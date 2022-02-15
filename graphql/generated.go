@@ -465,7 +465,7 @@ type Target implements Node {
   name: String!
   forwardConnectIP: String!
 
-  credentials(filter: CredentialWhereInput): [Credential!]
+  credentials: [Credential!]
 }
 
 enum TargetOrderField {
