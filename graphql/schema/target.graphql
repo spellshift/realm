@@ -1,0 +1,28 @@
+# Types and Definitions for Targets
+
+type Target implements Node {
+  id: ID!
+  Name: String!
+  ForwardConnectIP: String!
+}
+
+enum TargetOrderField {
+  NAME
+  FORWARD_CONNECT_IP
+}
+
+input TargetOrder {
+  direction: OrderDirection!
+  field: TargetOrderField
+}
+
+type TargetEdge {
+  node: Target
+  cursor: Cursor!
+}
+
+type TargetConnection {
+  totalCount: Int!
+  pageInfo: PageInfo!
+  edges: [TargetEdge]
+}

@@ -1,0 +1,8 @@
+# Schema for all queries that the Graph API supports.
+
+type Query {
+  node(id: ID!): Node
+  nodes(ids: [ID!]!): [Node]!
+  targets(after: Cursor, first: Int, before: Cursor, last: Int, orderBy: TargetOrder, where: TargetWhereInput): TargetConnection
+  credentials(after: Cursor, first: Int, before: Cursor, last: Int, orderBy: CredentialOrder, where: CredentialWhereInput): CredentialConnection
+}
