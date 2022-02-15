@@ -1,8 +1,8 @@
 # See VSCode default image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.195.0/containers/go/.devcontainer/base.Dockerfile
 
 # [Choice] Go version (use -bullseye variants on local arm64/Apple Silicon)
-ARG VARIANT=1.18beta2-buster
-FROM golang:${VARIANT}
+ARG GO_VARIANT=1.18beta2-buster
+FROM golang:${GO_VARIANT}
 
 # Copy library scripts to execute
 COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
