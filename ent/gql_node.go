@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/hashicorp/go-multierror"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/target"
 	"golang.org/x/sync/semaphore"
 )
@@ -88,6 +89,65 @@ func (c *Credential) Node(ctx context.Context) (node *Node, err error) {
 		Scan(ctx, &node.Edges[0].IDs)
 	if err != nil {
 		return nil, err
+	}
+	return node, nil
+}
+
+func (f *File) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     f.ID,
+		Type:   "File",
+		Fields: make([]*Field, 6),
+		Edges:  make([]*Edge, 0),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(f.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(f.Size); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "int",
+		Name:  "size",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(f.Hash); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "hash",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(f.CreatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "time.Time",
+		Name:  "createdAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(f.LastModifiedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "time.Time",
+		Name:  "lastModifiedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(f.Content); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "[]byte",
+		Name:  "content",
+		Value: string(buf),
 	}
 	return node, nil
 }
@@ -205,6 +265,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			return nil, err
 		}
 		return n, nil
+	case file.Table:
+		n, err := c.File.Query().
+			Where(file.ID(id)).
+			CollectFields(ctx, "File").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
 	case target.Table:
 		n, err := c.Target.Query().
 			Where(target.ID(id)).
@@ -291,6 +360,19 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		nodes, err := c.Credential.Query().
 			Where(credential.IDIn(ids...)).
 			CollectFields(ctx, "Credential").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case file.Table:
+		nodes, err := c.File.Query().
+			Where(file.IDIn(ids...)).
+			CollectFields(ctx, "File").
 			All(ctx)
 		if err != nil {
 			return nil, err
