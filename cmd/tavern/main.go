@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"github.com/kcarretto/realm/ent"
+	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/migrate"
 	"github.com/kcarretto/realm/graphql"
 
@@ -39,10 +40,22 @@ func main() {
 	}
 
 	// Initialize Test Data
-	client.Target.Create().
+	target := client.Target.Create().
 		SetName("Test").
 		SetForwardConnectIP("10.0.0.1").
-		ExecX(ctx)
+		SaveX(ctx)
+	client.Credential.Create().
+		SetPrincipal("root").
+		SetSecret("changeme").
+		SetKind(credential.KindPassword).
+		SetTarget(target).
+		SaveX(ctx)
+	client.Credential.Create().
+		SetPrincipal("admin").
+		SetSecret("password1!").
+		SetKind(credential.KindPassword).
+		SetTarget(target).
+		SaveX(ctx)
 
 	// Create GraphQL Handler
 	srv := handler.NewDefaultServer(graphql.NewSchema(client))

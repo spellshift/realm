@@ -61,6 +61,10 @@ type CredentialWhereInput struct {
 	KindNEQ   *credential.Kind  `json:"kindNEQ,omitempty"`
 	KindIn    []credential.Kind `json:"kindIn,omitempty"`
 	KindNotIn []credential.Kind `json:"kindNotIn,omitempty"`
+
+	// "target" edge predicates.
+	HasTarget     *bool               `json:"hasTarget,omitempty"`
+	HasTargetWith []*TargetWhereInput `json:"hasTargetWith,omitempty"`
 }
 
 // Filter applies the CredentialWhereInput filter on the CredentialQuery builder.
@@ -237,6 +241,24 @@ func (i *CredentialWhereInput) P() (predicate.Credential, error) {
 		predicates = append(predicates, credential.KindNotIn(i.KindNotIn...))
 	}
 
+	if i.HasTarget != nil {
+		p := credential.HasTarget()
+		if !*i.HasTarget {
+			p = credential.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTargetWith) > 0 {
+		with := make([]predicate.Target, 0, len(i.HasTargetWith))
+		for _, w := range i.HasTargetWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, credential.HasTargetWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, fmt.Errorf("github.com/kcarretto/realm/ent: empty predicate CredentialWhereInput")
@@ -292,6 +314,10 @@ type TargetWhereInput struct {
 	ForwardConnectIPHasSuffix    *string  `json:"forwardconnectipHasSuffix,omitempty"`
 	ForwardConnectIPEqualFold    *string  `json:"forwardconnectipEqualFold,omitempty"`
 	ForwardConnectIPContainsFold *string  `json:"forwardconnectipContainsFold,omitempty"`
+
+	// "credentials" edge predicates.
+	HasCredentials     *bool                   `json:"hasCredentials,omitempty"`
+	HasCredentialsWith []*CredentialWhereInput `json:"hasCredentialsWith,omitempty"`
 }
 
 // Filter applies the TargetWhereInput filter on the TargetQuery builder.
@@ -456,6 +482,24 @@ func (i *TargetWhereInput) P() (predicate.Target, error) {
 		predicates = append(predicates, target.ForwardConnectIPContainsFold(*i.ForwardConnectIPContainsFold))
 	}
 
+	if i.HasCredentials != nil {
+		p := target.HasCredentials()
+		if !*i.HasCredentials {
+			p = target.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCredentialsWith) > 0 {
+		with := make([]predicate.Credential, 0, len(i.HasCredentialsWith))
+		for _, w := range i.HasCredentialsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, target.HasCredentialsWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, fmt.Errorf("github.com/kcarretto/realm/ent: empty predicate TargetWhereInput")

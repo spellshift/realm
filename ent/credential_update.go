@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/predicate"
+	"github.com/kcarretto/realm/ent/target"
 )
 
 // CredentialUpdate is the builder for updating Credential entities.
@@ -45,9 +46,34 @@ func (cu *CredentialUpdate) SetKind(c credential.Kind) *CredentialUpdate {
 	return cu
 }
 
+// SetTargetID sets the "target" edge to the Target entity by ID.
+func (cu *CredentialUpdate) SetTargetID(id int) *CredentialUpdate {
+	cu.mutation.SetTargetID(id)
+	return cu
+}
+
+// SetNillableTargetID sets the "target" edge to the Target entity by ID if the given value is not nil.
+func (cu *CredentialUpdate) SetNillableTargetID(id *int) *CredentialUpdate {
+	if id != nil {
+		cu = cu.SetTargetID(*id)
+	}
+	return cu
+}
+
+// SetTarget sets the "target" edge to the Target entity.
+func (cu *CredentialUpdate) SetTarget(t *Target) *CredentialUpdate {
+	return cu.SetTargetID(t.ID)
+}
+
 // Mutation returns the CredentialMutation object of the builder.
 func (cu *CredentialUpdate) Mutation() *CredentialMutation {
 	return cu.mutation
+}
+
+// ClearTarget clears the "target" edge to the Target entity.
+func (cu *CredentialUpdate) ClearTarget() *CredentialUpdate {
+	cu.mutation.ClearTarget()
+	return cu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -169,6 +195,41 @@ func (cu *CredentialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: credential.FieldKind,
 		})
 	}
+	if cu.mutation.TargetCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   credential.TargetTable,
+			Columns: []string{credential.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.TargetIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   credential.TargetTable,
+			Columns: []string{credential.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, cu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{credential.Label}
@@ -206,9 +267,34 @@ func (cuo *CredentialUpdateOne) SetKind(c credential.Kind) *CredentialUpdateOne 
 	return cuo
 }
 
+// SetTargetID sets the "target" edge to the Target entity by ID.
+func (cuo *CredentialUpdateOne) SetTargetID(id int) *CredentialUpdateOne {
+	cuo.mutation.SetTargetID(id)
+	return cuo
+}
+
+// SetNillableTargetID sets the "target" edge to the Target entity by ID if the given value is not nil.
+func (cuo *CredentialUpdateOne) SetNillableTargetID(id *int) *CredentialUpdateOne {
+	if id != nil {
+		cuo = cuo.SetTargetID(*id)
+	}
+	return cuo
+}
+
+// SetTarget sets the "target" edge to the Target entity.
+func (cuo *CredentialUpdateOne) SetTarget(t *Target) *CredentialUpdateOne {
+	return cuo.SetTargetID(t.ID)
+}
+
 // Mutation returns the CredentialMutation object of the builder.
 func (cuo *CredentialUpdateOne) Mutation() *CredentialMutation {
 	return cuo.mutation
+}
+
+// ClearTarget clears the "target" edge to the Target entity.
+func (cuo *CredentialUpdateOne) ClearTarget() *CredentialUpdateOne {
+	cuo.mutation.ClearTarget()
+	return cuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -353,6 +439,41 @@ func (cuo *CredentialUpdateOne) sqlSave(ctx context.Context) (_node *Credential,
 			Value:  value,
 			Column: credential.FieldKind,
 		})
+	}
+	if cuo.mutation.TargetCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   credential.TargetTable,
+			Columns: []string{credential.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.TargetIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   credential.TargetTable,
+			Columns: []string{credential.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Credential{config: cuo.config}
 	_spec.Assign = _node.assignValues

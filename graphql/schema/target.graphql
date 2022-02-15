@@ -2,8 +2,10 @@
 
 type Target implements Node {
   id: ID!
-  Name: String!
-  ForwardConnectIP: String!
+  name: String!
+  forwardConnectIP: String!
+
+  credentials(filter: CredentialWhereInput): [Credential!]
 }
 
 enum TargetOrderField {

@@ -14,6 +14,7 @@ import (
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -216,6 +217,22 @@ func (c *CredentialClient) GetX(ctx context.Context, id int) *Credential {
 	return obj
 }
 
+// QueryTarget queries the target edge of a Credential.
+func (c *CredentialClient) QueryTarget(cr *Credential) *TargetQuery {
+	query := &TargetQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(credential.Table, credential.FieldID, id),
+			sqlgraph.To(target.Table, target.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, credential.TargetTable, credential.TargetColumn),
+		)
+		fromV = sqlgraph.Neighbors(cr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CredentialClient) Hooks() []Hook {
 	return c.hooks.Credential
@@ -304,6 +321,22 @@ func (c *TargetClient) GetX(ctx context.Context, id int) *Target {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryCredentials queries the credentials edge of a Target.
+func (c *TargetClient) QueryCredentials(t *Target) *CredentialQuery {
+	query := &CredentialQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, id),
+			sqlgraph.To(credential.Table, credential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, target.CredentialsTable, target.CredentialsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

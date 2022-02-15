@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/target"
 )
 
 // Credential is the model entity for the Credential schema.
@@ -24,6 +25,33 @@ type Credential struct {
 	// Kind holds the value of the "kind" field.
 	// The kind of the credential (password, key, etc)
 	Kind credential.Kind `json:"kind,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the CredentialQuery when eager-loading is set.
+	Edges              CredentialEdges `json:"edges"`
+	target_credentials *int
+}
+
+// CredentialEdges holds the relations/edges for other nodes in the graph.
+type CredentialEdges struct {
+	// Target holds the value of the target edge.
+	Target *Target `json:"target,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// TargetOrErr returns the Target value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e CredentialEdges) TargetOrErr() (*Target, error) {
+	if e.loadedTypes[0] {
+		if e.Target == nil {
+			// The edge target was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: target.Label}
+		}
+		return e.Target, nil
+	}
+	return nil, &NotLoadedError{edge: "target"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -35,6 +63,8 @@ func (*Credential) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullInt64)
 		case credential.FieldPrincipal, credential.FieldSecret, credential.FieldKind:
 			values[i] = new(sql.NullString)
+		case credential.ForeignKeys[0]: // target_credentials
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Credential", columns[i])
 		}
@@ -74,9 +104,21 @@ func (c *Credential) assignValues(columns []string, values []interface{}) error 
 			} else if value.Valid {
 				c.Kind = credential.Kind(value.String)
 			}
+		case credential.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field target_credentials", value)
+			} else if value.Valid {
+				c.target_credentials = new(int)
+				*c.target_credentials = int(value.Int64)
+			}
 		}
 	}
 	return nil
+}
+
+// QueryTarget queries the "target" edge of the Credential entity.
+func (c *Credential) QueryTarget() *TargetQuery {
+	return (&CredentialClient{config: c.config}).QueryTarget(c)
 }
 
 // Update returns a builder for updating this Credential.

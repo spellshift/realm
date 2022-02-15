@@ -38,6 +38,8 @@ type CredentialMutation struct {
 	secret        *string
 	kind          *credential.Kind
 	clearedFields map[string]struct{}
+	target        *int
+	clearedtarget bool
 	done          bool
 	oldValue      func(context.Context) (*Credential, error)
 	predicates    []predicate.Credential
@@ -249,6 +251,45 @@ func (m *CredentialMutation) ResetKind() {
 	m.kind = nil
 }
 
+// SetTargetID sets the "target" edge to the Target entity by id.
+func (m *CredentialMutation) SetTargetID(id int) {
+	m.target = &id
+}
+
+// ClearTarget clears the "target" edge to the Target entity.
+func (m *CredentialMutation) ClearTarget() {
+	m.clearedtarget = true
+}
+
+// TargetCleared reports if the "target" edge to the Target entity was cleared.
+func (m *CredentialMutation) TargetCleared() bool {
+	return m.clearedtarget
+}
+
+// TargetID returns the "target" edge ID in the mutation.
+func (m *CredentialMutation) TargetID() (id int, exists bool) {
+	if m.target != nil {
+		return *m.target, true
+	}
+	return
+}
+
+// TargetIDs returns the "target" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TargetID instead. It exists only for internal usage by the builders.
+func (m *CredentialMutation) TargetIDs() (ids []int) {
+	if id := m.target; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTarget resets all changes to the "target" edge.
+func (m *CredentialMutation) ResetTarget() {
+	m.target = nil
+	m.clearedtarget = false
+}
+
 // Where appends a list predicates to the CredentialMutation builder.
 func (m *CredentialMutation) Where(ps ...predicate.Credential) {
 	m.predicates = append(m.predicates, ps...)
@@ -401,64 +442,95 @@ func (m *CredentialMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CredentialMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.target != nil {
+		edges = append(edges, credential.EdgeTarget)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *CredentialMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case credential.EdgeTarget:
+		if id := m.target; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CredentialMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *CredentialMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CredentialMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedtarget {
+		edges = append(edges, credential.EdgeTarget)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *CredentialMutation) EdgeCleared(name string) bool {
+	switch name {
+	case credential.EdgeTarget:
+		return m.clearedtarget
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *CredentialMutation) ClearEdge(name string) error {
+	switch name {
+	case credential.EdgeTarget:
+		m.ClearTarget()
+		return nil
+	}
 	return fmt.Errorf("unknown Credential unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *CredentialMutation) ResetEdge(name string) error {
+	switch name {
+	case credential.EdgeTarget:
+		m.ResetTarget()
+		return nil
+	}
 	return fmt.Errorf("unknown Credential edge %s", name)
 }
 
 // TargetMutation represents an operation that mutates the Target nodes in the graph.
 type TargetMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	name             *string
-	forwardConnectIP *string
-	clearedFields    map[string]struct{}
-	done             bool
-	oldValue         func(context.Context) (*Target, error)
-	predicates       []predicate.Target
+	op                 Op
+	typ                string
+	id                 *int
+	name               *string
+	forwardConnectIP   *string
+	clearedFields      map[string]struct{}
+	credentials        map[int]struct{}
+	removedcredentials map[int]struct{}
+	clearedcredentials bool
+	done               bool
+	oldValue           func(context.Context) (*Target, error)
+	predicates         []predicate.Target
 }
 
 var _ ent.Mutation = (*TargetMutation)(nil)
@@ -631,6 +703,60 @@ func (m *TargetMutation) ResetForwardConnectIP() {
 	m.forwardConnectIP = nil
 }
 
+// AddCredentialIDs adds the "credentials" edge to the Credential entity by ids.
+func (m *TargetMutation) AddCredentialIDs(ids ...int) {
+	if m.credentials == nil {
+		m.credentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.credentials[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCredentials clears the "credentials" edge to the Credential entity.
+func (m *TargetMutation) ClearCredentials() {
+	m.clearedcredentials = true
+}
+
+// CredentialsCleared reports if the "credentials" edge to the Credential entity was cleared.
+func (m *TargetMutation) CredentialsCleared() bool {
+	return m.clearedcredentials
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to the Credential entity by IDs.
+func (m *TargetMutation) RemoveCredentialIDs(ids ...int) {
+	if m.removedcredentials == nil {
+		m.removedcredentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.credentials, ids[i])
+		m.removedcredentials[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCredentials returns the removed IDs of the "credentials" edge to the Credential entity.
+func (m *TargetMutation) RemovedCredentialsIDs() (ids []int) {
+	for id := range m.removedcredentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CredentialsIDs returns the "credentials" edge IDs in the mutation.
+func (m *TargetMutation) CredentialsIDs() (ids []int) {
+	for id := range m.credentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCredentials resets all changes to the "credentials" edge.
+func (m *TargetMutation) ResetCredentials() {
+	m.credentials = nil
+	m.clearedcredentials = false
+	m.removedcredentials = nil
+}
+
 // Where appends a list predicates to the TargetMutation builder.
 func (m *TargetMutation) Where(ps ...predicate.Target) {
 	m.predicates = append(m.predicates, ps...)
@@ -766,48 +892,84 @@ func (m *TargetMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TargetMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.credentials != nil {
+		edges = append(edges, target.EdgeCredentials)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *TargetMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case target.EdgeCredentials:
+		ids := make([]ent.Value, 0, len(m.credentials))
+		for id := range m.credentials {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TargetMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedcredentials != nil {
+		edges = append(edges, target.EdgeCredentials)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *TargetMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case target.EdgeCredentials:
+		ids := make([]ent.Value, 0, len(m.removedcredentials))
+		for id := range m.removedcredentials {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TargetMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedcredentials {
+		edges = append(edges, target.EdgeCredentials)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *TargetMutation) EdgeCleared(name string) bool {
+	switch name {
+	case target.EdgeCredentials:
+		return m.clearedcredentials
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *TargetMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Target unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *TargetMutation) ResetEdge(name string) error {
+	switch name {
+	case target.EdgeCredentials:
+		m.ResetCredentials()
+		return nil
+	}
 	return fmt.Errorf("unknown Target edge %s", name)
 }

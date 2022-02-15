@@ -21,6 +21,27 @@ type Target struct {
 	// ForwardConnectIP holds the value of the "forwardConnectIP" field.
 	// The IP Address that can be used to connect to the target using a protocol like SSH.
 	ForwardConnectIP string `json:"forwardConnectIP,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the TargetQuery when eager-loading is set.
+	Edges TargetEdges `json:"edges"`
+}
+
+// TargetEdges holds the relations/edges for other nodes in the graph.
+type TargetEdges struct {
+	// Credentials holds the value of the credentials edge.
+	Credentials []*Credential `json:"credentials,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// CredentialsOrErr returns the Credentials value or an error if the edge
+// was not loaded in eager-loading.
+func (e TargetEdges) CredentialsOrErr() ([]*Credential, error) {
+	if e.loadedTypes[0] {
+		return e.Credentials, nil
+	}
+	return nil, &NotLoadedError{edge: "credentials"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -68,6 +89,11 @@ func (t *Target) assignValues(columns []string, values []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryCredentials queries the "credentials" edge of the Target entity.
+func (t *Target) QueryCredentials() *CredentialQuery {
+	return (&TargetClient{config: t.config}).QueryCredentials(t)
 }
 
 // Update returns a builder for updating this Target.

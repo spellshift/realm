@@ -52,7 +52,7 @@ func (c *Credential) Node(ctx context.Context) (node *Node, err error) {
 		ID:     c.ID,
 		Type:   "Credential",
 		Fields: make([]*Field, 3),
-		Edges:  make([]*Edge, 0),
+		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(c.Principal); err != nil {
@@ -79,6 +79,16 @@ func (c *Credential) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "kind",
 		Value: string(buf),
 	}
+	node.Edges[0] = &Edge{
+		Type: "Target",
+		Name: "target",
+	}
+	err = c.QueryTarget().
+		Select(target.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
 	return node, nil
 }
 
@@ -87,7 +97,7 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 		ID:     t.ID,
 		Type:   "Target",
 		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 0),
+		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(t.Name); err != nil {
@@ -105,6 +115,16 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 		Type:  "string",
 		Name:  "forwardConnectIP",
 		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Credential",
+		Name: "credentials",
+	}
+	err = t.QueryCredentials().
+		Select(credential.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
 	}
 	return node, nil
 }

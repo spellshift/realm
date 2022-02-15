@@ -52,6 +52,10 @@ input CredentialWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  
+  """target edge predicates"""
+  hasTarget: Boolean
+  hasTargetWith: [TargetWhereInput!]
 }
 
 """
@@ -102,4 +106,8 @@ input TargetWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  
+  """credentials edge predicates"""
+  hasCredentials: Boolean
+  hasCredentialsWith: [CredentialWhereInput!]
 }

@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -29,6 +30,21 @@ func (tc *TargetCreate) SetName(s string) *TargetCreate {
 func (tc *TargetCreate) SetForwardConnectIP(s string) *TargetCreate {
 	tc.mutation.SetForwardConnectIP(s)
 	return tc
+}
+
+// AddCredentialIDs adds the "credentials" edge to the Credential entity by IDs.
+func (tc *TargetCreate) AddCredentialIDs(ids ...int) *TargetCreate {
+	tc.mutation.AddCredentialIDs(ids...)
+	return tc
+}
+
+// AddCredentials adds the "credentials" edges to the Credential entity.
+func (tc *TargetCreate) AddCredentials(c ...*Credential) *TargetCreate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return tc.AddCredentialIDs(ids...)
 }
 
 // Mutation returns the TargetMutation object of the builder.
@@ -159,6 +175,25 @@ func (tc *TargetCreate) createSpec() (*Target, *sqlgraph.CreateSpec) {
 			Column: target.FieldForwardConnectIP,
 		})
 		_node.ForwardConnectIP = value
+	}
+	if nodes := tc.mutation.CredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   target.CredentialsTable,
+			Columns: []string{target.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: credential.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

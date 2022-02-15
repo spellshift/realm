@@ -17,6 +17,14 @@ func (c *CredentialQuery) CollectFields(ctx context.Context, satisfies ...string
 }
 
 func (c *CredentialQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *CredentialQuery {
+	for _, field := range graphql.CollectFields(ctx, field.Selections, satisfies) {
+		switch field.Name {
+		case "target":
+			c = c.WithTarget(func(query *TargetQuery) {
+				query.collectField(ctx, field)
+			})
+		}
+	}
 	return c
 }
 
@@ -29,5 +37,13 @@ func (t *TargetQuery) CollectFields(ctx context.Context, satisfies ...string) *T
 }
 
 func (t *TargetQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *TargetQuery {
+	for _, field := range graphql.CollectFields(ctx, field.Selections, satisfies) {
+		switch field.Name {
+		case "credentials":
+			t = t.WithCredentials(func(query *CredentialQuery) {
+				query.collectField(ctx, field)
+			})
+		}
+	}
 	return t
 }

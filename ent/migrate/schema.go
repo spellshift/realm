@@ -14,12 +14,21 @@ var (
 		{Name: "principal", Type: field.TypeString},
 		{Name: "secret", Type: field.TypeString, Size: 3000},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"PASSWORD", "KEY", "CERTIFICATE"}},
+		{Name: "target_credentials", Type: field.TypeInt, Nullable: true},
 	}
 	// CredentialsTable holds the schema information for the "credentials" table.
 	CredentialsTable = &schema.Table{
 		Name:       "credentials",
 		Columns:    CredentialsColumns,
 		PrimaryKey: []*schema.Column{CredentialsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "credentials_targets_credentials",
+				Columns:    []*schema.Column{CredentialsColumns[4]},
+				RefColumns: []*schema.Column{TargetsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// TargetsColumns holds the columns for the "targets" table.
 	TargetsColumns = []*schema.Column{
@@ -41,4 +50,5 @@ var (
 )
 
 func init() {
+	CredentialsTable.ForeignKeys[0].RefTable = TargetsTable
 }

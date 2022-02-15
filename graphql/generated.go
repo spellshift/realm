@@ -50,6 +50,7 @@ type ComplexityRoot struct {
 		Kind      func(childComplexity int) int
 		Principal func(childComplexity int) int
 		Secret    func(childComplexity int) int
+		Target    func(childComplexity int) int
 	}
 
 	CredentialConnection struct {
@@ -82,6 +83,7 @@ type ComplexityRoot struct {
 	}
 
 	Target struct {
+		Credentials      func(childComplexity int) int
 		ForwardConnectIP func(childComplexity int) int
 		ID               func(childComplexity int) int
 		Name             func(childComplexity int) int
@@ -131,26 +133,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Credential.ID(childComplexity), true
 
-	case "Credential.Kind":
+	case "Credential.kind":
 		if e.complexity.Credential.Kind == nil {
 			break
 		}
 
 		return e.complexity.Credential.Kind(childComplexity), true
 
-	case "Credential.Principal":
+	case "Credential.principal":
 		if e.complexity.Credential.Principal == nil {
 			break
 		}
 
 		return e.complexity.Credential.Principal(childComplexity), true
 
-	case "Credential.Secret":
+	case "Credential.secret":
 		if e.complexity.Credential.Secret == nil {
 			break
 		}
 
 		return e.complexity.Credential.Secret(childComplexity), true
+
+	case "Credential.target":
+		if e.complexity.Credential.Target == nil {
+			break
+		}
+
+		return e.complexity.Credential.Target(childComplexity), true
 
 	case "CredentialConnection.edges":
 		if e.complexity.CredentialConnection.Edges == nil {
@@ -275,7 +284,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Targets(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["orderBy"].(*ent.TargetOrder), args["where"].(*ent.TargetWhereInput)), true
 
-	case "Target.ForwardConnectIP":
+	case "Target.credentials":
+		if e.complexity.Target.Credentials == nil {
+			break
+		}
+
+		return e.complexity.Target.Credentials(childComplexity), true
+
+	case "Target.forwardConnectIP":
 		if e.complexity.Target.ForwardConnectIP == nil {
 			break
 		}
@@ -289,7 +305,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Target.ID(childComplexity), true
 
-	case "Target.Name":
+	case "Target.name":
 		if e.complexity.Target.Name == nil {
 			break
 		}
@@ -446,8 +462,10 @@ input CreateCredentialInput {
 
 type Target implements Node {
   id: ID!
-  Name: String!
-  ForwardConnectIP: String!
+  name: String!
+  forwardConnectIP: String!
+
+  credentials(filter: CredentialWhereInput): [Credential!]
 }
 
 enum TargetOrderField {
@@ -481,9 +499,11 @@ enum CredentialKind {
 
 type Credential implements Node {
   id: ID!
-  Principal: String!
-  Secret: String!
-  Kind: CredentialKind!
+  principal: String!
+  secret: String!
+  kind: CredentialKind!
+
+  target: Target!
 }
 
 enum CredentialOrderField {
@@ -562,6 +582,10 @@ input CredentialWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  
+  """target edge predicates"""
+  hasTarget: Boolean
+  hasTargetWith: [TargetWhereInput!]
 }
 
 """
@@ -612,6 +636,10 @@ input TargetWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  
+  """credentials edge predicates"""
+  hasCredentials: Boolean
+  hasCredentialsWith: [CredentialWhereInput!]
 }
 `, BuiltIn: false},
 }
@@ -874,7 +902,7 @@ func (ec *executionContext) _Credential_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Credential_Principal(ctx context.Context, field graphql.CollectedField, obj *ent.Credential) (ret graphql.Marshaler) {
+func (ec *executionContext) _Credential_principal(ctx context.Context, field graphql.CollectedField, obj *ent.Credential) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -909,7 +937,7 @@ func (ec *executionContext) _Credential_Principal(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Credential_Secret(ctx context.Context, field graphql.CollectedField, obj *ent.Credential) (ret graphql.Marshaler) {
+func (ec *executionContext) _Credential_secret(ctx context.Context, field graphql.CollectedField, obj *ent.Credential) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -944,7 +972,7 @@ func (ec *executionContext) _Credential_Secret(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Credential_Kind(ctx context.Context, field graphql.CollectedField, obj *ent.Credential) (ret graphql.Marshaler) {
+func (ec *executionContext) _Credential_kind(ctx context.Context, field graphql.CollectedField, obj *ent.Credential) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -977,6 +1005,41 @@ func (ec *executionContext) _Credential_Kind(ctx context.Context, field graphql.
 	res := resTmp.(credential.Kind)
 	fc.Result = res
 	return ec.marshalNCredentialKind2githubᚗcomᚋkcarrettoᚋrealmᚋentᚋcredentialᚐKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Credential_target(ctx context.Context, field graphql.CollectedField, obj *ent.Credential) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Credential",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Target(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Target)
+	fc.Result = res
+	return ec.marshalNTarget2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐTarget(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CredentialConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.CredentialConnection) (ret graphql.Marshaler) {
@@ -1589,7 +1652,7 @@ func (ec *executionContext) _Target_id(ctx context.Context, field graphql.Collec
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Target_Name(ctx context.Context, field graphql.CollectedField, obj *ent.Target) (ret graphql.Marshaler) {
+func (ec *executionContext) _Target_name(ctx context.Context, field graphql.CollectedField, obj *ent.Target) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1624,7 +1687,7 @@ func (ec *executionContext) _Target_Name(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Target_ForwardConnectIP(ctx context.Context, field graphql.CollectedField, obj *ent.Target) (ret graphql.Marshaler) {
+func (ec *executionContext) _Target_forwardConnectIP(ctx context.Context, field graphql.CollectedField, obj *ent.Target) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1657,6 +1720,38 @@ func (ec *executionContext) _Target_ForwardConnectIP(ctx context.Context, field 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Target_credentials(ctx context.Context, field graphql.CollectedField, obj *ent.Target) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Target",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Credentials(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Credential)
+	fc.Result = res
+	return ec.marshalOCredential2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredentialᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TargetConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.TargetConnection) (ret graphql.Marshaler) {
@@ -3388,6 +3483,22 @@ func (ec *executionContext) unmarshalInputCredentialWhereInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
+		case "hasTarget":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTarget"))
+			it.HasTarget, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasTargetWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTargetWith"))
+			it.HasTargetWith, err = ec.unmarshalOTargetWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐTargetWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -3730,6 +3841,22 @@ func (ec *executionContext) unmarshalInputTargetWhereInput(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
+		case "hasCredentials":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCredentials"))
+			it.HasCredentials, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasCredentialsWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCredentialsWith"))
+			it.HasCredentialsWith, err = ec.unmarshalOCredentialWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredentialWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -3781,38 +3908,58 @@ func (ec *executionContext) _Credential(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "Principal":
+		case "principal":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Credential_Principal(ctx, field, obj)
+				return ec._Credential_principal(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "Secret":
+		case "secret":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Credential_Secret(ctx, field, obj)
+				return ec._Credential_secret(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "Kind":
+		case "kind":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Credential_Kind(ctx, field, obj)
+				return ec._Credential_kind(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "target":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Credential_target(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4150,28 +4297,45 @@ func (ec *executionContext) _Target(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "Name":
+		case "name":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Target_Name(ctx, field, obj)
+				return ec._Target_name(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "ForwardConnectIP":
+		case "forwardConnectIP":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Target_ForwardConnectIP(ctx, field, obj)
+				return ec._Target_forwardConnectIP(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "credentials":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Target_credentials(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4698,6 +4862,16 @@ func (ec *executionContext) unmarshalNCreateTargetInput2githubᚗcomᚋkcarretto
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNCredential2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredential(ctx context.Context, sel ast.SelectionSet, v *ent.Credential) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Credential(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNCredentialKind2githubᚗcomᚋkcarrettoᚋrealmᚋentᚋcredentialᚐKind(ctx context.Context, v interface{}) (credential.Kind, error) {
 	var res credential.Kind
 	err := res.UnmarshalGQL(v)
@@ -5148,6 +5322,53 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOCredential2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredentialᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Credential) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCredential2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredential(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOCredential2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredential(ctx context.Context, sel ast.SelectionSet, v *ent.Credential) graphql.Marshaler {
