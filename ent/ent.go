@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -31,6 +32,7 @@ type OrderFunc func(*sql.Selector)
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		credential.Table: credential.ValidColumn,
+		file.Table:       file.ValidColumn,
 		target.Table:     target.ValidColumn,
 	}
 	check, ok := checks[table]

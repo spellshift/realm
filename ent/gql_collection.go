@@ -29,6 +29,18 @@ func (c *CredentialQuery) collectField(ctx *graphql.OperationContext, field grap
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (f *FileQuery) CollectFields(ctx context.Context, satisfies ...string) *FileQuery {
+	if fc := graphql.GetFieldContext(ctx); fc != nil {
+		f = f.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
+	}
+	return f
+}
+
+func (f *FileQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *FileQuery {
+	return f
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (t *TargetQuery) CollectFields(ctx context.Context, satisfies ...string) *TargetQuery {
 	if fc := graphql.GetFieldContext(ctx); fc != nil {
 		t = t.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)

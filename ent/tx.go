@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Credential is the client for interacting with the Credential builders.
 	Credential *CredentialClient
+	// File is the client for interacting with the File builders.
+	File *FileClient
 	// Target is the client for interacting with the Target builders.
 	Target *TargetClient
 
@@ -152,6 +154,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Credential = NewCredentialClient(tx.config)
+	tx.File = NewFileClient(tx.config)
 	tx.Target = NewTargetClient(tx.config)
 }
 

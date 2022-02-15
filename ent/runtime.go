@@ -3,7 +3,10 @@
 package ent
 
 import (
+	"time"
+
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/schema"
 	"github.com/kcarretto/realm/ent/target"
 )
@@ -36,6 +39,26 @@ func init() {
 			return nil
 		}
 	}()
+	fileFields := schema.File{}.Fields()
+	_ = fileFields
+	// fileDescName is the schema descriptor for name field.
+	fileDescName := fileFields[0].Descriptor()
+	// file.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	file.NameValidator = fileDescName.Validators[0].(func(string) error)
+	// fileDescSize is the schema descriptor for size field.
+	fileDescSize := fileFields[1].Descriptor()
+	// file.DefaultSize holds the default value on creation for the size field.
+	file.DefaultSize = fileDescSize.Default.(int)
+	// file.SizeValidator is a validator for the "size" field. It is called by the builders before save.
+	file.SizeValidator = fileDescSize.Validators[0].(func(int) error)
+	// fileDescHash is the schema descriptor for hash field.
+	fileDescHash := fileFields[2].Descriptor()
+	// file.HashValidator is a validator for the "hash" field. It is called by the builders before save.
+	file.HashValidator = fileDescHash.Validators[0].(func(string) error)
+	// fileDescCreatedAt is the schema descriptor for createdAt field.
+	fileDescCreatedAt := fileFields[3].Descriptor()
+	// file.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	file.DefaultCreatedAt = fileDescCreatedAt.Default.(func() time.Time)
 	targetFields := schema.Target{}.Fields()
 	_ = targetFields
 	// targetDescName is the schema descriptor for name field.
