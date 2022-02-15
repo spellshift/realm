@@ -11,8 +11,17 @@ const (
 	FieldName = "name"
 	// FieldForwardConnectIP holds the string denoting the forwardconnectip field in the database.
 	FieldForwardConnectIP = "forward_connect_ip"
+	// EdgeCredentials holds the string denoting the credentials edge name in mutations.
+	EdgeCredentials = "credentials"
 	// Table holds the table name of the target in the database.
 	Table = "targets"
+	// CredentialsTable is the table that holds the credentials relation/edge.
+	CredentialsTable = "credentials"
+	// CredentialsInverseTable is the table name for the Credential entity.
+	// It exists in this package in order to avoid circular dependency with the "credential" package.
+	CredentialsInverseTable = "credentials"
+	// CredentialsColumn is the table column denoting the credentials relation/edge.
+	CredentialsColumn = "target_credentials"
 )
 
 // Columns holds all SQL columns for target fields.

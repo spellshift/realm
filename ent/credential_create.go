@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/target"
 )
 
 // CredentialCreate is the builder for creating a Credential entity.
@@ -35,6 +36,25 @@ func (cc *CredentialCreate) SetSecret(s string) *CredentialCreate {
 func (cc *CredentialCreate) SetKind(c credential.Kind) *CredentialCreate {
 	cc.mutation.SetKind(c)
 	return cc
+}
+
+// SetTargetID sets the "target" edge to the Target entity by ID.
+func (cc *CredentialCreate) SetTargetID(id int) *CredentialCreate {
+	cc.mutation.SetTargetID(id)
+	return cc
+}
+
+// SetNillableTargetID sets the "target" edge to the Target entity by ID if the given value is not nil.
+func (cc *CredentialCreate) SetNillableTargetID(id *int) *CredentialCreate {
+	if id != nil {
+		cc = cc.SetTargetID(*id)
+	}
+	return cc
+}
+
+// SetTarget sets the "target" edge to the Target entity.
+func (cc *CredentialCreate) SetTarget(t *Target) *CredentialCreate {
+	return cc.SetTargetID(t.ID)
 }
 
 // Mutation returns the CredentialMutation object of the builder.
@@ -181,6 +201,26 @@ func (cc *CredentialCreate) createSpec() (*Credential, *sqlgraph.CreateSpec) {
 			Column: credential.FieldKind,
 		})
 		_node.Kind = value
+	}
+	if nodes := cc.mutation.TargetIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   credential.TargetTable,
+			Columns: []string{credential.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.target_credentials = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

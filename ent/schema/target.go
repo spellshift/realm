@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -33,5 +34,9 @@ func (Target) Fields() []ent.Field {
 
 // Edges of the Target.
 func (Target) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("credentials", Credential.Type).
+			Comment("A Target can have many credentials connected to it").
+			Annotations(entgql.Bind()),
+	}
 }

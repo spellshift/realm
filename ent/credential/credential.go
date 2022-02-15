@@ -19,8 +19,17 @@ const (
 	FieldSecret = "secret"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
+	// EdgeTarget holds the string denoting the target edge name in mutations.
+	EdgeTarget = "target"
 	// Table holds the table name of the credential in the database.
 	Table = "credentials"
+	// TargetTable is the table that holds the target relation/edge.
+	TargetTable = "credentials"
+	// TargetInverseTable is the table name for the Target entity.
+	// It exists in this package in order to avoid circular dependency with the "target" package.
+	TargetInverseTable = "targets"
+	// TargetColumn is the table column denoting the target relation/edge.
+	TargetColumn = "target_credentials"
 )
 
 // Columns holds all SQL columns for credential fields.
@@ -31,10 +40,21 @@ var Columns = []string{
 	FieldKind,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "credentials"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"target_credentials",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

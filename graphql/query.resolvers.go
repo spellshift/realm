@@ -5,7 +5,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kcarretto/realm/ent"
 )
@@ -27,7 +26,11 @@ func (r *queryResolver) Targets(ctx context.Context, after *ent.Cursor, first *i
 }
 
 func (r *queryResolver) Credentials(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.CredentialOrder, where *ent.CredentialWhereInput) (*ent.CredentialConnection, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.client.Credential.Query().
+		Paginate(ctx, after, first, before, last,
+			ent.WithCredentialOrder(orderBy),
+			ent.WithCredentialFilter(where.Filter),
+		)
 }
 
 // Query returns QueryResolver implementation.

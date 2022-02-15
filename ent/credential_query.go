@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/predicate"
+	"github.com/kcarretto/realm/ent/target"
 )
 
 // CredentialQuery is the builder for querying Credential entities.
@@ -24,6 +25,9 @@ type CredentialQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Credential
+	// eager-loading edges.
+	withTarget *TargetQuery
+	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (cq *CredentialQuery) Unique(unique bool) *CredentialQuery {
 func (cq *CredentialQuery) Order(o ...OrderFunc) *CredentialQuery {
 	cq.order = append(cq.order, o...)
 	return cq
+}
+
+// QueryTarget chains the current query on the "target" edge.
+func (cq *CredentialQuery) QueryTarget() *TargetQuery {
+	query := &TargetQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(credential.Table, credential.FieldID, selector),
+			sqlgraph.To(target.Table, target.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, credential.TargetTable, credential.TargetColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Credential entity from the query.
@@ -241,10 +267,22 @@ func (cq *CredentialQuery) Clone() *CredentialQuery {
 		offset:     cq.offset,
 		order:      append([]OrderFunc{}, cq.order...),
 		predicates: append([]predicate.Credential{}, cq.predicates...),
+		withTarget: cq.withTarget.Clone(),
 		// clone intermediate query.
 		sql:  cq.sql.Clone(),
 		path: cq.path,
 	}
+}
+
+// WithTarget tells the query-builder to eager-load the nodes that are connected to
+// the "target" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CredentialQuery) WithTarget(opts ...func(*TargetQuery)) *CredentialQuery {
+	query := &TargetQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withTarget = query
+	return cq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -310,9 +348,19 @@ func (cq *CredentialQuery) prepareQuery(ctx context.Context) error {
 
 func (cq *CredentialQuery) sqlAll(ctx context.Context) ([]*Credential, error) {
 	var (
-		nodes = []*Credential{}
-		_spec = cq.querySpec()
+		nodes       = []*Credential{}
+		withFKs     = cq.withFKs
+		_spec       = cq.querySpec()
+		loadedTypes = [1]bool{
+			cq.withTarget != nil,
+		}
 	)
+	if cq.withTarget != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, credential.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Credential{config: cq.config}
 		nodes = append(nodes, node)
@@ -323,6 +371,7 @@ func (cq *CredentialQuery) sqlAll(ctx context.Context) ([]*Credential, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, cq.driver, _spec); err != nil {
@@ -331,6 +380,36 @@ func (cq *CredentialQuery) sqlAll(ctx context.Context) ([]*Credential, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := cq.withTarget; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Credential)
+		for i := range nodes {
+			if nodes[i].target_credentials == nil {
+				continue
+			}
+			fk := *nodes[i].target_credentials
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(target.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "target_credentials" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Target = n
+			}
+		}
+	}
+
 	return nodes, nil
 }
 

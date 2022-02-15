@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -36,5 +37,11 @@ func (Credential) Fields() []ent.Field {
 
 // Edges of the Credential.
 func (Credential) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("target", Target.Type).
+			Comment("The target that this credential was created for").
+			Ref("credentials").
+			Annotations(entgql.MapsTo("target")).
+			Unique(),
+	}
 }

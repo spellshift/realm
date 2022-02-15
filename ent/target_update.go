@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/predicate"
 	"github.com/kcarretto/realm/ent/target"
 )
@@ -39,9 +40,45 @@ func (tu *TargetUpdate) SetForwardConnectIP(s string) *TargetUpdate {
 	return tu
 }
 
+// AddCredentialIDs adds the "credentials" edge to the Credential entity by IDs.
+func (tu *TargetUpdate) AddCredentialIDs(ids ...int) *TargetUpdate {
+	tu.mutation.AddCredentialIDs(ids...)
+	return tu
+}
+
+// AddCredentials adds the "credentials" edges to the Credential entity.
+func (tu *TargetUpdate) AddCredentials(c ...*Credential) *TargetUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return tu.AddCredentialIDs(ids...)
+}
+
 // Mutation returns the TargetMutation object of the builder.
 func (tu *TargetUpdate) Mutation() *TargetMutation {
 	return tu.mutation
+}
+
+// ClearCredentials clears all "credentials" edges to the Credential entity.
+func (tu *TargetUpdate) ClearCredentials() *TargetUpdate {
+	tu.mutation.ClearCredentials()
+	return tu
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to Credential entities by IDs.
+func (tu *TargetUpdate) RemoveCredentialIDs(ids ...int) *TargetUpdate {
+	tu.mutation.RemoveCredentialIDs(ids...)
+	return tu
+}
+
+// RemoveCredentials removes "credentials" edges to Credential entities.
+func (tu *TargetUpdate) RemoveCredentials(c ...*Credential) *TargetUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return tu.RemoveCredentialIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -151,6 +188,60 @@ func (tu *TargetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: target.FieldForwardConnectIP,
 		})
 	}
+	if tu.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   target.CredentialsTable,
+			Columns: []string{target.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: credential.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedCredentialsIDs(); len(nodes) > 0 && !tu.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   target.CredentialsTable,
+			Columns: []string{target.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: credential.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.CredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   target.CredentialsTable,
+			Columns: []string{target.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: credential.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{target.Label}
@@ -182,9 +273,45 @@ func (tuo *TargetUpdateOne) SetForwardConnectIP(s string) *TargetUpdateOne {
 	return tuo
 }
 
+// AddCredentialIDs adds the "credentials" edge to the Credential entity by IDs.
+func (tuo *TargetUpdateOne) AddCredentialIDs(ids ...int) *TargetUpdateOne {
+	tuo.mutation.AddCredentialIDs(ids...)
+	return tuo
+}
+
+// AddCredentials adds the "credentials" edges to the Credential entity.
+func (tuo *TargetUpdateOne) AddCredentials(c ...*Credential) *TargetUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return tuo.AddCredentialIDs(ids...)
+}
+
 // Mutation returns the TargetMutation object of the builder.
 func (tuo *TargetUpdateOne) Mutation() *TargetMutation {
 	return tuo.mutation
+}
+
+// ClearCredentials clears all "credentials" edges to the Credential entity.
+func (tuo *TargetUpdateOne) ClearCredentials() *TargetUpdateOne {
+	tuo.mutation.ClearCredentials()
+	return tuo
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to Credential entities by IDs.
+func (tuo *TargetUpdateOne) RemoveCredentialIDs(ids ...int) *TargetUpdateOne {
+	tuo.mutation.RemoveCredentialIDs(ids...)
+	return tuo
+}
+
+// RemoveCredentials removes "credentials" edges to Credential entities.
+func (tuo *TargetUpdateOne) RemoveCredentials(c ...*Credential) *TargetUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return tuo.RemoveCredentialIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -317,6 +444,60 @@ func (tuo *TargetUpdateOne) sqlSave(ctx context.Context) (_node *Target, err err
 			Value:  value,
 			Column: target.FieldForwardConnectIP,
 		})
+	}
+	if tuo.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   target.CredentialsTable,
+			Columns: []string{target.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: credential.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedCredentialsIDs(); len(nodes) > 0 && !tuo.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   target.CredentialsTable,
+			Columns: []string{target.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: credential.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.CredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   target.CredentialsTable,
+			Columns: []string{target.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: credential.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Target{config: tuo.config}
 	_spec.Assign = _node.assignValues

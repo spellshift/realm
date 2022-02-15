@@ -4,6 +4,7 @@ package target
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/ent/predicate"
 )
 
@@ -323,6 +324,34 @@ func ForwardConnectIPEqualFold(v string) predicate.Target {
 func ForwardConnectIPContainsFold(v string) predicate.Target {
 	return predicate.Target(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldForwardConnectIP), v))
+	})
+}
+
+// HasCredentials applies the HasEdge predicate on the "credentials" edge.
+func HasCredentials() predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(CredentialsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CredentialsTable, CredentialsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCredentialsWith applies the HasEdge predicate on the "credentials" edge with a given conditions (other predicates).
+func HasCredentialsWith(preds ...predicate.Credential) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(CredentialsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CredentialsTable, CredentialsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 
