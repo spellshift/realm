@@ -63,15 +63,20 @@ func main() {
 	srv.Use(&debug.Tracer{})
 
 	// Setup HTTP Handler
-	http.Handle("/",
-		playground.Handler("Tavern", "/query"),
+	router := http.NewServeMux()
+	router.Handle("/",
+		playground.Handler("Tavern", "/graphql"),
 	)
-	http.Handle("/query", srv)
+	router.Handle("/graphql", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		srv.ServeHTTP(w, req)
+	}))
 
 	// Listen & Serve HTTP Traffic
 	addr := "0.0.0.0:80"
 	log.Printf("listening on %s", addr)
-	if err := http.ListenAndServe(addr, nil); err != nil {
+	if err := http.ListenAndServe(addr, router); err != nil {
 		log.Printf("stopped http server: %v", err)
 	}
 
