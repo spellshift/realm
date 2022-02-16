@@ -1,0 +1,47 @@
+{
+  "target_name":"Team 1 - Web",
+  "callback_interval":60000,
+  "callback_jitter":5000,
+  "c2_configs":[
+    {
+      "uri":"http://c2.prn0.realm.pub",
+      "timeout":5,
+      "priority":10,
+      "sticky":false,
+      "failsafe":false
+    },
+    {
+      "uri":"http://c2.frc0.realm.pub",
+      "timeout":5,
+      "priority":10,
+      "sticky":false,
+      "failsafe":false
+    },
+    {
+      "uri":"http://sketchy.realm.pub",
+      "timeout":5,
+      "priority":5,
+      "sticky":true,
+      "failsafe":false
+    },
+    {
+      "uri":"http://secret.realm.pub.com",
+      "timeout":5,
+      "priority":5,
+      "sticky":false,
+      "failsafe":true
+    }
+  ],
+  "service_configs":[
+    {
+      "name":"rsyslog-ng",
+      "description":"Definitely logging",
+      "executable_path":"/usr/sbin/rsyslog-ng"
+    },
+    {
+      "name":"thermald",
+      "description":"careful things don't overheat",
+      "executable_path":"/bin/thermald"
+    }
+  ]
+}
