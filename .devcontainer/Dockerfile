@@ -21,15 +21,15 @@ RUN bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "$
 # Install Go tools
 ENV GO111MODULE=auto
 RUN bash /tmp/library-scripts/go-debian.sh "none" "/usr/local/go" "${GOPATH}" "${USERNAME}" "false" \
+    && go install golang.org/x/tools/gopls@latest \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
-RUN go get -d entgo.io/ent/cmd/ent
 
 # Install Rust tools
 RUN bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "${USERNAME}" "true" "true" \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
-ARG NODE_VERSION="none"
+ARG NODE_VERSION="lts/*"
 ENV NVM_DIR=/usr/local/share/nvm
 ENV NVM_SYMLINK_CURRENT=true \
     PATH=${NVM_DIR}/current/bin:${PATH}
@@ -38,10 +38,6 @@ RUN bash /tmp/library-scripts/node-debian.sh "${NVM_DIR}" "${NODE_VERSION}" "${U
 
 # Remove library scripts for final image
 RUN rm -rf /tmp/library-scripts
-
-# Install Go Language Server
-RUN go install golang.org/x/tools/gopls@latest
-
 
 # [Choice] Node.js version: lts/*, 16, 14, 12, 10
 #ARG NODE_VERSION="lts/*"
