@@ -86,7 +86,8 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateTarget func(childComplexity int, target CreateTargetInput) int
+		CreateCredential func(childComplexity int, credential CreateCredentialInput) int
+		CreateTarget     func(childComplexity int, target CreateTargetInput) int
 	}
 
 	PageInfo struct {
@@ -98,6 +99,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Credentials func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.CredentialOrder, where *ent.CredentialWhereInput) int
+		Files       func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.FileOrder, where *ent.FileWhereInput) int
 		Node        func(childComplexity int, id int) int
 		Nodes       func(childComplexity int, ids []int) int
 		Targets     func(childComplexity int, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.TargetOrder, where *ent.TargetWhereInput) int
@@ -124,12 +126,14 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error)
+	CreateCredential(ctx context.Context, credential CreateCredentialInput) (*ent.Credential, error)
 }
 type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
 	Targets(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.TargetOrder, where *ent.TargetWhereInput) (*ent.TargetConnection, error)
 	Credentials(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.CredentialOrder, where *ent.CredentialWhereInput) (*ent.CredentialConnection, error)
+	Files(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.FileOrder, where *ent.FileWhereInput) (*ent.FileConnection, error)
 }
 
 type executableSchema struct {
@@ -294,6 +298,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FileEdge.Node(childComplexity), true
 
+	case "Mutation.createCredential":
+		if e.complexity.Mutation.CreateCredential == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCredential_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateCredential(childComplexity, args["credential"].(CreateCredentialInput)), true
+
 	case "Mutation.createTarget":
 		if e.complexity.Mutation.CreateTarget == nil {
 			break
@@ -345,6 +361,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Credentials(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["orderBy"].(*ent.CredentialOrder), args["where"].(*ent.CredentialWhereInput)), true
+
+	case "Query.files":
+		if e.complexity.Query.Files == nil {
+			break
+		}
+
+		args, err := ec.field_Query_files_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Files(childComplexity, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["orderBy"].(*ent.FileOrder), args["where"].(*ent.FileWhereInput)), true
 
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
@@ -540,23 +568,25 @@ type Query {
   nodes(ids: [ID!]!): [Node]!
   targets(after: Cursor, first: Int, before: Cursor, last: Int, orderBy: TargetOrder, where: TargetWhereInput): TargetConnection
   credentials(after: Cursor, first: Int, before: Cursor, last: Int, orderBy: CredentialOrder, where: CredentialWhereInput): CredentialConnection
+  files(after: Cursor, first: Int, before: Cursor, last: Int, orderBy: FileOrder, where: FileWhereInput): FileConnection
 }`, BuiltIn: false},
 	{Name: "schema/mutation.graphql", Input: `# Schema for all mutations that the Graph API supports.
 
 type Mutation {
   createTarget(target: CreateTargetInput!): Target!
-  # createCredential(credential: CreateCredentialInput!): Credential!
+  createCredential(credential: CreateCredentialInput!): Credential!
 }
 
 input CreateTargetInput {
-    Name: String!
-    ForwardConnectIP: String!
+    name: String!
+    forwardConnectIP: String!
 }
 
 input CreateCredentialInput {
-    Principal: String!
-    Secret: String!
-    Kind: CredentialKind!
+    principal: String!
+    secret: String!
+    kind: CredentialKind!
+    targetID: ID!
 }
 
 `, BuiltIn: false},
@@ -865,6 +895,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_createCredential_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 CreateCredentialInput
+	if tmp, ok := rawArgs["credential"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("credential"))
+		arg0, err = ec.unmarshalNCreateCredentialInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateCredentialInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["credential"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createTarget_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -947,6 +992,66 @@ func (ec *executionContext) field_Query_credentials_args(ctx context.Context, ra
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
 		arg5, err = ec.unmarshalOCredentialWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredentialWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_files_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ent.Cursor
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg0, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *ent.Cursor
+	if tmp, ok := rawArgs["before"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+		arg2, err = ec.unmarshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	var arg4 *ent.FileOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg4, err = ec.unmarshalOFileOrder2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐFileOrder(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg4
+	var arg5 *ent.FileWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg5, err = ec.unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐFileWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1848,6 +1953,48 @@ func (ec *executionContext) _Mutation_createTarget(ctx context.Context, field gr
 	return ec.marshalNTarget2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐTarget(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createCredential(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createCredential_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateCredential(rctx, args["credential"].(CreateCredentialInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Credential)
+	fc.Result = res
+	return ec.marshalNCredential2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredential(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *ent.PageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2139,6 +2286,45 @@ func (ec *executionContext) _Query_credentials(ctx context.Context, field graphq
 	res := resTmp.(*ent.CredentialConnection)
 	fc.Result = res
 	return ec.marshalOCredentialConnection2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredentialConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_files(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_files_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Files(rctx, args["after"].(*ent.Cursor), args["first"].(*int), args["before"].(*ent.Cursor), args["last"].(*int), args["orderBy"].(*ent.FileOrder), args["where"].(*ent.FileWhereInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.FileConnection)
+	fc.Result = res
+	return ec.marshalOFileConnection2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐFileConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3649,27 +3835,35 @@ func (ec *executionContext) unmarshalInputCreateCredentialInput(ctx context.Cont
 
 	for k, v := range asMap {
 		switch k {
-		case "Principal":
+		case "principal":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Principal"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("principal"))
 			it.Principal, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "Secret":
+		case "secret":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Secret"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("secret"))
 			it.Secret, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "Kind":
+		case "kind":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Kind"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
 			it.Kind, err = ec.unmarshalNCredentialKind2githubᚗcomᚋkcarrettoᚋrealmᚋentᚋcredentialᚐKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "targetID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetID"))
+			it.TargetID, err = ec.unmarshalNID2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3688,18 +3882,18 @@ func (ec *executionContext) unmarshalInputCreateTargetInput(ctx context.Context,
 
 	for k, v := range asMap {
 		switch k {
-		case "Name":
+		case "name":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Name"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "ForwardConnectIP":
+		case "forwardConnectIP":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ForwardConnectIP"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("forwardConnectIP"))
 			it.ForwardConnectIP, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
@@ -5387,6 +5581,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createCredential":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createCredential(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5545,6 +5749,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_credentials(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "files":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_files(ctx, field)
 				return res
 			}
 
@@ -6158,9 +6382,18 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNCreateCredentialInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateCredentialInput(ctx context.Context, v interface{}) (CreateCredentialInput, error) {
+	res, err := ec.unmarshalInputCreateCredentialInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateTargetInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateTargetInput(ctx context.Context, v interface{}) (CreateTargetInput, error) {
 	res, err := ec.unmarshalInputCreateTargetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCredential2githubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredential(ctx context.Context, sel ast.SelectionSet, v ent.Credential) graphql.Marshaler {
+	return ec._Credential(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNCredential2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐCredential(ctx context.Context, sel ast.SelectionSet, v *ent.Credential) graphql.Marshaler {
@@ -6912,6 +7145,13 @@ func (ec *executionContext) marshalOFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋe
 	return ec._File(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOFileConnection2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐFileConnection(ctx context.Context, sel ast.SelectionSet, v *ent.FileConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._FileConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOFileEdge2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐFileEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.FileEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -6958,6 +7198,14 @@ func (ec *executionContext) marshalOFileEdge2ᚖgithubᚗcomᚋkcarrettoᚋrealm
 		return graphql.Null
 	}
 	return ec._FileEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOFileOrder2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐFileOrder(ctx context.Context, v interface{}) (*ent.FileOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputFileOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOFileOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐFileOrderField(ctx context.Context, v interface{}) (*ent.FileOrderField, error) {

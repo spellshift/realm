@@ -2,17 +2,18 @@
 
 type Mutation {
   createTarget(target: CreateTargetInput!): Target!
-  # createCredential(credential: CreateCredentialInput!): Credential!
+  createCredential(credential: CreateCredentialInput!): Credential!
 }
 
 input CreateTargetInput {
-    Name: String!
-    ForwardConnectIP: String!
+    name: String!
+    forwardConnectIP: String!
 }
 
 input CreateCredentialInput {
-    Principal: String!
-    Secret: String!
-    Kind: CredentialKind!
+    principal: String!
+    secret: String!
+    kind: CredentialKind!
+    targetID: ID!
 }
 
