@@ -7,12 +7,13 @@ import (
 )
 
 type CreateCredentialInput struct {
-	Principal string          `json:"Principal"`
-	Secret    string          `json:"Secret"`
-	Kind      credential.Kind `json:"Kind"`
+	Principal string          `json:"principal"`
+	Secret    string          `json:"secret"`
+	Kind      credential.Kind `json:"kind"`
+	TargetID  int             `json:"targetID"`
 }
 
 type CreateTargetInput struct {
-	Name             string `json:"Name"`
-	ForwardConnectIP string `json:"ForwardConnectIP"`
+	Name             string `json:"name"`
+	ForwardConnectIP string `json:"forwardConnectIP"`
 }

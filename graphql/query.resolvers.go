@@ -33,6 +33,14 @@ func (r *queryResolver) Credentials(ctx context.Context, after *ent.Cursor, firs
 		)
 }
 
+func (r *queryResolver) Files(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.FileOrder, where *ent.FileWhereInput) (*ent.FileConnection, error) {
+	return r.client.File.Query().
+		Paginate(ctx, after, first, before, last,
+			ent.WithFileOrder(orderBy),
+			ent.WithFileFilter(where.Filter),
+		)
+}
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 

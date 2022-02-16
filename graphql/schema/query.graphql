@@ -5,4 +5,5 @@ type Query {
   nodes(ids: [ID!]!): [Node]!
   targets(after: Cursor, first: Int, before: Cursor, last: Int, orderBy: TargetOrder, where: TargetWhereInput): TargetConnection
   credentials(after: Cursor, first: Int, before: Cursor, last: Int, orderBy: CredentialOrder, where: CredentialWhereInput): CredentialConnection
+  files(after: Cursor, first: Int, before: Cursor, last: Int, orderBy: FileOrder, where: FileWhereInput): FileConnection
 }

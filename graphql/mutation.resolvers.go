@@ -5,13 +5,24 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kcarretto/realm/ent"
 )
 
 func (r *mutationResolver) CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.client.Target.Create().
+		SetName(target.Name).
+		SetForwardConnectIP(target.ForwardConnectIP).
+		Save(ctx)
+}
+
+func (r *mutationResolver) CreateCredential(ctx context.Context, credential CreateCredentialInput) (*ent.Credential, error) {
+	return r.client.Credential.Create().
+		SetTargetID(credential.TargetID).
+		SetPrincipal(credential.Principal).
+		SetSecret(credential.Secret).
+		SetKind(credential.Kind).
+		Save(ctx)
 }
 
 // Mutation returns MutationResolver implementation.
