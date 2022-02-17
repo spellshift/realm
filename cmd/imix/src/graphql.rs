@@ -58,5 +58,6 @@ pub async fn call(variables: String, uri: String, timeout: u64) -> Result<GraphQ
     let http_resp_body = body::to_bytes(http_resp).await?;
     let resp: GraphQLResponse = serde_json::from_slice(&http_resp_body)?;
     
+    // TODO: handles API errors also
     Ok(resp)
 }
