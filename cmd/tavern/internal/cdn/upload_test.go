@@ -34,7 +34,7 @@ func TestUpload(t *testing.T) {
 	t.Run("NewFile", newUploadTest(
 		graph,
 		newUploadRequest(t, "NewUploadTestFile", expectedContent),
-		func(id int, err error) {
+		func(t *testing.T, id int, err error) {
 			require.NoError(t, err)
 			assert.NotEqual(t, 0, id)
 
@@ -50,7 +50,7 @@ func TestUpload(t *testing.T) {
 	t.Run("ExistingFile", newUploadTest(
 		graph,
 		newUploadRequest(t, existingFile.Name, newExpectedContent),
-		func(id int, err error) {
+		func(t *testing.T, id int, err error) {
 			require.NoError(t, err)
 			assert.NotEqual(t, 0, id)
 
@@ -67,7 +67,7 @@ func TestUpload(t *testing.T) {
 }
 
 // newUploadTest initializes a new test case for the upload handler.
-func newUploadTest(graph *ent.Client, req *http.Request, checks ...func(id int, err error)) func(*testing.T) {
+func newUploadTest(graph *ent.Client, req *http.Request, checks ...func(t *testing.T, id int, err error)) func(*testing.T) {
 	return func(t *testing.T) {
 		// Initialize Upload Handler
 		handler := cdn.NewUploadHandler(graph)
@@ -94,14 +94,14 @@ func newUploadTest(graph *ent.Client, req *http.Request, checks ...func(id int, 
 			require.NoError(t, json.Unmarshal(body, &resp), "failed to unmarshal json with 200 response code: %s", body)
 
 			for _, check := range checks {
-				check(resp.Data.File.ID, nil)
+				check(t, resp.Data.File.ID, nil)
 			}
 			return
 		}
 
 		// Parse Error from failed response and run checks
 		for _, check := range checks {
-			check(0, fmt.Errorf("%s", body))
+			check(t, 0, fmt.Errorf("%s", body))
 		}
 	}
 }
