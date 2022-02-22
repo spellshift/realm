@@ -27,7 +27,7 @@ func TestDownload(t *testing.T) {
 	t.Run("File", newDownloadTest(
 		graph,
 		newDownloadRequest(t, existingFile.Name),
-		func(fileContent []byte, err *errors.HTTP) {
+		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
 			assert.Nil(t, err)
 			assert.Equal(t, string(expectedContent), string(fileContent))
 		},
@@ -35,7 +35,7 @@ func TestDownload(t *testing.T) {
 	t.Run("CachedFile", newDownloadTest(
 		graph,
 		newDownloadRequest(t, existingFile.Name, withIfNoneMatchHeader(existingFile.Hash)),
-		func(fileContent []byte, err *errors.HTTP) {
+		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
 			require.NotNil(t, err)
 			assert.Equal(t, http.StatusNotModified, err.StatusCode)
 			assert.ErrorContains(t, err, cdn.ErrFileNotModified.Error())
@@ -45,7 +45,7 @@ func TestDownload(t *testing.T) {
 	t.Run("NonExistentFile", newDownloadTest(
 		graph,
 		newDownloadRequest(t, "ThisFileDoesNotExist"),
-		func(fileContent []byte, err *errors.HTTP) {
+		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
 			require.NotNil(t, err)
 			assert.Equal(t, http.StatusNotFound, err.StatusCode)
 			assert.ErrorContains(t, err, cdn.ErrFileNotFound.Error())
@@ -55,7 +55,7 @@ func TestDownload(t *testing.T) {
 }
 
 // newDownloadTest initializes a new test case for the download handler.
-func newDownloadTest(graph *ent.Client, req *http.Request, checks ...func(fileContent []byte, err *errors.HTTP)) func(*testing.T) {
+func newDownloadTest(graph *ent.Client, req *http.Request, checks ...func(t *testing.T, fileContent []byte, err *errors.HTTP)) func(*testing.T) {
 	return func(t *testing.T) {
 		// Initialize Download Handler
 		handler := cdn.NewDownloadHandler(graph)
@@ -78,7 +78,7 @@ func newDownloadTest(graph *ent.Client, req *http.Request, checks ...func(fileCo
 
 			// Run Checks
 			for _, check := range checks {
-				check(body, nil)
+				check(t, body, nil)
 			}
 			return
 		}
@@ -86,7 +86,7 @@ func newDownloadTest(graph *ent.Client, req *http.Request, checks ...func(fileCo
 		// Parse Error from failed response and run checks
 		httpErr := errors.NewHTTP(string(body), result.StatusCode)
 		for _, check := range checks {
-			check(nil, &httpErr)
+			check(t, nil, &httpErr)
 		}
 	}
 }
