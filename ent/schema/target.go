@@ -16,19 +16,21 @@ type Target struct {
 func (Target) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
-			Comment("A human readable identifier for the target system.").
+			Unique().
 			NotEmpty().
 			MinLen(3).
 			MaxLen(50).
 			Annotations(
 				entgql.OrderField("NAME"),
-			),
+			).
+			Comment("A human readable identifier for the target system."),
 		field.String("forwardConnectIP").
-			Comment("The IP Address that can be used to connect to the target using a protocol like SSH.").
+			Unique().
 			NotEmpty().
 			Annotations(
 				entgql.OrderField("FORWARD_CONNECT_IP"),
-			),
+			).
+			Comment("The IP Address that can be used to connect to the target using a protocol like SSH."),
 	}
 }
 

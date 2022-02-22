@@ -49,8 +49,8 @@ var (
 	// TargetsColumns holds the columns for the "targets" table.
 	TargetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString, Size: 50},
-		{Name: "forward_connect_ip", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString, Unique: true, Size: 50},
+		{Name: "forward_connect_ip", Type: field.TypeString, Unique: true},
 	}
 	// TargetsTable holds the schema information for the "targets" table.
 	TargetsTable = &schema.Table{
