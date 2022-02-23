@@ -19,10 +19,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("creating entgql extension: %v", err)
 	}
+	opts := []entc.Option{
+		entc.Extensions(extensions),
+		entc.FeatureNames("privacy"),
+	}
+
 	if err := entc.Generate(
 		"./schema",
-		&gen.Config{},
-		entc.Extensions(extensions),
+		&gen.Config{
+			Templates: entgql.AllTemplates,
+		},
+		opts...,
 	); err != nil {
 		log.Fatalf("running ent codegen: %v", err)
 	}
