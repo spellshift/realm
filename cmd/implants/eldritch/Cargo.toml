@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+starlark = "0.6.0"
+anyhow = "1.0.55"
+derive_more = "0.99.17"
+gazebo = "0.4.4"
