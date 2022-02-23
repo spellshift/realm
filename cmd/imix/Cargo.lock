@@ -75,6 +75,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5827cebf4670468b8772dd191856768aedcb1b0278a04f989f7766351917b9dc"
 
 [[package]]
+name = "eldritch"
+version = "0.1.0"
+
+[[package]]
 name = "fastrand"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -276,6 +280,7 @@ name = "imix"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "eldritch",
  "hyper",
  "hyper-timeout",
  "hyper-tls",
