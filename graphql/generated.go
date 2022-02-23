@@ -46,6 +46,10 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	CallbackResponse struct {
+		Implant func(childComplexity int) int
+	}
+
 	Credential struct {
 		ID        func(childComplexity int) int
 		Kind      func(childComplexity int) int
@@ -85,7 +89,40 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Implant struct {
+		Config      func(childComplexity int) int
+		ID          func(childComplexity int) int
+		ProcessName func(childComplexity int) int
+		SessionID   func(childComplexity int) int
+		Target      func(childComplexity int) int
+	}
+
+	ImplantCallbackConfig struct {
+		ID       func(childComplexity int) int
+		Interval func(childComplexity int) int
+		Jitter   func(childComplexity int) int
+		Priority func(childComplexity int) int
+		Timeout  func(childComplexity int) int
+		URI      func(childComplexity int) int
+	}
+
+	ImplantConfig struct {
+		AuthToken       func(childComplexity int) int
+		CallbackConfigs func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Name            func(childComplexity int) int
+		ServiceConfigs  func(childComplexity int) int
+	}
+
+	ImplantServiceConfig struct {
+		Description    func(childComplexity int) int
+		ExecutablePath func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+	}
+
 	Mutation struct {
+		Callback         func(childComplexity int, info CallbackInput) int
 		CreateCredential func(childComplexity int, credential CreateCredentialInput) int
 		CreateTarget     func(childComplexity int, target CreateTargetInput) int
 	}
@@ -125,6 +162,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
+	Callback(ctx context.Context, info CallbackInput) (*CallbackResponse, error)
 	CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error)
 	CreateCredential(ctx context.Context, credential CreateCredentialInput) (*ent.Credential, error)
 }
@@ -150,6 +188,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "CallbackResponse.implant":
+		if e.complexity.CallbackResponse.Implant == nil {
+			break
+		}
+
+		return e.complexity.CallbackResponse.Implant(childComplexity), true
 
 	case "Credential.id":
 		if e.complexity.Credential.ID == nil {
@@ -297,6 +342,158 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FileEdge.Node(childComplexity), true
+
+	case "Implant.config":
+		if e.complexity.Implant.Config == nil {
+			break
+		}
+
+		return e.complexity.Implant.Config(childComplexity), true
+
+	case "Implant.id":
+		if e.complexity.Implant.ID == nil {
+			break
+		}
+
+		return e.complexity.Implant.ID(childComplexity), true
+
+	case "Implant.processName":
+		if e.complexity.Implant.ProcessName == nil {
+			break
+		}
+
+		return e.complexity.Implant.ProcessName(childComplexity), true
+
+	case "Implant.sessionID":
+		if e.complexity.Implant.SessionID == nil {
+			break
+		}
+
+		return e.complexity.Implant.SessionID(childComplexity), true
+
+	case "Implant.target":
+		if e.complexity.Implant.Target == nil {
+			break
+		}
+
+		return e.complexity.Implant.Target(childComplexity), true
+
+	case "ImplantCallbackConfig.id":
+		if e.complexity.ImplantCallbackConfig.ID == nil {
+			break
+		}
+
+		return e.complexity.ImplantCallbackConfig.ID(childComplexity), true
+
+	case "ImplantCallbackConfig.interval":
+		if e.complexity.ImplantCallbackConfig.Interval == nil {
+			break
+		}
+
+		return e.complexity.ImplantCallbackConfig.Interval(childComplexity), true
+
+	case "ImplantCallbackConfig.jitter":
+		if e.complexity.ImplantCallbackConfig.Jitter == nil {
+			break
+		}
+
+		return e.complexity.ImplantCallbackConfig.Jitter(childComplexity), true
+
+	case "ImplantCallbackConfig.priority":
+		if e.complexity.ImplantCallbackConfig.Priority == nil {
+			break
+		}
+
+		return e.complexity.ImplantCallbackConfig.Priority(childComplexity), true
+
+	case "ImplantCallbackConfig.timeout":
+		if e.complexity.ImplantCallbackConfig.Timeout == nil {
+			break
+		}
+
+		return e.complexity.ImplantCallbackConfig.Timeout(childComplexity), true
+
+	case "ImplantCallbackConfig.uri":
+		if e.complexity.ImplantCallbackConfig.URI == nil {
+			break
+		}
+
+		return e.complexity.ImplantCallbackConfig.URI(childComplexity), true
+
+	case "ImplantConfig.authToken":
+		if e.complexity.ImplantConfig.AuthToken == nil {
+			break
+		}
+
+		return e.complexity.ImplantConfig.AuthToken(childComplexity), true
+
+	case "ImplantConfig.callbackConfigs":
+		if e.complexity.ImplantConfig.CallbackConfigs == nil {
+			break
+		}
+
+		return e.complexity.ImplantConfig.CallbackConfigs(childComplexity), true
+
+	case "ImplantConfig.id":
+		if e.complexity.ImplantConfig.ID == nil {
+			break
+		}
+
+		return e.complexity.ImplantConfig.ID(childComplexity), true
+
+	case "ImplantConfig.name":
+		if e.complexity.ImplantConfig.Name == nil {
+			break
+		}
+
+		return e.complexity.ImplantConfig.Name(childComplexity), true
+
+	case "ImplantConfig.serviceConfigs":
+		if e.complexity.ImplantConfig.ServiceConfigs == nil {
+			break
+		}
+
+		return e.complexity.ImplantConfig.ServiceConfigs(childComplexity), true
+
+	case "ImplantServiceConfig.description":
+		if e.complexity.ImplantServiceConfig.Description == nil {
+			break
+		}
+
+		return e.complexity.ImplantServiceConfig.Description(childComplexity), true
+
+	case "ImplantServiceConfig.executablePath":
+		if e.complexity.ImplantServiceConfig.ExecutablePath == nil {
+			break
+		}
+
+		return e.complexity.ImplantServiceConfig.ExecutablePath(childComplexity), true
+
+	case "ImplantServiceConfig.id":
+		if e.complexity.ImplantServiceConfig.ID == nil {
+			break
+		}
+
+		return e.complexity.ImplantServiceConfig.ID(childComplexity), true
+
+	case "ImplantServiceConfig.name":
+		if e.complexity.ImplantServiceConfig.Name == nil {
+			break
+		}
+
+		return e.complexity.ImplantServiceConfig.Name(childComplexity), true
+
+	case "Mutation.callback":
+		if e.complexity.Mutation.Callback == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_callback_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Callback(childComplexity, args["info"].(CallbackInput)), true
 
 	case "Mutation.createCredential":
 		if e.complexity.Mutation.CreateCredential == nil {
@@ -573,8 +770,16 @@ type Query {
 	{Name: "schema/mutation.graphql", Input: `# Schema for all mutations that the Graph API supports.
 
 type Mutation {
+  callback(info: CallbackInput!): CallbackResponse!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
+}
+
+input CallbackInput {
+  targetID: ID!
+  sessionID: String!
+  configName: String!
+  processName: String!
 }
 
 input CreateTargetInput {
@@ -694,6 +899,43 @@ type TargetConnection {
   edges: [TargetEdge]
 }
 `, BuiltIn: false},
+	{Name: "schema/implant.graphql", Input: `type ImplantCallbackConfig implements Node {
+    id: ID!
+    uri: String!
+    priority: Int!
+    timeout: Int!
+    interval: Int!
+    jitter: Int!
+}
+
+type ImplantServiceConfig implements Node {
+    id: ID!
+    name: String!
+    description: String!
+    executablePath: String!
+}
+
+type ImplantConfig implements Node {
+  id: ID!
+  name: String!
+  authToken: String!
+
+  serviceConfigs: [ImplantServiceConfig!]
+  callbackConfigs: [ImplantCallbackConfig!]
+}
+
+type Implant implements Node {
+  id: ID!
+  sessionID: String!
+  processName: String
+
+  target: Target!
+  config: ImplantConfig!
+}
+
+type CallbackResponse {
+    implant: Implant!
+}`, BuiltIn: false},
 	{Name: "schema/ent.graphql", Input: `"""
 CredentialWhereInput is used for filtering Credential objects.
 Input was generated by ent.
@@ -1169,6 +1411,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_callback_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 CallbackInput
+	if tmp, ok := rawArgs["info"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("info"))
+		arg0, err = ec.unmarshalNCallbackInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCallbackInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["info"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createCredential_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1461,6 +1718,41 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _CallbackResponse_implant(ctx context.Context, field graphql.CollectedField, obj *CallbackResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "CallbackResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Implant, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Implant)
+	fc.Result = res
+	return ec.marshalNImplant2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplant(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _Credential_id(ctx context.Context, field graphql.CollectedField, obj *ent.Credential) (ret graphql.Marshaler) {
 	defer func() {
@@ -2183,6 +2475,739 @@ func (ec *executionContext) _FileEdge_cursor(ctx context.Context, field graphql.
 	res := resTmp.(ent.Cursor)
 	fc.Result = res
 	return ec.marshalNCursor2githubᚗcomᚋkcarrettoᚋrealmᚋentᚐCursor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Implant_id(ctx context.Context, field graphql.CollectedField, obj *ent.Implant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Implant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Implant_sessionID(ctx context.Context, field graphql.CollectedField, obj *ent.Implant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Implant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SessionID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Implant_processName(ctx context.Context, field graphql.CollectedField, obj *ent.Implant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Implant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProcessName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Implant_target(ctx context.Context, field graphql.CollectedField, obj *ent.Implant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Implant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Target(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Target)
+	fc.Result = res
+	return ec.marshalNTarget2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐTarget(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Implant_config(ctx context.Context, field graphql.CollectedField, obj *ent.Implant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Implant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Config(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.ImplantConfig)
+	fc.Result = res
+	return ec.marshalNImplantConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantCallbackConfig_id(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantCallbackConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantCallbackConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantCallbackConfig_uri(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantCallbackConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantCallbackConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URI, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantCallbackConfig_priority(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantCallbackConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantCallbackConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Priority, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantCallbackConfig_timeout(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantCallbackConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantCallbackConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timeout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantCallbackConfig_interval(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantCallbackConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantCallbackConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantCallbackConfig_jitter(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantCallbackConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantCallbackConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Jitter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantConfig_id(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantConfig_name(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantConfig_authToken(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuthToken, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantConfig_serviceConfigs(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServiceConfigs(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.ImplantServiceConfig)
+	fc.Result = res
+	return ec.marshalOImplantServiceConfig2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfigᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantConfig_callbackConfigs(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CallbackConfigs(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.ImplantCallbackConfig)
+	fc.Result = res
+	return ec.marshalOImplantCallbackConfig2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfigᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantServiceConfig_id(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantServiceConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantServiceConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantServiceConfig_name(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantServiceConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantServiceConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantServiceConfig_description(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantServiceConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantServiceConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImplantServiceConfig_executablePath(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantServiceConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantServiceConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExecutablePath, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_callback(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_callback_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Callback(rctx, args["info"].(CallbackInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*CallbackResponse)
+	fc.Result = res
+	return ec.marshalNCallbackResponse2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCallbackResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createTarget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4099,6 +5124,53 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
+
+func (ec *executionContext) unmarshalInputCallbackInput(ctx context.Context, obj interface{}) (CallbackInput, error) {
+	var it CallbackInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "targetID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetID"))
+			it.TargetID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sessionID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sessionID"))
+			it.SessionID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "configName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("configName"))
+			it.ConfigName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "processName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("processName"))
+			it.ProcessName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
 
 func (ec *executionContext) unmarshalInputCreateCredentialInput(ctx context.Context, obj interface{}) (CreateCredentialInput, error) {
 	var it CreateCredentialInput
@@ -7127,6 +8199,26 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._Target(ctx, sel, obj)
+	case *ent.ImplantCallbackConfig:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ImplantCallbackConfig(ctx, sel, obj)
+	case *ent.ImplantServiceConfig:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ImplantServiceConfig(ctx, sel, obj)
+	case *ent.ImplantConfig:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ImplantConfig(ctx, sel, obj)
+	case *ent.Implant:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Implant(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -7135,6 +8227,37 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var callbackResponseImplementors = []string{"CallbackResponse"}
+
+func (ec *executionContext) _CallbackResponse(ctx context.Context, sel ast.SelectionSet, obj *CallbackResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, callbackResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CallbackResponse")
+		case "implant":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._CallbackResponse_implant(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var credentialImplementors = []string{"Credential", "Node"}
 
@@ -7470,6 +8593,321 @@ func (ec *executionContext) _FileEdge(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var implantImplementors = []string{"Implant", "Node"}
+
+func (ec *executionContext) _Implant(ctx context.Context, sel ast.SelectionSet, obj *ent.Implant) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, implantImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Implant")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Implant_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "sessionID":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Implant_sessionID(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "processName":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Implant_processName(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "target":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Implant_target(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "config":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Implant_config(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var implantCallbackConfigImplementors = []string{"ImplantCallbackConfig", "Node"}
+
+func (ec *executionContext) _ImplantCallbackConfig(ctx context.Context, sel ast.SelectionSet, obj *ent.ImplantCallbackConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, implantCallbackConfigImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ImplantCallbackConfig")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantCallbackConfig_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "uri":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantCallbackConfig_uri(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "priority":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantCallbackConfig_priority(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timeout":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantCallbackConfig_timeout(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "interval":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantCallbackConfig_interval(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "jitter":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantCallbackConfig_jitter(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var implantConfigImplementors = []string{"ImplantConfig", "Node"}
+
+func (ec *executionContext) _ImplantConfig(ctx context.Context, sel ast.SelectionSet, obj *ent.ImplantConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, implantConfigImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ImplantConfig")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantConfig_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "name":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantConfig_name(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "authToken":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantConfig_authToken(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "serviceConfigs":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ImplantConfig_serviceConfigs(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "callbackConfigs":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ImplantConfig_callbackConfigs(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var implantServiceConfigImplementors = []string{"ImplantServiceConfig", "Node"}
+
+func (ec *executionContext) _ImplantServiceConfig(ctx context.Context, sel ast.SelectionSet, obj *ent.ImplantServiceConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, implantServiceConfigImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ImplantServiceConfig")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantServiceConfig_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantServiceConfig_name(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantServiceConfig_description(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "executablePath":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantServiceConfig_executablePath(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -7489,6 +8927,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "callback":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_callback(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createTarget":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createTarget(ctx, field)
@@ -8300,6 +9748,25 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNCallbackInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCallbackInput(ctx context.Context, v interface{}) (CallbackInput, error) {
+	res, err := ec.unmarshalInputCallbackInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCallbackResponse2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCallbackResponse(ctx context.Context, sel ast.SelectionSet, v CallbackResponse) graphql.Marshaler {
+	return ec._CallbackResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCallbackResponse2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCallbackResponse(ctx context.Context, sel ast.SelectionSet, v *CallbackResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._CallbackResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNCreateCredentialInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateCredentialInput(ctx context.Context, v interface{}) (CreateCredentialInput, error) {
 	res, err := ec.unmarshalInputCreateCredentialInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8401,14 +9868,54 @@ func (ec *executionContext) marshalNID2ᚕintᚄ(ctx context.Context, sel ast.Se
 	return ret
 }
 
+func (ec *executionContext) marshalNImplant2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplant(ctx context.Context, sel ast.SelectionSet, v *ent.Implant) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Implant(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNImplantCallbackConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfig(ctx context.Context, sel ast.SelectionSet, v *ent.ImplantCallbackConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ImplantCallbackConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNImplantCallbackConfigWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfigWhereInput(ctx context.Context, v interface{}) (*ent.ImplantCallbackConfigWhereInput, error) {
 	res, err := ec.unmarshalInputImplantCallbackConfigWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNImplantConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantConfig(ctx context.Context, sel ast.SelectionSet, v *ent.ImplantConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ImplantConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNImplantConfigWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantConfigWhereInput(ctx context.Context, v interface{}) (*ent.ImplantConfigWhereInput, error) {
 	res, err := ec.unmarshalInputImplantConfigWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNImplantServiceConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfig(ctx context.Context, sel ast.SelectionSet, v *ent.ImplantServiceConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ImplantServiceConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNImplantServiceConfigWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfigWhereInput(ctx context.Context, v interface{}) (*ent.ImplantServiceConfigWhereInput, error) {
@@ -9244,6 +10751,53 @@ func (ec *executionContext) marshalOID2ᚖint(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) marshalOImplantCallbackConfig2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.ImplantCallbackConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNImplantCallbackConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOImplantCallbackConfigWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfigWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.ImplantCallbackConfigWhereInput, error) {
 	if v == nil {
 		return nil, nil
@@ -9298,6 +10852,53 @@ func (ec *executionContext) unmarshalOImplantConfigWhereInput2ᚖgithubᚗcomᚋ
 	}
 	res, err := ec.unmarshalInputImplantConfigWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOImplantServiceConfig2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.ImplantServiceConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNImplantServiceConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOImplantServiceConfigWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfigWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.ImplantServiceConfigWhereInput, error) {

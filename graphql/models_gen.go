@@ -3,8 +3,20 @@
 package graphql
 
 import (
+	"github.com/kcarretto/realm/ent"
 	"github.com/kcarretto/realm/ent/credential"
 )
+
+type CallbackInput struct {
+	TargetID    int    `json:"targetID"`
+	SessionID   string `json:"sessionID"`
+	ConfigName  string `json:"configName"`
+	ProcessName string `json:"processName"`
+}
+
+type CallbackResponse struct {
+	Implant *ent.Implant `json:"implant"`
+}
 
 type CreateCredentialInput struct {
 	Principal string          `json:"principal"`

@@ -9,6 +9,7 @@ import (
 	"github.com/kcarretto/realm/ent"
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/migrate"
+	_ "github.com/kcarretto/realm/ent/runtime"
 	"github.com/kcarretto/realm/graphql"
 
 	"github.com/99designs/gqlgen/graphql/handler"
