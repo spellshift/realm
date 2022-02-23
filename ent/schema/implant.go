@@ -1,11 +1,6 @@
 package schema
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"fmt"
-	"io"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -40,13 +35,4 @@ func (Implant) Edges() []ent.Edge {
 			Required().
 			Comment("Configuration for this implant"),
 	}
-}
-
-func newSessionID() string {
-	buf := make([]byte, 32)
-	_, err := io.ReadFull(rand.Reader, buf)
-	if err != nil {
-		panic(fmt.Errorf("failed to generate authToken: %w", err))
-	}
-	return base64.StdEncoding.EncodeToString(buf)
 }
