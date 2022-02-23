@@ -16,6 +16,14 @@ type Tx struct {
 	Credential *CredentialClient
 	// File is the client for interacting with the File builders.
 	File *FileClient
+	// Implant is the client for interacting with the Implant builders.
+	Implant *ImplantClient
+	// ImplantCallbackConfig is the client for interacting with the ImplantCallbackConfig builders.
+	ImplantCallbackConfig *ImplantCallbackConfigClient
+	// ImplantConfig is the client for interacting with the ImplantConfig builders.
+	ImplantConfig *ImplantConfigClient
+	// ImplantServiceConfig is the client for interacting with the ImplantServiceConfig builders.
+	ImplantServiceConfig *ImplantServiceConfigClient
 	// Target is the client for interacting with the Target builders.
 	Target *TargetClient
 
@@ -155,6 +163,10 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Credential = NewCredentialClient(tx.config)
 	tx.File = NewFileClient(tx.config)
+	tx.Implant = NewImplantClient(tx.config)
+	tx.ImplantCallbackConfig = NewImplantCallbackConfigClient(tx.config)
+	tx.ImplantConfig = NewImplantConfigClient(tx.config)
+	tx.ImplantServiceConfig = NewImplantServiceConfigClient(tx.config)
 	tx.Target = NewTargetClient(tx.config)
 }
 

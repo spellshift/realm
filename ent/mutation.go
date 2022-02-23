@@ -11,6 +11,10 @@ import (
 
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/file"
+	"github.com/kcarretto/realm/ent/implant"
+	"github.com/kcarretto/realm/ent/implantcallbackconfig"
+	"github.com/kcarretto/realm/ent/implantconfig"
+	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/predicate"
 	"github.com/kcarretto/realm/ent/target"
 
@@ -26,9 +30,13 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeCredential = "Credential"
-	TypeFile       = "File"
-	TypeTarget     = "Target"
+	TypeCredential            = "Credential"
+	TypeFile                  = "File"
+	TypeImplant               = "Implant"
+	TypeImplantCallbackConfig = "ImplantCallbackConfig"
+	TypeImplantConfig         = "ImplantConfig"
+	TypeImplantServiceConfig  = "ImplantServiceConfig"
+	TypeTarget                = "Target"
 )
 
 // CredentialMutation represents an operation that mutates the Credential nodes in the graph.
@@ -1136,6 +1144,2412 @@ func (m *FileMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown File edge %s", name)
 }
 
+// ImplantMutation represents an operation that mutates the Implant nodes in the graph.
+type ImplantMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	sessionID      *string
+	processName    *string
+	clearedFields  map[string]struct{}
+	target         *int
+	clearedtarget  bool
+	_config        *int
+	cleared_config bool
+	done           bool
+	oldValue       func(context.Context) (*Implant, error)
+	predicates     []predicate.Implant
+}
+
+var _ ent.Mutation = (*ImplantMutation)(nil)
+
+// implantOption allows management of the mutation configuration using functional options.
+type implantOption func(*ImplantMutation)
+
+// newImplantMutation creates new mutation for the Implant entity.
+func newImplantMutation(c config, op Op, opts ...implantOption) *ImplantMutation {
+	m := &ImplantMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeImplant,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withImplantID sets the ID field of the mutation.
+func withImplantID(id int) implantOption {
+	return func(m *ImplantMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Implant
+		)
+		m.oldValue = func(ctx context.Context) (*Implant, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Implant.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withImplant sets the old Implant of the mutation.
+func withImplant(node *Implant) implantOption {
+	return func(m *ImplantMutation) {
+		m.oldValue = func(context.Context) (*Implant, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ImplantMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ImplantMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ImplantMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ImplantMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Implant.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetSessionID sets the "sessionID" field.
+func (m *ImplantMutation) SetSessionID(s string) {
+	m.sessionID = &s
+}
+
+// SessionID returns the value of the "sessionID" field in the mutation.
+func (m *ImplantMutation) SessionID() (r string, exists bool) {
+	v := m.sessionID
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionID returns the old "sessionID" field's value of the Implant entity.
+// If the Implant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantMutation) OldSessionID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionID: %w", err)
+	}
+	return oldValue.SessionID, nil
+}
+
+// ResetSessionID resets all changes to the "sessionID" field.
+func (m *ImplantMutation) ResetSessionID() {
+	m.sessionID = nil
+}
+
+// SetProcessName sets the "processName" field.
+func (m *ImplantMutation) SetProcessName(s string) {
+	m.processName = &s
+}
+
+// ProcessName returns the value of the "processName" field in the mutation.
+func (m *ImplantMutation) ProcessName() (r string, exists bool) {
+	v := m.processName
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProcessName returns the old "processName" field's value of the Implant entity.
+// If the Implant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantMutation) OldProcessName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProcessName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProcessName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProcessName: %w", err)
+	}
+	return oldValue.ProcessName, nil
+}
+
+// ClearProcessName clears the value of the "processName" field.
+func (m *ImplantMutation) ClearProcessName() {
+	m.processName = nil
+	m.clearedFields[implant.FieldProcessName] = struct{}{}
+}
+
+// ProcessNameCleared returns if the "processName" field was cleared in this mutation.
+func (m *ImplantMutation) ProcessNameCleared() bool {
+	_, ok := m.clearedFields[implant.FieldProcessName]
+	return ok
+}
+
+// ResetProcessName resets all changes to the "processName" field.
+func (m *ImplantMutation) ResetProcessName() {
+	m.processName = nil
+	delete(m.clearedFields, implant.FieldProcessName)
+}
+
+// SetTargetID sets the "target" edge to the Target entity by id.
+func (m *ImplantMutation) SetTargetID(id int) {
+	m.target = &id
+}
+
+// ClearTarget clears the "target" edge to the Target entity.
+func (m *ImplantMutation) ClearTarget() {
+	m.clearedtarget = true
+}
+
+// TargetCleared reports if the "target" edge to the Target entity was cleared.
+func (m *ImplantMutation) TargetCleared() bool {
+	return m.clearedtarget
+}
+
+// TargetID returns the "target" edge ID in the mutation.
+func (m *ImplantMutation) TargetID() (id int, exists bool) {
+	if m.target != nil {
+		return *m.target, true
+	}
+	return
+}
+
+// TargetIDs returns the "target" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TargetID instead. It exists only for internal usage by the builders.
+func (m *ImplantMutation) TargetIDs() (ids []int) {
+	if id := m.target; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTarget resets all changes to the "target" edge.
+func (m *ImplantMutation) ResetTarget() {
+	m.target = nil
+	m.clearedtarget = false
+}
+
+// SetConfigID sets the "config" edge to the ImplantConfig entity by id.
+func (m *ImplantMutation) SetConfigID(id int) {
+	m._config = &id
+}
+
+// ClearConfig clears the "config" edge to the ImplantConfig entity.
+func (m *ImplantMutation) ClearConfig() {
+	m.cleared_config = true
+}
+
+// ConfigCleared reports if the "config" edge to the ImplantConfig entity was cleared.
+func (m *ImplantMutation) ConfigCleared() bool {
+	return m.cleared_config
+}
+
+// ConfigID returns the "config" edge ID in the mutation.
+func (m *ImplantMutation) ConfigID() (id int, exists bool) {
+	if m._config != nil {
+		return *m._config, true
+	}
+	return
+}
+
+// ConfigIDs returns the "config" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ConfigID instead. It exists only for internal usage by the builders.
+func (m *ImplantMutation) ConfigIDs() (ids []int) {
+	if id := m._config; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetConfig resets all changes to the "config" edge.
+func (m *ImplantMutation) ResetConfig() {
+	m._config = nil
+	m.cleared_config = false
+}
+
+// Where appends a list predicates to the ImplantMutation builder.
+func (m *ImplantMutation) Where(ps ...predicate.Implant) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ImplantMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Implant).
+func (m *ImplantMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ImplantMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.sessionID != nil {
+		fields = append(fields, implant.FieldSessionID)
+	}
+	if m.processName != nil {
+		fields = append(fields, implant.FieldProcessName)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ImplantMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case implant.FieldSessionID:
+		return m.SessionID()
+	case implant.FieldProcessName:
+		return m.ProcessName()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ImplantMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case implant.FieldSessionID:
+		return m.OldSessionID(ctx)
+	case implant.FieldProcessName:
+		return m.OldProcessName(ctx)
+	}
+	return nil, fmt.Errorf("unknown Implant field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImplantMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case implant.FieldSessionID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionID(v)
+		return nil
+	case implant.FieldProcessName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProcessName(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Implant field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ImplantMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ImplantMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImplantMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Implant numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ImplantMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(implant.FieldProcessName) {
+		fields = append(fields, implant.FieldProcessName)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ImplantMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ImplantMutation) ClearField(name string) error {
+	switch name {
+	case implant.FieldProcessName:
+		m.ClearProcessName()
+		return nil
+	}
+	return fmt.Errorf("unknown Implant nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ImplantMutation) ResetField(name string) error {
+	switch name {
+	case implant.FieldSessionID:
+		m.ResetSessionID()
+		return nil
+	case implant.FieldProcessName:
+		m.ResetProcessName()
+		return nil
+	}
+	return fmt.Errorf("unknown Implant field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ImplantMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.target != nil {
+		edges = append(edges, implant.EdgeTarget)
+	}
+	if m._config != nil {
+		edges = append(edges, implant.EdgeConfig)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ImplantMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case implant.EdgeTarget:
+		if id := m.target; id != nil {
+			return []ent.Value{*id}
+		}
+	case implant.EdgeConfig:
+		if id := m._config; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ImplantMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ImplantMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ImplantMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedtarget {
+		edges = append(edges, implant.EdgeTarget)
+	}
+	if m.cleared_config {
+		edges = append(edges, implant.EdgeConfig)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ImplantMutation) EdgeCleared(name string) bool {
+	switch name {
+	case implant.EdgeTarget:
+		return m.clearedtarget
+	case implant.EdgeConfig:
+		return m.cleared_config
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ImplantMutation) ClearEdge(name string) error {
+	switch name {
+	case implant.EdgeTarget:
+		m.ClearTarget()
+		return nil
+	case implant.EdgeConfig:
+		m.ClearConfig()
+		return nil
+	}
+	return fmt.Errorf("unknown Implant unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ImplantMutation) ResetEdge(name string) error {
+	switch name {
+	case implant.EdgeTarget:
+		m.ResetTarget()
+		return nil
+	case implant.EdgeConfig:
+		m.ResetConfig()
+		return nil
+	}
+	return fmt.Errorf("unknown Implant edge %s", name)
+}
+
+// ImplantCallbackConfigMutation represents an operation that mutates the ImplantCallbackConfig nodes in the graph.
+type ImplantCallbackConfigMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *int
+	uri                   *string
+	priority              *int
+	addpriority           *int
+	timeout               *int
+	addtimeout            *int
+	interval              *int
+	addinterval           *int
+	jitter                *int
+	addjitter             *int
+	clearedFields         map[string]struct{}
+	implantConfigs        map[int]struct{}
+	removedimplantConfigs map[int]struct{}
+	clearedimplantConfigs bool
+	done                  bool
+	oldValue              func(context.Context) (*ImplantCallbackConfig, error)
+	predicates            []predicate.ImplantCallbackConfig
+}
+
+var _ ent.Mutation = (*ImplantCallbackConfigMutation)(nil)
+
+// implantcallbackconfigOption allows management of the mutation configuration using functional options.
+type implantcallbackconfigOption func(*ImplantCallbackConfigMutation)
+
+// newImplantCallbackConfigMutation creates new mutation for the ImplantCallbackConfig entity.
+func newImplantCallbackConfigMutation(c config, op Op, opts ...implantcallbackconfigOption) *ImplantCallbackConfigMutation {
+	m := &ImplantCallbackConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeImplantCallbackConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withImplantCallbackConfigID sets the ID field of the mutation.
+func withImplantCallbackConfigID(id int) implantcallbackconfigOption {
+	return func(m *ImplantCallbackConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ImplantCallbackConfig
+		)
+		m.oldValue = func(ctx context.Context) (*ImplantCallbackConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ImplantCallbackConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withImplantCallbackConfig sets the old ImplantCallbackConfig of the mutation.
+func withImplantCallbackConfig(node *ImplantCallbackConfig) implantcallbackconfigOption {
+	return func(m *ImplantCallbackConfigMutation) {
+		m.oldValue = func(context.Context) (*ImplantCallbackConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ImplantCallbackConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ImplantCallbackConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ImplantCallbackConfigMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ImplantCallbackConfigMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ImplantCallbackConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetURI sets the "uri" field.
+func (m *ImplantCallbackConfigMutation) SetURI(s string) {
+	m.uri = &s
+}
+
+// URI returns the value of the "uri" field in the mutation.
+func (m *ImplantCallbackConfigMutation) URI() (r string, exists bool) {
+	v := m.uri
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURI returns the old "uri" field's value of the ImplantCallbackConfig entity.
+// If the ImplantCallbackConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantCallbackConfigMutation) OldURI(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldURI is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldURI requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURI: %w", err)
+	}
+	return oldValue.URI, nil
+}
+
+// ResetURI resets all changes to the "uri" field.
+func (m *ImplantCallbackConfigMutation) ResetURI() {
+	m.uri = nil
+}
+
+// SetPriority sets the "priority" field.
+func (m *ImplantCallbackConfigMutation) SetPriority(i int) {
+	m.priority = &i
+	m.addpriority = nil
+}
+
+// Priority returns the value of the "priority" field in the mutation.
+func (m *ImplantCallbackConfigMutation) Priority() (r int, exists bool) {
+	v := m.priority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriority returns the old "priority" field's value of the ImplantCallbackConfig entity.
+// If the ImplantCallbackConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantCallbackConfigMutation) OldPriority(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriority is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriority requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriority: %w", err)
+	}
+	return oldValue.Priority, nil
+}
+
+// AddPriority adds i to the "priority" field.
+func (m *ImplantCallbackConfigMutation) AddPriority(i int) {
+	if m.addpriority != nil {
+		*m.addpriority += i
+	} else {
+		m.addpriority = &i
+	}
+}
+
+// AddedPriority returns the value that was added to the "priority" field in this mutation.
+func (m *ImplantCallbackConfigMutation) AddedPriority() (r int, exists bool) {
+	v := m.addpriority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPriority resets all changes to the "priority" field.
+func (m *ImplantCallbackConfigMutation) ResetPriority() {
+	m.priority = nil
+	m.addpriority = nil
+}
+
+// SetTimeout sets the "timeout" field.
+func (m *ImplantCallbackConfigMutation) SetTimeout(i int) {
+	m.timeout = &i
+	m.addtimeout = nil
+}
+
+// Timeout returns the value of the "timeout" field in the mutation.
+func (m *ImplantCallbackConfigMutation) Timeout() (r int, exists bool) {
+	v := m.timeout
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimeout returns the old "timeout" field's value of the ImplantCallbackConfig entity.
+// If the ImplantCallbackConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantCallbackConfigMutation) OldTimeout(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimeout is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimeout requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimeout: %w", err)
+	}
+	return oldValue.Timeout, nil
+}
+
+// AddTimeout adds i to the "timeout" field.
+func (m *ImplantCallbackConfigMutation) AddTimeout(i int) {
+	if m.addtimeout != nil {
+		*m.addtimeout += i
+	} else {
+		m.addtimeout = &i
+	}
+}
+
+// AddedTimeout returns the value that was added to the "timeout" field in this mutation.
+func (m *ImplantCallbackConfigMutation) AddedTimeout() (r int, exists bool) {
+	v := m.addtimeout
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTimeout resets all changes to the "timeout" field.
+func (m *ImplantCallbackConfigMutation) ResetTimeout() {
+	m.timeout = nil
+	m.addtimeout = nil
+}
+
+// SetInterval sets the "interval" field.
+func (m *ImplantCallbackConfigMutation) SetInterval(i int) {
+	m.interval = &i
+	m.addinterval = nil
+}
+
+// Interval returns the value of the "interval" field in the mutation.
+func (m *ImplantCallbackConfigMutation) Interval() (r int, exists bool) {
+	v := m.interval
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInterval returns the old "interval" field's value of the ImplantCallbackConfig entity.
+// If the ImplantCallbackConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantCallbackConfigMutation) OldInterval(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInterval is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInterval requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInterval: %w", err)
+	}
+	return oldValue.Interval, nil
+}
+
+// AddInterval adds i to the "interval" field.
+func (m *ImplantCallbackConfigMutation) AddInterval(i int) {
+	if m.addinterval != nil {
+		*m.addinterval += i
+	} else {
+		m.addinterval = &i
+	}
+}
+
+// AddedInterval returns the value that was added to the "interval" field in this mutation.
+func (m *ImplantCallbackConfigMutation) AddedInterval() (r int, exists bool) {
+	v := m.addinterval
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetInterval resets all changes to the "interval" field.
+func (m *ImplantCallbackConfigMutation) ResetInterval() {
+	m.interval = nil
+	m.addinterval = nil
+}
+
+// SetJitter sets the "jitter" field.
+func (m *ImplantCallbackConfigMutation) SetJitter(i int) {
+	m.jitter = &i
+	m.addjitter = nil
+}
+
+// Jitter returns the value of the "jitter" field in the mutation.
+func (m *ImplantCallbackConfigMutation) Jitter() (r int, exists bool) {
+	v := m.jitter
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldJitter returns the old "jitter" field's value of the ImplantCallbackConfig entity.
+// If the ImplantCallbackConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantCallbackConfigMutation) OldJitter(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldJitter is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldJitter requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldJitter: %w", err)
+	}
+	return oldValue.Jitter, nil
+}
+
+// AddJitter adds i to the "jitter" field.
+func (m *ImplantCallbackConfigMutation) AddJitter(i int) {
+	if m.addjitter != nil {
+		*m.addjitter += i
+	} else {
+		m.addjitter = &i
+	}
+}
+
+// AddedJitter returns the value that was added to the "jitter" field in this mutation.
+func (m *ImplantCallbackConfigMutation) AddedJitter() (r int, exists bool) {
+	v := m.addjitter
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetJitter resets all changes to the "jitter" field.
+func (m *ImplantCallbackConfigMutation) ResetJitter() {
+	m.jitter = nil
+	m.addjitter = nil
+}
+
+// AddImplantConfigIDs adds the "implantConfigs" edge to the ImplantConfig entity by ids.
+func (m *ImplantCallbackConfigMutation) AddImplantConfigIDs(ids ...int) {
+	if m.implantConfigs == nil {
+		m.implantConfigs = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.implantConfigs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImplantConfigs clears the "implantConfigs" edge to the ImplantConfig entity.
+func (m *ImplantCallbackConfigMutation) ClearImplantConfigs() {
+	m.clearedimplantConfigs = true
+}
+
+// ImplantConfigsCleared reports if the "implantConfigs" edge to the ImplantConfig entity was cleared.
+func (m *ImplantCallbackConfigMutation) ImplantConfigsCleared() bool {
+	return m.clearedimplantConfigs
+}
+
+// RemoveImplantConfigIDs removes the "implantConfigs" edge to the ImplantConfig entity by IDs.
+func (m *ImplantCallbackConfigMutation) RemoveImplantConfigIDs(ids ...int) {
+	if m.removedimplantConfigs == nil {
+		m.removedimplantConfigs = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.implantConfigs, ids[i])
+		m.removedimplantConfigs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImplantConfigs returns the removed IDs of the "implantConfigs" edge to the ImplantConfig entity.
+func (m *ImplantCallbackConfigMutation) RemovedImplantConfigsIDs() (ids []int) {
+	for id := range m.removedimplantConfigs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImplantConfigsIDs returns the "implantConfigs" edge IDs in the mutation.
+func (m *ImplantCallbackConfigMutation) ImplantConfigsIDs() (ids []int) {
+	for id := range m.implantConfigs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImplantConfigs resets all changes to the "implantConfigs" edge.
+func (m *ImplantCallbackConfigMutation) ResetImplantConfigs() {
+	m.implantConfigs = nil
+	m.clearedimplantConfigs = false
+	m.removedimplantConfigs = nil
+}
+
+// Where appends a list predicates to the ImplantCallbackConfigMutation builder.
+func (m *ImplantCallbackConfigMutation) Where(ps ...predicate.ImplantCallbackConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ImplantCallbackConfigMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (ImplantCallbackConfig).
+func (m *ImplantCallbackConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ImplantCallbackConfigMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.uri != nil {
+		fields = append(fields, implantcallbackconfig.FieldURI)
+	}
+	if m.priority != nil {
+		fields = append(fields, implantcallbackconfig.FieldPriority)
+	}
+	if m.timeout != nil {
+		fields = append(fields, implantcallbackconfig.FieldTimeout)
+	}
+	if m.interval != nil {
+		fields = append(fields, implantcallbackconfig.FieldInterval)
+	}
+	if m.jitter != nil {
+		fields = append(fields, implantcallbackconfig.FieldJitter)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ImplantCallbackConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case implantcallbackconfig.FieldURI:
+		return m.URI()
+	case implantcallbackconfig.FieldPriority:
+		return m.Priority()
+	case implantcallbackconfig.FieldTimeout:
+		return m.Timeout()
+	case implantcallbackconfig.FieldInterval:
+		return m.Interval()
+	case implantcallbackconfig.FieldJitter:
+		return m.Jitter()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ImplantCallbackConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case implantcallbackconfig.FieldURI:
+		return m.OldURI(ctx)
+	case implantcallbackconfig.FieldPriority:
+		return m.OldPriority(ctx)
+	case implantcallbackconfig.FieldTimeout:
+		return m.OldTimeout(ctx)
+	case implantcallbackconfig.FieldInterval:
+		return m.OldInterval(ctx)
+	case implantcallbackconfig.FieldJitter:
+		return m.OldJitter(ctx)
+	}
+	return nil, fmt.Errorf("unknown ImplantCallbackConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImplantCallbackConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case implantcallbackconfig.FieldURI:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURI(v)
+		return nil
+	case implantcallbackconfig.FieldPriority:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriority(v)
+		return nil
+	case implantcallbackconfig.FieldTimeout:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimeout(v)
+		return nil
+	case implantcallbackconfig.FieldInterval:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInterval(v)
+		return nil
+	case implantcallbackconfig.FieldJitter:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetJitter(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantCallbackConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ImplantCallbackConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addpriority != nil {
+		fields = append(fields, implantcallbackconfig.FieldPriority)
+	}
+	if m.addtimeout != nil {
+		fields = append(fields, implantcallbackconfig.FieldTimeout)
+	}
+	if m.addinterval != nil {
+		fields = append(fields, implantcallbackconfig.FieldInterval)
+	}
+	if m.addjitter != nil {
+		fields = append(fields, implantcallbackconfig.FieldJitter)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ImplantCallbackConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case implantcallbackconfig.FieldPriority:
+		return m.AddedPriority()
+	case implantcallbackconfig.FieldTimeout:
+		return m.AddedTimeout()
+	case implantcallbackconfig.FieldInterval:
+		return m.AddedInterval()
+	case implantcallbackconfig.FieldJitter:
+		return m.AddedJitter()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImplantCallbackConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case implantcallbackconfig.FieldPriority:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPriority(v)
+		return nil
+	case implantcallbackconfig.FieldTimeout:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTimeout(v)
+		return nil
+	case implantcallbackconfig.FieldInterval:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddInterval(v)
+		return nil
+	case implantcallbackconfig.FieldJitter:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddJitter(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantCallbackConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ImplantCallbackConfigMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ImplantCallbackConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ImplantCallbackConfigMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ImplantCallbackConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ImplantCallbackConfigMutation) ResetField(name string) error {
+	switch name {
+	case implantcallbackconfig.FieldURI:
+		m.ResetURI()
+		return nil
+	case implantcallbackconfig.FieldPriority:
+		m.ResetPriority()
+		return nil
+	case implantcallbackconfig.FieldTimeout:
+		m.ResetTimeout()
+		return nil
+	case implantcallbackconfig.FieldInterval:
+		m.ResetInterval()
+		return nil
+	case implantcallbackconfig.FieldJitter:
+		m.ResetJitter()
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantCallbackConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ImplantCallbackConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.implantConfigs != nil {
+		edges = append(edges, implantcallbackconfig.EdgeImplantConfigs)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ImplantCallbackConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case implantcallbackconfig.EdgeImplantConfigs:
+		ids := make([]ent.Value, 0, len(m.implantConfigs))
+		for id := range m.implantConfigs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ImplantCallbackConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedimplantConfigs != nil {
+		edges = append(edges, implantcallbackconfig.EdgeImplantConfigs)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ImplantCallbackConfigMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case implantcallbackconfig.EdgeImplantConfigs:
+		ids := make([]ent.Value, 0, len(m.removedimplantConfigs))
+		for id := range m.removedimplantConfigs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ImplantCallbackConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedimplantConfigs {
+		edges = append(edges, implantcallbackconfig.EdgeImplantConfigs)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ImplantCallbackConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case implantcallbackconfig.EdgeImplantConfigs:
+		return m.clearedimplantConfigs
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ImplantCallbackConfigMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ImplantCallbackConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ImplantCallbackConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case implantcallbackconfig.EdgeImplantConfigs:
+		m.ResetImplantConfigs()
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantCallbackConfig edge %s", name)
+}
+
+// ImplantConfigMutation represents an operation that mutates the ImplantConfig nodes in the graph.
+type ImplantConfigMutation struct {
+	config
+	op                     Op
+	typ                    string
+	id                     *int
+	name                   *string
+	authToken              *string
+	clearedFields          map[string]struct{}
+	implants               map[int]struct{}
+	removedimplants        map[int]struct{}
+	clearedimplants        bool
+	serviceConfigs         map[int]struct{}
+	removedserviceConfigs  map[int]struct{}
+	clearedserviceConfigs  bool
+	callbackConfigs        map[int]struct{}
+	removedcallbackConfigs map[int]struct{}
+	clearedcallbackConfigs bool
+	done                   bool
+	oldValue               func(context.Context) (*ImplantConfig, error)
+	predicates             []predicate.ImplantConfig
+}
+
+var _ ent.Mutation = (*ImplantConfigMutation)(nil)
+
+// implantconfigOption allows management of the mutation configuration using functional options.
+type implantconfigOption func(*ImplantConfigMutation)
+
+// newImplantConfigMutation creates new mutation for the ImplantConfig entity.
+func newImplantConfigMutation(c config, op Op, opts ...implantconfigOption) *ImplantConfigMutation {
+	m := &ImplantConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeImplantConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withImplantConfigID sets the ID field of the mutation.
+func withImplantConfigID(id int) implantconfigOption {
+	return func(m *ImplantConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ImplantConfig
+		)
+		m.oldValue = func(ctx context.Context) (*ImplantConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ImplantConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withImplantConfig sets the old ImplantConfig of the mutation.
+func withImplantConfig(node *ImplantConfig) implantconfigOption {
+	return func(m *ImplantConfigMutation) {
+		m.oldValue = func(context.Context) (*ImplantConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ImplantConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ImplantConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ImplantConfigMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ImplantConfigMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ImplantConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *ImplantConfigMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ImplantConfigMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ImplantConfig entity.
+// If the ImplantConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantConfigMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ImplantConfigMutation) ResetName() {
+	m.name = nil
+}
+
+// SetAuthToken sets the "authToken" field.
+func (m *ImplantConfigMutation) SetAuthToken(s string) {
+	m.authToken = &s
+}
+
+// AuthToken returns the value of the "authToken" field in the mutation.
+func (m *ImplantConfigMutation) AuthToken() (r string, exists bool) {
+	v := m.authToken
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthToken returns the old "authToken" field's value of the ImplantConfig entity.
+// If the ImplantConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantConfigMutation) OldAuthToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthToken: %w", err)
+	}
+	return oldValue.AuthToken, nil
+}
+
+// ResetAuthToken resets all changes to the "authToken" field.
+func (m *ImplantConfigMutation) ResetAuthToken() {
+	m.authToken = nil
+}
+
+// AddImplantIDs adds the "implants" edge to the Implant entity by ids.
+func (m *ImplantConfigMutation) AddImplantIDs(ids ...int) {
+	if m.implants == nil {
+		m.implants = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.implants[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImplants clears the "implants" edge to the Implant entity.
+func (m *ImplantConfigMutation) ClearImplants() {
+	m.clearedimplants = true
+}
+
+// ImplantsCleared reports if the "implants" edge to the Implant entity was cleared.
+func (m *ImplantConfigMutation) ImplantsCleared() bool {
+	return m.clearedimplants
+}
+
+// RemoveImplantIDs removes the "implants" edge to the Implant entity by IDs.
+func (m *ImplantConfigMutation) RemoveImplantIDs(ids ...int) {
+	if m.removedimplants == nil {
+		m.removedimplants = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.implants, ids[i])
+		m.removedimplants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImplants returns the removed IDs of the "implants" edge to the Implant entity.
+func (m *ImplantConfigMutation) RemovedImplantsIDs() (ids []int) {
+	for id := range m.removedimplants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImplantsIDs returns the "implants" edge IDs in the mutation.
+func (m *ImplantConfigMutation) ImplantsIDs() (ids []int) {
+	for id := range m.implants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImplants resets all changes to the "implants" edge.
+func (m *ImplantConfigMutation) ResetImplants() {
+	m.implants = nil
+	m.clearedimplants = false
+	m.removedimplants = nil
+}
+
+// AddServiceConfigIDs adds the "serviceConfigs" edge to the ImplantServiceConfig entity by ids.
+func (m *ImplantConfigMutation) AddServiceConfigIDs(ids ...int) {
+	if m.serviceConfigs == nil {
+		m.serviceConfigs = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.serviceConfigs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearServiceConfigs clears the "serviceConfigs" edge to the ImplantServiceConfig entity.
+func (m *ImplantConfigMutation) ClearServiceConfigs() {
+	m.clearedserviceConfigs = true
+}
+
+// ServiceConfigsCleared reports if the "serviceConfigs" edge to the ImplantServiceConfig entity was cleared.
+func (m *ImplantConfigMutation) ServiceConfigsCleared() bool {
+	return m.clearedserviceConfigs
+}
+
+// RemoveServiceConfigIDs removes the "serviceConfigs" edge to the ImplantServiceConfig entity by IDs.
+func (m *ImplantConfigMutation) RemoveServiceConfigIDs(ids ...int) {
+	if m.removedserviceConfigs == nil {
+		m.removedserviceConfigs = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.serviceConfigs, ids[i])
+		m.removedserviceConfigs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedServiceConfigs returns the removed IDs of the "serviceConfigs" edge to the ImplantServiceConfig entity.
+func (m *ImplantConfigMutation) RemovedServiceConfigsIDs() (ids []int) {
+	for id := range m.removedserviceConfigs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ServiceConfigsIDs returns the "serviceConfigs" edge IDs in the mutation.
+func (m *ImplantConfigMutation) ServiceConfigsIDs() (ids []int) {
+	for id := range m.serviceConfigs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetServiceConfigs resets all changes to the "serviceConfigs" edge.
+func (m *ImplantConfigMutation) ResetServiceConfigs() {
+	m.serviceConfigs = nil
+	m.clearedserviceConfigs = false
+	m.removedserviceConfigs = nil
+}
+
+// AddCallbackConfigIDs adds the "callbackConfigs" edge to the ImplantCallbackConfig entity by ids.
+func (m *ImplantConfigMutation) AddCallbackConfigIDs(ids ...int) {
+	if m.callbackConfigs == nil {
+		m.callbackConfigs = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.callbackConfigs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCallbackConfigs clears the "callbackConfigs" edge to the ImplantCallbackConfig entity.
+func (m *ImplantConfigMutation) ClearCallbackConfigs() {
+	m.clearedcallbackConfigs = true
+}
+
+// CallbackConfigsCleared reports if the "callbackConfigs" edge to the ImplantCallbackConfig entity was cleared.
+func (m *ImplantConfigMutation) CallbackConfigsCleared() bool {
+	return m.clearedcallbackConfigs
+}
+
+// RemoveCallbackConfigIDs removes the "callbackConfigs" edge to the ImplantCallbackConfig entity by IDs.
+func (m *ImplantConfigMutation) RemoveCallbackConfigIDs(ids ...int) {
+	if m.removedcallbackConfigs == nil {
+		m.removedcallbackConfigs = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.callbackConfigs, ids[i])
+		m.removedcallbackConfigs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCallbackConfigs returns the removed IDs of the "callbackConfigs" edge to the ImplantCallbackConfig entity.
+func (m *ImplantConfigMutation) RemovedCallbackConfigsIDs() (ids []int) {
+	for id := range m.removedcallbackConfigs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CallbackConfigsIDs returns the "callbackConfigs" edge IDs in the mutation.
+func (m *ImplantConfigMutation) CallbackConfigsIDs() (ids []int) {
+	for id := range m.callbackConfigs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCallbackConfigs resets all changes to the "callbackConfigs" edge.
+func (m *ImplantConfigMutation) ResetCallbackConfigs() {
+	m.callbackConfigs = nil
+	m.clearedcallbackConfigs = false
+	m.removedcallbackConfigs = nil
+}
+
+// Where appends a list predicates to the ImplantConfigMutation builder.
+func (m *ImplantConfigMutation) Where(ps ...predicate.ImplantConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ImplantConfigMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (ImplantConfig).
+func (m *ImplantConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ImplantConfigMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.name != nil {
+		fields = append(fields, implantconfig.FieldName)
+	}
+	if m.authToken != nil {
+		fields = append(fields, implantconfig.FieldAuthToken)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ImplantConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case implantconfig.FieldName:
+		return m.Name()
+	case implantconfig.FieldAuthToken:
+		return m.AuthToken()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ImplantConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case implantconfig.FieldName:
+		return m.OldName(ctx)
+	case implantconfig.FieldAuthToken:
+		return m.OldAuthToken(ctx)
+	}
+	return nil, fmt.Errorf("unknown ImplantConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImplantConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case implantconfig.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case implantconfig.FieldAuthToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthToken(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ImplantConfigMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ImplantConfigMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImplantConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ImplantConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ImplantConfigMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ImplantConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ImplantConfigMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ImplantConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ImplantConfigMutation) ResetField(name string) error {
+	switch name {
+	case implantconfig.FieldName:
+		m.ResetName()
+		return nil
+	case implantconfig.FieldAuthToken:
+		m.ResetAuthToken()
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ImplantConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.implants != nil {
+		edges = append(edges, implantconfig.EdgeImplants)
+	}
+	if m.serviceConfigs != nil {
+		edges = append(edges, implantconfig.EdgeServiceConfigs)
+	}
+	if m.callbackConfigs != nil {
+		edges = append(edges, implantconfig.EdgeCallbackConfigs)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ImplantConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case implantconfig.EdgeImplants:
+		ids := make([]ent.Value, 0, len(m.implants))
+		for id := range m.implants {
+			ids = append(ids, id)
+		}
+		return ids
+	case implantconfig.EdgeServiceConfigs:
+		ids := make([]ent.Value, 0, len(m.serviceConfigs))
+		for id := range m.serviceConfigs {
+			ids = append(ids, id)
+		}
+		return ids
+	case implantconfig.EdgeCallbackConfigs:
+		ids := make([]ent.Value, 0, len(m.callbackConfigs))
+		for id := range m.callbackConfigs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ImplantConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedimplants != nil {
+		edges = append(edges, implantconfig.EdgeImplants)
+	}
+	if m.removedserviceConfigs != nil {
+		edges = append(edges, implantconfig.EdgeServiceConfigs)
+	}
+	if m.removedcallbackConfigs != nil {
+		edges = append(edges, implantconfig.EdgeCallbackConfigs)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ImplantConfigMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case implantconfig.EdgeImplants:
+		ids := make([]ent.Value, 0, len(m.removedimplants))
+		for id := range m.removedimplants {
+			ids = append(ids, id)
+		}
+		return ids
+	case implantconfig.EdgeServiceConfigs:
+		ids := make([]ent.Value, 0, len(m.removedserviceConfigs))
+		for id := range m.removedserviceConfigs {
+			ids = append(ids, id)
+		}
+		return ids
+	case implantconfig.EdgeCallbackConfigs:
+		ids := make([]ent.Value, 0, len(m.removedcallbackConfigs))
+		for id := range m.removedcallbackConfigs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ImplantConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedimplants {
+		edges = append(edges, implantconfig.EdgeImplants)
+	}
+	if m.clearedserviceConfigs {
+		edges = append(edges, implantconfig.EdgeServiceConfigs)
+	}
+	if m.clearedcallbackConfigs {
+		edges = append(edges, implantconfig.EdgeCallbackConfigs)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ImplantConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case implantconfig.EdgeImplants:
+		return m.clearedimplants
+	case implantconfig.EdgeServiceConfigs:
+		return m.clearedserviceConfigs
+	case implantconfig.EdgeCallbackConfigs:
+		return m.clearedcallbackConfigs
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ImplantConfigMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ImplantConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ImplantConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case implantconfig.EdgeImplants:
+		m.ResetImplants()
+		return nil
+	case implantconfig.EdgeServiceConfigs:
+		m.ResetServiceConfigs()
+		return nil
+	case implantconfig.EdgeCallbackConfigs:
+		m.ResetCallbackConfigs()
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantConfig edge %s", name)
+}
+
+// ImplantServiceConfigMutation represents an operation that mutates the ImplantServiceConfig nodes in the graph.
+type ImplantServiceConfigMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *int
+	name                  *string
+	description           *string
+	executablePath        *string
+	clearedFields         map[string]struct{}
+	implantConfigs        map[int]struct{}
+	removedimplantConfigs map[int]struct{}
+	clearedimplantConfigs bool
+	done                  bool
+	oldValue              func(context.Context) (*ImplantServiceConfig, error)
+	predicates            []predicate.ImplantServiceConfig
+}
+
+var _ ent.Mutation = (*ImplantServiceConfigMutation)(nil)
+
+// implantserviceconfigOption allows management of the mutation configuration using functional options.
+type implantserviceconfigOption func(*ImplantServiceConfigMutation)
+
+// newImplantServiceConfigMutation creates new mutation for the ImplantServiceConfig entity.
+func newImplantServiceConfigMutation(c config, op Op, opts ...implantserviceconfigOption) *ImplantServiceConfigMutation {
+	m := &ImplantServiceConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeImplantServiceConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withImplantServiceConfigID sets the ID field of the mutation.
+func withImplantServiceConfigID(id int) implantserviceconfigOption {
+	return func(m *ImplantServiceConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ImplantServiceConfig
+		)
+		m.oldValue = func(ctx context.Context) (*ImplantServiceConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ImplantServiceConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withImplantServiceConfig sets the old ImplantServiceConfig of the mutation.
+func withImplantServiceConfig(node *ImplantServiceConfig) implantserviceconfigOption {
+	return func(m *ImplantServiceConfigMutation) {
+		m.oldValue = func(context.Context) (*ImplantServiceConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ImplantServiceConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ImplantServiceConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ImplantServiceConfigMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ImplantServiceConfigMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ImplantServiceConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *ImplantServiceConfigMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ImplantServiceConfigMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ImplantServiceConfig entity.
+// If the ImplantServiceConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantServiceConfigMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ImplantServiceConfigMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *ImplantServiceConfigMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *ImplantServiceConfigMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the ImplantServiceConfig entity.
+// If the ImplantServiceConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantServiceConfigMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *ImplantServiceConfigMutation) ResetDescription() {
+	m.description = nil
+}
+
+// SetExecutablePath sets the "executablePath" field.
+func (m *ImplantServiceConfigMutation) SetExecutablePath(s string) {
+	m.executablePath = &s
+}
+
+// ExecutablePath returns the value of the "executablePath" field in the mutation.
+func (m *ImplantServiceConfigMutation) ExecutablePath() (r string, exists bool) {
+	v := m.executablePath
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecutablePath returns the old "executablePath" field's value of the ImplantServiceConfig entity.
+// If the ImplantServiceConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantServiceConfigMutation) OldExecutablePath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecutablePath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecutablePath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecutablePath: %w", err)
+	}
+	return oldValue.ExecutablePath, nil
+}
+
+// ResetExecutablePath resets all changes to the "executablePath" field.
+func (m *ImplantServiceConfigMutation) ResetExecutablePath() {
+	m.executablePath = nil
+}
+
+// AddImplantConfigIDs adds the "implantConfigs" edge to the ImplantConfig entity by ids.
+func (m *ImplantServiceConfigMutation) AddImplantConfigIDs(ids ...int) {
+	if m.implantConfigs == nil {
+		m.implantConfigs = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.implantConfigs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImplantConfigs clears the "implantConfigs" edge to the ImplantConfig entity.
+func (m *ImplantServiceConfigMutation) ClearImplantConfigs() {
+	m.clearedimplantConfigs = true
+}
+
+// ImplantConfigsCleared reports if the "implantConfigs" edge to the ImplantConfig entity was cleared.
+func (m *ImplantServiceConfigMutation) ImplantConfigsCleared() bool {
+	return m.clearedimplantConfigs
+}
+
+// RemoveImplantConfigIDs removes the "implantConfigs" edge to the ImplantConfig entity by IDs.
+func (m *ImplantServiceConfigMutation) RemoveImplantConfigIDs(ids ...int) {
+	if m.removedimplantConfigs == nil {
+		m.removedimplantConfigs = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.implantConfigs, ids[i])
+		m.removedimplantConfigs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImplantConfigs returns the removed IDs of the "implantConfigs" edge to the ImplantConfig entity.
+func (m *ImplantServiceConfigMutation) RemovedImplantConfigsIDs() (ids []int) {
+	for id := range m.removedimplantConfigs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImplantConfigsIDs returns the "implantConfigs" edge IDs in the mutation.
+func (m *ImplantServiceConfigMutation) ImplantConfigsIDs() (ids []int) {
+	for id := range m.implantConfigs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImplantConfigs resets all changes to the "implantConfigs" edge.
+func (m *ImplantServiceConfigMutation) ResetImplantConfigs() {
+	m.implantConfigs = nil
+	m.clearedimplantConfigs = false
+	m.removedimplantConfigs = nil
+}
+
+// Where appends a list predicates to the ImplantServiceConfigMutation builder.
+func (m *ImplantServiceConfigMutation) Where(ps ...predicate.ImplantServiceConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ImplantServiceConfigMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (ImplantServiceConfig).
+func (m *ImplantServiceConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ImplantServiceConfigMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.name != nil {
+		fields = append(fields, implantserviceconfig.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, implantserviceconfig.FieldDescription)
+	}
+	if m.executablePath != nil {
+		fields = append(fields, implantserviceconfig.FieldExecutablePath)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ImplantServiceConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case implantserviceconfig.FieldName:
+		return m.Name()
+	case implantserviceconfig.FieldDescription:
+		return m.Description()
+	case implantserviceconfig.FieldExecutablePath:
+		return m.ExecutablePath()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ImplantServiceConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case implantserviceconfig.FieldName:
+		return m.OldName(ctx)
+	case implantserviceconfig.FieldDescription:
+		return m.OldDescription(ctx)
+	case implantserviceconfig.FieldExecutablePath:
+		return m.OldExecutablePath(ctx)
+	}
+	return nil, fmt.Errorf("unknown ImplantServiceConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImplantServiceConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case implantserviceconfig.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case implantserviceconfig.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case implantserviceconfig.FieldExecutablePath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecutablePath(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantServiceConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ImplantServiceConfigMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ImplantServiceConfigMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImplantServiceConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ImplantServiceConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ImplantServiceConfigMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ImplantServiceConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ImplantServiceConfigMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ImplantServiceConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ImplantServiceConfigMutation) ResetField(name string) error {
+	switch name {
+	case implantserviceconfig.FieldName:
+		m.ResetName()
+		return nil
+	case implantserviceconfig.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case implantserviceconfig.FieldExecutablePath:
+		m.ResetExecutablePath()
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantServiceConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ImplantServiceConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.implantConfigs != nil {
+		edges = append(edges, implantserviceconfig.EdgeImplantConfigs)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ImplantServiceConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case implantserviceconfig.EdgeImplantConfigs:
+		ids := make([]ent.Value, 0, len(m.implantConfigs))
+		for id := range m.implantConfigs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ImplantServiceConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedimplantConfigs != nil {
+		edges = append(edges, implantserviceconfig.EdgeImplantConfigs)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ImplantServiceConfigMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case implantserviceconfig.EdgeImplantConfigs:
+		ids := make([]ent.Value, 0, len(m.removedimplantConfigs))
+		for id := range m.removedimplantConfigs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ImplantServiceConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedimplantConfigs {
+		edges = append(edges, implantserviceconfig.EdgeImplantConfigs)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ImplantServiceConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case implantserviceconfig.EdgeImplantConfigs:
+		return m.clearedimplantConfigs
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ImplantServiceConfigMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ImplantServiceConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ImplantServiceConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case implantserviceconfig.EdgeImplantConfigs:
+		m.ResetImplantConfigs()
+		return nil
+	}
+	return fmt.Errorf("unknown ImplantServiceConfig edge %s", name)
+}
+
 // TargetMutation represents an operation that mutates the Target nodes in the graph.
 type TargetMutation struct {
 	config
@@ -1148,6 +3562,9 @@ type TargetMutation struct {
 	credentials        map[int]struct{}
 	removedcredentials map[int]struct{}
 	clearedcredentials bool
+	implants           map[int]struct{}
+	removedimplants    map[int]struct{}
+	clearedimplants    bool
 	done               bool
 	oldValue           func(context.Context) (*Target, error)
 	predicates         []predicate.Target
@@ -1377,6 +3794,60 @@ func (m *TargetMutation) ResetCredentials() {
 	m.removedcredentials = nil
 }
 
+// AddImplantIDs adds the "implants" edge to the Implant entity by ids.
+func (m *TargetMutation) AddImplantIDs(ids ...int) {
+	if m.implants == nil {
+		m.implants = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.implants[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImplants clears the "implants" edge to the Implant entity.
+func (m *TargetMutation) ClearImplants() {
+	m.clearedimplants = true
+}
+
+// ImplantsCleared reports if the "implants" edge to the Implant entity was cleared.
+func (m *TargetMutation) ImplantsCleared() bool {
+	return m.clearedimplants
+}
+
+// RemoveImplantIDs removes the "implants" edge to the Implant entity by IDs.
+func (m *TargetMutation) RemoveImplantIDs(ids ...int) {
+	if m.removedimplants == nil {
+		m.removedimplants = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.implants, ids[i])
+		m.removedimplants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImplants returns the removed IDs of the "implants" edge to the Implant entity.
+func (m *TargetMutation) RemovedImplantsIDs() (ids []int) {
+	for id := range m.removedimplants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImplantsIDs returns the "implants" edge IDs in the mutation.
+func (m *TargetMutation) ImplantsIDs() (ids []int) {
+	for id := range m.implants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImplants resets all changes to the "implants" edge.
+func (m *TargetMutation) ResetImplants() {
+	m.implants = nil
+	m.clearedimplants = false
+	m.removedimplants = nil
+}
+
 // Where appends a list predicates to the TargetMutation builder.
 func (m *TargetMutation) Where(ps ...predicate.Target) {
 	m.predicates = append(m.predicates, ps...)
@@ -1512,9 +3983,12 @@ func (m *TargetMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TargetMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.credentials != nil {
 		edges = append(edges, target.EdgeCredentials)
+	}
+	if m.implants != nil {
+		edges = append(edges, target.EdgeImplants)
 	}
 	return edges
 }
@@ -1529,15 +4003,24 @@ func (m *TargetMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case target.EdgeImplants:
+		ids := make([]ent.Value, 0, len(m.implants))
+		for id := range m.implants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TargetMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedcredentials != nil {
 		edges = append(edges, target.EdgeCredentials)
+	}
+	if m.removedimplants != nil {
+		edges = append(edges, target.EdgeImplants)
 	}
 	return edges
 }
@@ -1552,15 +4035,24 @@ func (m *TargetMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case target.EdgeImplants:
+		ids := make([]ent.Value, 0, len(m.removedimplants))
+		for id := range m.removedimplants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TargetMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedcredentials {
 		edges = append(edges, target.EdgeCredentials)
+	}
+	if m.clearedimplants {
+		edges = append(edges, target.EdgeImplants)
 	}
 	return edges
 }
@@ -1571,6 +4063,8 @@ func (m *TargetMutation) EdgeCleared(name string) bool {
 	switch name {
 	case target.EdgeCredentials:
 		return m.clearedcredentials
+	case target.EdgeImplants:
+		return m.clearedimplants
 	}
 	return false
 }
@@ -1589,6 +4083,9 @@ func (m *TargetMutation) ResetEdge(name string) error {
 	switch name {
 	case target.EdgeCredentials:
 		m.ResetCredentials()
+		return nil
+	case target.EdgeImplants:
+		m.ResetImplants()
 		return nil
 	}
 	return fmt.Errorf("unknown Target edge %s", name)

@@ -17,6 +17,10 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/file"
+	"github.com/kcarretto/realm/ent/implant"
+	"github.com/kcarretto/realm/ent/implantcallbackconfig"
+	"github.com/kcarretto/realm/ent/implantconfig"
+	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/target"
 	"golang.org/x/sync/semaphore"
 )
@@ -152,12 +156,222 @@ func (f *File) Node(ctx context.Context) (node *Node, err error) {
 	return node, nil
 }
 
+func (i *Implant) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     i.ID,
+		Type:   "Implant",
+		Fields: make([]*Field, 2),
+		Edges:  make([]*Edge, 2),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(i.SessionID); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "sessionID",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(i.ProcessName); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "processName",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Target",
+		Name: "target",
+	}
+	err = i.QueryTarget().
+		Select(target.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[1] = &Edge{
+		Type: "ImplantConfig",
+		Name: "config",
+	}
+	err = i.QueryConfig().
+		Select(implantconfig.FieldID).
+		Scan(ctx, &node.Edges[1].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+func (icc *ImplantCallbackConfig) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     icc.ID,
+		Type:   "ImplantCallbackConfig",
+		Fields: make([]*Field, 5),
+		Edges:  make([]*Edge, 1),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(icc.URI); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "uri",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(icc.Priority); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "int",
+		Name:  "priority",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(icc.Timeout); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "int",
+		Name:  "timeout",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(icc.Interval); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "int",
+		Name:  "interval",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(icc.Jitter); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "int",
+		Name:  "jitter",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "ImplantConfig",
+		Name: "implantConfigs",
+	}
+	err = icc.QueryImplantConfigs().
+		Select(implantconfig.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+func (ic *ImplantConfig) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     ic.ID,
+		Type:   "ImplantConfig",
+		Fields: make([]*Field, 2),
+		Edges:  make([]*Edge, 3),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(ic.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(ic.AuthToken); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "authToken",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Implant",
+		Name: "implants",
+	}
+	err = ic.QueryImplants().
+		Select(implant.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[1] = &Edge{
+		Type: "ImplantServiceConfig",
+		Name: "serviceConfigs",
+	}
+	err = ic.QueryServiceConfigs().
+		Select(implantserviceconfig.FieldID).
+		Scan(ctx, &node.Edges[1].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[2] = &Edge{
+		Type: "ImplantCallbackConfig",
+		Name: "callbackConfigs",
+	}
+	err = ic.QueryCallbackConfigs().
+		Select(implantcallbackconfig.FieldID).
+		Scan(ctx, &node.Edges[2].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+func (isc *ImplantServiceConfig) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     isc.ID,
+		Type:   "ImplantServiceConfig",
+		Fields: make([]*Field, 3),
+		Edges:  make([]*Edge, 1),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(isc.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(isc.Description); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "description",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(isc.ExecutablePath); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "executablePath",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "ImplantConfig",
+		Name: "implantConfigs",
+	}
+	err = isc.QueryImplantConfigs().
+		Select(implantconfig.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
 func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Target",
 		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 1),
+		Edges:  make([]*Edge, 2),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(t.Name); err != nil {
@@ -183,6 +397,16 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 	err = t.QueryCredentials().
 		Select(credential.FieldID).
 		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[1] = &Edge{
+		Type: "Implant",
+		Name: "implants",
+	}
+	err = t.QueryImplants().
+		Select(implant.FieldID).
+		Scan(ctx, &node.Edges[1].IDs)
 	if err != nil {
 		return nil, err
 	}
@@ -269,6 +493,42 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		n, err := c.File.Query().
 			Where(file.ID(id)).
 			CollectFields(ctx, "File").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case implant.Table:
+		n, err := c.Implant.Query().
+			Where(implant.ID(id)).
+			CollectFields(ctx, "Implant").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case implantcallbackconfig.Table:
+		n, err := c.ImplantCallbackConfig.Query().
+			Where(implantcallbackconfig.ID(id)).
+			CollectFields(ctx, "ImplantCallbackConfig").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case implantconfig.Table:
+		n, err := c.ImplantConfig.Query().
+			Where(implantconfig.ID(id)).
+			CollectFields(ctx, "ImplantConfig").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case implantserviceconfig.Table:
+		n, err := c.ImplantServiceConfig.Query().
+			Where(implantserviceconfig.ID(id)).
+			CollectFields(ctx, "ImplantServiceConfig").
 			Only(ctx)
 		if err != nil {
 			return nil, err
@@ -373,6 +633,58 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		nodes, err := c.File.Query().
 			Where(file.IDIn(ids...)).
 			CollectFields(ctx, "File").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case implant.Table:
+		nodes, err := c.Implant.Query().
+			Where(implant.IDIn(ids...)).
+			CollectFields(ctx, "Implant").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case implantcallbackconfig.Table:
+		nodes, err := c.ImplantCallbackConfig.Query().
+			Where(implantcallbackconfig.IDIn(ids...)).
+			CollectFields(ctx, "ImplantCallbackConfig").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case implantconfig.Table:
+		nodes, err := c.ImplantConfig.Query().
+			Where(implantconfig.IDIn(ids...)).
+			CollectFields(ctx, "ImplantConfig").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case implantserviceconfig.Table:
+		nodes, err := c.ImplantServiceConfig.Query().
+			Where(implantserviceconfig.IDIn(ids...)).
+			CollectFields(ctx, "ImplantServiceConfig").
 			All(ctx)
 		if err != nil {
 			return nil, err

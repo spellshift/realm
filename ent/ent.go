@@ -10,6 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/file"
+	"github.com/kcarretto/realm/ent/implant"
+	"github.com/kcarretto/realm/ent/implantcallbackconfig"
+	"github.com/kcarretto/realm/ent/implantconfig"
+	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -31,9 +35,13 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		credential.Table: credential.ValidColumn,
-		file.Table:       file.ValidColumn,
-		target.Table:     target.ValidColumn,
+		credential.Table:            credential.ValidColumn,
+		file.Table:                  file.ValidColumn,
+		implant.Table:               implant.ValidColumn,
+		implantcallbackconfig.Table: implantcallbackconfig.ValidColumn,
+		implantconfig.Table:         implantconfig.ValidColumn,
+		implantserviceconfig.Table:  implantserviceconfig.ValidColumn,
+		target.Table:                target.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

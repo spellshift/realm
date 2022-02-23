@@ -8,6 +8,10 @@ import (
 
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/file"
+	"github.com/kcarretto/realm/ent/implant"
+	"github.com/kcarretto/realm/ent/implantcallbackconfig"
+	"github.com/kcarretto/realm/ent/implantconfig"
+	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/predicate"
 	"github.com/kcarretto/realm/ent/target"
 )
@@ -592,6 +596,1180 @@ func (i *FileWhereInput) P() (predicate.File, error) {
 	}
 }
 
+// ImplantWhereInput represents a where input for filtering Implant queries.
+type ImplantWhereInput struct {
+	Not *ImplantWhereInput   `json:"not,omitempty"`
+	Or  []*ImplantWhereInput `json:"or,omitempty"`
+	And []*ImplantWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "sessionID" field predicates.
+	SessionID             *string  `json:"sessionid,omitempty"`
+	SessionIDNEQ          *string  `json:"sessionidNEQ,omitempty"`
+	SessionIDIn           []string `json:"sessionidIn,omitempty"`
+	SessionIDNotIn        []string `json:"sessionidNotIn,omitempty"`
+	SessionIDGT           *string  `json:"sessionidGT,omitempty"`
+	SessionIDGTE          *string  `json:"sessionidGTE,omitempty"`
+	SessionIDLT           *string  `json:"sessionidLT,omitempty"`
+	SessionIDLTE          *string  `json:"sessionidLTE,omitempty"`
+	SessionIDContains     *string  `json:"sessionidContains,omitempty"`
+	SessionIDHasPrefix    *string  `json:"sessionidHasPrefix,omitempty"`
+	SessionIDHasSuffix    *string  `json:"sessionidHasSuffix,omitempty"`
+	SessionIDEqualFold    *string  `json:"sessionidEqualFold,omitempty"`
+	SessionIDContainsFold *string  `json:"sessionidContainsFold,omitempty"`
+
+	// "processName" field predicates.
+	ProcessName             *string  `json:"processname,omitempty"`
+	ProcessNameNEQ          *string  `json:"processnameNEQ,omitempty"`
+	ProcessNameIn           []string `json:"processnameIn,omitempty"`
+	ProcessNameNotIn        []string `json:"processnameNotIn,omitempty"`
+	ProcessNameGT           *string  `json:"processnameGT,omitempty"`
+	ProcessNameGTE          *string  `json:"processnameGTE,omitempty"`
+	ProcessNameLT           *string  `json:"processnameLT,omitempty"`
+	ProcessNameLTE          *string  `json:"processnameLTE,omitempty"`
+	ProcessNameContains     *string  `json:"processnameContains,omitempty"`
+	ProcessNameHasPrefix    *string  `json:"processnameHasPrefix,omitempty"`
+	ProcessNameHasSuffix    *string  `json:"processnameHasSuffix,omitempty"`
+	ProcessNameIsNil        bool     `json:"processnameIsNil,omitempty"`
+	ProcessNameNotNil       bool     `json:"processnameNotNil,omitempty"`
+	ProcessNameEqualFold    *string  `json:"processnameEqualFold,omitempty"`
+	ProcessNameContainsFold *string  `json:"processnameContainsFold,omitempty"`
+
+	// "target" edge predicates.
+	HasTarget     *bool               `json:"hasTarget,omitempty"`
+	HasTargetWith []*TargetWhereInput `json:"hasTargetWith,omitempty"`
+
+	// "config" edge predicates.
+	HasConfig     *bool                      `json:"hasConfig,omitempty"`
+	HasConfigWith []*ImplantConfigWhereInput `json:"hasConfigWith,omitempty"`
+}
+
+// Filter applies the ImplantWhereInput filter on the ImplantQuery builder.
+func (i *ImplantWhereInput) Filter(q *ImplantQuery) (*ImplantQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// P returns a predicate for filtering implants.
+// An error is returned if the input is empty or invalid.
+func (i *ImplantWhereInput) P() (predicate.Implant, error) {
+	var predicates []predicate.Implant
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, implant.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Implant, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, implant.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Implant, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, implant.And(and...))
+	}
+	if i.ID != nil {
+		predicates = append(predicates, implant.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, implant.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, implant.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, implant.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, implant.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, implant.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, implant.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, implant.IDLTE(*i.IDLTE))
+	}
+	if i.SessionID != nil {
+		predicates = append(predicates, implant.SessionIDEQ(*i.SessionID))
+	}
+	if i.SessionIDNEQ != nil {
+		predicates = append(predicates, implant.SessionIDNEQ(*i.SessionIDNEQ))
+	}
+	if len(i.SessionIDIn) > 0 {
+		predicates = append(predicates, implant.SessionIDIn(i.SessionIDIn...))
+	}
+	if len(i.SessionIDNotIn) > 0 {
+		predicates = append(predicates, implant.SessionIDNotIn(i.SessionIDNotIn...))
+	}
+	if i.SessionIDGT != nil {
+		predicates = append(predicates, implant.SessionIDGT(*i.SessionIDGT))
+	}
+	if i.SessionIDGTE != nil {
+		predicates = append(predicates, implant.SessionIDGTE(*i.SessionIDGTE))
+	}
+	if i.SessionIDLT != nil {
+		predicates = append(predicates, implant.SessionIDLT(*i.SessionIDLT))
+	}
+	if i.SessionIDLTE != nil {
+		predicates = append(predicates, implant.SessionIDLTE(*i.SessionIDLTE))
+	}
+	if i.SessionIDContains != nil {
+		predicates = append(predicates, implant.SessionIDContains(*i.SessionIDContains))
+	}
+	if i.SessionIDHasPrefix != nil {
+		predicates = append(predicates, implant.SessionIDHasPrefix(*i.SessionIDHasPrefix))
+	}
+	if i.SessionIDHasSuffix != nil {
+		predicates = append(predicates, implant.SessionIDHasSuffix(*i.SessionIDHasSuffix))
+	}
+	if i.SessionIDEqualFold != nil {
+		predicates = append(predicates, implant.SessionIDEqualFold(*i.SessionIDEqualFold))
+	}
+	if i.SessionIDContainsFold != nil {
+		predicates = append(predicates, implant.SessionIDContainsFold(*i.SessionIDContainsFold))
+	}
+	if i.ProcessName != nil {
+		predicates = append(predicates, implant.ProcessNameEQ(*i.ProcessName))
+	}
+	if i.ProcessNameNEQ != nil {
+		predicates = append(predicates, implant.ProcessNameNEQ(*i.ProcessNameNEQ))
+	}
+	if len(i.ProcessNameIn) > 0 {
+		predicates = append(predicates, implant.ProcessNameIn(i.ProcessNameIn...))
+	}
+	if len(i.ProcessNameNotIn) > 0 {
+		predicates = append(predicates, implant.ProcessNameNotIn(i.ProcessNameNotIn...))
+	}
+	if i.ProcessNameGT != nil {
+		predicates = append(predicates, implant.ProcessNameGT(*i.ProcessNameGT))
+	}
+	if i.ProcessNameGTE != nil {
+		predicates = append(predicates, implant.ProcessNameGTE(*i.ProcessNameGTE))
+	}
+	if i.ProcessNameLT != nil {
+		predicates = append(predicates, implant.ProcessNameLT(*i.ProcessNameLT))
+	}
+	if i.ProcessNameLTE != nil {
+		predicates = append(predicates, implant.ProcessNameLTE(*i.ProcessNameLTE))
+	}
+	if i.ProcessNameContains != nil {
+		predicates = append(predicates, implant.ProcessNameContains(*i.ProcessNameContains))
+	}
+	if i.ProcessNameHasPrefix != nil {
+		predicates = append(predicates, implant.ProcessNameHasPrefix(*i.ProcessNameHasPrefix))
+	}
+	if i.ProcessNameHasSuffix != nil {
+		predicates = append(predicates, implant.ProcessNameHasSuffix(*i.ProcessNameHasSuffix))
+	}
+	if i.ProcessNameIsNil {
+		predicates = append(predicates, implant.ProcessNameIsNil())
+	}
+	if i.ProcessNameNotNil {
+		predicates = append(predicates, implant.ProcessNameNotNil())
+	}
+	if i.ProcessNameEqualFold != nil {
+		predicates = append(predicates, implant.ProcessNameEqualFold(*i.ProcessNameEqualFold))
+	}
+	if i.ProcessNameContainsFold != nil {
+		predicates = append(predicates, implant.ProcessNameContainsFold(*i.ProcessNameContainsFold))
+	}
+
+	if i.HasTarget != nil {
+		p := implant.HasTarget()
+		if !*i.HasTarget {
+			p = implant.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTargetWith) > 0 {
+		with := make([]predicate.Target, 0, len(i.HasTargetWith))
+		for _, w := range i.HasTargetWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, implant.HasTargetWith(with...))
+	}
+	if i.HasConfig != nil {
+		p := implant.HasConfig()
+		if !*i.HasConfig {
+			p = implant.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasConfigWith) > 0 {
+		with := make([]predicate.ImplantConfig, 0, len(i.HasConfigWith))
+		for _, w := range i.HasConfigWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, implant.HasConfigWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, fmt.Errorf("github.com/kcarretto/realm/ent: empty predicate ImplantWhereInput")
+	case 1:
+		return predicates[0], nil
+	default:
+		return implant.And(predicates...), nil
+	}
+}
+
+// ImplantCallbackConfigWhereInput represents a where input for filtering ImplantCallbackConfig queries.
+type ImplantCallbackConfigWhereInput struct {
+	Not *ImplantCallbackConfigWhereInput   `json:"not,omitempty"`
+	Or  []*ImplantCallbackConfigWhereInput `json:"or,omitempty"`
+	And []*ImplantCallbackConfigWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "uri" field predicates.
+	URI             *string  `json:"uri,omitempty"`
+	URINEQ          *string  `json:"uriNEQ,omitempty"`
+	URIIn           []string `json:"uriIn,omitempty"`
+	URINotIn        []string `json:"uriNotIn,omitempty"`
+	URIGT           *string  `json:"uriGT,omitempty"`
+	URIGTE          *string  `json:"uriGTE,omitempty"`
+	URILT           *string  `json:"uriLT,omitempty"`
+	URILTE          *string  `json:"uriLTE,omitempty"`
+	URIContains     *string  `json:"uriContains,omitempty"`
+	URIHasPrefix    *string  `json:"uriHasPrefix,omitempty"`
+	URIHasSuffix    *string  `json:"uriHasSuffix,omitempty"`
+	URIEqualFold    *string  `json:"uriEqualFold,omitempty"`
+	URIContainsFold *string  `json:"uriContainsFold,omitempty"`
+
+	// "priority" field predicates.
+	Priority      *int  `json:"priority,omitempty"`
+	PriorityNEQ   *int  `json:"priorityNEQ,omitempty"`
+	PriorityIn    []int `json:"priorityIn,omitempty"`
+	PriorityNotIn []int `json:"priorityNotIn,omitempty"`
+	PriorityGT    *int  `json:"priorityGT,omitempty"`
+	PriorityGTE   *int  `json:"priorityGTE,omitempty"`
+	PriorityLT    *int  `json:"priorityLT,omitempty"`
+	PriorityLTE   *int  `json:"priorityLTE,omitempty"`
+
+	// "timeout" field predicates.
+	Timeout      *int  `json:"timeout,omitempty"`
+	TimeoutNEQ   *int  `json:"timeoutNEQ,omitempty"`
+	TimeoutIn    []int `json:"timeoutIn,omitempty"`
+	TimeoutNotIn []int `json:"timeoutNotIn,omitempty"`
+	TimeoutGT    *int  `json:"timeoutGT,omitempty"`
+	TimeoutGTE   *int  `json:"timeoutGTE,omitempty"`
+	TimeoutLT    *int  `json:"timeoutLT,omitempty"`
+	TimeoutLTE   *int  `json:"timeoutLTE,omitempty"`
+
+	// "interval" field predicates.
+	Interval      *int  `json:"interval,omitempty"`
+	IntervalNEQ   *int  `json:"intervalNEQ,omitempty"`
+	IntervalIn    []int `json:"intervalIn,omitempty"`
+	IntervalNotIn []int `json:"intervalNotIn,omitempty"`
+	IntervalGT    *int  `json:"intervalGT,omitempty"`
+	IntervalGTE   *int  `json:"intervalGTE,omitempty"`
+	IntervalLT    *int  `json:"intervalLT,omitempty"`
+	IntervalLTE   *int  `json:"intervalLTE,omitempty"`
+
+	// "jitter" field predicates.
+	Jitter      *int  `json:"jitter,omitempty"`
+	JitterNEQ   *int  `json:"jitterNEQ,omitempty"`
+	JitterIn    []int `json:"jitterIn,omitempty"`
+	JitterNotIn []int `json:"jitterNotIn,omitempty"`
+	JitterGT    *int  `json:"jitterGT,omitempty"`
+	JitterGTE   *int  `json:"jitterGTE,omitempty"`
+	JitterLT    *int  `json:"jitterLT,omitempty"`
+	JitterLTE   *int  `json:"jitterLTE,omitempty"`
+
+	// "implantConfigs" edge predicates.
+	HasImplantConfigs     *bool                      `json:"hasImplantConfigs,omitempty"`
+	HasImplantConfigsWith []*ImplantConfigWhereInput `json:"hasImplantConfigsWith,omitempty"`
+}
+
+// Filter applies the ImplantCallbackConfigWhereInput filter on the ImplantCallbackConfigQuery builder.
+func (i *ImplantCallbackConfigWhereInput) Filter(q *ImplantCallbackConfigQuery) (*ImplantCallbackConfigQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// P returns a predicate for filtering implantcallbackconfigs.
+// An error is returned if the input is empty or invalid.
+func (i *ImplantCallbackConfigWhereInput) P() (predicate.ImplantCallbackConfig, error) {
+	var predicates []predicate.ImplantCallbackConfig
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, implantcallbackconfig.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.ImplantCallbackConfig, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, implantcallbackconfig.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.ImplantCallbackConfig, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, implantcallbackconfig.And(and...))
+	}
+	if i.ID != nil {
+		predicates = append(predicates, implantcallbackconfig.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, implantcallbackconfig.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, implantcallbackconfig.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, implantcallbackconfig.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, implantcallbackconfig.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, implantcallbackconfig.IDLTE(*i.IDLTE))
+	}
+	if i.URI != nil {
+		predicates = append(predicates, implantcallbackconfig.URIEQ(*i.URI))
+	}
+	if i.URINEQ != nil {
+		predicates = append(predicates, implantcallbackconfig.URINEQ(*i.URINEQ))
+	}
+	if len(i.URIIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.URIIn(i.URIIn...))
+	}
+	if len(i.URINotIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.URINotIn(i.URINotIn...))
+	}
+	if i.URIGT != nil {
+		predicates = append(predicates, implantcallbackconfig.URIGT(*i.URIGT))
+	}
+	if i.URIGTE != nil {
+		predicates = append(predicates, implantcallbackconfig.URIGTE(*i.URIGTE))
+	}
+	if i.URILT != nil {
+		predicates = append(predicates, implantcallbackconfig.URILT(*i.URILT))
+	}
+	if i.URILTE != nil {
+		predicates = append(predicates, implantcallbackconfig.URILTE(*i.URILTE))
+	}
+	if i.URIContains != nil {
+		predicates = append(predicates, implantcallbackconfig.URIContains(*i.URIContains))
+	}
+	if i.URIHasPrefix != nil {
+		predicates = append(predicates, implantcallbackconfig.URIHasPrefix(*i.URIHasPrefix))
+	}
+	if i.URIHasSuffix != nil {
+		predicates = append(predicates, implantcallbackconfig.URIHasSuffix(*i.URIHasSuffix))
+	}
+	if i.URIEqualFold != nil {
+		predicates = append(predicates, implantcallbackconfig.URIEqualFold(*i.URIEqualFold))
+	}
+	if i.URIContainsFold != nil {
+		predicates = append(predicates, implantcallbackconfig.URIContainsFold(*i.URIContainsFold))
+	}
+	if i.Priority != nil {
+		predicates = append(predicates, implantcallbackconfig.PriorityEQ(*i.Priority))
+	}
+	if i.PriorityNEQ != nil {
+		predicates = append(predicates, implantcallbackconfig.PriorityNEQ(*i.PriorityNEQ))
+	}
+	if len(i.PriorityIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.PriorityIn(i.PriorityIn...))
+	}
+	if len(i.PriorityNotIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.PriorityNotIn(i.PriorityNotIn...))
+	}
+	if i.PriorityGT != nil {
+		predicates = append(predicates, implantcallbackconfig.PriorityGT(*i.PriorityGT))
+	}
+	if i.PriorityGTE != nil {
+		predicates = append(predicates, implantcallbackconfig.PriorityGTE(*i.PriorityGTE))
+	}
+	if i.PriorityLT != nil {
+		predicates = append(predicates, implantcallbackconfig.PriorityLT(*i.PriorityLT))
+	}
+	if i.PriorityLTE != nil {
+		predicates = append(predicates, implantcallbackconfig.PriorityLTE(*i.PriorityLTE))
+	}
+	if i.Timeout != nil {
+		predicates = append(predicates, implantcallbackconfig.TimeoutEQ(*i.Timeout))
+	}
+	if i.TimeoutNEQ != nil {
+		predicates = append(predicates, implantcallbackconfig.TimeoutNEQ(*i.TimeoutNEQ))
+	}
+	if len(i.TimeoutIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.TimeoutIn(i.TimeoutIn...))
+	}
+	if len(i.TimeoutNotIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.TimeoutNotIn(i.TimeoutNotIn...))
+	}
+	if i.TimeoutGT != nil {
+		predicates = append(predicates, implantcallbackconfig.TimeoutGT(*i.TimeoutGT))
+	}
+	if i.TimeoutGTE != nil {
+		predicates = append(predicates, implantcallbackconfig.TimeoutGTE(*i.TimeoutGTE))
+	}
+	if i.TimeoutLT != nil {
+		predicates = append(predicates, implantcallbackconfig.TimeoutLT(*i.TimeoutLT))
+	}
+	if i.TimeoutLTE != nil {
+		predicates = append(predicates, implantcallbackconfig.TimeoutLTE(*i.TimeoutLTE))
+	}
+	if i.Interval != nil {
+		predicates = append(predicates, implantcallbackconfig.IntervalEQ(*i.Interval))
+	}
+	if i.IntervalNEQ != nil {
+		predicates = append(predicates, implantcallbackconfig.IntervalNEQ(*i.IntervalNEQ))
+	}
+	if len(i.IntervalIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.IntervalIn(i.IntervalIn...))
+	}
+	if len(i.IntervalNotIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.IntervalNotIn(i.IntervalNotIn...))
+	}
+	if i.IntervalGT != nil {
+		predicates = append(predicates, implantcallbackconfig.IntervalGT(*i.IntervalGT))
+	}
+	if i.IntervalGTE != nil {
+		predicates = append(predicates, implantcallbackconfig.IntervalGTE(*i.IntervalGTE))
+	}
+	if i.IntervalLT != nil {
+		predicates = append(predicates, implantcallbackconfig.IntervalLT(*i.IntervalLT))
+	}
+	if i.IntervalLTE != nil {
+		predicates = append(predicates, implantcallbackconfig.IntervalLTE(*i.IntervalLTE))
+	}
+	if i.Jitter != nil {
+		predicates = append(predicates, implantcallbackconfig.JitterEQ(*i.Jitter))
+	}
+	if i.JitterNEQ != nil {
+		predicates = append(predicates, implantcallbackconfig.JitterNEQ(*i.JitterNEQ))
+	}
+	if len(i.JitterIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.JitterIn(i.JitterIn...))
+	}
+	if len(i.JitterNotIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.JitterNotIn(i.JitterNotIn...))
+	}
+	if i.JitterGT != nil {
+		predicates = append(predicates, implantcallbackconfig.JitterGT(*i.JitterGT))
+	}
+	if i.JitterGTE != nil {
+		predicates = append(predicates, implantcallbackconfig.JitterGTE(*i.JitterGTE))
+	}
+	if i.JitterLT != nil {
+		predicates = append(predicates, implantcallbackconfig.JitterLT(*i.JitterLT))
+	}
+	if i.JitterLTE != nil {
+		predicates = append(predicates, implantcallbackconfig.JitterLTE(*i.JitterLTE))
+	}
+
+	if i.HasImplantConfigs != nil {
+		p := implantcallbackconfig.HasImplantConfigs()
+		if !*i.HasImplantConfigs {
+			p = implantcallbackconfig.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasImplantConfigsWith) > 0 {
+		with := make([]predicate.ImplantConfig, 0, len(i.HasImplantConfigsWith))
+		for _, w := range i.HasImplantConfigsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, implantcallbackconfig.HasImplantConfigsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, fmt.Errorf("github.com/kcarretto/realm/ent: empty predicate ImplantCallbackConfigWhereInput")
+	case 1:
+		return predicates[0], nil
+	default:
+		return implantcallbackconfig.And(predicates...), nil
+	}
+}
+
+// ImplantConfigWhereInput represents a where input for filtering ImplantConfig queries.
+type ImplantConfigWhereInput struct {
+	Not *ImplantConfigWhereInput   `json:"not,omitempty"`
+	Or  []*ImplantConfigWhereInput `json:"or,omitempty"`
+	And []*ImplantConfigWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "authToken" field predicates.
+	AuthToken             *string  `json:"authtoken,omitempty"`
+	AuthTokenNEQ          *string  `json:"authtokenNEQ,omitempty"`
+	AuthTokenIn           []string `json:"authtokenIn,omitempty"`
+	AuthTokenNotIn        []string `json:"authtokenNotIn,omitempty"`
+	AuthTokenGT           *string  `json:"authtokenGT,omitempty"`
+	AuthTokenGTE          *string  `json:"authtokenGTE,omitempty"`
+	AuthTokenLT           *string  `json:"authtokenLT,omitempty"`
+	AuthTokenLTE          *string  `json:"authtokenLTE,omitempty"`
+	AuthTokenContains     *string  `json:"authtokenContains,omitempty"`
+	AuthTokenHasPrefix    *string  `json:"authtokenHasPrefix,omitempty"`
+	AuthTokenHasSuffix    *string  `json:"authtokenHasSuffix,omitempty"`
+	AuthTokenEqualFold    *string  `json:"authtokenEqualFold,omitempty"`
+	AuthTokenContainsFold *string  `json:"authtokenContainsFold,omitempty"`
+
+	// "implants" edge predicates.
+	HasImplants     *bool                `json:"hasImplants,omitempty"`
+	HasImplantsWith []*ImplantWhereInput `json:"hasImplantsWith,omitempty"`
+
+	// "serviceConfigs" edge predicates.
+	HasServiceConfigs     *bool                             `json:"hasServiceConfigs,omitempty"`
+	HasServiceConfigsWith []*ImplantServiceConfigWhereInput `json:"hasServiceConfigsWith,omitempty"`
+
+	// "callbackConfigs" edge predicates.
+	HasCallbackConfigs     *bool                              `json:"hasCallbackConfigs,omitempty"`
+	HasCallbackConfigsWith []*ImplantCallbackConfigWhereInput `json:"hasCallbackConfigsWith,omitempty"`
+}
+
+// Filter applies the ImplantConfigWhereInput filter on the ImplantConfigQuery builder.
+func (i *ImplantConfigWhereInput) Filter(q *ImplantConfigQuery) (*ImplantConfigQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// P returns a predicate for filtering implantconfigs.
+// An error is returned if the input is empty or invalid.
+func (i *ImplantConfigWhereInput) P() (predicate.ImplantConfig, error) {
+	var predicates []predicate.ImplantConfig
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, implantconfig.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.ImplantConfig, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, implantconfig.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.ImplantConfig, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, implantconfig.And(and...))
+	}
+	if i.ID != nil {
+		predicates = append(predicates, implantconfig.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, implantconfig.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, implantconfig.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, implantconfig.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, implantconfig.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, implantconfig.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, implantconfig.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, implantconfig.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, implantconfig.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, implantconfig.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, implantconfig.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, implantconfig.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, implantconfig.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, implantconfig.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, implantconfig.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, implantconfig.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, implantconfig.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, implantconfig.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, implantconfig.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, implantconfig.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, implantconfig.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.AuthToken != nil {
+		predicates = append(predicates, implantconfig.AuthTokenEQ(*i.AuthToken))
+	}
+	if i.AuthTokenNEQ != nil {
+		predicates = append(predicates, implantconfig.AuthTokenNEQ(*i.AuthTokenNEQ))
+	}
+	if len(i.AuthTokenIn) > 0 {
+		predicates = append(predicates, implantconfig.AuthTokenIn(i.AuthTokenIn...))
+	}
+	if len(i.AuthTokenNotIn) > 0 {
+		predicates = append(predicates, implantconfig.AuthTokenNotIn(i.AuthTokenNotIn...))
+	}
+	if i.AuthTokenGT != nil {
+		predicates = append(predicates, implantconfig.AuthTokenGT(*i.AuthTokenGT))
+	}
+	if i.AuthTokenGTE != nil {
+		predicates = append(predicates, implantconfig.AuthTokenGTE(*i.AuthTokenGTE))
+	}
+	if i.AuthTokenLT != nil {
+		predicates = append(predicates, implantconfig.AuthTokenLT(*i.AuthTokenLT))
+	}
+	if i.AuthTokenLTE != nil {
+		predicates = append(predicates, implantconfig.AuthTokenLTE(*i.AuthTokenLTE))
+	}
+	if i.AuthTokenContains != nil {
+		predicates = append(predicates, implantconfig.AuthTokenContains(*i.AuthTokenContains))
+	}
+	if i.AuthTokenHasPrefix != nil {
+		predicates = append(predicates, implantconfig.AuthTokenHasPrefix(*i.AuthTokenHasPrefix))
+	}
+	if i.AuthTokenHasSuffix != nil {
+		predicates = append(predicates, implantconfig.AuthTokenHasSuffix(*i.AuthTokenHasSuffix))
+	}
+	if i.AuthTokenEqualFold != nil {
+		predicates = append(predicates, implantconfig.AuthTokenEqualFold(*i.AuthTokenEqualFold))
+	}
+	if i.AuthTokenContainsFold != nil {
+		predicates = append(predicates, implantconfig.AuthTokenContainsFold(*i.AuthTokenContainsFold))
+	}
+
+	if i.HasImplants != nil {
+		p := implantconfig.HasImplants()
+		if !*i.HasImplants {
+			p = implantconfig.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasImplantsWith) > 0 {
+		with := make([]predicate.Implant, 0, len(i.HasImplantsWith))
+		for _, w := range i.HasImplantsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, implantconfig.HasImplantsWith(with...))
+	}
+	if i.HasServiceConfigs != nil {
+		p := implantconfig.HasServiceConfigs()
+		if !*i.HasServiceConfigs {
+			p = implantconfig.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasServiceConfigsWith) > 0 {
+		with := make([]predicate.ImplantServiceConfig, 0, len(i.HasServiceConfigsWith))
+		for _, w := range i.HasServiceConfigsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, implantconfig.HasServiceConfigsWith(with...))
+	}
+	if i.HasCallbackConfigs != nil {
+		p := implantconfig.HasCallbackConfigs()
+		if !*i.HasCallbackConfigs {
+			p = implantconfig.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCallbackConfigsWith) > 0 {
+		with := make([]predicate.ImplantCallbackConfig, 0, len(i.HasCallbackConfigsWith))
+		for _, w := range i.HasCallbackConfigsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, implantconfig.HasCallbackConfigsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, fmt.Errorf("github.com/kcarretto/realm/ent: empty predicate ImplantConfigWhereInput")
+	case 1:
+		return predicates[0], nil
+	default:
+		return implantconfig.And(predicates...), nil
+	}
+}
+
+// ImplantServiceConfigWhereInput represents a where input for filtering ImplantServiceConfig queries.
+type ImplantServiceConfigWhereInput struct {
+	Not *ImplantServiceConfigWhereInput   `json:"not,omitempty"`
+	Or  []*ImplantServiceConfigWhereInput `json:"or,omitempty"`
+	And []*ImplantServiceConfigWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "description" field predicates.
+	Description             *string  `json:"description,omitempty"`
+	DescriptionNEQ          *string  `json:"descriptionNEQ,omitempty"`
+	DescriptionIn           []string `json:"descriptionIn,omitempty"`
+	DescriptionNotIn        []string `json:"descriptionNotIn,omitempty"`
+	DescriptionGT           *string  `json:"descriptionGT,omitempty"`
+	DescriptionGTE          *string  `json:"descriptionGTE,omitempty"`
+	DescriptionLT           *string  `json:"descriptionLT,omitempty"`
+	DescriptionLTE          *string  `json:"descriptionLTE,omitempty"`
+	DescriptionContains     *string  `json:"descriptionContains,omitempty"`
+	DescriptionHasPrefix    *string  `json:"descriptionHasPrefix,omitempty"`
+	DescriptionHasSuffix    *string  `json:"descriptionHasSuffix,omitempty"`
+	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
+	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
+
+	// "executablePath" field predicates.
+	ExecutablePath             *string  `json:"executablepath,omitempty"`
+	ExecutablePathNEQ          *string  `json:"executablepathNEQ,omitempty"`
+	ExecutablePathIn           []string `json:"executablepathIn,omitempty"`
+	ExecutablePathNotIn        []string `json:"executablepathNotIn,omitempty"`
+	ExecutablePathGT           *string  `json:"executablepathGT,omitempty"`
+	ExecutablePathGTE          *string  `json:"executablepathGTE,omitempty"`
+	ExecutablePathLT           *string  `json:"executablepathLT,omitempty"`
+	ExecutablePathLTE          *string  `json:"executablepathLTE,omitempty"`
+	ExecutablePathContains     *string  `json:"executablepathContains,omitempty"`
+	ExecutablePathHasPrefix    *string  `json:"executablepathHasPrefix,omitempty"`
+	ExecutablePathHasSuffix    *string  `json:"executablepathHasSuffix,omitempty"`
+	ExecutablePathEqualFold    *string  `json:"executablepathEqualFold,omitempty"`
+	ExecutablePathContainsFold *string  `json:"executablepathContainsFold,omitempty"`
+
+	// "implantConfigs" edge predicates.
+	HasImplantConfigs     *bool                      `json:"hasImplantConfigs,omitempty"`
+	HasImplantConfigsWith []*ImplantConfigWhereInput `json:"hasImplantConfigsWith,omitempty"`
+}
+
+// Filter applies the ImplantServiceConfigWhereInput filter on the ImplantServiceConfigQuery builder.
+func (i *ImplantServiceConfigWhereInput) Filter(q *ImplantServiceConfigQuery) (*ImplantServiceConfigQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// P returns a predicate for filtering implantserviceconfigs.
+// An error is returned if the input is empty or invalid.
+func (i *ImplantServiceConfigWhereInput) P() (predicate.ImplantServiceConfig, error) {
+	var predicates []predicate.ImplantServiceConfig
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, implantserviceconfig.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.ImplantServiceConfig, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, implantserviceconfig.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.ImplantServiceConfig, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, implantserviceconfig.And(and...))
+	}
+	if i.ID != nil {
+		predicates = append(predicates, implantserviceconfig.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, implantserviceconfig.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, implantserviceconfig.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, implantserviceconfig.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, implantserviceconfig.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, implantserviceconfig.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, implantserviceconfig.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, implantserviceconfig.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, implantserviceconfig.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, implantserviceconfig.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, implantserviceconfig.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, implantserviceconfig.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, implantserviceconfig.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, implantserviceconfig.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, implantserviceconfig.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, implantserviceconfig.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, implantserviceconfig.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, implantserviceconfig.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, implantserviceconfig.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, implantserviceconfig.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, implantserviceconfig.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Description != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionEQ(*i.Description))
+	}
+	if i.DescriptionNEQ != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionNEQ(*i.DescriptionNEQ))
+	}
+	if len(i.DescriptionIn) > 0 {
+		predicates = append(predicates, implantserviceconfig.DescriptionIn(i.DescriptionIn...))
+	}
+	if len(i.DescriptionNotIn) > 0 {
+		predicates = append(predicates, implantserviceconfig.DescriptionNotIn(i.DescriptionNotIn...))
+	}
+	if i.DescriptionGT != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionGT(*i.DescriptionGT))
+	}
+	if i.DescriptionGTE != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionGTE(*i.DescriptionGTE))
+	}
+	if i.DescriptionLT != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionLT(*i.DescriptionLT))
+	}
+	if i.DescriptionLTE != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionLTE(*i.DescriptionLTE))
+	}
+	if i.DescriptionContains != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionContains(*i.DescriptionContains))
+	}
+	if i.DescriptionHasPrefix != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionHasPrefix(*i.DescriptionHasPrefix))
+	}
+	if i.DescriptionHasSuffix != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionHasSuffix(*i.DescriptionHasSuffix))
+	}
+	if i.DescriptionEqualFold != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionEqualFold(*i.DescriptionEqualFold))
+	}
+	if i.DescriptionContainsFold != nil {
+		predicates = append(predicates, implantserviceconfig.DescriptionContainsFold(*i.DescriptionContainsFold))
+	}
+	if i.ExecutablePath != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathEQ(*i.ExecutablePath))
+	}
+	if i.ExecutablePathNEQ != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathNEQ(*i.ExecutablePathNEQ))
+	}
+	if len(i.ExecutablePathIn) > 0 {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathIn(i.ExecutablePathIn...))
+	}
+	if len(i.ExecutablePathNotIn) > 0 {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathNotIn(i.ExecutablePathNotIn...))
+	}
+	if i.ExecutablePathGT != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathGT(*i.ExecutablePathGT))
+	}
+	if i.ExecutablePathGTE != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathGTE(*i.ExecutablePathGTE))
+	}
+	if i.ExecutablePathLT != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathLT(*i.ExecutablePathLT))
+	}
+	if i.ExecutablePathLTE != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathLTE(*i.ExecutablePathLTE))
+	}
+	if i.ExecutablePathContains != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathContains(*i.ExecutablePathContains))
+	}
+	if i.ExecutablePathHasPrefix != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathHasPrefix(*i.ExecutablePathHasPrefix))
+	}
+	if i.ExecutablePathHasSuffix != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathHasSuffix(*i.ExecutablePathHasSuffix))
+	}
+	if i.ExecutablePathEqualFold != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathEqualFold(*i.ExecutablePathEqualFold))
+	}
+	if i.ExecutablePathContainsFold != nil {
+		predicates = append(predicates, implantserviceconfig.ExecutablePathContainsFold(*i.ExecutablePathContainsFold))
+	}
+
+	if i.HasImplantConfigs != nil {
+		p := implantserviceconfig.HasImplantConfigs()
+		if !*i.HasImplantConfigs {
+			p = implantserviceconfig.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasImplantConfigsWith) > 0 {
+		with := make([]predicate.ImplantConfig, 0, len(i.HasImplantConfigsWith))
+		for _, w := range i.HasImplantConfigsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, implantserviceconfig.HasImplantConfigsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, fmt.Errorf("github.com/kcarretto/realm/ent: empty predicate ImplantServiceConfigWhereInput")
+	case 1:
+		return predicates[0], nil
+	default:
+		return implantserviceconfig.And(predicates...), nil
+	}
+}
+
 // TargetWhereInput represents a where input for filtering Target queries.
 type TargetWhereInput struct {
 	Not *TargetWhereInput   `json:"not,omitempty"`
@@ -641,6 +1819,10 @@ type TargetWhereInput struct {
 	// "credentials" edge predicates.
 	HasCredentials     *bool                   `json:"hasCredentials,omitempty"`
 	HasCredentialsWith []*CredentialWhereInput `json:"hasCredentialsWith,omitempty"`
+
+	// "implants" edge predicates.
+	HasImplants     *bool                `json:"hasImplants,omitempty"`
+	HasImplantsWith []*ImplantWhereInput `json:"hasImplantsWith,omitempty"`
 }
 
 // Filter applies the TargetWhereInput filter on the TargetQuery builder.
@@ -822,6 +2004,24 @@ func (i *TargetWhereInput) P() (predicate.Target, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, target.HasCredentialsWith(with...))
+	}
+	if i.HasImplants != nil {
+		p := target.HasImplants()
+		if !*i.HasImplants {
+			p = target.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasImplantsWith) > 0 {
+		with := make([]predicate.Implant, 0, len(i.HasImplantsWith))
+		for _, w := range i.HasImplantsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, target.HasImplantsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

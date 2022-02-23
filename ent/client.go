@@ -11,6 +11,10 @@ import (
 
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/file"
+	"github.com/kcarretto/realm/ent/implant"
+	"github.com/kcarretto/realm/ent/implantcallbackconfig"
+	"github.com/kcarretto/realm/ent/implantconfig"
+	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/target"
 
 	"entgo.io/ent/dialect"
@@ -27,6 +31,14 @@ type Client struct {
 	Credential *CredentialClient
 	// File is the client for interacting with the File builders.
 	File *FileClient
+	// Implant is the client for interacting with the Implant builders.
+	Implant *ImplantClient
+	// ImplantCallbackConfig is the client for interacting with the ImplantCallbackConfig builders.
+	ImplantCallbackConfig *ImplantCallbackConfigClient
+	// ImplantConfig is the client for interacting with the ImplantConfig builders.
+	ImplantConfig *ImplantConfigClient
+	// ImplantServiceConfig is the client for interacting with the ImplantServiceConfig builders.
+	ImplantServiceConfig *ImplantServiceConfigClient
 	// Target is the client for interacting with the Target builders.
 	Target *TargetClient
 	// additional fields for node api
@@ -46,6 +58,10 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Credential = NewCredentialClient(c.config)
 	c.File = NewFileClient(c.config)
+	c.Implant = NewImplantClient(c.config)
+	c.ImplantCallbackConfig = NewImplantCallbackConfigClient(c.config)
+	c.ImplantConfig = NewImplantConfigClient(c.config)
+	c.ImplantServiceConfig = NewImplantServiceConfigClient(c.config)
 	c.Target = NewTargetClient(c.config)
 }
 
@@ -78,11 +94,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Credential: NewCredentialClient(cfg),
-		File:       NewFileClient(cfg),
-		Target:     NewTargetClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		Credential:            NewCredentialClient(cfg),
+		File:                  NewFileClient(cfg),
+		Implant:               NewImplantClient(cfg),
+		ImplantCallbackConfig: NewImplantCallbackConfigClient(cfg),
+		ImplantConfig:         NewImplantConfigClient(cfg),
+		ImplantServiceConfig:  NewImplantServiceConfigClient(cfg),
+		Target:                NewTargetClient(cfg),
 	}, nil
 }
 
@@ -100,11 +120,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Credential: NewCredentialClient(cfg),
-		File:       NewFileClient(cfg),
-		Target:     NewTargetClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		Credential:            NewCredentialClient(cfg),
+		File:                  NewFileClient(cfg),
+		Implant:               NewImplantClient(cfg),
+		ImplantCallbackConfig: NewImplantCallbackConfigClient(cfg),
+		ImplantConfig:         NewImplantConfigClient(cfg),
+		ImplantServiceConfig:  NewImplantServiceConfigClient(cfg),
+		Target:                NewTargetClient(cfg),
 	}, nil
 }
 
@@ -136,6 +160,10 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.Credential.Use(hooks...)
 	c.File.Use(hooks...)
+	c.Implant.Use(hooks...)
+	c.ImplantCallbackConfig.Use(hooks...)
+	c.ImplantConfig.Use(hooks...)
+	c.ImplantServiceConfig.Use(hooks...)
 	c.Target.Use(hooks...)
 }
 
@@ -335,6 +363,478 @@ func (c *FileClient) Hooks() []Hook {
 	return c.hooks.File
 }
 
+// ImplantClient is a client for the Implant schema.
+type ImplantClient struct {
+	config
+}
+
+// NewImplantClient returns a client for the Implant from the given config.
+func NewImplantClient(c config) *ImplantClient {
+	return &ImplantClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `implant.Hooks(f(g(h())))`.
+func (c *ImplantClient) Use(hooks ...Hook) {
+	c.hooks.Implant = append(c.hooks.Implant, hooks...)
+}
+
+// Create returns a create builder for Implant.
+func (c *ImplantClient) Create() *ImplantCreate {
+	mutation := newImplantMutation(c.config, OpCreate)
+	return &ImplantCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Implant entities.
+func (c *ImplantClient) CreateBulk(builders ...*ImplantCreate) *ImplantCreateBulk {
+	return &ImplantCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Implant.
+func (c *ImplantClient) Update() *ImplantUpdate {
+	mutation := newImplantMutation(c.config, OpUpdate)
+	return &ImplantUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ImplantClient) UpdateOne(i *Implant) *ImplantUpdateOne {
+	mutation := newImplantMutation(c.config, OpUpdateOne, withImplant(i))
+	return &ImplantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ImplantClient) UpdateOneID(id int) *ImplantUpdateOne {
+	mutation := newImplantMutation(c.config, OpUpdateOne, withImplantID(id))
+	return &ImplantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Implant.
+func (c *ImplantClient) Delete() *ImplantDelete {
+	mutation := newImplantMutation(c.config, OpDelete)
+	return &ImplantDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ImplantClient) DeleteOne(i *Implant) *ImplantDeleteOne {
+	return c.DeleteOneID(i.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ImplantClient) DeleteOneID(id int) *ImplantDeleteOne {
+	builder := c.Delete().Where(implant.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ImplantDeleteOne{builder}
+}
+
+// Query returns a query builder for Implant.
+func (c *ImplantClient) Query() *ImplantQuery {
+	return &ImplantQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Implant entity by its id.
+func (c *ImplantClient) Get(ctx context.Context, id int) (*Implant, error) {
+	return c.Query().Where(implant.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ImplantClient) GetX(ctx context.Context, id int) *Implant {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTarget queries the target edge of a Implant.
+func (c *ImplantClient) QueryTarget(i *Implant) *TargetQuery {
+	query := &TargetQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implant.Table, implant.FieldID, id),
+			sqlgraph.To(target.Table, target.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, implant.TargetTable, implant.TargetColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryConfig queries the config edge of a Implant.
+func (c *ImplantClient) QueryConfig(i *Implant) *ImplantConfigQuery {
+	query := &ImplantConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implant.Table, implant.FieldID, id),
+			sqlgraph.To(implantconfig.Table, implantconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, implant.ConfigTable, implant.ConfigColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ImplantClient) Hooks() []Hook {
+	return c.hooks.Implant
+}
+
+// ImplantCallbackConfigClient is a client for the ImplantCallbackConfig schema.
+type ImplantCallbackConfigClient struct {
+	config
+}
+
+// NewImplantCallbackConfigClient returns a client for the ImplantCallbackConfig from the given config.
+func NewImplantCallbackConfigClient(c config) *ImplantCallbackConfigClient {
+	return &ImplantCallbackConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `implantcallbackconfig.Hooks(f(g(h())))`.
+func (c *ImplantCallbackConfigClient) Use(hooks ...Hook) {
+	c.hooks.ImplantCallbackConfig = append(c.hooks.ImplantCallbackConfig, hooks...)
+}
+
+// Create returns a create builder for ImplantCallbackConfig.
+func (c *ImplantCallbackConfigClient) Create() *ImplantCallbackConfigCreate {
+	mutation := newImplantCallbackConfigMutation(c.config, OpCreate)
+	return &ImplantCallbackConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ImplantCallbackConfig entities.
+func (c *ImplantCallbackConfigClient) CreateBulk(builders ...*ImplantCallbackConfigCreate) *ImplantCallbackConfigCreateBulk {
+	return &ImplantCallbackConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ImplantCallbackConfig.
+func (c *ImplantCallbackConfigClient) Update() *ImplantCallbackConfigUpdate {
+	mutation := newImplantCallbackConfigMutation(c.config, OpUpdate)
+	return &ImplantCallbackConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ImplantCallbackConfigClient) UpdateOne(icc *ImplantCallbackConfig) *ImplantCallbackConfigUpdateOne {
+	mutation := newImplantCallbackConfigMutation(c.config, OpUpdateOne, withImplantCallbackConfig(icc))
+	return &ImplantCallbackConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ImplantCallbackConfigClient) UpdateOneID(id int) *ImplantCallbackConfigUpdateOne {
+	mutation := newImplantCallbackConfigMutation(c.config, OpUpdateOne, withImplantCallbackConfigID(id))
+	return &ImplantCallbackConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ImplantCallbackConfig.
+func (c *ImplantCallbackConfigClient) Delete() *ImplantCallbackConfigDelete {
+	mutation := newImplantCallbackConfigMutation(c.config, OpDelete)
+	return &ImplantCallbackConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ImplantCallbackConfigClient) DeleteOne(icc *ImplantCallbackConfig) *ImplantCallbackConfigDeleteOne {
+	return c.DeleteOneID(icc.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ImplantCallbackConfigClient) DeleteOneID(id int) *ImplantCallbackConfigDeleteOne {
+	builder := c.Delete().Where(implantcallbackconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ImplantCallbackConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for ImplantCallbackConfig.
+func (c *ImplantCallbackConfigClient) Query() *ImplantCallbackConfigQuery {
+	return &ImplantCallbackConfigQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a ImplantCallbackConfig entity by its id.
+func (c *ImplantCallbackConfigClient) Get(ctx context.Context, id int) (*ImplantCallbackConfig, error) {
+	return c.Query().Where(implantcallbackconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ImplantCallbackConfigClient) GetX(ctx context.Context, id int) *ImplantCallbackConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryImplantConfigs queries the implantConfigs edge of a ImplantCallbackConfig.
+func (c *ImplantCallbackConfigClient) QueryImplantConfigs(icc *ImplantCallbackConfig) *ImplantConfigQuery {
+	query := &ImplantConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := icc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implantcallbackconfig.Table, implantcallbackconfig.FieldID, id),
+			sqlgraph.To(implantconfig.Table, implantconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, implantcallbackconfig.ImplantConfigsTable, implantcallbackconfig.ImplantConfigsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(icc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ImplantCallbackConfigClient) Hooks() []Hook {
+	return c.hooks.ImplantCallbackConfig
+}
+
+// ImplantConfigClient is a client for the ImplantConfig schema.
+type ImplantConfigClient struct {
+	config
+}
+
+// NewImplantConfigClient returns a client for the ImplantConfig from the given config.
+func NewImplantConfigClient(c config) *ImplantConfigClient {
+	return &ImplantConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `implantconfig.Hooks(f(g(h())))`.
+func (c *ImplantConfigClient) Use(hooks ...Hook) {
+	c.hooks.ImplantConfig = append(c.hooks.ImplantConfig, hooks...)
+}
+
+// Create returns a create builder for ImplantConfig.
+func (c *ImplantConfigClient) Create() *ImplantConfigCreate {
+	mutation := newImplantConfigMutation(c.config, OpCreate)
+	return &ImplantConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ImplantConfig entities.
+func (c *ImplantConfigClient) CreateBulk(builders ...*ImplantConfigCreate) *ImplantConfigCreateBulk {
+	return &ImplantConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ImplantConfig.
+func (c *ImplantConfigClient) Update() *ImplantConfigUpdate {
+	mutation := newImplantConfigMutation(c.config, OpUpdate)
+	return &ImplantConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ImplantConfigClient) UpdateOne(ic *ImplantConfig) *ImplantConfigUpdateOne {
+	mutation := newImplantConfigMutation(c.config, OpUpdateOne, withImplantConfig(ic))
+	return &ImplantConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ImplantConfigClient) UpdateOneID(id int) *ImplantConfigUpdateOne {
+	mutation := newImplantConfigMutation(c.config, OpUpdateOne, withImplantConfigID(id))
+	return &ImplantConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ImplantConfig.
+func (c *ImplantConfigClient) Delete() *ImplantConfigDelete {
+	mutation := newImplantConfigMutation(c.config, OpDelete)
+	return &ImplantConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ImplantConfigClient) DeleteOne(ic *ImplantConfig) *ImplantConfigDeleteOne {
+	return c.DeleteOneID(ic.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ImplantConfigClient) DeleteOneID(id int) *ImplantConfigDeleteOne {
+	builder := c.Delete().Where(implantconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ImplantConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for ImplantConfig.
+func (c *ImplantConfigClient) Query() *ImplantConfigQuery {
+	return &ImplantConfigQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a ImplantConfig entity by its id.
+func (c *ImplantConfigClient) Get(ctx context.Context, id int) (*ImplantConfig, error) {
+	return c.Query().Where(implantconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ImplantConfigClient) GetX(ctx context.Context, id int) *ImplantConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryImplants queries the implants edge of a ImplantConfig.
+func (c *ImplantConfigClient) QueryImplants(ic *ImplantConfig) *ImplantQuery {
+	query := &ImplantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ic.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implantconfig.Table, implantconfig.FieldID, id),
+			sqlgraph.To(implant.Table, implant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, implantconfig.ImplantsTable, implantconfig.ImplantsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ic.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryServiceConfigs queries the serviceConfigs edge of a ImplantConfig.
+func (c *ImplantConfigClient) QueryServiceConfigs(ic *ImplantConfig) *ImplantServiceConfigQuery {
+	query := &ImplantServiceConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ic.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implantconfig.Table, implantconfig.FieldID, id),
+			sqlgraph.To(implantserviceconfig.Table, implantserviceconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, implantconfig.ServiceConfigsTable, implantconfig.ServiceConfigsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(ic.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCallbackConfigs queries the callbackConfigs edge of a ImplantConfig.
+func (c *ImplantConfigClient) QueryCallbackConfigs(ic *ImplantConfig) *ImplantCallbackConfigQuery {
+	query := &ImplantCallbackConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ic.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implantconfig.Table, implantconfig.FieldID, id),
+			sqlgraph.To(implantcallbackconfig.Table, implantcallbackconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, implantconfig.CallbackConfigsTable, implantconfig.CallbackConfigsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(ic.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ImplantConfigClient) Hooks() []Hook {
+	return c.hooks.ImplantConfig
+}
+
+// ImplantServiceConfigClient is a client for the ImplantServiceConfig schema.
+type ImplantServiceConfigClient struct {
+	config
+}
+
+// NewImplantServiceConfigClient returns a client for the ImplantServiceConfig from the given config.
+func NewImplantServiceConfigClient(c config) *ImplantServiceConfigClient {
+	return &ImplantServiceConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `implantserviceconfig.Hooks(f(g(h())))`.
+func (c *ImplantServiceConfigClient) Use(hooks ...Hook) {
+	c.hooks.ImplantServiceConfig = append(c.hooks.ImplantServiceConfig, hooks...)
+}
+
+// Create returns a create builder for ImplantServiceConfig.
+func (c *ImplantServiceConfigClient) Create() *ImplantServiceConfigCreate {
+	mutation := newImplantServiceConfigMutation(c.config, OpCreate)
+	return &ImplantServiceConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ImplantServiceConfig entities.
+func (c *ImplantServiceConfigClient) CreateBulk(builders ...*ImplantServiceConfigCreate) *ImplantServiceConfigCreateBulk {
+	return &ImplantServiceConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ImplantServiceConfig.
+func (c *ImplantServiceConfigClient) Update() *ImplantServiceConfigUpdate {
+	mutation := newImplantServiceConfigMutation(c.config, OpUpdate)
+	return &ImplantServiceConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ImplantServiceConfigClient) UpdateOne(isc *ImplantServiceConfig) *ImplantServiceConfigUpdateOne {
+	mutation := newImplantServiceConfigMutation(c.config, OpUpdateOne, withImplantServiceConfig(isc))
+	return &ImplantServiceConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ImplantServiceConfigClient) UpdateOneID(id int) *ImplantServiceConfigUpdateOne {
+	mutation := newImplantServiceConfigMutation(c.config, OpUpdateOne, withImplantServiceConfigID(id))
+	return &ImplantServiceConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ImplantServiceConfig.
+func (c *ImplantServiceConfigClient) Delete() *ImplantServiceConfigDelete {
+	mutation := newImplantServiceConfigMutation(c.config, OpDelete)
+	return &ImplantServiceConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ImplantServiceConfigClient) DeleteOne(isc *ImplantServiceConfig) *ImplantServiceConfigDeleteOne {
+	return c.DeleteOneID(isc.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ImplantServiceConfigClient) DeleteOneID(id int) *ImplantServiceConfigDeleteOne {
+	builder := c.Delete().Where(implantserviceconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ImplantServiceConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for ImplantServiceConfig.
+func (c *ImplantServiceConfigClient) Query() *ImplantServiceConfigQuery {
+	return &ImplantServiceConfigQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a ImplantServiceConfig entity by its id.
+func (c *ImplantServiceConfigClient) Get(ctx context.Context, id int) (*ImplantServiceConfig, error) {
+	return c.Query().Where(implantserviceconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ImplantServiceConfigClient) GetX(ctx context.Context, id int) *ImplantServiceConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryImplantConfigs queries the implantConfigs edge of a ImplantServiceConfig.
+func (c *ImplantServiceConfigClient) QueryImplantConfigs(isc *ImplantServiceConfig) *ImplantConfigQuery {
+	query := &ImplantConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := isc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implantserviceconfig.Table, implantserviceconfig.FieldID, id),
+			sqlgraph.To(implantconfig.Table, implantconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, implantserviceconfig.ImplantConfigsTable, implantserviceconfig.ImplantConfigsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(isc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ImplantServiceConfigClient) Hooks() []Hook {
+	return c.hooks.ImplantServiceConfig
+}
+
 // TargetClient is a client for the Target schema.
 type TargetClient struct {
 	config
@@ -429,6 +929,22 @@ func (c *TargetClient) QueryCredentials(t *Target) *CredentialQuery {
 			sqlgraph.From(target.Table, target.FieldID, id),
 			sqlgraph.To(credential.Table, credential.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, target.CredentialsTable, target.CredentialsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryImplants queries the implants edge of a Target.
+func (c *TargetClient) QueryImplants(t *Target) *ImplantQuery {
+	query := &ImplantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, id),
+			sqlgraph.To(implant.Table, implant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, target.ImplantsTable, target.ImplantsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
