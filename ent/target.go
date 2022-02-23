@@ -30,9 +30,11 @@ type Target struct {
 type TargetEdges struct {
 	// Credentials holds the value of the credentials edge.
 	Credentials []*Credential `json:"credentials,omitempty"`
+	// Implants holds the value of the implants edge.
+	Implants []*Implant `json:"implants,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // CredentialsOrErr returns the Credentials value or an error if the edge
@@ -42,6 +44,15 @@ func (e TargetEdges) CredentialsOrErr() ([]*Credential, error) {
 		return e.Credentials, nil
 	}
 	return nil, &NotLoadedError{edge: "credentials"}
+}
+
+// ImplantsOrErr returns the Implants value or an error if the edge
+// was not loaded in eager-loading.
+func (e TargetEdges) ImplantsOrErr() ([]*Implant, error) {
+	if e.loadedTypes[1] {
+		return e.Implants, nil
+	}
+	return nil, &NotLoadedError{edge: "implants"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -94,6 +105,11 @@ func (t *Target) assignValues(columns []string, values []interface{}) error {
 // QueryCredentials queries the "credentials" edge of the Target entity.
 func (t *Target) QueryCredentials() *CredentialQuery {
 	return (&TargetClient{config: t.config}).QueryCredentials(t)
+}
+
+// QueryImplants queries the "implants" edge of the Target entity.
+func (t *Target) QueryImplants() *ImplantQuery {
+	return (&TargetClient{config: t.config}).QueryImplants(t)
 }
 
 // Update returns a builder for updating this Target.

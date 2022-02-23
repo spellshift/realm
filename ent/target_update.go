@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/predicate"
 	"github.com/kcarretto/realm/ent/target"
 )
@@ -55,6 +56,21 @@ func (tu *TargetUpdate) AddCredentials(c ...*Credential) *TargetUpdate {
 	return tu.AddCredentialIDs(ids...)
 }
 
+// AddImplantIDs adds the "implants" edge to the Implant entity by IDs.
+func (tu *TargetUpdate) AddImplantIDs(ids ...int) *TargetUpdate {
+	tu.mutation.AddImplantIDs(ids...)
+	return tu
+}
+
+// AddImplants adds the "implants" edges to the Implant entity.
+func (tu *TargetUpdate) AddImplants(i ...*Implant) *TargetUpdate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tu.AddImplantIDs(ids...)
+}
+
 // Mutation returns the TargetMutation object of the builder.
 func (tu *TargetUpdate) Mutation() *TargetMutation {
 	return tu.mutation
@@ -79,6 +95,27 @@ func (tu *TargetUpdate) RemoveCredentials(c ...*Credential) *TargetUpdate {
 		ids[i] = c[i].ID
 	}
 	return tu.RemoveCredentialIDs(ids...)
+}
+
+// ClearImplants clears all "implants" edges to the Implant entity.
+func (tu *TargetUpdate) ClearImplants() *TargetUpdate {
+	tu.mutation.ClearImplants()
+	return tu
+}
+
+// RemoveImplantIDs removes the "implants" edge to Implant entities by IDs.
+func (tu *TargetUpdate) RemoveImplantIDs(ids ...int) *TargetUpdate {
+	tu.mutation.RemoveImplantIDs(ids...)
+	return tu
+}
+
+// RemoveImplants removes "implants" edges to Implant entities.
+func (tu *TargetUpdate) RemoveImplants(i ...*Implant) *TargetUpdate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tu.RemoveImplantIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -242,6 +279,60 @@ func (tu *TargetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.ImplantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.ImplantsTable,
+			Columns: []string{target.ImplantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: implant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedImplantsIDs(); len(nodes) > 0 && !tu.mutation.ImplantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.ImplantsTable,
+			Columns: []string{target.ImplantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: implant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ImplantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.ImplantsTable,
+			Columns: []string{target.ImplantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: implant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{target.Label}
@@ -288,6 +379,21 @@ func (tuo *TargetUpdateOne) AddCredentials(c ...*Credential) *TargetUpdateOne {
 	return tuo.AddCredentialIDs(ids...)
 }
 
+// AddImplantIDs adds the "implants" edge to the Implant entity by IDs.
+func (tuo *TargetUpdateOne) AddImplantIDs(ids ...int) *TargetUpdateOne {
+	tuo.mutation.AddImplantIDs(ids...)
+	return tuo
+}
+
+// AddImplants adds the "implants" edges to the Implant entity.
+func (tuo *TargetUpdateOne) AddImplants(i ...*Implant) *TargetUpdateOne {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tuo.AddImplantIDs(ids...)
+}
+
 // Mutation returns the TargetMutation object of the builder.
 func (tuo *TargetUpdateOne) Mutation() *TargetMutation {
 	return tuo.mutation
@@ -312,6 +418,27 @@ func (tuo *TargetUpdateOne) RemoveCredentials(c ...*Credential) *TargetUpdateOne
 		ids[i] = c[i].ID
 	}
 	return tuo.RemoveCredentialIDs(ids...)
+}
+
+// ClearImplants clears all "implants" edges to the Implant entity.
+func (tuo *TargetUpdateOne) ClearImplants() *TargetUpdateOne {
+	tuo.mutation.ClearImplants()
+	return tuo
+}
+
+// RemoveImplantIDs removes the "implants" edge to Implant entities by IDs.
+func (tuo *TargetUpdateOne) RemoveImplantIDs(ids ...int) *TargetUpdateOne {
+	tuo.mutation.RemoveImplantIDs(ids...)
+	return tuo
+}
+
+// RemoveImplants removes "implants" edges to Implant entities.
+func (tuo *TargetUpdateOne) RemoveImplants(i ...*Implant) *TargetUpdateOne {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tuo.RemoveImplantIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -491,6 +618,60 @@ func (tuo *TargetUpdateOne) sqlSave(ctx context.Context) (_node *Target, err err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: credential.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.ImplantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.ImplantsTable,
+			Columns: []string{target.ImplantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: implant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedImplantsIDs(); len(nodes) > 0 && !tuo.mutation.ImplantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.ImplantsTable,
+			Columns: []string{target.ImplantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: implant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ImplantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.ImplantsTable,
+			Columns: []string{target.ImplantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: implant.FieldID,
 				},
 			},
 		}

@@ -13,6 +13,8 @@ const (
 	FieldForwardConnectIP = "forward_connect_ip"
 	// EdgeCredentials holds the string denoting the credentials edge name in mutations.
 	EdgeCredentials = "credentials"
+	// EdgeImplants holds the string denoting the implants edge name in mutations.
+	EdgeImplants = "implants"
 	// Table holds the table name of the target in the database.
 	Table = "targets"
 	// CredentialsTable is the table that holds the credentials relation/edge.
@@ -22,6 +24,13 @@ const (
 	CredentialsInverseTable = "credentials"
 	// CredentialsColumn is the table column denoting the credentials relation/edge.
 	CredentialsColumn = "target_credentials"
+	// ImplantsTable is the table that holds the implants relation/edge.
+	ImplantsTable = "implants"
+	// ImplantsInverseTable is the table name for the Implant entity.
+	// It exists in this package in order to avoid circular dependency with the "implant" package.
+	ImplantsInverseTable = "implants"
+	// ImplantsColumn is the table column denoting the implants relation/edge.
+	ImplantsColumn = "implant_target"
 )
 
 // Columns holds all SQL columns for target fields.

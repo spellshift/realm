@@ -16,6 +16,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/kcarretto/realm/ent/credential"
 	"github.com/kcarretto/realm/ent/file"
+	"github.com/kcarretto/realm/ent/implant"
+	"github.com/kcarretto/realm/ent/implantcallbackconfig"
+	"github.com/kcarretto/realm/ent/implantconfig"
+	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/target"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"github.com/vmihailenco/msgpack/v5"
@@ -841,6 +845,914 @@ func (f *File) ToEdge(order *FileOrder) *FileEdge {
 	return &FileEdge{
 		Node:   f,
 		Cursor: order.Field.toCursor(f),
+	}
+}
+
+// ImplantEdge is the edge representation of Implant.
+type ImplantEdge struct {
+	Node   *Implant `json:"node"`
+	Cursor Cursor   `json:"cursor"`
+}
+
+// ImplantConnection is the connection containing edges to Implant.
+type ImplantConnection struct {
+	Edges      []*ImplantEdge `json:"edges"`
+	PageInfo   PageInfo       `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+// ImplantPaginateOption enables pagination customization.
+type ImplantPaginateOption func(*implantPager) error
+
+// WithImplantOrder configures pagination ordering.
+func WithImplantOrder(order *ImplantOrder) ImplantPaginateOption {
+	if order == nil {
+		order = DefaultImplantOrder
+	}
+	o := *order
+	return func(pager *implantPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultImplantOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithImplantFilter configures pagination filter.
+func WithImplantFilter(filter func(*ImplantQuery) (*ImplantQuery, error)) ImplantPaginateOption {
+	return func(pager *implantPager) error {
+		if filter == nil {
+			return errors.New("ImplantQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type implantPager struct {
+	order  *ImplantOrder
+	filter func(*ImplantQuery) (*ImplantQuery, error)
+}
+
+func newImplantPager(opts []ImplantPaginateOption) (*implantPager, error) {
+	pager := &implantPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultImplantOrder
+	}
+	return pager, nil
+}
+
+func (p *implantPager) applyFilter(query *ImplantQuery) (*ImplantQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *implantPager) toCursor(i *Implant) Cursor {
+	return p.order.Field.toCursor(i)
+}
+
+func (p *implantPager) applyCursors(query *ImplantQuery, after, before *Cursor) *ImplantQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultImplantOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *implantPager) applyOrder(query *ImplantQuery, reverse bool) *ImplantQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultImplantOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultImplantOrder.Field.field))
+	}
+	return query
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Implant.
+func (i *ImplantQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ImplantPaginateOption,
+) (*ImplantConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newImplantPager(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if i, err = pager.applyFilter(i); err != nil {
+		return nil, err
+	}
+
+	conn := &ImplantConnection{Edges: []*ImplantEdge{}}
+	if !hasCollectedField(ctx, edgesField) || first != nil && *first == 0 || last != nil && *last == 0 {
+		if hasCollectedField(ctx, totalCountField) ||
+			hasCollectedField(ctx, pageInfoField) {
+			count, err := i.Count(ctx)
+			if err != nil {
+				return nil, err
+			}
+			conn.TotalCount = count
+			conn.PageInfo.HasNextPage = first != nil && count > 0
+			conn.PageInfo.HasPreviousPage = last != nil && count > 0
+		}
+		return conn, nil
+	}
+
+	if (after != nil || first != nil || before != nil || last != nil) && hasCollectedField(ctx, totalCountField) {
+		count, err := i.Clone().Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		conn.TotalCount = count
+	}
+
+	i = pager.applyCursors(i, after, before)
+	i = pager.applyOrder(i, last != nil)
+	var limit int
+	if first != nil {
+		limit = *first + 1
+	} else if last != nil {
+		limit = *last + 1
+	}
+	if limit > 0 {
+		i = i.Limit(limit)
+	}
+
+	if field := getCollectedField(ctx, edgesField, nodeField); field != nil {
+		i = i.collectField(graphql.GetOperationContext(ctx), *field)
+	}
+
+	nodes, err := i.All(ctx)
+	if err != nil || len(nodes) == 0 {
+		return conn, err
+	}
+
+	if len(nodes) == limit {
+		conn.PageInfo.HasNextPage = first != nil
+		conn.PageInfo.HasPreviousPage = last != nil
+		nodes = nodes[:len(nodes)-1]
+	}
+
+	var nodeAt func(int) *Implant
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Implant {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Implant {
+			return nodes[i]
+		}
+	}
+
+	conn.Edges = make([]*ImplantEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		conn.Edges[i] = &ImplantEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+
+	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
+	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+	if conn.TotalCount == 0 {
+		conn.TotalCount = len(nodes)
+	}
+
+	return conn, nil
+}
+
+// ImplantOrderField defines the ordering field of Implant.
+type ImplantOrderField struct {
+	field    string
+	toCursor func(*Implant) Cursor
+}
+
+// ImplantOrder defines the ordering of Implant.
+type ImplantOrder struct {
+	Direction OrderDirection     `json:"direction"`
+	Field     *ImplantOrderField `json:"field"`
+}
+
+// DefaultImplantOrder is the default ordering of Implant.
+var DefaultImplantOrder = &ImplantOrder{
+	Direction: OrderDirectionAsc,
+	Field: &ImplantOrderField{
+		field: implant.FieldID,
+		toCursor: func(i *Implant) Cursor {
+			return Cursor{ID: i.ID}
+		},
+	},
+}
+
+// ToEdge converts Implant into ImplantEdge.
+func (i *Implant) ToEdge(order *ImplantOrder) *ImplantEdge {
+	if order == nil {
+		order = DefaultImplantOrder
+	}
+	return &ImplantEdge{
+		Node:   i,
+		Cursor: order.Field.toCursor(i),
+	}
+}
+
+// ImplantCallbackConfigEdge is the edge representation of ImplantCallbackConfig.
+type ImplantCallbackConfigEdge struct {
+	Node   *ImplantCallbackConfig `json:"node"`
+	Cursor Cursor                 `json:"cursor"`
+}
+
+// ImplantCallbackConfigConnection is the connection containing edges to ImplantCallbackConfig.
+type ImplantCallbackConfigConnection struct {
+	Edges      []*ImplantCallbackConfigEdge `json:"edges"`
+	PageInfo   PageInfo                     `json:"pageInfo"`
+	TotalCount int                          `json:"totalCount"`
+}
+
+// ImplantCallbackConfigPaginateOption enables pagination customization.
+type ImplantCallbackConfigPaginateOption func(*implantCallbackConfigPager) error
+
+// WithImplantCallbackConfigOrder configures pagination ordering.
+func WithImplantCallbackConfigOrder(order *ImplantCallbackConfigOrder) ImplantCallbackConfigPaginateOption {
+	if order == nil {
+		order = DefaultImplantCallbackConfigOrder
+	}
+	o := *order
+	return func(pager *implantCallbackConfigPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultImplantCallbackConfigOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithImplantCallbackConfigFilter configures pagination filter.
+func WithImplantCallbackConfigFilter(filter func(*ImplantCallbackConfigQuery) (*ImplantCallbackConfigQuery, error)) ImplantCallbackConfigPaginateOption {
+	return func(pager *implantCallbackConfigPager) error {
+		if filter == nil {
+			return errors.New("ImplantCallbackConfigQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type implantCallbackConfigPager struct {
+	order  *ImplantCallbackConfigOrder
+	filter func(*ImplantCallbackConfigQuery) (*ImplantCallbackConfigQuery, error)
+}
+
+func newImplantCallbackConfigPager(opts []ImplantCallbackConfigPaginateOption) (*implantCallbackConfigPager, error) {
+	pager := &implantCallbackConfigPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultImplantCallbackConfigOrder
+	}
+	return pager, nil
+}
+
+func (p *implantCallbackConfigPager) applyFilter(query *ImplantCallbackConfigQuery) (*ImplantCallbackConfigQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *implantCallbackConfigPager) toCursor(icc *ImplantCallbackConfig) Cursor {
+	return p.order.Field.toCursor(icc)
+}
+
+func (p *implantCallbackConfigPager) applyCursors(query *ImplantCallbackConfigQuery, after, before *Cursor) *ImplantCallbackConfigQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultImplantCallbackConfigOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *implantCallbackConfigPager) applyOrder(query *ImplantCallbackConfigQuery, reverse bool) *ImplantCallbackConfigQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultImplantCallbackConfigOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultImplantCallbackConfigOrder.Field.field))
+	}
+	return query
+}
+
+// Paginate executes the query and returns a relay based cursor connection to ImplantCallbackConfig.
+func (icc *ImplantCallbackConfigQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ImplantCallbackConfigPaginateOption,
+) (*ImplantCallbackConfigConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newImplantCallbackConfigPager(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if icc, err = pager.applyFilter(icc); err != nil {
+		return nil, err
+	}
+
+	conn := &ImplantCallbackConfigConnection{Edges: []*ImplantCallbackConfigEdge{}}
+	if !hasCollectedField(ctx, edgesField) || first != nil && *first == 0 || last != nil && *last == 0 {
+		if hasCollectedField(ctx, totalCountField) ||
+			hasCollectedField(ctx, pageInfoField) {
+			count, err := icc.Count(ctx)
+			if err != nil {
+				return nil, err
+			}
+			conn.TotalCount = count
+			conn.PageInfo.HasNextPage = first != nil && count > 0
+			conn.PageInfo.HasPreviousPage = last != nil && count > 0
+		}
+		return conn, nil
+	}
+
+	if (after != nil || first != nil || before != nil || last != nil) && hasCollectedField(ctx, totalCountField) {
+		count, err := icc.Clone().Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		conn.TotalCount = count
+	}
+
+	icc = pager.applyCursors(icc, after, before)
+	icc = pager.applyOrder(icc, last != nil)
+	var limit int
+	if first != nil {
+		limit = *first + 1
+	} else if last != nil {
+		limit = *last + 1
+	}
+	if limit > 0 {
+		icc = icc.Limit(limit)
+	}
+
+	if field := getCollectedField(ctx, edgesField, nodeField); field != nil {
+		icc = icc.collectField(graphql.GetOperationContext(ctx), *field)
+	}
+
+	nodes, err := icc.All(ctx)
+	if err != nil || len(nodes) == 0 {
+		return conn, err
+	}
+
+	if len(nodes) == limit {
+		conn.PageInfo.HasNextPage = first != nil
+		conn.PageInfo.HasPreviousPage = last != nil
+		nodes = nodes[:len(nodes)-1]
+	}
+
+	var nodeAt func(int) *ImplantCallbackConfig
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *ImplantCallbackConfig {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *ImplantCallbackConfig {
+			return nodes[i]
+		}
+	}
+
+	conn.Edges = make([]*ImplantCallbackConfigEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		conn.Edges[i] = &ImplantCallbackConfigEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+
+	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
+	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+	if conn.TotalCount == 0 {
+		conn.TotalCount = len(nodes)
+	}
+
+	return conn, nil
+}
+
+// ImplantCallbackConfigOrderField defines the ordering field of ImplantCallbackConfig.
+type ImplantCallbackConfigOrderField struct {
+	field    string
+	toCursor func(*ImplantCallbackConfig) Cursor
+}
+
+// ImplantCallbackConfigOrder defines the ordering of ImplantCallbackConfig.
+type ImplantCallbackConfigOrder struct {
+	Direction OrderDirection                   `json:"direction"`
+	Field     *ImplantCallbackConfigOrderField `json:"field"`
+}
+
+// DefaultImplantCallbackConfigOrder is the default ordering of ImplantCallbackConfig.
+var DefaultImplantCallbackConfigOrder = &ImplantCallbackConfigOrder{
+	Direction: OrderDirectionAsc,
+	Field: &ImplantCallbackConfigOrderField{
+		field: implantcallbackconfig.FieldID,
+		toCursor: func(icc *ImplantCallbackConfig) Cursor {
+			return Cursor{ID: icc.ID}
+		},
+	},
+}
+
+// ToEdge converts ImplantCallbackConfig into ImplantCallbackConfigEdge.
+func (icc *ImplantCallbackConfig) ToEdge(order *ImplantCallbackConfigOrder) *ImplantCallbackConfigEdge {
+	if order == nil {
+		order = DefaultImplantCallbackConfigOrder
+	}
+	return &ImplantCallbackConfigEdge{
+		Node:   icc,
+		Cursor: order.Field.toCursor(icc),
+	}
+}
+
+// ImplantConfigEdge is the edge representation of ImplantConfig.
+type ImplantConfigEdge struct {
+	Node   *ImplantConfig `json:"node"`
+	Cursor Cursor         `json:"cursor"`
+}
+
+// ImplantConfigConnection is the connection containing edges to ImplantConfig.
+type ImplantConfigConnection struct {
+	Edges      []*ImplantConfigEdge `json:"edges"`
+	PageInfo   PageInfo             `json:"pageInfo"`
+	TotalCount int                  `json:"totalCount"`
+}
+
+// ImplantConfigPaginateOption enables pagination customization.
+type ImplantConfigPaginateOption func(*implantConfigPager) error
+
+// WithImplantConfigOrder configures pagination ordering.
+func WithImplantConfigOrder(order *ImplantConfigOrder) ImplantConfigPaginateOption {
+	if order == nil {
+		order = DefaultImplantConfigOrder
+	}
+	o := *order
+	return func(pager *implantConfigPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultImplantConfigOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithImplantConfigFilter configures pagination filter.
+func WithImplantConfigFilter(filter func(*ImplantConfigQuery) (*ImplantConfigQuery, error)) ImplantConfigPaginateOption {
+	return func(pager *implantConfigPager) error {
+		if filter == nil {
+			return errors.New("ImplantConfigQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type implantConfigPager struct {
+	order  *ImplantConfigOrder
+	filter func(*ImplantConfigQuery) (*ImplantConfigQuery, error)
+}
+
+func newImplantConfigPager(opts []ImplantConfigPaginateOption) (*implantConfigPager, error) {
+	pager := &implantConfigPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultImplantConfigOrder
+	}
+	return pager, nil
+}
+
+func (p *implantConfigPager) applyFilter(query *ImplantConfigQuery) (*ImplantConfigQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *implantConfigPager) toCursor(ic *ImplantConfig) Cursor {
+	return p.order.Field.toCursor(ic)
+}
+
+func (p *implantConfigPager) applyCursors(query *ImplantConfigQuery, after, before *Cursor) *ImplantConfigQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultImplantConfigOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *implantConfigPager) applyOrder(query *ImplantConfigQuery, reverse bool) *ImplantConfigQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultImplantConfigOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultImplantConfigOrder.Field.field))
+	}
+	return query
+}
+
+// Paginate executes the query and returns a relay based cursor connection to ImplantConfig.
+func (ic *ImplantConfigQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ImplantConfigPaginateOption,
+) (*ImplantConfigConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newImplantConfigPager(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if ic, err = pager.applyFilter(ic); err != nil {
+		return nil, err
+	}
+
+	conn := &ImplantConfigConnection{Edges: []*ImplantConfigEdge{}}
+	if !hasCollectedField(ctx, edgesField) || first != nil && *first == 0 || last != nil && *last == 0 {
+		if hasCollectedField(ctx, totalCountField) ||
+			hasCollectedField(ctx, pageInfoField) {
+			count, err := ic.Count(ctx)
+			if err != nil {
+				return nil, err
+			}
+			conn.TotalCount = count
+			conn.PageInfo.HasNextPage = first != nil && count > 0
+			conn.PageInfo.HasPreviousPage = last != nil && count > 0
+		}
+		return conn, nil
+	}
+
+	if (after != nil || first != nil || before != nil || last != nil) && hasCollectedField(ctx, totalCountField) {
+		count, err := ic.Clone().Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		conn.TotalCount = count
+	}
+
+	ic = pager.applyCursors(ic, after, before)
+	ic = pager.applyOrder(ic, last != nil)
+	var limit int
+	if first != nil {
+		limit = *first + 1
+	} else if last != nil {
+		limit = *last + 1
+	}
+	if limit > 0 {
+		ic = ic.Limit(limit)
+	}
+
+	if field := getCollectedField(ctx, edgesField, nodeField); field != nil {
+		ic = ic.collectField(graphql.GetOperationContext(ctx), *field)
+	}
+
+	nodes, err := ic.All(ctx)
+	if err != nil || len(nodes) == 0 {
+		return conn, err
+	}
+
+	if len(nodes) == limit {
+		conn.PageInfo.HasNextPage = first != nil
+		conn.PageInfo.HasPreviousPage = last != nil
+		nodes = nodes[:len(nodes)-1]
+	}
+
+	var nodeAt func(int) *ImplantConfig
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *ImplantConfig {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *ImplantConfig {
+			return nodes[i]
+		}
+	}
+
+	conn.Edges = make([]*ImplantConfigEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		conn.Edges[i] = &ImplantConfigEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+
+	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
+	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+	if conn.TotalCount == 0 {
+		conn.TotalCount = len(nodes)
+	}
+
+	return conn, nil
+}
+
+// ImplantConfigOrderField defines the ordering field of ImplantConfig.
+type ImplantConfigOrderField struct {
+	field    string
+	toCursor func(*ImplantConfig) Cursor
+}
+
+// ImplantConfigOrder defines the ordering of ImplantConfig.
+type ImplantConfigOrder struct {
+	Direction OrderDirection           `json:"direction"`
+	Field     *ImplantConfigOrderField `json:"field"`
+}
+
+// DefaultImplantConfigOrder is the default ordering of ImplantConfig.
+var DefaultImplantConfigOrder = &ImplantConfigOrder{
+	Direction: OrderDirectionAsc,
+	Field: &ImplantConfigOrderField{
+		field: implantconfig.FieldID,
+		toCursor: func(ic *ImplantConfig) Cursor {
+			return Cursor{ID: ic.ID}
+		},
+	},
+}
+
+// ToEdge converts ImplantConfig into ImplantConfigEdge.
+func (ic *ImplantConfig) ToEdge(order *ImplantConfigOrder) *ImplantConfigEdge {
+	if order == nil {
+		order = DefaultImplantConfigOrder
+	}
+	return &ImplantConfigEdge{
+		Node:   ic,
+		Cursor: order.Field.toCursor(ic),
+	}
+}
+
+// ImplantServiceConfigEdge is the edge representation of ImplantServiceConfig.
+type ImplantServiceConfigEdge struct {
+	Node   *ImplantServiceConfig `json:"node"`
+	Cursor Cursor                `json:"cursor"`
+}
+
+// ImplantServiceConfigConnection is the connection containing edges to ImplantServiceConfig.
+type ImplantServiceConfigConnection struct {
+	Edges      []*ImplantServiceConfigEdge `json:"edges"`
+	PageInfo   PageInfo                    `json:"pageInfo"`
+	TotalCount int                         `json:"totalCount"`
+}
+
+// ImplantServiceConfigPaginateOption enables pagination customization.
+type ImplantServiceConfigPaginateOption func(*implantServiceConfigPager) error
+
+// WithImplantServiceConfigOrder configures pagination ordering.
+func WithImplantServiceConfigOrder(order *ImplantServiceConfigOrder) ImplantServiceConfigPaginateOption {
+	if order == nil {
+		order = DefaultImplantServiceConfigOrder
+	}
+	o := *order
+	return func(pager *implantServiceConfigPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultImplantServiceConfigOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithImplantServiceConfigFilter configures pagination filter.
+func WithImplantServiceConfigFilter(filter func(*ImplantServiceConfigQuery) (*ImplantServiceConfigQuery, error)) ImplantServiceConfigPaginateOption {
+	return func(pager *implantServiceConfigPager) error {
+		if filter == nil {
+			return errors.New("ImplantServiceConfigQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type implantServiceConfigPager struct {
+	order  *ImplantServiceConfigOrder
+	filter func(*ImplantServiceConfigQuery) (*ImplantServiceConfigQuery, error)
+}
+
+func newImplantServiceConfigPager(opts []ImplantServiceConfigPaginateOption) (*implantServiceConfigPager, error) {
+	pager := &implantServiceConfigPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultImplantServiceConfigOrder
+	}
+	return pager, nil
+}
+
+func (p *implantServiceConfigPager) applyFilter(query *ImplantServiceConfigQuery) (*ImplantServiceConfigQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *implantServiceConfigPager) toCursor(isc *ImplantServiceConfig) Cursor {
+	return p.order.Field.toCursor(isc)
+}
+
+func (p *implantServiceConfigPager) applyCursors(query *ImplantServiceConfigQuery, after, before *Cursor) *ImplantServiceConfigQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultImplantServiceConfigOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *implantServiceConfigPager) applyOrder(query *ImplantServiceConfigQuery, reverse bool) *ImplantServiceConfigQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultImplantServiceConfigOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultImplantServiceConfigOrder.Field.field))
+	}
+	return query
+}
+
+// Paginate executes the query and returns a relay based cursor connection to ImplantServiceConfig.
+func (isc *ImplantServiceConfigQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ImplantServiceConfigPaginateOption,
+) (*ImplantServiceConfigConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newImplantServiceConfigPager(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if isc, err = pager.applyFilter(isc); err != nil {
+		return nil, err
+	}
+
+	conn := &ImplantServiceConfigConnection{Edges: []*ImplantServiceConfigEdge{}}
+	if !hasCollectedField(ctx, edgesField) || first != nil && *first == 0 || last != nil && *last == 0 {
+		if hasCollectedField(ctx, totalCountField) ||
+			hasCollectedField(ctx, pageInfoField) {
+			count, err := isc.Count(ctx)
+			if err != nil {
+				return nil, err
+			}
+			conn.TotalCount = count
+			conn.PageInfo.HasNextPage = first != nil && count > 0
+			conn.PageInfo.HasPreviousPage = last != nil && count > 0
+		}
+		return conn, nil
+	}
+
+	if (after != nil || first != nil || before != nil || last != nil) && hasCollectedField(ctx, totalCountField) {
+		count, err := isc.Clone().Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		conn.TotalCount = count
+	}
+
+	isc = pager.applyCursors(isc, after, before)
+	isc = pager.applyOrder(isc, last != nil)
+	var limit int
+	if first != nil {
+		limit = *first + 1
+	} else if last != nil {
+		limit = *last + 1
+	}
+	if limit > 0 {
+		isc = isc.Limit(limit)
+	}
+
+	if field := getCollectedField(ctx, edgesField, nodeField); field != nil {
+		isc = isc.collectField(graphql.GetOperationContext(ctx), *field)
+	}
+
+	nodes, err := isc.All(ctx)
+	if err != nil || len(nodes) == 0 {
+		return conn, err
+	}
+
+	if len(nodes) == limit {
+		conn.PageInfo.HasNextPage = first != nil
+		conn.PageInfo.HasPreviousPage = last != nil
+		nodes = nodes[:len(nodes)-1]
+	}
+
+	var nodeAt func(int) *ImplantServiceConfig
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *ImplantServiceConfig {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *ImplantServiceConfig {
+			return nodes[i]
+		}
+	}
+
+	conn.Edges = make([]*ImplantServiceConfigEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		conn.Edges[i] = &ImplantServiceConfigEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+
+	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
+	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+	if conn.TotalCount == 0 {
+		conn.TotalCount = len(nodes)
+	}
+
+	return conn, nil
+}
+
+// ImplantServiceConfigOrderField defines the ordering field of ImplantServiceConfig.
+type ImplantServiceConfigOrderField struct {
+	field    string
+	toCursor func(*ImplantServiceConfig) Cursor
+}
+
+// ImplantServiceConfigOrder defines the ordering of ImplantServiceConfig.
+type ImplantServiceConfigOrder struct {
+	Direction OrderDirection                  `json:"direction"`
+	Field     *ImplantServiceConfigOrderField `json:"field"`
+}
+
+// DefaultImplantServiceConfigOrder is the default ordering of ImplantServiceConfig.
+var DefaultImplantServiceConfigOrder = &ImplantServiceConfigOrder{
+	Direction: OrderDirectionAsc,
+	Field: &ImplantServiceConfigOrderField{
+		field: implantserviceconfig.FieldID,
+		toCursor: func(isc *ImplantServiceConfig) Cursor {
+			return Cursor{ID: isc.ID}
+		},
+	},
+}
+
+// ToEdge converts ImplantServiceConfig into ImplantServiceConfigEdge.
+func (isc *ImplantServiceConfig) ToEdge(order *ImplantServiceConfigOrder) *ImplantServiceConfigEdge {
+	if order == nil {
+		order = DefaultImplantServiceConfigOrder
+	}
+	return &ImplantServiceConfigEdge{
+		Node:   isc,
+		Cursor: order.Field.toCursor(isc),
 	}
 }
 

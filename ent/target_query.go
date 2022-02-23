@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/predicate"
 	"github.com/kcarretto/realm/ent/target"
 )
@@ -28,6 +29,7 @@ type TargetQuery struct {
 	predicates []predicate.Target
 	// eager-loading edges.
 	withCredentials *CredentialQuery
+	withImplants    *ImplantQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +81,28 @@ func (tq *TargetQuery) QueryCredentials() *CredentialQuery {
 			sqlgraph.From(target.Table, target.FieldID, selector),
 			sqlgraph.To(credential.Table, credential.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, target.CredentialsTable, target.CredentialsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryImplants chains the current query on the "implants" edge.
+func (tq *TargetQuery) QueryImplants() *ImplantQuery {
+	query := &ImplantQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, selector),
+			sqlgraph.To(implant.Table, implant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, target.ImplantsTable, target.ImplantsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,6 +292,7 @@ func (tq *TargetQuery) Clone() *TargetQuery {
 		order:           append([]OrderFunc{}, tq.order...),
 		predicates:      append([]predicate.Target{}, tq.predicates...),
 		withCredentials: tq.withCredentials.Clone(),
+		withImplants:    tq.withImplants.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -282,6 +307,17 @@ func (tq *TargetQuery) WithCredentials(opts ...func(*CredentialQuery)) *TargetQu
 		opt(query)
 	}
 	tq.withCredentials = query
+	return tq
+}
+
+// WithImplants tells the query-builder to eager-load the nodes that are connected to
+// the "implants" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TargetQuery) WithImplants(opts ...func(*ImplantQuery)) *TargetQuery {
+	query := &ImplantQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withImplants = query
 	return tq
 }
 
@@ -350,8 +386,9 @@ func (tq *TargetQuery) sqlAll(ctx context.Context) ([]*Target, error) {
 	var (
 		nodes       = []*Target{}
 		_spec       = tq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			tq.withCredentials != nil,
+			tq.withImplants != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -400,6 +437,35 @@ func (tq *TargetQuery) sqlAll(ctx context.Context) ([]*Target, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "target_credentials" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Credentials = append(node.Edges.Credentials, n)
+		}
+	}
+
+	if query := tq.withImplants; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Target)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Implants = []*Implant{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Implant(func(s *sql.Selector) {
+			s.Where(sql.InValues(target.ImplantsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.implant_target
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "implant_target" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "implant_target" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Implants = append(node.Edges.Implants, n)
 		}
 	}
 

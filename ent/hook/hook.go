@@ -35,6 +35,58 @@ func (f FileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return f(ctx, mv)
 }
 
+// The ImplantFunc type is an adapter to allow the use of ordinary
+// function as Implant mutator.
+type ImplantFunc func(context.Context, *ent.ImplantMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ImplantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ImplantMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ImplantMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ImplantCallbackConfigFunc type is an adapter to allow the use of ordinary
+// function as ImplantCallbackConfig mutator.
+type ImplantCallbackConfigFunc func(context.Context, *ent.ImplantCallbackConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ImplantCallbackConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ImplantCallbackConfigMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ImplantCallbackConfigMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ImplantConfigFunc type is an adapter to allow the use of ordinary
+// function as ImplantConfig mutator.
+type ImplantConfigFunc func(context.Context, *ent.ImplantConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ImplantConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ImplantConfigMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ImplantConfigMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ImplantServiceConfigFunc type is an adapter to allow the use of ordinary
+// function as ImplantServiceConfig mutator.
+type ImplantServiceConfigFunc func(context.Context, *ent.ImplantServiceConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ImplantServiceConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ImplantServiceConfigMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ImplantServiceConfigMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The TargetFunc type is an adapter to allow the use of ordinary
 // function as Target mutator.
 type TargetFunc func(context.Context, *ent.TargetMutation) (ent.Value, error)

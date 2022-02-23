@@ -41,6 +41,54 @@ func (f *FileQuery) collectField(ctx *graphql.OperationContext, field graphql.Co
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (i *ImplantQuery) CollectFields(ctx context.Context, satisfies ...string) *ImplantQuery {
+	if fc := graphql.GetFieldContext(ctx); fc != nil {
+		i = i.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
+	}
+	return i
+}
+
+func (i *ImplantQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *ImplantQuery {
+	return i
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (icc *ImplantCallbackConfigQuery) CollectFields(ctx context.Context, satisfies ...string) *ImplantCallbackConfigQuery {
+	if fc := graphql.GetFieldContext(ctx); fc != nil {
+		icc = icc.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
+	}
+	return icc
+}
+
+func (icc *ImplantCallbackConfigQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *ImplantCallbackConfigQuery {
+	return icc
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (ic *ImplantConfigQuery) CollectFields(ctx context.Context, satisfies ...string) *ImplantConfigQuery {
+	if fc := graphql.GetFieldContext(ctx); fc != nil {
+		ic = ic.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
+	}
+	return ic
+}
+
+func (ic *ImplantConfigQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *ImplantConfigQuery {
+	return ic
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (isc *ImplantServiceConfigQuery) CollectFields(ctx context.Context, satisfies ...string) *ImplantServiceConfigQuery {
+	if fc := graphql.GetFieldContext(ctx); fc != nil {
+		isc = isc.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
+	}
+	return isc
+}
+
+func (isc *ImplantServiceConfigQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *ImplantServiceConfigQuery {
+	return isc
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (t *TargetQuery) CollectFields(ctx context.Context, satisfies ...string) *TargetQuery {
 	if fc := graphql.GetFieldContext(ctx); fc != nil {
 		t = t.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)

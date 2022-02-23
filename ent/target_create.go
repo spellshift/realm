@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -45,6 +46,21 @@ func (tc *TargetCreate) AddCredentials(c ...*Credential) *TargetCreate {
 		ids[i] = c[i].ID
 	}
 	return tc.AddCredentialIDs(ids...)
+}
+
+// AddImplantIDs adds the "implants" edge to the Implant entity by IDs.
+func (tc *TargetCreate) AddImplantIDs(ids ...int) *TargetCreate {
+	tc.mutation.AddImplantIDs(ids...)
+	return tc
+}
+
+// AddImplants adds the "implants" edges to the Implant entity.
+func (tc *TargetCreate) AddImplants(i ...*Implant) *TargetCreate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tc.AddImplantIDs(ids...)
 }
 
 // Mutation returns the TargetMutation object of the builder.
@@ -187,6 +203,25 @@ func (tc *TargetCreate) createSpec() (*Target, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: credential.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ImplantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.ImplantsTable,
+			Columns: []string{target.ImplantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: implant.FieldID,
 				},
 			},
 		}

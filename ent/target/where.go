@@ -355,6 +355,34 @@ func HasCredentialsWith(preds ...predicate.Credential) predicate.Target {
 	})
 }
 
+// HasImplants applies the HasEdge predicate on the "implants" edge.
+func HasImplants() predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ImplantsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, ImplantsTable, ImplantsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasImplantsWith applies the HasEdge predicate on the "implants" edge with a given conditions (other predicates).
+func HasImplantsWith(preds ...predicate.Implant) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ImplantsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, ImplantsTable, ImplantsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Target) predicate.Target {
 	return predicate.Target(func(s *sql.Selector) {
