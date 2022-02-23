@@ -1,7 +1,7 @@
 extern crate imix;
 extern crate eldritch;
 
-use clap::{App, arg};
+use clap::{Command, arg};
 use std::fs::File;
 use std::path::Path;
 
@@ -38,7 +38,7 @@ async fn run(config_path: String) -> Result<(), imix::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), imix::Error> {
-    let matches = App::new("imix")
+    let matches = Command::new("imix")
         .arg(
             arg!(
                 -c --config <FILE> "Sets a custom config file"
@@ -46,7 +46,7 @@ async fn main() -> Result<(), imix::Error> {
             .required(false)
         )
         .subcommand(
-            App::new("install")
+            Command::new("install")
                 .about("Run in install mode")
                 .arg(
                     arg!(
