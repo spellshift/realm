@@ -1,4 +1,5 @@
 extern crate imix;
+extern crate eldritch;
 
 use clap::{App, arg};
 use std::fs::File;
