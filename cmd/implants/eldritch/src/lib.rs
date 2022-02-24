@@ -12,6 +12,7 @@ mod tests {
     use super::process::ProcessLibrary;
     use super::sys::SysLibrary;
 
+    // just checks dir...
     #[test]
     fn test_library_bindings() {
         #[starlark_module]
