@@ -40,13 +40,8 @@
 
 	// SPEEEEEEED
 	"mounts": [
-<<<<<<< HEAD
 		"source=realm-cmd-implants-eldritch-target,target=${containerWorkspaceFolder}/cmd/implants/eldritch/target,type=volume",
 		"source=realm-cmd-implants-eldritch-target,target=${containerWorkspaceFolder}/cmd/implants/imix/target,type=volume",
 		"source=realm-cmd-implants-target,target=${containerWorkspaceFolder}/cmd/implants/target,type=volume"
-=======
-    		"source=realm-cmd-implants-eldritch-target,target=${containerWorkspaceFolder}/cmd/implants/eldritch/target,type=volume",
-			"source=realm-cmd-implants-target,target=${containerWorkspaceFolder}/cmd/implants/target,type=volume"
->>>>>>> gett the initial starlark setup
 	]
 }
