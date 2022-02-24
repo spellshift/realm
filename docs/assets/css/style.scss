@@ -1,8 +1,10 @@
-div.shell{
+---
+---
+
+@import "{{ site.theme }}";
+
+div.contentShell{
     display:block;
     width:920px;
     margin:0 auto
 }
-
-
-@import "{{ site.theme }}";
