@@ -53,7 +53,7 @@
     =============================================== */
 
     $('body').scrollspy({
-        target: '.docs-sidebar'
+        target: '.page-sidebar'
     });
 
     $('[data-spy="scroll"]').each(function () {
@@ -73,8 +73,8 @@
     VIDEO FIX -->
     =============================================== */
 
-    $('.docs-sidebar>nav>li>a').click(function() {
-        $('.docs-sidebar>nav>li').removeClass('active');
+    $('.page-sidebar>nav>li>a').click(function() {
+        $('.page-sidebar>nav>li').removeClass('active');
         $(this).parent().addClass('active');
     });
 

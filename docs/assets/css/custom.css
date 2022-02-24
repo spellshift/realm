@@ -17,7 +17,7 @@ html.dark hr {
     border-color: #111;
 }
 
-html.dark .docs-sidebar .nav>li>a {
+html.dark .site-sidebar .nav>li>a {
     color: #eee;
 }
 
@@ -186,7 +186,7 @@ html #mode .dark {
 }
 
 /* hover links */ 
-.docs-sidebar .nav>li:not(.active)>a:hover {
+.site-sidebar .nav>li:not(.active)>a:hover {
     color: #0E97EE;
     text-decoration: none;
     background-color: transparent;
@@ -231,7 +231,7 @@ html #mode .dark {
 /* SITE SIDEBAR */
 
 @media (min-width: 768px) {
-    .docs-sidebar {
+    .site-sidebar {
         padding-top: 20px;
         padding-left: 20px
     }
@@ -239,7 +239,7 @@ html #mode .dark {
 
 
 /* all links */
-.docs-sidebar .nav>li>a {
+.site-sidebar .nav>li>a {
     color: #111;
     border-left: 2px solid transparent;
     padding: 0 20px;
@@ -248,19 +248,19 @@ html #mode .dark {
 }
 
 /* nested links */
-.docs-sidebar .nav .nav>li>a {
+.site-sidebar .nav .nav>li>a {
     padding-left: 40px;
     font-size: 18px;
 }
 
 /* doubly nested links */
-.docs-sidebar .nav .nav .nav>li>a {
+.site-sidebar .nav .nav .nav>li>a {
     padding-left: 80px;
     font-size: 14px;
 }
 
 /* hover links */ 
-.docs-sidebar .nav>li:not(.active)>a:hover {
+.site-sidebar .nav>li:not(.active)>a:hover {
     color: #0E97EE;
     text-decoration: none;
     background-color: transparent;
@@ -268,36 +268,36 @@ html #mode .dark {
     border-left-color: #0E97EE;
 }
 /* focus links */
-.docs-sidebar .nav>li>a:focus {
+.site-sidebar .nav>li>a:focus {
     text-decoration: none;
     background-color: transparent;
 }
 /* active links */
-.docs-sidebar .nav>.active>a {
+.site-sidebar .nav>.active>a {
     color: #0E97EE;
     text-decoration: none;
     background-color: transparent;
     border-left-color: #0E97EE;
 }
 /* all active links */
-.docs-sidebar .nav>.active>a, 
-.docs-sidebar .nav>.active:hover>a,
-.docs-sidebar .nav>.active:focus>a {
+.site-sidebar .nav>.active>a, 
+.site-sidebar .nav>.active:hover>a,
+.site-sidebar .nav>.active:focus>a {
     font-weight: 700;
 }
 /* nested active links */
-.docs-sidebar .nav .nav>.active>a, 
-.docs-sidebar .nav .nav>.active:hover>a,
-.docs-sidebar .nav .nav>.active:focus>a {
+.site-sidebar .nav .nav>.active>a, 
+.site-sidebar .nav .nav>.active:hover>a,
+.site-sidebar .nav .nav>.active:focus>a {
     font-weight: 500;
 }
 
 @media (min-width: 992px) {
-    .docs-sidebar .nav ul {
+    .site-sidebar .nav ul {
         display: none;
         padding-bottom: 10px;
     }
-    .docs-sidebar .nav>.active>ul {
+    .site-sidebar .nav>.active>ul {
         display: block
     }
 }
