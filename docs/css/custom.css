@@ -169,13 +169,19 @@ html #mode .dark {
     color: #111;
     border-left: 2px solid transparent;
     padding: 0 20px;
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 400;
 }
 
 /* nested links */
 .docs-sidebar .nav .nav>li>a {
     padding-left: 40px;
+    font-size: 18px;
+}
+
+/* doubly nested links */
+.docs-sidebar .nav .nav .nav>li>a {
+    padding-left: 80px;
     font-size: 14px;
 }
 
