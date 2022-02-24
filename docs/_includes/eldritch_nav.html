@@ -1,0 +1,20 @@
+<nav class="page-sidebar" data-spy="affix" data-offset-top="300" data-offset-bottom="200" role="navigation">
+    <ul class="nav">
+    {% for item in site.data.eldritch_nav %}
+    <li><a href="#{{ item.link }}">{{ item.name }}</a></li>
+        {% if item.subnav %}
+        <ul class="nav">
+        {% for subitem in item.subnav %}
+            <li><a href="#{{ subitem.link }}">{{ subitem.name }}</a></li>
+            {% if subitem.subnav %}
+            <ul class="nav">
+                {% for subsubitem in subitem.subnav %}
+                    <li><a href="#{{ subsubitem.link }}">{{ subsubitem.name }}</a></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </ul>
+        {% endif %}
+    {% endfor %}
+    </ul>
+</nav >
