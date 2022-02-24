@@ -21,6 +21,10 @@ html.dark .site-sidebar .nav>li>a {
     color: #eee;
 }
 
+html.dark .page-sidebar .nav>li>a {
+    color: #eee;
+}
+
 html.dark .dark-text hr {
     border-color: #fcfcfc;
 }
@@ -186,7 +190,7 @@ html #mode .dark {
 }
 
 /* hover links */ 
-.site-sidebar .nav>li:not(.active)>a:hover {
+.page-sidebar .nav>li:not(.active)>a:hover {
     color: #0E97EE;
     text-decoration: none;
     background-color: transparent;
