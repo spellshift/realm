@@ -68,18 +68,18 @@
         link: stdlib_sys
         content: The Sys Library is very cool, and will be even cooler when Nick documents it.
         subnav:
-        - name: "sys.exec(path: str, args: List<str>, ?disown: bool) -> str"
-          link: stdlib_sys_exec
-          content: The <b>sys.exec</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "sys.is_linux() -> bool"
-          link: stdlib_sys_is_linux
-          content: The <b>sys.is_linux</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "sys.is_windows() -> bool"
-          link: stdlib_sys_is_windows
-          content: The <b>sys.is_windows</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "sys.shell(cmd: str) -> str"
-          link: stdlib_sys_shell
-          content: The <b>sys.shell</b> method is very cool, and will be even cooler when Nick documents it.
+          - name: "sys.exec(path: str, args: List<str>, ?disown: bool) -> str"
+            link: stdlib_sys_exec
+            content: The <b>sys.exec</b> method is very cool, and will be even cooler when Nick documents it.
+          - name: "sys.is_linux() -> bool"
+            link: stdlib_sys_is_linux
+            content: The <b>sys.is_linux</b> method is very cool, and will be even cooler when Nick documents it.
+          - name: "sys.is_windows() -> bool"
+            link: stdlib_sys_is_windows
+            content: The <b>sys.is_windows</b> method is very cool, and will be even cooler when Nick documents it.
+          - name: "sys.shell(cmd: str) -> str"
+            link: stdlib_sys_shell
+            content: The <b>sys.shell</b> method is very cool, and will be even cooler when Nick documents it.
 
 - name: Dev Docs
   link: dev
