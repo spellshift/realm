@@ -1,14 +1,14 @@
 <nav class="page-sidebar" data-spy="affix" data-offset-top="300" data-offset-bottom="200" role="navigation">
     <ul class="nav">
     {% for item in site.data.eldritch_nav %}
-    <li><a href="#{{ item.link }}">{{ item.name }}</a></li>
+    <li><a href="#{{ item.link }}">{{ item.name }}</a>
        
         {% if item.subnav != nil %}
             <ul class="nav">
             
             
             {% for subitem in item.subnav %}
-                <li><a href="#{{ subitem.link }}">{{ subitem.name }}</a></li>
+                <li><a href="#{{ subitem.link }}">{{ subitem.name }}</a>
                 {% if subitem.subnav != nil %}
                     <ul class="nav">
                     {% for subsubitem in subitem.subnav %}
@@ -16,11 +16,13 @@
                     {% endfor %}
                     </ul>
                 {% endif %}
+                </li>
             {% endfor %}
 
     
             </ul>
         {% endif %}
+    </li>
     {% endfor %}
     </ul>
 </nav >
