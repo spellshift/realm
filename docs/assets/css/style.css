@@ -202,7 +202,11 @@ strong {
 .grey {
     background-color: #f3f3f3;
 }
-
+.big-title{
+    display: flex;
+    flex: row;
+    gap: 1em;
+}
 .big-title h1 {
     font-size: 48px;
     font-weight: 300;
