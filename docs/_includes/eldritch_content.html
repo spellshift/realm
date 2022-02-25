@@ -2,7 +2,7 @@
 {% for item in site.data.eldritch_nav %}
     <div class="row">
         <div class="col-md-12">
-            <h2 id="{{ item.link }}">{{ item.name }}</h2>
+            <h1 id="{{ item.link }}">{{ item.name }}<hr/></h1>
         </div>
         <!-- end col -->
     </div>
@@ -21,7 +21,7 @@
     {% for subitem in item.subnav %}
         <div class="row">
             <div class="col-md-12">
-                <h3 id="{{ subitem.link }}">{{ subitem.name }}</h3>
+                <h2 id="{{ subitem.link }}">{{ subitem.name }}</h2>
             </div>
             <!-- end col -->
         </div>
@@ -40,7 +40,7 @@
         {% for subsubitem in subitem.subnav %}
             <div class="row">
                 <div class="col-md-12">
-                    <h4 id="{{ subsubitem.link }}">{{ subsubitem.name }}</h4>
+                    <b id="{{ subsubitem.link }}">{{ subsubitem.name }}</b>
                 </div>
                 <!-- end col -->
             </div>
