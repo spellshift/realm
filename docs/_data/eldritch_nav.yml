@@ -9,77 +9,98 @@
       link: stdlib_file
       content: The File Library is very cool, and will be even cooler when Nick documents it.
       subnav:
-        - name: "file.append(path: str, content: str) -> None"
+        - name: "file.append"
+          signature: "file.append(path: str, content: str) -> None"
           link: stdlib_file_append
           content: The <b>file.append</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.copy(src: str, dst: str) -> None"
+        - name: "file.copy"
+          signature: "file.copy(src: str, dst: str) -> None"
           link: stdlib_file_copy
           content: The <b>file.copy</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.download(uri: str, dst: str) -> None"
+        - name: "file.download"
+          signature: "file.download(uri: str, dst: str) -> None"
           link: stdlib_file_download
           content: The <b>file.download</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.exists(path: str) -> bool"
+        - name: "file.exists"
+          signature: "file.exists(path: str) -> bool"
           link: stdlib_file_exists
           content: The <b>file.exists</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.hash(path: str) -> str"
+        - name: "file.hash"
+          signature: "file.hash(path: str) -> str"
           link: stdlib_file_hash
           content: The <b>file.hash</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.is_dir(path: str) -> bool"
+        - name: "file.is_dir"
+          signature: "file.is_dir(path: str) -> bool"
           link: stdlib_file_is_dir
           content: The <b>file.is_dir</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.mkdir(path: str) -> None"
+        - name: "file.mkdir"
+          signature: "file.mkdir(path: str) -> None"
           link: stdlib_file_mkdir
           content: The <b>file.mkdir</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.read(path: str) -> str"
+        - name: "file.read"
+          signature: "file.read(path: str) -> str"
           link: stdlib_file_read
           content: The <b>file.read</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.remove(path: str) -> None"
+        - name: "file.remove"
+          signature: "file.remove(path: str) -> None"
           link: stdlib_file_remove
           content: The <b>file.remove</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.rename(src: str, dst: str) -> None"
+        - name: "file.rename"
+          signature: "file.rename(src: str, dst: str) -> None"
           link: stdlib_file_rename
           content: The <b>file.rename</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.replace(path: str, pattern: str, value: str) -> None"
+        - name: "file.replace"
+          signature: "file.replace(path: str, pattern: str, value: str) -> None"
           link: stdlib_file_replace
           content: The <b>file.replace</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.replace_all(path: str, pattern: str, value: str) -> None"
+        - name: "file.replace_all"
+          signature: "file.replace_all(path: str, pattern: str, value: str) -> None"
           link: stdlib_file_replace_all
           content: The <b>file.replace_all</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.timestomp(src: str, dst: str) -> None"
+        - name: "file.timestomp"
+          signature: "file.timestomp(src: str, dst: str) -> None"
           link: stdlib_file_timestomp
           content: The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "file.write(path: str, content: str) -> None"
+        - name: "file.write"
+          signature: "file.write(path: str, content: str) -> None"
           link: stdlib_file_write
           content: The <b>file.write</b> method is very cool, and will be even cooler when Nick documents it.
-      - name: Process Library
-        link: stdlib_process
-        content: The Process Library is very cool, and will be even cooler when Nick documents it.
-        subnav:
-        - name: "process.kill(pid: int) -> None"
-          link: stdlib_process_kill
-          content: The <b>process.kill</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "process.list() -> List<int>"
-          link: stdlib_process_list
-          content: The <b>process.list</b> method is very cool, and will be even cooler when Nick documents it.
-        - name: "process.name(pid: int) -> str"
-          link: stdlib_process_name
-          content: The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
-      - name: Sys Library
-        link: stdlib_sys
-        content: The Sys Library is very cool, and will be even cooler when Nick documents it.
-        subnav:
-          - name: "sys.exec(path: str, args: List<str>, ?disown: bool) -> str"
-            link: stdlib_sys_exec
-            content: The <b>sys.exec</b> method is very cool, and will be even cooler when Nick documents it.
-          - name: "sys.is_linux() -> bool"
-            link: stdlib_sys_is_linux
-            content: The <b>sys.is_linux</b> method is very cool, and will be even cooler when Nick documents it.
-          - name: "sys.is_windows() -> bool"
-            link: stdlib_sys_is_windows
-            content: The <b>sys.is_windows</b> method is very cool, and will be even cooler when Nick documents it.
-          - name: "sys.shell(cmd: str) -> str"
-            link: stdlib_sys_shell
-            content: The <b>sys.shell</b> method is very cool, and will be even cooler when Nick documents it.
+    - name: Process Library
+      link: stdlib_process
+      content: The Process Library is very cool, and will be even cooler when Nick documents it.
+      subnav:
+      - name: "process.kill"
+        signature: "process.kill(pid: int) -> None"
+        link: stdlib_process_kill
+        content: The <b>process.kill</b> method is very cool, and will be even cooler when Nick documents it.
+      - name: "process.list"
+        signature: "process.list() -> List<int>"
+        link: stdlib_process_list
+        content: The <b>process.list</b> method is very cool, and will be even cooler when Nick documents it.
+      - name: "process.name"
+        signature: "process.name(pid: int) -> str"
+        link: stdlib_process_name
+        content: The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
+    - name: Sys Library
+      link: stdlib_sys
+      content: The Sys Library is very cool, and will be even cooler when Nick documents it.
+      subnav:
+        - name: "sys.exec"
+          signature: "sys.exec(path: str, args: List<str>, ?disown: bool) -> str"
+          link: stdlib_sys_exec
+          content: The <b>sys.exec</b> method is very cool, and will be even cooler when Nick documents it.
+        - name: "sys.is_linux"
+          signature: "sys.is_linux() -> bool"
+          link: stdlib_sys_is_linux
+          content: The <b>sys.is_linux</b> method is very cool, and will be even cooler when Nick documents it.
+        - name: "sys.is_windows"
+          signature: "sys.is_windows() -> bool"
+          link: stdlib_sys_is_windows
+          content: The <b>sys.is_windows</b> method is very cool, and will be even cooler when Nick documents it.
+        - name: "sys.shell"
+          signature: "sys.shell(cmd: str) -> str"
+          link: stdlib_sys_shell
+          content: The <b>sys.shell</b> method is very cool, and will be even cooler when Nick documents it.
 
 - name: Dev Docs
   link: dev

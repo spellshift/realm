@@ -1,3 +1,7 @@
 # Ruby
 Gemfile
 Gemfile.lock
+
+# Jekyll
+.jekyll-cache
+_site
