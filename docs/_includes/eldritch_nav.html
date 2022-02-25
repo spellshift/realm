@@ -8,7 +8,7 @@
             
             
             {% for subitem in item.subnav %}
-                <li><a href="#{{ subitem.link }}">{{ subitem.name }}</a>
+                <li><a href="#{{ subitem.link }}" >{{ subitem.name }}</a>
                 {% if subitem.subnav != nil %}
                     <ul class="nav">
                     {% for subsubitem in subitem.subnav %}
