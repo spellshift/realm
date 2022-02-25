@@ -205,7 +205,13 @@ strong {
 .big-title{
     display: flex;
     flex: row;
-    gap: 1em;
+    gap: 1vw;
+    align-items: center;
+}
+.big-title-text{
+    display: flex;
+    flex: column;
+    gap:1vw;
 }
 .big-title h1 {
     font-size: 48px;
