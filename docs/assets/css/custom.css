@@ -37,6 +37,10 @@ html.dark .intro1 {
     background-color: #0c0c0c;
 }
 
+html.dark .code {
+    background-color: #0c0c0c;
+}
+
 html.dark .intro1 a {
     color: #F16811 !important;
 }
