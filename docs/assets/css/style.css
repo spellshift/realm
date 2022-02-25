@@ -202,15 +202,21 @@ strong {
 .grey {
     background-color: #f3f3f3;
 }
+.big-center-title{
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    justify-content: center;
+}
 .big-title{
     display: flex;
-    flex: row;
+    flex-direction: row;
     gap: 1vw;
     align-items: center;
 }
 .big-title-text{
     display: flex;
-    flex: column;
+    flex-direction: column;
     gap:1vw;
 }
 .big-title h1 {
