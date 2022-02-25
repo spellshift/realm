@@ -6,6 +6,7 @@
         </div>
         <!-- end col -->
     </div>
+    {% if item.content != nil %}
     <!-- end row -->
     <div class="row">
         <div class="col-md-12">
@@ -14,6 +15,7 @@
         <!-- end col -->
     </div>
     <!-- end row -->
+    {% endif %}
        
     {% if item.subnav != nil %}
     {% for subitem in item.subnav %}
@@ -24,6 +26,7 @@
             <!-- end col -->
         </div>
         <!-- end row -->
+        {% if subitem.content != nil %}
         <div class="row">
             <div class="col-md-12">
                 <p>{{ subitem.content }}</p>
@@ -31,6 +34,7 @@
             <!-- end col -->
         </div>
         <!-- end row -->
+        {% endif %}
 
         {% if subitem.subnav != nil %}
         {% for subsubitem in subitem.subnav %}
@@ -41,12 +45,14 @@
                 <!-- end col -->
             </div>
             <!-- end row -->
+            {% if subsubitem.content != nil %}
             <div class="row">
                 <div class="col-md-12">
                     <p>{{ subsubitem.content }}</p>
                 </div>
                 <!-- end col -->
             </div>
+            {% endif %}
             <!-- end row -->
         {% endfor %}
         {% endif %}
