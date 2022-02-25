@@ -1,0 +1,56 @@
+<section id="docs" class="section">
+{% for item in site.data.eldritch_nav %}
+    <div class="row">
+        <div class="col-md-12">
+            <h2 id="{{ item.link }}">{{ item.name }}</h2>
+        </div>
+        <!-- end col -->
+    </div>
+    <!-- end row -->
+    <div class="row">
+        <div class="col-md-12">
+            <p>{{ item.content }}</p>
+        </div>
+        <!-- end col -->
+    </div>
+    <!-- end row -->
+       
+    {% if item.subnav != nil %}
+    {% for subitem in item.subnav %}
+        <div class="row">
+            <div class="col-md-12">
+                <h2 id="{{ subitem.link }}">{{ subitem.name }}</h2>
+            </div>
+            <!-- end col -->
+        </div>
+        <!-- end row -->
+        <div class="row">
+            <div class="col-md-12">
+                <p>{{ subitem.content }}</p>
+            </div>
+            <!-- end col -->
+        </div>
+        <!-- end row -->
+
+        {% if subitem.subnav != nil %}
+        {% for subsubitem in subitem.subnav %}
+            <div class="row">
+                <div class="col-md-12">
+                    <h2 id="{{ subsubitem.link }}">{{ subsubitem.name }}</h2>
+                </div>
+                <!-- end col -->
+            </div>
+            <!-- end row -->
+            <div class="row">
+                <div class="col-md-12">
+                    <p>{{ subsubitem.content }}</p>
+                </div>
+                <!-- end col -->
+            </div>
+            <!-- end row -->
+        {% endfor %}
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+{% endfor %}
+</section>

@@ -1,13 +1,18 @@
 - name: Overview
   link: overview
+  content: Eldritch is a Pythonic-DSL for Red Team Implants. 
 - name: Standard Library
   link: stdlib
+  content: The Standard Library is very cool, and will be even cooler when Nick documents it.
   subnav: 
     - name: File Library
       link: stdlib_file
+      content: The File Library is very cool, and will be even cooler when Nick documents it.
       subnav:
         - name: "file.append(path: str, content: str) -> None"
           link: stdlib_file_append
-- name: Developer Documentation
+          content: The file.append method is very cool, and will be even cooler when Nick documents it.
+- name: Dev Docs
   link: dev
+  content: I'm sure Nick would love help developing the language, but until he finishes this documentation he probably won't receive any.
       
