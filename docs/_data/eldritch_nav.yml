@@ -11,7 +11,7 @@
       subnav:
         - name: "file.append(path: str, content: str) -> None"
           link: stdlib_file_append
-          content: The <b>file.append</b><script>alert(1)</script> method is very cool, and will be even cooler when Nick documents it.
+          content: The <b>file.append</b> method is very cool, and will be even cooler when Nick documents it.
 - name: Dev Docs
   link: dev
   content: I'm sure Nick would love help developing the language, but until he finishes this documentation he probably won't receive any.
