@@ -21,7 +21,7 @@
     {% for subitem in item.subnav %}
         <div class="row">
             <div class="col-md-12">
-                <h2 id="{{ subitem.link }}">{{ subitem.name }}</h2>
+                <h3 id="{{ subitem.link }}">{{ subitem.name }}</h3>
             </div>
             <!-- end col -->
         </div>
@@ -40,7 +40,7 @@
         {% for subsubitem in subitem.subnav %}
             <div class="row">
                 <div class="col-md-12">
-                    <h2 id="{{ subsubitem.link }}">{{ subsubitem.name }}</h2>
+                    <h4 id="{{ subsubitem.link }}">{{ subsubitem.name }}</h4>
                 </div>
                 <!-- end col -->
             </div>
