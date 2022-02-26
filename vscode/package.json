@@ -1,0 +1,103 @@
+{
+    "name": "eldritch",
+    "description": "An Eldritch language server",
+    "author": "realm",
+    "license": "GNU GPL v3.0",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/kcarretto/realm"
+    },
+    "publisher": "realm",
+    "categories": [],
+    "keywords": [
+        "eldritch",
+        "implant",
+        "red team"
+    ],
+    "engines": {
+        "vscode": "^1.43.0"
+    },
+    "activationEvents": [
+        "onLanguage:eldritch"
+    ],
+    "main": "./client/out/extension",
+    "contributes": {
+        "languages": [
+            {
+                "id": "eldritch",
+                "aliases": [
+                    "Eldritch",
+                    "eldritch"
+                ],
+                "extensions": [
+                    ".tome"
+                ],
+                "filenames": [],
+                "configuration": "./syntaxes/eldritch.configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "eldritch",
+                "scopeName": "source.eldritch",
+                "path": "./syntaxes/eldritch.tmLanguage.json"
+            }
+        ],
+        "breakpoints": [
+            {
+                "language": "eldritch"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "eldritch",
+                "label": "Eldritch Debug",
+                "program": "/usr/bin/env",
+                "args": [
+                    "eldritchlang",
+                    "--dap"
+                ],
+                "languages": [
+                    "eldritch"
+                ],
+                "configurationAttributes": {
+                    "launch": {
+                        "properties": {
+                            "program": {
+                                "type": "string",
+                                "description": "The program to debug.",
+                                "default": "${file}"
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "eldritch",
+                        "request": "launch",
+                        "name": "Launch Program",
+                        "program": "${file}"
+                    }
+                ]
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -b",
+        "watch": "tsc -b -w",
+        "postinstall": "cd client && npm install && cd .."
+    },
+    "devDependencies": {
+        "@types/mocha": "^9.0.0",
+        "@types/node": "^16.10.2",
+        "@typescript-eslint/parser": "^4.32.0",
+        "eslint": "^7.32.0",
+        "mocha": "^9.0.0",
+        "typescript": "^4.4.3"
+    },
+    "dependencies": {
+        "vsce": "^2.6.7"
+    }
+}
