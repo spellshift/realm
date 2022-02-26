@@ -1,6 +1,6 @@
-mod file;
-mod process;
-mod sys;
+pub mod file;
+pub mod process;
+pub mod sys;
 
 #[cfg(test)]
 mod tests {

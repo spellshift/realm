@@ -356,8 +356,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
-name = "eldritch-lang"
+name = "eldritch"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "derive_more",
+ "starlark",
+]
+
+[[package]]
+name = "eldritch-lang"
+version = "0.0.2"
 dependencies = [
  "annotate-snippets",
  "anyhow",
@@ -368,6 +377,7 @@ dependencies = [
  "derivative",
  "derive_more",
  "either",
+ "eldritch",
  "fnv",
  "gazebo 0.5.0",
  "gazebo_lint",

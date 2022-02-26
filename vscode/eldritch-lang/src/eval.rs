@@ -6,9 +6,15 @@ use std::{
 use gazebo::prelude::*;
 use itertools::Either;
 use starlark::{
-    environment::{FrozenModule, Globals, Module},
+    starlark_module,
+    environment::{FrozenModule, Globals, GlobalsBuilder, Module},
     eval::Evaluator,
     syntax::{AstModule, Dialect},
+};
+use eldritch::{
+    file::FileLibrary,
+    process::ProcessLibrary,
+    sys::SysLibrary,
 };
 
 use crate::types::Message;
@@ -31,6 +37,7 @@ impl Context {
         module: bool,
     ) -> anyhow::Result<Self> {
         let globals = globals();
+
         let prelude = prelude.try_map(|x| {
             let env = Module::new();
 
@@ -157,7 +164,14 @@ impl Context {
 }
 
 pub fn globals() -> Globals {
-    Globals::extended()
+    #[starlark_module]
+    fn stdlib(builder: &mut GlobalsBuilder) {
+        const file: FileLibrary = FileLibrary();
+        const process: ProcessLibrary = ProcessLibrary();
+        const sys: SysLibrary = SysLibrary();
+    }
+
+    GlobalsBuilder::new().with(stdlib).build()
 }
 
 pub fn dialect() -> Dialect {
