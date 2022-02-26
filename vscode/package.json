@@ -3,7 +3,8 @@
     "description": "An Eldritch language server",
     "author": "realm",
     "license": "GNU GPL v3.0",
-    "version": "0.0.1",
+    "version": "0.0.3",
+	"icon": "images/eldritch.png",
     "repository": {
         "type": "git",
         "url": "https://github.com/kcarretto/realm"
@@ -11,21 +12,29 @@
     "publisher": "realm",
     "categories": [],
     "keywords": [
+        "Eldritch",
         "eldritch",
         "implant",
         "red team"
     ],
     "engines": {
         "vscode": "^1.43.0"
-    },
+    }, 
     "activationEvents": [
-        "onLanguage:eldritch"
+        "onLanguage:eldritch",
+        "workspaceContains:*.tome",
+        "workspaceContains:*/*.tome",
+        "workspaceContains:*/*/*.tome"
     ],
     "main": "./client/out/extension",
     "contributes": {
         "languages": [
             {
                 "id": "eldritch",
+                "icon": {
+	                "light": "client/src/images/eldritch.png",
+	                "dark": "client/src/images/eldritch.png"
+                },
                 "aliases": [
                     "Eldritch",
                     "eldritch"
@@ -47,39 +56,6 @@
         "breakpoints": [
             {
                 "language": "eldritch"
-            }
-        ],
-        "debuggers": [
-            {
-                "type": "eldritch",
-                "label": "Eldritch Debug",
-                "program": "/usr/bin/env",
-                "args": [
-                    "eldritchlang",
-                    "--dap"
-                ],
-                "languages": [
-                    "eldritch"
-                ],
-                "configurationAttributes": {
-                    "launch": {
-                        "properties": {
-                            "program": {
-                                "type": "string",
-                                "description": "The program to debug.",
-                                "default": "${file}"
-                            }
-                        }
-                    }
-                },
-                "initialConfigurations": [
-                    {
-                        "type": "eldritch",
-                        "request": "launch",
-                        "name": "Launch Program",
-                        "program": "${file}"
-                    }
-                ]
             }
         ]
     },

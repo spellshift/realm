@@ -1,5 +1,4 @@
 //! Based on the reference lsp-server example at <https://github.com/rust-analyzer/lsp-server/blob/master/examples/goto_def.rs>.
-
 use lsp_server::{Connection, Message, Notification};
 use lsp_types::{
     notification::{
@@ -17,6 +16,8 @@ use crate::{
     eval::Context,
     types::{Message as StarlarkMessage, Severity},
 };
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 struct Backend {
     connection: Connection,
@@ -61,6 +62,7 @@ impl Backend {
     }
 
     fn validate(&self, uri: Url, version: Option<i64>, text: String) {
+        self.log_message(MessageType::Info, format!("Validating: {}", uri.path()).as_str());
         let diags = self
             .starlark
             .file_with_contents(&uri.to_string(), text)
@@ -115,7 +117,7 @@ impl Backend {
     }
 
     fn main_loop(&self, _params: InitializeParams) -> anyhow::Result<()> {
-        self.log_message(MessageType::Info, "Starlark server initialised");
+        self.log_message(MessageType::Info, "Eldritch Language Server Initialised");
         for msg in &self.connection.receiver {
             match msg {
                 Message::Request(req) => {
@@ -144,7 +146,7 @@ impl Backend {
 
 pub fn server(starlark: Context) -> anyhow::Result<()> {
     // Note that  we must have our logging only write out to stderr.
-    eprintln!("Starting Rust Starlark server");
+    eprintln!("Starting Eldritch Language Server v{v}", v=VERSION);
 
     let (connection, io_threads) = Connection::stdio();
     // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
@@ -158,7 +160,7 @@ pub fn server(starlark: Context) -> anyhow::Result<()> {
     .main_loop(initialization_params)?;
     io_threads.join()?;
 
-    eprintln!("Stopping Rust Starlark server");
+    eprintln!("Stopping Eldritch Language Server v{v}", v=VERSION);
     Ok(())
 }
 

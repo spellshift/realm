@@ -1,7 +1,7 @@
 [package]
 name = "eldritch-lang"
 edition = "2021"
-version = "0.1.0"
+version = "0.0.2"
 license = "GNU GPL v3.0"
 description = "Eldritch Language Server."
 documentation = "https://docs.realm.pub/eldritch"
@@ -17,6 +17,7 @@ categories = ["parser-implementations", "development-tools"]
 lalrpop = "0.19"
 
 [dependencies]
+eldritch = { path = "../../cmd/implants/eldritch" }
 annotate-snippets = { version = "0.9.0", features = ["color"] }
 anyhow = "1.0.51"
 derivative = "2.1.1"

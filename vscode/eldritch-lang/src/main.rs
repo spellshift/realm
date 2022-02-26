@@ -26,8 +26,8 @@ mod types;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
-    name = "starlark",
-    about = "Evaluate Starlark code",
+    name = "eldritch-lang",
+    about = "Evaluate Eldritch tomes",
     global_settings(&[AppSettings::ColoredHelp]),
 )]
 pub struct Args {
@@ -189,7 +189,7 @@ fn main() -> anyhow::Result<()> {
     let ext = args
         .extension
         .as_ref()
-        .map_or("bzl", |x| x.as_str())
+        .map_or("tome", |x| x.as_str())
         .trim_start_match('.');
     let mut ctx = Context::new(
         args.check,
