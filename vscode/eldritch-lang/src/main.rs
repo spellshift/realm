@@ -2,13 +2,13 @@
 #![feature(box_syntax)]
 //
 // Plugins
-#![cfg_attr(feature = "gazebo_linter", feature(plugin))]
-#![cfg_attr(feature = "gazebo_linter", allow(deprecated))] // :(
-#![cfg_attr(feature = "gazebo_linter", plugin(gazebo_lint))]
+#![cfg_attr(feature = "custom_linter", feature(plugin))]
+#![cfg_attr(feature = "custom_linter", allow(deprecated))] // :(
+#![cfg_attr(feature = "custom_linter", plugin(gazebo_lint))]
 // Disagree these are good hints
 #![allow(clippy::type_complexity)]
 
-use std::{ffi::OsStr, fmt, fmt::Display, path::PathBuf, sync::Arc};
+use std::{ffi::OsStr, fmt, fmt::Display, fs, path::PathBuf, sync::Arc};
 
 use anyhow::anyhow;
 use eval::Context;
@@ -20,7 +20,6 @@ use walkdir::WalkDir;
 
 use crate::types::{LintMessage, Message, Severity};
 
-mod dap;
 mod eval;
 mod lsp;
 mod types;
@@ -42,9 +41,6 @@ pub struct Args {
 
     #[structopt(long = "lsp", help = "Start an LSP server.")]
     lsp: bool,
-
-    #[structopt(long = "dap", help = "Start a DAP server.")]
-    dap: bool,
 
     #[structopt(long = "check", help = "Run checks and lints.")]
     check: bool,
@@ -80,7 +76,27 @@ pub struct Args {
     evaluate: Vec<String>,
 
     #[structopt(name = "FILE", help = "Files to evaluate.")]
-    files: Vec<PathBuf>,
+    // String instead of PathBuf so we can expand @file things
+    files: Vec<String>,
+}
+
+// We'd really like clap to deal with args-files, but it doesn't yet
+// Waiting on: https://github.com/clap-rs/clap/issues/1693.
+// This is a minimal version to make basic @file options work.
+fn expand_args(args: Vec<String>) -> anyhow::Result<Vec<PathBuf>> {
+    let mut res = Vec::with_capacity(args.len());
+    for x in args {
+        match x.strip_prefix('@') {
+            None => res.push(PathBuf::from(x)),
+            Some(x) => {
+                let src = fs::read_to_string(x)?;
+                for x in src.lines() {
+                    res.push(PathBuf::from(x));
+                }
+            }
+        }
+    }
+    Ok(res)
 }
 
 // Treat directories as things to recursively walk for .<extension> files,
@@ -169,10 +185,7 @@ fn interactive(ctx: &Context) -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()> {
-    gazebo::terminate_on_panic();
-
-    let args = argfile::expand_args(argfile::parse_fromfile, argfile::PREFIX)?;
-    let args = Args::from_iter(args);
+    let args = Args::from_args();
     let ext = args
         .extension
         .as_ref()
@@ -193,7 +206,7 @@ fn main() -> anyhow::Result<()> {
             drain(ctx.expression(e), args.json, &mut stats);
         }
 
-        for file in expand_dirs(ext, args.files.clone()) {
+        for file in expand_dirs(ext, expand_args(args.files.clone())?) {
             stats.increment_file();
             drain(ctx.file(&file), args.json, &mut stats);
         }
@@ -208,8 +221,6 @@ fn main() -> anyhow::Result<()> {
         ctx.info = false;
         ctx.run = false;
         lsp::server(ctx)?;
-    } else if args.dap {
-        dap::server()
     }
 
     if !args.json {
