@@ -1,10 +1,10 @@
 # Build 
 ```
 cd ./cmd/implants/eldritch/
-crago build
+cargo build
 ```
 # Test 
 ```
 cd ./cmd/implants/eldritch/
-crago test
+cargo test
 ```
