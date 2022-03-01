@@ -48,6 +48,8 @@ mod tests {
             // Last line so just break.
             break;
         }
+        let _rmfileres = remove_file(String::from("/tmp/win"));
+
     
     }
 }
