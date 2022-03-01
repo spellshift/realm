@@ -16,7 +16,7 @@
         - name: "file.copy"
           signature: "file.copy(src: str, dst: str) -> None"
           link: stdlib_file_copy
-          content: The <b>file.copy</b> method is very cool, and will be even cooler when Nick documents it.
+          content: The <b>file.copy</b> copies a file from src path to dst path. If dst path doesn't exist it will be created.
         - name: "file.download"
           signature: "file.download(uri: str, dst: str) -> None"
           link: stdlib_file_download
