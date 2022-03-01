@@ -12,7 +12,7 @@
         - name: "file.append"
           signature: "file.append(path: str, content: str) -> None"
           link: stdlib_file_append
-          content: The <b>file.append</b> Append content str to file at path. If no file exists at path create the file with the contents <b>content</b>
+          content: The <b>file.append</b> Append content str to file at path. If no file exists at path create the file with the contents content.
         - name: "file.copy"
           signature: "file.copy(src: str, dst: str) -> None"
           link: stdlib_file_copy
