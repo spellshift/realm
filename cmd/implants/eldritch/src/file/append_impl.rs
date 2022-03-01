@@ -50,14 +50,9 @@ mod tests {
     #[test]
     fn test_append_existing() -> anyhow::Result<()> {
         //Remove the test file
-        let remove_res = remove_file(String::from("/tmp/win"));
-        match remove_res {
-            Ok(_res) => {
-                let mut file = File::create("/tmp/win")?;
-                file.write_all(b"Hello, world!\n")?;
-            },
-            Err(_) => {}
-        }
+        let _remove_res = remove_file(String::from("/tmp/win"));
+        let mut file = File::create("/tmp/win").unwrap();
+        file.write_all(b"Hello, world!\n")?;
 
         // Run  our code
         append(String::from("/tmp/win"), String::from("Hi2!"))?;
