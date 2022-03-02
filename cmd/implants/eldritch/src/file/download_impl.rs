@@ -8,14 +8,15 @@ pub fn download(uri: String, dst: String) -> Result<()> {
     //TODO: Configure proxy.
     //TODO: Configure header settings.
 
-    // Do this first in case the dest file fails.
-
+    // Setup vars.
     let mut response = Vec::new();
     let mut easy = Easy::new();
+    // Setup requset.
     easy.url(&uri).unwrap();
     let _redirect = easy.follow_location(true);
 
     {
+        // Download data to response vector.
         let mut transfer = easy.transfer();
         transfer.write_function(|data| {
             response.extend_from_slice(data);
@@ -24,6 +25,7 @@ pub fn download(uri: String, dst: String) -> Result<()> {
         transfer.perform().unwrap();
     }
     {
+        // Write response vector to file dst.
         let mut file = std::fs::File::create(dst)?;
         file.write_all(response.as_slice())?;
     }
