@@ -24,7 +24,7 @@
         - name: "file.exists"
           signature: "file.exists(path: str) -> bool"
           link: stdlib_file_exists
-          content: The <b>file.exists</b> method is very cool, and will be even cooler when Nick documents it.
+          content: The <b>file.exists</b> checks if a file or directory exists at the path specified.
         - name: "file.hash"
           signature: "file.hash(path: str) -> str"
           link: stdlib_file_hash
