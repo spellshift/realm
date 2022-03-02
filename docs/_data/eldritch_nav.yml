@@ -20,7 +20,7 @@
         - name: "file.download"
           signature: "file.download(uri: str, dst: str) -> None"
           link: stdlib_file_download
-          content: The <b>file.download</b> method is very cool, and will be even cooler when Nick documents it.
+          content: The <b>file.download</b> will download a file using HTTP, HTTPS, or FTP from the uri source to the dst file path. Redirects will be followed, and the dst file will be overwritten if it already existis.
         - name: "file.exists"
           signature: "file.exists(path: str) -> bool"
           link: stdlib_file_exists

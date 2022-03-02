@@ -7,3 +7,6 @@ edition = "2021"
 starlark = "0.6.0"
 anyhow = "1.0.55"
 derive_more = "0.99.17"
+curl = { version = "0.4.42", features = ["protocol-ftp"] }
+sha256 = "1.0.3"
+url = "2.2.2"

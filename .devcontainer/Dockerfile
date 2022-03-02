@@ -27,6 +27,9 @@ RUN bash /tmp/library-scripts/go-debian.sh "none" "/usr/local/go" "${GOPATH}" "$
 # Install Rust tools
 RUN bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "${USERNAME}" "true" "true" \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+# Install Rust dependenciest
+RUN apt-get update -y && apt-get install -y pkg-config libssl-dev
+
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
 ARG NODE_VERSION="lts/*"
