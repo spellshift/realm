@@ -18,6 +18,9 @@ type ImplantCallbackConfig struct {
 	// URI holds the value of the "uri" field.
 	// URI the implant should use for checking in.
 	URI string `json:"uri,omitempty"`
+	// ProxyURI holds the value of the "proxyURI" field.
+	// Proxy URI the implant should use for checking in.
+	ProxyURI string `json:"proxyURI,omitempty"`
 	// Priority holds the value of the "priority" field.
 	// The priority of using this callback config (lower is better).
 	Priority int `json:"priority,omitempty"`
@@ -60,7 +63,7 @@ func (*ImplantCallbackConfig) scanValues(columns []string) ([]interface{}, error
 		switch columns[i] {
 		case implantcallbackconfig.FieldID, implantcallbackconfig.FieldPriority, implantcallbackconfig.FieldTimeout, implantcallbackconfig.FieldInterval, implantcallbackconfig.FieldJitter:
 			values[i] = new(sql.NullInt64)
-		case implantcallbackconfig.FieldURI:
+		case implantcallbackconfig.FieldURI, implantcallbackconfig.FieldProxyURI:
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type ImplantCallbackConfig", columns[i])
@@ -88,6 +91,12 @@ func (icc *ImplantCallbackConfig) assignValues(columns []string, values []interf
 				return fmt.Errorf("unexpected type %T for field uri", values[i])
 			} else if value.Valid {
 				icc.URI = value.String
+			}
+		case implantcallbackconfig.FieldProxyURI:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field proxyURI", values[i])
+			} else if value.Valid {
+				icc.ProxyURI = value.String
 			}
 		case implantcallbackconfig.FieldPriority:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -148,6 +157,8 @@ func (icc *ImplantCallbackConfig) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", icc.ID))
 	builder.WriteString(", uri=")
 	builder.WriteString(icc.URI)
+	builder.WriteString(", proxyURI=")
+	builder.WriteString(icc.ProxyURI)
 	builder.WriteString(", priority=")
 	builder.WriteString(fmt.Sprintf("%v", icc.Priority))
 	builder.WriteString(", timeout=")

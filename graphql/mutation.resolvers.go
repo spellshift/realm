@@ -62,6 +62,17 @@ func (r *mutationResolver) Callback(ctx context.Context, info CallbackInput) (*C
 	return &resp, nil
 }
 
+func (r *mutationResolver) CreateImplantCallbackConfig(ctx context.Context, config CreateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error) {
+	return r.client.ImplantCallbackConfig.Create().
+		SetURI(config.URI).
+		SetNillableProxyURI(config.ProxyURI).
+		SetNillablePriority(config.Priority).
+		SetNillableTimeout(config.Timeout).
+		SetNillableInterval(config.Interval).
+		SetNillableJitter(config.Jitter).
+		Save(ctx)
+}
+
 func (r *mutationResolver) CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error) {
 	return r.client.Target.Create().
 		SetName(target.Name).

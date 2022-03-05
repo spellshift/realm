@@ -17,6 +17,9 @@ func (ImplantCallbackConfig) Fields() []ent.Field {
 		field.String("uri").
 			NotEmpty().
 			Comment("URI the implant should use for checking in."),
+		field.String("proxyURI").
+			Optional().
+			Comment("Proxy URI the implant should use for checking in."),
 		field.Int("priority").
 			Default(10).
 			Min(0).

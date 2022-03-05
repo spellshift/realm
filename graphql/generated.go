@@ -102,6 +102,7 @@ type ComplexityRoot struct {
 		Interval func(childComplexity int) int
 		Jitter   func(childComplexity int) int
 		Priority func(childComplexity int) int
+		ProxyURI func(childComplexity int) int
 		Timeout  func(childComplexity int) int
 		URI      func(childComplexity int) int
 	}
@@ -122,9 +123,10 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Callback         func(childComplexity int, info CallbackInput) int
-		CreateCredential func(childComplexity int, credential CreateCredentialInput) int
-		CreateTarget     func(childComplexity int, target CreateTargetInput) int
+		Callback                    func(childComplexity int, info CallbackInput) int
+		CreateCredential            func(childComplexity int, credential CreateCredentialInput) int
+		CreateImplantCallbackConfig func(childComplexity int, config CreateImplantCallbackConfigInput) int
+		CreateTarget                func(childComplexity int, target CreateTargetInput) int
 	}
 
 	PageInfo struct {
@@ -163,6 +165,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	Callback(ctx context.Context, info CallbackInput) (*CallbackResponse, error)
+	CreateImplantCallbackConfig(ctx context.Context, config CreateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error)
 	CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error)
 	CreateCredential(ctx context.Context, credential CreateCredentialInput) (*ent.Credential, error)
 }
@@ -406,6 +409,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ImplantCallbackConfig.Priority(childComplexity), true
 
+	case "ImplantCallbackConfig.proxyURI":
+		if e.complexity.ImplantCallbackConfig.ProxyURI == nil {
+			break
+		}
+
+		return e.complexity.ImplantCallbackConfig.ProxyURI(childComplexity), true
+
 	case "ImplantCallbackConfig.timeout":
 		if e.complexity.ImplantCallbackConfig.Timeout == nil {
 			break
@@ -506,6 +516,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateCredential(childComplexity, args["credential"].(CreateCredentialInput)), true
+
+	case "Mutation.createImplantCallbackConfig":
+		if e.complexity.Mutation.CreateImplantCallbackConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createImplantCallbackConfig_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateImplantCallbackConfig(childComplexity, args["config"].(CreateImplantCallbackConfigInput)), true
 
 	case "Mutation.createTarget":
 		if e.complexity.Mutation.CreateTarget == nil {
@@ -771,6 +793,7 @@ type Query {
 
 type Mutation {
   callback(info: CallbackInput!): CallbackResponse!
+  createImplantCallbackConfig(config: CreateImplantCallbackConfigInput!): ImplantCallbackConfig!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
 }
@@ -780,6 +803,15 @@ input CallbackInput {
   sessionID: String!
   configName: String!
   processName: String!
+}
+
+input CreateImplantCallbackConfigInput {
+    uri: String!
+    proxyURI: String
+    priority: Int
+    timeout: Int
+    interval: Int
+    jitter: Int
 }
 
 input CreateTargetInput {
@@ -902,6 +934,7 @@ type TargetConnection {
 	{Name: "schema/implant.graphql", Input: `type ImplantCallbackConfig implements Node {
     id: ID!
     uri: String!
+    proxyURI: String
     priority: Int!
     timeout: Int!
     interval: Int!
@@ -1218,6 +1251,23 @@ input ImplantCallbackConfigWhereInput {
   uriEqualFold: String
   uriContainsFold: String
   
+  """proxyURI field predicates"""
+  proxyuri: String
+  proxyuriNEQ: String
+  proxyuriIn: [String!]
+  proxyuriNotIn: [String!]
+  proxyuriGT: String
+  proxyuriGTE: String
+  proxyuriLT: String
+  proxyuriLTE: String
+  proxyuriContains: String
+  proxyuriHasPrefix: String
+  proxyuriHasSuffix: String
+  proxyuriIsNil: Boolean
+  proxyuriNotNil: Boolean
+  proxyuriEqualFold: String
+  proxyuriContainsFold: String
+  
   """priority field predicates"""
   priority: Int
   priorityNEQ: Int
@@ -1438,6 +1488,21 @@ func (ec *executionContext) field_Mutation_createCredential_args(ctx context.Con
 		}
 	}
 	args["credential"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createImplantCallbackConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 CreateImplantCallbackConfigInput
+	if tmp, ok := rawArgs["config"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
+		arg0, err = ec.unmarshalNCreateImplantCallbackConfigInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateImplantCallbackConfigInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["config"] = arg0
 	return args, nil
 }
 
@@ -2719,6 +2784,38 @@ func (ec *executionContext) _ImplantCallbackConfig_uri(ctx context.Context, fiel
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ImplantCallbackConfig_proxyURI(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantCallbackConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ImplantCallbackConfig",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProxyURI, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ImplantCallbackConfig_priority(ctx context.Context, field graphql.CollectedField, obj *ent.ImplantCallbackConfig) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3208,6 +3305,48 @@ func (ec *executionContext) _Mutation_callback(ctx context.Context, field graphq
 	res := resTmp.(*CallbackResponse)
 	fc.Result = res
 	return ec.marshalNCallbackResponse2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCallbackResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createImplantCallbackConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createImplantCallbackConfig_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateImplantCallbackConfig(rctx, args["config"].(CreateImplantCallbackConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.ImplantCallbackConfig)
+	fc.Result = res
+	return ec.marshalNImplantCallbackConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createTarget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5219,6 +5358,69 @@ func (ec *executionContext) unmarshalInputCreateCredentialInput(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateImplantCallbackConfigInput(ctx context.Context, obj interface{}) (CreateImplantCallbackConfigInput, error) {
+	var it CreateImplantCallbackConfigInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "uri":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uri"))
+			it.URI, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyURI":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyURI"))
+			it.ProxyURI, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "priority":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priority"))
+			it.Priority, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "timeout":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timeout"))
+			it.Timeout, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "interval":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
+			it.Interval, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "jitter":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jitter"))
+			it.Jitter, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateTargetInput(ctx context.Context, obj interface{}) (CreateTargetInput, error) {
 	var it CreateTargetInput
 	asMap := map[string]interface{}{}
@@ -6308,6 +6510,126 @@ func (ec *executionContext) unmarshalInputImplantCallbackConfigWhereInput(ctx co
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uriContainsFold"))
 			it.URIContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuri":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuri"))
+			it.ProxyURI, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriNEQ"))
+			it.ProxyURINEQ, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriIn"))
+			it.ProxyURIIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriNotIn"))
+			it.ProxyURINotIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriGT"))
+			it.ProxyURIGT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriGTE"))
+			it.ProxyURIGTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriLT"))
+			it.ProxyURILT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriLTE"))
+			it.ProxyURILTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriContains":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriContains"))
+			it.ProxyURIContains, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriHasPrefix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriHasPrefix"))
+			it.ProxyURIHasPrefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriHasSuffix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriHasSuffix"))
+			it.ProxyURIHasSuffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriIsNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriIsNil"))
+			it.ProxyURIIsNil, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriNotNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriNotNil"))
+			it.ProxyURINotNil, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriEqualFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriEqualFold"))
+			it.ProxyURIEqualFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "proxyuriContainsFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proxyuriContainsFold"))
+			it.ProxyURIContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8711,6 +9033,13 @@ func (ec *executionContext) _ImplantCallbackConfig(ctx context.Context, sel ast.
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "proxyURI":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ImplantCallbackConfig_proxyURI(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		case "priority":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._ImplantCallbackConfig_priority(ctx, field, obj)
@@ -8930,6 +9259,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "callback":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_callback(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createImplantCallbackConfig":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createImplantCallbackConfig(ctx, field)
 			}
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
@@ -9772,6 +10111,11 @@ func (ec *executionContext) unmarshalNCreateCredentialInput2githubᚗcomᚋkcarr
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateImplantCallbackConfigInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateImplantCallbackConfigInput(ctx context.Context, v interface{}) (CreateImplantCallbackConfigInput, error) {
+	res, err := ec.unmarshalInputCreateImplantCallbackConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateTargetInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateTargetInput(ctx context.Context, v interface{}) (CreateTargetInput, error) {
 	res, err := ec.unmarshalInputCreateTargetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9876,6 +10220,10 @@ func (ec *executionContext) marshalNImplant2ᚖgithubᚗcomᚋkcarrettoᚋrealm�
 		return graphql.Null
 	}
 	return ec._Implant(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNImplantCallbackConfig2githubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfig(ctx context.Context, sel ast.SelectionSet, v ent.ImplantCallbackConfig) graphql.Marshaler {
+	return ec._ImplantCallbackConfig(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNImplantCallbackConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfig(ctx context.Context, sel ast.SelectionSet, v *ent.ImplantCallbackConfig) graphql.Marshaler {

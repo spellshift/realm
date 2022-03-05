@@ -26,6 +26,20 @@ func (iccc *ImplantCallbackConfigCreate) SetURI(s string) *ImplantCallbackConfig
 	return iccc
 }
 
+// SetProxyURI sets the "proxyURI" field.
+func (iccc *ImplantCallbackConfigCreate) SetProxyURI(s string) *ImplantCallbackConfigCreate {
+	iccc.mutation.SetProxyURI(s)
+	return iccc
+}
+
+// SetNillableProxyURI sets the "proxyURI" field if the given value is not nil.
+func (iccc *ImplantCallbackConfigCreate) SetNillableProxyURI(s *string) *ImplantCallbackConfigCreate {
+	if s != nil {
+		iccc.SetProxyURI(*s)
+	}
+	return iccc
+}
+
 // SetPriority sets the "priority" field.
 func (iccc *ImplantCallbackConfigCreate) SetPriority(i int) *ImplantCallbackConfigCreate {
 	iccc.mutation.SetPriority(i)
@@ -262,6 +276,14 @@ func (iccc *ImplantCallbackConfigCreate) createSpec() (*ImplantCallbackConfig, *
 			Column: implantcallbackconfig.FieldURI,
 		})
 		_node.URI = value
+	}
+	if value, ok := iccc.mutation.ProxyURI(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: implantcallbackconfig.FieldProxyURI,
+		})
+		_node.ProxyURI = value
 	}
 	if value, ok := iccc.mutation.Priority(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

@@ -78,6 +78,7 @@ var (
 	ImplantCallbackConfigsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "uri", Type: field.TypeString},
+		{Name: "proxy_uri", Type: field.TypeString, Nullable: true},
 		{Name: "priority", Type: field.TypeInt, Default: 10},
 		{Name: "timeout", Type: field.TypeInt, Default: 5},
 		{Name: "interval", Type: field.TypeInt, Default: 60},

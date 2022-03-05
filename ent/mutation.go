@@ -1666,6 +1666,7 @@ type ImplantCallbackConfigMutation struct {
 	typ                   string
 	id                    *int
 	uri                   *string
+	proxyURI              *string
 	priority              *int
 	addpriority           *int
 	timeout               *int
@@ -1815,6 +1816,55 @@ func (m *ImplantCallbackConfigMutation) OldURI(ctx context.Context) (v string, e
 // ResetURI resets all changes to the "uri" field.
 func (m *ImplantCallbackConfigMutation) ResetURI() {
 	m.uri = nil
+}
+
+// SetProxyURI sets the "proxyURI" field.
+func (m *ImplantCallbackConfigMutation) SetProxyURI(s string) {
+	m.proxyURI = &s
+}
+
+// ProxyURI returns the value of the "proxyURI" field in the mutation.
+func (m *ImplantCallbackConfigMutation) ProxyURI() (r string, exists bool) {
+	v := m.proxyURI
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProxyURI returns the old "proxyURI" field's value of the ImplantCallbackConfig entity.
+// If the ImplantCallbackConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImplantCallbackConfigMutation) OldProxyURI(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProxyURI is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProxyURI requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProxyURI: %w", err)
+	}
+	return oldValue.ProxyURI, nil
+}
+
+// ClearProxyURI clears the value of the "proxyURI" field.
+func (m *ImplantCallbackConfigMutation) ClearProxyURI() {
+	m.proxyURI = nil
+	m.clearedFields[implantcallbackconfig.FieldProxyURI] = struct{}{}
+}
+
+// ProxyURICleared returns if the "proxyURI" field was cleared in this mutation.
+func (m *ImplantCallbackConfigMutation) ProxyURICleared() bool {
+	_, ok := m.clearedFields[implantcallbackconfig.FieldProxyURI]
+	return ok
+}
+
+// ResetProxyURI resets all changes to the "proxyURI" field.
+func (m *ImplantCallbackConfigMutation) ResetProxyURI() {
+	m.proxyURI = nil
+	delete(m.clearedFields, implantcallbackconfig.FieldProxyURI)
 }
 
 // SetPriority sets the "priority" field.
@@ -2114,9 +2164,12 @@ func (m *ImplantCallbackConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ImplantCallbackConfigMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.uri != nil {
 		fields = append(fields, implantcallbackconfig.FieldURI)
+	}
+	if m.proxyURI != nil {
+		fields = append(fields, implantcallbackconfig.FieldProxyURI)
 	}
 	if m.priority != nil {
 		fields = append(fields, implantcallbackconfig.FieldPriority)
@@ -2140,6 +2193,8 @@ func (m *ImplantCallbackConfigMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case implantcallbackconfig.FieldURI:
 		return m.URI()
+	case implantcallbackconfig.FieldProxyURI:
+		return m.ProxyURI()
 	case implantcallbackconfig.FieldPriority:
 		return m.Priority()
 	case implantcallbackconfig.FieldTimeout:
@@ -2159,6 +2214,8 @@ func (m *ImplantCallbackConfigMutation) OldField(ctx context.Context, name strin
 	switch name {
 	case implantcallbackconfig.FieldURI:
 		return m.OldURI(ctx)
+	case implantcallbackconfig.FieldProxyURI:
+		return m.OldProxyURI(ctx)
 	case implantcallbackconfig.FieldPriority:
 		return m.OldPriority(ctx)
 	case implantcallbackconfig.FieldTimeout:
@@ -2182,6 +2239,13 @@ func (m *ImplantCallbackConfigMutation) SetField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetURI(v)
+		return nil
+	case implantcallbackconfig.FieldProxyURI:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProxyURI(v)
 		return nil
 	case implantcallbackconfig.FieldPriority:
 		v, ok := value.(int)
@@ -2291,7 +2355,11 @@ func (m *ImplantCallbackConfigMutation) AddField(name string, value ent.Value) e
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ImplantCallbackConfigMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(implantcallbackconfig.FieldProxyURI) {
+		fields = append(fields, implantcallbackconfig.FieldProxyURI)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2304,6 +2372,11 @@ func (m *ImplantCallbackConfigMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ImplantCallbackConfigMutation) ClearField(name string) error {
+	switch name {
+	case implantcallbackconfig.FieldProxyURI:
+		m.ClearProxyURI()
+		return nil
+	}
 	return fmt.Errorf("unknown ImplantCallbackConfig nullable field %s", name)
 }
 
@@ -2313,6 +2386,9 @@ func (m *ImplantCallbackConfigMutation) ResetField(name string) error {
 	switch name {
 	case implantcallbackconfig.FieldURI:
 		m.ResetURI()
+		return nil
+	case implantcallbackconfig.FieldProxyURI:
+		m.ResetProxyURI()
 		return nil
 	case implantcallbackconfig.FieldPriority:
 		m.ResetPriority()

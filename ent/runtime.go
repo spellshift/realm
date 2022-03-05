@@ -76,25 +76,25 @@ func init() {
 	// implantcallbackconfig.URIValidator is a validator for the "uri" field. It is called by the builders before save.
 	implantcallbackconfig.URIValidator = implantcallbackconfigDescURI.Validators[0].(func(string) error)
 	// implantcallbackconfigDescPriority is the schema descriptor for priority field.
-	implantcallbackconfigDescPriority := implantcallbackconfigFields[1].Descriptor()
+	implantcallbackconfigDescPriority := implantcallbackconfigFields[2].Descriptor()
 	// implantcallbackconfig.DefaultPriority holds the default value on creation for the priority field.
 	implantcallbackconfig.DefaultPriority = implantcallbackconfigDescPriority.Default.(int)
 	// implantcallbackconfig.PriorityValidator is a validator for the "priority" field. It is called by the builders before save.
 	implantcallbackconfig.PriorityValidator = implantcallbackconfigDescPriority.Validators[0].(func(int) error)
 	// implantcallbackconfigDescTimeout is the schema descriptor for timeout field.
-	implantcallbackconfigDescTimeout := implantcallbackconfigFields[2].Descriptor()
+	implantcallbackconfigDescTimeout := implantcallbackconfigFields[3].Descriptor()
 	// implantcallbackconfig.DefaultTimeout holds the default value on creation for the timeout field.
 	implantcallbackconfig.DefaultTimeout = implantcallbackconfigDescTimeout.Default.(int)
 	// implantcallbackconfig.TimeoutValidator is a validator for the "timeout" field. It is called by the builders before save.
 	implantcallbackconfig.TimeoutValidator = implantcallbackconfigDescTimeout.Validators[0].(func(int) error)
 	// implantcallbackconfigDescInterval is the schema descriptor for interval field.
-	implantcallbackconfigDescInterval := implantcallbackconfigFields[3].Descriptor()
+	implantcallbackconfigDescInterval := implantcallbackconfigFields[4].Descriptor()
 	// implantcallbackconfig.DefaultInterval holds the default value on creation for the interval field.
 	implantcallbackconfig.DefaultInterval = implantcallbackconfigDescInterval.Default.(int)
 	// implantcallbackconfig.IntervalValidator is a validator for the "interval" field. It is called by the builders before save.
 	implantcallbackconfig.IntervalValidator = implantcallbackconfigDescInterval.Validators[0].(func(int) error)
 	// implantcallbackconfigDescJitter is the schema descriptor for jitter field.
-	implantcallbackconfigDescJitter := implantcallbackconfigFields[4].Descriptor()
+	implantcallbackconfigDescJitter := implantcallbackconfigFields[5].Descriptor()
 	// implantcallbackconfig.DefaultJitter holds the default value on creation for the jitter field.
 	implantcallbackconfig.DefaultJitter = implantcallbackconfigDescJitter.Default.(int)
 	// implantcallbackconfig.JitterValidator is a validator for the "jitter" field. It is called by the builders before save.

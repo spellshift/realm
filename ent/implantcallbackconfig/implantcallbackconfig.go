@@ -9,6 +9,8 @@ const (
 	FieldID = "id"
 	// FieldURI holds the string denoting the uri field in the database.
 	FieldURI = "uri"
+	// FieldProxyURI holds the string denoting the proxyuri field in the database.
+	FieldProxyURI = "proxy_uri"
 	// FieldPriority holds the string denoting the priority field in the database.
 	FieldPriority = "priority"
 	// FieldTimeout holds the string denoting the timeout field in the database.
@@ -32,6 +34,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldURI,
+	FieldProxyURI,
 	FieldPriority,
 	FieldTimeout,
 	FieldInterval,

@@ -280,6 +280,23 @@ input ImplantCallbackConfigWhereInput {
   uriEqualFold: String
   uriContainsFold: String
   
+  """proxyURI field predicates"""
+  proxyuri: String
+  proxyuriNEQ: String
+  proxyuriIn: [String!]
+  proxyuriNotIn: [String!]
+  proxyuriGT: String
+  proxyuriGTE: String
+  proxyuriLT: String
+  proxyuriLTE: String
+  proxyuriContains: String
+  proxyuriHasPrefix: String
+  proxyuriHasSuffix: String
+  proxyuriIsNil: Boolean
+  proxyuriNotNil: Boolean
+  proxyuriEqualFold: String
+  proxyuriContainsFold: String
+  
   """priority field predicates"""
   priority: Int
   priorityNEQ: Int

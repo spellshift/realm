@@ -898,6 +898,23 @@ type ImplantCallbackConfigWhereInput struct {
 	URIEqualFold    *string  `json:"uriEqualFold,omitempty"`
 	URIContainsFold *string  `json:"uriContainsFold,omitempty"`
 
+	// "proxyURI" field predicates.
+	ProxyURI             *string  `json:"proxyuri,omitempty"`
+	ProxyURINEQ          *string  `json:"proxyuriNEQ,omitempty"`
+	ProxyURIIn           []string `json:"proxyuriIn,omitempty"`
+	ProxyURINotIn        []string `json:"proxyuriNotIn,omitempty"`
+	ProxyURIGT           *string  `json:"proxyuriGT,omitempty"`
+	ProxyURIGTE          *string  `json:"proxyuriGTE,omitempty"`
+	ProxyURILT           *string  `json:"proxyuriLT,omitempty"`
+	ProxyURILTE          *string  `json:"proxyuriLTE,omitempty"`
+	ProxyURIContains     *string  `json:"proxyuriContains,omitempty"`
+	ProxyURIHasPrefix    *string  `json:"proxyuriHasPrefix,omitempty"`
+	ProxyURIHasSuffix    *string  `json:"proxyuriHasSuffix,omitempty"`
+	ProxyURIIsNil        bool     `json:"proxyuriIsNil,omitempty"`
+	ProxyURINotNil       bool     `json:"proxyuriNotNil,omitempty"`
+	ProxyURIEqualFold    *string  `json:"proxyuriEqualFold,omitempty"`
+	ProxyURIContainsFold *string  `json:"proxyuriContainsFold,omitempty"`
+
 	// "priority" field predicates.
 	Priority      *int  `json:"priority,omitempty"`
 	PriorityNEQ   *int  `json:"priorityNEQ,omitempty"`
@@ -1064,6 +1081,51 @@ func (i *ImplantCallbackConfigWhereInput) P() (predicate.ImplantCallbackConfig, 
 	}
 	if i.URIContainsFold != nil {
 		predicates = append(predicates, implantcallbackconfig.URIContainsFold(*i.URIContainsFold))
+	}
+	if i.ProxyURI != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIEQ(*i.ProxyURI))
+	}
+	if i.ProxyURINEQ != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURINEQ(*i.ProxyURINEQ))
+	}
+	if len(i.ProxyURIIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIIn(i.ProxyURIIn...))
+	}
+	if len(i.ProxyURINotIn) > 0 {
+		predicates = append(predicates, implantcallbackconfig.ProxyURINotIn(i.ProxyURINotIn...))
+	}
+	if i.ProxyURIGT != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIGT(*i.ProxyURIGT))
+	}
+	if i.ProxyURIGTE != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIGTE(*i.ProxyURIGTE))
+	}
+	if i.ProxyURILT != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURILT(*i.ProxyURILT))
+	}
+	if i.ProxyURILTE != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURILTE(*i.ProxyURILTE))
+	}
+	if i.ProxyURIContains != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIContains(*i.ProxyURIContains))
+	}
+	if i.ProxyURIHasPrefix != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIHasPrefix(*i.ProxyURIHasPrefix))
+	}
+	if i.ProxyURIHasSuffix != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIHasSuffix(*i.ProxyURIHasSuffix))
+	}
+	if i.ProxyURIIsNil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIIsNil())
+	}
+	if i.ProxyURINotNil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURINotNil())
+	}
+	if i.ProxyURIEqualFold != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIEqualFold(*i.ProxyURIEqualFold))
+	}
+	if i.ProxyURIContainsFold != nil {
+		predicates = append(predicates, implantcallbackconfig.ProxyURIContainsFold(*i.ProxyURIContainsFold))
 	}
 	if i.Priority != nil {
 		predicates = append(predicates, implantcallbackconfig.PriorityEQ(*i.Priority))

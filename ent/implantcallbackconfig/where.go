@@ -98,6 +98,13 @@ func URI(v string) predicate.ImplantCallbackConfig {
 	})
 }
 
+// ProxyURI applies equality check predicate on the "proxyURI" field. It's identical to ProxyURIEQ.
+func ProxyURI(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldProxyURI), v))
+	})
+}
+
 // Priority applies equality check predicate on the "priority" field. It's identical to PriorityEQ.
 func Priority(v int) predicate.ImplantCallbackConfig {
 	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
@@ -234,6 +241,131 @@ func URIEqualFold(v string) predicate.ImplantCallbackConfig {
 func URIContainsFold(v string) predicate.ImplantCallbackConfig {
 	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldURI), v))
+	})
+}
+
+// ProxyURIEQ applies the EQ predicate on the "proxyURI" field.
+func ProxyURIEQ(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURINEQ applies the NEQ predicate on the "proxyURI" field.
+func ProxyURINEQ(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURIIn applies the In predicate on the "proxyURI" field.
+func ProxyURIIn(vs ...string) predicate.ImplantCallbackConfig {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldProxyURI), v...))
+	})
+}
+
+// ProxyURINotIn applies the NotIn predicate on the "proxyURI" field.
+func ProxyURINotIn(vs ...string) predicate.ImplantCallbackConfig {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldProxyURI), v...))
+	})
+}
+
+// ProxyURIGT applies the GT predicate on the "proxyURI" field.
+func ProxyURIGT(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURIGTE applies the GTE predicate on the "proxyURI" field.
+func ProxyURIGTE(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURILT applies the LT predicate on the "proxyURI" field.
+func ProxyURILT(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURILTE applies the LTE predicate on the "proxyURI" field.
+func ProxyURILTE(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURIContains applies the Contains predicate on the "proxyURI" field.
+func ProxyURIContains(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURIHasPrefix applies the HasPrefix predicate on the "proxyURI" field.
+func ProxyURIHasPrefix(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURIHasSuffix applies the HasSuffix predicate on the "proxyURI" field.
+func ProxyURIHasSuffix(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURIIsNil applies the IsNil predicate on the "proxyURI" field.
+func ProxyURIIsNil() predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldProxyURI)))
+	})
+}
+
+// ProxyURINotNil applies the NotNil predicate on the "proxyURI" field.
+func ProxyURINotNil() predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldProxyURI)))
+	})
+}
+
+// ProxyURIEqualFold applies the EqualFold predicate on the "proxyURI" field.
+func ProxyURIEqualFold(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldProxyURI), v))
+	})
+}
+
+// ProxyURIContainsFold applies the ContainsFold predicate on the "proxyURI" field.
+func ProxyURIContainsFold(v string) predicate.ImplantCallbackConfig {
+	return predicate.ImplantCallbackConfig(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldProxyURI), v))
 	})
 }
 
