@@ -207,7 +207,7 @@ func (icc *ImplantCallbackConfig) Node(ctx context.Context) (node *Node, err err
 	node = &Node{
 		ID:     icc.ID,
 		Type:   "ImplantCallbackConfig",
-		Fields: make([]*Field, 5),
+		Fields: make([]*Field, 6),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -219,10 +219,18 @@ func (icc *ImplantCallbackConfig) Node(ctx context.Context) (node *Node, err err
 		Name:  "uri",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(icc.Priority); err != nil {
+	if buf, err = json.Marshal(icc.ProxyURI); err != nil {
 		return nil, err
 	}
 	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "proxyURI",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(icc.Priority); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
 		Type:  "int",
 		Name:  "priority",
 		Value: string(buf),
@@ -230,7 +238,7 @@ func (icc *ImplantCallbackConfig) Node(ctx context.Context) (node *Node, err err
 	if buf, err = json.Marshal(icc.Timeout); err != nil {
 		return nil, err
 	}
-	node.Fields[2] = &Field{
+	node.Fields[3] = &Field{
 		Type:  "int",
 		Name:  "timeout",
 		Value: string(buf),
@@ -238,7 +246,7 @@ func (icc *ImplantCallbackConfig) Node(ctx context.Context) (node *Node, err err
 	if buf, err = json.Marshal(icc.Interval); err != nil {
 		return nil, err
 	}
-	node.Fields[3] = &Field{
+	node.Fields[4] = &Field{
 		Type:  "int",
 		Name:  "interval",
 		Value: string(buf),
@@ -246,7 +254,7 @@ func (icc *ImplantCallbackConfig) Node(ctx context.Context) (node *Node, err err
 	if buf, err = json.Marshal(icc.Jitter); err != nil {
 		return nil, err
 	}
-	node.Fields[4] = &Field{
+	node.Fields[5] = &Field{
 		Type:  "int",
 		Name:  "jitter",
 		Value: string(buf),

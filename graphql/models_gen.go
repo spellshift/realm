@@ -25,6 +25,15 @@ type CreateCredentialInput struct {
 	TargetID  int             `json:"targetID"`
 }
 
+type CreateImplantCallbackConfigInput struct {
+	URI      string  `json:"uri"`
+	ProxyURI *string `json:"proxyURI"`
+	Priority *int    `json:"priority"`
+	Timeout  *int    `json:"timeout"`
+	Interval *int    `json:"interval"`
+	Jitter   *int    `json:"jitter"`
+}
+
 type CreateTargetInput struct {
 	Name             string `json:"name"`
 	ForwardConnectIP string `json:"forwardConnectIP"`

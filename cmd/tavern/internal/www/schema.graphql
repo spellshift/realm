@@ -318,6 +318,23 @@ input ImplantCallbackConfigWhereInput {
   uriEqualFold: String
   uriContainsFold: String
   
+  """proxyURI field predicates"""
+  proxyuri: String
+  proxyuriNEQ: String
+  proxyuriIn: [String!]
+  proxyuriNotIn: [String!]
+  proxyuriGT: String
+  proxyuriGTE: String
+  proxyuriLT: String
+  proxyuriLTE: String
+  proxyuriContains: String
+  proxyuriHasPrefix: String
+  proxyuriHasSuffix: String
+  proxyuriIsNil: Boolean
+  proxyuriNotNil: Boolean
+  proxyuriEqualFold: String
+  proxyuriContainsFold: String
+  
   """priority field predicates"""
   priority: Int
   priorityNEQ: Int
@@ -539,6 +556,7 @@ type FileConnection {
 type ImplantCallbackConfig implements Node {
     id: ID!
     uri: String!
+    proxyURI: String
     priority: Int!
     timeout: Int!
     interval: Int!
@@ -576,6 +594,7 @@ type CallbackResponse {
 
 type Mutation {
   callback(info: CallbackInput!): CallbackResponse!
+  createImplantCallbackConfig(config: CreateImplantCallbackConfigInput!): ImplantCallbackConfig!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
 }
@@ -585,6 +604,15 @@ input CallbackInput {
   sessionID: String!
   configName: String!
   processName: String!
+}
+
+input CreateImplantCallbackConfigInput {
+    uri: String!
+    proxyURI: String
+    priority: Int
+    timeout: Int
+    interval: Int
+    jitter: Int
 }
 
 input CreateTargetInput {

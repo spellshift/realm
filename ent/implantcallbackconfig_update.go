@@ -34,6 +34,26 @@ func (iccu *ImplantCallbackConfigUpdate) SetURI(s string) *ImplantCallbackConfig
 	return iccu
 }
 
+// SetProxyURI sets the "proxyURI" field.
+func (iccu *ImplantCallbackConfigUpdate) SetProxyURI(s string) *ImplantCallbackConfigUpdate {
+	iccu.mutation.SetProxyURI(s)
+	return iccu
+}
+
+// SetNillableProxyURI sets the "proxyURI" field if the given value is not nil.
+func (iccu *ImplantCallbackConfigUpdate) SetNillableProxyURI(s *string) *ImplantCallbackConfigUpdate {
+	if s != nil {
+		iccu.SetProxyURI(*s)
+	}
+	return iccu
+}
+
+// ClearProxyURI clears the value of the "proxyURI" field.
+func (iccu *ImplantCallbackConfigUpdate) ClearProxyURI() *ImplantCallbackConfigUpdate {
+	iccu.mutation.ClearProxyURI()
+	return iccu
+}
+
 // SetPriority sets the "priority" field.
 func (iccu *ImplantCallbackConfigUpdate) SetPriority(i int) *ImplantCallbackConfigUpdate {
 	iccu.mutation.ResetPriority()
@@ -274,6 +294,19 @@ func (iccu *ImplantCallbackConfigUpdate) sqlSave(ctx context.Context) (n int, er
 			Column: implantcallbackconfig.FieldURI,
 		})
 	}
+	if value, ok := iccu.mutation.ProxyURI(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: implantcallbackconfig.FieldProxyURI,
+		})
+	}
+	if iccu.mutation.ProxyURICleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: implantcallbackconfig.FieldProxyURI,
+		})
+	}
 	if value, ok := iccu.mutation.Priority(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
@@ -406,6 +439,26 @@ type ImplantCallbackConfigUpdateOne struct {
 // SetURI sets the "uri" field.
 func (iccuo *ImplantCallbackConfigUpdateOne) SetURI(s string) *ImplantCallbackConfigUpdateOne {
 	iccuo.mutation.SetURI(s)
+	return iccuo
+}
+
+// SetProxyURI sets the "proxyURI" field.
+func (iccuo *ImplantCallbackConfigUpdateOne) SetProxyURI(s string) *ImplantCallbackConfigUpdateOne {
+	iccuo.mutation.SetProxyURI(s)
+	return iccuo
+}
+
+// SetNillableProxyURI sets the "proxyURI" field if the given value is not nil.
+func (iccuo *ImplantCallbackConfigUpdateOne) SetNillableProxyURI(s *string) *ImplantCallbackConfigUpdateOne {
+	if s != nil {
+		iccuo.SetProxyURI(*s)
+	}
+	return iccuo
+}
+
+// ClearProxyURI clears the value of the "proxyURI" field.
+func (iccuo *ImplantCallbackConfigUpdateOne) ClearProxyURI() *ImplantCallbackConfigUpdateOne {
+	iccuo.mutation.ClearProxyURI()
 	return iccuo
 }
 
@@ -671,6 +724,19 @@ func (iccuo *ImplantCallbackConfigUpdateOne) sqlSave(ctx context.Context) (_node
 			Type:   field.TypeString,
 			Value:  value,
 			Column: implantcallbackconfig.FieldURI,
+		})
+	}
+	if value, ok := iccuo.mutation.ProxyURI(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: implantcallbackconfig.FieldProxyURI,
+		})
+	}
+	if iccuo.mutation.ProxyURICleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: implantcallbackconfig.FieldProxyURI,
 		})
 	}
 	if value, ok := iccuo.mutation.Priority(); ok {
