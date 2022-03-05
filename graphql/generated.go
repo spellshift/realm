@@ -127,6 +127,7 @@ type ComplexityRoot struct {
 		CreateCredential            func(childComplexity int, credential CreateCredentialInput) int
 		CreateImplantCallbackConfig func(childComplexity int, config CreateImplantCallbackConfigInput) int
 		CreateTarget                func(childComplexity int, target CreateTargetInput) int
+		DeleteImplantCallbackConfig func(childComplexity int, id int) int
 		UpdateImplantCallbackConfig func(childComplexity int, config UpdateImplantCallbackConfigInput) int
 	}
 
@@ -168,6 +169,7 @@ type MutationResolver interface {
 	Callback(ctx context.Context, info CallbackInput) (*CallbackResponse, error)
 	CreateImplantCallbackConfig(ctx context.Context, config CreateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error)
 	UpdateImplantCallbackConfig(ctx context.Context, config UpdateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error)
+	DeleteImplantCallbackConfig(ctx context.Context, id int) (int, error)
 	CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error)
 	CreateCredential(ctx context.Context, credential CreateCredentialInput) (*ent.Credential, error)
 }
@@ -543,6 +545,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateTarget(childComplexity, args["target"].(CreateTargetInput)), true
 
+	case "Mutation.deleteImplantCallbackConfig":
+		if e.complexity.Mutation.DeleteImplantCallbackConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteImplantCallbackConfig_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteImplantCallbackConfig(childComplexity, args["id"].(int)), true
+
 	case "Mutation.updateImplantCallbackConfig":
 		if e.complexity.Mutation.UpdateImplantCallbackConfig == nil {
 			break
@@ -809,6 +823,7 @@ type Mutation {
   callback(info: CallbackInput!): CallbackResponse!
   createImplantCallbackConfig(config: CreateImplantCallbackConfigInput!): ImplantCallbackConfig!
   updateImplantCallbackConfig(config: UpdateImplantCallbackConfigInput!): ImplantCallbackConfig!
+  deleteImplantCallbackConfig(id: ID!): ID!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
 }
@@ -1543,6 +1558,21 @@ func (ec *executionContext) field_Mutation_createTarget_args(ctx context.Context
 		}
 	}
 	args["target"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteImplantCallbackConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3429,6 +3459,48 @@ func (ec *executionContext) _Mutation_updateImplantCallbackConfig(ctx context.Co
 	res := resTmp.(*ent.ImplantCallbackConfig)
 	fc.Result = res
 	return ec.marshalNImplantCallbackConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantCallbackConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteImplantCallbackConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteImplantCallbackConfig_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteImplantCallbackConfig(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createTarget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9432,6 +9504,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateImplantCallbackConfig":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateImplantCallbackConfig(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteImplantCallbackConfig":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteImplantCallbackConfig(ctx, field)
 			}
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)

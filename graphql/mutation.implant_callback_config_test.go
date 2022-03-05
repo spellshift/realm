@@ -7,6 +7,7 @@ import (
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/kcarretto/realm/ent/enttest"
+	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -191,6 +192,66 @@ func newUpdateImplantCallbackConfigTest(gqlClient *client.Client, input graphql.
 		// Run checks with error (if any) and resulting ImplantCallbackConfig ID
 		for _, check := range checks {
 			check(t, resp.UpdateImplantCallbackConfig.ID, err)
+		}
+	}
+}
+
+// TestDeleteImplantCallbackConfig ensures the deleteImplantCallbackConfig mutation exhibits expected behavior.
+func TestDeleteImplantCallbackConfig(t *testing.T) {
+	// Initialize Test Context
+	ctx := context.Background()
+
+	// Initialize DB Backend
+	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	defer graph.Close()
+
+	// Initialize sample data
+	existingConfig := graph.ImplantCallbackConfig.Create().
+		SetURI("https://existingconfig.realm.pub/").
+		SaveX(ctx)
+
+	// Create a new GraphQL client
+	gqlClient := client.New(handler.NewDefaultServer(graphql.NewSchema(graph)))
+
+	// Run tests
+	t.Run("Existing", newDeleteImplantCallbackConfigTest(
+		gqlClient,
+		existingConfig.ID,
+		func(t *testing.T, id int, err error) {
+			require.NoError(t, err)
+			assert.NotZero(t, id)
+			assert.Equal(t, existingConfig.ID, id)
+
+			exists := graph.ImplantCallbackConfig.Query().
+				Where(implantcallbackconfig.ID(id)).
+				ExistX(ctx)
+			assert.False(t, exists)
+		},
+	))
+	t.Run("NotExists", newDeleteImplantCallbackConfigTest(
+		gqlClient,
+		-1,
+		func(t *testing.T, id int, err error) {
+			assert.Zero(t, id)
+			assert.ErrorContains(t, err, "ent: implant_callback_config not found")
+		},
+	))
+}
+
+func newDeleteImplantCallbackConfigTest(gqlClient *client.Client, id int, checks ...func(t *testing.T, id int, err error)) func(t *testing.T) {
+	return func(t *testing.T) {
+		// Define the mutatation for testing, taking the input as a variable
+		mut := `mutation DeleteImplantCallbackConfig($input: ID!) { deleteImplantCallbackConfig(id:$input) }`
+
+		// Make our request to the GraphQL API
+		var resp struct {
+			DeleteImplantCallbackConfig int
+		}
+		err := gqlClient.Post(mut, &resp, client.Var("input", id))
+
+		// Run checks with error (if any) and resulting ImplantCallbackConfig ID
+		for _, check := range checks {
+			check(t, resp.DeleteImplantCallbackConfig, err)
 		}
 	}
 }
