@@ -36,20 +36,6 @@ func (icu *ImplantConfigUpdate) SetName(s string) *ImplantConfigUpdate {
 	return icu
 }
 
-// SetAuthToken sets the "authToken" field.
-func (icu *ImplantConfigUpdate) SetAuthToken(s string) *ImplantConfigUpdate {
-	icu.mutation.SetAuthToken(s)
-	return icu
-}
-
-// SetNillableAuthToken sets the "authToken" field if the given value is not nil.
-func (icu *ImplantConfigUpdate) SetNillableAuthToken(s *string) *ImplantConfigUpdate {
-	if s != nil {
-		icu.SetAuthToken(*s)
-	}
-	return icu
-}
-
 // AddImplantIDs adds the "implants" edge to the Implant entity by IDs.
 func (icu *ImplantConfigUpdate) AddImplantIDs(ids ...int) *ImplantConfigUpdate {
 	icu.mutation.AddImplantIDs(ids...)
@@ -258,13 +244,6 @@ func (icu *ImplantConfigUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Column: implantconfig.FieldName,
 		})
 	}
-	if value, ok := icu.mutation.AuthToken(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: implantconfig.FieldAuthToken,
-		})
-	}
 	if icu.mutation.ImplantsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -449,20 +428,6 @@ type ImplantConfigUpdateOne struct {
 // SetName sets the "name" field.
 func (icuo *ImplantConfigUpdateOne) SetName(s string) *ImplantConfigUpdateOne {
 	icuo.mutation.SetName(s)
-	return icuo
-}
-
-// SetAuthToken sets the "authToken" field.
-func (icuo *ImplantConfigUpdateOne) SetAuthToken(s string) *ImplantConfigUpdateOne {
-	icuo.mutation.SetAuthToken(s)
-	return icuo
-}
-
-// SetNillableAuthToken sets the "authToken" field if the given value is not nil.
-func (icuo *ImplantConfigUpdateOne) SetNillableAuthToken(s *string) *ImplantConfigUpdateOne {
-	if s != nil {
-		icuo.SetAuthToken(*s)
-	}
 	return icuo
 }
 
@@ -696,13 +661,6 @@ func (icuo *ImplantConfigUpdateOne) sqlSave(ctx context.Context) (_node *Implant
 			Type:   field.TypeString,
 			Value:  value,
 			Column: implantconfig.FieldName,
-		})
-	}
-	if value, ok := icuo.mutation.AuthToken(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: implantconfig.FieldAuthToken,
 		})
 	}
 	if icuo.mutation.ImplantsCleared() {

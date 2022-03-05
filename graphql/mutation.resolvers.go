@@ -124,6 +124,30 @@ func (r *mutationResolver) DeleteImplantServiceConfig(ctx context.Context, id in
 	return id, r.client.ImplantServiceConfig.DeleteOneID(id).Exec(ctx)
 }
 
+func (r *mutationResolver) CreateImplantConfig(ctx context.Context, config CreateImplantConfigInput) (*ent.ImplantConfig, error) {
+	return r.client.ImplantConfig.Create().
+		SetName(config.Name).
+		AddCallbackConfigIDs(config.CallbackConfigIDs...).
+		AddServiceConfigIDs(config.ServiceConfigIDs...).
+		Save(ctx)
+}
+
+func (r *mutationResolver) UpdateImplantConfig(ctx context.Context, config UpdateImplantConfigInput) (*ent.ImplantConfig, error) {
+	mutation := r.client.ImplantConfig.UpdateOneID(config.ID).
+		AddCallbackConfigIDs(config.AddCallbackConfigIDs...).
+		RemoveCallbackConfigIDs(config.RemoveCallbackConfigIDs...).
+		AddServiceConfigIDs(config.AddServiceConfigIDs...).
+		RemoveServiceConfigIDs(config.RemoveServiceConfigIDs...)
+	if config.Name != nil {
+		mutation.SetName(*config.Name)
+	}
+	return mutation.Save(ctx)
+}
+
+func (r *mutationResolver) DeleteImplantConfig(ctx context.Context, id int) (int, error) {
+	return id, r.client.ImplantConfig.DeleteOneID(id).Exec(ctx)
+}
+
 func (r *mutationResolver) CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error) {
 	return r.client.Target.Create().
 		SetName(target.Name).

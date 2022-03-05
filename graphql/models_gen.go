@@ -34,6 +34,12 @@ type CreateImplantCallbackConfigInput struct {
 	Jitter   *int    `json:"jitter"`
 }
 
+type CreateImplantConfigInput struct {
+	Name              string `json:"name"`
+	ServiceConfigIDs  []int  `json:"serviceConfigIDs"`
+	CallbackConfigIDs []int  `json:"callbackConfigIDs"`
+}
+
 type CreateImplantServiceConfigInput struct {
 	Name           string  `json:"name"`
 	Description    *string `json:"description"`
@@ -53,6 +59,15 @@ type UpdateImplantCallbackConfigInput struct {
 	Timeout  *int    `json:"timeout"`
 	Interval *int    `json:"interval"`
 	Jitter   *int    `json:"jitter"`
+}
+
+type UpdateImplantConfigInput struct {
+	ID                      int     `json:"id"`
+	Name                    *string `json:"name"`
+	AddServiceConfigIDs     []int   `json:"addServiceConfigIDs"`
+	RemoveServiceConfigIDs  []int   `json:"removeServiceConfigIDs"`
+	AddCallbackConfigIDs    []int   `json:"addCallbackConfigIDs"`
+	RemoveCallbackConfigIDs []int   `json:"removeCallbackConfigIDs"`
 }
 
 type UpdateImplantServiceConfigInput struct {
