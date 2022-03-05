@@ -73,6 +73,24 @@ func (r *mutationResolver) CreateImplantCallbackConfig(ctx context.Context, conf
 		Save(ctx)
 }
 
+func (r *mutationResolver) UpdateImplantCallbackConfig(ctx context.Context, config UpdateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error) {
+	cfg, err := r.client.ImplantCallbackConfig.Get(ctx, config.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	mutation := cfg.Update().
+		SetNillableProxyURI(config.ProxyURI).
+		SetNillablePriority(config.Priority).
+		SetNillableTimeout(config.Timeout).
+		SetNillableInterval(config.Interval).
+		SetNillableJitter(config.Jitter)
+	if config.URI != nil {
+		mutation = mutation.SetURI(*config.URI)
+	}
+	return mutation.Save(ctx)
+}
+
 func (r *mutationResolver) CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error) {
 	return r.client.Target.Create().
 		SetName(target.Name).
