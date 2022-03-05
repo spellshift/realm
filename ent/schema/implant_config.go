@@ -25,6 +25,7 @@ func (ImplantConfig) Fields() []ent.Field {
 			Comment("Human-readable name assigned to this implant config (e.g. imix-rhel)."),
 		field.String("authToken").
 			Unique().
+			Immutable().
 			DefaultFunc(newAuthToken).
 			Comment("Authentication token used by the implant to communicate with the GraphQL API."),
 	}

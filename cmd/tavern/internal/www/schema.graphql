@@ -600,6 +600,9 @@ type Mutation {
   createImplantServiceConfig(config: CreateImplantServiceConfigInput!): ImplantServiceConfig!
   updateImplantServiceConfig(config: UpdateImplantServiceConfigInput!): ImplantServiceConfig!
   deleteImplantServiceConfig(id: ID!): ID!
+  createImplantConfig(config: CreateImplantConfigInput!): ImplantConfig!
+  updateImplantConfig(config: UpdateImplantConfigInput!): ImplantConfig!
+  deleteImplantConfig(id: ID!): ID!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
 }
@@ -641,6 +644,24 @@ input UpdateImplantServiceConfigInput {
     name: String
     description: String
     executablePath: String
+}
+
+input CreateImplantConfigInput {
+  name: String!
+
+  serviceConfigIDs: [ID!]
+  callbackConfigIDs: [ID!]
+}
+
+input UpdateImplantConfigInput {
+    id: ID!
+    name: String
+
+    addServiceConfigIDs: [ID!]
+    removeServiceConfigIDs: [ID!]
+
+    addCallbackConfigIDs: [ID!]
+    removeCallbackConfigIDs: [ID!]
 }
 
 input CreateTargetInput {
