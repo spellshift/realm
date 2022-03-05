@@ -34,6 +34,12 @@ type CreateImplantCallbackConfigInput struct {
 	Jitter   *int    `json:"jitter"`
 }
 
+type CreateImplantServiceConfigInput struct {
+	Name           string  `json:"name"`
+	Description    *string `json:"description"`
+	ExecutablePath string  `json:"executablePath"`
+}
+
 type CreateTargetInput struct {
 	Name             string `json:"name"`
 	ForwardConnectIP string `json:"forwardConnectIP"`
@@ -47,4 +53,11 @@ type UpdateImplantCallbackConfigInput struct {
 	Timeout  *int    `json:"timeout"`
 	Interval *int    `json:"interval"`
 	Jitter   *int    `json:"jitter"`
+}
+
+type UpdateImplantServiceConfigInput struct {
+	ID             int     `json:"id"`
+	Name           *string `json:"name"`
+	Description    *string `json:"description"`
+	ExecutablePath *string `json:"executablePath"`
 }

@@ -126,9 +126,12 @@ type ComplexityRoot struct {
 		Callback                    func(childComplexity int, info CallbackInput) int
 		CreateCredential            func(childComplexity int, credential CreateCredentialInput) int
 		CreateImplantCallbackConfig func(childComplexity int, config CreateImplantCallbackConfigInput) int
+		CreateImplantServiceConfig  func(childComplexity int, config CreateImplantServiceConfigInput) int
 		CreateTarget                func(childComplexity int, target CreateTargetInput) int
 		DeleteImplantCallbackConfig func(childComplexity int, id int) int
+		DeleteImplantServiceConfig  func(childComplexity int, id int) int
 		UpdateImplantCallbackConfig func(childComplexity int, config UpdateImplantCallbackConfigInput) int
+		UpdateImplantServiceConfig  func(childComplexity int, config UpdateImplantServiceConfigInput) int
 	}
 
 	PageInfo struct {
@@ -170,6 +173,9 @@ type MutationResolver interface {
 	CreateImplantCallbackConfig(ctx context.Context, config CreateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error)
 	UpdateImplantCallbackConfig(ctx context.Context, config UpdateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error)
 	DeleteImplantCallbackConfig(ctx context.Context, id int) (int, error)
+	CreateImplantServiceConfig(ctx context.Context, config CreateImplantServiceConfigInput) (*ent.ImplantServiceConfig, error)
+	UpdateImplantServiceConfig(ctx context.Context, config UpdateImplantServiceConfigInput) (*ent.ImplantServiceConfig, error)
+	DeleteImplantServiceConfig(ctx context.Context, id int) (int, error)
 	CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error)
 	CreateCredential(ctx context.Context, credential CreateCredentialInput) (*ent.Credential, error)
 }
@@ -533,6 +539,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateImplantCallbackConfig(childComplexity, args["config"].(CreateImplantCallbackConfigInput)), true
 
+	case "Mutation.createImplantServiceConfig":
+		if e.complexity.Mutation.CreateImplantServiceConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createImplantServiceConfig_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateImplantServiceConfig(childComplexity, args["config"].(CreateImplantServiceConfigInput)), true
+
 	case "Mutation.createTarget":
 		if e.complexity.Mutation.CreateTarget == nil {
 			break
@@ -557,6 +575,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteImplantCallbackConfig(childComplexity, args["id"].(int)), true
 
+	case "Mutation.deleteImplantServiceConfig":
+		if e.complexity.Mutation.DeleteImplantServiceConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteImplantServiceConfig_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteImplantServiceConfig(childComplexity, args["id"].(int)), true
+
 	case "Mutation.updateImplantCallbackConfig":
 		if e.complexity.Mutation.UpdateImplantCallbackConfig == nil {
 			break
@@ -568,6 +598,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateImplantCallbackConfig(childComplexity, args["config"].(UpdateImplantCallbackConfigInput)), true
+
+	case "Mutation.updateImplantServiceConfig":
+		if e.complexity.Mutation.UpdateImplantServiceConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateImplantServiceConfig_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateImplantServiceConfig(childComplexity, args["config"].(UpdateImplantServiceConfigInput)), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -824,6 +866,9 @@ type Mutation {
   createImplantCallbackConfig(config: CreateImplantCallbackConfigInput!): ImplantCallbackConfig!
   updateImplantCallbackConfig(config: UpdateImplantCallbackConfigInput!): ImplantCallbackConfig!
   deleteImplantCallbackConfig(id: ID!): ID!
+  createImplantServiceConfig(config: CreateImplantServiceConfigInput!): ImplantServiceConfig!
+  updateImplantServiceConfig(config: UpdateImplantServiceConfigInput!): ImplantServiceConfig!
+  deleteImplantServiceConfig(id: ID!): ID!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
 }
@@ -852,6 +897,19 @@ input UpdateImplantCallbackConfigInput {
     timeout: Int
     interval: Int
     jitter: Int
+}
+
+input CreateImplantServiceConfigInput {
+    name: String!
+    description: String
+    executablePath: String!
+}
+
+input UpdateImplantServiceConfigInput {
+    id: ID!
+    name: String
+    description: String
+    executablePath: String
 }
 
 input CreateTargetInput {
@@ -1546,6 +1604,21 @@ func (ec *executionContext) field_Mutation_createImplantCallbackConfig_args(ctx 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createImplantServiceConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 CreateImplantServiceConfigInput
+	if tmp, ok := rawArgs["config"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
+		arg0, err = ec.unmarshalNCreateImplantServiceConfigInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateImplantServiceConfigInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["config"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createTarget_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1576,6 +1649,21 @@ func (ec *executionContext) field_Mutation_deleteImplantCallbackConfig_args(ctx 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteImplantServiceConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateImplantCallbackConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1583,6 +1671,21 @@ func (ec *executionContext) field_Mutation_updateImplantCallbackConfig_args(ctx 
 	if tmp, ok := rawArgs["config"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
 		arg0, err = ec.unmarshalNUpdateImplantCallbackConfigInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐUpdateImplantCallbackConfigInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["config"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateImplantServiceConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 UpdateImplantServiceConfigInput
+	if tmp, ok := rawArgs["config"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
+		arg0, err = ec.unmarshalNUpdateImplantServiceConfigInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐUpdateImplantServiceConfigInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3487,6 +3590,132 @@ func (ec *executionContext) _Mutation_deleteImplantCallbackConfig(ctx context.Co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().DeleteImplantCallbackConfig(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createImplantServiceConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createImplantServiceConfig_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateImplantServiceConfig(rctx, args["config"].(CreateImplantServiceConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.ImplantServiceConfig)
+	fc.Result = res
+	return ec.marshalNImplantServiceConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateImplantServiceConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateImplantServiceConfig_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateImplantServiceConfig(rctx, args["config"].(UpdateImplantServiceConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.ImplantServiceConfig)
+	fc.Result = res
+	return ec.marshalNImplantServiceConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteImplantServiceConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteImplantServiceConfig_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteImplantServiceConfig(rctx, args["id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5566,6 +5795,45 @@ func (ec *executionContext) unmarshalInputCreateImplantCallbackConfigInput(ctx c
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jitter"))
 			it.Jitter, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateImplantServiceConfigInput(ctx context.Context, obj interface{}) (CreateImplantServiceConfigInput, error) {
+	var it CreateImplantServiceConfigInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "executablePath":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executablePath"))
+			it.ExecutablePath, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8723,6 +8991,53 @@ func (ec *executionContext) unmarshalInputUpdateImplantCallbackConfigInput(ctx c
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateImplantServiceConfigInput(ctx context.Context, obj interface{}) (UpdateImplantServiceConfigInput, error) {
+	var it UpdateImplantServiceConfigInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "executablePath":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executablePath"))
+			it.ExecutablePath, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -9514,6 +9829,36 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteImplantCallbackConfig":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteImplantCallbackConfig(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createImplantServiceConfig":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createImplantServiceConfig(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateImplantServiceConfig":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateImplantServiceConfig(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteImplantServiceConfig":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteImplantServiceConfig(ctx, field)
 			}
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
@@ -10361,6 +10706,11 @@ func (ec *executionContext) unmarshalNCreateImplantCallbackConfigInput2githubᚗ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateImplantServiceConfigInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateImplantServiceConfigInput(ctx context.Context, v interface{}) (CreateImplantServiceConfigInput, error) {
+	res, err := ec.unmarshalInputCreateImplantServiceConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateTargetInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐCreateTargetInput(ctx context.Context, v interface{}) (CreateTargetInput, error) {
 	res, err := ec.unmarshalInputCreateTargetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10501,6 +10851,10 @@ func (ec *executionContext) unmarshalNImplantConfigWhereInput2ᚖgithubᚗcomᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNImplantServiceConfig2githubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfig(ctx context.Context, sel ast.SelectionSet, v ent.ImplantServiceConfig) graphql.Marshaler {
+	return ec._ImplantServiceConfig(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNImplantServiceConfig2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋentᚐImplantServiceConfig(ctx context.Context, sel ast.SelectionSet, v *ent.ImplantServiceConfig) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -10639,6 +10993,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 
 func (ec *executionContext) unmarshalNUpdateImplantCallbackConfigInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐUpdateImplantCallbackConfigInput(ctx context.Context, v interface{}) (UpdateImplantCallbackConfigInput, error) {
 	res, err := ec.unmarshalInputUpdateImplantCallbackConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateImplantServiceConfigInput2githubᚗcomᚋkcarrettoᚋrealmᚋgraphqlᚐUpdateImplantServiceConfigInput(ctx context.Context, v interface{}) (UpdateImplantServiceConfigInput, error) {
+	res, err := ec.unmarshalInputUpdateImplantServiceConfigInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

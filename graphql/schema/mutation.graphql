@@ -5,6 +5,9 @@ type Mutation {
   createImplantCallbackConfig(config: CreateImplantCallbackConfigInput!): ImplantCallbackConfig!
   updateImplantCallbackConfig(config: UpdateImplantCallbackConfigInput!): ImplantCallbackConfig!
   deleteImplantCallbackConfig(id: ID!): ID!
+  createImplantServiceConfig(config: CreateImplantServiceConfigInput!): ImplantServiceConfig!
+  updateImplantServiceConfig(config: UpdateImplantServiceConfigInput!): ImplantServiceConfig!
+  deleteImplantServiceConfig(id: ID!): ID!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
 }
@@ -33,6 +36,19 @@ input UpdateImplantCallbackConfigInput {
     timeout: Int
     interval: Int
     jitter: Int
+}
+
+input CreateImplantServiceConfigInput {
+    name: String!
+    description: String
+    executablePath: String!
+}
+
+input UpdateImplantServiceConfigInput {
+    id: ID!
+    name: String
+    description: String
+    executablePath: String
 }
 
 input CreateTargetInput {
