@@ -91,6 +91,10 @@ func (r *mutationResolver) UpdateImplantCallbackConfig(ctx context.Context, conf
 	return mutation.Save(ctx)
 }
 
+func (r *mutationResolver) DeleteImplantCallbackConfig(ctx context.Context, id int) (int, error) {
+	return id, r.client.ImplantCallbackConfig.DeleteOneID(id).Exec(ctx)
+}
+
 func (r *mutationResolver) CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error) {
 	return r.client.Target.Create().
 		SetName(target.Name).
