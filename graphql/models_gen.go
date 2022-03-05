@@ -38,3 +38,13 @@ type CreateTargetInput struct {
 	Name             string `json:"name"`
 	ForwardConnectIP string `json:"forwardConnectIP"`
 }
+
+type UpdateImplantCallbackConfigInput struct {
+	ID       int     `json:"id"`
+	URI      *string `json:"uri"`
+	ProxyURI *string `json:"proxyURI"`
+	Priority *int    `json:"priority"`
+	Timeout  *int    `json:"timeout"`
+	Interval *int    `json:"interval"`
+	Jitter   *int    `json:"jitter"`
+}

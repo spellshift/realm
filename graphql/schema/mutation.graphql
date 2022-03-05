@@ -3,6 +3,7 @@
 type Mutation {
   callback(info: CallbackInput!): CallbackResponse!
   createImplantCallbackConfig(config: CreateImplantCallbackConfigInput!): ImplantCallbackConfig!
+  updateImplantCallbackConfig(config: UpdateImplantCallbackConfigInput!): ImplantCallbackConfig!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
 }
@@ -16,6 +17,16 @@ input CallbackInput {
 
 input CreateImplantCallbackConfigInput {
     uri: String!
+    proxyURI: String
+    priority: Int
+    timeout: Int
+    interval: Int
+    jitter: Int
+}
+
+input UpdateImplantCallbackConfigInput {
+    id: ID!
+    uri: String
     proxyURI: String
     priority: Int
     timeout: Int
