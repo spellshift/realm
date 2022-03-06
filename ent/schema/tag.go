@@ -15,6 +15,7 @@ type Tag struct {
 func (Tag) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
+			Unique().
 			NotEmpty().
 			MinLen(3).
 			Comment("The name of the tag."),

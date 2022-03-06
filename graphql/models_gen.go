@@ -46,6 +46,11 @@ type CreateImplantServiceConfigInput struct {
 	ExecutablePath string  `json:"executablePath"`
 }
 
+type CreateTagInput struct {
+	Name      string `json:"name"`
+	TargetIDs []int  `json:"targetIDs"`
+}
+
 type CreateTargetInput struct {
 	Name             string `json:"name"`
 	ForwardConnectIP string `json:"forwardConnectIP"`
@@ -75,4 +80,11 @@ type UpdateImplantServiceConfigInput struct {
 	Name           *string `json:"name"`
 	Description    *string `json:"description"`
 	ExecutablePath *string `json:"executablePath"`
+}
+
+type UpdateTagInput struct {
+	ID              int     `json:"id"`
+	Name            *string `json:"name"`
+	AddTargetIDs    []int   `json:"addTargetIDs"`
+	RemoveTargetIDs []int   `json:"removeTargetIDs"`
 }

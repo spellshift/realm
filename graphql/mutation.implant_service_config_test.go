@@ -15,7 +15,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// TestCreateServiceServiceConfig ensures the createImplantServiceConfig mutation exhibits expected behavior.
+// TestCreateImplantServiceConfig ensures the createImplantServiceConfig mutation exhibits expected behavior.
 func TestCreateImplantServiceConfig(t *testing.T) {
 	// Initialize Test Context
 	ctx := context.Background()
