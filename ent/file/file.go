@@ -68,4 +68,6 @@ var (
 	HashValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.
+	DefaultLastModifiedAt func() time.Time
 )

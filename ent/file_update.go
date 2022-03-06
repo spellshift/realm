@@ -82,6 +82,14 @@ func (fu *FileUpdate) SetLastModifiedAt(t time.Time) *FileUpdate {
 	return fu
 }
 
+// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+func (fu *FileUpdate) SetNillableLastModifiedAt(t *time.Time) *FileUpdate {
+	if t != nil {
+		fu.SetLastModifiedAt(*t)
+	}
+	return fu
+}
+
 // SetContent sets the "content" field.
 func (fu *FileUpdate) SetContent(b []byte) *FileUpdate {
 	fu.mutation.SetContent(b)
@@ -399,6 +407,14 @@ func (fuo *FileUpdateOne) SetNillableCreatedAt(t *time.Time) *FileUpdateOne {
 // SetLastModifiedAt sets the "lastModifiedAt" field.
 func (fuo *FileUpdateOne) SetLastModifiedAt(t time.Time) *FileUpdateOne {
 	fuo.mutation.SetLastModifiedAt(t)
+	return fuo
+}
+
+// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+func (fuo *FileUpdateOne) SetNillableLastModifiedAt(t *time.Time) *FileUpdateOne {
+	if t != nil {
+		fuo.SetLastModifiedAt(*t)
+	}
 	return fuo
 }
 

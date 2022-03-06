@@ -11,6 +11,9 @@ type Mutation {
   createImplantConfig(config: CreateImplantConfigInput!): ImplantConfig!
   updateImplantConfig(config: UpdateImplantConfigInput!): ImplantConfig!
   deleteImplantConfig(id: ID!): ID!
+  createDeploymentConfig(config: CreateDeploymentConfigInput!): DeploymentConfig!
+  updateDeploymentConfig(config: UpdateDeploymentConfigInput!): DeploymentConfig!
+  deleteDeploymentConfig(id: ID!): ID!
   createTag(tag: CreateTagInput!): Tag!
   updateTag(tag: UpdateTagInput!): Tag!
   deleteTag(id: ID!): ID!
@@ -73,6 +76,27 @@ input UpdateImplantConfigInput {
 
     addCallbackConfigIDs: [ID!]
     removeCallbackConfigIDs: [ID!]
+}
+
+input CreateDeploymentConfigInput {
+    name: String!
+    cmd: String
+    startCmd: Boolean
+    fileDst: String 
+
+    implantConfigID: ID
+    fileID: ID
+}
+
+input UpdateDeploymentConfigInput {
+    id: ID!
+    name: String
+    cmd: String
+    startCmd: Boolean
+    fileDst: String 
+
+    implantConfigID: ID
+    fileID: ID
 }
 
 input CreateTagInput {

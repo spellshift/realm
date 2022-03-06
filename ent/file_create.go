@@ -67,6 +67,14 @@ func (fc *FileCreate) SetLastModifiedAt(t time.Time) *FileCreate {
 	return fc
 }
 
+// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+func (fc *FileCreate) SetNillableLastModifiedAt(t *time.Time) *FileCreate {
+	if t != nil {
+		fc.SetLastModifiedAt(*t)
+	}
+	return fc
+}
+
 // SetContent sets the "content" field.
 func (fc *FileCreate) SetContent(b []byte) *FileCreate {
 	fc.mutation.SetContent(b)
@@ -166,6 +174,10 @@ func (fc *FileCreate) defaults() {
 	if _, ok := fc.mutation.CreatedAt(); !ok {
 		v := file.DefaultCreatedAt()
 		fc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := fc.mutation.LastModifiedAt(); !ok {
+		v := file.DefaultLastModifiedAt()
+		fc.mutation.SetLastModifiedAt(v)
 	}
 }
 
