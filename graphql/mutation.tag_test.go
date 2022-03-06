@@ -221,8 +221,17 @@ func TestDeleteTag(t *testing.T) {
 	defer graph.Close()
 
 	// Initialize sample data
+	existingTarget := graph.Target.Create().
+		SetName("target1").
+		SetForwardConnectIP("10.0.0.1").
+		SaveX(ctx)
 	existingTag := graph.Tag.Create().
 		SetName("delete-me").
+		AddTargetIDs(existingTarget.ID).
+		SaveX(ctx)
+	existingTag2 := graph.Tag.Create().
+		SetName("keep-me").
+		AddTargetIDs(existingTarget.ID).
 		SaveX(ctx)
 
 	// Create a new GraphQL client
@@ -241,6 +250,12 @@ func TestDeleteTag(t *testing.T) {
 				Where(tag.ID(id)).
 				ExistX(ctx)
 			assert.False(t, exists)
+
+			tags, err := graph.Target.GetX(ctx, existingTarget.ID).
+				Tags(ctx)
+			require.NoError(t, err)
+			require.Len(t, tags, 1)
+			assert.Equal(t, existingTag2.ID, tags[0].ID)
 		},
 	))
 	t.Run("NotExists", newDeleteTagTest(
