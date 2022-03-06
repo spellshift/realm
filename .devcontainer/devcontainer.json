@@ -44,6 +44,7 @@
 		"source=realm-vscode-eldritch-lang-target,target=${containerWorkspaceFolder}/vscode/eldritch-lang/target,type=volume",
 		"source=realm-cmd-implants-target,target=${containerWorkspaceFolder}/cmd/implants/target,type=volume",
 		"source=realm-cmd-implants-eldritch-target,target=${containerWorkspaceFolder}/cmd/implants/eldritch/target,type=volume",
-		"source=realm-cmd-implants-imix-target,target=${containerWorkspaceFolder}/cmd/implants/imix/target,type=volume"
+		"source=realm-cmd-implants-imix-target,target=${containerWorkspaceFolder}/cmd/implants/imix/target,type=volume",
+		"source=root-.cache,target=/root/.cache,type=volume"
 	]
 }
