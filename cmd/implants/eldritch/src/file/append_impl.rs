@@ -21,51 +21,53 @@ mod tests {
     use std::io::BufReader;
     use std::fs::File;
     use std::fs::remove_file;
+    use tempfile::NamedTempFile;
+
 
     #[test]
     fn test_append_nonexisting() -> anyhow::Result<()> {
-        // In Case Cleanup failed
-        let _ = remove_file(String::from("/tmp/win"));
+        // Create file and then delete it (so we know it doesnt exist)
+        let tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        tmp_file.close()?;
 
         // Run  our code
-        append(String::from("/tmp/win"), String::from("Hi2!"))?;
+        append(path.clone(), String::from("Hi2!"))?;
 
         // Read the file
-        let file = BufReader::new(File::open("/tmp/win")?);
+        let file_reader = BufReader::new(File::open(path.clone())?);
 
         // Get Last Line
-        let last_line = file.lines().last().unwrap()?;
+        let last_line = file_reader.lines().last().unwrap()?;
 
         // Make sure the last line equals == Hi2!
         assert_eq!(last_line, "Hi2!");
 
         // Cleanup
-        remove_file(String::from("/tmp/win"))?;
+        remove_file(path)?;
         Ok(())
     }    
     #[test]
     fn test_append_existing() -> anyhow::Result<()> {
-        // In Case Cleanup failed
-        let _ = remove_file(String::from("/tmp/win"));
+        // Create file
+        let mut tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap());
 
-        // Make New File
-        let mut file = File::create("/tmp/win")?;
-        file.write_all(b"Hello, world!\n")?;
+        // Write to New File
+        tmp_file.write_all(b"Hello, world!\n")?;
 
         // Run  our code
-        append(String::from("/tmp/win"), String::from("Hi2!"))?;
+        append(path, String::from("Hi2!"))?;
 
         // Read the file
-        let file = BufReader::new(File::open("/tmp/win")?);
+        let file_reader = BufReader::new(tmp_file);
 
         // Get Last Line
-        let last_line = file.lines().last().unwrap()?;
+        let last_line = file_reader.lines().last().unwrap()?;
 
         // Make sure the last line equals == Hi2!
         assert_eq!(last_line, "Hi2!");
 
-        // Cleanup
-        let _ = remove_file(String::from("/tmp/win"));
         Ok(())
     }
 }
