@@ -102,6 +102,10 @@ func init() {
 	fileDescCreatedAt := fileFields[3].Descriptor()
 	// file.DefaultCreatedAt holds the default value on creation for the createdAt field.
 	file.DefaultCreatedAt = fileDescCreatedAt.Default.(func() time.Time)
+	// fileDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	fileDescLastModifiedAt := fileFields[4].Descriptor()
+	// file.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	file.DefaultLastModifiedAt = fileDescLastModifiedAt.Default.(func() time.Time)
 	implantFields := schema.Implant{}.Fields()
 	_ = implantFields
 	// implantDescSessionID is the schema descriptor for sessionID field.

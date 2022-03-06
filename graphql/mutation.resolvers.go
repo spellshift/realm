@@ -148,6 +148,34 @@ func (r *mutationResolver) DeleteImplantConfig(ctx context.Context, id int) (int
 	return id, r.client.ImplantConfig.DeleteOneID(id).Exec(ctx)
 }
 
+func (r *mutationResolver) CreateDeploymentConfig(ctx context.Context, config CreateDeploymentConfigInput) (*ent.DeploymentConfig, error) {
+	return r.client.DeploymentConfig.Create().
+		SetName(config.Name).
+		SetNillableCmd(config.Cmd).
+		SetNillableStartCmd(config.StartCmd).
+		SetNillableFileDst(config.FileDst).
+		SetNillableImplantConfigID(config.ImplantConfigID).
+		SetNillableFileID(config.FileID).
+		Save(ctx)
+}
+
+func (r *mutationResolver) UpdateDeploymentConfig(ctx context.Context, config UpdateDeploymentConfigInput) (*ent.DeploymentConfig, error) {
+	mutation := r.client.DeploymentConfig.UpdateOneID(config.ID).
+		SetNillableCmd(config.Cmd).
+		SetNillableStartCmd(config.StartCmd).
+		SetNillableFileDst(config.FileDst).
+		SetNillableImplantConfigID(config.ImplantConfigID).
+		SetNillableFileID(config.FileID)
+	if config.Name != nil {
+		mutation = mutation.SetName(*config.Name)
+	}
+	return mutation.Save(ctx)
+}
+
+func (r *mutationResolver) DeleteDeploymentConfig(ctx context.Context, id int) (int, error) {
+	return id, r.client.DeploymentConfig.DeleteOneID(id).Exec(ctx)
+}
+
 func (r *mutationResolver) CreateTag(ctx context.Context, tag CreateTagInput) (*ent.Tag, error) {
 	return r.client.Tag.Create().
 		SetName(tag.Name).

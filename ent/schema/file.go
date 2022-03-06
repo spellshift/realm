@@ -43,6 +43,7 @@ func (File) Fields() []ent.Field {
 			).
 			Comment("The timestamp for when the File was created"),
 		field.Time("lastModifiedAt").
+			Default(time.Now).
 			Annotations(
 				entgql.OrderField("LAST_MODIFIED_AT"),
 			).

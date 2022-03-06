@@ -25,6 +25,15 @@ type CreateCredentialInput struct {
 	TargetID  int             `json:"targetID"`
 }
 
+type CreateDeploymentConfigInput struct {
+	Name            string  `json:"name"`
+	Cmd             *string `json:"cmd"`
+	StartCmd        *bool   `json:"startCmd"`
+	FileDst         *string `json:"fileDst"`
+	ImplantConfigID *int    `json:"implantConfigID"`
+	FileID          *int    `json:"fileID"`
+}
+
 type CreateImplantCallbackConfigInput struct {
 	URI      string  `json:"uri"`
 	ProxyURI *string `json:"proxyURI"`
@@ -54,6 +63,16 @@ type CreateTagInput struct {
 type CreateTargetInput struct {
 	Name             string `json:"name"`
 	ForwardConnectIP string `json:"forwardConnectIP"`
+}
+
+type UpdateDeploymentConfigInput struct {
+	ID              int     `json:"id"`
+	Name            *string `json:"name"`
+	Cmd             *string `json:"cmd"`
+	StartCmd        *bool   `json:"startCmd"`
+	FileDst         *string `json:"fileDst"`
+	ImplantConfigID *int    `json:"implantConfigID"`
+	FileID          *int    `json:"fileID"`
 }
 
 type UpdateImplantCallbackConfigInput struct {
