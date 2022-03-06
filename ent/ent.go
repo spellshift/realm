@@ -9,11 +9,14 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
 	"github.com/kcarretto/realm/ent/implantserviceconfig"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -36,11 +39,14 @@ type OrderFunc func(*sql.Selector)
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		credential.Table:            credential.ValidColumn,
+		deployment.Table:            deployment.ValidColumn,
+		deploymentconfig.Table:      deploymentconfig.ValidColumn,
 		file.Table:                  file.ValidColumn,
 		implant.Table:               implant.ValidColumn,
 		implantcallbackconfig.Table: implantcallbackconfig.ValidColumn,
 		implantconfig.Table:         implantconfig.ValidColumn,
 		implantserviceconfig.Table:  implantserviceconfig.ValidColumn,
+		tag.Table:                   tag.ValidColumn,
 		target.Table:                target.ValidColumn,
 	}
 	check, ok := checks[table]

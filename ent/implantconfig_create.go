@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
@@ -40,6 +41,21 @@ func (icc *ImplantConfigCreate) SetNillableAuthToken(s *string) *ImplantConfigCr
 		icc.SetAuthToken(*s)
 	}
 	return icc
+}
+
+// AddDeploymentConfigIDs adds the "deploymentConfigs" edge to the DeploymentConfig entity by IDs.
+func (icc *ImplantConfigCreate) AddDeploymentConfigIDs(ids ...int) *ImplantConfigCreate {
+	icc.mutation.AddDeploymentConfigIDs(ids...)
+	return icc
+}
+
+// AddDeploymentConfigs adds the "deploymentConfigs" edges to the DeploymentConfig entity.
+func (icc *ImplantConfigCreate) AddDeploymentConfigs(d ...*DeploymentConfig) *ImplantConfigCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return icc.AddDeploymentConfigIDs(ids...)
 }
 
 // AddImplantIDs adds the "implants" edge to the Implant entity by IDs.
@@ -219,6 +235,25 @@ func (icc *ImplantConfigCreate) createSpec() (*ImplantConfig, *sqlgraph.CreateSp
 			Column: implantconfig.FieldAuthToken,
 		})
 		_node.AuthToken = value
+	}
+	if nodes := icc.mutation.DeploymentConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   implantconfig.DeploymentConfigsTable,
+			Columns: []string{implantconfig.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := icc.mutation.ImplantsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

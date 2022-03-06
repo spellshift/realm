@@ -28,31 +28,53 @@ type Target struct {
 
 // TargetEdges holds the relations/edges for other nodes in the graph.
 type TargetEdges struct {
-	// Credentials holds the value of the credentials edge.
-	Credentials []*Credential `json:"credentials,omitempty"`
 	// Implants holds the value of the implants edge.
 	Implants []*Implant `json:"implants,omitempty"`
+	// Deployments holds the value of the deployments edge.
+	Deployments []*Deployment `json:"deployments,omitempty"`
+	// Credentials holds the value of the credentials edge.
+	Credentials []*Credential `json:"credentials,omitempty"`
+	// Tags holds the value of the tags edge.
+	Tags []*Tag `json:"tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
-}
-
-// CredentialsOrErr returns the Credentials value or an error if the edge
-// was not loaded in eager-loading.
-func (e TargetEdges) CredentialsOrErr() ([]*Credential, error) {
-	if e.loadedTypes[0] {
-		return e.Credentials, nil
-	}
-	return nil, &NotLoadedError{edge: "credentials"}
+	loadedTypes [4]bool
 }
 
 // ImplantsOrErr returns the Implants value or an error if the edge
 // was not loaded in eager-loading.
 func (e TargetEdges) ImplantsOrErr() ([]*Implant, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[0] {
 		return e.Implants, nil
 	}
 	return nil, &NotLoadedError{edge: "implants"}
+}
+
+// DeploymentsOrErr returns the Deployments value or an error if the edge
+// was not loaded in eager-loading.
+func (e TargetEdges) DeploymentsOrErr() ([]*Deployment, error) {
+	if e.loadedTypes[1] {
+		return e.Deployments, nil
+	}
+	return nil, &NotLoadedError{edge: "deployments"}
+}
+
+// CredentialsOrErr returns the Credentials value or an error if the edge
+// was not loaded in eager-loading.
+func (e TargetEdges) CredentialsOrErr() ([]*Credential, error) {
+	if e.loadedTypes[2] {
+		return e.Credentials, nil
+	}
+	return nil, &NotLoadedError{edge: "credentials"}
+}
+
+// TagsOrErr returns the Tags value or an error if the edge
+// was not loaded in eager-loading.
+func (e TargetEdges) TagsOrErr() ([]*Tag, error) {
+	if e.loadedTypes[3] {
+		return e.Tags, nil
+	}
+	return nil, &NotLoadedError{edge: "tags"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -102,14 +124,24 @@ func (t *Target) assignValues(columns []string, values []interface{}) error {
 	return nil
 }
 
+// QueryImplants queries the "implants" edge of the Target entity.
+func (t *Target) QueryImplants() *ImplantQuery {
+	return (&TargetClient{config: t.config}).QueryImplants(t)
+}
+
+// QueryDeployments queries the "deployments" edge of the Target entity.
+func (t *Target) QueryDeployments() *DeploymentQuery {
+	return (&TargetClient{config: t.config}).QueryDeployments(t)
+}
+
 // QueryCredentials queries the "credentials" edge of the Target entity.
 func (t *Target) QueryCredentials() *CredentialQuery {
 	return (&TargetClient{config: t.config}).QueryCredentials(t)
 }
 
-// QueryImplants queries the "implants" edge of the Target entity.
-func (t *Target) QueryImplants() *ImplantQuery {
-	return (&TargetClient{config: t.config}).QueryImplants(t)
+// QueryTags queries the "tags" edge of the Target entity.
+func (t *Target) QueryTags() *TagQuery {
+	return (&TargetClient{config: t.config}).QueryTags(t)
 }
 
 // Update returns a builder for updating this Target.

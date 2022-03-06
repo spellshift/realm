@@ -132,7 +132,7 @@ func (iccq *ImplantCallbackConfigQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single ImplantCallbackConfig entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one ImplantCallbackConfig entity is not found.
+// Returns a *NotSingularError when more than one ImplantCallbackConfig entity is found.
 // Returns a *NotFoundError when no ImplantCallbackConfig entities are found.
 func (iccq *ImplantCallbackConfigQuery) Only(ctx context.Context) (*ImplantCallbackConfig, error) {
 	nodes, err := iccq.Limit(2).All(ctx)
@@ -159,7 +159,7 @@ func (iccq *ImplantCallbackConfigQuery) OnlyX(ctx context.Context) *ImplantCallb
 }
 
 // OnlyID is like Only, but returns the only ImplantCallbackConfig ID in the query.
-// Returns a *NotSingularError when exactly one ImplantCallbackConfig ID is not found.
+// Returns a *NotSingularError when more than one ImplantCallbackConfig ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (iccq *ImplantCallbackConfigQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -269,8 +269,9 @@ func (iccq *ImplantCallbackConfigQuery) Clone() *ImplantCallbackConfigQuery {
 		predicates:         append([]predicate.ImplantCallbackConfig{}, iccq.predicates...),
 		withImplantConfigs: iccq.withImplantConfigs.Clone(),
 		// clone intermediate query.
-		sql:  iccq.sql.Clone(),
-		path: iccq.path,
+		sql:    iccq.sql.Clone(),
+		path:   iccq.path,
+		unique: iccq.unique,
 	}
 }
 

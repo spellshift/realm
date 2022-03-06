@@ -5,6 +5,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -42,6 +43,7 @@ func (File) Fields() []ent.Field {
 			).
 			Comment("The timestamp for when the File was created"),
 		field.Time("lastModifiedAt").
+			Default(time.Now).
 			Annotations(
 				entgql.OrderField("LAST_MODIFIED_AT"),
 			).
@@ -54,5 +56,9 @@ func (File) Fields() []ent.Field {
 
 // Edges of the File.
 func (File) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("deploymentConfigs", DeploymentConfig.Type).
+			Ref("file").
+			Comment("Deployment Configurations that depend on this file."),
+	}
 }

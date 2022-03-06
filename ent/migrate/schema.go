@@ -30,6 +30,68 @@ var (
 			},
 		},
 	}
+	// DeploymentsColumns holds the columns for the "deployments" table.
+	DeploymentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "output", Type: field.TypeString, Default: ""},
+		{Name: "error", Type: field.TypeString, Default: ""},
+		{Name: "queued_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
+		{Name: "deployment_config", Type: field.TypeInt},
+		{Name: "deployment_target", Type: field.TypeInt},
+	}
+	// DeploymentsTable holds the schema information for the "deployments" table.
+	DeploymentsTable = &schema.Table{
+		Name:       "deployments",
+		Columns:    DeploymentsColumns,
+		PrimaryKey: []*schema.Column{DeploymentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "deployments_deployment_configs_config",
+				Columns:    []*schema.Column{DeploymentsColumns[7]},
+				RefColumns: []*schema.Column{DeploymentConfigsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "deployments_targets_target",
+				Columns:    []*schema.Column{DeploymentsColumns[8]},
+				RefColumns: []*schema.Column{TargetsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// DeploymentConfigsColumns holds the columns for the "deployment_configs" table.
+	DeploymentConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "cmd", Type: field.TypeString, Default: ""},
+		{Name: "start_cmd", Type: field.TypeBool, Default: false},
+		{Name: "file_dst", Type: field.TypeString, Default: ""},
+		{Name: "deployment_config_file", Type: field.TypeInt, Nullable: true},
+		{Name: "deployment_config_implant_config", Type: field.TypeInt, Nullable: true},
+	}
+	// DeploymentConfigsTable holds the schema information for the "deployment_configs" table.
+	DeploymentConfigsTable = &schema.Table{
+		Name:       "deployment_configs",
+		Columns:    DeploymentConfigsColumns,
+		PrimaryKey: []*schema.Column{DeploymentConfigsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "deployment_configs_files_file",
+				Columns:    []*schema.Column{DeploymentConfigsColumns[5]},
+				RefColumns: []*schema.Column{FilesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "deployment_configs_implant_configs_implantConfig",
+				Columns:    []*schema.Column{DeploymentConfigsColumns[6]},
+				RefColumns: []*schema.Column{ImplantConfigsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// FilesColumns holds the columns for the "files" table.
 	FilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -51,8 +113,8 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "session_id", Type: field.TypeString},
 		{Name: "process_name", Type: field.TypeString, Nullable: true},
-		{Name: "implant_target", Type: field.TypeInt, Nullable: true},
-		{Name: "implant_config", Type: field.TypeInt, Nullable: true},
+		{Name: "implant_target", Type: field.TypeInt},
+		{Name: "implant_config", Type: field.TypeInt},
 	}
 	// ImplantsTable holds the schema information for the "implants" table.
 	ImplantsTable = &schema.Table{
@@ -64,13 +126,13 @@ var (
 				Symbol:     "implants_targets_target",
 				Columns:    []*schema.Column{ImplantsColumns[3]},
 				RefColumns: []*schema.Column{TargetsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "implants_implant_configs_config",
 				Columns:    []*schema.Column{ImplantsColumns[4]},
 				RefColumns: []*schema.Column{ImplantConfigsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -78,6 +140,7 @@ var (
 	ImplantCallbackConfigsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "uri", Type: field.TypeString},
+		{Name: "proxy_uri", Type: field.TypeString, Nullable: true},
 		{Name: "priority", Type: field.TypeInt, Default: 10},
 		{Name: "timeout", Type: field.TypeInt, Default: 5},
 		{Name: "interval", Type: field.TypeInt, Default: 60},
@@ -113,6 +176,17 @@ var (
 		Name:       "implant_service_configs",
 		Columns:    ImplantServiceConfigsColumns,
 		PrimaryKey: []*schema.Column{ImplantServiceConfigsColumns[0]},
+	}
+	// TagsColumns holds the columns for the "tags" table.
+	TagsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+	}
+	// TagsTable holds the schema information for the "tags" table.
+	TagsTable = &schema.Table{
+		Name:       "tags",
+		Columns:    TagsColumns,
+		PrimaryKey: []*schema.Column{TagsColumns[0]},
 	}
 	// TargetsColumns holds the columns for the "targets" table.
 	TargetsColumns = []*schema.Column{
@@ -176,26 +250,61 @@ var (
 			},
 		},
 	}
+	// TargetTagsColumns holds the columns for the "target_tags" table.
+	TargetTagsColumns = []*schema.Column{
+		{Name: "target_id", Type: field.TypeInt},
+		{Name: "tag_id", Type: field.TypeInt},
+	}
+	// TargetTagsTable holds the schema information for the "target_tags" table.
+	TargetTagsTable = &schema.Table{
+		Name:       "target_tags",
+		Columns:    TargetTagsColumns,
+		PrimaryKey: []*schema.Column{TargetTagsColumns[0], TargetTagsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "target_tags_target_id",
+				Columns:    []*schema.Column{TargetTagsColumns[0]},
+				RefColumns: []*schema.Column{TargetsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "target_tags_tag_id",
+				Columns:    []*schema.Column{TargetTagsColumns[1]},
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CredentialsTable,
+		DeploymentsTable,
+		DeploymentConfigsTable,
 		FilesTable,
 		ImplantsTable,
 		ImplantCallbackConfigsTable,
 		ImplantConfigsTable,
 		ImplantServiceConfigsTable,
+		TagsTable,
 		TargetsTable,
 		ImplantConfigServiceConfigsTable,
 		ImplantConfigCallbackConfigsTable,
+		TargetTagsTable,
 	}
 )
 
 func init() {
 	CredentialsTable.ForeignKeys[0].RefTable = TargetsTable
+	DeploymentsTable.ForeignKeys[0].RefTable = DeploymentConfigsTable
+	DeploymentsTable.ForeignKeys[1].RefTable = TargetsTable
+	DeploymentConfigsTable.ForeignKeys[0].RefTable = FilesTable
+	DeploymentConfigsTable.ForeignKeys[1].RefTable = ImplantConfigsTable
 	ImplantsTable.ForeignKeys[0].RefTable = TargetsTable
 	ImplantsTable.ForeignKeys[1].RefTable = ImplantConfigsTable
 	ImplantConfigServiceConfigsTable.ForeignKeys[0].RefTable = ImplantConfigsTable
 	ImplantConfigServiceConfigsTable.ForeignKeys[1].RefTable = ImplantServiceConfigsTable
 	ImplantConfigCallbackConfigsTable.ForeignKeys[0].RefTable = ImplantConfigsTable
 	ImplantConfigCallbackConfigsTable.ForeignKeys[1].RefTable = ImplantCallbackConfigsTable
+	TargetTagsTable.ForeignKeys[0].RefTable = TargetsTable
+	TargetTagsTable.ForeignKeys[1].RefTable = TagsTable
 }

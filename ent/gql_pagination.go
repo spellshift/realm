@@ -15,11 +15,14 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
 	"github.com/kcarretto/realm/ent/implantserviceconfig"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"github.com/vmihailenco/msgpack/v5"
@@ -533,6 +536,460 @@ func (c *Credential) ToEdge(order *CredentialOrder) *CredentialEdge {
 	return &CredentialEdge{
 		Node:   c,
 		Cursor: order.Field.toCursor(c),
+	}
+}
+
+// DeploymentEdge is the edge representation of Deployment.
+type DeploymentEdge struct {
+	Node   *Deployment `json:"node"`
+	Cursor Cursor      `json:"cursor"`
+}
+
+// DeploymentConnection is the connection containing edges to Deployment.
+type DeploymentConnection struct {
+	Edges      []*DeploymentEdge `json:"edges"`
+	PageInfo   PageInfo          `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+// DeploymentPaginateOption enables pagination customization.
+type DeploymentPaginateOption func(*deploymentPager) error
+
+// WithDeploymentOrder configures pagination ordering.
+func WithDeploymentOrder(order *DeploymentOrder) DeploymentPaginateOption {
+	if order == nil {
+		order = DefaultDeploymentOrder
+	}
+	o := *order
+	return func(pager *deploymentPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultDeploymentOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithDeploymentFilter configures pagination filter.
+func WithDeploymentFilter(filter func(*DeploymentQuery) (*DeploymentQuery, error)) DeploymentPaginateOption {
+	return func(pager *deploymentPager) error {
+		if filter == nil {
+			return errors.New("DeploymentQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type deploymentPager struct {
+	order  *DeploymentOrder
+	filter func(*DeploymentQuery) (*DeploymentQuery, error)
+}
+
+func newDeploymentPager(opts []DeploymentPaginateOption) (*deploymentPager, error) {
+	pager := &deploymentPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultDeploymentOrder
+	}
+	return pager, nil
+}
+
+func (p *deploymentPager) applyFilter(query *DeploymentQuery) (*DeploymentQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *deploymentPager) toCursor(d *Deployment) Cursor {
+	return p.order.Field.toCursor(d)
+}
+
+func (p *deploymentPager) applyCursors(query *DeploymentQuery, after, before *Cursor) *DeploymentQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultDeploymentOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *deploymentPager) applyOrder(query *DeploymentQuery, reverse bool) *DeploymentQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultDeploymentOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultDeploymentOrder.Field.field))
+	}
+	return query
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Deployment.
+func (d *DeploymentQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...DeploymentPaginateOption,
+) (*DeploymentConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newDeploymentPager(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if d, err = pager.applyFilter(d); err != nil {
+		return nil, err
+	}
+
+	conn := &DeploymentConnection{Edges: []*DeploymentEdge{}}
+	if !hasCollectedField(ctx, edgesField) || first != nil && *first == 0 || last != nil && *last == 0 {
+		if hasCollectedField(ctx, totalCountField) ||
+			hasCollectedField(ctx, pageInfoField) {
+			count, err := d.Count(ctx)
+			if err != nil {
+				return nil, err
+			}
+			conn.TotalCount = count
+			conn.PageInfo.HasNextPage = first != nil && count > 0
+			conn.PageInfo.HasPreviousPage = last != nil && count > 0
+		}
+		return conn, nil
+	}
+
+	if (after != nil || first != nil || before != nil || last != nil) && hasCollectedField(ctx, totalCountField) {
+		count, err := d.Clone().Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		conn.TotalCount = count
+	}
+
+	d = pager.applyCursors(d, after, before)
+	d = pager.applyOrder(d, last != nil)
+	var limit int
+	if first != nil {
+		limit = *first + 1
+	} else if last != nil {
+		limit = *last + 1
+	}
+	if limit > 0 {
+		d = d.Limit(limit)
+	}
+
+	if field := getCollectedField(ctx, edgesField, nodeField); field != nil {
+		d = d.collectField(graphql.GetOperationContext(ctx), *field)
+	}
+
+	nodes, err := d.All(ctx)
+	if err != nil || len(nodes) == 0 {
+		return conn, err
+	}
+
+	if len(nodes) == limit {
+		conn.PageInfo.HasNextPage = first != nil
+		conn.PageInfo.HasPreviousPage = last != nil
+		nodes = nodes[:len(nodes)-1]
+	}
+
+	var nodeAt func(int) *Deployment
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Deployment {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Deployment {
+			return nodes[i]
+		}
+	}
+
+	conn.Edges = make([]*DeploymentEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		conn.Edges[i] = &DeploymentEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+
+	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
+	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+	if conn.TotalCount == 0 {
+		conn.TotalCount = len(nodes)
+	}
+
+	return conn, nil
+}
+
+// DeploymentOrderField defines the ordering field of Deployment.
+type DeploymentOrderField struct {
+	field    string
+	toCursor func(*Deployment) Cursor
+}
+
+// DeploymentOrder defines the ordering of Deployment.
+type DeploymentOrder struct {
+	Direction OrderDirection        `json:"direction"`
+	Field     *DeploymentOrderField `json:"field"`
+}
+
+// DefaultDeploymentOrder is the default ordering of Deployment.
+var DefaultDeploymentOrder = &DeploymentOrder{
+	Direction: OrderDirectionAsc,
+	Field: &DeploymentOrderField{
+		field: deployment.FieldID,
+		toCursor: func(d *Deployment) Cursor {
+			return Cursor{ID: d.ID}
+		},
+	},
+}
+
+// ToEdge converts Deployment into DeploymentEdge.
+func (d *Deployment) ToEdge(order *DeploymentOrder) *DeploymentEdge {
+	if order == nil {
+		order = DefaultDeploymentOrder
+	}
+	return &DeploymentEdge{
+		Node:   d,
+		Cursor: order.Field.toCursor(d),
+	}
+}
+
+// DeploymentConfigEdge is the edge representation of DeploymentConfig.
+type DeploymentConfigEdge struct {
+	Node   *DeploymentConfig `json:"node"`
+	Cursor Cursor            `json:"cursor"`
+}
+
+// DeploymentConfigConnection is the connection containing edges to DeploymentConfig.
+type DeploymentConfigConnection struct {
+	Edges      []*DeploymentConfigEdge `json:"edges"`
+	PageInfo   PageInfo                `json:"pageInfo"`
+	TotalCount int                     `json:"totalCount"`
+}
+
+// DeploymentConfigPaginateOption enables pagination customization.
+type DeploymentConfigPaginateOption func(*deploymentConfigPager) error
+
+// WithDeploymentConfigOrder configures pagination ordering.
+func WithDeploymentConfigOrder(order *DeploymentConfigOrder) DeploymentConfigPaginateOption {
+	if order == nil {
+		order = DefaultDeploymentConfigOrder
+	}
+	o := *order
+	return func(pager *deploymentConfigPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultDeploymentConfigOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithDeploymentConfigFilter configures pagination filter.
+func WithDeploymentConfigFilter(filter func(*DeploymentConfigQuery) (*DeploymentConfigQuery, error)) DeploymentConfigPaginateOption {
+	return func(pager *deploymentConfigPager) error {
+		if filter == nil {
+			return errors.New("DeploymentConfigQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type deploymentConfigPager struct {
+	order  *DeploymentConfigOrder
+	filter func(*DeploymentConfigQuery) (*DeploymentConfigQuery, error)
+}
+
+func newDeploymentConfigPager(opts []DeploymentConfigPaginateOption) (*deploymentConfigPager, error) {
+	pager := &deploymentConfigPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultDeploymentConfigOrder
+	}
+	return pager, nil
+}
+
+func (p *deploymentConfigPager) applyFilter(query *DeploymentConfigQuery) (*DeploymentConfigQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *deploymentConfigPager) toCursor(dc *DeploymentConfig) Cursor {
+	return p.order.Field.toCursor(dc)
+}
+
+func (p *deploymentConfigPager) applyCursors(query *DeploymentConfigQuery, after, before *Cursor) *DeploymentConfigQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultDeploymentConfigOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *deploymentConfigPager) applyOrder(query *DeploymentConfigQuery, reverse bool) *DeploymentConfigQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultDeploymentConfigOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultDeploymentConfigOrder.Field.field))
+	}
+	return query
+}
+
+// Paginate executes the query and returns a relay based cursor connection to DeploymentConfig.
+func (dc *DeploymentConfigQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...DeploymentConfigPaginateOption,
+) (*DeploymentConfigConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newDeploymentConfigPager(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if dc, err = pager.applyFilter(dc); err != nil {
+		return nil, err
+	}
+
+	conn := &DeploymentConfigConnection{Edges: []*DeploymentConfigEdge{}}
+	if !hasCollectedField(ctx, edgesField) || first != nil && *first == 0 || last != nil && *last == 0 {
+		if hasCollectedField(ctx, totalCountField) ||
+			hasCollectedField(ctx, pageInfoField) {
+			count, err := dc.Count(ctx)
+			if err != nil {
+				return nil, err
+			}
+			conn.TotalCount = count
+			conn.PageInfo.HasNextPage = first != nil && count > 0
+			conn.PageInfo.HasPreviousPage = last != nil && count > 0
+		}
+		return conn, nil
+	}
+
+	if (after != nil || first != nil || before != nil || last != nil) && hasCollectedField(ctx, totalCountField) {
+		count, err := dc.Clone().Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		conn.TotalCount = count
+	}
+
+	dc = pager.applyCursors(dc, after, before)
+	dc = pager.applyOrder(dc, last != nil)
+	var limit int
+	if first != nil {
+		limit = *first + 1
+	} else if last != nil {
+		limit = *last + 1
+	}
+	if limit > 0 {
+		dc = dc.Limit(limit)
+	}
+
+	if field := getCollectedField(ctx, edgesField, nodeField); field != nil {
+		dc = dc.collectField(graphql.GetOperationContext(ctx), *field)
+	}
+
+	nodes, err := dc.All(ctx)
+	if err != nil || len(nodes) == 0 {
+		return conn, err
+	}
+
+	if len(nodes) == limit {
+		conn.PageInfo.HasNextPage = first != nil
+		conn.PageInfo.HasPreviousPage = last != nil
+		nodes = nodes[:len(nodes)-1]
+	}
+
+	var nodeAt func(int) *DeploymentConfig
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *DeploymentConfig {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *DeploymentConfig {
+			return nodes[i]
+		}
+	}
+
+	conn.Edges = make([]*DeploymentConfigEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		conn.Edges[i] = &DeploymentConfigEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+
+	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
+	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+	if conn.TotalCount == 0 {
+		conn.TotalCount = len(nodes)
+	}
+
+	return conn, nil
+}
+
+// DeploymentConfigOrderField defines the ordering field of DeploymentConfig.
+type DeploymentConfigOrderField struct {
+	field    string
+	toCursor func(*DeploymentConfig) Cursor
+}
+
+// DeploymentConfigOrder defines the ordering of DeploymentConfig.
+type DeploymentConfigOrder struct {
+	Direction OrderDirection              `json:"direction"`
+	Field     *DeploymentConfigOrderField `json:"field"`
+}
+
+// DefaultDeploymentConfigOrder is the default ordering of DeploymentConfig.
+var DefaultDeploymentConfigOrder = &DeploymentConfigOrder{
+	Direction: OrderDirectionAsc,
+	Field: &DeploymentConfigOrderField{
+		field: deploymentconfig.FieldID,
+		toCursor: func(dc *DeploymentConfig) Cursor {
+			return Cursor{ID: dc.ID}
+		},
+	},
+}
+
+// ToEdge converts DeploymentConfig into DeploymentConfigEdge.
+func (dc *DeploymentConfig) ToEdge(order *DeploymentConfigOrder) *DeploymentConfigEdge {
+	if order == nil {
+		order = DefaultDeploymentConfigOrder
+	}
+	return &DeploymentConfigEdge{
+		Node:   dc,
+		Cursor: order.Field.toCursor(dc),
 	}
 }
 
@@ -1753,6 +2210,233 @@ func (isc *ImplantServiceConfig) ToEdge(order *ImplantServiceConfigOrder) *Impla
 	return &ImplantServiceConfigEdge{
 		Node:   isc,
 		Cursor: order.Field.toCursor(isc),
+	}
+}
+
+// TagEdge is the edge representation of Tag.
+type TagEdge struct {
+	Node   *Tag   `json:"node"`
+	Cursor Cursor `json:"cursor"`
+}
+
+// TagConnection is the connection containing edges to Tag.
+type TagConnection struct {
+	Edges      []*TagEdge `json:"edges"`
+	PageInfo   PageInfo   `json:"pageInfo"`
+	TotalCount int        `json:"totalCount"`
+}
+
+// TagPaginateOption enables pagination customization.
+type TagPaginateOption func(*tagPager) error
+
+// WithTagOrder configures pagination ordering.
+func WithTagOrder(order *TagOrder) TagPaginateOption {
+	if order == nil {
+		order = DefaultTagOrder
+	}
+	o := *order
+	return func(pager *tagPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultTagOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithTagFilter configures pagination filter.
+func WithTagFilter(filter func(*TagQuery) (*TagQuery, error)) TagPaginateOption {
+	return func(pager *tagPager) error {
+		if filter == nil {
+			return errors.New("TagQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type tagPager struct {
+	order  *TagOrder
+	filter func(*TagQuery) (*TagQuery, error)
+}
+
+func newTagPager(opts []TagPaginateOption) (*tagPager, error) {
+	pager := &tagPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultTagOrder
+	}
+	return pager, nil
+}
+
+func (p *tagPager) applyFilter(query *TagQuery) (*TagQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *tagPager) toCursor(t *Tag) Cursor {
+	return p.order.Field.toCursor(t)
+}
+
+func (p *tagPager) applyCursors(query *TagQuery, after, before *Cursor) *TagQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultTagOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *tagPager) applyOrder(query *TagQuery, reverse bool) *TagQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultTagOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultTagOrder.Field.field))
+	}
+	return query
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Tag.
+func (t *TagQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...TagPaginateOption,
+) (*TagConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newTagPager(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if t, err = pager.applyFilter(t); err != nil {
+		return nil, err
+	}
+
+	conn := &TagConnection{Edges: []*TagEdge{}}
+	if !hasCollectedField(ctx, edgesField) || first != nil && *first == 0 || last != nil && *last == 0 {
+		if hasCollectedField(ctx, totalCountField) ||
+			hasCollectedField(ctx, pageInfoField) {
+			count, err := t.Count(ctx)
+			if err != nil {
+				return nil, err
+			}
+			conn.TotalCount = count
+			conn.PageInfo.HasNextPage = first != nil && count > 0
+			conn.PageInfo.HasPreviousPage = last != nil && count > 0
+		}
+		return conn, nil
+	}
+
+	if (after != nil || first != nil || before != nil || last != nil) && hasCollectedField(ctx, totalCountField) {
+		count, err := t.Clone().Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		conn.TotalCount = count
+	}
+
+	t = pager.applyCursors(t, after, before)
+	t = pager.applyOrder(t, last != nil)
+	var limit int
+	if first != nil {
+		limit = *first + 1
+	} else if last != nil {
+		limit = *last + 1
+	}
+	if limit > 0 {
+		t = t.Limit(limit)
+	}
+
+	if field := getCollectedField(ctx, edgesField, nodeField); field != nil {
+		t = t.collectField(graphql.GetOperationContext(ctx), *field)
+	}
+
+	nodes, err := t.All(ctx)
+	if err != nil || len(nodes) == 0 {
+		return conn, err
+	}
+
+	if len(nodes) == limit {
+		conn.PageInfo.HasNextPage = first != nil
+		conn.PageInfo.HasPreviousPage = last != nil
+		nodes = nodes[:len(nodes)-1]
+	}
+
+	var nodeAt func(int) *Tag
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Tag {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Tag {
+			return nodes[i]
+		}
+	}
+
+	conn.Edges = make([]*TagEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		conn.Edges[i] = &TagEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+
+	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
+	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+	if conn.TotalCount == 0 {
+		conn.TotalCount = len(nodes)
+	}
+
+	return conn, nil
+}
+
+// TagOrderField defines the ordering field of Tag.
+type TagOrderField struct {
+	field    string
+	toCursor func(*Tag) Cursor
+}
+
+// TagOrder defines the ordering of Tag.
+type TagOrder struct {
+	Direction OrderDirection `json:"direction"`
+	Field     *TagOrderField `json:"field"`
+}
+
+// DefaultTagOrder is the default ordering of Tag.
+var DefaultTagOrder = &TagOrder{
+	Direction: OrderDirectionAsc,
+	Field: &TagOrderField{
+		field: tag.FieldID,
+		toCursor: func(t *Tag) Cursor {
+			return Cursor{ID: t.ID}
+		},
+	},
+}
+
+// ToEdge converts Tag into TagEdge.
+func (t *Tag) ToEdge(order *TagOrder) *TagEdge {
+	if order == nil {
+		order = DefaultTagOrder
+	}
+	return &TagEdge{
+		Node:   t,
+		Cursor: order.Field.toCursor(t),
 	}
 }
 

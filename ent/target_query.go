@@ -13,8 +13,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/predicate"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -28,8 +30,10 @@ type TargetQuery struct {
 	fields     []string
 	predicates []predicate.Target
 	// eager-loading edges.
-	withCredentials *CredentialQuery
 	withImplants    *ImplantQuery
+	withDeployments *DeploymentQuery
+	withCredentials *CredentialQuery
+	withTags        *TagQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -66,6 +70,50 @@ func (tq *TargetQuery) Order(o ...OrderFunc) *TargetQuery {
 	return tq
 }
 
+// QueryImplants chains the current query on the "implants" edge.
+func (tq *TargetQuery) QueryImplants() *ImplantQuery {
+	query := &ImplantQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, selector),
+			sqlgraph.To(implant.Table, implant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, target.ImplantsTable, target.ImplantsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDeployments chains the current query on the "deployments" edge.
+func (tq *TargetQuery) QueryDeployments() *DeploymentQuery {
+	query := &DeploymentQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, selector),
+			sqlgraph.To(deployment.Table, deployment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, target.DeploymentsTable, target.DeploymentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryCredentials chains the current query on the "credentials" edge.
 func (tq *TargetQuery) QueryCredentials() *CredentialQuery {
 	query := &CredentialQuery{config: tq.config}
@@ -88,9 +136,9 @@ func (tq *TargetQuery) QueryCredentials() *CredentialQuery {
 	return query
 }
 
-// QueryImplants chains the current query on the "implants" edge.
-func (tq *TargetQuery) QueryImplants() *ImplantQuery {
-	query := &ImplantQuery{config: tq.config}
+// QueryTags chains the current query on the "tags" edge.
+func (tq *TargetQuery) QueryTags() *TagQuery {
+	query := &TagQuery{config: tq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -101,8 +149,8 @@ func (tq *TargetQuery) QueryImplants() *ImplantQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(target.Table, target.FieldID, selector),
-			sqlgraph.To(implant.Table, implant.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, target.ImplantsTable, target.ImplantsColumn),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, target.TagsTable, target.TagsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -156,7 +204,7 @@ func (tq *TargetQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single Target entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one Target entity is not found.
+// Returns a *NotSingularError when more than one Target entity is found.
 // Returns a *NotFoundError when no Target entities are found.
 func (tq *TargetQuery) Only(ctx context.Context) (*Target, error) {
 	nodes, err := tq.Limit(2).All(ctx)
@@ -183,7 +231,7 @@ func (tq *TargetQuery) OnlyX(ctx context.Context) *Target {
 }
 
 // OnlyID is like Only, but returns the only Target ID in the query.
-// Returns a *NotSingularError when exactly one Target ID is not found.
+// Returns a *NotSingularError when more than one Target ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (tq *TargetQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -291,12 +339,37 @@ func (tq *TargetQuery) Clone() *TargetQuery {
 		offset:          tq.offset,
 		order:           append([]OrderFunc{}, tq.order...),
 		predicates:      append([]predicate.Target{}, tq.predicates...),
-		withCredentials: tq.withCredentials.Clone(),
 		withImplants:    tq.withImplants.Clone(),
+		withDeployments: tq.withDeployments.Clone(),
+		withCredentials: tq.withCredentials.Clone(),
+		withTags:        tq.withTags.Clone(),
 		// clone intermediate query.
-		sql:  tq.sql.Clone(),
-		path: tq.path,
+		sql:    tq.sql.Clone(),
+		path:   tq.path,
+		unique: tq.unique,
 	}
+}
+
+// WithImplants tells the query-builder to eager-load the nodes that are connected to
+// the "implants" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TargetQuery) WithImplants(opts ...func(*ImplantQuery)) *TargetQuery {
+	query := &ImplantQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withImplants = query
+	return tq
+}
+
+// WithDeployments tells the query-builder to eager-load the nodes that are connected to
+// the "deployments" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TargetQuery) WithDeployments(opts ...func(*DeploymentQuery)) *TargetQuery {
+	query := &DeploymentQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withDeployments = query
+	return tq
 }
 
 // WithCredentials tells the query-builder to eager-load the nodes that are connected to
@@ -310,14 +383,14 @@ func (tq *TargetQuery) WithCredentials(opts ...func(*CredentialQuery)) *TargetQu
 	return tq
 }
 
-// WithImplants tells the query-builder to eager-load the nodes that are connected to
-// the "implants" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TargetQuery) WithImplants(opts ...func(*ImplantQuery)) *TargetQuery {
-	query := &ImplantQuery{config: tq.config}
+// WithTags tells the query-builder to eager-load the nodes that are connected to
+// the "tags" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TargetQuery) WithTags(opts ...func(*TagQuery)) *TargetQuery {
+	query := &TagQuery{config: tq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	tq.withImplants = query
+	tq.withTags = query
 	return tq
 }
 
@@ -386,9 +459,11 @@ func (tq *TargetQuery) sqlAll(ctx context.Context) ([]*Target, error) {
 	var (
 		nodes       = []*Target{}
 		_spec       = tq.querySpec()
-		loadedTypes = [2]bool{
-			tq.withCredentials != nil,
+		loadedTypes = [4]bool{
 			tq.withImplants != nil,
+			tq.withDeployments != nil,
+			tq.withCredentials != nil,
+			tq.withTags != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -409,6 +484,64 @@ func (tq *TargetQuery) sqlAll(ctx context.Context) ([]*Target, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := tq.withImplants; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Target)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Implants = []*Implant{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Implant(func(s *sql.Selector) {
+			s.Where(sql.InValues(target.ImplantsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.implant_target
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "implant_target" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "implant_target" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Implants = append(node.Edges.Implants, n)
+		}
+	}
+
+	if query := tq.withDeployments; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Target)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Deployments = []*Deployment{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Deployment(func(s *sql.Selector) {
+			s.Where(sql.InValues(target.DeploymentsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.deployment_target
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "deployment_target" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "deployment_target" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Deployments = append(node.Edges.Deployments, n)
+		}
 	}
 
 	if query := tq.withCredentials; query != nil {
@@ -440,32 +573,68 @@ func (tq *TargetQuery) sqlAll(ctx context.Context) ([]*Target, error) {
 		}
 	}
 
-	if query := tq.withImplants; query != nil {
+	if query := tq.withTags; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
-		nodeids := make(map[int]*Target)
-		for i := range nodes {
-			fks = append(fks, nodes[i].ID)
-			nodeids[nodes[i].ID] = nodes[i]
-			nodes[i].Edges.Implants = []*Implant{}
+		ids := make(map[int]*Target, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.Tags = []*Tag{}
 		}
-		query.withFKs = true
-		query.Where(predicate.Implant(func(s *sql.Selector) {
-			s.Where(sql.InValues(target.ImplantsColumn, fks...))
-		}))
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Target)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   target.TagsTable,
+				Columns: target.TagsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(target.TagsPrimaryKey[0], fks...))
+			},
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				if _, ok := edges[inValue]; !ok {
+					edgeids = append(edgeids, inValue)
+				}
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, tq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "tags": %w`, err)
+		}
+		query.Where(tag.IDIn(edgeids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			fk := n.implant_target
-			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "implant_target" is nil for node %v`, n.ID)
-			}
-			node, ok := nodeids[*fk]
+			nodes, ok := edges[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "implant_target" returned %v for node %v`, *fk, n.ID)
+				return nil, fmt.Errorf(`unexpected "tags" node returned %v`, n.ID)
 			}
-			node.Edges.Implants = append(node.Edges.Implants, n)
+			for i := range nodes {
+				nodes[i].Edges.Tags = append(nodes[i].Edges.Tags, n)
+			}
 		}
 	}
 

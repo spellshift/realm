@@ -37,11 +37,16 @@ func (Target) Fields() []ent.Field {
 // Edges of the Target.
 func (Target) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("credentials", Credential.Type).
-			Annotations(entgql.Bind()).
-			Comment("A Target can have many credentials connected to it"),
 		edge.From("implants", Implant.Type).
 			Ref("target").
 			Comment("Implants that are (or will be) installed on the target."),
+		edge.From("deployments", Deployment.Type).
+			Ref("target").
+			Comment("Deployments that occurred on this target."),
+		edge.To("credentials", Credential.Type).
+			Annotations(entgql.Bind()).
+			Comment("A Target can have many credentials connected to it"),
+		edge.To("tags", Tag.Type).
+			Comment("Tags to categorize the target system."),
 	}
 }

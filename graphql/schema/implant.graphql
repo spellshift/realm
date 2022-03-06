@@ -1,6 +1,7 @@
 type ImplantCallbackConfig implements Node {
     id: ID!
     uri: String!
+    proxyURI: String
     priority: Int!
     timeout: Int!
     interval: Int!

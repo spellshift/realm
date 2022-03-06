@@ -23,8 +23,17 @@ const (
 	FieldLastModifiedAt = "last_modified_at"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
+	// EdgeDeploymentConfigs holds the string denoting the deploymentconfigs edge name in mutations.
+	EdgeDeploymentConfigs = "deploymentConfigs"
 	// Table holds the table name of the file in the database.
 	Table = "files"
+	// DeploymentConfigsTable is the table that holds the deploymentConfigs relation/edge.
+	DeploymentConfigsTable = "deployment_configs"
+	// DeploymentConfigsInverseTable is the table name for the DeploymentConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "deploymentconfig" package.
+	DeploymentConfigsInverseTable = "deployment_configs"
+	// DeploymentConfigsColumn is the table column denoting the deploymentConfigs relation/edge.
+	DeploymentConfigsColumn = "deployment_config_file"
 )
 
 // Columns holds all SQL columns for file fields.
@@ -59,4 +68,6 @@ var (
 	HashValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.
+	DefaultLastModifiedAt func() time.Time
 )

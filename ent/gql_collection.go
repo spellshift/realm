@@ -29,6 +29,30 @@ func (c *CredentialQuery) collectField(ctx *graphql.OperationContext, field grap
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (d *DeploymentQuery) CollectFields(ctx context.Context, satisfies ...string) *DeploymentQuery {
+	if fc := graphql.GetFieldContext(ctx); fc != nil {
+		d = d.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
+	}
+	return d
+}
+
+func (d *DeploymentQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *DeploymentQuery {
+	return d
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (dc *DeploymentConfigQuery) CollectFields(ctx context.Context, satisfies ...string) *DeploymentConfigQuery {
+	if fc := graphql.GetFieldContext(ctx); fc != nil {
+		dc = dc.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
+	}
+	return dc
+}
+
+func (dc *DeploymentConfigQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *DeploymentConfigQuery {
+	return dc
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (f *FileQuery) CollectFields(ctx context.Context, satisfies ...string) *FileQuery {
 	if fc := graphql.GetFieldContext(ctx); fc != nil {
 		f = f.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
@@ -86,6 +110,18 @@ func (isc *ImplantServiceConfigQuery) CollectFields(ctx context.Context, satisfi
 
 func (isc *ImplantServiceConfigQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *ImplantServiceConfigQuery {
 	return isc
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (t *TagQuery) CollectFields(ctx context.Context, satisfies ...string) *TagQuery {
+	if fc := graphql.GetFieldContext(ctx); fc != nil {
+		t = t.collectField(graphql.GetOperationContext(ctx), fc.Field, satisfies...)
+	}
+	return t
+}
+
+func (t *TagQuery) collectField(ctx *graphql.OperationContext, field graphql.CollectedField, satisfies ...string) *TagQuery {
+	return t
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.

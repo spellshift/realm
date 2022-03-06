@@ -9,6 +9,12 @@ import (
 // Credential is the predicate function for credential builders.
 type Credential func(*sql.Selector)
 
+// Deployment is the predicate function for deployment builders.
+type Deployment func(*sql.Selector)
+
+// DeploymentConfig is the predicate function for deploymentconfig builders.
+type DeploymentConfig func(*sql.Selector)
+
 // File is the predicate function for file builders.
 type File func(*sql.Selector)
 
@@ -23,6 +29,9 @@ type ImplantConfig func(*sql.Selector)
 
 // ImplantServiceConfig is the predicate function for implantserviceconfig builders.
 type ImplantServiceConfig func(*sql.Selector)
+
+// Tag is the predicate function for tag builders.
+type Tag func(*sql.Selector)
 
 // Target is the predicate function for target builders.
 type Target func(*sql.Selector)

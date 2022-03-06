@@ -2,6 +2,21 @@
 
 type Mutation {
   callback(info: CallbackInput!): CallbackResponse!
+  createImplantCallbackConfig(config: CreateImplantCallbackConfigInput!): ImplantCallbackConfig!
+  updateImplantCallbackConfig(config: UpdateImplantCallbackConfigInput!): ImplantCallbackConfig!
+  deleteImplantCallbackConfig(id: ID!): ID!
+  createImplantServiceConfig(config: CreateImplantServiceConfigInput!): ImplantServiceConfig!
+  updateImplantServiceConfig(config: UpdateImplantServiceConfigInput!): ImplantServiceConfig!
+  deleteImplantServiceConfig(id: ID!): ID!
+  createImplantConfig(config: CreateImplantConfigInput!): ImplantConfig!
+  updateImplantConfig(config: UpdateImplantConfigInput!): ImplantConfig!
+  deleteImplantConfig(id: ID!): ID!
+  createDeploymentConfig(config: CreateDeploymentConfigInput!): DeploymentConfig!
+  updateDeploymentConfig(config: UpdateDeploymentConfigInput!): DeploymentConfig!
+  deleteDeploymentConfig(id: ID!): ID!
+  createTag(tag: CreateTagInput!): Tag!
+  updateTag(tag: UpdateTagInput!): Tag!
+  deleteTag(id: ID!): ID!
   createTarget(target: CreateTargetInput!): Target!
   createCredential(credential: CreateCredentialInput!): Credential!
 }
@@ -11,6 +26,91 @@ input CallbackInput {
   sessionID: String!
   configName: String!
   processName: String!
+}
+
+input CreateImplantCallbackConfigInput {
+    uri: String!
+    proxyURI: String
+    priority: Int
+    timeout: Int
+    interval: Int
+    jitter: Int
+}
+
+input UpdateImplantCallbackConfigInput {
+    id: ID!
+    uri: String
+    proxyURI: String
+    priority: Int
+    timeout: Int
+    interval: Int
+    jitter: Int
+}
+
+input CreateImplantServiceConfigInput {
+    name: String!
+    description: String
+    executablePath: String!
+}
+
+input UpdateImplantServiceConfigInput {
+    id: ID!
+    name: String
+    description: String
+    executablePath: String
+}
+
+input CreateImplantConfigInput {
+  name: String!
+
+  serviceConfigIDs: [ID!]
+  callbackConfigIDs: [ID!]
+}
+
+input UpdateImplantConfigInput {
+    id: ID!
+    name: String
+
+    addServiceConfigIDs: [ID!]
+    removeServiceConfigIDs: [ID!]
+
+    addCallbackConfigIDs: [ID!]
+    removeCallbackConfigIDs: [ID!]
+}
+
+input CreateDeploymentConfigInput {
+    name: String!
+    cmd: String
+    startCmd: Boolean
+    fileDst: String 
+
+    implantConfigID: ID
+    fileID: ID
+}
+
+input UpdateDeploymentConfigInput {
+    id: ID!
+    name: String
+    cmd: String
+    startCmd: Boolean
+    fileDst: String 
+
+    implantConfigID: ID
+    fileID: ID
+}
+
+input CreateTagInput {
+    name: String!
+
+    targetIDs: [ID!]
+}
+
+input UpdateTagInput {
+    id: ID!
+    name: String
+
+    addTargetIDs: [ID!]
+    removeTargetIDs: [ID!]
 }
 
 input CreateTargetInput {

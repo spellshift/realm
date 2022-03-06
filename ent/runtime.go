@@ -6,12 +6,15 @@ import (
 	"time"
 
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
 	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/schema"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -43,6 +46,42 @@ func init() {
 			return nil
 		}
 	}()
+	deploymentFields := schema.Deployment{}.Fields()
+	_ = deploymentFields
+	// deploymentDescOutput is the schema descriptor for output field.
+	deploymentDescOutput := deploymentFields[0].Descriptor()
+	// deployment.DefaultOutput holds the default value on creation for the output field.
+	deployment.DefaultOutput = deploymentDescOutput.Default.(string)
+	// deploymentDescError is the schema descriptor for error field.
+	deploymentDescError := deploymentFields[1].Descriptor()
+	// deployment.DefaultError holds the default value on creation for the error field.
+	deployment.DefaultError = deploymentDescError.Default.(string)
+	// deploymentDescQueuedAt is the schema descriptor for queuedAt field.
+	deploymentDescQueuedAt := deploymentFields[2].Descriptor()
+	// deployment.DefaultQueuedAt holds the default value on creation for the queuedAt field.
+	deployment.DefaultQueuedAt = deploymentDescQueuedAt.Default.(func() time.Time)
+	// deploymentDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	deploymentDescLastModifiedAt := deploymentFields[3].Descriptor()
+	// deployment.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	deployment.DefaultLastModifiedAt = deploymentDescLastModifiedAt.Default.(func() time.Time)
+	deploymentconfigFields := schema.DeploymentConfig{}.Fields()
+	_ = deploymentconfigFields
+	// deploymentconfigDescName is the schema descriptor for name field.
+	deploymentconfigDescName := deploymentconfigFields[0].Descriptor()
+	// deploymentconfig.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	deploymentconfig.NameValidator = deploymentconfigDescName.Validators[0].(func(string) error)
+	// deploymentconfigDescCmd is the schema descriptor for cmd field.
+	deploymentconfigDescCmd := deploymentconfigFields[1].Descriptor()
+	// deploymentconfig.DefaultCmd holds the default value on creation for the cmd field.
+	deploymentconfig.DefaultCmd = deploymentconfigDescCmd.Default.(string)
+	// deploymentconfigDescStartCmd is the schema descriptor for startCmd field.
+	deploymentconfigDescStartCmd := deploymentconfigFields[2].Descriptor()
+	// deploymentconfig.DefaultStartCmd holds the default value on creation for the startCmd field.
+	deploymentconfig.DefaultStartCmd = deploymentconfigDescStartCmd.Default.(bool)
+	// deploymentconfigDescFileDst is the schema descriptor for fileDst field.
+	deploymentconfigDescFileDst := deploymentconfigFields[3].Descriptor()
+	// deploymentconfig.DefaultFileDst holds the default value on creation for the fileDst field.
+	deploymentconfig.DefaultFileDst = deploymentconfigDescFileDst.Default.(string)
 	fileFields := schema.File{}.Fields()
 	_ = fileFields
 	// fileDescName is the schema descriptor for name field.
@@ -63,6 +102,10 @@ func init() {
 	fileDescCreatedAt := fileFields[3].Descriptor()
 	// file.DefaultCreatedAt holds the default value on creation for the createdAt field.
 	file.DefaultCreatedAt = fileDescCreatedAt.Default.(func() time.Time)
+	// fileDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	fileDescLastModifiedAt := fileFields[4].Descriptor()
+	// file.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	file.DefaultLastModifiedAt = fileDescLastModifiedAt.Default.(func() time.Time)
 	implantFields := schema.Implant{}.Fields()
 	_ = implantFields
 	// implantDescSessionID is the schema descriptor for sessionID field.
@@ -76,25 +119,25 @@ func init() {
 	// implantcallbackconfig.URIValidator is a validator for the "uri" field. It is called by the builders before save.
 	implantcallbackconfig.URIValidator = implantcallbackconfigDescURI.Validators[0].(func(string) error)
 	// implantcallbackconfigDescPriority is the schema descriptor for priority field.
-	implantcallbackconfigDescPriority := implantcallbackconfigFields[1].Descriptor()
+	implantcallbackconfigDescPriority := implantcallbackconfigFields[2].Descriptor()
 	// implantcallbackconfig.DefaultPriority holds the default value on creation for the priority field.
 	implantcallbackconfig.DefaultPriority = implantcallbackconfigDescPriority.Default.(int)
 	// implantcallbackconfig.PriorityValidator is a validator for the "priority" field. It is called by the builders before save.
 	implantcallbackconfig.PriorityValidator = implantcallbackconfigDescPriority.Validators[0].(func(int) error)
 	// implantcallbackconfigDescTimeout is the schema descriptor for timeout field.
-	implantcallbackconfigDescTimeout := implantcallbackconfigFields[2].Descriptor()
+	implantcallbackconfigDescTimeout := implantcallbackconfigFields[3].Descriptor()
 	// implantcallbackconfig.DefaultTimeout holds the default value on creation for the timeout field.
 	implantcallbackconfig.DefaultTimeout = implantcallbackconfigDescTimeout.Default.(int)
 	// implantcallbackconfig.TimeoutValidator is a validator for the "timeout" field. It is called by the builders before save.
 	implantcallbackconfig.TimeoutValidator = implantcallbackconfigDescTimeout.Validators[0].(func(int) error)
 	// implantcallbackconfigDescInterval is the schema descriptor for interval field.
-	implantcallbackconfigDescInterval := implantcallbackconfigFields[3].Descriptor()
+	implantcallbackconfigDescInterval := implantcallbackconfigFields[4].Descriptor()
 	// implantcallbackconfig.DefaultInterval holds the default value on creation for the interval field.
 	implantcallbackconfig.DefaultInterval = implantcallbackconfigDescInterval.Default.(int)
 	// implantcallbackconfig.IntervalValidator is a validator for the "interval" field. It is called by the builders before save.
 	implantcallbackconfig.IntervalValidator = implantcallbackconfigDescInterval.Validators[0].(func(int) error)
 	// implantcallbackconfigDescJitter is the schema descriptor for jitter field.
-	implantcallbackconfigDescJitter := implantcallbackconfigFields[4].Descriptor()
+	implantcallbackconfigDescJitter := implantcallbackconfigFields[5].Descriptor()
 	// implantcallbackconfig.DefaultJitter holds the default value on creation for the jitter field.
 	implantcallbackconfig.DefaultJitter = implantcallbackconfigDescJitter.Default.(int)
 	// implantcallbackconfig.JitterValidator is a validator for the "jitter" field. It is called by the builders before save.
@@ -123,6 +166,26 @@ func init() {
 	implantserviceconfigDescExecutablePath := implantserviceconfigFields[2].Descriptor()
 	// implantserviceconfig.ExecutablePathValidator is a validator for the "executablePath" field. It is called by the builders before save.
 	implantserviceconfig.ExecutablePathValidator = implantserviceconfigDescExecutablePath.Validators[0].(func(string) error)
+	tagFields := schema.Tag{}.Fields()
+	_ = tagFields
+	// tagDescName is the schema descriptor for name field.
+	tagDescName := tagFields[0].Descriptor()
+	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tag.NameValidator = func() func(string) error {
+		validators := tagDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	targetFields := schema.Target{}.Fields()
 	_ = targetFields
 	// targetDescName is the schema descriptor for name field.

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/predicate"
 )
@@ -81,15 +82,59 @@ func (fu *FileUpdate) SetLastModifiedAt(t time.Time) *FileUpdate {
 	return fu
 }
 
+// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+func (fu *FileUpdate) SetNillableLastModifiedAt(t *time.Time) *FileUpdate {
+	if t != nil {
+		fu.SetLastModifiedAt(*t)
+	}
+	return fu
+}
+
 // SetContent sets the "content" field.
 func (fu *FileUpdate) SetContent(b []byte) *FileUpdate {
 	fu.mutation.SetContent(b)
 	return fu
 }
 
+// AddDeploymentConfigIDs adds the "deploymentConfigs" edge to the DeploymentConfig entity by IDs.
+func (fu *FileUpdate) AddDeploymentConfigIDs(ids ...int) *FileUpdate {
+	fu.mutation.AddDeploymentConfigIDs(ids...)
+	return fu
+}
+
+// AddDeploymentConfigs adds the "deploymentConfigs" edges to the DeploymentConfig entity.
+func (fu *FileUpdate) AddDeploymentConfigs(d ...*DeploymentConfig) *FileUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return fu.AddDeploymentConfigIDs(ids...)
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (fu *FileUpdate) Mutation() *FileMutation {
 	return fu.mutation
+}
+
+// ClearDeploymentConfigs clears all "deploymentConfigs" edges to the DeploymentConfig entity.
+func (fu *FileUpdate) ClearDeploymentConfigs() *FileUpdate {
+	fu.mutation.ClearDeploymentConfigs()
+	return fu
+}
+
+// RemoveDeploymentConfigIDs removes the "deploymentConfigs" edge to DeploymentConfig entities by IDs.
+func (fu *FileUpdate) RemoveDeploymentConfigIDs(ids ...int) *FileUpdate {
+	fu.mutation.RemoveDeploymentConfigIDs(ids...)
+	return fu
+}
+
+// RemoveDeploymentConfigs removes "deploymentConfigs" edges to DeploymentConfig entities.
+func (fu *FileUpdate) RemoveDeploymentConfigs(d ...*DeploymentConfig) *FileUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return fu.RemoveDeploymentConfigIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -239,6 +284,60 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: file.FieldContent,
 		})
 	}
+	if fu.mutation.DeploymentConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.DeploymentConfigsTable,
+			Columns: []string{file.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fu.mutation.RemovedDeploymentConfigsIDs(); len(nodes) > 0 && !fu.mutation.DeploymentConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.DeploymentConfigsTable,
+			Columns: []string{file.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fu.mutation.DeploymentConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.DeploymentConfigsTable,
+			Columns: []string{file.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, fu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{file.Label}
@@ -311,15 +410,59 @@ func (fuo *FileUpdateOne) SetLastModifiedAt(t time.Time) *FileUpdateOne {
 	return fuo
 }
 
+// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+func (fuo *FileUpdateOne) SetNillableLastModifiedAt(t *time.Time) *FileUpdateOne {
+	if t != nil {
+		fuo.SetLastModifiedAt(*t)
+	}
+	return fuo
+}
+
 // SetContent sets the "content" field.
 func (fuo *FileUpdateOne) SetContent(b []byte) *FileUpdateOne {
 	fuo.mutation.SetContent(b)
 	return fuo
 }
 
+// AddDeploymentConfigIDs adds the "deploymentConfigs" edge to the DeploymentConfig entity by IDs.
+func (fuo *FileUpdateOne) AddDeploymentConfigIDs(ids ...int) *FileUpdateOne {
+	fuo.mutation.AddDeploymentConfigIDs(ids...)
+	return fuo
+}
+
+// AddDeploymentConfigs adds the "deploymentConfigs" edges to the DeploymentConfig entity.
+func (fuo *FileUpdateOne) AddDeploymentConfigs(d ...*DeploymentConfig) *FileUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return fuo.AddDeploymentConfigIDs(ids...)
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (fuo *FileUpdateOne) Mutation() *FileMutation {
 	return fuo.mutation
+}
+
+// ClearDeploymentConfigs clears all "deploymentConfigs" edges to the DeploymentConfig entity.
+func (fuo *FileUpdateOne) ClearDeploymentConfigs() *FileUpdateOne {
+	fuo.mutation.ClearDeploymentConfigs()
+	return fuo
+}
+
+// RemoveDeploymentConfigIDs removes the "deploymentConfigs" edge to DeploymentConfig entities by IDs.
+func (fuo *FileUpdateOne) RemoveDeploymentConfigIDs(ids ...int) *FileUpdateOne {
+	fuo.mutation.RemoveDeploymentConfigIDs(ids...)
+	return fuo
+}
+
+// RemoveDeploymentConfigs removes "deploymentConfigs" edges to DeploymentConfig entities.
+func (fuo *FileUpdateOne) RemoveDeploymentConfigs(d ...*DeploymentConfig) *FileUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return fuo.RemoveDeploymentConfigIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -492,6 +635,60 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 			Value:  value,
 			Column: file.FieldContent,
 		})
+	}
+	if fuo.mutation.DeploymentConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.DeploymentConfigsTable,
+			Columns: []string{file.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fuo.mutation.RemovedDeploymentConfigsIDs(); len(nodes) > 0 && !fuo.mutation.DeploymentConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.DeploymentConfigsTable,
+			Columns: []string{file.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fuo.mutation.DeploymentConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.DeploymentConfigsTable,
+			Columns: []string{file.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &File{config: fuo.config}
 	_spec.Assign = _node.assignValues

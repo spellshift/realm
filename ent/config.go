@@ -25,11 +25,14 @@ type config struct {
 // hooks per client, for fast access.
 type hooks struct {
 	Credential            []ent.Hook
+	Deployment            []ent.Hook
+	DeploymentConfig      []ent.Hook
 	File                  []ent.Hook
 	Implant               []ent.Hook
 	ImplantCallbackConfig []ent.Hook
 	ImplantConfig         []ent.Hook
 	ImplantServiceConfig  []ent.Hook
+	Tag                   []ent.Hook
 	Target                []ent.Hook
 }
 

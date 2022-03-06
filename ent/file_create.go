@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 )
 
@@ -66,10 +67,33 @@ func (fc *FileCreate) SetLastModifiedAt(t time.Time) *FileCreate {
 	return fc
 }
 
+// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+func (fc *FileCreate) SetNillableLastModifiedAt(t *time.Time) *FileCreate {
+	if t != nil {
+		fc.SetLastModifiedAt(*t)
+	}
+	return fc
+}
+
 // SetContent sets the "content" field.
 func (fc *FileCreate) SetContent(b []byte) *FileCreate {
 	fc.mutation.SetContent(b)
 	return fc
+}
+
+// AddDeploymentConfigIDs adds the "deploymentConfigs" edge to the DeploymentConfig entity by IDs.
+func (fc *FileCreate) AddDeploymentConfigIDs(ids ...int) *FileCreate {
+	fc.mutation.AddDeploymentConfigIDs(ids...)
+	return fc
+}
+
+// AddDeploymentConfigs adds the "deploymentConfigs" edges to the DeploymentConfig entity.
+func (fc *FileCreate) AddDeploymentConfigs(d ...*DeploymentConfig) *FileCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return fc.AddDeploymentConfigIDs(ids...)
 }
 
 // Mutation returns the FileMutation object of the builder.
@@ -150,6 +174,10 @@ func (fc *FileCreate) defaults() {
 	if _, ok := fc.mutation.CreatedAt(); !ok {
 		v := file.DefaultCreatedAt()
 		fc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := fc.mutation.LastModifiedAt(); !ok {
+		v := file.DefaultLastModifiedAt()
+		fc.mutation.SetLastModifiedAt(v)
 	}
 }
 
@@ -262,6 +290,25 @@ func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 			Column: file.FieldContent,
 		})
 		_node.Content = value
+	}
+	if nodes := fc.mutation.DeploymentConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.DeploymentConfigsTable,
+			Columns: []string{file.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

@@ -2,7 +2,7 @@ use anyhow::Result;
 use sha256::digest_file;
 
 pub fn hash(path: String) -> Result<String> {
-    let val = digest_file(path).unwrap();
+    let val = digest_file(path)?;
     Ok(val)
 }
 
