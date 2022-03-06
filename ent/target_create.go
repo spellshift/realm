@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/target"
 )
@@ -61,6 +62,21 @@ func (tc *TargetCreate) AddImplants(i ...*Implant) *TargetCreate {
 		ids[j] = i[j].ID
 	}
 	return tc.AddImplantIDs(ids...)
+}
+
+// AddDeploymentIDs adds the "deployments" edge to the Deployment entity by IDs.
+func (tc *TargetCreate) AddDeploymentIDs(ids ...int) *TargetCreate {
+	tc.mutation.AddDeploymentIDs(ids...)
+	return tc
+}
+
+// AddDeployments adds the "deployments" edges to the Deployment entity.
+func (tc *TargetCreate) AddDeployments(d ...*Deployment) *TargetCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return tc.AddDeploymentIDs(ids...)
 }
 
 // Mutation returns the TargetMutation object of the builder.
@@ -222,6 +238,25 @@ func (tc *TargetCreate) createSpec() (*Target, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: implant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.DeploymentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.DeploymentsTable,
+			Columns: []string{target.DeploymentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deployment.FieldID,
 				},
 			},
 		}

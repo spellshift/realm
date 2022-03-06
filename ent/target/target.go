@@ -15,6 +15,8 @@ const (
 	EdgeCredentials = "credentials"
 	// EdgeImplants holds the string denoting the implants edge name in mutations.
 	EdgeImplants = "implants"
+	// EdgeDeployments holds the string denoting the deployments edge name in mutations.
+	EdgeDeployments = "deployments"
 	// Table holds the table name of the target in the database.
 	Table = "targets"
 	// CredentialsTable is the table that holds the credentials relation/edge.
@@ -31,6 +33,13 @@ const (
 	ImplantsInverseTable = "implants"
 	// ImplantsColumn is the table column denoting the implants relation/edge.
 	ImplantsColumn = "implant_target"
+	// DeploymentsTable is the table that holds the deployments relation/edge.
+	DeploymentsTable = "deployments"
+	// DeploymentsInverseTable is the table name for the Deployment entity.
+	// It exists in this package in order to avoid circular dependency with the "deployment" package.
+	DeploymentsInverseTable = "deployments"
+	// DeploymentsColumn is the table column denoting the deployments relation/edge.
+	DeploymentsColumn = "deployment_target"
 )
 
 // Columns holds all SQL columns for target fields.

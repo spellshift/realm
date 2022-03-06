@@ -132,7 +132,7 @@ func (cq *CredentialQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single Credential entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one Credential entity is not found.
+// Returns a *NotSingularError when more than one Credential entity is found.
 // Returns a *NotFoundError when no Credential entities are found.
 func (cq *CredentialQuery) Only(ctx context.Context) (*Credential, error) {
 	nodes, err := cq.Limit(2).All(ctx)
@@ -159,7 +159,7 @@ func (cq *CredentialQuery) OnlyX(ctx context.Context) *Credential {
 }
 
 // OnlyID is like Only, but returns the only Credential ID in the query.
-// Returns a *NotSingularError when exactly one Credential ID is not found.
+// Returns a *NotSingularError when more than one Credential ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (cq *CredentialQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -269,8 +269,9 @@ func (cq *CredentialQuery) Clone() *CredentialQuery {
 		predicates: append([]predicate.Credential{}, cq.predicates...),
 		withTarget: cq.withTarget.Clone(),
 		// clone intermediate query.
-		sql:  cq.sql.Clone(),
-		path: cq.path,
+		sql:    cq.sql.Clone(),
+		path:   cq.path,
+		unique: cq.unique,
 	}
 }
 

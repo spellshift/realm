@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/predicate"
 	"github.com/kcarretto/realm/ent/target"
@@ -71,6 +72,21 @@ func (tu *TargetUpdate) AddImplants(i ...*Implant) *TargetUpdate {
 	return tu.AddImplantIDs(ids...)
 }
 
+// AddDeploymentIDs adds the "deployments" edge to the Deployment entity by IDs.
+func (tu *TargetUpdate) AddDeploymentIDs(ids ...int) *TargetUpdate {
+	tu.mutation.AddDeploymentIDs(ids...)
+	return tu
+}
+
+// AddDeployments adds the "deployments" edges to the Deployment entity.
+func (tu *TargetUpdate) AddDeployments(d ...*Deployment) *TargetUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return tu.AddDeploymentIDs(ids...)
+}
+
 // Mutation returns the TargetMutation object of the builder.
 func (tu *TargetUpdate) Mutation() *TargetMutation {
 	return tu.mutation
@@ -116,6 +132,27 @@ func (tu *TargetUpdate) RemoveImplants(i ...*Implant) *TargetUpdate {
 		ids[j] = i[j].ID
 	}
 	return tu.RemoveImplantIDs(ids...)
+}
+
+// ClearDeployments clears all "deployments" edges to the Deployment entity.
+func (tu *TargetUpdate) ClearDeployments() *TargetUpdate {
+	tu.mutation.ClearDeployments()
+	return tu
+}
+
+// RemoveDeploymentIDs removes the "deployments" edge to Deployment entities by IDs.
+func (tu *TargetUpdate) RemoveDeploymentIDs(ids ...int) *TargetUpdate {
+	tu.mutation.RemoveDeploymentIDs(ids...)
+	return tu
+}
+
+// RemoveDeployments removes "deployments" edges to Deployment entities.
+func (tu *TargetUpdate) RemoveDeployments(d ...*Deployment) *TargetUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return tu.RemoveDeploymentIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -333,6 +370,60 @@ func (tu *TargetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.DeploymentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.DeploymentsTable,
+			Columns: []string{target.DeploymentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deployment.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedDeploymentsIDs(); len(nodes) > 0 && !tu.mutation.DeploymentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.DeploymentsTable,
+			Columns: []string{target.DeploymentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deployment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.DeploymentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.DeploymentsTable,
+			Columns: []string{target.DeploymentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deployment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{target.Label}
@@ -394,6 +485,21 @@ func (tuo *TargetUpdateOne) AddImplants(i ...*Implant) *TargetUpdateOne {
 	return tuo.AddImplantIDs(ids...)
 }
 
+// AddDeploymentIDs adds the "deployments" edge to the Deployment entity by IDs.
+func (tuo *TargetUpdateOne) AddDeploymentIDs(ids ...int) *TargetUpdateOne {
+	tuo.mutation.AddDeploymentIDs(ids...)
+	return tuo
+}
+
+// AddDeployments adds the "deployments" edges to the Deployment entity.
+func (tuo *TargetUpdateOne) AddDeployments(d ...*Deployment) *TargetUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return tuo.AddDeploymentIDs(ids...)
+}
+
 // Mutation returns the TargetMutation object of the builder.
 func (tuo *TargetUpdateOne) Mutation() *TargetMutation {
 	return tuo.mutation
@@ -439,6 +545,27 @@ func (tuo *TargetUpdateOne) RemoveImplants(i ...*Implant) *TargetUpdateOne {
 		ids[j] = i[j].ID
 	}
 	return tuo.RemoveImplantIDs(ids...)
+}
+
+// ClearDeployments clears all "deployments" edges to the Deployment entity.
+func (tuo *TargetUpdateOne) ClearDeployments() *TargetUpdateOne {
+	tuo.mutation.ClearDeployments()
+	return tuo
+}
+
+// RemoveDeploymentIDs removes the "deployments" edge to Deployment entities by IDs.
+func (tuo *TargetUpdateOne) RemoveDeploymentIDs(ids ...int) *TargetUpdateOne {
+	tuo.mutation.RemoveDeploymentIDs(ids...)
+	return tuo
+}
+
+// RemoveDeployments removes "deployments" edges to Deployment entities.
+func (tuo *TargetUpdateOne) RemoveDeployments(d ...*Deployment) *TargetUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return tuo.RemoveDeploymentIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -672,6 +799,60 @@ func (tuo *TargetUpdateOne) sqlSave(ctx context.Context) (_node *Target, err err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: implant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.DeploymentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.DeploymentsTable,
+			Columns: []string{target.DeploymentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deployment.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedDeploymentsIDs(); len(nodes) > 0 && !tuo.mutation.DeploymentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.DeploymentsTable,
+			Columns: []string{target.DeploymentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deployment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.DeploymentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   target.DeploymentsTable,
+			Columns: []string{target.DeploymentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deployment.FieldID,
 				},
 			},
 		}

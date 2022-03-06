@@ -16,6 +16,8 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/hashicorp/go-multierror"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
@@ -97,12 +99,164 @@ func (c *Credential) Node(ctx context.Context) (node *Node, err error) {
 	return node, nil
 }
 
+func (d *Deployment) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     d.ID,
+		Type:   "Deployment",
+		Fields: make([]*Field, 6),
+		Edges:  make([]*Edge, 2),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(d.Output); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "output",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(d.Error); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "error",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(d.QueuedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "time.Time",
+		Name:  "queuedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(d.LastModifiedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "time.Time",
+		Name:  "lastModifiedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(d.StartedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "time.Time",
+		Name:  "startedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(d.FinishedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "time.Time",
+		Name:  "finishedAt",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "DeploymentConfig",
+		Name: "config",
+	}
+	err = d.QueryConfig().
+		Select(deploymentconfig.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[1] = &Edge{
+		Type: "Target",
+		Name: "target",
+	}
+	err = d.QueryTarget().
+		Select(target.FieldID).
+		Scan(ctx, &node.Edges[1].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+func (dc *DeploymentConfig) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     dc.ID,
+		Type:   "DeploymentConfig",
+		Fields: make([]*Field, 4),
+		Edges:  make([]*Edge, 3),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(dc.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(dc.Cmd); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "cmd",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(dc.StartCmd); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "bool",
+		Name:  "startCmd",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(dc.FileDst); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "fileDst",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Deployment",
+		Name: "deployments",
+	}
+	err = dc.QueryDeployments().
+		Select(deployment.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[1] = &Edge{
+		Type: "File",
+		Name: "file",
+	}
+	err = dc.QueryFile().
+		Select(file.FieldID).
+		Scan(ctx, &node.Edges[1].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[2] = &Edge{
+		Type: "ImplantConfig",
+		Name: "implantConfig",
+	}
+	err = dc.QueryImplantConfig().
+		Select(implantconfig.FieldID).
+		Scan(ctx, &node.Edges[2].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
 func (f *File) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     f.ID,
 		Type:   "File",
 		Fields: make([]*Field, 6),
-		Edges:  make([]*Edge, 0),
+		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(f.Name); err != nil {
@@ -152,6 +306,16 @@ func (f *File) Node(ctx context.Context) (node *Node, err error) {
 		Type:  "[]byte",
 		Name:  "content",
 		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "DeploymentConfig",
+		Name: "deploymentConfigs",
+	}
+	err = f.QueryDeploymentConfigs().
+		Select(deploymentconfig.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
 	}
 	return node, nil
 }
@@ -277,7 +441,7 @@ func (ic *ImplantConfig) Node(ctx context.Context) (node *Node, err error) {
 		ID:     ic.ID,
 		Type:   "ImplantConfig",
 		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 3),
+		Edges:  make([]*Edge, 4),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(ic.Name); err != nil {
@@ -297,32 +461,42 @@ func (ic *ImplantConfig) Node(ctx context.Context) (node *Node, err error) {
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{
-		Type: "Implant",
-		Name: "implants",
+		Type: "DeploymentConfig",
+		Name: "deploymentConfigs",
 	}
-	err = ic.QueryImplants().
-		Select(implant.FieldID).
+	err = ic.QueryDeploymentConfigs().
+		Select(deploymentconfig.FieldID).
 		Scan(ctx, &node.Edges[0].IDs)
 	if err != nil {
 		return nil, err
 	}
 	node.Edges[1] = &Edge{
-		Type: "ImplantServiceConfig",
-		Name: "serviceConfigs",
+		Type: "Implant",
+		Name: "implants",
 	}
-	err = ic.QueryServiceConfigs().
-		Select(implantserviceconfig.FieldID).
+	err = ic.QueryImplants().
+		Select(implant.FieldID).
 		Scan(ctx, &node.Edges[1].IDs)
 	if err != nil {
 		return nil, err
 	}
 	node.Edges[2] = &Edge{
+		Type: "ImplantServiceConfig",
+		Name: "serviceConfigs",
+	}
+	err = ic.QueryServiceConfigs().
+		Select(implantserviceconfig.FieldID).
+		Scan(ctx, &node.Edges[2].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[3] = &Edge{
 		Type: "ImplantCallbackConfig",
 		Name: "callbackConfigs",
 	}
 	err = ic.QueryCallbackConfigs().
 		Select(implantcallbackconfig.FieldID).
-		Scan(ctx, &node.Edges[2].IDs)
+		Scan(ctx, &node.Edges[3].IDs)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +553,7 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 		ID:     t.ID,
 		Type:   "Target",
 		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 2),
+		Edges:  make([]*Edge, 3),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(t.Name); err != nil {
@@ -415,6 +589,16 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 	err = t.QueryImplants().
 		Select(implant.FieldID).
 		Scan(ctx, &node.Edges[1].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[2] = &Edge{
+		Type: "Deployment",
+		Name: "deployments",
+	}
+	err = t.QueryDeployments().
+		Select(deployment.FieldID).
+		Scan(ctx, &node.Edges[2].IDs)
 	if err != nil {
 		return nil, err
 	}
@@ -492,6 +676,24 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		n, err := c.Credential.Query().
 			Where(credential.ID(id)).
 			CollectFields(ctx, "Credential").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case deployment.Table:
+		n, err := c.Deployment.Query().
+			Where(deployment.ID(id)).
+			CollectFields(ctx, "Deployment").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case deploymentconfig.Table:
+		n, err := c.DeploymentConfig.Query().
+			Where(deploymentconfig.ID(id)).
+			CollectFields(ctx, "DeploymentConfig").
 			Only(ctx)
 		if err != nil {
 			return nil, err
@@ -628,6 +830,32 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		nodes, err := c.Credential.Query().
 			Where(credential.IDIn(ids...)).
 			CollectFields(ctx, "Credential").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case deployment.Table:
+		nodes, err := c.Deployment.Query().
+			Where(deployment.IDIn(ids...)).
+			CollectFields(ctx, "Deployment").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case deploymentconfig.Table:
+		nodes, err := c.DeploymentConfig.Query().
+			Where(deploymentconfig.IDIn(ids...)).
+			CollectFields(ctx, "DeploymentConfig").
 			All(ctx)
 		if err != nil {
 			return nil, err

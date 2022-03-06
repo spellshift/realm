@@ -34,6 +34,9 @@ func (ImplantConfig) Fields() []ent.Field {
 // Edges of the Implant.
 func (ImplantConfig) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.From("deploymentConfigs", DeploymentConfig.Type).
+			Ref("implantConfig").
+			Comment("Deployment Configurations that depend on this ImplantConfig."),
 		edge.From("implants", Implant.Type).
 			Ref("config").
 			Comment("Implants that are using this config"),

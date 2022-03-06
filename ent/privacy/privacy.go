@@ -188,6 +188,54 @@ func (f CredentialMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Muta
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.CredentialMutation", m)
 }
 
+// The DeploymentQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type DeploymentQueryRuleFunc func(context.Context, *ent.DeploymentQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f DeploymentQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.DeploymentQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.DeploymentQuery", q)
+}
+
+// The DeploymentMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type DeploymentMutationRuleFunc func(context.Context, *ent.DeploymentMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f DeploymentMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.DeploymentMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.DeploymentMutation", m)
+}
+
+// The DeploymentConfigQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type DeploymentConfigQueryRuleFunc func(context.Context, *ent.DeploymentConfigQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f DeploymentConfigQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.DeploymentConfigQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.DeploymentConfigQuery", q)
+}
+
+// The DeploymentConfigMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type DeploymentConfigMutationRuleFunc func(context.Context, *ent.DeploymentConfigMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f DeploymentConfigMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.DeploymentConfigMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.DeploymentConfigMutation", m)
+}
+
 // The FileQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type FileQueryRuleFunc func(context.Context, *ent.FileQuery) error

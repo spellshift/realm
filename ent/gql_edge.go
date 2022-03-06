@@ -12,6 +12,54 @@ func (c *Credential) Target(ctx context.Context) (*Target, error) {
 	return result, MaskNotFound(err)
 }
 
+func (d *Deployment) Config(ctx context.Context) (*DeploymentConfig, error) {
+	result, err := d.Edges.ConfigOrErr()
+	if IsNotLoaded(err) {
+		result, err = d.QueryConfig().Only(ctx)
+	}
+	return result, err
+}
+
+func (d *Deployment) Target(ctx context.Context) (*Target, error) {
+	result, err := d.Edges.TargetOrErr()
+	if IsNotLoaded(err) {
+		result, err = d.QueryTarget().Only(ctx)
+	}
+	return result, err
+}
+
+func (dc *DeploymentConfig) Deployments(ctx context.Context) ([]*Deployment, error) {
+	result, err := dc.Edges.DeploymentsOrErr()
+	if IsNotLoaded(err) {
+		result, err = dc.QueryDeployments().All(ctx)
+	}
+	return result, err
+}
+
+func (dc *DeploymentConfig) File(ctx context.Context) (*File, error) {
+	result, err := dc.Edges.FileOrErr()
+	if IsNotLoaded(err) {
+		result, err = dc.QueryFile().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (dc *DeploymentConfig) ImplantConfig(ctx context.Context) (*ImplantConfig, error) {
+	result, err := dc.Edges.ImplantConfigOrErr()
+	if IsNotLoaded(err) {
+		result, err = dc.QueryImplantConfig().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (f *File) DeploymentConfigs(ctx context.Context) ([]*DeploymentConfig, error) {
+	result, err := f.Edges.DeploymentConfigsOrErr()
+	if IsNotLoaded(err) {
+		result, err = f.QueryDeploymentConfigs().All(ctx)
+	}
+	return result, err
+}
+
 func (i *Implant) Target(ctx context.Context) (*Target, error) {
 	result, err := i.Edges.TargetOrErr()
 	if IsNotLoaded(err) {
@@ -32,6 +80,14 @@ func (icc *ImplantCallbackConfig) ImplantConfigs(ctx context.Context) ([]*Implan
 	result, err := icc.Edges.ImplantConfigsOrErr()
 	if IsNotLoaded(err) {
 		result, err = icc.QueryImplantConfigs().All(ctx)
+	}
+	return result, err
+}
+
+func (ic *ImplantConfig) DeploymentConfigs(ctx context.Context) ([]*DeploymentConfig, error) {
+	result, err := ic.Edges.DeploymentConfigsOrErr()
+	if IsNotLoaded(err) {
+		result, err = ic.QueryDeploymentConfigs().All(ctx)
 	}
 	return result, err
 }
@@ -80,6 +136,14 @@ func (t *Target) Implants(ctx context.Context) ([]*Implant, error) {
 	result, err := t.Edges.ImplantsOrErr()
 	if IsNotLoaded(err) {
 		result, err = t.QueryImplants().All(ctx)
+	}
+	return result, err
+}
+
+func (t *Target) Deployments(ctx context.Context) ([]*Deployment, error) {
+	result, err := t.Edges.DeploymentsOrErr()
+	if IsNotLoaded(err) {
+		result, err = t.QueryDeployments().All(ctx)
 	}
 	return result, err
 }

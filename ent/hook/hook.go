@@ -22,6 +22,32 @@ func (f CredentialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return f(ctx, mv)
 }
 
+// The DeploymentFunc type is an adapter to allow the use of ordinary
+// function as Deployment mutator.
+type DeploymentFunc func(context.Context, *ent.DeploymentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DeploymentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.DeploymentMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DeploymentMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The DeploymentConfigFunc type is an adapter to allow the use of ordinary
+// function as DeploymentConfig mutator.
+type DeploymentConfigFunc func(context.Context, *ent.DeploymentConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DeploymentConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.DeploymentConfigMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DeploymentConfigMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The FileFunc type is an adapter to allow the use of ordinary
 // function as File mutator.
 type FileFunc func(context.Context, *ent.FileMutation) (ent.Value, error)

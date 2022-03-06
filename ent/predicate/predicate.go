@@ -9,6 +9,12 @@ import (
 // Credential is the predicate function for credential builders.
 type Credential func(*sql.Selector)
 
+// Deployment is the predicate function for deployment builders.
+type Deployment func(*sql.Selector)
+
+// DeploymentConfig is the predicate function for deploymentconfig builders.
+type DeploymentConfig func(*sql.Selector)
+
 // File is the predicate function for file builders.
 type File func(*sql.Selector)
 

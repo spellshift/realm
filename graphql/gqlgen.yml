@@ -4,6 +4,7 @@ schema:
   - schema/query.graphql      # API Query Definitions.
   - schema/mutation.graphql   # API Mutation Definitions.
   - schema/credential.graphql # Credential GraphQL Schema.
+  - schema/deployment.graphql # Deployment GraphQL Schema.
   - schema/file.graphql       # File GraphQL Schema.
   - schema/target.graphql     # Target GraphQL Schema.
   - schema/implant.graphql    # Implant GraphQL Schemas.
@@ -19,6 +20,8 @@ resolver:
 autobind:
   - github.com/kcarretto/realm/ent
   - github.com/kcarretto/realm/ent/credential
+  - github.com/kcarretto/realm/ent/deployment
+  - github.com/kcarretto/realm/ent/deploymentconfig
   - github.com/kcarretto/realm/ent/file
   - github.com/kcarretto/realm/ent/implant
   - github.com/kcarretto/realm/ent/implantcallbackconfig

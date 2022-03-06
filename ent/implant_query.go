@@ -156,7 +156,7 @@ func (iq *ImplantQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single Implant entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one Implant entity is not found.
+// Returns a *NotSingularError when more than one Implant entity is found.
 // Returns a *NotFoundError when no Implant entities are found.
 func (iq *ImplantQuery) Only(ctx context.Context) (*Implant, error) {
 	nodes, err := iq.Limit(2).All(ctx)
@@ -183,7 +183,7 @@ func (iq *ImplantQuery) OnlyX(ctx context.Context) *Implant {
 }
 
 // OnlyID is like Only, but returns the only Implant ID in the query.
-// Returns a *NotSingularError when exactly one Implant ID is not found.
+// Returns a *NotSingularError when more than one Implant ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (iq *ImplantQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -294,8 +294,9 @@ func (iq *ImplantQuery) Clone() *ImplantQuery {
 		withTarget: iq.withTarget.Clone(),
 		withConfig: iq.withConfig.Clone(),
 		// clone intermediate query.
-		sql:  iq.sql.Clone(),
-		path: iq.path,
+		sql:    iq.sql.Clone(),
+		path:   iq.path,
+		unique: iq.unique,
 	}
 }
 

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
@@ -29,9 +30,10 @@ type ImplantConfigQuery struct {
 	fields     []string
 	predicates []predicate.ImplantConfig
 	// eager-loading edges.
-	withImplants        *ImplantQuery
-	withServiceConfigs  *ImplantServiceConfigQuery
-	withCallbackConfigs *ImplantCallbackConfigQuery
+	withDeploymentConfigs *DeploymentConfigQuery
+	withImplants          *ImplantQuery
+	withServiceConfigs    *ImplantServiceConfigQuery
+	withCallbackConfigs   *ImplantCallbackConfigQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -66,6 +68,28 @@ func (icq *ImplantConfigQuery) Unique(unique bool) *ImplantConfigQuery {
 func (icq *ImplantConfigQuery) Order(o ...OrderFunc) *ImplantConfigQuery {
 	icq.order = append(icq.order, o...)
 	return icq
+}
+
+// QueryDeploymentConfigs chains the current query on the "deploymentConfigs" edge.
+func (icq *ImplantConfigQuery) QueryDeploymentConfigs() *DeploymentConfigQuery {
+	query := &DeploymentConfigQuery{config: icq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := icq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := icq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implantconfig.Table, implantconfig.FieldID, selector),
+			sqlgraph.To(deploymentconfig.Table, deploymentconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, implantconfig.DeploymentConfigsTable, implantconfig.DeploymentConfigsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(icq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryImplants chains the current query on the "implants" edge.
@@ -180,7 +204,7 @@ func (icq *ImplantConfigQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single ImplantConfig entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one ImplantConfig entity is not found.
+// Returns a *NotSingularError when more than one ImplantConfig entity is found.
 // Returns a *NotFoundError when no ImplantConfig entities are found.
 func (icq *ImplantConfigQuery) Only(ctx context.Context) (*ImplantConfig, error) {
 	nodes, err := icq.Limit(2).All(ctx)
@@ -207,7 +231,7 @@ func (icq *ImplantConfigQuery) OnlyX(ctx context.Context) *ImplantConfig {
 }
 
 // OnlyID is like Only, but returns the only ImplantConfig ID in the query.
-// Returns a *NotSingularError when exactly one ImplantConfig ID is not found.
+// Returns a *NotSingularError when more than one ImplantConfig ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (icq *ImplantConfigQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -310,18 +334,31 @@ func (icq *ImplantConfigQuery) Clone() *ImplantConfigQuery {
 		return nil
 	}
 	return &ImplantConfigQuery{
-		config:              icq.config,
-		limit:               icq.limit,
-		offset:              icq.offset,
-		order:               append([]OrderFunc{}, icq.order...),
-		predicates:          append([]predicate.ImplantConfig{}, icq.predicates...),
-		withImplants:        icq.withImplants.Clone(),
-		withServiceConfigs:  icq.withServiceConfigs.Clone(),
-		withCallbackConfigs: icq.withCallbackConfigs.Clone(),
+		config:                icq.config,
+		limit:                 icq.limit,
+		offset:                icq.offset,
+		order:                 append([]OrderFunc{}, icq.order...),
+		predicates:            append([]predicate.ImplantConfig{}, icq.predicates...),
+		withDeploymentConfigs: icq.withDeploymentConfigs.Clone(),
+		withImplants:          icq.withImplants.Clone(),
+		withServiceConfigs:    icq.withServiceConfigs.Clone(),
+		withCallbackConfigs:   icq.withCallbackConfigs.Clone(),
 		// clone intermediate query.
-		sql:  icq.sql.Clone(),
-		path: icq.path,
+		sql:    icq.sql.Clone(),
+		path:   icq.path,
+		unique: icq.unique,
 	}
+}
+
+// WithDeploymentConfigs tells the query-builder to eager-load the nodes that are connected to
+// the "deploymentConfigs" edge. The optional arguments are used to configure the query builder of the edge.
+func (icq *ImplantConfigQuery) WithDeploymentConfigs(opts ...func(*DeploymentConfigQuery)) *ImplantConfigQuery {
+	query := &DeploymentConfigQuery{config: icq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	icq.withDeploymentConfigs = query
+	return icq
 }
 
 // WithImplants tells the query-builder to eager-load the nodes that are connected to
@@ -422,7 +459,8 @@ func (icq *ImplantConfigQuery) sqlAll(ctx context.Context) ([]*ImplantConfig, er
 	var (
 		nodes       = []*ImplantConfig{}
 		_spec       = icq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
+			icq.withDeploymentConfigs != nil,
 			icq.withImplants != nil,
 			icq.withServiceConfigs != nil,
 			icq.withCallbackConfigs != nil,
@@ -446,6 +484,35 @@ func (icq *ImplantConfigQuery) sqlAll(ctx context.Context) ([]*ImplantConfig, er
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := icq.withDeploymentConfigs; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*ImplantConfig)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.DeploymentConfigs = []*DeploymentConfig{}
+		}
+		query.withFKs = true
+		query.Where(predicate.DeploymentConfig(func(s *sql.Selector) {
+			s.Where(sql.InValues(implantconfig.DeploymentConfigsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.deployment_config_implant_config
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "deployment_config_implant_config" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "deployment_config_implant_config" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.DeploymentConfigs = append(node.Edges.DeploymentConfigs, n)
+		}
 	}
 
 	if query := icq.withImplants; query != nil {

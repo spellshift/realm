@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
@@ -43,6 +45,42 @@ func init() {
 			return nil
 		}
 	}()
+	deploymentFields := schema.Deployment{}.Fields()
+	_ = deploymentFields
+	// deploymentDescOutput is the schema descriptor for output field.
+	deploymentDescOutput := deploymentFields[0].Descriptor()
+	// deployment.DefaultOutput holds the default value on creation for the output field.
+	deployment.DefaultOutput = deploymentDescOutput.Default.(string)
+	// deploymentDescError is the schema descriptor for error field.
+	deploymentDescError := deploymentFields[1].Descriptor()
+	// deployment.DefaultError holds the default value on creation for the error field.
+	deployment.DefaultError = deploymentDescError.Default.(string)
+	// deploymentDescQueuedAt is the schema descriptor for queuedAt field.
+	deploymentDescQueuedAt := deploymentFields[2].Descriptor()
+	// deployment.DefaultQueuedAt holds the default value on creation for the queuedAt field.
+	deployment.DefaultQueuedAt = deploymentDescQueuedAt.Default.(func() time.Time)
+	// deploymentDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	deploymentDescLastModifiedAt := deploymentFields[3].Descriptor()
+	// deployment.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	deployment.DefaultLastModifiedAt = deploymentDescLastModifiedAt.Default.(func() time.Time)
+	deploymentconfigFields := schema.DeploymentConfig{}.Fields()
+	_ = deploymentconfigFields
+	// deploymentconfigDescName is the schema descriptor for name field.
+	deploymentconfigDescName := deploymentconfigFields[0].Descriptor()
+	// deploymentconfig.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	deploymentconfig.NameValidator = deploymentconfigDescName.Validators[0].(func(string) error)
+	// deploymentconfigDescCmd is the schema descriptor for cmd field.
+	deploymentconfigDescCmd := deploymentconfigFields[1].Descriptor()
+	// deploymentconfig.DefaultCmd holds the default value on creation for the cmd field.
+	deploymentconfig.DefaultCmd = deploymentconfigDescCmd.Default.(string)
+	// deploymentconfigDescStartCmd is the schema descriptor for startCmd field.
+	deploymentconfigDescStartCmd := deploymentconfigFields[2].Descriptor()
+	// deploymentconfig.DefaultStartCmd holds the default value on creation for the startCmd field.
+	deploymentconfig.DefaultStartCmd = deploymentconfigDescStartCmd.Default.(bool)
+	// deploymentconfigDescFileDst is the schema descriptor for fileDst field.
+	deploymentconfigDescFileDst := deploymentconfigFields[3].Descriptor()
+	// deploymentconfig.DefaultFileDst holds the default value on creation for the fileDst field.
+	deploymentconfig.DefaultFileDst = deploymentconfigDescFileDst.Default.(string)
 	fileFields := schema.File{}.Fields()
 	_ = fileFields
 	// fileDescName is the schema descriptor for name field.

@@ -14,6 +14,10 @@ type Tx struct {
 	config
 	// Credential is the client for interacting with the Credential builders.
 	Credential *CredentialClient
+	// Deployment is the client for interacting with the Deployment builders.
+	Deployment *DeploymentClient
+	// DeploymentConfig is the client for interacting with the DeploymentConfig builders.
+	DeploymentConfig *DeploymentConfigClient
 	// File is the client for interacting with the File builders.
 	File *FileClient
 	// Implant is the client for interacting with the Implant builders.
@@ -162,6 +166,8 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Credential = NewCredentialClient(tx.config)
+	tx.Deployment = NewDeploymentClient(tx.config)
+	tx.DeploymentConfig = NewDeploymentConfigClient(tx.config)
 	tx.File = NewFileClient(tx.config)
 	tx.Implant = NewImplantClient(tx.config)
 	tx.ImplantCallbackConfig = NewImplantCallbackConfigClient(tx.config)

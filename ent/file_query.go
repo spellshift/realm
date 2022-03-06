@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/predicate"
 )
@@ -24,6 +26,8 @@ type FileQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.File
+	// eager-loading edges.
+	withDeploymentConfigs *DeploymentConfigQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (fq *FileQuery) Unique(unique bool) *FileQuery {
 func (fq *FileQuery) Order(o ...OrderFunc) *FileQuery {
 	fq.order = append(fq.order, o...)
 	return fq
+}
+
+// QueryDeploymentConfigs chains the current query on the "deploymentConfigs" edge.
+func (fq *FileQuery) QueryDeploymentConfigs() *DeploymentConfigQuery {
+	query := &DeploymentConfigQuery{config: fq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := fq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := fq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(file.Table, file.FieldID, selector),
+			sqlgraph.To(deploymentconfig.Table, deploymentconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, file.DeploymentConfigsTable, file.DeploymentConfigsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(fq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first File entity from the query.
@@ -106,7 +132,7 @@ func (fq *FileQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single File entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one File entity is not found.
+// Returns a *NotSingularError when more than one File entity is found.
 // Returns a *NotFoundError when no File entities are found.
 func (fq *FileQuery) Only(ctx context.Context) (*File, error) {
 	nodes, err := fq.Limit(2).All(ctx)
@@ -133,7 +159,7 @@ func (fq *FileQuery) OnlyX(ctx context.Context) *File {
 }
 
 // OnlyID is like Only, but returns the only File ID in the query.
-// Returns a *NotSingularError when exactly one File ID is not found.
+// Returns a *NotSingularError when more than one File ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (fq *FileQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -236,15 +262,28 @@ func (fq *FileQuery) Clone() *FileQuery {
 		return nil
 	}
 	return &FileQuery{
-		config:     fq.config,
-		limit:      fq.limit,
-		offset:     fq.offset,
-		order:      append([]OrderFunc{}, fq.order...),
-		predicates: append([]predicate.File{}, fq.predicates...),
+		config:                fq.config,
+		limit:                 fq.limit,
+		offset:                fq.offset,
+		order:                 append([]OrderFunc{}, fq.order...),
+		predicates:            append([]predicate.File{}, fq.predicates...),
+		withDeploymentConfigs: fq.withDeploymentConfigs.Clone(),
 		// clone intermediate query.
-		sql:  fq.sql.Clone(),
-		path: fq.path,
+		sql:    fq.sql.Clone(),
+		path:   fq.path,
+		unique: fq.unique,
 	}
+}
+
+// WithDeploymentConfigs tells the query-builder to eager-load the nodes that are connected to
+// the "deploymentConfigs" edge. The optional arguments are used to configure the query builder of the edge.
+func (fq *FileQuery) WithDeploymentConfigs(opts ...func(*DeploymentConfigQuery)) *FileQuery {
+	query := &DeploymentConfigQuery{config: fq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	fq.withDeploymentConfigs = query
+	return fq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -310,8 +349,11 @@ func (fq *FileQuery) prepareQuery(ctx context.Context) error {
 
 func (fq *FileQuery) sqlAll(ctx context.Context) ([]*File, error) {
 	var (
-		nodes = []*File{}
-		_spec = fq.querySpec()
+		nodes       = []*File{}
+		_spec       = fq.querySpec()
+		loadedTypes = [1]bool{
+			fq.withDeploymentConfigs != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &File{config: fq.config}
@@ -323,6 +365,7 @@ func (fq *FileQuery) sqlAll(ctx context.Context) ([]*File, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, fq.driver, _spec); err != nil {
@@ -331,6 +374,36 @@ func (fq *FileQuery) sqlAll(ctx context.Context) ([]*File, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := fq.withDeploymentConfigs; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*File)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.DeploymentConfigs = []*DeploymentConfig{}
+		}
+		query.withFKs = true
+		query.Where(predicate.DeploymentConfig(func(s *sql.Selector) {
+			s.Where(sql.InValues(file.DeploymentConfigsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.deployment_config_file
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "deployment_config_file" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "deployment_config_file" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.DeploymentConfigs = append(node.Edges.DeploymentConfigs, n)
+		}
+	}
+
 	return nodes, nil
 }
 
