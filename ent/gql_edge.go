@@ -124,10 +124,10 @@ func (isc *ImplantServiceConfig) ImplantConfigs(ctx context.Context) ([]*Implant
 	return result, err
 }
 
-func (t *Target) Credentials(ctx context.Context) ([]*Credential, error) {
-	result, err := t.Edges.CredentialsOrErr()
+func (t *Tag) Targets(ctx context.Context) ([]*Target, error) {
+	result, err := t.Edges.TargetsOrErr()
 	if IsNotLoaded(err) {
-		result, err = t.QueryCredentials().All(ctx)
+		result, err = t.QueryTargets().All(ctx)
 	}
 	return result, err
 }
@@ -144,6 +144,22 @@ func (t *Target) Deployments(ctx context.Context) ([]*Deployment, error) {
 	result, err := t.Edges.DeploymentsOrErr()
 	if IsNotLoaded(err) {
 		result, err = t.QueryDeployments().All(ctx)
+	}
+	return result, err
+}
+
+func (t *Target) Credentials(ctx context.Context) ([]*Credential, error) {
+	result, err := t.Edges.CredentialsOrErr()
+	if IsNotLoaded(err) {
+		result, err = t.QueryCredentials().All(ctx)
+	}
+	return result, err
+}
+
+func (t *Target) Tags(ctx context.Context) ([]*Tag, error) {
+	result, err := t.Edges.TagsOrErr()
+	if IsNotLoaded(err) {
+		result, err = t.QueryTags().All(ctx)
 	}
 	return result, err
 }

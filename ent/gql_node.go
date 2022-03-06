@@ -23,6 +23,7 @@ import (
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
 	"github.com/kcarretto/realm/ent/implantserviceconfig"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 	"golang.org/x/sync/semaphore"
 )
@@ -548,12 +549,41 @@ func (isc *ImplantServiceConfig) Node(ctx context.Context) (node *Node, err erro
 	return node, nil
 }
 
+func (t *Tag) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     t.ID,
+		Type:   "Tag",
+		Fields: make([]*Field, 1),
+		Edges:  make([]*Edge, 1),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(t.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Target",
+		Name: "targets",
+	}
+	err = t.QueryTargets().
+		Select(target.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
 func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Target",
 		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 3),
+		Edges:  make([]*Edge, 4),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(t.Name); err != nil {
@@ -573,32 +603,42 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{
-		Type: "Credential",
-		Name: "credentials",
-	}
-	err = t.QueryCredentials().
-		Select(credential.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[1] = &Edge{
 		Type: "Implant",
 		Name: "implants",
 	}
 	err = t.QueryImplants().
 		Select(implant.FieldID).
-		Scan(ctx, &node.Edges[1].IDs)
+		Scan(ctx, &node.Edges[0].IDs)
 	if err != nil {
 		return nil, err
 	}
-	node.Edges[2] = &Edge{
+	node.Edges[1] = &Edge{
 		Type: "Deployment",
 		Name: "deployments",
 	}
 	err = t.QueryDeployments().
 		Select(deployment.FieldID).
+		Scan(ctx, &node.Edges[1].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[2] = &Edge{
+		Type: "Credential",
+		Name: "credentials",
+	}
+	err = t.QueryCredentials().
+		Select(credential.FieldID).
 		Scan(ctx, &node.Edges[2].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[3] = &Edge{
+		Type: "Tag",
+		Name: "tags",
+	}
+	err = t.QueryTags().
+		Select(tag.FieldID).
+		Scan(ctx, &node.Edges[3].IDs)
 	if err != nil {
 		return nil, err
 	}
@@ -739,6 +779,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		n, err := c.ImplantServiceConfig.Query().
 			Where(implantserviceconfig.ID(id)).
 			CollectFields(ctx, "ImplantServiceConfig").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case tag.Table:
+		n, err := c.Tag.Query().
+			Where(tag.ID(id)).
+			CollectFields(ctx, "Tag").
 			Only(ctx)
 		if err != nil {
 			return nil, err
@@ -921,6 +970,19 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		nodes, err := c.ImplantServiceConfig.Query().
 			Where(implantserviceconfig.IDIn(ids...)).
 			CollectFields(ctx, "ImplantServiceConfig").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case tag.Table:
+		nodes, err := c.Tag.Query().
+			Where(tag.IDIn(ids...)).
+			CollectFields(ctx, "Tag").
 			All(ctx)
 		if err != nil {
 			return nil, err

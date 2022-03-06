@@ -32,6 +32,7 @@ type hooks struct {
 	ImplantCallbackConfig []ent.Hook
 	ImplantConfig         []ent.Hook
 	ImplantServiceConfig  []ent.Hook
+	Tag                   []ent.Hook
 	Target                []ent.Hook
 }
 

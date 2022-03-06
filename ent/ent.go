@@ -16,6 +16,7 @@ import (
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
 	"github.com/kcarretto/realm/ent/implantserviceconfig"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -45,6 +46,7 @@ func columnChecker(table string) func(string) error {
 		implantcallbackconfig.Table: implantcallbackconfig.ValidColumn,
 		implantconfig.Table:         implantconfig.ValidColumn,
 		implantserviceconfig.Table:  implantserviceconfig.ValidColumn,
+		tag.Table:                   tag.ValidColumn,
 		target.Table:                target.ValidColumn,
 	}
 	check, ok := checks[table]

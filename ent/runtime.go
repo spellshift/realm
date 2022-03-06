@@ -14,6 +14,7 @@ import (
 	"github.com/kcarretto/realm/ent/implantconfig"
 	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/schema"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -161,6 +162,26 @@ func init() {
 	implantserviceconfigDescExecutablePath := implantserviceconfigFields[2].Descriptor()
 	// implantserviceconfig.ExecutablePathValidator is a validator for the "executablePath" field. It is called by the builders before save.
 	implantserviceconfig.ExecutablePathValidator = implantserviceconfigDescExecutablePath.Validators[0].(func(string) error)
+	tagFields := schema.Tag{}.Fields()
+	_ = tagFields
+	// tagDescName is the schema descriptor for name field.
+	tagDescName := tagFields[0].Descriptor()
+	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tag.NameValidator = func() func(string) error {
+		validators := tagDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	targetFields := schema.Target{}.Fields()
 	_ = targetFields
 	// targetDescName is the schema descriptor for name field.
