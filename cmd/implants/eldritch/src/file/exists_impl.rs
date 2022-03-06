@@ -14,7 +14,7 @@ mod tests {
     use std::fs::remove_file;
 
     #[test]
-    fn test_exists_does() -> anyhow::Result<()>{
+    fn test_exists_file() -> anyhow::Result<()>{
         let winfile = "/tmp/win_test_exists_does";
         let _ = remove_file(String::from(winfile));
         // Create file
