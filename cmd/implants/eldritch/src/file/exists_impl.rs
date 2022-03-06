@@ -44,7 +44,7 @@ mod tests {
         Ok(())
     }
     #[test]
-    fn test_exists_dir_does() -> anyhow::Result<()>{
+    fn test_exists_dir() -> anyhow::Result<()>{
         let winfile = "/tmp/";
 
         // Run our code
