@@ -327,34 +327,6 @@ func ForwardConnectIPContainsFold(v string) predicate.Target {
 	})
 }
 
-// HasCredentials applies the HasEdge predicate on the "credentials" edge.
-func HasCredentials() predicate.Target {
-	return predicate.Target(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CredentialsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, CredentialsTable, CredentialsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasCredentialsWith applies the HasEdge predicate on the "credentials" edge with a given conditions (other predicates).
-func HasCredentialsWith(preds ...predicate.Credential) predicate.Target {
-	return predicate.Target(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CredentialsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, CredentialsTable, CredentialsColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasImplants applies the HasEdge predicate on the "implants" edge.
 func HasImplants() predicate.Target {
 	return predicate.Target(func(s *sql.Selector) {
@@ -402,6 +374,62 @@ func HasDeploymentsWith(preds ...predicate.Deployment) predicate.Target {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(DeploymentsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, DeploymentsTable, DeploymentsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasCredentials applies the HasEdge predicate on the "credentials" edge.
+func HasCredentials() predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(CredentialsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CredentialsTable, CredentialsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCredentialsWith applies the HasEdge predicate on the "credentials" edge with a given conditions (other predicates).
+func HasCredentialsWith(preds ...predicate.Credential) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(CredentialsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CredentialsTable, CredentialsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasTags applies the HasEdge predicate on the "tags" edge.
+func HasTags() predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TagsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, TagsTable, TagsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTagsWith applies the HasEdge predicate on the "tags" edge with a given conditions (other predicates).
+func HasTagsWith(preds ...predicate.Tag) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TagsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, TagsTable, TagsPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

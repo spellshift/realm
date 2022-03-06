@@ -924,6 +924,13 @@ type PageInfo {
 enum OrderDirection {
   ASC
   DESC
+}# Types and Definitions for Tags
+
+type Tag implements Node {
+  id: ID!
+  name: String!
+
+  targets: [Target!]
 }# Types and Definitions for Targets
 
 type Target implements Node {
@@ -932,6 +939,7 @@ type Target implements Node {
   forwardConnectIP: String!
 
   credentials: [Credential!]
+  tags: [Tag!]
   deployments: [Deployment!]
 }
 

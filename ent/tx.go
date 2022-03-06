@@ -28,6 +28,8 @@ type Tx struct {
 	ImplantConfig *ImplantConfigClient
 	// ImplantServiceConfig is the client for interacting with the ImplantServiceConfig builders.
 	ImplantServiceConfig *ImplantServiceConfigClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
 	// Target is the client for interacting with the Target builders.
 	Target *TargetClient
 
@@ -173,6 +175,7 @@ func (tx *Tx) init() {
 	tx.ImplantCallbackConfig = NewImplantCallbackConfigClient(tx.config)
 	tx.ImplantConfig = NewImplantConfigClient(tx.config)
 	tx.ImplantServiceConfig = NewImplantServiceConfigClient(tx.config)
+	tx.Tag = NewTagClient(tx.config)
 	tx.Target = NewTargetClient(tx.config)
 }
 

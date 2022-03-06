@@ -15,6 +15,7 @@ import (
 	"github.com/kcarretto/realm/ent/implantconfig"
 	"github.com/kcarretto/realm/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/ent/predicate"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 )
 
@@ -2642,6 +2643,193 @@ func (i *ImplantServiceConfigWhereInput) P() (predicate.ImplantServiceConfig, er
 	}
 }
 
+// TagWhereInput represents a where input for filtering Tag queries.
+type TagWhereInput struct {
+	Not *TagWhereInput   `json:"not,omitempty"`
+	Or  []*TagWhereInput `json:"or,omitempty"`
+	And []*TagWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "targets" edge predicates.
+	HasTargets     *bool               `json:"hasTargets,omitempty"`
+	HasTargetsWith []*TargetWhereInput `json:"hasTargetsWith,omitempty"`
+}
+
+// Filter applies the TagWhereInput filter on the TagQuery builder.
+func (i *TagWhereInput) Filter(q *TagQuery) (*TagQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// P returns a predicate for filtering tags.
+// An error is returned if the input is empty or invalid.
+func (i *TagWhereInput) P() (predicate.Tag, error) {
+	var predicates []predicate.Tag
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, tag.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Tag, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, tag.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Tag, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, tag.And(and...))
+	}
+	if i.ID != nil {
+		predicates = append(predicates, tag.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, tag.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, tag.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, tag.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, tag.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, tag.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, tag.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, tag.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, tag.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, tag.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, tag.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, tag.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, tag.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, tag.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, tag.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, tag.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, tag.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, tag.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, tag.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, tag.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, tag.NameContainsFold(*i.NameContainsFold))
+	}
+
+	if i.HasTargets != nil {
+		p := tag.HasTargets()
+		if !*i.HasTargets {
+			p = tag.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTargetsWith) > 0 {
+		with := make([]predicate.Target, 0, len(i.HasTargetsWith))
+		for _, w := range i.HasTargetsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, tag.HasTargetsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, fmt.Errorf("github.com/kcarretto/realm/ent: empty predicate TagWhereInput")
+	case 1:
+		return predicates[0], nil
+	default:
+		return tag.And(predicates...), nil
+	}
+}
+
 // TargetWhereInput represents a where input for filtering Target queries.
 type TargetWhereInput struct {
 	Not *TargetWhereInput   `json:"not,omitempty"`
@@ -2688,10 +2876,6 @@ type TargetWhereInput struct {
 	ForwardConnectIPEqualFold    *string  `json:"forwardconnectipEqualFold,omitempty"`
 	ForwardConnectIPContainsFold *string  `json:"forwardconnectipContainsFold,omitempty"`
 
-	// "credentials" edge predicates.
-	HasCredentials     *bool                   `json:"hasCredentials,omitempty"`
-	HasCredentialsWith []*CredentialWhereInput `json:"hasCredentialsWith,omitempty"`
-
 	// "implants" edge predicates.
 	HasImplants     *bool                `json:"hasImplants,omitempty"`
 	HasImplantsWith []*ImplantWhereInput `json:"hasImplantsWith,omitempty"`
@@ -2699,6 +2883,14 @@ type TargetWhereInput struct {
 	// "deployments" edge predicates.
 	HasDeployments     *bool                   `json:"hasDeployments,omitempty"`
 	HasDeploymentsWith []*DeploymentWhereInput `json:"hasDeploymentsWith,omitempty"`
+
+	// "credentials" edge predicates.
+	HasCredentials     *bool                   `json:"hasCredentials,omitempty"`
+	HasCredentialsWith []*CredentialWhereInput `json:"hasCredentialsWith,omitempty"`
+
+	// "tags" edge predicates.
+	HasTags     *bool            `json:"hasTags,omitempty"`
+	HasTagsWith []*TagWhereInput `json:"hasTagsWith,omitempty"`
 }
 
 // Filter applies the TargetWhereInput filter on the TargetQuery builder.
@@ -2863,24 +3055,6 @@ func (i *TargetWhereInput) P() (predicate.Target, error) {
 		predicates = append(predicates, target.ForwardConnectIPContainsFold(*i.ForwardConnectIPContainsFold))
 	}
 
-	if i.HasCredentials != nil {
-		p := target.HasCredentials()
-		if !*i.HasCredentials {
-			p = target.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasCredentialsWith) > 0 {
-		with := make([]predicate.Credential, 0, len(i.HasCredentialsWith))
-		for _, w := range i.HasCredentialsWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, err
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, target.HasCredentialsWith(with...))
-	}
 	if i.HasImplants != nil {
 		p := target.HasImplants()
 		if !*i.HasImplants {
@@ -2916,6 +3090,42 @@ func (i *TargetWhereInput) P() (predicate.Target, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, target.HasDeploymentsWith(with...))
+	}
+	if i.HasCredentials != nil {
+		p := target.HasCredentials()
+		if !*i.HasCredentials {
+			p = target.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCredentialsWith) > 0 {
+		with := make([]predicate.Credential, 0, len(i.HasCredentialsWith))
+		for _, w := range i.HasCredentialsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, target.HasCredentialsWith(with...))
+	}
+	if i.HasTags != nil {
+		p := target.HasTags()
+		if !*i.HasTags {
+			p = target.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTagsWith) > 0 {
+		with := make([]predicate.Tag, 0, len(i.HasTagsWith))
+		for _, w := range i.HasTagsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, target.HasTagsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

@@ -30,5 +30,8 @@ type ImplantConfig func(*sql.Selector)
 // ImplantServiceConfig is the predicate function for implantserviceconfig builders.
 type ImplantServiceConfig func(*sql.Selector)
 
+// Tag is the predicate function for tag builders.
+type Tag func(*sql.Selector)
+
 // Target is the predicate function for target builders.
 type Target func(*sql.Selector)

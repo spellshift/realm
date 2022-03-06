@@ -177,6 +177,17 @@ var (
 		Columns:    ImplantServiceConfigsColumns,
 		PrimaryKey: []*schema.Column{ImplantServiceConfigsColumns[0]},
 	}
+	// TagsColumns holds the columns for the "tags" table.
+	TagsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+	}
+	// TagsTable holds the schema information for the "tags" table.
+	TagsTable = &schema.Table{
+		Name:       "tags",
+		Columns:    TagsColumns,
+		PrimaryKey: []*schema.Column{TagsColumns[0]},
+	}
 	// TargetsColumns holds the columns for the "targets" table.
 	TargetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -239,6 +250,31 @@ var (
 			},
 		},
 	}
+	// TargetTagsColumns holds the columns for the "target_tags" table.
+	TargetTagsColumns = []*schema.Column{
+		{Name: "target_id", Type: field.TypeInt},
+		{Name: "tag_id", Type: field.TypeInt},
+	}
+	// TargetTagsTable holds the schema information for the "target_tags" table.
+	TargetTagsTable = &schema.Table{
+		Name:       "target_tags",
+		Columns:    TargetTagsColumns,
+		PrimaryKey: []*schema.Column{TargetTagsColumns[0], TargetTagsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "target_tags_target_id",
+				Columns:    []*schema.Column{TargetTagsColumns[0]},
+				RefColumns: []*schema.Column{TargetsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "target_tags_tag_id",
+				Columns:    []*schema.Column{TargetTagsColumns[1]},
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CredentialsTable,
@@ -249,9 +285,11 @@ var (
 		ImplantCallbackConfigsTable,
 		ImplantConfigsTable,
 		ImplantServiceConfigsTable,
+		TagsTable,
 		TargetsTable,
 		ImplantConfigServiceConfigsTable,
 		ImplantConfigCallbackConfigsTable,
+		TargetTagsTable,
 	}
 )
 
@@ -267,4 +305,6 @@ func init() {
 	ImplantConfigServiceConfigsTable.ForeignKeys[1].RefTable = ImplantServiceConfigsTable
 	ImplantConfigCallbackConfigsTable.ForeignKeys[0].RefTable = ImplantConfigsTable
 	ImplantConfigCallbackConfigsTable.ForeignKeys[1].RefTable = ImplantCallbackConfigsTable
+	TargetTagsTable.ForeignKeys[0].RefTable = TargetsTable
+	TargetTagsTable.ForeignKeys[1].RefTable = TagsTable
 }

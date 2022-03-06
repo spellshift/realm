@@ -17,6 +17,7 @@ import (
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
 	"github.com/kcarretto/realm/ent/implantserviceconfig"
+	"github.com/kcarretto/realm/ent/tag"
 	"github.com/kcarretto/realm/ent/target"
 
 	"entgo.io/ent/dialect"
@@ -45,6 +46,8 @@ type Client struct {
 	ImplantConfig *ImplantConfigClient
 	// ImplantServiceConfig is the client for interacting with the ImplantServiceConfig builders.
 	ImplantServiceConfig *ImplantServiceConfigClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
 	// Target is the client for interacting with the Target builders.
 	Target *TargetClient
 	// additional fields for node api
@@ -70,6 +73,7 @@ func (c *Client) init() {
 	c.ImplantCallbackConfig = NewImplantCallbackConfigClient(c.config)
 	c.ImplantConfig = NewImplantConfigClient(c.config)
 	c.ImplantServiceConfig = NewImplantServiceConfigClient(c.config)
+	c.Tag = NewTagClient(c.config)
 	c.Target = NewTargetClient(c.config)
 }
 
@@ -112,6 +116,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ImplantCallbackConfig: NewImplantCallbackConfigClient(cfg),
 		ImplantConfig:         NewImplantConfigClient(cfg),
 		ImplantServiceConfig:  NewImplantServiceConfigClient(cfg),
+		Tag:                   NewTagClient(cfg),
 		Target:                NewTargetClient(cfg),
 	}, nil
 }
@@ -140,6 +145,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ImplantCallbackConfig: NewImplantCallbackConfigClient(cfg),
 		ImplantConfig:         NewImplantConfigClient(cfg),
 		ImplantServiceConfig:  NewImplantServiceConfigClient(cfg),
+		Tag:                   NewTagClient(cfg),
 		Target:                NewTargetClient(cfg),
 	}, nil
 }
@@ -178,6 +184,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.ImplantCallbackConfig.Use(hooks...)
 	c.ImplantConfig.Use(hooks...)
 	c.ImplantServiceConfig.Use(hooks...)
+	c.Tag.Use(hooks...)
 	c.Target.Use(hooks...)
 }
 
@@ -1141,6 +1148,112 @@ func (c *ImplantServiceConfigClient) Hooks() []Hook {
 	return c.hooks.ImplantServiceConfig
 }
 
+// TagClient is a client for the Tag schema.
+type TagClient struct {
+	config
+}
+
+// NewTagClient returns a client for the Tag from the given config.
+func NewTagClient(c config) *TagClient {
+	return &TagClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tag.Hooks(f(g(h())))`.
+func (c *TagClient) Use(hooks ...Hook) {
+	c.hooks.Tag = append(c.hooks.Tag, hooks...)
+}
+
+// Create returns a create builder for Tag.
+func (c *TagClient) Create() *TagCreate {
+	mutation := newTagMutation(c.config, OpCreate)
+	return &TagCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Tag entities.
+func (c *TagClient) CreateBulk(builders ...*TagCreate) *TagCreateBulk {
+	return &TagCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Tag.
+func (c *TagClient) Update() *TagUpdate {
+	mutation := newTagMutation(c.config, OpUpdate)
+	return &TagUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TagClient) UpdateOne(t *Tag) *TagUpdateOne {
+	mutation := newTagMutation(c.config, OpUpdateOne, withTag(t))
+	return &TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TagClient) UpdateOneID(id int) *TagUpdateOne {
+	mutation := newTagMutation(c.config, OpUpdateOne, withTagID(id))
+	return &TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Tag.
+func (c *TagClient) Delete() *TagDelete {
+	mutation := newTagMutation(c.config, OpDelete)
+	return &TagDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *TagClient) DeleteOne(t *Tag) *TagDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *TagClient) DeleteOneID(id int) *TagDeleteOne {
+	builder := c.Delete().Where(tag.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TagDeleteOne{builder}
+}
+
+// Query returns a query builder for Tag.
+func (c *TagClient) Query() *TagQuery {
+	return &TagQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Tag entity by its id.
+func (c *TagClient) Get(ctx context.Context, id int) (*Tag, error) {
+	return c.Query().Where(tag.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TagClient) GetX(ctx context.Context, id int) *Tag {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTargets queries the targets edge of a Tag.
+func (c *TagClient) QueryTargets(t *Tag) *TargetQuery {
+	query := &TargetQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, id),
+			sqlgraph.To(target.Table, target.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.TargetsTable, tag.TargetsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TagClient) Hooks() []Hook {
+	return c.hooks.Tag
+}
+
 // TargetClient is a client for the Target schema.
 type TargetClient struct {
 	config
@@ -1226,22 +1339,6 @@ func (c *TargetClient) GetX(ctx context.Context, id int) *Target {
 	return obj
 }
 
-// QueryCredentials queries the credentials edge of a Target.
-func (c *TargetClient) QueryCredentials(t *Target) *CredentialQuery {
-	query := &CredentialQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(target.Table, target.FieldID, id),
-			sqlgraph.To(credential.Table, credential.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, target.CredentialsTable, target.CredentialsColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryImplants queries the implants edge of a Target.
 func (c *TargetClient) QueryImplants(t *Target) *ImplantQuery {
 	query := &ImplantQuery{config: c.config}
@@ -1267,6 +1364,38 @@ func (c *TargetClient) QueryDeployments(t *Target) *DeploymentQuery {
 			sqlgraph.From(target.Table, target.FieldID, id),
 			sqlgraph.To(deployment.Table, deployment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, target.DeploymentsTable, target.DeploymentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCredentials queries the credentials edge of a Target.
+func (c *TargetClient) QueryCredentials(t *Target) *CredentialQuery {
+	query := &CredentialQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, id),
+			sqlgraph.To(credential.Table, credential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, target.CredentialsTable, target.CredentialsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTags queries the tags edge of a Target.
+func (c *TargetClient) QueryTags(t *Target) *TagQuery {
+	query := &TagQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, target.TagsTable, target.TagsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
