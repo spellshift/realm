@@ -31,7 +31,7 @@ mod tests {
         Ok(())
     }
     #[test]
-    fn test_exists_doesnt() -> anyhow::Result<()>{
+    fn test_exists_no_file() -> anyhow::Result<()>{
         let winfile = "/tmp/win_test_exists_doesnt";
         let _ = remove_file(String::from(winfile));
 
