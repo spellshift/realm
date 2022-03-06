@@ -28,7 +28,7 @@
         - name: "file.hash"
           signature: "file.hash(path: str) -> str"
           link: stdlib_file_hash
-          content: The <b>file.hash</b> method is very cool, and will be even cooler when Nick documents it.
+          content: The <b>file.hash</b> takes a sha256 hash of the file specified in path.
         - name: "file.is_dir"
           signature: "file.is_dir(path: str) -> bool"
           link: stdlib_file_is_dir
