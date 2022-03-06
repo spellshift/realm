@@ -32,9 +32,11 @@ type TargetEdges struct {
 	Credentials []*Credential `json:"credentials,omitempty"`
 	// Implants holds the value of the implants edge.
 	Implants []*Implant `json:"implants,omitempty"`
+	// Deployments holds the value of the deployments edge.
+	Deployments []*Deployment `json:"deployments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // CredentialsOrErr returns the Credentials value or an error if the edge
@@ -53,6 +55,15 @@ func (e TargetEdges) ImplantsOrErr() ([]*Implant, error) {
 		return e.Implants, nil
 	}
 	return nil, &NotLoadedError{edge: "implants"}
+}
+
+// DeploymentsOrErr returns the Deployments value or an error if the edge
+// was not loaded in eager-loading.
+func (e TargetEdges) DeploymentsOrErr() ([]*Deployment, error) {
+	if e.loadedTypes[2] {
+		return e.Deployments, nil
+	}
+	return nil, &NotLoadedError{edge: "deployments"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -110,6 +121,11 @@ func (t *Target) QueryCredentials() *CredentialQuery {
 // QueryImplants queries the "implants" edge of the Target entity.
 func (t *Target) QueryImplants() *ImplantQuery {
 	return (&TargetClient{config: t.config}).QueryImplants(t)
+}
+
+// QueryDeployments queries the "deployments" edge of the Target entity.
+func (t *Target) QueryDeployments() *DeploymentQuery {
+	return (&TargetClient{config: t.config}).QueryDeployments(t)
 }
 
 // Update returns a builder for updating this Target.

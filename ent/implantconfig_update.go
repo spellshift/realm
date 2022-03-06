@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
 	"github.com/kcarretto/realm/ent/implantconfig"
@@ -34,6 +35,21 @@ func (icu *ImplantConfigUpdate) Where(ps ...predicate.ImplantConfig) *ImplantCon
 func (icu *ImplantConfigUpdate) SetName(s string) *ImplantConfigUpdate {
 	icu.mutation.SetName(s)
 	return icu
+}
+
+// AddDeploymentConfigIDs adds the "deploymentConfigs" edge to the DeploymentConfig entity by IDs.
+func (icu *ImplantConfigUpdate) AddDeploymentConfigIDs(ids ...int) *ImplantConfigUpdate {
+	icu.mutation.AddDeploymentConfigIDs(ids...)
+	return icu
+}
+
+// AddDeploymentConfigs adds the "deploymentConfigs" edges to the DeploymentConfig entity.
+func (icu *ImplantConfigUpdate) AddDeploymentConfigs(d ...*DeploymentConfig) *ImplantConfigUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return icu.AddDeploymentConfigIDs(ids...)
 }
 
 // AddImplantIDs adds the "implants" edge to the Implant entity by IDs.
@@ -84,6 +100,27 @@ func (icu *ImplantConfigUpdate) AddCallbackConfigs(i ...*ImplantCallbackConfig) 
 // Mutation returns the ImplantConfigMutation object of the builder.
 func (icu *ImplantConfigUpdate) Mutation() *ImplantConfigMutation {
 	return icu.mutation
+}
+
+// ClearDeploymentConfigs clears all "deploymentConfigs" edges to the DeploymentConfig entity.
+func (icu *ImplantConfigUpdate) ClearDeploymentConfigs() *ImplantConfigUpdate {
+	icu.mutation.ClearDeploymentConfigs()
+	return icu
+}
+
+// RemoveDeploymentConfigIDs removes the "deploymentConfigs" edge to DeploymentConfig entities by IDs.
+func (icu *ImplantConfigUpdate) RemoveDeploymentConfigIDs(ids ...int) *ImplantConfigUpdate {
+	icu.mutation.RemoveDeploymentConfigIDs(ids...)
+	return icu
+}
+
+// RemoveDeploymentConfigs removes "deploymentConfigs" edges to DeploymentConfig entities.
+func (icu *ImplantConfigUpdate) RemoveDeploymentConfigs(d ...*DeploymentConfig) *ImplantConfigUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return icu.RemoveDeploymentConfigIDs(ids...)
 }
 
 // ClearImplants clears all "implants" edges to the Implant entity.
@@ -243,6 +280,60 @@ func (icu *ImplantConfigUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Value:  value,
 			Column: implantconfig.FieldName,
 		})
+	}
+	if icu.mutation.DeploymentConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   implantconfig.DeploymentConfigsTable,
+			Columns: []string{implantconfig.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := icu.mutation.RemovedDeploymentConfigsIDs(); len(nodes) > 0 && !icu.mutation.DeploymentConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   implantconfig.DeploymentConfigsTable,
+			Columns: []string{implantconfig.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := icu.mutation.DeploymentConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   implantconfig.DeploymentConfigsTable,
+			Columns: []string{implantconfig.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if icu.mutation.ImplantsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -431,6 +522,21 @@ func (icuo *ImplantConfigUpdateOne) SetName(s string) *ImplantConfigUpdateOne {
 	return icuo
 }
 
+// AddDeploymentConfigIDs adds the "deploymentConfigs" edge to the DeploymentConfig entity by IDs.
+func (icuo *ImplantConfigUpdateOne) AddDeploymentConfigIDs(ids ...int) *ImplantConfigUpdateOne {
+	icuo.mutation.AddDeploymentConfigIDs(ids...)
+	return icuo
+}
+
+// AddDeploymentConfigs adds the "deploymentConfigs" edges to the DeploymentConfig entity.
+func (icuo *ImplantConfigUpdateOne) AddDeploymentConfigs(d ...*DeploymentConfig) *ImplantConfigUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return icuo.AddDeploymentConfigIDs(ids...)
+}
+
 // AddImplantIDs adds the "implants" edge to the Implant entity by IDs.
 func (icuo *ImplantConfigUpdateOne) AddImplantIDs(ids ...int) *ImplantConfigUpdateOne {
 	icuo.mutation.AddImplantIDs(ids...)
@@ -479,6 +585,27 @@ func (icuo *ImplantConfigUpdateOne) AddCallbackConfigs(i ...*ImplantCallbackConf
 // Mutation returns the ImplantConfigMutation object of the builder.
 func (icuo *ImplantConfigUpdateOne) Mutation() *ImplantConfigMutation {
 	return icuo.mutation
+}
+
+// ClearDeploymentConfigs clears all "deploymentConfigs" edges to the DeploymentConfig entity.
+func (icuo *ImplantConfigUpdateOne) ClearDeploymentConfigs() *ImplantConfigUpdateOne {
+	icuo.mutation.ClearDeploymentConfigs()
+	return icuo
+}
+
+// RemoveDeploymentConfigIDs removes the "deploymentConfigs" edge to DeploymentConfig entities by IDs.
+func (icuo *ImplantConfigUpdateOne) RemoveDeploymentConfigIDs(ids ...int) *ImplantConfigUpdateOne {
+	icuo.mutation.RemoveDeploymentConfigIDs(ids...)
+	return icuo
+}
+
+// RemoveDeploymentConfigs removes "deploymentConfigs" edges to DeploymentConfig entities.
+func (icuo *ImplantConfigUpdateOne) RemoveDeploymentConfigs(d ...*DeploymentConfig) *ImplantConfigUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return icuo.RemoveDeploymentConfigIDs(ids...)
 }
 
 // ClearImplants clears all "implants" edges to the Implant entity.
@@ -662,6 +789,60 @@ func (icuo *ImplantConfigUpdateOne) sqlSave(ctx context.Context) (_node *Implant
 			Value:  value,
 			Column: implantconfig.FieldName,
 		})
+	}
+	if icuo.mutation.DeploymentConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   implantconfig.DeploymentConfigsTable,
+			Columns: []string{implantconfig.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := icuo.mutation.RemovedDeploymentConfigsIDs(); len(nodes) > 0 && !icuo.mutation.DeploymentConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   implantconfig.DeploymentConfigsTable,
+			Columns: []string{implantconfig.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := icuo.mutation.DeploymentConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   implantconfig.DeploymentConfigsTable,
+			Columns: []string{implantconfig.DeploymentConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deploymentconfig.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if icuo.mutation.ImplantsCleared() {
 		edge := &sqlgraph.EdgeSpec{

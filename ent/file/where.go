@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/ent/predicate"
 )
 
@@ -657,6 +658,34 @@ func ContentLT(v []byte) predicate.File {
 func ContentLTE(v []byte) predicate.File {
 	return predicate.File(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldContent), v))
+	})
+}
+
+// HasDeploymentConfigs applies the HasEdge predicate on the "deploymentConfigs" edge.
+func HasDeploymentConfigs() predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DeploymentConfigsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, DeploymentConfigsTable, DeploymentConfigsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDeploymentConfigsWith applies the HasEdge predicate on the "deploymentConfigs" edge with a given conditions (other predicates).
+func HasDeploymentConfigsWith(preds ...predicate.DeploymentConfig) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DeploymentConfigsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, DeploymentConfigsTable, DeploymentConfigsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

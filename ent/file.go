@@ -34,6 +34,27 @@ type File struct {
 	// Content holds the value of the "content" field.
 	// The content of the file
 	Content []byte `json:"content,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the FileQuery when eager-loading is set.
+	Edges FileEdges `json:"edges"`
+}
+
+// FileEdges holds the relations/edges for other nodes in the graph.
+type FileEdges struct {
+	// DeploymentConfigs holds the value of the deploymentConfigs edge.
+	DeploymentConfigs []*DeploymentConfig `json:"deploymentConfigs,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// DeploymentConfigsOrErr returns the DeploymentConfigs value or an error if the edge
+// was not loaded in eager-loading.
+func (e FileEdges) DeploymentConfigsOrErr() ([]*DeploymentConfig, error) {
+	if e.loadedTypes[0] {
+		return e.DeploymentConfigs, nil
+	}
+	return nil, &NotLoadedError{edge: "deploymentConfigs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -109,6 +130,11 @@ func (f *File) assignValues(columns []string, values []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryDeploymentConfigs queries the "deploymentConfigs" edge of the File entity.
+func (f *File) QueryDeploymentConfigs() *DeploymentConfigQuery {
+	return (&FileClient{config: f.config}).QueryDeploymentConfigs(f)
 }
 
 // Update returns a builder for updating this File.

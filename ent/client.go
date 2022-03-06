@@ -10,6 +10,8 @@ import (
 	"github.com/kcarretto/realm/ent/migrate"
 
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
+	"github.com/kcarretto/realm/ent/deploymentconfig"
 	"github.com/kcarretto/realm/ent/file"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/implantcallbackconfig"
@@ -29,6 +31,10 @@ type Client struct {
 	Schema *migrate.Schema
 	// Credential is the client for interacting with the Credential builders.
 	Credential *CredentialClient
+	// Deployment is the client for interacting with the Deployment builders.
+	Deployment *DeploymentClient
+	// DeploymentConfig is the client for interacting with the DeploymentConfig builders.
+	DeploymentConfig *DeploymentConfigClient
 	// File is the client for interacting with the File builders.
 	File *FileClient
 	// Implant is the client for interacting with the Implant builders.
@@ -57,6 +63,8 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Credential = NewCredentialClient(c.config)
+	c.Deployment = NewDeploymentClient(c.config)
+	c.DeploymentConfig = NewDeploymentConfigClient(c.config)
 	c.File = NewFileClient(c.config)
 	c.Implant = NewImplantClient(c.config)
 	c.ImplantCallbackConfig = NewImplantCallbackConfigClient(c.config)
@@ -97,6 +105,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:                   ctx,
 		config:                cfg,
 		Credential:            NewCredentialClient(cfg),
+		Deployment:            NewDeploymentClient(cfg),
+		DeploymentConfig:      NewDeploymentConfigClient(cfg),
 		File:                  NewFileClient(cfg),
 		Implant:               NewImplantClient(cfg),
 		ImplantCallbackConfig: NewImplantCallbackConfigClient(cfg),
@@ -123,6 +133,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:                   ctx,
 		config:                cfg,
 		Credential:            NewCredentialClient(cfg),
+		Deployment:            NewDeploymentClient(cfg),
+		DeploymentConfig:      NewDeploymentConfigClient(cfg),
 		File:                  NewFileClient(cfg),
 		Implant:               NewImplantClient(cfg),
 		ImplantCallbackConfig: NewImplantCallbackConfigClient(cfg),
@@ -159,6 +171,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Credential.Use(hooks...)
+	c.Deployment.Use(hooks...)
+	c.DeploymentConfig.Use(hooks...)
 	c.File.Use(hooks...)
 	c.Implant.Use(hooks...)
 	c.ImplantCallbackConfig.Use(hooks...)
@@ -273,6 +287,266 @@ func (c *CredentialClient) Hooks() []Hook {
 	return c.hooks.Credential
 }
 
+// DeploymentClient is a client for the Deployment schema.
+type DeploymentClient struct {
+	config
+}
+
+// NewDeploymentClient returns a client for the Deployment from the given config.
+func NewDeploymentClient(c config) *DeploymentClient {
+	return &DeploymentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `deployment.Hooks(f(g(h())))`.
+func (c *DeploymentClient) Use(hooks ...Hook) {
+	c.hooks.Deployment = append(c.hooks.Deployment, hooks...)
+}
+
+// Create returns a create builder for Deployment.
+func (c *DeploymentClient) Create() *DeploymentCreate {
+	mutation := newDeploymentMutation(c.config, OpCreate)
+	return &DeploymentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Deployment entities.
+func (c *DeploymentClient) CreateBulk(builders ...*DeploymentCreate) *DeploymentCreateBulk {
+	return &DeploymentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Deployment.
+func (c *DeploymentClient) Update() *DeploymentUpdate {
+	mutation := newDeploymentMutation(c.config, OpUpdate)
+	return &DeploymentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DeploymentClient) UpdateOne(d *Deployment) *DeploymentUpdateOne {
+	mutation := newDeploymentMutation(c.config, OpUpdateOne, withDeployment(d))
+	return &DeploymentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DeploymentClient) UpdateOneID(id int) *DeploymentUpdateOne {
+	mutation := newDeploymentMutation(c.config, OpUpdateOne, withDeploymentID(id))
+	return &DeploymentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Deployment.
+func (c *DeploymentClient) Delete() *DeploymentDelete {
+	mutation := newDeploymentMutation(c.config, OpDelete)
+	return &DeploymentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *DeploymentClient) DeleteOne(d *Deployment) *DeploymentDeleteOne {
+	return c.DeleteOneID(d.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *DeploymentClient) DeleteOneID(id int) *DeploymentDeleteOne {
+	builder := c.Delete().Where(deployment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DeploymentDeleteOne{builder}
+}
+
+// Query returns a query builder for Deployment.
+func (c *DeploymentClient) Query() *DeploymentQuery {
+	return &DeploymentQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Deployment entity by its id.
+func (c *DeploymentClient) Get(ctx context.Context, id int) (*Deployment, error) {
+	return c.Query().Where(deployment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DeploymentClient) GetX(ctx context.Context, id int) *Deployment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryConfig queries the config edge of a Deployment.
+func (c *DeploymentClient) QueryConfig(d *Deployment) *DeploymentConfigQuery {
+	query := &DeploymentConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deployment.Table, deployment.FieldID, id),
+			sqlgraph.To(deploymentconfig.Table, deploymentconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, deployment.ConfigTable, deployment.ConfigColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTarget queries the target edge of a Deployment.
+func (c *DeploymentClient) QueryTarget(d *Deployment) *TargetQuery {
+	query := &TargetQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deployment.Table, deployment.FieldID, id),
+			sqlgraph.To(target.Table, target.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, deployment.TargetTable, deployment.TargetColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *DeploymentClient) Hooks() []Hook {
+	return c.hooks.Deployment
+}
+
+// DeploymentConfigClient is a client for the DeploymentConfig schema.
+type DeploymentConfigClient struct {
+	config
+}
+
+// NewDeploymentConfigClient returns a client for the DeploymentConfig from the given config.
+func NewDeploymentConfigClient(c config) *DeploymentConfigClient {
+	return &DeploymentConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `deploymentconfig.Hooks(f(g(h())))`.
+func (c *DeploymentConfigClient) Use(hooks ...Hook) {
+	c.hooks.DeploymentConfig = append(c.hooks.DeploymentConfig, hooks...)
+}
+
+// Create returns a create builder for DeploymentConfig.
+func (c *DeploymentConfigClient) Create() *DeploymentConfigCreate {
+	mutation := newDeploymentConfigMutation(c.config, OpCreate)
+	return &DeploymentConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DeploymentConfig entities.
+func (c *DeploymentConfigClient) CreateBulk(builders ...*DeploymentConfigCreate) *DeploymentConfigCreateBulk {
+	return &DeploymentConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DeploymentConfig.
+func (c *DeploymentConfigClient) Update() *DeploymentConfigUpdate {
+	mutation := newDeploymentConfigMutation(c.config, OpUpdate)
+	return &DeploymentConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DeploymentConfigClient) UpdateOne(dc *DeploymentConfig) *DeploymentConfigUpdateOne {
+	mutation := newDeploymentConfigMutation(c.config, OpUpdateOne, withDeploymentConfig(dc))
+	return &DeploymentConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DeploymentConfigClient) UpdateOneID(id int) *DeploymentConfigUpdateOne {
+	mutation := newDeploymentConfigMutation(c.config, OpUpdateOne, withDeploymentConfigID(id))
+	return &DeploymentConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DeploymentConfig.
+func (c *DeploymentConfigClient) Delete() *DeploymentConfigDelete {
+	mutation := newDeploymentConfigMutation(c.config, OpDelete)
+	return &DeploymentConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *DeploymentConfigClient) DeleteOne(dc *DeploymentConfig) *DeploymentConfigDeleteOne {
+	return c.DeleteOneID(dc.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *DeploymentConfigClient) DeleteOneID(id int) *DeploymentConfigDeleteOne {
+	builder := c.Delete().Where(deploymentconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DeploymentConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for DeploymentConfig.
+func (c *DeploymentConfigClient) Query() *DeploymentConfigQuery {
+	return &DeploymentConfigQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a DeploymentConfig entity by its id.
+func (c *DeploymentConfigClient) Get(ctx context.Context, id int) (*DeploymentConfig, error) {
+	return c.Query().Where(deploymentconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DeploymentConfigClient) GetX(ctx context.Context, id int) *DeploymentConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryDeployments queries the deployments edge of a DeploymentConfig.
+func (c *DeploymentConfigClient) QueryDeployments(dc *DeploymentConfig) *DeploymentQuery {
+	query := &DeploymentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := dc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deploymentconfig.Table, deploymentconfig.FieldID, id),
+			sqlgraph.To(deployment.Table, deployment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, deploymentconfig.DeploymentsTable, deploymentconfig.DeploymentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(dc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFile queries the file edge of a DeploymentConfig.
+func (c *DeploymentConfigClient) QueryFile(dc *DeploymentConfig) *FileQuery {
+	query := &FileQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := dc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deploymentconfig.Table, deploymentconfig.FieldID, id),
+			sqlgraph.To(file.Table, file.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, deploymentconfig.FileTable, deploymentconfig.FileColumn),
+		)
+		fromV = sqlgraph.Neighbors(dc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryImplantConfig queries the implantConfig edge of a DeploymentConfig.
+func (c *DeploymentConfigClient) QueryImplantConfig(dc *DeploymentConfig) *ImplantConfigQuery {
+	query := &ImplantConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := dc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deploymentconfig.Table, deploymentconfig.FieldID, id),
+			sqlgraph.To(implantconfig.Table, implantconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, deploymentconfig.ImplantConfigTable, deploymentconfig.ImplantConfigColumn),
+		)
+		fromV = sqlgraph.Neighbors(dc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *DeploymentConfigClient) Hooks() []Hook {
+	return c.hooks.DeploymentConfig
+}
+
 // FileClient is a client for the File schema.
 type FileClient struct {
 	config
@@ -356,6 +630,22 @@ func (c *FileClient) GetX(ctx context.Context, id int) *File {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryDeploymentConfigs queries the deploymentConfigs edge of a File.
+func (c *FileClient) QueryDeploymentConfigs(f *File) *DeploymentConfigQuery {
+	query := &DeploymentConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(file.Table, file.FieldID, id),
+			sqlgraph.To(deploymentconfig.Table, deploymentconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, file.DeploymentConfigsTable, file.DeploymentConfigsColumn),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -676,6 +966,22 @@ func (c *ImplantConfigClient) GetX(ctx context.Context, id int) *ImplantConfig {
 	return obj
 }
 
+// QueryDeploymentConfigs queries the deploymentConfigs edge of a ImplantConfig.
+func (c *ImplantConfigClient) QueryDeploymentConfigs(ic *ImplantConfig) *DeploymentConfigQuery {
+	query := &DeploymentConfigQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ic.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(implantconfig.Table, implantconfig.FieldID, id),
+			sqlgraph.To(deploymentconfig.Table, deploymentconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, implantconfig.DeploymentConfigsTable, implantconfig.DeploymentConfigsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ic.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryImplants queries the implants edge of a ImplantConfig.
 func (c *ImplantConfigClient) QueryImplants(ic *ImplantConfig) *ImplantQuery {
 	query := &ImplantQuery{config: c.config}
@@ -945,6 +1251,22 @@ func (c *TargetClient) QueryImplants(t *Target) *ImplantQuery {
 			sqlgraph.From(target.Table, target.FieldID, id),
 			sqlgraph.To(implant.Table, implant.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, target.ImplantsTable, target.ImplantsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDeployments queries the deployments edge of a Target.
+func (c *TargetClient) QueryDeployments(t *Target) *DeploymentQuery {
+	query := &DeploymentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, id),
+			sqlgraph.To(deployment.Table, deployment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, target.DeploymentsTable, target.DeploymentsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

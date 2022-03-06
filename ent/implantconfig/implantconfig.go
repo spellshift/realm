@@ -11,6 +11,8 @@ const (
 	FieldName = "name"
 	// FieldAuthToken holds the string denoting the authtoken field in the database.
 	FieldAuthToken = "auth_token"
+	// EdgeDeploymentConfigs holds the string denoting the deploymentconfigs edge name in mutations.
+	EdgeDeploymentConfigs = "deploymentConfigs"
 	// EdgeImplants holds the string denoting the implants edge name in mutations.
 	EdgeImplants = "implants"
 	// EdgeServiceConfigs holds the string denoting the serviceconfigs edge name in mutations.
@@ -19,6 +21,13 @@ const (
 	EdgeCallbackConfigs = "callbackConfigs"
 	// Table holds the table name of the implantconfig in the database.
 	Table = "implant_configs"
+	// DeploymentConfigsTable is the table that holds the deploymentConfigs relation/edge.
+	DeploymentConfigsTable = "deployment_configs"
+	// DeploymentConfigsInverseTable is the table name for the DeploymentConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "deploymentconfig" package.
+	DeploymentConfigsInverseTable = "deployment_configs"
+	// DeploymentConfigsColumn is the table column denoting the deploymentConfigs relation/edge.
+	DeploymentConfigsColumn = "deployment_config_implant_config"
 	// ImplantsTable is the table that holds the implants relation/edge.
 	ImplantsTable = "implants"
 	// ImplantsInverseTable is the table name for the Implant entity.

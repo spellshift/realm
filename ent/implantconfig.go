@@ -28,6 +28,8 @@ type ImplantConfig struct {
 
 // ImplantConfigEdges holds the relations/edges for other nodes in the graph.
 type ImplantConfigEdges struct {
+	// DeploymentConfigs holds the value of the deploymentConfigs edge.
+	DeploymentConfigs []*DeploymentConfig `json:"deploymentConfigs,omitempty"`
 	// Implants holds the value of the implants edge.
 	Implants []*Implant `json:"implants,omitempty"`
 	// ServiceConfigs holds the value of the serviceConfigs edge.
@@ -36,13 +38,22 @@ type ImplantConfigEdges struct {
 	CallbackConfigs []*ImplantCallbackConfig `json:"callbackConfigs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
+}
+
+// DeploymentConfigsOrErr returns the DeploymentConfigs value or an error if the edge
+// was not loaded in eager-loading.
+func (e ImplantConfigEdges) DeploymentConfigsOrErr() ([]*DeploymentConfig, error) {
+	if e.loadedTypes[0] {
+		return e.DeploymentConfigs, nil
+	}
+	return nil, &NotLoadedError{edge: "deploymentConfigs"}
 }
 
 // ImplantsOrErr returns the Implants value or an error if the edge
 // was not loaded in eager-loading.
 func (e ImplantConfigEdges) ImplantsOrErr() ([]*Implant, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Implants, nil
 	}
 	return nil, &NotLoadedError{edge: "implants"}
@@ -51,7 +62,7 @@ func (e ImplantConfigEdges) ImplantsOrErr() ([]*Implant, error) {
 // ServiceConfigsOrErr returns the ServiceConfigs value or an error if the edge
 // was not loaded in eager-loading.
 func (e ImplantConfigEdges) ServiceConfigsOrErr() ([]*ImplantServiceConfig, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.ServiceConfigs, nil
 	}
 	return nil, &NotLoadedError{edge: "serviceConfigs"}
@@ -60,7 +71,7 @@ func (e ImplantConfigEdges) ServiceConfigsOrErr() ([]*ImplantServiceConfig, erro
 // CallbackConfigsOrErr returns the CallbackConfigs value or an error if the edge
 // was not loaded in eager-loading.
 func (e ImplantConfigEdges) CallbackConfigsOrErr() ([]*ImplantCallbackConfig, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.CallbackConfigs, nil
 	}
 	return nil, &NotLoadedError{edge: "callbackConfigs"}
@@ -111,6 +122,11 @@ func (ic *ImplantConfig) assignValues(columns []string, values []interface{}) er
 		}
 	}
 	return nil
+}
+
+// QueryDeploymentConfigs queries the "deploymentConfigs" edge of the ImplantConfig entity.
+func (ic *ImplantConfig) QueryDeploymentConfigs() *DeploymentConfigQuery {
+	return (&ImplantConfigClient{config: ic.config}).QueryDeploymentConfigs(ic)
 }
 
 // QueryImplants queries the "implants" edge of the ImplantConfig entity.

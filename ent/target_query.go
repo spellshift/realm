@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/ent/credential"
+	"github.com/kcarretto/realm/ent/deployment"
 	"github.com/kcarretto/realm/ent/implant"
 	"github.com/kcarretto/realm/ent/predicate"
 	"github.com/kcarretto/realm/ent/target"
@@ -30,6 +31,7 @@ type TargetQuery struct {
 	// eager-loading edges.
 	withCredentials *CredentialQuery
 	withImplants    *ImplantQuery
+	withDeployments *DeploymentQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -110,6 +112,28 @@ func (tq *TargetQuery) QueryImplants() *ImplantQuery {
 	return query
 }
 
+// QueryDeployments chains the current query on the "deployments" edge.
+func (tq *TargetQuery) QueryDeployments() *DeploymentQuery {
+	query := &DeploymentQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(target.Table, target.FieldID, selector),
+			sqlgraph.To(deployment.Table, deployment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, target.DeploymentsTable, target.DeploymentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Target entity from the query.
 // Returns a *NotFoundError when no Target was found.
 func (tq *TargetQuery) First(ctx context.Context) (*Target, error) {
@@ -156,7 +180,7 @@ func (tq *TargetQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single Target entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one Target entity is not found.
+// Returns a *NotSingularError when more than one Target entity is found.
 // Returns a *NotFoundError when no Target entities are found.
 func (tq *TargetQuery) Only(ctx context.Context) (*Target, error) {
 	nodes, err := tq.Limit(2).All(ctx)
@@ -183,7 +207,7 @@ func (tq *TargetQuery) OnlyX(ctx context.Context) *Target {
 }
 
 // OnlyID is like Only, but returns the only Target ID in the query.
-// Returns a *NotSingularError when exactly one Target ID is not found.
+// Returns a *NotSingularError when more than one Target ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (tq *TargetQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -293,9 +317,11 @@ func (tq *TargetQuery) Clone() *TargetQuery {
 		predicates:      append([]predicate.Target{}, tq.predicates...),
 		withCredentials: tq.withCredentials.Clone(),
 		withImplants:    tq.withImplants.Clone(),
+		withDeployments: tq.withDeployments.Clone(),
 		// clone intermediate query.
-		sql:  tq.sql.Clone(),
-		path: tq.path,
+		sql:    tq.sql.Clone(),
+		path:   tq.path,
+		unique: tq.unique,
 	}
 }
 
@@ -318,6 +344,17 @@ func (tq *TargetQuery) WithImplants(opts ...func(*ImplantQuery)) *TargetQuery {
 		opt(query)
 	}
 	tq.withImplants = query
+	return tq
+}
+
+// WithDeployments tells the query-builder to eager-load the nodes that are connected to
+// the "deployments" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TargetQuery) WithDeployments(opts ...func(*DeploymentQuery)) *TargetQuery {
+	query := &DeploymentQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withDeployments = query
 	return tq
 }
 
@@ -386,9 +423,10 @@ func (tq *TargetQuery) sqlAll(ctx context.Context) ([]*Target, error) {
 	var (
 		nodes       = []*Target{}
 		_spec       = tq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			tq.withCredentials != nil,
 			tq.withImplants != nil,
+			tq.withDeployments != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -466,6 +504,35 @@ func (tq *TargetQuery) sqlAll(ctx context.Context) ([]*Target, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "implant_target" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Implants = append(node.Edges.Implants, n)
+		}
+	}
+
+	if query := tq.withDeployments; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Target)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Deployments = []*Deployment{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Deployment(func(s *sql.Selector) {
+			s.Where(sql.InValues(target.DeploymentsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.deployment_target
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "deployment_target" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "deployment_target" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Deployments = append(node.Edges.Deployments, n)
 		}
 	}
 

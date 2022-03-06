@@ -327,6 +327,34 @@ func AuthTokenContainsFold(v string) predicate.ImplantConfig {
 	})
 }
 
+// HasDeploymentConfigs applies the HasEdge predicate on the "deploymentConfigs" edge.
+func HasDeploymentConfigs() predicate.ImplantConfig {
+	return predicate.ImplantConfig(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DeploymentConfigsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, DeploymentConfigsTable, DeploymentConfigsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDeploymentConfigsWith applies the HasEdge predicate on the "deploymentConfigs" edge with a given conditions (other predicates).
+func HasDeploymentConfigsWith(preds ...predicate.DeploymentConfig) predicate.ImplantConfig {
+	return predicate.ImplantConfig(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DeploymentConfigsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, DeploymentConfigsTable, DeploymentConfigsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasImplants applies the HasEdge predicate on the "implants" edge.
 func HasImplants() predicate.ImplantConfig {
 	return predicate.ImplantConfig(func(s *sql.Selector) {

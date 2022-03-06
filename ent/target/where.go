@@ -383,6 +383,34 @@ func HasImplantsWith(preds ...predicate.Implant) predicate.Target {
 	})
 }
 
+// HasDeployments applies the HasEdge predicate on the "deployments" edge.
+func HasDeployments() predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DeploymentsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, DeploymentsTable, DeploymentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDeploymentsWith applies the HasEdge predicate on the "deployments" edge with a given conditions (other predicates).
+func HasDeploymentsWith(preds ...predicate.Deployment) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DeploymentsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, DeploymentsTable, DeploymentsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Target) predicate.Target {
 	return predicate.Target(func(s *sql.Selector) {

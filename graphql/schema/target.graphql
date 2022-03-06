@@ -6,6 +6,7 @@ type Target implements Node {
   forwardConnectIP: String!
 
   credentials: [Credential!]
+  deployments: [Deployment!]
 }
 
 enum TargetOrderField {

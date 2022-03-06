@@ -132,7 +132,7 @@ func (iscq *ImplantServiceConfigQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single ImplantServiceConfig entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one ImplantServiceConfig entity is not found.
+// Returns a *NotSingularError when more than one ImplantServiceConfig entity is found.
 // Returns a *NotFoundError when no ImplantServiceConfig entities are found.
 func (iscq *ImplantServiceConfigQuery) Only(ctx context.Context) (*ImplantServiceConfig, error) {
 	nodes, err := iscq.Limit(2).All(ctx)
@@ -159,7 +159,7 @@ func (iscq *ImplantServiceConfigQuery) OnlyX(ctx context.Context) *ImplantServic
 }
 
 // OnlyID is like Only, but returns the only ImplantServiceConfig ID in the query.
-// Returns a *NotSingularError when exactly one ImplantServiceConfig ID is not found.
+// Returns a *NotSingularError when more than one ImplantServiceConfig ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (iscq *ImplantServiceConfigQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -269,8 +269,9 @@ func (iscq *ImplantServiceConfigQuery) Clone() *ImplantServiceConfigQuery {
 		predicates:         append([]predicate.ImplantServiceConfig{}, iscq.predicates...),
 		withImplantConfigs: iscq.withImplantConfigs.Clone(),
 		// clone intermediate query.
-		sql:  iscq.sql.Clone(),
-		path: iscq.path,
+		sql:    iscq.sql.Clone(),
+		path:   iscq.path,
+		unique: iscq.unique,
 	}
 }
 
