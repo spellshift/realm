@@ -148,6 +148,27 @@ func (r *mutationResolver) DeleteImplantConfig(ctx context.Context, id int) (int
 	return id, r.client.ImplantConfig.DeleteOneID(id).Exec(ctx)
 }
 
+func (r *mutationResolver) CreateTag(ctx context.Context, tag CreateTagInput) (*ent.Tag, error) {
+	return r.client.Tag.Create().
+		SetName(tag.Name).
+		AddTargetIDs(tag.TargetIDs...).
+		Save(ctx)
+}
+
+func (r *mutationResolver) UpdateTag(ctx context.Context, tag UpdateTagInput) (*ent.Tag, error) {
+	mutation := r.client.Tag.UpdateOneID(tag.ID).
+		AddTargetIDs(tag.AddTargetIDs...).
+		RemoveTargetIDs(tag.RemoveTargetIDs...)
+	if tag.Name != nil {
+		mutation = mutation.SetName(*tag.Name)
+	}
+	return mutation.Save(ctx)
+}
+
+func (r *mutationResolver) DeleteTag(ctx context.Context, id int) (int, error) {
+	return id, r.client.Tag.DeleteOneID(id).Exec(ctx)
+}
+
 func (r *mutationResolver) CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error) {
 	return r.client.Target.Create().
 		SetName(target.Name).
