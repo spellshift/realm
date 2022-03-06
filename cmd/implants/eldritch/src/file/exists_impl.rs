@@ -9,56 +9,61 @@ pub fn exists(path: String) -> Result<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs::File;
     use std::io::prelude::*;
-    use std::fs::remove_file;
+    use tempfile::{NamedTempFile,tempdir};
+
 
     #[test]
     fn test_exists_file() -> anyhow::Result<()>{
-        let winfile = "/tmp/win_test_exists_does";
-        let _ = remove_file(String::from(winfile));
-        // Create file
-        let mut file = File::create(winfile)?;
+        // Create files
+        let mut tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap());
+
         // Write to file
-        file.write_all(b"Hello, world!")?;
+        tmp_file.write_all(b"Hello, world!")?;
 
         // Run our code
-        let res = exists(String::from(winfile))?;
+        let res = exists(path)?;
 
         assert_eq!(res, true);
 
-        remove_file(String::from(winfile))?;
         Ok(())
     }
     #[test]
     fn test_exists_no_file() -> anyhow::Result<()>{
-        let winfile = "/tmp/win_test_exists_doesnt";
-        let _ = remove_file(String::from(winfile));
+        // Create file and then delete it (so we know it doesnt exist)
+        let tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        tmp_file.close()?;
 
         // Run our code
-        let res = exists(String::from(winfile))?;
+        let res = exists(path)?;
 
         assert_eq!(res, false);
 
-        let _ = remove_file(String::from(winfile));
         Ok(())
     }
     #[test]
     fn test_exists_dir() -> anyhow::Result<()>{
-        let winfile = "/tmp/";
+        // Create Dir
+        let dir = tempdir()?;
+        let path = String::from(dir.path().to_str().unwrap());
 
         // Run our code
-        let res = exists(String::from(winfile))?;
+        let res = exists(path)?;
 
         assert_eq!(res, true);
         Ok(())
     }
     #[test]
     fn test_exists_no_dir() -> anyhow::Result<()>{
-        let winfile = "/aoeu/";
+        // Create Dir and then delete it (so we know it doesnt exist)
+        let dir = tempdir()?;
+        let path = String::from(dir.path().to_str().unwrap()).clone();
+        dir.close()?;
 
         // Run our code
-        let res = exists(String::from(winfile))?;
+        let res = exists(path)?;
 
         assert_eq!(res, false);
         Ok(())
