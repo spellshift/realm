@@ -41,4 +41,8 @@
 	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
 	"workspaceFolder": "/workspaces/realm",
 	"postCreateCommand": "cd /workspaces && git clone ssh://git@github.com/kcarretto/realm", 
+
+	"mounts": [
+		"source=realm-bashhistory,target=/commandhistory,type=volume"
+	]
 }
