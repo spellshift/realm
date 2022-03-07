@@ -75,13 +75,13 @@ func newCreateTagTest(gqlClient *client.Client, input graphql.CreateTagInput, ch
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			CreateTag struct{ ID int }
+			CreateTag struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", input))
 
 		// Run checks with error (if any) and resulting Tag ID
 		for _, check := range checks {
-			check(t, resp.CreateTag.ID, err)
+			check(t, convertID(resp.CreateTag.ID), err)
 		}
 	}
 }
@@ -200,13 +200,13 @@ func newUpdateTagTest(gqlClient *client.Client, input graphql.UpdateTagInput, ch
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			UpdateTag struct{ ID int }
+			UpdateTag struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", input))
 
 		// Run checks with error (if any) and resulting Tag ID
 		for _, check := range checks {
-			check(t, resp.UpdateTag.ID, err)
+			check(t, convertID(resp.UpdateTag.ID), err)
 		}
 	}
 }
@@ -275,13 +275,13 @@ func newDeleteTagTest(gqlClient *client.Client, id int, checks ...func(t *testin
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			DeleteTag int
+			DeleteTag string
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", id))
 
 		// Run checks with error (if any) and resulting Tag ID
 		for _, check := range checks {
-			check(t, resp.DeleteTag, err)
+			check(t, convertID(resp.DeleteTag), err)
 		}
 	}
 }

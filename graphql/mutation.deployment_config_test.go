@@ -93,13 +93,13 @@ func newCreateDeploymentConfigTest(gqlClient *client.Client, input graphql.Creat
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			CreateDeploymentConfig struct{ ID int }
+			CreateDeploymentConfig struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", input))
 
 		// Run checks with error (if any) and resulting DeploymentConfig ID
 		for _, check := range checks {
-			check(t, resp.CreateDeploymentConfig.ID, err)
+			check(t, convertID(resp.CreateDeploymentConfig.ID), err)
 		}
 	}
 }
@@ -195,13 +195,13 @@ func newUpdateDeploymentConfigTest(gqlClient *client.Client, input graphql.Updat
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			UpdateDeploymentConfig struct{ ID int }
+			UpdateDeploymentConfig struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", input))
 
 		// Run checks with error (if any) and resulting DeploymentConfig ID
 		for _, check := range checks {
-			check(t, resp.UpdateDeploymentConfig.ID, err)
+			check(t, convertID(resp.UpdateDeploymentConfig.ID), err)
 		}
 	}
 }
@@ -255,13 +255,13 @@ func newDeleteDeploymentConfigTest(gqlClient *client.Client, id int, checks ...f
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			DeleteDeploymentConfig int
+			DeleteDeploymentConfig string
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", id))
 
 		// Run checks with error (if any) and resulting DeploymentConfig ID
 		for _, check := range checks {
-			check(t, resp.DeleteDeploymentConfig, err)
+			check(t, convertID(resp.DeleteDeploymentConfig), err)
 		}
 	}
 }

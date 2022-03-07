@@ -84,7 +84,7 @@ func newQueryTargetsTest(gqlClient *client.Client, where *ent.TargetWhereInput, 
 		// Define what our response looks like (Relay Compliant)
 		var resp struct {
 			Targets struct {
-				Edges []struct{ Node struct{ ID int } }
+				Edges []struct{ Node struct{ ID string } }
 			}
 		}
 
@@ -100,7 +100,7 @@ func newQueryTargetsTest(gqlClient *client.Client, where *ent.TargetWhereInput, 
 		// Collect resulting target ids
 		targetIDs := make([]int, 0, len(resp.Targets.Edges))
 		for _, edge := range resp.Targets.Edges {
-			targetIDs = append(targetIDs, edge.Node.ID)
+			targetIDs = append(targetIDs, convertID(edge.Node.ID))
 		}
 
 		// Ensure lists of targets are the same

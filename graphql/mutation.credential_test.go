@@ -79,13 +79,13 @@ func newCreateCredentialTest(gqlClient *client.Client, input graphql.CreateCrede
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			CreateCredential struct{ ID int }
+			CreateCredential struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", input))
 
 		// Run checks with error (if any) and resulting CredentialID
 		for _, check := range checks {
-			check(t, resp.CreateCredential.ID, err)
+			check(t, convertID(resp.CreateCredential.ID), err)
 		}
 	}
 }

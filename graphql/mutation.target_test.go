@@ -71,13 +71,13 @@ func newCreateTargetTest(gqlClient *client.Client, input graphql.CreateTargetInp
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			CreateTarget struct{ ID int }
+			CreateTarget struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", input))
 
 		// Run checks with error (if any) and resulting TargetID
 		for _, check := range checks {
-			check(t, resp.CreateTarget.ID, err)
+			check(t, convertID(resp.CreateTarget.ID), err)
 		}
 	}
 }

@@ -93,13 +93,13 @@ func newCreateImplantServiceConfigTest(gqlClient *client.Client, input graphql.C
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			CreateImplantServiceConfig struct{ ID int }
+			CreateImplantServiceConfig struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", input))
 
 		// Run checks with error (if any) and resulting ImplantServiceConfig ID
 		for _, check := range checks {
-			check(t, resp.CreateImplantServiceConfig.ID, err)
+			check(t, convertID(resp.CreateImplantServiceConfig.ID), err)
 		}
 	}
 }
@@ -199,13 +199,13 @@ func newUpdateImplantServiceConfigTest(gqlClient *client.Client, input graphql.U
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			UpdateImplantServiceConfig struct{ ID int }
+			UpdateImplantServiceConfig struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", input))
 
 		// Run checks with error (if any) and resulting ImplantServiceConfig ID
 		for _, check := range checks {
-			check(t, resp.UpdateImplantServiceConfig.ID, err)
+			check(t, convertID(resp.UpdateImplantServiceConfig.ID), err)
 		}
 	}
 }
@@ -260,13 +260,13 @@ func newDeleteImplantServiceConfigTest(gqlClient *client.Client, id int, checks 
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			DeleteImplantServiceConfig int
+			DeleteImplantServiceConfig string
 		}
 		err := gqlClient.Post(mut, &resp, client.Var("input", id))
 
 		// Run checks with error (if any) and resulting ImplantServiceConfig ID
 		for _, check := range checks {
-			check(t, resp.DeleteImplantServiceConfig, err)
+			check(t, convertID(resp.DeleteImplantServiceConfig), err)
 		}
 	}
 }
