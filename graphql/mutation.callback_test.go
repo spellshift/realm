@@ -90,7 +90,7 @@ func newCallbackTest(gqlClient *client.Client, authToken string, input graphql.C
 
 		// Make our request to the GraphQL API
 		var resp struct {
-			Callback struct{ Implant struct{ ID int } }
+			Callback struct{ Implant struct{ ID string } }
 		}
 		err := gqlClient.Post(mut, &resp,
 			client.Var("input", input),
@@ -99,7 +99,7 @@ func newCallbackTest(gqlClient *client.Client, authToken string, input graphql.C
 
 		// Run checks with error (if any) and resulting ImplantID
 		for _, check := range checks {
-			check(t, resp.Callback.Implant.ID, err)
+			check(t, convertID(resp.Callback.Implant.ID), err)
 		}
 	}
 }
