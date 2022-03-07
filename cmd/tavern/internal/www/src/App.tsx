@@ -1,5 +1,4 @@
 import React from 'react';
-import './App.css';
 import graphql from 'babel-plugin-relay/macro';
 import {
   RelayEnvironmentProvider,
@@ -8,6 +7,14 @@ import {
 } from 'react-relay/hooks';
 import RelayEnvironment from './RelayEnvironment';
 import node from './__generated__/AppTargetsQuery.graphql';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
+import Toolbar from '@mui/material/Toolbar';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
 
 const { Suspense } = React;
 
@@ -55,6 +62,42 @@ function App(props: any) {
         <h1>Tavern</h1>
         <p>{data.targets.edges.map((target: any) => <li key={target.node.id}>{target.node.name}: {target.node.forwardConnectIP}</li>)}</p>
       </header>
+      <Drawer
+        // sx={{
+        //   width: drawerWidth,
+        //   flexShrink: 0,
+        //   '& .MuiDrawer-paper': {
+        //     width: drawerWidth,
+        //     boxSizing: 'border-box',
+        //   },
+        // }}
+        variant="permanent"
+        anchor="left"
+      >
+        <Toolbar />
+        <Divider />
+        <List>
+          {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
+            <ListItem button key={text}>
+              <ListItemIcon>
+                <InboxIcon />
+              </ListItemIcon>
+              <ListItemText primary={text} />
+            </ListItem>
+          ))}
+        </List>
+        <Divider />
+        <List>
+          {['All mail', 'Trash', 'Spam'].map((text, index) => (
+            <ListItem button key={text}>
+              <ListItemIcon>
+                <InboxIcon />
+              </ListItemIcon>
+              <ListItemText primary={text} />
+            </ListItem>
+          ))}
+        </List>
+      </Drawer>
     </div>
   );
 }
