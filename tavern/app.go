@@ -21,7 +21,8 @@ const Version = "v0.0.1"
 func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "tavern"
-	app.Description = "Teamserver implementation for realm, see https://docs.realm.pub for more details"
+	app.Description = "Teamserver implementation for Realm, see https://docs.realm.pub for more details"
+	app.Usage = "Time for an Adventure!"
 	app.Version = Version
 	app.Action = cli.ActionFunc(func(*cli.Context) error {
 		return run(ctx, options...)
