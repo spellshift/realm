@@ -6,7 +6,7 @@ permalink: /
 
 # Welcome to Realm!
 
-Below is a list of documentation pages, feel free to explore. If you're looking for somthing in particular, try the search feature.
+Below is a list of documentation pages, feel free to explore. If you're looking for something in particular, try the search feature.
 
 
 <div class="section-index">
