@@ -9,6 +9,31 @@ permalink: dev-guide/tavern
 ![/assets/img/coming-soon.gif](/assets/img/coming-soon.gif)
 
 # Configuration
+## MySQL
+By default, Tavern operates an in-memory SQLite database. To persist data, a MySQL backend is supported. In order to configure Tavern to use MySQL, the `MYSQL_ADDR` environment variable must be set to the `host[:port]` of the database (e.g. `127.0.0.1`, `mydb.com`, or `mydb.com:3306`). You can reference the [mysql.Config](https://pkg.go.dev/github.com/go-sql-driver/mysql#Config) for additional information about Tavern's MySQL configuration. 
+
+The following environment variables are currently supported for additional MySQL Configuration:
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| MYSQL_ADDR| Address of the MySQL server (e.g. `host[:port]`) | N/A | **_Yes_** |
+| MYSQL_NET| Network type (e.g. unix) | tcp | No |
+| MYSQL_USER| User to authenticate with | root | No |
+| MYSQL_PASSWD| Password to authenticate with | no password | No |
+| MYSQL_DB| Name of the database to use | tavern | No |
+
+<br/>
+Here is an example of running Tavern locally with a MySQL backend:
+```
+MYSQL_USER="admin" MYSQL_ADDR="127.0.0.1:3306" go run ./tavern
+```
+<br/>
+When no value is set for `MYSQL_ADDR`, the default SQLite backend is used:
+```
+MYSQL_USER="admin" go run ./tavern/
+2022/03/08 05:46:06 no value found for environment var 'MYSQL_ADDR', starting tavern with SQLite
+```
+
 
 # User Interface
 
