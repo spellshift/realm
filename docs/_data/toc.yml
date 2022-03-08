@@ -1,0 +1,52 @@
+- title: User Guide
+  url: user-guide
+  links:
+    - title: "Getting Started"
+      url: "user-guide/getting-started"
+    - title: "Tavern"
+      url: "user-guide/tavern"
+    - title: "Eldritch"
+      url: "user-guide/eldritch"
+      children:
+        - title: Standard Library
+          url: "user-guide/eldritch#standard-library"
+- title: Developer Guide
+  url: dev-guide
+  links:
+    - title: "Introduction"
+      url: "dev-guide/introduction"
+      children:
+        - title: "Contribution Guidelines"
+          url: "dev-guide/introduction#contribution-guidelines"
+        - title: "Terminology"
+          url: "dev-guide/introduction#terminology"
+        - title: "Project Structure"
+          url: "dev-guide/introduction#project-structure"
+        - title: "Where to Start?"
+          url: "dev-guide/introduction#where-to-start"
+    - title: "Tavern"
+      url: "dev-guide/tavern"
+      children:
+        - title: "Configuration"
+          url: "dev-guide/tavern#configuration"
+        - title: "User Interface"
+          url: "dev-guide/tavern#user-interface"
+        - title: "CDN API"
+          url: "dev-guide/tavern#cdn-api"
+        - title: "GraphQL API"
+          url: "dev-guide/tavern#graphql-api"
+    - title: "Eldritch"
+      url: "dev-guide/eldritch"
+      children:
+        - title: "Adding a Method"
+          url: "dev-guide/eldritch#adding-a-method"
+  # links:
+  #   - title: "Getting Started"
+  #     url: "user-guide/getting-started"
+  #   - title: "Eldritch"
+  #     url: "user-guide/eldritch"
+  #     children:
+  #       - title: Standard Library
+  #         url: "user-guide/eldritch#StandardLibrary"
+- title: "About"
+  url: "about"
