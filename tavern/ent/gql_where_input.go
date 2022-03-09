@@ -17,6 +17,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/target"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // CredentialWhereInput represents a where input for filtering Credential queries.
@@ -3134,5 +3135,352 @@ func (i *TargetWhereInput) P() (predicate.Target, error) {
 		return predicates[0], nil
 	default:
 		return target.And(predicates...), nil
+	}
+}
+
+// UserWhereInput represents a where input for filtering User queries.
+type UserWhereInput struct {
+	Not *UserWhereInput   `json:"not,omitempty"`
+	Or  []*UserWhereInput `json:"or,omitempty"`
+	And []*UserWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "Name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "OAuthID" field predicates.
+	OAuthID             *string  `json:"oauthid,omitempty"`
+	OAuthIDNEQ          *string  `json:"oauthidNEQ,omitempty"`
+	OAuthIDIn           []string `json:"oauthidIn,omitempty"`
+	OAuthIDNotIn        []string `json:"oauthidNotIn,omitempty"`
+	OAuthIDGT           *string  `json:"oauthidGT,omitempty"`
+	OAuthIDGTE          *string  `json:"oauthidGTE,omitempty"`
+	OAuthIDLT           *string  `json:"oauthidLT,omitempty"`
+	OAuthIDLTE          *string  `json:"oauthidLTE,omitempty"`
+	OAuthIDContains     *string  `json:"oauthidContains,omitempty"`
+	OAuthIDHasPrefix    *string  `json:"oauthidHasPrefix,omitempty"`
+	OAuthIDHasSuffix    *string  `json:"oauthidHasSuffix,omitempty"`
+	OAuthIDEqualFold    *string  `json:"oauthidEqualFold,omitempty"`
+	OAuthIDContainsFold *string  `json:"oauthidContainsFold,omitempty"`
+
+	// "PhotoURL" field predicates.
+	PhotoURL             *string  `json:"photourl,omitempty"`
+	PhotoURLNEQ          *string  `json:"photourlNEQ,omitempty"`
+	PhotoURLIn           []string `json:"photourlIn,omitempty"`
+	PhotoURLNotIn        []string `json:"photourlNotIn,omitempty"`
+	PhotoURLGT           *string  `json:"photourlGT,omitempty"`
+	PhotoURLGTE          *string  `json:"photourlGTE,omitempty"`
+	PhotoURLLT           *string  `json:"photourlLT,omitempty"`
+	PhotoURLLTE          *string  `json:"photourlLTE,omitempty"`
+	PhotoURLContains     *string  `json:"photourlContains,omitempty"`
+	PhotoURLHasPrefix    *string  `json:"photourlHasPrefix,omitempty"`
+	PhotoURLHasSuffix    *string  `json:"photourlHasSuffix,omitempty"`
+	PhotoURLEqualFold    *string  `json:"photourlEqualFold,omitempty"`
+	PhotoURLContainsFold *string  `json:"photourlContainsFold,omitempty"`
+
+	// "SessionToken" field predicates.
+	SessionToken             *string  `json:"sessiontoken,omitempty"`
+	SessionTokenNEQ          *string  `json:"sessiontokenNEQ,omitempty"`
+	SessionTokenIn           []string `json:"sessiontokenIn,omitempty"`
+	SessionTokenNotIn        []string `json:"sessiontokenNotIn,omitempty"`
+	SessionTokenGT           *string  `json:"sessiontokenGT,omitempty"`
+	SessionTokenGTE          *string  `json:"sessiontokenGTE,omitempty"`
+	SessionTokenLT           *string  `json:"sessiontokenLT,omitempty"`
+	SessionTokenLTE          *string  `json:"sessiontokenLTE,omitempty"`
+	SessionTokenContains     *string  `json:"sessiontokenContains,omitempty"`
+	SessionTokenHasPrefix    *string  `json:"sessiontokenHasPrefix,omitempty"`
+	SessionTokenHasSuffix    *string  `json:"sessiontokenHasSuffix,omitempty"`
+	SessionTokenEqualFold    *string  `json:"sessiontokenEqualFold,omitempty"`
+	SessionTokenContainsFold *string  `json:"sessiontokenContainsFold,omitempty"`
+
+	// "IsActivated" field predicates.
+	IsActivated    *bool `json:"isactivated,omitempty"`
+	IsActivatedNEQ *bool `json:"isactivatedNEQ,omitempty"`
+
+	// "IsAdmin" field predicates.
+	IsAdmin    *bool `json:"isadmin,omitempty"`
+	IsAdminNEQ *bool `json:"isadminNEQ,omitempty"`
+}
+
+// Filter applies the UserWhereInput filter on the UserQuery builder.
+func (i *UserWhereInput) Filter(q *UserQuery) (*UserQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// P returns a predicate for filtering users.
+// An error is returned if the input is empty or invalid.
+func (i *UserWhereInput) P() (predicate.User, error) {
+	var predicates []predicate.User
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, user.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.User, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, user.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, err
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.User, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, err
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, user.And(and...))
+	}
+	if i.ID != nil {
+		predicates = append(predicates, user.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, user.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, user.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, user.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, user.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, user.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, user.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, user.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, user.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, user.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, user.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, user.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, user.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, user.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, user.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, user.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, user.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, user.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, user.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, user.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, user.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.OAuthID != nil {
+		predicates = append(predicates, user.OAuthIDEQ(*i.OAuthID))
+	}
+	if i.OAuthIDNEQ != nil {
+		predicates = append(predicates, user.OAuthIDNEQ(*i.OAuthIDNEQ))
+	}
+	if len(i.OAuthIDIn) > 0 {
+		predicates = append(predicates, user.OAuthIDIn(i.OAuthIDIn...))
+	}
+	if len(i.OAuthIDNotIn) > 0 {
+		predicates = append(predicates, user.OAuthIDNotIn(i.OAuthIDNotIn...))
+	}
+	if i.OAuthIDGT != nil {
+		predicates = append(predicates, user.OAuthIDGT(*i.OAuthIDGT))
+	}
+	if i.OAuthIDGTE != nil {
+		predicates = append(predicates, user.OAuthIDGTE(*i.OAuthIDGTE))
+	}
+	if i.OAuthIDLT != nil {
+		predicates = append(predicates, user.OAuthIDLT(*i.OAuthIDLT))
+	}
+	if i.OAuthIDLTE != nil {
+		predicates = append(predicates, user.OAuthIDLTE(*i.OAuthIDLTE))
+	}
+	if i.OAuthIDContains != nil {
+		predicates = append(predicates, user.OAuthIDContains(*i.OAuthIDContains))
+	}
+	if i.OAuthIDHasPrefix != nil {
+		predicates = append(predicates, user.OAuthIDHasPrefix(*i.OAuthIDHasPrefix))
+	}
+	if i.OAuthIDHasSuffix != nil {
+		predicates = append(predicates, user.OAuthIDHasSuffix(*i.OAuthIDHasSuffix))
+	}
+	if i.OAuthIDEqualFold != nil {
+		predicates = append(predicates, user.OAuthIDEqualFold(*i.OAuthIDEqualFold))
+	}
+	if i.OAuthIDContainsFold != nil {
+		predicates = append(predicates, user.OAuthIDContainsFold(*i.OAuthIDContainsFold))
+	}
+	if i.PhotoURL != nil {
+		predicates = append(predicates, user.PhotoURLEQ(*i.PhotoURL))
+	}
+	if i.PhotoURLNEQ != nil {
+		predicates = append(predicates, user.PhotoURLNEQ(*i.PhotoURLNEQ))
+	}
+	if len(i.PhotoURLIn) > 0 {
+		predicates = append(predicates, user.PhotoURLIn(i.PhotoURLIn...))
+	}
+	if len(i.PhotoURLNotIn) > 0 {
+		predicates = append(predicates, user.PhotoURLNotIn(i.PhotoURLNotIn...))
+	}
+	if i.PhotoURLGT != nil {
+		predicates = append(predicates, user.PhotoURLGT(*i.PhotoURLGT))
+	}
+	if i.PhotoURLGTE != nil {
+		predicates = append(predicates, user.PhotoURLGTE(*i.PhotoURLGTE))
+	}
+	if i.PhotoURLLT != nil {
+		predicates = append(predicates, user.PhotoURLLT(*i.PhotoURLLT))
+	}
+	if i.PhotoURLLTE != nil {
+		predicates = append(predicates, user.PhotoURLLTE(*i.PhotoURLLTE))
+	}
+	if i.PhotoURLContains != nil {
+		predicates = append(predicates, user.PhotoURLContains(*i.PhotoURLContains))
+	}
+	if i.PhotoURLHasPrefix != nil {
+		predicates = append(predicates, user.PhotoURLHasPrefix(*i.PhotoURLHasPrefix))
+	}
+	if i.PhotoURLHasSuffix != nil {
+		predicates = append(predicates, user.PhotoURLHasSuffix(*i.PhotoURLHasSuffix))
+	}
+	if i.PhotoURLEqualFold != nil {
+		predicates = append(predicates, user.PhotoURLEqualFold(*i.PhotoURLEqualFold))
+	}
+	if i.PhotoURLContainsFold != nil {
+		predicates = append(predicates, user.PhotoURLContainsFold(*i.PhotoURLContainsFold))
+	}
+	if i.SessionToken != nil {
+		predicates = append(predicates, user.SessionTokenEQ(*i.SessionToken))
+	}
+	if i.SessionTokenNEQ != nil {
+		predicates = append(predicates, user.SessionTokenNEQ(*i.SessionTokenNEQ))
+	}
+	if len(i.SessionTokenIn) > 0 {
+		predicates = append(predicates, user.SessionTokenIn(i.SessionTokenIn...))
+	}
+	if len(i.SessionTokenNotIn) > 0 {
+		predicates = append(predicates, user.SessionTokenNotIn(i.SessionTokenNotIn...))
+	}
+	if i.SessionTokenGT != nil {
+		predicates = append(predicates, user.SessionTokenGT(*i.SessionTokenGT))
+	}
+	if i.SessionTokenGTE != nil {
+		predicates = append(predicates, user.SessionTokenGTE(*i.SessionTokenGTE))
+	}
+	if i.SessionTokenLT != nil {
+		predicates = append(predicates, user.SessionTokenLT(*i.SessionTokenLT))
+	}
+	if i.SessionTokenLTE != nil {
+		predicates = append(predicates, user.SessionTokenLTE(*i.SessionTokenLTE))
+	}
+	if i.SessionTokenContains != nil {
+		predicates = append(predicates, user.SessionTokenContains(*i.SessionTokenContains))
+	}
+	if i.SessionTokenHasPrefix != nil {
+		predicates = append(predicates, user.SessionTokenHasPrefix(*i.SessionTokenHasPrefix))
+	}
+	if i.SessionTokenHasSuffix != nil {
+		predicates = append(predicates, user.SessionTokenHasSuffix(*i.SessionTokenHasSuffix))
+	}
+	if i.SessionTokenEqualFold != nil {
+		predicates = append(predicates, user.SessionTokenEqualFold(*i.SessionTokenEqualFold))
+	}
+	if i.SessionTokenContainsFold != nil {
+		predicates = append(predicates, user.SessionTokenContainsFold(*i.SessionTokenContainsFold))
+	}
+	if i.IsActivated != nil {
+		predicates = append(predicates, user.IsActivatedEQ(*i.IsActivated))
+	}
+	if i.IsActivatedNEQ != nil {
+		predicates = append(predicates, user.IsActivatedNEQ(*i.IsActivatedNEQ))
+	}
+	if i.IsAdmin != nil {
+		predicates = append(predicates, user.IsAdminEQ(*i.IsAdmin))
+	}
+	if i.IsAdminNEQ != nil {
+		predicates = append(predicates, user.IsAdminNEQ(*i.IsAdminNEQ))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, fmt.Errorf("github.com/kcarretto/realm/tavern/ent: empty predicate UserWhereInput")
+	case 1:
+		return predicates[0], nil
+	default:
+		return user.And(predicates...), nil
 	}
 }

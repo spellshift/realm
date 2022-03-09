@@ -32,6 +32,8 @@ type Tx struct {
 	Tag *TagClient
 	// Target is the client for interacting with the Target builders.
 	Target *TargetClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 
 	// lazily loaded.
 	client     *Client
@@ -177,6 +179,7 @@ func (tx *Tx) init() {
 	tx.ImplantServiceConfig = NewImplantServiceConfigClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Target = NewTargetClient(tx.config)
+	tx.User = NewUserClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

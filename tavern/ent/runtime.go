@@ -16,6 +16,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/schema"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/target"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -211,4 +212,38 @@ func init() {
 	targetDescForwardConnectIP := targetFields[1].Descriptor()
 	// target.ForwardConnectIPValidator is a validator for the "forwardConnectIP" field. It is called by the builders before save.
 	target.ForwardConnectIPValidator = targetDescForwardConnectIP.Validators[0].(func(string) error)
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescName is the schema descriptor for Name field.
+	userDescName := userFields[0].Descriptor()
+	// user.NameValidator is a validator for the "Name" field. It is called by the builders before save.
+	user.NameValidator = func() func(string) error {
+		validators := userDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(_Name string) error {
+			for _, fn := range fns {
+				if err := fn(_Name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// userDescSessionToken is the schema descriptor for SessionToken field.
+	userDescSessionToken := userFields[3].Descriptor()
+	// user.DefaultSessionToken holds the default value on creation for the SessionToken field.
+	user.DefaultSessionToken = userDescSessionToken.Default.(func() string)
+	// user.SessionTokenValidator is a validator for the "SessionToken" field. It is called by the builders before save.
+	user.SessionTokenValidator = userDescSessionToken.Validators[0].(func(string) error)
+	// userDescIsActivated is the schema descriptor for IsActivated field.
+	userDescIsActivated := userFields[4].Descriptor()
+	// user.DefaultIsActivated holds the default value on creation for the IsActivated field.
+	user.DefaultIsActivated = userDescIsActivated.Default.(bool)
+	// userDescIsAdmin is the schema descriptor for IsAdmin field.
+	userDescIsAdmin := userFields[5].Descriptor()
+	// user.DefaultIsAdmin holds the default value on creation for the IsAdmin field.
+	user.DefaultIsAdmin = userDescIsAdmin.Default.(bool)
 }

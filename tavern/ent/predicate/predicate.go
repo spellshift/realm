@@ -35,3 +35,6 @@ type Tag func(*sql.Selector)
 
 // Target is the predicate function for target builders.
 type Target func(*sql.Selector)
+
+// User is the predicate function for user builders.
+type User func(*sql.Selector)

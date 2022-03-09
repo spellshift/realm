@@ -200,6 +200,22 @@ var (
 		Columns:    TargetsColumns,
 		PrimaryKey: []*schema.Column{TargetsColumns[0]},
 	}
+	// UsersColumns holds the columns for the "users" table.
+	UsersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Size: 25},
+		{Name: "oauth_id", Type: field.TypeString, Unique: true},
+		{Name: "photo_url", Type: field.TypeString},
+		{Name: "session_token", Type: field.TypeString, Unique: true, Size: 1000},
+		{Name: "is_activated", Type: field.TypeBool, Default: false},
+		{Name: "is_admin", Type: field.TypeBool, Default: false},
+	}
+	// UsersTable holds the schema information for the "users" table.
+	UsersTable = &schema.Table{
+		Name:       "users",
+		Columns:    UsersColumns,
+		PrimaryKey: []*schema.Column{UsersColumns[0]},
+	}
 	// ImplantConfigServiceConfigsColumns holds the columns for the "implant_config_serviceConfigs" table.
 	ImplantConfigServiceConfigsColumns = []*schema.Column{
 		{Name: "implant_config_id", Type: field.TypeInt},
@@ -287,6 +303,7 @@ var (
 		ImplantServiceConfigsTable,
 		TagsTable,
 		TargetsTable,
+		UsersTable,
 		ImplantConfigServiceConfigsTable,
 		ImplantConfigCallbackConfigsTable,
 		TargetTagsTable,

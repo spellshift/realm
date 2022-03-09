@@ -25,6 +25,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/target"
+	"github.com/kcarretto/realm/tavern/ent/user"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -645,6 +646,65 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 	return node, nil
 }
 
+func (u *User) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     u.ID,
+		Type:   "User",
+		Fields: make([]*Field, 6),
+		Edges:  make([]*Edge, 0),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(u.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "Name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.OAuthID); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "OAuthID",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.PhotoURL); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "PhotoURL",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.SessionToken); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "SessionToken",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.IsActivated); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "bool",
+		Name:  "IsActivated",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(u.IsAdmin); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "bool",
+		Name:  "IsAdmin",
+		Value: string(buf),
+	}
+	return node, nil
+}
+
 func (c *Client) Node(ctx context.Context, id int) (*Node, error) {
 	n, err := c.Noder(ctx, id)
 	if err != nil {
@@ -797,6 +857,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		n, err := c.Target.Query().
 			Where(target.ID(id)).
 			CollectFields(ctx, "Target").
+			Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case user.Table:
+		n, err := c.User.Query().
+			Where(user.ID(id)).
+			CollectFields(ctx, "User").
 			Only(ctx)
 		if err != nil {
 			return nil, err
@@ -996,6 +1065,19 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		nodes, err := c.Target.Query().
 			Where(target.IDIn(ids...)).
 			CollectFields(ctx, "Target").
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case user.Table:
+		nodes, err := c.User.Query().
+			Where(user.IDIn(ids...)).
+			CollectFields(ctx, "User").
 			All(ctx)
 		if err != nil {
 			return nil, err

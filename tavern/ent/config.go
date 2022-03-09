@@ -34,6 +34,7 @@ type hooks struct {
 	ImplantServiceConfig  []ent.Hook
 	Tag                   []ent.Hook
 	Target                []ent.Hook
+	User                  []ent.Hook
 }
 
 // Options applies the options on the config object.
