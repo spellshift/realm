@@ -18,6 +18,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/implantserviceconfig"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/target"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -48,6 +49,7 @@ func columnChecker(table string) func(string) error {
 		implantserviceconfig.Table:  implantserviceconfig.ValidColumn,
 		tag.Table:                   tag.ValidColumn,
 		target.Table:                target.ValidColumn,
+		user.Table:                  user.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

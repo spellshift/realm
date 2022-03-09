@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +12,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/debug"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent/migrate"
 	"github.com/kcarretto/realm/tavern/graphql"
 	"github.com/urfave/cli"
@@ -31,6 +34,11 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 }
 
 func run(ctx context.Context, options ...func(*Config)) error {
+	// Generate server key pair
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		log.Fatalf("[FATAL] failed to generate ed25519 keypair: %v", err)
+	}
 	// Initialize Config
 	cfg := &Config{}
 	for _, opt := range options {
@@ -70,6 +78,8 @@ func run(ctx context.Context, options ...func(*Config)) error {
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		srv.ServeHTTP(w, req)
 	}))
+	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
+	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
 
 	// Listen & Serve HTTP Traffic
 	addr := "0.0.0.0:80"

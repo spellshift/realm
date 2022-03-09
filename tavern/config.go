@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/kcarretto/realm/tavern/ent"
+	"golang.org/x/oauth2"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -13,6 +14,7 @@ import (
 type Config struct {
 	mysql  string
 	client *ent.Client
+	oauth  oauth2.Config
 }
 
 // Connect to the database using configured drivers and uri
@@ -35,6 +37,43 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 		mysql,
 		options...,
 	)
+}
+
+// ConfigureOAuthFromEnv sets OAuth config values from the environment
+func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
+	return func(cfg *Config) {
+		var (
+			clientID     = os.Getenv("OAUTH_CLIENT_ID")
+			clientSecret = os.Getenv("OAUTH_CLIENT_SECRET")
+			domain       = os.Getenv("OAUTH_DOMAIN")
+		)
+
+		// If none are set, default to auth disabled
+		if clientID == "" && clientSecret == "" && domain == "" {
+			log.Printf("WARNING: OAuth is not configured, authentication disabled")
+			return
+		}
+
+		// If partially set, panic to indicate OAuth is improperly configured
+		if clientID == "" {
+			log.Fatalf("[FATAL] To configure OAuth, must provide value for environment var 'OAUTH_CLIENT_ID'")
+		}
+		if clientSecret == "" {
+			log.Fatalf("[FATAL] To configure OAuth, must provide value for environment var 'OAUTH_CLIENT_SECRET'")
+		}
+		if domain == "" {
+			log.Fatalf("[FATAL] To configure OAuth, must provide value for environment var 'OAUTH_DOMAIN'")
+		}
+
+		cfg.oauth = oauth2.Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			RedirectURL:  domain + redirectPath,
+			Scopes: []string{
+				"https://www.googleapis.com/auth/userinfo.profile",
+			},
+		}
+	}
 }
 
 // ConfigureMySQLFromEnv sets MySQL config values from the environment
