@@ -12,7 +12,7 @@ pub fn download(uri: String, dst: String) -> Result<()> {
     let mut response = Vec::new();
     let mut easy = Easy::new();
     // Setup requset.
-    easy.url(&uri).unwrap();
+    easy.url(&uri)?;
     easy.follow_location(true)?;
 
     {
