@@ -32,7 +32,7 @@
         - name: "file.is_dir"
           signature: "file.is_dir(path: str) -> bool"
           link: stdlib_file_is_dir
-          content: The <b>file.is_dir</b> checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return false. If the path doesn't exist an error will also be raised.
+          content: The <b>file.is_dir</b> checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return false.
         - name: "file.mkdir"
           signature: "file.mkdir(path: str) -> None"
           link: stdlib_file_mkdir
