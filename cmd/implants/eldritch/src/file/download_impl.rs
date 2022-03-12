@@ -53,7 +53,7 @@ mod tests {
 
         // Make sure the hash matches.
         let input = Path::new(win_file);
-        let val = digest_file(input).unwrap();
+        let val = digest_file(input)?;
         assert_eq!(val, "c9e07f4ca083a99dda2bc9062400f6b54afceba4c6ce355914fef66c9f018dd0");
 
         // Cleanup
