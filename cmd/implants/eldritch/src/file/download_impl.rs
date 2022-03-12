@@ -45,7 +45,7 @@ mod tests {
     fn test_download_new() -> anyhow::Result<()>{
         // Remove test files just in case.
         let win_file = "/tmp/win_test_download_new";
-        let _remove_res = remove_file(String::from(win_file));
+        let _ = remove_file(String::from(win_file));
     
         // Run our code.
         // :shrug: seems like a mostly static file to test downloading.
