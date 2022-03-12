@@ -64,7 +64,7 @@ mod tests {
     fn test_download_existing_dst() -> anyhow::Result<()>{
         // Remove test files just in case.
         let win_file = "/tmp/win_test_download_existing_dst";
-        let _remove_res = remove_file(String::from(win_file));
+        let _ = remove_file(String::from(win_file));
 
         // Create file to exist.
         let mut file = File::create(win_file).unwrap();
