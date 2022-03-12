@@ -13,7 +13,7 @@ pub fn download(uri: String, dst: String) -> Result<()> {
     let mut easy = Easy::new();
     // Setup requset.
     easy.url(&uri).unwrap();
-    let _redirect = easy.follow_location(true);
+    easy.follow_location(true)?;
 
     {
         // Download data to response vector.
