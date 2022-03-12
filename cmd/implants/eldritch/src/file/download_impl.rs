@@ -100,7 +100,7 @@ mod tests {
 
         // Make sure the hash matches.
         let input = Path::new(win_file);
-        let val = digest_file(input).unwrap();
+        let val = digest_file(input)?;
         assert_eq!(val, "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58");
 
         // Cleanup
