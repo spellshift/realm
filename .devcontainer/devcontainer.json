@@ -24,7 +24,8 @@
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"golang.Go",
-		"rust-lang.rust",		
+		"rust-lang.rust",
+		"graphql.vscode-graphql",		
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -32,17 +33,16 @@
 		"127.0.0.1:80:80",
 	],
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "go version",
 
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	// "remoteUser": "vscode"
 
-	// SPEEEEEEED
+	// SPEEEEEEED on MacOS & Windows. Note that your local clone of realm will not be updated.
+	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
+	"workspaceFolder": "/workspaces/realm",
+	"postCreateCommand": "cd /workspaces && git clone ssh://git@github.com/kcarretto/realm", 
+
 	"mounts": [
-		"source=realm-vscode-eldritch-lang-target,target=${containerWorkspaceFolder}/vscode/eldritch-lang/target,type=volume",
-		"source=realm-cmd-implants-target,target=${containerWorkspaceFolder}/cmd/implants/target,type=volume",
-		"source=realm-cmd-implants-eldritch-target,target=${containerWorkspaceFolder}/cmd/implants/eldritch/target,type=volume",
-		"source=realm-cmd-implants-imix-target,target=${containerWorkspaceFolder}/cmd/implants/imix/target,type=volume"
+		"source=realm-bashhistory,target=/commandhistory,type=volume"
 	]
 }

@@ -1,0 +1,38 @@
+type ImplantCallbackConfig implements Node {
+    id: ID!
+    uri: String!
+    proxyURI: String
+    priority: Int!
+    timeout: Int!
+    interval: Int!
+    jitter: Int!
+}
+
+type ImplantServiceConfig implements Node {
+    id: ID!
+    name: String!
+    description: String!
+    executablePath: String!
+}
+
+type ImplantConfig implements Node {
+  id: ID!
+  name: String!
+  authToken: String!
+
+  serviceConfigs: [ImplantServiceConfig!]
+  callbackConfigs: [ImplantCallbackConfig!]
+}
+
+type Implant implements Node {
+  id: ID!
+  sessionID: String!
+  processName: String
+
+  target: Target!
+  config: ImplantConfig!
+}
+
+type CallbackResponse {
+    implant: Implant!
+}
