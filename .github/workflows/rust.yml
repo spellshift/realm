@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  imix:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -21,6 +21,20 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: cd implants && cargo build --verbose
+      run: cd implants/imix && cargo build --verbose
     - name: Run tests
-      run: cd implants && cargo test --verbose
+      run: cd implants/imix && cargo test --verbose
+  eldritch:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: cd implants/eldritch && cargo build --verbose
+    - name: Run tests
+      run: cd implants/eldritch && cargo test --verbose
