@@ -1,7 +1,7 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: "[BUG] Something went wrong"
+title: "[bug] Something went wrong"
 labels: bug
 assignees: KCarretto
 
