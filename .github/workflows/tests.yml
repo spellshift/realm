@@ -1,4 +1,4 @@
-name: Rust
+name: Tests
 
 on:
   push:
@@ -10,6 +10,25 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  tavern:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18.0-rc.1
+    - name: Build
+      run: go build -v -o ./build/tavern ./tavern
+    - name: Test
+      run: go test -v ./tavern/...
+  
   imix:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -24,6 +43,7 @@ jobs:
       run: cd implants/imix && cargo build --verbose
     - name: Run tests
       run: cd implants/imix && cargo test --verbose
+  
   eldritch:
     runs-on: ${{ matrix.os }}
     strategy:
