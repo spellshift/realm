@@ -24,9 +24,9 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: 1.18.0-rc.1
-    - name: Build
+    - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
-    - name: Cache
+    - name: ⚡ Cache
       uses: actions/cache@preview
       with:
         path: |
@@ -37,7 +37,7 @@ jobs:
         key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-${{ matrix.go-version }}- 
-    - name: Test
+    - name: 🔎 Test
       run: go test -v ./tavern/...
   
   imix:
@@ -50,9 +50,19 @@ jobs:
           - windows-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build
+    - name: ⚡ Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+    - name: 🔨 Build
       run: cd implants/imix && cargo build --verbose
-    - name: Run tests
+    - name: 🔎 Run tests
       run: cd implants/imix && cargo test --verbose
   
   eldritch:
@@ -65,7 +75,17 @@ jobs:
           - windows-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build
+    - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
-    - name: Run tests
+    - name: ⚡ Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+    - name: 🔎 Run tests
       run: cd implants/eldritch && cargo test --verbose
