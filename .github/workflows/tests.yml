@@ -32,9 +32,9 @@ jobs:
           ~/.cache/go-build
           ~/Library/Caches/go-build
           ~\AppData\Local\go-build
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-tavern-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}- 
+          ${{ runner.os }}-tavern-go-${{ matrix.go-version }}- 
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
@@ -57,9 +57,9 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-imix-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-imix-cargo-
     - name: 🔨 Build
       run: cd implants/imix && cargo build --verbose
     - name: 🔎 Run tests
@@ -82,9 +82,9 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-eldritch-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-eldritch-cargo-
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
