@@ -59,10 +59,10 @@ The <b>file.read</b> method is very cool, and will be even cooler when Nick docu
 
 The <b>file.remove</b> method is very cool, and will be even cooler when Nick documents it.
 
-### file.rename
-`file.rename(src: str, dst: str) -> None`
+### file.moveto
+`file.moveto(src: str, dst: str) -> None`
 
-The <b>file.rename</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.moveto</b> method will move a file or directory from src to dst. If the dst directory or file exists it will be deleted before being replaced. To ensure consistency across systems.
 
 ### file.replace
 `file.replace(path: str, pattern: str, value: str) -> 

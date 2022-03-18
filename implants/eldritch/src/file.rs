@@ -7,7 +7,7 @@ mod is_dir_impl;
 mod mkdir_impl;
 mod read_impl;
 mod remove_impl;
-mod rename_impl;
+mod moveto_impl;
 mod replace_all_impl;
 mod replace_impl;
 mod timestomp_impl;
@@ -80,7 +80,7 @@ fn methods(builder: &mut MethodsBuilder) {
         Ok(NoneType{})
     }
     fn rename(_this: FileLibrary, old: String, new: String) -> NoneType {
-        rename_impl::rename(old, new)?;
+        moveto_impl::moveto(old, new)?;
         Ok(NoneType{})
     }
     fn replace_all(_this: FileLibrary, path: String, pattern: String, value: String) -> NoneType {
