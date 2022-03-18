@@ -72,7 +72,7 @@ The <b>file.replace</b> method is very cool, and will be even cooler when Nick d
 ### file.replace_all
 `file.replace_all(path: str, pattern: str, value:` str) -> None
 
-The <b>file.replace_all</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value.
 
 ### file.timestomp
 `file.timestomp(src: str, dst: str) -> None`
