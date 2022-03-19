@@ -50,7 +50,11 @@ mod tests {
         cfg!(target_os = "freebsd") || 
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
-            assert_eq!(res, "root\n");
+            let mut bool_res = false;
+            if res == "runner\n" || res == "root\n" {
+                bool_res = true;
+            }
+            assert_eq!(bool_res, true);
         }
         else if cfg!(target_os = "macos") {
             assert_eq!(res, "root\n")
