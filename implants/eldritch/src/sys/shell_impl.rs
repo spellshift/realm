@@ -57,10 +57,18 @@ mod tests {
             assert_eq!(bool_res, true);
         }
         else if cfg!(target_os = "macos") {
-            assert_eq!(res, "root\n")
+            let mut bool_res = false;
+            if res == "runner\n" || res == "root\n" {
+                bool_res = true;
+            }
+            assert_eq!(bool_res, true);
         }
         else if cfg!(target_os = "windows") {
-            assert_eq!(res, "Administrator\n")
+            let mut bool_res = false;
+            if res == "runner\n" || res == "Administrator\n" {
+                bool_res = true;
+            }
+            assert_eq!(bool_res, true);
         }
         Ok(())
     }
@@ -73,7 +81,7 @@ mod tests {
         cfg!(target_os = "freebsd") || 
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
-            let res = shell(String::from("cat /etc/passwd | awk '{print $1}' | grep root | awk -F \":\" '{print $3}'"))?;
+            let res = shell(String::from("cat /etc/passwd | awk '{print $1}' | grep -E '^root:' | awk -F \":\" '{print $3}'"))?;
             assert_eq!(res, "0\n");
         }
         Ok(())
