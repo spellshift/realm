@@ -65,7 +65,7 @@ mod tests {
         }
         else if cfg!(target_os = "windows") {
             let mut bool_res = false;
-            if res == "runner\n" || res == "Administrator\n" {
+            if res.contains("runneradmin") || res.contains("Administrator") {
                 bool_res = true;
             }
             assert_eq!(bool_res, true);
