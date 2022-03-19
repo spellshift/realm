@@ -90,7 +90,7 @@ mod tests {
     fn test_process_shell_complex_windows() -> anyhow::Result<()>{
         if cfg!(target_os = "windows") {
             let res = shell(String::from("wmic useraccount get name | findstr /c:\"Administrator\""))?;
-            assert_eq!(res, "Administrator\n")
+            assert_eq!(res.contains("Administrator"), true);
         }
         Ok(())
     }
