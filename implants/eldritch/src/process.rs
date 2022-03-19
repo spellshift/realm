@@ -40,7 +40,7 @@ fn methods(builder: &mut MethodsBuilder) {
         kill_impl::kill(pid)?;
         Ok(NoneType{})
     }
-    fn list(_this: ProcessLibrary) -> Vec<i32> {
+    fn list(_this: ProcessLibrary) -> Vec<String> {
         list_impl::list()
     }
     fn name(_this: ProcessLibrary, pid: i32) -> String {
