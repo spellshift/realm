@@ -26,7 +26,8 @@ impl ToString for ProcessRes {
 
 
 // Returns PID, PPID, status, user, cmd, command
-// https://docs.rs/sysinfo/0.23.5/sysinfo/enum.ProcessStatus.html
+// REVIEW BLOCKER: Do we want to add environ? start_time? run_time? {cpu,memory,disk}_usage?
+// https://docs.rs/sysinfo/0.23.5/sysinfo/struct.Process.html
 pub fn list() -> Result<Vec<String>> {
     if !System::IS_SUPPORTED {
         return Err(anyhow::anyhow!("This OS isn't supported for process functions.
