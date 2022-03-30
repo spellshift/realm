@@ -2,35 +2,18 @@
 	"name": "Realm DevContainer",
 	"build": {
 		"dockerfile": "Dockerfile",
-		"args": {
-			// Use the -bullseye variants if you are on a M1 mac.
-			"GO_VARIANT": "1.18beta2-buster",
-			"RUST_VARIANT": "buster",
-			// Options
-			"NODE_VERSION": "lts/*"
-		},
 	},
 	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
 
-	// Set *default* container specific settings.json values on container create.
-	"settings": {
-		// GO
-		"go.toolsManagement.checkForUpdates": "local",
-		"go.useLanguageServer": true,
-		"go.gopath": "/go",
-		"go.goroot": "/usr/local/go",
-	},
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"golang.Go",
-		"rust-lang.rust",
-		"graphql.vscode-graphql",		
+		"matklad.rust-analyzer",
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"appPort": [
-		"127.0.0.1:80:80",
+		"127.0.0.1:2222:22",
 	],
 
 
@@ -38,11 +21,11 @@
 	// "remoteUser": "vscode"
 
 	// SPEEEEEEED on MacOS & Windows. Note that your local clone of realm will not be updated.
-	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
-	"workspaceFolder": "/workspaces/realm",
-	"postCreateCommand": "cd /workspaces && git clone ssh://git@github.com/kcarretto/realm", 
+	"workspaceMount": "source=nom4,target=/workspaces/nom4,type=volume",
+	"workspaceFolder": "/workspaces/nom4",
+	"postCreateCommand": "cd /workspaces && git clone ssh://git@github.com/hulto/nom4", 
 
 	"mounts": [
-		"source=realm-bashhistory,target=/commandhistory,type=volume"
+		"source=nom4-bashhistory,target=/commandhistory,type=volume"
 	]
 }

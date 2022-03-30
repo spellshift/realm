@@ -1,11 +1,11 @@
 use anyhow::{Result};
-use sysinfo::{ProcessExt,System,SystemExt,PidExt};
+use sysinfo::{ProcessExt,System,SystemExt,PidExt,User,UserExt};
 
 pub struct ProcessRes {
     pid:        u32,
     ppid:       u32,
     status:     String,
-    uid:        u32,
+    username:   String,
     path:       String,
     command:    String,
 }
@@ -13,11 +13,11 @@ pub struct ProcessRes {
 impl ToString for ProcessRes {
     #[inline]
     fn to_string(&self) -> String {
-        return format!("{{pid:{},ppid:{},status:\"{}\",uid:{},path:\"{}\",command:\"{}\"}}",
+        return format!("{{pid:{},ppid:{},status:\"{}\",username:\"{}\",path:\"{}\",command:\"{}\"}}",
         &self.pid,
         &self.ppid,
         &self.status,
-        &self.uid,
+        &self.username,
         &self.path,
         &self.command,
     );
@@ -38,23 +38,39 @@ pub fn list() -> Result<Vec<String>> {
     let mut res : Vec<String> = Vec::new();
     let mut sys = System::new();
     sys.refresh_processes();
+    sys.refresh_users_list();
+    let user_list =  sys.users().clone();
+    // for user in user_list {
+    //     println!("{} is username {}", user.name(), *user.username());
+    // }    
+
     println!("Here");
     for (pid, process) in sys.processes() {
         let mut tmp_ppid = 0;
         if  process.parent() != None {
             tmp_ppid = process.parent().unwrap().as_u32();
         }
+
         let tmprow = ProcessRes{ 
             pid:        pid.as_u32(),
             ppid:       tmp_ppid,
             status:     process.status().to_string(),
-            uid:        process.uid,                                            //REVIEW BLOCKER: Do we want uid number or add some more sys functionality to pass back username.
+            username:   username_to_username(process.uid, user_list),
             path:       String::from(process.exe().to_str().unwrap()),
             command:    String::from(process.cmd().join(" ")),
         };
         res.push(tmprow.to_string());
     }
     Ok(res)
+}
+
+fn username_to_username(username: u32, user_list: &[User]) -> String {
+    for user in user_list {
+        if *user.uid() == username {
+            return String::from(user.name());
+        }
+    }
+    return String::from("");
 }
 
 // REVIEW BLOCKER: Not totally sure the right way to test this.
