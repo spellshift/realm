@@ -92,7 +92,7 @@ The <b>process.kill</b> method is very cool, and will be even cooler when Nick d
 ### process.list
 `process.list() -> List<str>`
 
-The <b>process.list</b> method will return a list of JSON strings representing the current process list. Eg. `"{pid:9,ppid:0,status:\"Sleeping\",uid:0,path:\"/bin/dash\",command:\"/bin/sh\"}"`
+The <b>process.list</b> method will return a list of JSON strings representing the current process list. Eg. `"{pid:9,ppid:0,status:\"Sleeping\",username:\"root\",path:\"/bin/dash\",command:\"/bin/sh\",cwd:\"/\",environ:\"TERM_PROGRAM_VERSION=1.65.2 USER=root\",name:\"sh\"}"`
 
 ### process.name
 `process.name(pid: int) -> str`
