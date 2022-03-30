@@ -42,7 +42,7 @@ The <b>file.hash</b> takes a sha256 hash of the file specified in path.
 ### file.is_dir
 `file.is_dir(path: str) -> bool`
 
-The <b>file.is_dir</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.is_dir</b> checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return false.
 
 ### file.mkdir
 `file.mkdir(path: str) -> None`
