@@ -28,7 +28,6 @@ mod tests {
 
     #[test]
     fn test_download_file() -> anyhow::Result<()> {
-        println!("First bit");
         // running test http server
         let server = Server::run();
         server.expect(
@@ -36,7 +35,6 @@ mod tests {
             .respond_with(status_code(200)
             .body("test body")),
         );
-        println!("Second bit");
 
         // just using a temp file for its path
         let tmp_file = NamedTempFile::new()?;
