@@ -27,7 +27,7 @@ mod tests {
     use std::fs::{remove_file, read_to_string};
 
     #[test]
-    fn test_append_nonexisting() -> anyhow::Result<()> {
+    fn test_download_file() -> anyhow::Result<()> {
         println!("First bit");
         // running test http server
         let server = Server::run();
