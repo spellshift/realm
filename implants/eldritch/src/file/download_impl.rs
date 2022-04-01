@@ -9,7 +9,7 @@ pub fn download(uri: String, dst: String) -> Result<()> {
     let content = resp.text()?;
 
     let mut dest = {
-        let fname = PathBuf::from(_dst);
+        let fname = PathBuf::from(dst);
         File::create(fname)?
     };
 
