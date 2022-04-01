@@ -27,7 +27,7 @@ The <b>file.copy</b> copies a file from src path to dst path. If dst path doesn'
 ### file.download
 `file.download(uri: str, dst: str) -> None`
 
-The <b>file.download</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.download</b> method downloads a file at the URI specified in `_uri` to the path specified in `_dst`. This currently only supports `http` & `https` protocols.
 
 ### file.exists
 `file.exists(path: str) -> bool`

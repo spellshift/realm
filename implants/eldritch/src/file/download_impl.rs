@@ -18,7 +18,6 @@ pub fn download(_uri: String, _dst: String) -> Result<()> {
     Ok(())
 }
 
-// TODO: tests
 #[cfg(test)]
 mod tests {
     use super::*;
