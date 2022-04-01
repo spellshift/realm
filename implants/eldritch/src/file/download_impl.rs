@@ -26,8 +26,7 @@ mod tests {
     use std::fs::{remove_file, read_to_string};
 
     #[test]
-    fn test_append_nonexisting() -> anyhow::Result<()> {
-        println!("First bit");
+    fn test_download_file() -> anyhow::Result<()> {
         // running test http server
         let server = Server::run();
         server.expect(
@@ -35,7 +34,6 @@ mod tests {
             .respond_with(status_code(200)
             .body("test body")),
         );
-        println!("Second bit");
 
         // just using a temp file for its path
         let tmp_file = NamedTempFile::new()?;
