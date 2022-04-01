@@ -3,9 +3,9 @@ use std::io::copy;
 use std::fs::File;
 use std::path::PathBuf;
 
-pub fn download(_uri: String, _dst: String) -> Result<()> {
+pub fn download(uri: String, dst: String) -> Result<()> {
     // there's no checking at all happening here, for anything
-    let resp = reqwest::blocking::get(_uri)?;
+    let resp = reqwest::blocking::get(uri)?;
     let content = resp.text()?;
 
     let mut dest = {
