@@ -52,7 +52,7 @@ The <b>file.mkdir</b> method is very cool, and will be even cooler when Nick doc
 ### file.read
 `file.read(path: str) -> str`
 
-The <b>file.read</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.read</b> method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 
 ### file.remove
 `file.remove(path: str) -> None`
