@@ -27,7 +27,7 @@ The <b>file.copy</b> copies a file from src path to dst path. If dst path doesn'
 ### file.download
 `file.download(uri: str, dst: str) -> None`
 
-The <b>file.download</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten. This currently only supports `http` & `https` protocols.
 
 ### file.exists
 `file.exists(path: str) -> bool`
@@ -52,12 +52,12 @@ The <b>file.mkdir</b> method is very cool, and will be even cooler when Nick doc
 ### file.read
 `file.read(path: str) -> str`
 
-The <b>file.read</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.read</b> method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 
 ### file.remove
 `file.remove(path: str) -> None`
 
-The <b>file.remove</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.remove</b> method will delete a file or directory (and it's contents) specified by path.
 
 ### file.rename
 `file.rename(src: str, dst: str) -> None`
