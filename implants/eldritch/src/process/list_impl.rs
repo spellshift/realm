@@ -49,12 +49,17 @@ pub fn list() -> Result<Vec<String>> {
         if  process.parent() != None {
             tmp_ppid = process.parent().unwrap().as_u32();
         }
+        let mut tmp_username = String::from("???");
+        if cfg!(target_os = "windows") {
+        }else{
+            tmp_username = uid_to_username(process.uid, user_list);
+        }
 
         let tmprow = ProcessRes{
             pid:        pid.as_u32(),
             ppid:       tmp_ppid,
             status:     process.status().to_string(),
-            username:   uid_to_username(process.uid, user_list),
+            username:   tmp_username,
             path:       String::from(process.exe().to_str().unwrap()),
             command:    String::from(process.cmd().join(" ")),
             cwd:        String::from(process.cwd().to_str().unwrap()),
