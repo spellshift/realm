@@ -119,4 +119,4 @@ The <b>sys.is_windows</b> method is very cool, and will be even cooler when Nick
 ### sys.shell
 `sys.shell(cmd: str) -> str`
 
-The <b>sys.shell</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>sys.shell</b> Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout from the process will be returned. If your command errors the error will be ignored and not passed back to you.
