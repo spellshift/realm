@@ -1,5 +1,6 @@
 use anyhow::{Result};
 use sysinfo::{ProcessExt,System,SystemExt,PidExt,User,UserExt};
+use  std::fmt;
 
 pub struct ProcessRes {
     pid:        u32,
@@ -13,10 +14,9 @@ pub struct ProcessRes {
     name:       String,
 }
 
-impl ToString for ProcessRes {
-    #[inline]
-    fn to_string(&self) -> String {
-        return format!("{{pid:{},ppid:{},status:\"{}\",username:\"{}\",path:\"{}\",\
+impl fmt::Display for ProcessRes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{{pid:{},ppid:{},status:\"{}\",username:\"{}\",path:\"{}\",\
         command:\"{}\",cwd:\"{}\",environ:\"{}\",name:\"{}\"}}",
         &self.pid,
         &self.ppid,
@@ -27,7 +27,7 @@ impl ToString for ProcessRes {
         &self.cwd,
         &self.environ,
         &self.name,
-    );
+        )
     }
 }
 
