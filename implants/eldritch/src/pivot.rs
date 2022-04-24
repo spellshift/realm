@@ -1,4 +1,11 @@
-mod append_impl;
+mod ssh_exec_impl;
+mod ssh_password_spray_impl;
+mod smb_exec_impl;
+mod port_scan_impl;
+mod arp_scan_impl;
+mod port_forward_impl;
+mod ncat_impl;
+mod bind_proxy;
 
 use derive_more::Display;
 
@@ -34,56 +41,38 @@ impl<'v> UnpackValue<'v> for PivotLibrary {
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn revshell(_this: PivotLibrary, path: String, content: String) -> NoneType {
-        append_impl::append(path, content)?;
+    fn ssh_exec(_this:  PivotLibrary, target: String, port: i32, username: String, password: String, key: String, command: String, shell_path: String) ->  String {
+        ssh_exec_impl::ssh_exec(target, port, username, password, key, command, shell_path)
+    }
+    fn ssh_password_spray(_this:  PivotLibrary, targets: Vec<String>, port: i32, credentials: Vec<String>, keys: Vec<String>, command: String, shell_path: String) ->  String {
+        ssh_password_spray_impl::ssh_password_spray(targets, port, credentials, keys, command, shell_path)
+    }
+    fn smb_exec(_this:  PivotLibrary, target: String, port: i32, username: String, password: String, hash: String, command: String) ->  String {
+        smb_exec_impl::smb_exec(target, username, password, hash, command)
+    }     // May want these too: PSRemoting, WMI, WinRM
+    fn port_scan(_this:  PivotLibrary, target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String) ->  Vec<String> {
+        port_scan_impl::port_scan(target_cidrs, ports, portocol)
+    }
+    fn arp_scan(_this:  PivotLibrary, target_cidrs: Vec<String>) ->  Vec<String> {
+        arp_scan_impl::arp_scan(target_cidrs)
+    }
+    fn port_forward(_this:  PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, portocol: String) ->  NoneType {
+        port_forward_impl::port_forward(listen_address, listen_port, forward_address, forward_port, portocol)?;
         Ok(NoneType{})
     }
-    fn copy(_this: PivotLibrary, src: String, dst: String) -> NoneType {
-        copy_impl::copy(src, dst)?;
+    fn ncat(_this:  PivotLibrary, address: String, port: i32, data: String, portocol: String, timeout: i32) ->  String {
+        ncat_impl::ncat(address, port, data, portocol, timeout)
+    }
+    // Seems to have the best protocol support - https://github.com/ajmwagar/merino
+    fn bind_proxy(_this:  PivotLibrary, listen_address: String, listen_port: i32, username: String, password: String) ->  NoneType {
+        bind_proxy_impl::bind_proxy(listen_address, listen_port, username, password)?;
         Ok(NoneType{})
     }
-    fn download(_this: PivotLibrary, uri: String, dst: String) -> NoneType {
-        download_impl::download(uri, dst)?;
-        Ok(NoneType{})
-    }
-    fn exists(_this: PivotLibrary, path: String) -> bool {
-        exists_impl::exists(path)
-    }
-    fn hash(_this: PivotLibrary, path: String) -> String {
-        hash_impl::hash(path)
-    }
-    fn is_dir(_this: PivotLibrary, path: String) -> bool {
-        is_dir_impl::is_dir(path)
-    }
-    fn mkdir(_this: PivotLibrary, path: String) -> NoneType {
-        mkdir_impl::mkdir(path)?;
-        Ok(NoneType{})
-    }
-    fn read(_this: PivotLibrary, path: String) -> String {
-        read_impl::read(path)
-    }
-    fn remove(_this: PivotLibrary, path: String) -> NoneType {
-        remove_impl::remove(path)?;
-        Ok(NoneType{})
-    }
-    fn rename(_this: PivotLibrary, old: String, new: String) -> NoneType {
-        rename_impl::rename(old, new)?;
-        Ok(NoneType{})
-    }
-    fn replace_all(_this: PivotLibrary, path: String, pattern: String, value: String) -> NoneType {
-        replace_all_impl::replace_all(path, pattern, value)?;
-        Ok(NoneType{})
-    }
-    fn replace(_this: PivotLibrary, path: String, pattern: String, value: String) -> NoneType {
-        replace_impl::replace(path, pattern, value)?;
-        Ok(NoneType{})
-    }
-    fn timestomp(_this: PivotLibrary, src: String, dst: String) -> NoneType {
-        timestomp_impl::timestomp(src, dst)?;
-        Ok(NoneType{})
-    }
-    fn write(_this: PivotLibrary, path: String, content: String) -> NoneType {
-        write_impl::write(path, content)?;
-        Ok(NoneType{})
-    }
+
+
+    // This + smb_copy should likely move to file or rolled into the download function  or made into an upload function.
+    //fn ssh_copy(_this:  PivotLibrary, target: String, port: i32, username: String, password: String, key: String, src: String, dst: String) ->  String {
+    //   ssh_copy_impl::ssh_copy(target, port, username, password, key, command, shell_path, src, dst)?;
+    //   Ok(NoneType{})
+    //}
 }
