@@ -20,7 +20,8 @@ pub fn kill(pid: i32) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::process::Command;
+    use core::time;
+    use std::{process::Command, thread};
 
     #[test]
     fn test_process_kill() -> anyhow::Result<()>{
@@ -38,7 +39,7 @@ mod tests {
         }
         
         let child = Command::new(commandstring)
-            .arg("8")
+            .arg("120")
             .spawn()?;
 
         let mut sys = System::new();
@@ -47,14 +48,20 @@ mod tests {
             if pid.as_u32() == child.id(){
                 let i32_pid = pid.as_u32() as i32;
                 kill(i32_pid)?;
-                println!("{:?}", process.status().to_string());
                 assert_eq!(true, true)
             }
-        } 
+        }
+        let mut sys = System::new();
         sys.refresh_processes();    
         for (pid, process) in sys.processes() {
-            if pid.as_u32() == child.id(){
-                assert_eq!(process.status().to_string(), "Zombie")
+            if pid.as_u32() == child.id() {
+                if cfg!(target_os = "linux") {
+                    // Linux child PID will become Zombie
+                    assert_eq!(process.status().to_string(), "Zombie")
+                }else if cfg!(target_os = "macos") {
+                    //MacOS Child PID should not exist.
+                    assert_eq!(false, true);
+                }
             }
         }
         return Ok(())
