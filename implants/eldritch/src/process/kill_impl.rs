@@ -10,7 +10,7 @@ pub fn kill(pid: i32) -> Result<()> {
 
     let mut sys = System::new();
     sys.refresh_processes();
-    if let Some(process) = sys.process(Pid::from(pid)) {
+    if let Some(process) = sys.process(Pid::from_u32(pid as u32)) {
         process.kill_with(Signal::Kill);
     }
 
@@ -58,7 +58,7 @@ mod tests {
                 if cfg!(target_os = "linux") {
                     // Linux child PID will become Zombie
                     assert_eq!(process.status().to_string(), "Zombie")
-                }else if cfg!(target_os = "macos") {
+                }else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
                     //MacOS Child PID should not exist.
                     assert_eq!(false, true);
                 }
