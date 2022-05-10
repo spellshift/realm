@@ -29,19 +29,23 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
     
         // Setting the bind address to unspecified should leave it up to the OS to decide.
         // https://stackoverflow.com/a/67084977
+        println!("UDP");
         let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
+        println!("UDP Unspecified");
         sock.connect(address_and_port.clone()).await?;
+        println!("UDP connected");
 
         // Send bytes to remote host
         let _bytes_sent = sock.send_to(data.as_bytes(), address_and_port.clone()).await?;
-    
+        println!("UDP sent");
         // Recieve any response from remote host
         let mut response_buffer = [0; 1024];
         let (_bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
-
+        println!("UDP recieved");
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
         result_string = String::from(String::from_utf8((&response_buffer).to_vec()).unwrap().trim_matches(char::from(0)));
+        println!("UDP result {:?}", result_string.clone());
         Ok(result_string)
 
     } else {
@@ -163,10 +167,13 @@ mod tests {
     fn test_ncat_not_handle() -> anyhow::Result<()> {
         let result = ncat(String::from("127.0.0.1"), 65431, String::from("No one can hear me!"), String::from("tcp"));
         match result {
-            Ok(_) => assert_eq!("Connection should fail", ""), // No valid connection should exist
-            Err(err) if String::from(format!("{:?}", err)) ==  "Connection refused (os error 111)" => assert!(true), //Linux
-            Err(err) if String::from(format!("{:?}", err)) == "No connection could be made because the target machine actively refused it. (os error 10061)" => assert!(true), //Windows
-            Err(err) =>  { println!("{:?}", err); assert!(false) }, // We shouldn't get any other error
+            Ok(res) => panic!("Connection failure expected: {:?}", res), // No valid connection should exist
+            Err(err) => match String::from(format!("{:?}", err)).as_str() {
+                "Connection refused (os error 111)" if cfg!(target_os = "linux") => assert!(true),
+                "No connection could be made because the target machine actively refused it. (os error 10061)" if cfg!(target_os = "windows") => assert!(true),
+                "Connection refused (os error 61)" if cfg!(target_os = "macos") => assert!(true),
+                _ => panic!("Unhandled result {:?}", err)
+            }
         }
         Ok(())
     }
