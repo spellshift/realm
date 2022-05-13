@@ -157,4 +157,4 @@ The <b>pivot.ncat</b> method is being proposed to allow arbitrary data to be sen
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
 
-The <b>pivot.bind_proxy</b> method is being proposed to providde users the ability  to make inbound connection to the environment  from their host.
+The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specificed port and interface, with the specificed username and password (if provided).
