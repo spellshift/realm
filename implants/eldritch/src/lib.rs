@@ -1,6 +1,7 @@
 pub mod file;
 pub mod process;
 pub mod sys;
+pub mod pivot;
 
 #[cfg(test)]
 mod tests {
