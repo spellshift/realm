@@ -14,12 +14,6 @@ mod tests {
     use tokio::io::copy;
 
 
-    async fn process_socket(mut socket: TcpStream) {
-        // do work with socket here
-        let (mut reader, mut writer) = socket.split();
-        let _bytes_copied = copy(&mut reader, &mut writer);
-    }    
-
     async fn setup_test_listener(address: String, port: i32, protocol: String, _timeout: i32) -> anyhow::Result<()> {
         if protocol == "tcp" {
             let listener = TcpListener::bind(format!("{}:{}", address,  port)).await?;
@@ -27,8 +21,12 @@ mod tests {
 
             while i < 100 {
                 println!("Accepting connections");
-                let (socket, _) = listener.accept().await?;
-                process_socket(socket).await;
+                let (mut socket, _) = listener.accept().await?;
+                let (mut reader, mut writer) = socket.split();
+                let bytes_copied = copy(&mut reader, &mut writer).await?;
+                if bytes_copied > 1 {
+                    break;
+                }
                 i = i + 1;
             }
             
@@ -50,9 +48,9 @@ mod tests {
             65432, String::from("tcp"), 3));
 
         // Send data
-        let actual_response = ncat(String::from("127.0.0.1"),
-            65432, expected_response.clone(), String::from("tcp"), 3)?;
-        println!("{}", actual_response);
+        // let actual_response = ncat(String::from("127.0.0.1"),
+        //     65432, expected_response.clone(), String::from("tcp"), 3)?;
+        // println!("{}", actual_response);
         // Verify our data
         let _a = tokio::join!(listen_task);
         // assert_eq!(expected_response, actual_response);
