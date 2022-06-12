@@ -155,9 +155,9 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 The <b>pivot.port_forward</b> method is being proposed to providde socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
 ### pivot.ncat
-`pivot.ncat(address: str, port: int, data: str, str: portocol, timeout: int ) -> String`
+`pivot.ncat(address: str, port: int, data: str, str: portocol ) -> String`
 
-The <b>pivot.ncat</b> method is being proposed to allow arbitrary data to be sent to a host. The results will be reutrned.
+The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
 
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
