@@ -59,14 +59,18 @@ pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Resul
     let response = runtime.block_on(
         handle_ncat(address, port, data, protocol)
     );
+
+    match response {
+        Ok(_) => Ok(String::from(response.unwrap())),
+        Err(_) => return response,
+    }
     
-    Ok(String::from(response.unwrap()))
+    
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use tokio::net::TcpListener;
     use tokio::net::UdpSocket;
     use tokio::task;
@@ -158,24 +162,11 @@ mod tests {
     #[test]
     fn test_ncat_not_handle() -> anyhow::Result<()> {
         let result = ncat(String::from("127.0.0.1"), 65431, String::from("No one can hear me!"), String::from("tcp"));
-        let response = match result {
-            Ok(_) => todo!(),
-            Err(_) => return Ok(()),
-        };
+        match result {
+            Ok(_) => assert!(false), // No valid connection should exist
+            Err(err) if String::from(format!("{:?}", err)) ==  "Connection refused (os error 111)" => assert!(true),
+            Err(_) => assert!(false), // We shouldn't get any other error
+        }
         Ok(())
-            //     panic!("No connection should be made. Expect connection refused.")
-        // } else {
-        //     println!(E)
-        // }
-        //  let response = match result {
-        //     Ok(res) => res,
-        //     Err(err) => return Err(err),
-        //   };
-
-        // match res {
-        //     Ok(_) => todo!(),
-        //     Err(_) => break,
-        // }
-        // Ok(())
     }
 }
