@@ -163,9 +163,10 @@ mod tests {
     fn test_ncat_not_handle() -> anyhow::Result<()> {
         let result = ncat(String::from("127.0.0.1"), 65431, String::from("No one can hear me!"), String::from("tcp"));
         match result {
-            Ok(_) => assert!(false), // No valid connection should exist
-            Err(err) if String::from(format!("{:?}", err)) ==  "Connection refused (os error 111)" => assert!(true),
-            Err(_) => assert!(false), // We shouldn't get any other error
+            Ok(_) => assert_eq!("Connection should fail", ""), // No valid connection should exist
+            Err(err) if String::from(format!("{:?}", err)) ==  "Connection refused (os error 111)" => assert!(true), //Linux
+            Err(err) if String::from(format!("{:?}", err)) == "No connection could be made because the target machine actively refused it. (os error 10061)" => assert!(true), //Windows
+            Err(err) =>  { println!("{:?}", err); assert!(false) }, // We shouldn't get any other error
         }
         Ok(())
     }
