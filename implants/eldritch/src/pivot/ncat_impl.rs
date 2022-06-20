@@ -32,8 +32,8 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
         println!("UDP");
         let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
         println!("UDP Unspecified");
-        sock.connect(address_and_port.clone()).await?;
-        println!("UDP connected");
+        // sock.connect(address_and_port.clone()).await?;
+        // println!("UDP connected");
 
         // Send bytes to remote host
         let _bytes_sent = sock.send_to(data.as_bytes(), address_and_port.clone()).await?;
