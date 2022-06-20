@@ -7,9 +7,12 @@ use tokio::net::{TcpStream, UdpSocket};
 
 // Since we cannot go from async (test) -> sync (ncat) `block_on` -> async (handle_ncat) without getting an error "cannot create runtime in current runtime since current thread is calling async code."
 async fn handle_ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
-    let mut response_buffer = [0; 1024];
+    // If the response is longer than 4096 bytes it will be  truncated.
+    let mut response_buffer = [0; 4096];
     let result_string: String;
+
     let  address_and_port = format!("{}:{}", address, port);
+
     if protocol == "tcp" {
         // Connect to remote host
         let mut connection = TcpStream::connect(&address_and_port).await?;
@@ -49,6 +52,7 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
 }
 
 // We do not want to make this async since it would require we make all of the starlark bindings async.
+// Instead we have a handle_ncat function that we call with block_on
 pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -63,8 +67,6 @@ pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Resul
         Ok(_) => Ok(String::from(response.unwrap())),
         Err(_) => return response,
     }
-    
-    
 }
 
 #[cfg(test)]
@@ -79,7 +81,7 @@ mod tests {
         let mut i = 0;
         if protocol == "tcp" {
             let listener = TcpListener::bind(format!("{}:{}", address,  port)).await?;
-            while i < 100 {
+            while i < 5 {
                 // Accept new connection
                 let (mut socket, _) = listener.accept().await?;
                 // Split reader and writer references
@@ -96,7 +98,7 @@ mod tests {
             let sock = UdpSocket::bind(format!("{}:{}", address,  port)).await?;
 
             let mut buf = [0; 1024];
-            while i < 100 {
+            while i < 5 {
                 println!("Accepting connections");
                 let (bytes_copied, addr) = sock.recv_from(&mut buf).await?;
 
