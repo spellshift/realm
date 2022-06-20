@@ -29,23 +29,18 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
     
         // Setting the bind address to unspecified should leave it up to the OS to decide.
         // https://stackoverflow.com/a/67084977
-        println!("UDP");
         let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
-        println!("UDP Unspecified");
-        // sock.connect(address_and_port.clone()).await?;
-        // println!("UDP connected");
 
         // Send bytes to remote host
         let _bytes_sent = sock.send_to(data.as_bytes(), address_and_port.clone()).await?;
-        println!("UDP sent");
+
         // Recieve any response from remote host
         let mut response_buffer = [0; 1024];
         let (_bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
-        println!("UDP recieved");
+
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
         result_string = String::from(String::from_utf8((&response_buffer).to_vec()).unwrap().trim_matches(char::from(0)));
-        println!("UDP result {:?}", result_string.clone());
         Ok(result_string)
 
     } else {
