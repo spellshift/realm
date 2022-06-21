@@ -5,7 +5,7 @@ mod port_scan_impl;
 mod arp_scan_impl;
 mod port_forward_impl;
 mod ncat_impl;
-mod bind_proxy;
+mod bind_proxy_impl;
 
 use derive_more::Display;
 
@@ -48,7 +48,7 @@ fn methods(builder: &mut MethodsBuilder) {
         ssh_password_spray_impl::ssh_password_spray(targets, port, credentials, keys, command, shell_path)
     }
     fn smb_exec(_this:  PivotLibrary, target: String, port: i32, username: String, password: String, hash: String, command: String) ->  String {
-        smb_exec_impl::smb_exec(target, username, password, hash, command)
+        smb_exec_impl::smb_exec(target, port, username, password, hash, command)
     }     // May want these too: PSRemoting, WMI, WinRM
     fn port_scan(_this:  PivotLibrary, target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String) ->  Vec<String> {
         port_scan_impl::port_scan(target_cidrs, ports, portocol)
@@ -68,7 +68,6 @@ fn methods(builder: &mut MethodsBuilder) {
         bind_proxy_impl::bind_proxy(listen_address, listen_port, username, password)?;
         Ok(NoneType{})
     }
-
 
     // This + smb_copy should likely move to file or rolled into the download function  or made into an upload function.
     //fn ssh_copy(_this:  PivotLibrary, target: String, port: i32, username: String, password: String, key: String, src: String, dst: String) ->  String {
