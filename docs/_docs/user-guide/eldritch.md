@@ -59,10 +59,10 @@ The <b>file.read</b> method will read the contents of a file. If the file or dir
 
 The <b>file.remove</b> method will delete a file or directory (and it's contents) specified by path.
 
-### file.rename
-`file.rename(src: str, dst: str) -> None`
+### file.moveto
+`file.moveto(src: str, dst: str) -> None`
 
-The <b>file.rename</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.moveto</b> method will move a file or directory from src to dst. If the dst directory or file exists it will be deleted before being replaced. To ensure consistency across systems.
 
 ### file.replace
 `file.replace(path: str, pattern: str, value: str) -> None`
