@@ -114,6 +114,11 @@ The <b>sys.is_linux</b> method is very cool, and will be even cooler when Nick d
 
 The <b>sys.is_windows</b> method is very cool, and will be even cooler when Nick documents it.
 
+### sys.is_macos
+`sys.is_macos() -> bool`
+
+The <b>sys.is_macos</b> method returns true if on a mac os system and fales on everything else.
+
 ### sys.shell
 `sys.shell(cmd: str) -> str`
 

@@ -1,6 +1,7 @@
 mod exec_impl;
 mod is_linux_impl;
 mod is_windows_impl;
+mod is_macos_impl;
 mod shell_impl;
 
 use derive_more::Display;
@@ -44,6 +45,9 @@ fn methods(builder: &mut MethodsBuilder) {
     }
     fn is_windows(_this: SysLibrary) -> bool {
         is_windows_impl::is_windows()
+    }
+    fn is_macos(_this: SysLibrary) -> bool {
+        is_macos_impl::is_macos()
     }
     fn shell(_this: SysLibrary, cmd: String) -> String {
         shell_impl::shell(cmd)
