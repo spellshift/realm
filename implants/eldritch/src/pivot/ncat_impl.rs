@@ -76,6 +76,23 @@ mod tests {
     use tokio::task;
     use tokio::io::copy;
 
+    // Tests run concurrently so each test needs a unique port.
+    async fn allocate_localhost_unused_ports(count: i32, protocol: String) -> anyhow::Result<Vec<i32>> {
+        let mut i = 0;
+        let mut res: Vec<i32> = vec![];
+        while i < count {
+            i = i + 1;
+            if protocol == "tcp" {
+                let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+                res.push(listener.local_addr().unwrap().port().into());
+            } else if protocol == "udp" {
+                let listener = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+                res.push(listener.local_addr().unwrap().port().into());
+            }
+        }
+        Ok(res)
+    }
+    
     async fn setup_test_listener(address: String, port: i32, protocol: String) -> anyhow::Result<()> {
         let mut i = 0;
         if protocol == "tcp" {
@@ -117,15 +134,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_ncat_send_tcp() -> anyhow::Result<()> {
+        let test_port = allocate_localhost_unused_ports(1,"tcp".to_string()).await?[0];
         // Setup a test echo server
         let expected_response = String::from("Hello world!");
         let listen_task = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),65432, String::from("tcp"))
+            setup_test_listener(String::from("127.0.0.1"),test_port, String::from("tcp"))
         );
 
         // Setup a sender
         let send_task = task::spawn(
-            handle_ncat(String::from("127.0.0.1"), 65432, expected_response.clone(), String::from("tcp"))
+            handle_ncat(String::from("127.0.0.1"), test_port, expected_response.clone(), String::from("tcp"))
         );
 
         // Will this create a race condition where the sender sends before the listener starts?
@@ -139,15 +157,17 @@ mod tests {
     }
     #[tokio::test]
     async fn test_ncat_send_udp() -> anyhow::Result<()> {
+        let test_port = allocate_localhost_unused_ports(1,"udp".to_string()).await?[0];
+
         // Setup a test echo server
         let expected_response = String::from("Hello world!");
         let listen_task = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),65432, String::from("udp"))
+            setup_test_listener(String::from("127.0.0.1"),test_port, String::from("udp"))
         );
 
         // Setup a sender
         let send_task = task::spawn(
-            handle_ncat(String::from("127.0.0.1"), 65432, expected_response.clone(), String::from("udp"))
+            handle_ncat(String::from("127.0.0.1"), test_port, expected_response.clone(), String::from("udp"))
         );
 
         // Will this create a race condition where the sender sends before the listener starts?
@@ -161,7 +181,18 @@ mod tests {
     }
     #[test]
     fn test_ncat_not_handle() -> anyhow::Result<()> {
-        let result = ncat(String::from("127.0.0.1"), 65431, String::from("No one can hear me!"), String::from("tcp"));
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let response = runtime.block_on(
+            allocate_localhost_unused_ports(1,"tcp".to_string())
+        );
+
+        let test_port = response.unwrap()[0];
+
+        let result = ncat(String::from("127.0.0.1"), test_port, String::from("No one can hear me!"), String::from("tcp"));
         match result {
             Ok(res) => panic!("Connection failure expected: {:?}", res), // No valid connection should exist
             Err(err) => match String::from(format!("{:?}", err)).as_str() {
