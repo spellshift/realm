@@ -160,9 +160,16 @@ The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a wa
 The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb.
 
 ### pivot.port_scan
-`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, portocol: str) -> List<str>`
+`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, portocol: str, timeout: int) -> List<str>`
 
-The <b>pivot.port_scan</b> method is being proposed to allow users to scan the network for open ports. It will take a list of CIDRs and/or IPs and return the results in a grepable format similar to nmap.
+The <b>pivot.port_scan</b> method allows users to scan TCP/UDP from eldritch. A port can be open, closed, or timeout:
+|**State**|**Protocol**| **Meaning**                                          |
+|---------|------------|------------------------------------------------------|
+| open    | tcp        | Connection successful.                               |
+| close   | tcp        | Connection refused.                                  |
+| timeout | tcp        | Connection timedout: unresponsive or dropping.       |
+| open    | udp        | Connection was made and a response recieved.         |
+| timeout | udp        | Connection was refused, dropped, or didn't respond   |
 
 ### pivot.arp_scan
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
