@@ -127,17 +127,12 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
 async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result<String> {
     let result: String;
     match protocol.as_str() {
-        "udp" => todo!(),
+        "udp" => {
+            todo!();
+        }
         "tcp" => {
-            // Check if you have root. If you have root perform a syn scan.
-            // If you do not have root perform a connect scan
-            if false { // If (user == root && os == Linux) || (user == root && os == macos) || (user == Administrator && winpacp_is_installed && os == windows)
-                result = "unimplemented".to_string(); // Do SYN scan
-            } else { // TCP connect scan sucks but should work regardless of environment.
-
-                // Implement some kind of thread pool to scan multiple hosts at once.
-                result = tcp_connect_scan_socket(target_host.clone(), port.clone()).await.unwrap();
-            }        
+            // TCP connect scan sucks but should work regardless of environment.
+            result = tcp_connect_scan_socket(target_host.clone(), port.clone()).await.unwrap();
         },
         _ => return Err(anyhow::anyhow!("protocol not supported. Use udp or tcp.")),
 
@@ -154,6 +149,8 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
     for target in parse_cidr(target_cidrs).unwrap() {
         // Iterate over all listed ports.
         for port in &ports {
+            // Implement some kind of thread pool to scan multiple hosts at once.
+
             // Define our scan future.
             let scan_with_timeout = handle_scan(target.clone(), port.clone(), protocol.clone());
             // Execute that future with a timeout defined by the timeout argument.
