@@ -416,10 +416,18 @@ mod tests {
         
         let host = "127.0.0.1".to_string();
         let proto = "tcp".to_string();
-        let expected_response: Vec<String> = vec![format!("{},{},{},closed", host, test_ports[0], proto),
+        let expected_response: Vec<String>;
+        if cfg!(target_os = "windows") {
+            expected_response = vec![format!("{},{},{},timeout", host, test_ports[0], proto),
+                format!("{},{},{},timeout", host, test_ports[1], proto),
+                format!("{},{},{},timeout", host, test_ports[2], proto),
+                format!("{},{},{},timeout", host, test_ports[3], proto)];
+        } else {
+            expected_response = vec![format!("{},{},{},closed", host, test_ports[0], proto),
                 format!("{},{},{},closed", host, test_ports[1], proto),
                 format!("{},{},{},closed", host, test_ports[2], proto),
                 format!("{},{},{},closed", host, test_ports[3], proto)];
+        }
 
         let result = port_scan(test_cidr, test_ports, String::from("tcp"), 1)?;
         assert_eq!(result, expected_response);
