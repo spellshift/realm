@@ -180,7 +180,7 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
             match tokio::time::timeout(timeout, scan_with_timeout).await {
                 Ok(res) => result.push(res.unwrap()),
                 Err(_) => result.push(format!("{address},{port},{protocol},{status}", 
-                address=target.clone(), port=port.clone(), protocol="tcp".to_string(), status="timeout".to_string())),
+                address=target.clone(), port=port.clone(), protocol=protocol, status="timeout".to_string())),
             }
         }
     }
@@ -189,6 +189,10 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
 
 // Non-async wrapper for our async scan.
 pub fn port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout: i32) -> Result<Vec<String>> {
+    if portocol != "tcp" && portocol != "udp" {
+        return Err(anyhow::anyhow!("Unsupported protocol. Use tcp or udp."))
+    }
+
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -211,6 +215,23 @@ mod tests {
     use tokio::net::UdpSocket;
     use tokio::task;
     use tokio::io::copy;
+
+    // Tests run concurrently so each test needs a unique port.
+    async fn allocate_localhost_unused_ports(count: i32, protocol: String) -> anyhow::Result<Vec<i32>> {
+        let mut i = 0;
+        let mut res: Vec<i32> = vec![];
+        while i < count {
+            i = i + 1;
+            if protocol == "tcp" {
+                let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+                res.push(listener.local_addr().unwrap().port().into());
+            } else if protocol == "udp" {
+                let listener = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+                res.push(listener.local_addr().unwrap().port().into());
+            }
+        }
+        Ok(res)
+    }
 
     async fn setup_test_listener(address: String, port: i32, protocol: String) -> anyhow::Result<()> {
         let mut i = 0;
@@ -302,23 +323,25 @@ mod tests {
 
     #[tokio::test]
     async fn test_portscan_tcp() -> anyhow::Result<()> {
+        let test_ports =  allocate_localhost_unused_ports(4, "tcp".to_string()).await?;
+
+
         // Setup a test echo server
         let listen_task1 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),65432, String::from("tcp"))
+            setup_test_listener(String::from("127.0.0.1"),test_ports[0], String::from("tcp"))
         );
         let listen_task2 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),65431, String::from("tcp"))
+            setup_test_listener(String::from("127.0.0.1"),test_ports[1], String::from("tcp"))
         );
         let listen_task3 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),65430, String::from("tcp"))
+            setup_test_listener(String::from("127.0.0.1"),test_ports[2], String::from("tcp"))
         );
 
         let test_cidr =  vec!["127.0.0.1/32".to_string()];
-        let test_ports =  vec![65432, 65431,  65430,  9091];
 
         // Setup a sender
         let send_task = task::spawn(
-            handle_port_scan(test_cidr, test_ports, String::from("tcp"), 1)
+            handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 1)
         );
 
         // Will this create a race condition where the sender sends before the listener starts?
@@ -326,8 +349,12 @@ mod tests {
         let (_a, _b, _c, actual_response) = 
             tokio::join!(listen_task1,listen_task2,listen_task3,send_task);
 
-        let expected_response = vec!["127.0.0.1,65432,tcp,open".to_string(), "127.0.0.1,65431,tcp,open".to_string(),
-             "127.0.0.1,65430,tcp,open".to_string(), "127.0.0.1,9091,tcp,closed".to_string()];
+        let host = "127.0.0.1".to_string();
+        let proto = "tcp".to_string();
+        let expected_response: Vec<String> = vec![format!("{},{},{},open", host, test_ports[0], proto),
+                format!("{},{},{},open", host, test_ports[1], proto),
+                format!("{},{},{},open", host, test_ports[2], proto),
+                format!("{},{},{},closed", host, test_ports[3], proto)];
 
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
@@ -335,23 +362,25 @@ mod tests {
 
     #[tokio::test]
     async fn test_portscan_udp() -> anyhow::Result<()> {
+        let test_ports =  allocate_localhost_unused_ports(4, "tcp".to_string()).await?;
+
         // Setup a test echo server
         let listen_task1 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),65432, String::from("udp"))
+            setup_test_listener(String::from("127.0.0.1"),test_ports[0], String::from("udp"))
         );
         let listen_task2 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),65431, String::from("udp"))
+            setup_test_listener(String::from("127.0.0.1"),test_ports[1], String::from("udp"))
         );
         let listen_task3 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),65430, String::from("udp"))
+            setup_test_listener(String::from("127.0.0.1"),test_ports[2], String::from("udp"))
         );
 
         let test_cidr =  vec!["127.0.0.1/32".to_string()];
-        let test_ports =  vec![65432, 65431,  65430,  9091];
+        // let test_ports =  vec![65432, 65431,  65430,  9091];
 
         // Setup a sender
         let send_task = task::spawn(
-            handle_port_scan(test_cidr, test_ports, String::from("udp"), 1)
+            handle_port_scan(test_cidr, test_ports.clone(), String::from("udp"), 1)
         );
 
         // Will this create a race condition where the sender sends before the listener starts?
@@ -359,9 +388,13 @@ mod tests {
         let (_a, _b, _c, actual_response) = 
             tokio::join!(listen_task1,listen_task2,listen_task3,send_task);
 
-        let expected_response = vec!["127.0.0.1,65432,udp,open".to_string(), "127.0.0.1,65431,udp,open".to_string(),
-             "127.0.0.1,65430,udp,open".to_string(), "127.0.0.1,9091,tcp,timeout".to_string()];
-
+        let host = "127.0.0.1".to_string();
+        let proto = "udp".to_string();
+        let expected_response: Vec<String> = vec![format!("{},{},{},open", host, test_ports[0], proto),
+                format!("{},{},{},open", host, test_ports[1], proto),
+                format!("{},{},{},open", host, test_ports[2], proto),
+                format!("{},{},{},timeout", host, test_ports[3], proto)];
+    
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
     }
