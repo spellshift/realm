@@ -403,10 +403,23 @@ mod tests {
     #[test]
     fn test_portscan_not_handle() -> anyhow::Result<()> {
         let test_cidr =  vec!["127.0.0.1/32".to_string()];
-        let test_ports =  vec![65432, 65431,  65430,  9091];
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let response = runtime.block_on(
+            allocate_localhost_unused_ports(4,"tcp".to_string())
+        );
+
+        let test_ports = response.unwrap();
         
-        let expected_response = vec!["127.0.0.1,65432,tcp,closed".to_string(), "127.0.0.1,65431,tcp,closed".to_string(),
-        "127.0.0.1,65430,tcp,closed".to_string(), "127.0.0.1,9091,tcp,closed".to_string()];
+        let host = "127.0.0.1".to_string();
+        let proto = "tcp".to_string();
+        let expected_response: Vec<String> = vec![format!("{},{},{},closed", host, test_ports[0], proto),
+                format!("{},{},{},closed", host, test_ports[1], proto),
+                format!("{},{},{},closed", host, test_ports[2], proto),
+                format!("{},{},{},closed", host, test_ports[3], proto)];
 
         let result = port_scan(test_cidr, test_ports, String::from("tcp"), 1)?;
         assert_eq!(result, expected_response);
