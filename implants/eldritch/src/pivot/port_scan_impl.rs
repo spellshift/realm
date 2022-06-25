@@ -1,6 +1,6 @@
 use anyhow::Result;
-use tokio::time::{timeout, Duration};
-use tokio::net::{TcpStream};
+use tokio::time::Duration;
+use tokio::net::TcpStream;
 
 macro_rules! scanf {
     ( $string:expr, $sep:expr, $( $x:ty ),+ ) => {{
