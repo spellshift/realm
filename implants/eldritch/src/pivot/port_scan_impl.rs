@@ -1,6 +1,8 @@
+use std::net::Ipv4Addr;
+
 use anyhow::Result;
 use tokio::time::Duration;
-use tokio::net::TcpStream;
+use tokio::net::{TcpStream, UdpSocket};
 
 macro_rules! scanf {
     ( $string:expr, $sep:expr, $( $x:ty ),+ ) => {{
@@ -124,11 +126,31 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
     }
 }
 
+async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<String> {
+    // Let the OS set our bind port.
+    let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
+    
+    // Send bytes to remote host.
+    let _bytes_sent = sock.send_to("hello".as_bytes(), format!("{}:{}", target_host.clone(), target_port.clone())).await;
+    
+    // Recieve any response from remote host.
+    let mut response_buffer = [0; 1024];
+    let (bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
+    
+    // UDP sockets are hard to coax.
+    // If UDP doesn't respond to our hello message recv_from will hang and timeout.
+    if bytes_copied > 0 {
+        return Ok(format!("{address},{port},{protocol},{status}", 
+            address=target_host, port=target_port, protocol="udp".to_string(), status="open".to_string()));
+    }
+    Ok("Error".to_string())
+}
+
 async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result<String> {
     let result: String;
     match protocol.as_str() {
         "udp" => {
-            todo!();
+            result = udp_scan_socket(target_host.clone(), port.clone()).await.unwrap();
         }
         "tcp" => {
             // TCP connect scan sucks but should work regardless of environment.
@@ -211,7 +233,6 @@ mod tests {
             let mut buf = [0; 1024];
             let sock = UdpSocket::bind(format!("{}:{}", address,  port)).await?;
             while i < 1 {
-                println!("Accepting connections");
                 let (bytes_copied, addr) = sock.recv_from(&mut buf).await?;
 
                 let bytes_copied = sock.send_to(&buf[..bytes_copied], addr).await?;
@@ -311,4 +332,38 @@ mod tests {
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_portscan_udp() -> anyhow::Result<()> {
+        // Setup a test echo server
+        let listen_task1 = task::spawn(
+            setup_test_listener(String::from("127.0.0.1"),65432, String::from("udp"))
+        );
+        let listen_task2 = task::spawn(
+            setup_test_listener(String::from("127.0.0.1"),65431, String::from("udp"))
+        );
+        let listen_task3 = task::spawn(
+            setup_test_listener(String::from("127.0.0.1"),65430, String::from("udp"))
+        );
+
+        let test_cidr =  vec!["127.0.0.1/32".to_string()];
+        let test_ports =  vec![65432, 65431,  65430,  9091];
+
+        // Setup a sender
+        let send_task = task::spawn(
+            handle_port_scan(test_cidr, test_ports, String::from("udp"), 1)
+        );
+
+        // Will this create a race condition where the sender sends before the listener starts?
+        // Run both
+        let (_a, _b, _c, actual_response) = 
+            tokio::join!(listen_task1,listen_task2,listen_task3,send_task);
+
+        let expected_response = vec!["127.0.0.1,65432,udp,open".to_string(), "127.0.0.1,65431,udp,open".to_string(),
+             "127.0.0.1,65430,udp,open".to_string(), "127.0.0.1,9091,tcp,timeout".to_string()];
+
+        assert_eq!(expected_response, actual_response.unwrap().unwrap());
+        Ok(())
+    }
+
 }
