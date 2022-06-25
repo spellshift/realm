@@ -9,6 +9,8 @@ macro_rules! scanf {
     }}
 }
 
+// Convert a u32 IP representation into a string.
+// Eg. 4294967295 -> "255.255.255.255"
 fn int_to_string(ip_int: u32) -> Result<String> {
     let mut ip_vec: Vec<String> = vec!["".to_string(), "".to_string(), "".to_string(), "".to_string()];
     
@@ -21,6 +23,8 @@ fn int_to_string(ip_int: u32) -> Result<String> {
     Ok(ip_vec.join("."))
 }
 
+// Transform a vector of u32 to u32 representation of IP.
+// Eg. [255, 225, 255, 255] -> 4294967295
 fn vec_to_int(ip_vec: Vec<u32>) -> Result<u32> {
     let mut res: u32 = 0;
     
@@ -33,13 +37,17 @@ fn vec_to_int(ip_vec: Vec<u32>) -> Result<u32> {
     Ok(res)
 }
 
+// Calculate the network and broadcast addresses given a CIDR string.
 fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)> {
-    // Transcribed from this python version: https://gist.github.com/vndmtrx/dc412e4d8481053ddef85c678f3323a6
-    // Ty! @vndmtrx
+    // Transcribed from this python version: https://gist.github.com/vndmtrx/dc412e4d8481053ddef85c678f3323a6.
+    // Ty! @vndmtrx.
+
+    // Split on / to get host and cidr bits.
     let tmpvec: Vec<&str> = target_cidr.split("/").collect();
     let host = tmpvec[0].clone().to_string();
     let bits: u32 = tmpvec[1].clone().parse::<u8>().unwrap().into();
 
+    // Define our vector representations.
     let mut addr: Vec<u64> = vec![0,0,0,0];
     let mut mask: Vec<u64> = vec![0,0,0,0];
     let mut bcas: Vec<u32> = vec![0,0,0,0];
@@ -53,20 +61,25 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     addr[1] = octet_two.unwrap();
     addr[0] = octet_one.unwrap();
 
+    // Calculate netmask store as vector.
     let v: Vec<u64> = vec![24, 16, 8, 0];
     for (i, val) in v.iter().enumerate() {
         mask[i] = ( (4294967295u64) << (32u64-cidr) >> val ) & 255u64;
     }
 
+    // Calculate broadcast store as vector.
     let v2: Vec<usize> = vec![0, 1, 2, 3];
     for (i, val) in v2.iter().enumerate() {
         bcas[val.clone()] = ( (addr[i] & mask[i]) | (255^mask[i]) ) as u32;
     }
 
+    // Calculate network address as vector.
     for (i, val) in v2.iter().enumerate() {
         netw[val.clone()] = (addr[i] & mask[i]) as u32;
     }
 
+    // Return network address and broadcast address
+    // we'll use these two to define oru scan space.
     Ok((netw,bcas))
 }
 
@@ -116,9 +129,13 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
     match protocol.as_str() {
         "udp" => todo!(),
         "tcp" => {
+            // Check if you have root. If you have root perform a syn scan.
+            // If you do not have root perform a connect scan
             if false { // If (user == root && os == Linux) || (user == root && os == macos) || (user == Administrator && winpacp_is_installed && os == windows)
                 result = "unimplemented".to_string(); // Do SYN scan
             } else { // TCP connect scan sucks but should work regardless of environment.
+
+                // Implement some kind of thread pool to scan multiple hosts at once.
                 result = tcp_connect_scan_socket(target_host.clone(), port.clone()).await.unwrap();
             }        
         },
@@ -128,14 +145,19 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
     return Ok(result);
 }
 
-// Check if you have root. If you have root perform a syn scan.
-// If you do not have root perform a connect scan
+// Async handler for port scanning.
 async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout: i32) -> Result<Vec<String>> {
     let mut result: Vec<String> = Vec::new();
+    // Define our tokio timeout for when to kill the tcp connection.
     let timeout = Duration::from_secs(timeout as u64);
+    // Iterate over all IP addresses in the CIDR range.
     for target in parse_cidr(target_cidrs).unwrap() {
+        // Iterate over all listed ports.
         for port in &ports {
+            // Define our scan future.
             let scan_with_timeout = handle_scan(target.clone(), port.clone(), protocol.clone());
+            // Execute that future with a timeout defined by the timeout argument.
+            // open for connected to port, closed for rejected, timeout for tokio timeout expiring.
             match tokio::time::timeout(timeout, scan_with_timeout).await {
                 Ok(res) => result.push(res.unwrap()),
                 Err(_) => result.push(format!("{address},{port},{protocol},{status}", 
@@ -146,6 +168,7 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
     Ok(result)
 }
 
+// Non-async wrapper for our async scan.
 pub fn port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout: i32) -> Result<Vec<String>> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
