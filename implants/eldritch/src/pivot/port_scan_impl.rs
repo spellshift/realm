@@ -366,4 +366,17 @@ mod tests {
         Ok(())
     }
 
+    // verify our non async call works.
+    #[test]
+    fn test_portscan_not_handle() -> anyhow::Result<()> {
+        let test_cidr =  vec!["127.0.0.1/32".to_string()];
+        let test_ports =  vec![65432, 65431,  65430,  9091];
+        
+        let expected_response = vec!["127.0.0.1,65432,tcp,closed".to_string(), "127.0.0.1,65431,tcp,closed".to_string(),
+        "127.0.0.1,65430,tcp,closed".to_string(), "127.0.0.1,9091,tcp,closed".to_string()];
+
+        let result = port_scan(test_cidr, test_ports, String::from("tcp"), 1)?;
+        assert_eq!(result, expected_response);
+        Ok(())
+    }
 }
