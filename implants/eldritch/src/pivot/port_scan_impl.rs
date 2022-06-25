@@ -277,7 +277,7 @@ mod tests {
 
         // Setup a sender
         let send_task = task::spawn(
-            handle_port_scan(test_cidr, test_ports, String::from("tcp"))
+            handle_port_scan(test_cidr, test_ports, String::from("tcp"), 1)
         );
 
         // Will this create a race condition where the sender sends before the listener starts?
