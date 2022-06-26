@@ -81,10 +81,11 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     }
 
     // Return network address and broadcast address
-    // we'll use these two to define oru scan space.
+    // we'll use these two to define or scan space.
     Ok((netw,bcas))
 }
 
+// Take a CIDR (192.168.1.1/24) and return a vector of the IPs possible within that CIDR.
 fn parse_cidr(target_cidrs: Vec<String>) -> Result<Vec<String>> {
     let mut result: Vec<String> = vec![];
     for cidr in target_cidrs {
@@ -117,6 +118,8 @@ fn parse_cidr(target_cidrs: Vec<String>) -> Result<Vec<String>> {
     Ok(result)
 }
 
+// Performs a TCP Connect scan. Connect to the remote port. If an error is thrown we know the port is closed.
+// If this function timesout the port is filtered or host  does not exist.
 async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Result<String> {
     match TcpStream::connect(format!("{}:{}", target_host.clone(), target_port.clone())).await {
         Ok(_) => Ok(format!("{address},{port},{protocol},{status}", 
@@ -145,6 +148,7 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
     }
 }
 
+// 
 async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<String> {
     // Let the OS set our bind port.
     let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
@@ -483,17 +487,10 @@ mod tests {
         let host = "127.0.0.1".to_string();
         let proto = "tcp".to_string();
         let expected_response: Vec<String>;
-        if cfg!(target_os = "windows") {
-            expected_response = vec![format!("{},{},{},closed", host, test_ports[0], proto),
-                format!("{},{},{},closed", host, test_ports[1], proto),
-                format!("{},{},{},closed", host, test_ports[2], proto),
-                format!("{},{},{},closed", host, test_ports[3], proto)];
-        } else {
-            expected_response = vec![format!("{},{},{},closed", host, test_ports[0], proto),
-                format!("{},{},{},closed", host, test_ports[1], proto),
-                format!("{},{},{},closed", host, test_ports[2], proto),
-                format!("{},{},{},closed", host, test_ports[3], proto)];
-        }
+        expected_response = vec![format!("{},{},{},closed", host, test_ports[0], proto),
+            format!("{},{},{},closed", host, test_ports[1], proto),
+            format!("{},{},{},closed", host, test_ports[2], proto),
+            format!("{},{},{},closed", host, test_ports[3], proto)];
 
         let result = port_scan(test_cidr, test_ports, String::from("tcp"), 5)?;
         assert_eq!(result, expected_response);
