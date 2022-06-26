@@ -131,7 +131,7 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
                     return Ok(format!("{address},{port},{protocol},{status}", 
                         address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string()));
                 },
-                "Connection refused" if cfg!(target_os = "macos") => {
+                "Connection refused (os error 61)" if cfg!(target_os = "macos") => {
                     return Ok(format!("{address},{port},{protocol},{status}", 
                         address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string()));
                 },
