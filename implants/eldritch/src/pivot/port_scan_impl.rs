@@ -369,7 +369,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_portscan_udp() -> anyhow::Result<()> {
-        let test_ports =  allocate_localhost_unused_ports(4, "tcp".to_string()).await?;
+        let test_ports =  allocate_localhost_unused_ports(4, "udp".to_string()).await?;
 
         // Setup a test echo server
         let listen_task1 = task::spawn(
