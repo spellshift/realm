@@ -151,7 +151,7 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
     match protocol.as_str() {
         "udp" => {
             result = udp_scan_socket(target_host.clone(), port.clone()).await.unwrap();
-        }
+        } 
         "tcp" => {
             // TCP connect scan sucks but should work regardless of environment.
             result = tcp_connect_scan_socket(target_host.clone(), port.clone()).await.unwrap();
@@ -351,11 +351,18 @@ mod tests {
 
         let host = "127.0.0.1".to_string();
         let proto = "tcp".to_string();
-        let expected_response: Vec<String> = vec![format!("{},{},{},open", host, test_ports[0], proto),
-                format!("{},{},{},open", host, test_ports[1], proto),
-                format!("{},{},{},open", host, test_ports[2], proto),
-                format!("{},{},{},closed", host, test_ports[3], proto)];
-
+        let expected_response: Vec<String>;
+        if cfg!(target_os = "windows") {
+            expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
+                    format!("{},{},{},open", host, test_ports[1], proto),
+                    format!("{},{},{},open", host, test_ports[2], proto),
+                    format!("{},{},{},timeout", host, test_ports[3], proto)];
+        } else {
+            expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
+                    format!("{},{},{},open", host, test_ports[1], proto),
+                    format!("{},{},{},open", host, test_ports[2], proto),
+                    format!("{},{},{},timeout", host, test_ports[3], proto)];
+        }
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
     }
@@ -394,7 +401,7 @@ mod tests {
                 format!("{},{},{},open", host, test_ports[1], proto),
                 format!("{},{},{},open", host, test_ports[2], proto),
                 format!("{},{},{},timeout", host, test_ports[3], proto)];
-    
+
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
     }
