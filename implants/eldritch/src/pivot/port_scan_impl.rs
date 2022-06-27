@@ -361,7 +361,7 @@ mod tests {
             expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
                     format!("{},{},{},open", host, test_ports[1], proto),
                     format!("{},{},{},open", host, test_ports[2], proto),
-                    format!("{},{},{},timeout", host, test_ports[3], proto)];
+                    format!("{},{},{},closed", host, test_ports[3], proto)];
         }
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
