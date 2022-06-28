@@ -121,8 +121,17 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
     match TcpStream::connect(format!("{}:{}", target_host.clone(), target_port.clone())).await {
         Ok(_) => Ok(format!("{address},{port},{protocol},{status}", 
             address=target_host, port=target_port, protocol="tcp".to_string(), status="open".to_string())),
-        Err(_) => Ok(format!("{address},{port},{protocol},{status}", 
-        address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string())),
+        Err(err) => {
+            match err.to_string().as_str() {
+                "Connection refused (os error 111)" if  cfg!(target_os = "linux") => {
+                    return Ok(format!("{address},{port},{protocol},{status}", 
+                        address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string()));
+                },
+                // Need to add handler for windows and nix*
+                _ => return Err(anyhow::anyhow!("Unexpected result. {:?}", err)),
+
+            }
+        },
     }
 }
 
@@ -148,11 +157,13 @@ async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<String
         },
         Err(err) => {
             match String::from(format!("{}", err.to_string())).as_str() {
-                // If windows throws an error "forcibly closed" the firewall is bolcking 
+                // If windows throws an error "forcibly closed" the firewall is blocking. 
                 "An existing connection was forcibly closed by the remote host. (os error 10054)" if cfg!(target_os = "windows") => {
                     return Ok(format!("{address},{port},{protocol},{status}", 
                         address=target_host, port=target_port, protocol="udp".to_string(), status="closed".to_string()))
                 },
+                // There should be an error for nix* about the ICMP unreachable respnose.
+                // Seems like rust isn't capturing that packet though may need to explicitly listen for it.
                 _ => {
                     println!("{}",String::from(format!("{:?}", err.to_string() )).as_str());
                     return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected  error", err)))
