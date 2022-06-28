@@ -1,4 +1,4 @@
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddr};
 
 use anyhow::Result;
 use tokio::time::Duration;
@@ -129,21 +129,39 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
 async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<String> {
     // Let the OS set our bind port.
     let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
-    
     // Send bytes to remote host.
     let _bytes_sent = sock.send_to("hello".as_bytes(), format!("{}:{}", target_host.clone(), target_port.clone())).await;
-    
+
     // Recieve any response from remote host.
     let mut response_buffer = [0; 1024];
-    let (bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
-    
+    // let (bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
+    // Handle the outcome of our recv.
+    match sock.recv_from(&mut response_buffer).await {
+        // If okay and we recieved bytes then we connected and the port  is open.
+        Ok((bytes_copied, _addr)) => {
+            if bytes_copied > 0 {
+                return Ok(format!("{address},{port},{protocol},{status}", 
+                    address=target_host, port=target_port, protocol="udp".to_string(), status="open".to_string()));
+            } else {
+                return Err(anyhow::anyhow!("Recieved successfully but byte length was 0. Unexpected result."));
+            }
+        },
+        Err(err) => {
+            match String::from(format!("{}", err.to_string())).as_str() {
+                // If windows throws an error "forcibly closed" the firewall is bolcking 
+                "An existing connection was forcibly closed by the remote host. (os error 10054)" if cfg!(target_os = "windows") => {
+                    return Ok(format!("{address},{port},{protocol},{status}", 
+                        address=target_host, port=target_port, protocol="udp".to_string(), status="closed".to_string()))
+                },
+                _ => {
+                    println!("{}",String::from(format!("{:?}", err.to_string() )).as_str());
+                    return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected  error", err)))
+                },
+            }
+        },
+    }
     // UDP sockets are hard to coax.
     // If UDP doesn't respond to our hello message recv_from will hang and timeout.
-    if bytes_copied > 0 {
-        return Ok(format!("{address},{port},{protocol},{status}", 
-            address=target_host, port=target_port, protocol="udp".to_string(), status="open".to_string()));
-    }
-    Ok("Error".to_string())
 }
 
 async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result<String> {
@@ -371,6 +389,7 @@ mod tests {
     async fn test_portscan_udp() -> anyhow::Result<()> {
         let test_ports =  allocate_localhost_unused_ports(4, "udp".to_string()).await?;
 
+        println!("{:?}", test_ports);
         // Setup a test echo server
         let listen_task1 = task::spawn(
             setup_test_listener(String::from("127.0.0.1"),test_ports[0], String::from("udp"))
@@ -383,7 +402,6 @@ mod tests {
         );
 
         let test_cidr =  vec!["127.0.0.1/32".to_string()];
-        // let test_ports =  vec![65432, 65431,  65430,  9091];
 
         // Setup a sender
         let send_task = task::spawn(
@@ -397,10 +415,18 @@ mod tests {
 
         let host = "127.0.0.1".to_string();
         let proto = "udp".to_string();
-        let expected_response: Vec<String> = vec![format!("{},{},{},open", host, test_ports[0], proto),
+        let expected_response: Vec<String>;
+        if cfg!(target_os = "windows") {
+            expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
+                format!("{},{},{},open", host, test_ports[1], proto),
+                format!("{},{},{},open", host, test_ports[2], proto),
+                format!("{},{},{},closed", host, test_ports[3], proto)];
+        }else{
+            expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
                 format!("{},{},{},open", host, test_ports[1], proto),
                 format!("{},{},{},open", host, test_ports[2], proto),
                 format!("{},{},{},timeout", host, test_ports[3], proto)];
+        }
 
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
