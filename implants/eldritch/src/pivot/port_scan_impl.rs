@@ -123,12 +123,22 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
             address=target_host, port=target_port, protocol="tcp".to_string(), status="open".to_string())),
         Err(err) => {
             match err.to_string().as_str() {
-                "Connection refused (os error 111)" if  cfg!(target_os = "linux") => {
+                "Connection refused (os error 111)" if cfg!(target_os = "linux") => {
                     return Ok(format!("{address},{port},{protocol},{status}", 
                         address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string()));
                 },
-                // Need to add handler for windows and nix*
-                _ => return Err(anyhow::anyhow!("Unexpected result. {:?}", err)),
+                "No connection could be made because the target machine actively refused it. (os error 10061)" if cfg!(target_os = "windows") => {
+                    return Ok(format!("{address},{port},{protocol},{status}", 
+                        address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string()));
+                },
+                "Connection refused" if cfg!(target_os = "macos") => {
+                    return Ok(format!("{address},{port},{protocol},{status}", 
+                        address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string()));
+                },
+                _ => {
+                    println!("{:?}", err.to_string().as_str());
+                    return Err(anyhow::anyhow!("Unexpected result. {:?}", err))
+                },
 
             }
         },
@@ -397,7 +407,7 @@ mod tests {
             expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
                     format!("{},{},{},open", host, test_ports[1], proto),
                     format!("{},{},{},open", host, test_ports[2], proto),
-                    format!("{},{},{},timeout", host, test_ports[3], proto)];
+                    format!("{},{},{},closed", host, test_ports[3], proto)];
         } else {
             expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
                     format!("{},{},{},open", host, test_ports[1], proto),
@@ -474,10 +484,10 @@ mod tests {
         let proto = "tcp".to_string();
         let expected_response: Vec<String>;
         if cfg!(target_os = "windows") {
-            expected_response = vec![format!("{},{},{},timeout", host, test_ports[0], proto),
-                format!("{},{},{},timeout", host, test_ports[1], proto),
-                format!("{},{},{},timeout", host, test_ports[2], proto),
-                format!("{},{},{},timeout", host, test_ports[3], proto)];
+            expected_response = vec![format!("{},{},{},closed", host, test_ports[0], proto),
+                format!("{},{},{},closed", host, test_ports[1], proto),
+                format!("{},{},{},closed", host, test_ports[2], proto),
+                format!("{},{},{},closed", host, test_ports[3], proto)];
         } else {
             expected_response = vec![format!("{},{},{},closed", host, test_ports[0], proto),
                 format!("{},{},{},closed", host, test_ports[1], proto),
@@ -492,7 +502,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_portscan_manual() -> anyhow::Result<()> {
-        let test_ports =  vec![22, 65432];
+        let test_ports =  vec![22, 53, 111, 65432];
 
         let test_cidr =  vec!["192.168.119.132/32".to_string()];
 
