@@ -169,7 +169,9 @@ async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<String
                 return Ok(format!("{address},{port},{protocol},{status}", 
                     address=target_host, port=target_port, protocol="udp".to_string(), status="open".to_string()));
             } else {
-                return Err(anyhow::anyhow!("Recieved successfully but byte length was 0. Unexpected result."));
+                // return Err(anyhow::anyhow!("Recieved successfully but byte length was 0. Unexpected result."));
+                return Ok(format!("{address},{port},{protocol},{status}", 
+                    address=target_host, port=target_port, protocol="udp".to_string(), status="open".to_string()));
             }
         },
         Err(err) => {
@@ -222,6 +224,9 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                         // If OS runs out file handles of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
                         "Too many open files (os error 24)" if cfg!(target_os = "linux") => {
+                            return Err(anyhow::anyhow!("Low resources try again"));
+                        },
+                        "Too many open files (os error 24)" if cfg!(target_os = "macos") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
                         _ => {
