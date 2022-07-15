@@ -201,7 +201,7 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                         // If OS runs out source ports of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
                         "Address already in use (os error 98)" if cfg!(target_os = "linux") => {
-                            return Err(anyhow::anyhow!("Address in use"));
+                            return Err(anyhow::anyhow!("Low resources try again"));
                         },
                         _ => {
                             return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected error", err)));
@@ -212,7 +212,22 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
         } 
         "tcp" => {
             // TCP connect scan sucks but should work regardless of environment.
-            result = tcp_connect_scan_socket(target_host.clone(), port.clone()).await.unwrap();
+            match tcp_connect_scan_socket(target_host.clone(), port.clone()).await {
+                Ok(res) => result = res,
+                Err(err) => {
+                    match String::from(format!("{}", err.to_string())).as_str() {
+                        // If OS runs out file handles of raise a common error to `handle_port_scan_timeout`
+                        // So a sleep can run and the port/host retried.
+                        "Too many open files" if cfg!(target_os = "linux") => {
+                            return Err(anyhow::anyhow!("Low resources try again"));
+                        },
+                        _ => {
+                            return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected error", err)));
+                        },
+                    }
+                }
+            }
+
         },
         _ => return Err(anyhow::anyhow!("protocol not supported. Use 'udp' or 'tcp'.")),
 
@@ -237,8 +252,8 @@ async fn handle_port_scan_timeout(target: String, port: i32, protocol: String, t
             match res {
                 Ok(scan_res) => return Ok(scan_res),
                 Err(scan_err) => match String::from(format!("{}", scan_err.to_string())).as_str() {
-                    // If our address in use error is raised wait and then try again.
-                    "Address in use" => {
+                    // If the OS is running out of resources wait and then try again.
+                    "Low resources try again" => {
                         sleep(Duration::from_secs(1)).await;
                         return Ok(handle_port_scan_timeout(target, port, protocol, timeout).await.unwrap());
                     },
