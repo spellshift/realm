@@ -235,6 +235,10 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                         "Too many open files (os error 24)" if cfg!(target_os = "macos") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
+                        // This appears to be how windows tells us it has run out of TCP sockets to bind.
+                        "An attempt was made to access a socket in a way forbidden by its access permissions. (os error 10013)" if cfg!(target_os = "windows") => {
+                            return Err(anyhow::anyhow!("Low resources try again"));
+                        },
                         _ => {
                             return  Err(anyhow::anyhow!(format!("{}:\n---\n{}\n---\n", "Unexpected error", err_str)));
                         },
