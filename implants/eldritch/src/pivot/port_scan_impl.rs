@@ -222,7 +222,7 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
                         _ => {
-                            return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected error", err.to_string())));
+                            return  Err(anyhow::anyhow!(format!("{}:{}", "Unexpected error", err.to_string())));
                         },
                     }
                 }
