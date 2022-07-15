@@ -181,7 +181,7 @@ async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<String
                         address=target_host, port=target_port, protocol="udp".to_string(), status="closed".to_string()))
                 },
                 _ => {
-                    return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected error", err)))
+                    return anyhow::private::Err(anyhow::Error::from(err));
                 },
             }
         },
@@ -197,14 +197,15 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
             match udp_scan_socket(target_host.clone(), port.clone()).await {
                 Ok(res) => result = res,
                 Err(err) => {
-                    match String::from(format!("{}", err.to_string())).as_str() {
+                    let err_str = String::from(format!("{}", err.to_string()));
+                    match err_str.as_str() {
                         // If OS runs out source ports of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
                         "Address already in use (os error 98)" if cfg!(target_os = "linux") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
                         _ => {
-                            return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected error", err)));
+                            return  Err(anyhow::anyhow!(format!("{}:\n---\n{}\n---\n", "Unexpected error", err_str)));
                         },
                     }
                 }
@@ -220,7 +221,7 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                     match  err_str.as_str() {
                         // If OS runs out file handles of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
-                        "Too many open files" if cfg!(target_os = "linux") => {
+                        "Too many open files (os error 24)" if cfg!(target_os = "linux") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
                         _ => {
