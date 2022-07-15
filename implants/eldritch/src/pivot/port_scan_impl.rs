@@ -206,6 +206,9 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                         "Address already in use (os error 98)" if cfg!(target_os = "linux") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
+                        "Too many open files (os error 24)" if cfg!(target_os = "macos") => {
+                            return Err(anyhow::anyhow!("Low resources try again"));
+                        },
                         _ => {
                             return  Err(anyhow::anyhow!(format!("{}:\n---\n{}\n---\n", "Unexpected error", err_str)));
                         },
