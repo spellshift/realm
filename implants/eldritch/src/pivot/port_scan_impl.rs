@@ -215,14 +215,15 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
             match tcp_connect_scan_socket(target_host.clone(), port.clone()).await {
                 Ok(res) => result = res,
                 Err(err) => {
-                    match String::from(format!("{}", err.to_string())).as_str() {
+                    let err_str = String::from(format!("{}", err.to_string())).as_str();
+                    match  err_str{
                         // If OS runs out file handles of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
                         "Too many open files" if cfg!(target_os = "linux") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
                         _ => {
-                            return  Err(anyhow::anyhow!(format!("{}:{}", "Unexpected error", err.to_string())));
+                            return  Err(anyhow::anyhow!(format!("{}:\n---\n{}\n---\n", "Unexpected error", err_str)));
                         },
                     }
                 }
