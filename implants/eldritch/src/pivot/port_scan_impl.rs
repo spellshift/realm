@@ -209,6 +209,9 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                         "Too many open files (os error 24)" if cfg!(target_os = "macos") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
+                        "An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full. (os error 10055)" if cfg!(target_os = "windows") => {
+                            return Err(anyhow::anyhow!("Low resources try again"));
+                        },
                         _ => {
                             return  Err(anyhow::anyhow!(format!("{}:\n---\n{}\n---\n", "Unexpected error", err_str)));
                         },
