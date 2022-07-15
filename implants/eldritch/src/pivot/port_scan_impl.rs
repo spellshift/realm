@@ -1,8 +1,11 @@
 use std::net::Ipv4Addr;
 
-use anyhow::Result;
-use tokio::time::Duration;
+use anyhow::{Result};
+use tokio::task;
+use tokio::time::{Duration,sleep};
 use tokio::net::{TcpStream, UdpSocket};
+use async_recursion::async_recursion;
+
 
 macro_rules! scanf {
     ( $string:expr, $sep:expr, $( $x:ty ),+ ) => {{
@@ -119,7 +122,7 @@ fn parse_cidr(target_cidrs: Vec<String>) -> Result<Vec<String>> {
 }
 
 // Performs a TCP Connect scan. Connect to the remote port. If an error is thrown we know the port is closed.
-// If this function timesout the port is filtered or host  does not exist.
+// If this function timesout the port is filtered or host does not exist.
 async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Result<String> {
     match TcpStream::connect(format!("{}:{}", target_host.clone(), target_port.clone())).await {
         Ok(_) => Ok(format!("{address},{port},{protocol},{status}", 
@@ -139,7 +142,6 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
                         address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string()));
                 },
                 _ => {
-                    println!("{:?}", err.to_string().as_str());
                     return Err(anyhow::anyhow!("Unexpected result. {:?}", err))
                 },
 
@@ -148,7 +150,8 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
     }
 }
 
-// 
+// Connect to a UDP port send the string hello and see if any data is sent back.
+// If data is recieved port is open.
 async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<String> {
     // Let the OS set our bind port.
     let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
@@ -171,74 +174,120 @@ async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<String
         },
         Err(err) => {
             match String::from(format!("{}", err.to_string())).as_str() {
-                // If windows throws an error "forcibly closed" the firewall is blocking. 
+                // Windows throws a weird error when scanning on localhost.
+                // Considering the port closed.
                 "An existing connection was forcibly closed by the remote host. (os error 10054)" if cfg!(target_os = "windows") => {
                     return Ok(format!("{address},{port},{protocol},{status}", 
                         address=target_host, port=target_port, protocol="udp".to_string(), status="closed".to_string()))
                 },
-                // There should be an error for nix* about the ICMP unreachable respnose.
-                // Seems like rust isn't capturing that packet though may need to explicitly listen for it.
                 _ => {
-                    println!("{}",String::from(format!("{:?}", err.to_string() )).as_str());
-                    return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected  error", err)))
+                    return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected error", err)))
                 },
             }
         },
     }
     // UDP sockets are hard to coax.
-    // If UDP doesn't respond to our hello message recv_from will hang and timeout.
+    // If UDP doesn't respond to our hello message recv_from will hang and get timedout by `handle_port_scan_timeout`.
 }
 
 async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result<String> {
     let result: String;
     match protocol.as_str() {
         "udp" => {
-            result = udp_scan_socket(target_host.clone(), port.clone()).await.unwrap();
+            match udp_scan_socket(target_host.clone(), port.clone()).await {
+                Ok(res) => result = res,
+                Err(err) => {
+                    match String::from(format!("{}", err.to_string())).as_str() {
+                        // If OS runs out source ports of raise a common error to `handle_port_scan_timeout`
+                        // So a sleep can run and the port/host retried.
+                        "Address already in use (os error 98)" if cfg!(target_os = "linux") => {
+                            return Err(anyhow::anyhow!("Address in use"));
+                        },
+                        _ => {
+                            return  Err(anyhow::anyhow!(format!("{}:{:?}", "Unexpected error", err)));
+                        },
+                    }
+                }
+            }
         } 
         "tcp" => {
             // TCP connect scan sucks but should work regardless of environment.
             result = tcp_connect_scan_socket(target_host.clone(), port.clone()).await.unwrap();
         },
-        _ => return Err(anyhow::anyhow!("protocol not supported. Use udp or tcp.")),
+        _ => return Err(anyhow::anyhow!("protocol not supported. Use 'udp' or 'tcp'.")),
 
     }
-    return Ok(result);
+    Ok(result)
+}
+
+// This needs to be split out so we can have the timeout error returned in the normal course of a thread running.
+// This allows us to more easily manage our three states: timeout, open, closed.
+#[async_recursion]
+async fn handle_port_scan_timeout(target: String, port: i32, protocol: String, timeout: i32) -> Result<String> {
+        // Define our tokio timeout for when to kill the tcp connection.
+    let timeout_duration = Duration::from_secs(timeout as u64);
+
+    // Define our scan future.
+    let scan = handle_scan(target.clone(), port.clone(), protocol.clone());
+
+    // Execute that future with a timeout defined by the timeout argument.
+    // open for connected to port, closed for rejected, timeout for tokio timeout expiring.
+    match tokio::time::timeout(timeout_duration, scan ).await {
+        Ok(res) => {
+            match res {
+                Ok(scan_res) => return Ok(scan_res),
+                Err(scan_err) => match String::from(format!("{}", scan_err.to_string())).as_str() {
+                    // If our address in use error is raised wait and then try again.
+                    "Address in use" => {
+                        sleep(Duration::from_secs(1)).await;
+                        return Ok(handle_port_scan_timeout(target, port, protocol, timeout).await.unwrap());
+                    },
+                    _ => {
+                        return anyhow::private::Err(scan_err);
+                    },
+                },
+            }
+        },
+        // If our timeout timer has expired set the port state to timeout and return.
+        Err(_timer_elapsed) => {
+            return Ok(format!("{address},{port},{protocol},{status}", 
+                address=target.clone(), port=port.clone(), protocol=protocol, status="timeout".to_string()));
+        },
+    }
 }
 
 // Async handler for port scanning.
 async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout: i32) -> Result<Vec<String>> {
     let mut result: Vec<String> = Vec::new();
-    // Define our tokio timeout for when to kill the tcp connection.
-    let timeout = Duration::from_secs(timeout as u64);
+    // This vector will hold the handles to our futures so we can retrieve the results when they finish.
+    let mut all_scan_futures: Vec<_> = vec![];
     // Iterate over all IP addresses in the CIDR range.
     for target in parse_cidr(target_cidrs).unwrap() {
         // Iterate over all listed ports.
         for port in &ports {
-            // Implement some kind of thread pool to scan multiple hosts at once.
+            // Add scanning job to the queue.
+           let scan_with_timeout = handle_port_scan_timeout(target.clone(), port.clone(), protocol.clone(), timeout);
+            all_scan_futures.push(task::spawn(scan_with_timeout));
 
-            // Define our scan future.
-            let scan_with_timeout = handle_scan(target.clone(), port.clone(), protocol.clone());
- 
-            // TODO: Create "thread pool" to run multiple scans concurrently.
-            // Not await the variable assigned instead of the call.
-            // 
-
-            // Execute that future with a timeout defined by the timeout argument.
-            // open for connected to port, closed for rejected, timeout for tokio timeout expirin
-            match tokio::time::timeout(timeout, scan_with_timeout).await {
-                Ok(res) => result.push(res.unwrap()),
-                Err(_) => result.push(format!("{address},{port},{protocol},{status}", 
-                address=target.clone(), port=port.clone(), protocol=protocol, status="timeout".to_string())),
-            }
         }
     }
+
+    // Await results of each job.
+    // We are not acting on scan results indepently so it's okay to loop through each and only return when all have finished.
+    for task in all_scan_futures {
+        match task.await? {
+            Ok(res) => result.push(res),
+            Err(err) => return anyhow::private::Err(err),
+        };
+    }
+
     Ok(result)
 }
 
 // Non-async wrapper for our async scan.
 pub fn port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout: i32) -> Result<Vec<String>> {
     if portocol != "tcp" && portocol != "udp" {
-        return Err(anyhow::anyhow!("Unsupported protocol. Use tcp or udp."))
+        return Err(anyhow::anyhow!("Unsupported protocol. Use 'tcp' or 'udp'."))
     }
 
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -256,13 +305,14 @@ pub fn port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, t
     }
 }
 
- 
-// TCP
-// Windows default port state = DROP / timeout
-// nix* default port state = REJECT / closed
-// UDP
-// Windows default port state = REJECT / closed
-// nix* default port state = REJECT / closed
+
+// For TCP tests we're able to determine if a port is: open, closed, or timeout (filtered).
+// timeout no response was recieved which can be due to the port being firewalled off with
+// the DROP verb or that the host doesn't exist.
+// For UDP tests open and timeout are the only states we're reliably able to determine.
+// When a port is closed the OS will send an ICMP reject to the requester, however, we're 
+// unable to capture that response at this time. The exception to this is scanning windows
+// on localhost where an OS error will be thrown and the port considered closed.
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -288,6 +338,7 @@ mod tests {
         Ok(res)
     }
 
+    // Create an echo server on the specificed port / protocol.
     async fn setup_test_listener(address: String, port: i32, protocol: String) -> anyhow::Result<()> {
         let mut i = 0;
         if protocol == "tcp" {
@@ -312,7 +363,7 @@ mod tests {
                 let (bytes_copied, addr) = sock.recv_from(&mut buf).await?;
 
                 let bytes_copied = sock.send_to(&buf[..bytes_copied], addr).await?;
-
+                
                 if bytes_copied > 1 {
                     break;
                 }
@@ -399,7 +450,6 @@ mod tests {
             handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5)
         );
 
-        // Will this create a race condition where the sender sends before the listener starts?
         // Run both
         let (_a, _b, _c, actual_response) = 
             tokio::join!(listen_task1,listen_task2,listen_task3,send_task);
@@ -407,17 +457,10 @@ mod tests {
         let host = "127.0.0.1".to_string();
         let proto = "tcp".to_string();
         let expected_response: Vec<String>;
-        if cfg!(target_os = "windows") {
-            expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
-                    format!("{},{},{},open", host, test_ports[1], proto),
-                    format!("{},{},{},open", host, test_ports[2], proto),
-                    format!("{},{},{},closed", host, test_ports[3], proto)];
-        } else {
-            expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
-                    format!("{},{},{},open", host, test_ports[1], proto),
-                    format!("{},{},{},open", host, test_ports[2], proto),
-                    format!("{},{},{},closed", host, test_ports[3], proto)];
-        }
+        expected_response = vec![format!("{},{},{},open", host, test_ports[0], proto),
+                format!("{},{},{},open", host, test_ports[1], proto),
+                format!("{},{},{},open", host, test_ports[2], proto),
+                format!("{},{},{},closed", host, test_ports[3], proto)];
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
     }
@@ -426,7 +469,6 @@ mod tests {
     async fn test_portscan_udp() -> anyhow::Result<()> {
         let test_ports =  allocate_localhost_unused_ports(4, "udp".to_string()).await?;
 
-        println!("{:?}", test_ports);
         // Setup a test echo server
         let listen_task1 = task::spawn(
             setup_test_listener(String::from("127.0.0.1"),test_ports[0], String::from("udp"))
@@ -445,7 +487,6 @@ mod tests {
             handle_port_scan(test_cidr, test_ports.clone(), String::from("udp"), 5)
         );
 
-        // Will this create a race condition where the sender sends before the listener starts?
         // Run both
         let (_a, _b, _c, actual_response) = 
             tokio::join!(listen_task1,listen_task2,listen_task3,send_task);
@@ -487,6 +528,7 @@ mod tests {
         let host = "127.0.0.1".to_string();
         let proto = "tcp".to_string();
         let expected_response: Vec<String>;
+        // We have no test listeners and are just testing that our sync -> async call works.
         expected_response = vec![format!("{},{},{},closed", host, test_ports[0], proto),
             format!("{},{},{},closed", host, test_ports[1], proto),
             format!("{},{},{},closed", host, test_ports[2], proto),
@@ -497,22 +539,54 @@ mod tests {
         Ok(())
     }
 
+    // Test scanning a lot of ports all at once. Can the OS handle it.
     #[tokio::test]
-    async fn test_portscan_manual() -> anyhow::Result<()> {
-        let test_ports =  vec![22, 53, 111, 65432];
+    async fn test_portscan_udp_max() -> anyhow::Result<()> {
+        let test_ports: Vec<i32> =  (1..65535).map(|x| x).collect();
+        let open_ports =  allocate_localhost_unused_ports(1, "udp".to_string()).await?;
+        let listen_task1 = task::spawn(
+            setup_test_listener(String::from("127.0.0.1"),open_ports[0], String::from("udp"))
+        );
 
-        let test_cidr =  vec!["192.168.119.132/32".to_string()];
+        let test_cidr =  vec!["127.0.0.1/32".to_string()];
 
         // Setup a sender
-        let scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("udp"), 15).await?;
-
-        println!("{:?}", scan_res);
+        let send_task = task::spawn(
+            handle_port_scan(test_cidr, test_ports.clone(), String::from("udp"), 5)
+        );
+        // let scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("udp"), 20).await?;
+        let (_a, actual_response) = 
+            tokio::join!(listen_task1,send_task);
+        
+        let expected_res = format!("127.0.0.1,{},udp,open", open_ports[0]);
+        let unwrapped_res = actual_response.unwrap().unwrap();
+        assert!(unwrapped_res.contains(  &expected_res  ));
         Ok(())
     }
+    
+    // Test scanning a lot of ports all at once. Can the OS handle it.
+    #[tokio::test]
+    async fn test_portscan_tcp_max() -> anyhow::Result<()>{
+        let test_ports: Vec<i32> =  (1..65535).map(|x| x).collect(); //vec![22, 53, 111, 65432, 4444, 123, 1234];
+        let open_ports =  allocate_localhost_unused_ports(1, "tcp".to_string()).await?;
+        let listen_task1 = task::spawn(
+            setup_test_listener(String::from("127.0.0.1"),open_ports[0], String::from("tcp"))
+        );
+ 
+        let test_cidr =  vec!["127.0.0.1/32".to_string()];
+
+        // Setup a sender
+        let send_task = task::spawn(
+            handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5)
+        );
+        // let scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("udp"), 20).await?;
+        let (_a, actual_response) = 
+            tokio::join!(listen_task1,send_task);
+        
+        let expected_res = format!("127.0.0.1,{},tcp,open", open_ports[0]);
+        let unwrapped_res = actual_response.unwrap().unwrap();
+        assert!(unwrapped_res.contains(  &expected_res  ));
+        Ok(())
+    }
+
 }
-
-
-
-// TODO: UDP/CLOSED not recieved when scanning form nix*
-//      - Linux: Just returns timedout not seeing the ICMP reject packet
-//      - MacOS: not tested yet.
