@@ -142,7 +142,7 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
                         address=target_host, port=target_port, protocol="tcp".to_string(), status="closed".to_string()));
                 },
                 _ => {
-                    return Err(anyhow::anyhow!("Unexpected result. {:?}", err))
+                    return anyhow::private::Err(anyhow::Error::from(err));
                 },
 
             }
