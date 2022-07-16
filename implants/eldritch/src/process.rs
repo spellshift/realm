@@ -40,7 +40,7 @@ fn methods(builder: &mut MethodsBuilder) {
         kill_impl::kill(pid)?;
         Ok(NoneType{})
     }
-    fn list(_this: ProcessLibrary) -> Vec<i32> {
+    fn list(_this: ProcessLibrary) -> Vec<String> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
         list_impl::list()
     }
     fn name(_this: ProcessLibrary, pid: i32) -> String {
