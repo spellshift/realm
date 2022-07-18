@@ -89,9 +89,9 @@ The <b>file.write</b> method is very cool, and will be even cooler when Nick doc
 The <b>process.kill</b> will kill a process using the KILL signal given its process id.
 
 ### process.list
-`process.list() -> List<int>`
+`process.list() -> List<str>`
 
-The <b>process.list</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>process.list</b> method will return a list of JSON strings representing the current process list. Eg. `"{pid:9,ppid:0,status:\"Sleeping\",username:\"root\",path:\"/bin/dash\",command:\"/bin/sh\",cwd:\"/\",environ:\"TERM_PROGRAM_VERSION=1.65.2 USER=root\",name:\"sh\"}"`
 
 ### process.name
 `process.name(pid: int) -> str`
