@@ -2,8 +2,17 @@
 ---
 {% include css/just-the-docs.scss.liquid color_scheme="dark" %}
 
+.site-nav{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
 .nav-button{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+  width: 100%;
+  margin-bottom: 1rem;
+
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  font-size: 12px !important;
+}
