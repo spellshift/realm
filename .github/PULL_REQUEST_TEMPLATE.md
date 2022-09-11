@@ -15,6 +15,7 @@ Add one of the following kinds:
 
 Optionally add one or more of the following kinds if applicable:
 /kind api-change
+/kind eldritch-function
 /kind deprecation
 /kind failing-test
 /kind regression
