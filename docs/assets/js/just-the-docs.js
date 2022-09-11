@@ -32,6 +32,17 @@
         target.parentNode.classList.toggle('active');
       }
     });
+
+    const toggleDarkMode = document.querySelector('.js-toggle-dark-mode');
+    jtd.addEvent(toggleDarkMode, 'click', function(){
+      if (jtd.getTheme() === 'dark') {
+        jtd.setTheme('light');
+        toggleDarkMode.textContent = 'Dark mode';
+      } else {
+        jtd.setTheme('dark');
+        toggleDarkMode.textContent = 'Light mode';
+      }
+    })
   
     const siteNav = document.getElementById('site-nav');
     const mainHeader = document.getElementById('main-header');
