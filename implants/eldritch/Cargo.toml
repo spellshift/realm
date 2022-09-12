@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-starlark = { git = "https://github.com/hulto/starlark-rust", rev = "f978ba1c3f406f58fe3e917a7e575e3920567468" }
+starlark = { git = "https://github.com/hulto/starlark-rust", rev = "b38dd5ff90b68e4e2eb5cd77c3241bb29b9b326d" }
 tempfile = "3.3.0"
 anyhow = "1.0.55"
 derive_more = "0.99.17"
