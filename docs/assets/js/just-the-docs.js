@@ -172,31 +172,35 @@ function searchLoaded(index, docs) {
       }
     });
 
-    const toggleDarkMode = document.querySelector('.js-toggle-dark-mode');
-    jtd.addEvent(toggleDarkMode, 'click', function(){
-      if (jtd.getTheme() === 'dark') {
-        jtd.setTheme('light');
-        toggleDarkMode.textContent = 'Dark mode';
-      } else {
-        jtd.setTheme('dark');
-        toggleDarkMode.textContent = 'Light mode';
-      }
-    })
-  
-    const siteNav = document.getElementById('site-nav');
-    const mainHeader = document.getElementById('main-header');
-    const menuButton = document.getElementById('menu-button');
-  
-    jtd.addEvent(menuButton, 'click', function(e){
-      e.preventDefault();
-  
-      if (menuButton.classList.toggle('nav-open')) {
-        siteNav.classList.add('nav-open');
-        mainHeader.classList.add('nav-open');
-      } else {
-        siteNav.classList.remove('nav-open');
-        mainHeader.classList.remove('nav-open');
-      }
+  function update() {
+    currentSearchIndex++;
+
+    var input = searchInput.value;
+    if (input === '') {
+      hideSearch();
+    } else {
+      showSearch();
+      // scroll search input into view, workaround for iOS Safari
+      window.scroll(0, -1);
+      setTimeout(function(){ window.scroll(0, 0); }, 0);
+    }
+    if (input === currentInput) {
+      return;
+    }
+    currentInput = input;
+    searchResults.innerHTML = '';
+    if (input === '') {
+      return;
+    }
+
+    var results = index.query(function (query) {
+      var tokens = lunr.tokenizer(input)
+      query.term(tokens, {
+        boost: 10
+      });
+      query.term(tokens, {
+        wildcard: lunr.Query.wildcard.TRAILING
+      });
     });
 
     if ((results.length == 0) && (input.length > 2)) {
