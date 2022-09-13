@@ -32,8 +32,11 @@ feedback: true
 permalink: pretty
 exclude: ["node_modules/", "*.gemspec", "*.gem", "Gemfile", "Gemfile.lock", "package.json", "package-lock.json",  "script/", "LICENSE.txt", "lib/", "bin/", "README.md", "Rakefile", "vendor"]
 
+
 # Set a path/url to a logo that will be displayed instead of the title
 #logo: "/assets/images/just-the-docs.png"
+logo_pixels: 34
+color: "#30638e"
 
 # Enable or disable the site search
 # Supports true (default) or false
@@ -92,6 +95,9 @@ nav_sort: case_sensitive # Capital letters sorted before lowercase
 #   - title: Realm on GitHub
 #     url: https://github.com/kcarretto/realm
 
+# This is mostly for testing
+url: "https://docs.realm.pub" # the base hostname & protocol for your site
+
 # Footer content
 # appears at the bottom of every page's main content
 
@@ -105,13 +111,17 @@ footer_content: "Copyright &copy; 2017-2020 Patrick Marsceill. Distributed by an
 last_edit_timestamp: true # show or hide edit time - page must have `last_modified_date` defined in the frontmatter
 last_edit_time_format: "%b %e %Y at %I:%M %p" # uses ruby's time format: https://ruby-doc.org/stdlib-2.7.0/libdoc/time/rdoc/Time.html
 
-
+# Social (First three Required)
+repo: "https://github.com/kcarretto/realm"
+github_user: "kcarretto"
+github_repo: "realm"
+github_branch: "main"
 
 # Footer "Edit this page on GitHub" link text
 gh_edit_link: true # show or hide edit this page link
 gh_edit_link_text: "Edit this page on GitHub"
-gh_edit_repository: "https://github.com/just-the-docs/just-the-docs" # the github URL for your repo
-gh_edit_branch: "main" # the branch that your docs is served from
+gh_edit_repository: "https://github.com/kcarretto/realm" # the github URL for your repo
+gh_edit_branch: "main/docs" # the branch that your docs is served from
 # gh_edit_source: docs # the source that your files originate from
 gh_edit_view_mode: "tree" # "tree" or "edit" if you want the user to jump into the editor immediately
 
