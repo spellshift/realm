@@ -2,11 +2,19 @@
 ---
 {% include css/just-the-docs.scss.liquid color_scheme="light" %}
 
-.site-nav{
+.site-nav.nav-open{
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
+@media (min-width: 50rem) { 
+  .site-nav { 
+    flex-direction: column;
+    justify-content: space-between;  
+    display: flex;
+  } 
+}
+
 .nav-button{
   width: 100%;
   margin-bottom: 1rem;
