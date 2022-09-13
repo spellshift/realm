@@ -48,11 +48,14 @@ The <b>file.hash</b> takes a sha256 hash of the file specified in path.
 
 The <b>file.is_dir</b> checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return false.
 
+<<<<<<< HEAD
 ### file.is_file
 `file.is_file(path: str) -> bool`
 
 The <b>file.is_file</b> checks if a path exists and is a file. If it doesn't exist or is not a file it will return false.
 
+=======
+>>>>>>> 186ad7b... Update doc nav formatting.
 ### file.mkdir
 `file.mkdir(path: str) -> None`
 
@@ -95,7 +98,11 @@ The <b>file.write</b> method is very cool, and will be even cooler when Nick doc
 ### process.kill
 `process.kill(pid: int) -> None`
 
+<<<<<<< HEAD
 The <b>process.kill</b> will kill a process using the KILL signal given its process id.
+=======
+The <b>process.kill</b> method is very cool, and will be even cooler when Nick documents it.
+>>>>>>> 186ad7b... Update doc nav formatting.
 
 ### process.list
 `process.list() -> List<str>`
@@ -164,9 +171,15 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 The <b>pivot.port_forward</b> method is being proposed to providde socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
 ### pivot.ncat
+<<<<<<< HEAD
 `pivot.ncat(address: str, port: int, data: str, str: portocol ) -> String`
 
 The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
+=======
+`pivot.ncat(address: str, port: int, data: str, str: portocol, timeout: int ) -> String`
+
+The <b>pivot.ncat</b> method is being proposed to allow arbitrary data to be sent to a host. The results will be reutrned.
+>>>>>>> 186ad7b... Update doc nav formatting.
 
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
