@@ -96,6 +96,8 @@ nav_sort: case_sensitive # Capital letters sorted before lowercase
 #     url: https://github.com/kcarretto/realm
 
 feedback: true
+# This is mostly for testing
+url: "https://docs.realm.pub" # the base hostname & protocol for your site
 
 # Footer content
 # appears at the bottom of every page's main content
