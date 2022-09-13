@@ -6,6 +6,7 @@ description: Read this before contributing to Realm!
 tags: 
  - Dev Guide
 nav_order: 1
+permalink: /dev-guide/introduction
 ---
 
 # Overview
