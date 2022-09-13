@@ -74,7 +74,7 @@ function initSearch() {
   request.onload = function(){
     if (request.status >= 200 && request.status < 400) {
       var docs = JSON.parse(request.responseText);
-
+      
       lunr.tokenizer.separator = {{ site.search.tokenizer_separator | default: site.search_tokenizer_separator | default: "/[\s\-/]+/" }}
 
       var index = lunr(function(){
@@ -521,12 +521,8 @@ jtd.onReady(function(){
   initSearch();
   {%- endif %}
   scrollNav();
-
 });
 
-
-
 })(window.jtd = window.jtd || {});
-
 
 {% include js/custom.js %}
