@@ -12,7 +12,24 @@
 
   {% include favicon.html %}
 
-  <link rel="stylesheet" href="{{ '/assets/css/just-the-docs-default.css' | relative_url }}">
+  <!-- <link rel="stylesheet" href="{{ '/assets/css/just-the-docs-default.css' | relative_url }}"> -->
+  <script>
+    var head = document.getElementsByTagName('head')[0];
+    // Create new link Element
+    var link = document.createElement('link');
+    // set the attributes for link element
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    // REPLACE url of file
+    
+    theme = 'light'
+    if (sessionStorage.getItem("darkmode") == 'true') {
+      theme = 'dark'
+    }
+    link.href = '/assets/css/just-the-docs-'+theme+'.css';
+    // Append link element to HTML head
+    head.appendChild(link);
+  </script>
 
   {% if site.ga_tracking != nil %}
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.ga_tracking }}"></script>
