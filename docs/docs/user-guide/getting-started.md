@@ -6,6 +6,7 @@ description: Getting started with Realm
 tags: 
  - User Guide
 nav_order: 1
+permalink: /user-guide/getting-started
 ---
 
 # Getting Started

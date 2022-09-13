@@ -6,6 +6,7 @@ description: Getting started with Realm
 tags: 
  - User Guide
 nav_order: 3
+permalink: /user-guide/tavern
 ---
 
 # Overview

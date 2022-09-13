@@ -6,6 +6,7 @@ description: Eldritch User Guide
 tags: 
  - User Guide
 nav_order: 2
+permalink: /user-guide/eldritch
 ---
 
 # Overview

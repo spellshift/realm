@@ -6,6 +6,7 @@ description: Want to contribute to Tavern? Start here!
 tags: 
  - Dev Guide
 nav_order: 3
+permalink: /dev-guide/tavern
 ---
 # Overview
 Tavern is a teamserver for Realm, providing a UI to control deployments and implants during an engagement. The majority of Tavern's functionality is exposed through a GraphQL API, which is used by both implants and the UI.
