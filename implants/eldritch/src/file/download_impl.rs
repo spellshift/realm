@@ -1,34 +1,50 @@
 use anyhow::Result;
-use std::io::{copy, Write};
-use std::fs::File;
+use tokio::{
+    io::{ AsyncWriteExt },
+    fs::{ File },
+};
+use tokio_stream::StreamExt;
 use std::path::PathBuf;
 
-pub fn download(uri: String, dst: String) -> Result<()> {
-    println!("Here");
+async fn handle_download(uri: String, dst: String) -> Result<()> {
+    // Create our file 
     let mut dest = {
         let fname = PathBuf::from(dst);
-        File::create(fname)?
+        File::create(fname).await?
     };
-    println!("file");
+
+    // Download as a stream of bytes.
     // there's no checking at all happening here, for anything
-    // let resp = reqwest::blocking::get(uri)?;
     let mut stream = reqwest::get(uri)
         .await?
         .bytes_stream();
-    println!("got");
-    // let content = resp.text()?;
+    
+    // Write the stream of bytes to the file in chunks
     while let Some(chunk_result) = stream.next().await {
         let chunk = chunk_result?;
         dest.write_all(&chunk).await?;
     }
-    println!("Text");
 
-    // copy(&mut content.as_bytes(), &mut dest)?;
+    // Flush file writer
     dest.flush().await?;
-    println!("Written");
     Ok(())
 }
 
+pub fn download(uri: String, dst: String) -> Result<()> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    let response = runtime.block_on(
+        handle_download(uri, dst)
+    );
+
+    match response {
+        Ok(_) => Ok(()),
+        Err(_) => return response,
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -56,7 +72,7 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        download(url, path.clone());
+        download(url, path.clone())?;
 
         // Read the file
         let contents = read_to_string(path.clone())
@@ -66,27 +82,6 @@ mod tests {
         assert_eq!(contents, "test body");
 
         // cleanup
-        remove_file(path)?;
-
-        Ok(())
-    }
-    #[test]
-    fn test_download_big() -> anyhow::Result<()> {
-        // running test http server
-        // just using a temp file for its path
-        let tmp_file = NamedTempFile::new()?;
-        let path = "/tmp/bigfile.bin".to_string(); //String::from(tmp_file.path().to_str().unwrap()).clone();
-        tmp_file.close()?;
-
-        // reference test server uri
-        let url = "https://speed.hetzner.de/1GB.bin".to_string();
-
-        println!("Starting download");
-        // run our code
-        download(url, path.clone());
-
-        println!("Finished download");
-
         remove_file(path)?;
 
         Ok(())
