@@ -1,13 +1,13 @@
 use std::net::Ipv4Addr;
 
 use anyhow::Result;
-use tokio::io::{AsyncWriteExt, AsyncReadExt};
+use tokio::io::{AsyncWriteExt, AsyncReadExt, BufReader};
 use tokio::net::{TcpStream, UdpSocket};
 
 // Since we cannot go from async (test) -> sync (ncat) `block_on` -> async (handle_ncat) without getting an error "cannot create runtime in current runtime since current thread is calling async code."
 async fn handle_ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
     // If the response is longer than 4096 bytes it will be  truncated.
-    let mut response_buffer = [0; 4096];
+    let mut response_buffer: Vec<u8> = Vec::new();
     let result_string: String;
 
     let  address_and_port = format!("{}:{}", address, port);
@@ -18,8 +18,10 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
 
         // Write our meessage
         connection.write_all(data.as_bytes()).await?;
+
         // Read server response
-        let _bytes_read_count = connection.read(&mut response_buffer).await?;    
+        let mut read_stream = BufReader::new(connection);
+        read_stream.read_buf(&mut response_buffer).await?;
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
