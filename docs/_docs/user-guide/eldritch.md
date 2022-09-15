@@ -86,7 +86,7 @@ The <b>file.write</b> method is very cool, and will be even cooler when Nick doc
 ### process.kill
 `process.kill(pid: int) -> None`
 
-The <b>process.kill</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>process.kill</b> will kill a process using the KILL signal given its process id.
 
 ### process.list
 `process.list() -> List<str>`
