@@ -91,12 +91,10 @@ mod tests {
             .arg("5")
             .spawn()?;
         
-        println!("{:?}", child.id());
         let res = list()?;
         let searchstring = String::from(format!("pid:{}", child.id()));
         for proc in res{
             if proc.as_str().contains(&searchstring) {
-                println!("{:?}", proc.to_string());
                 if proc.as_str().contains("command:\\\"sleep 5\\\"") {
                     assert_eq!(true, true);
                 }
