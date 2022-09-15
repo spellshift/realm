@@ -1,21 +1,49 @@
 use anyhow::Result;
-use std::io::copy;
-use std::fs::File;
+use tokio::{
+    io::{ AsyncWriteExt },
+    fs::{ File },
+};
+use tokio_stream::StreamExt;
 use std::path::PathBuf;
 
-pub fn download(uri: String, dst: String) -> Result<()> {
-    // there's no checking at all happening here, for anything
-    let resp = reqwest::blocking::get(uri)?;
-    let content = resp.text()?;
-
+async fn handle_download(uri: String, dst: String) -> Result<()> {
+    // Create our file 
     let mut dest = {
         let fname = PathBuf::from(dst);
-        File::create(fname)?
+        File::create(fname).await?
     };
 
-    copy(&mut content.as_bytes(), &mut dest)?;
+    // Download as a stream of bytes.
+    // there's no checking at all happening here, for anything
+    let mut stream = reqwest::get(uri)
+        .await?
+        .bytes_stream();
+    
+    // Write the stream of bytes to the file in chunks
+    while let Some(chunk_result) = stream.next().await {
+        let chunk = chunk_result?;
+        dest.write_all(&chunk).await?;
+    }
 
+    // Flush file writer
+    dest.flush().await?;
     Ok(())
+}
+
+pub fn download(uri: String, dst: String) -> Result<()> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    let response = runtime.block_on(
+        handle_download(uri, dst)
+    );
+
+    match response {
+        Ok(_) => Ok(()),
+        Err(_) => return response,
+    }
 }
 
 #[cfg(test)]
@@ -44,7 +72,7 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        download(url, path.clone());
+        download(url, path.clone())?;
 
         // Read the file
         let contents = read_to_string(path.clone())
