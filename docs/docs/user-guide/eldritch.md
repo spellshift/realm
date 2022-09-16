@@ -113,7 +113,9 @@ The <b>process.list</b> method will return a list of JSON strings representing t
 ### process.name
 `process.name(pid: int) -> str`
 
-The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.### Sys Library
+The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
+
+### Sys Library
 The Sys Library is very cool, and will be even cooler when Nick documents it.
 
 ### sys.exec
