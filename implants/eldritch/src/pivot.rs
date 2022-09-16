@@ -60,8 +60,8 @@ fn methods(builder: &mut MethodsBuilder) {
         port_forward_impl::port_forward(listen_address, listen_port, forward_address, forward_port, portocol)?;
         Ok(NoneType{})
     }
-    fn ncat(_this:  PivotLibrary, address: String, port: i32, data: String, portocol: String, timeout: i32) ->  String {
-        ncat_impl::ncat(address, port, data, portocol, timeout)
+    fn ncat(_this:  PivotLibrary, address: String, port: i32, data: String, portocol: String) ->  String {
+        ncat_impl::ncat(address, port, data, portocol)
     }
     // Seems to have the best protocol support - https://github.com/ajmwagar/merino
     fn bind_proxy(_this:  PivotLibrary, listen_address: String, listen_port: i32, username: String, password: String) ->  NoneType {
