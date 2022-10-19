@@ -1,7 +1,9 @@
 [package]
 name = "golem"
 version = "0.1.0"
-edition = "2022"
+edition = "2021"
 
 [dependencies]
 eldritch = { path = "../eldritch" }
+tokio = { version = "1", features = ["full"] }
+clap = { version = "3.0" }
