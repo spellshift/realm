@@ -1,0 +1,7 @@
+[package]
+name = "golem"
+version = "0.1.0"
+edition = "2022"
+
+[dependencies]
+eldritch = { path = "../eldritch" }
