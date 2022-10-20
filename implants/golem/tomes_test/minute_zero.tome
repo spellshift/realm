@@ -1,0 +1,8 @@
+def test():
+    res = ""
+    for i in ["H", "E", "L", "L", "O"]:
+        res = res + i
+    return res
+
+file.append("/tmp/win", test())
+str(process.list())
