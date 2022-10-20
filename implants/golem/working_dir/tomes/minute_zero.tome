@@ -4,5 +4,9 @@ def test():
         res = res + i
     return res
 
+def test2():
+    if file.exists("/etc/passwd"):
+       return str(file.read("/etc/passwd"))
+
 file.append("/tmp/win", test())
-str(process.list())
+str(test2())
