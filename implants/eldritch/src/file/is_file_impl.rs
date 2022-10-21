@@ -10,7 +10,7 @@ mod tests {
     use tempfile::{NamedTempFile,tempdir};
 
     #[test]
-    fn is_() -> anyhow::Result<()>{
+    fn test_is_file_basic() -> anyhow::Result<()>{
         unimplemented!("Method unimplemented")
     }
 }
