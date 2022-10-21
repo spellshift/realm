@@ -5,12 +5,8 @@ use clap::{Command, Arg};
 use tokio::task;
 use std::fs;
 
-// use eldritch::{eldritch_run,eldritch_interactive};
+use eldritch::{eldritch_run};
 
-async fn interactive() -> Result<(), golem::Error> {
-    // eldritch_interactive();
-    Ok(())
-}
 
 async fn run(tome_path: String) -> Result<String, golem::Error> {
     println!("Executing {}", tome_path);
@@ -57,11 +53,6 @@ async fn main() -> Result<(), golem::Error> {
 
         println!("{:?}", result);
 
-    } else {
-        match interactive().await {
-            Ok(_) => todo!(),
-            Err(_) => todo!(),
-        }
-    }
+    } 
     Ok(())
 }
