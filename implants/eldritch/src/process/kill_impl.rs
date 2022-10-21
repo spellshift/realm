@@ -20,8 +20,7 @@ pub fn kill(pid: i32) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::time;
-    use std::{process::Command, thread};
+    use std::{process::Command};
 
     #[test]
     fn test_process_kill() -> anyhow::Result<()>{
@@ -44,7 +43,7 @@ mod tests {
 
         let mut sys = System::new();
         sys.refresh_processes();    
-        for (pid, process) in sys.processes() {
+        for (pid, _) in sys.processes() {
             if pid.as_u32() == child.id(){
                 let i32_pid = pid.as_u32() as i32;
                 kill(i32_pid)?;
