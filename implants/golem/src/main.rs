@@ -5,9 +5,10 @@ use clap::{Command, Arg};
 use tokio::task;
 use std::fs;
 
-use eldritch::eldritch_run;
+// use eldritch::{eldritch_run,eldritch_interactive};
 
 async fn interactive() -> Result<(), golem::Error> {
+    // eldritch_interactive();
     Ok(())
 }
 
