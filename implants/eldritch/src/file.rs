@@ -4,6 +4,7 @@ mod download_impl;
 mod exists_impl;
 mod hash_impl;
 mod is_dir_impl;
+mod is_file_impl;
 mod mkdir_impl;
 mod read_impl;
 mod remove_impl;
@@ -67,6 +68,9 @@ fn methods(builder: &mut MethodsBuilder) {
     }
     fn is_dir(_this: FileLibrary, path: String) -> bool {
         is_dir_impl::is_dir(path)
+    }
+    fn is_file(_this: FileLibrary, path: String) -> bool {
+        is_file_impl::is_file(path)
     }
     fn mkdir(_this: FileLibrary, path: String) -> NoneType {
         mkdir_impl::mkdir(path)?;
