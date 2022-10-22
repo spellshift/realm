@@ -6,21 +6,17 @@ use tempfile::NamedTempFile;
 
 fn tar_dir(src: String) -> Result<String> {
     let src_path = Path::new(&src);
-    println!("{}", src_path.clone().to_str().unwrap());
 
     let tmp_tar_file_src = NamedTempFile::new()?;
     let tmp_tar_file_src_path = format!("{}.tar", String::from(tmp_tar_file_src.path().to_str().unwrap()));
-    tmp_tar_file_src.close();
-    // let tmp_tar_file_src_path = format!("{}.tar", src.clone());
-    println!("{}", tmp_tar_file_src_path);
+    let _ = tmp_tar_file_src.close();
 
     // Create the tar bulider
     let tmp_tar_file = File::create(tmp_tar_file_src_path.clone()).unwrap();
     let mut tar_builder = Builder::new(tmp_tar_file);
-    // tar_builder.mode(
-    //     HeaderMode::Deterministic
-    // );
-    println!("Tarring {}", src);
+    tar_builder.mode(
+        HeaderMode::Deterministic
+    );
     // Add all files from source dir with the name of the dir.
     let _ = tar_builder.append_dir_all(
         src_path.clone().file_name().unwrap().to_str().unwrap(), 
@@ -94,17 +90,14 @@ mod tests {
         // Create files
         let mut tmp_dir_src = tempdir()?;
         let path_src = String::from(tmp_dir_src.path().to_str().unwrap());
-        for (i,v) in ["Hello", "World", "Goodbye"].iter().enumerate() {
-            let tmp_file = format!("{}/{}.txt", path_src.clone(), i);
-            let _res = fs::write(tmp_file, v);
-        }
+        // for (i,v) in ["Hello", "World", "Goodbye"].iter().enumerate() {
+        //     let tmp_file = format!("{}/{}.txt", path_src.clone(), i);
+        //     let _res = fs::write(tmp_file, v);
+        // }
 
         let tmp_file_dst = NamedTempFile::new()?;
         let path_dst = format!("{}.tar.xz", String::from(tmp_file_dst.path().to_str().unwrap()));
         let _res = tmp_file_dst.close();
-
-        // println!("{}", path_dst.clone());
-        // println!("{}", path_src.clone());
 
         // Run our code 
         // Test with trailing slash.
@@ -121,32 +114,10 @@ mod tests {
 
     #[test]
     fn test_compress_hashdir() -> anyhow::Result<()>{
-        // Create files
-        // let mut tmp_dir_src = tempdir()?;
-        // let path_src = String::from(tmp_dir_src.path().to_str().unwrap());
-        // for (i,v) in ["Hello", "World", "Goodbye"].iter().enumerate() {
-        //     let tmp_file = format!("{}/{}.txt", path_src.clone(), i);
-        //     let _res = fs::write(tmp_file, v);
-        // }
-
-        // let tmp_file_dst = NamedTempFile::new()?;
-        // let path_dst = format!("{}.tar.xz", String::from(tmp_file_dst.path().to_str().unwrap()));
-        // let _res = tmp_file_dst.close();
-
-        // println!("{}", path_dst.clone());
-        // println!("{}", path_src.clone());
-
         let path_dst = "/tmp/test-compress.tar.xz".to_string();
-        // Run our code 
-        // compress(path_src.clone(), path_dst.clone())?;
         compress("/tmp/test-compress-hashdir/".to_string(), path_dst.clone())?;
-        // compress("/tmp/testing.tar".to_string(), "/tmp/testing.tar.gz".to_string());
-        // Hash
         let hash = digest_file(path_dst.clone())?;
-
-        // Compare
         assert_eq!(hash, "-");
-
         Ok(())
     }
 
