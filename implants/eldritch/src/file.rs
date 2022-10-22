@@ -1,5 +1,6 @@
 mod append_impl;
 mod copy_impl;
+mod compress_impl;
 mod download_impl;
 mod exists_impl;
 mod hash_impl;
@@ -66,6 +67,11 @@ fn methods(builder: &mut MethodsBuilder) {
     fn copy(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         copy_impl::copy(src, dst)?;
+        Ok(NoneType{})
+    }
+    fn compress(_this: FileLibrary, src: String, dst: String) -> NoneType {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        compress_impl::compress(src, dst)?;
         Ok(NoneType{})
     }
     fn download(this: FileLibrary, uri: String, dst: String) -> anyhow::Result<NoneType> {
