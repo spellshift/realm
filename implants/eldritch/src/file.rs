@@ -1,5 +1,6 @@
 mod append_impl;
 mod copy_impl;
+mod compress_impl;
 mod download_impl;
 mod exists_impl;
 mod hash_impl;
@@ -53,6 +54,10 @@ fn methods(builder: &mut MethodsBuilder) {
     }
     fn copy(_this: FileLibrary, src: String, dst: String) -> NoneType {
         copy_impl::copy(src, dst)?;
+        Ok(NoneType{})
+    }
+    fn compress(_this: FileLibrary, src: String, dst: String) -> NoneType {
+        compress_impl::compress(src, dst)?;
         Ok(NoneType{})
     }
     fn download(_this: FileLibrary, uri: String, dst: String) -> NoneType {
