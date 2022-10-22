@@ -126,7 +126,7 @@ mod tests {
 
         // Test for known strings.
         let mut res = 0;
-        let mut searchstrings = ["Hello", "World", "Goodbye", "/0.txt", "/1.txt", "/2.txt", "ustar"];
+        let searchstrings = ["Hello", "World", "Goodbye", "/0.txt", "/1.txt", "/2.txt", "ustar"];
         for cur_string in searchstrings {
             let tar_file = File::open(path_dst.clone())?;
             let reader = BufReader::new(tar_file);    
