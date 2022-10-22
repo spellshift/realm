@@ -1,7 +1,7 @@
-use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write, BufWriter, BufReader}};
+use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write, BufWriter, BufReader, BufRead, self}};
 
 use anyhow::Result;
-use flate2::{Compression, bufread::GzEncoder};
+use flate2::{Compression};
 use tar::{Builder, HeaderMode};
 use tempfile::NamedTempFile;
 
@@ -41,7 +41,7 @@ pub fn compress(src: String, dst: String) -> Result<()> {
     }
     // Check if src is a dir.
     // if dir tar the directry up.
-    let mut f_src = std::io::BufReader::with_capacity(16000, std::fs::File::open(tmp_src.clone()).unwrap());
+    let f_src = std::io::BufReader::new(std::fs::File::open(tmp_src.clone()).unwrap());
     let mut f_dst = std::io::BufWriter::new(
             OpenOptions::new()
             .create(true) //Do we want to create the file if it doesn't exist? - Yes!
@@ -49,11 +49,37 @@ pub fn compress(src: String, dst: String) -> Result<()> {
             .open(dst.clone())?
     );
 
-    let mut deflater = GzEncoder::new(f_src, Compression::fast());
-    let mut buffer = Vec::new();
-    deflater.read_to_end(&mut buffer)?;
-    f_dst.write_all(&mut buffer);
+    // let compressed_file = File::create(dst.clone())?;
+    // let mut encoder = flate2::write::GzEncoder::new(compressed_file, Compression::fast());
+    // {
+    //     // Create tar archive and compress files 
+    //     let mut archive = Builder::new(&mut encoder);
+    //     archive.append_dir_all(
+    //         src_path.clone().file_name().unwrap().to_str().unwrap(),
+    //         src_path.clone(),
+    //     )?;
+    // }
+    // encoder.finish();
 
+    let mut deflater = flate2::bufread::GzEncoder::new(f_src, Compression::fast());
+    // let mut gz_engine = flate2::write::GzEncoder::new(f_dst, Compression::fast());
+    // let mut buf = Vec::with_capacity(1024*16);
+
+
+    // while let Err(e) = f_src.fill_buf() {
+    //     if e.kind() != io::ErrorKind::Interrupted {
+    //         return Err(e);
+    //     }
+    // }
+    // gz_engine.write(f_src);
+    // This is bad. Holding the entire compressed file seems unideal.
+    // Is it possible to compress a file directly to disk?
+    let mut buffer: Vec<u8> = vec![0; 1024*16];
+    deflater.read_to_end(&mut buffer)?;
+    let _ = f_dst.write_all(&mut buffer);
+    
+
+    println!("{}", buffer.len());
     // lzma_rs::lzma2_compress(&mut f_src, &mut f_dst).unwrap();
     // let mut compressed = lzma::compress(test_string.as_bytes(), 6).unwrap();
 
@@ -86,7 +112,7 @@ mod tests {
         let hash = digest_file(path_dst.clone())?;
 
         // Compare
-        assert_eq!(hash, "a4a62449deb847be376f523c527ddb8e37eda2a4a71dd293d3ddcd4c4a81941f");
+        assert_eq!(hash, "2ebf88a2917afdf9e8b3d5e0573457ee03f0d37780de770e94da38f55f298d73");
 
         Ok(())
     }
@@ -149,11 +175,11 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_compress_manual() -> anyhow::Result<()>{
-        // Create files
-        compress("/var/log/dpkg.log".to_string(), "/tmp/dpkg.gz".to_string())?;
-        Ok(())
-    }
+    // #[test]
+    // fn test_compress_manual() -> anyhow::Result<()>{
+    //     // Create files
+    //     compress("/tmp/bigfile".to_string(), "/tmp/bigfile.gz".to_string())?;
+    //     Ok(())
+    // }
 
 }
