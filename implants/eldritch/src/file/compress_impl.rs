@@ -1,6 +1,7 @@
-use std::{path::Path, fs::{OpenOptions, File}};
+use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write, BufWriter, BufReader}};
 
 use anyhow::Result;
+use flate2::{Compression, bufread::GzEncoder};
 use tar::{Builder, HeaderMode};
 use tempfile::NamedTempFile;
 
@@ -40,18 +41,24 @@ pub fn compress(src: String, dst: String) -> Result<()> {
     }
     // Check if src is a dir.
     // if dir tar the directry up.
-    let mut f_src = std::io::BufReader::new(std::fs::File::open(tmp_src.clone()).unwrap());
+    let mut f_src = std::io::BufReader::with_capacity(16000, std::fs::File::open(tmp_src.clone()).unwrap());
     let mut f_dst = std::io::BufWriter::new(
             OpenOptions::new()
             .create(true) //Do we want to create the file if it doesn't exist? - Yes!
             .write(true)    
-            .open(dst.clone())?);
+            .open(dst.clone())?
+    );
 
-    lzma_rs::xz_compress(&mut f_src, &mut f_dst).unwrap();
+    let mut deflater = GzEncoder::new(f_src, Compression::fast());
+    let mut buffer = Vec::new();
+    deflater.read_to_end(&mut buffer)?;
+    f_dst.write_all(&mut buffer);
+
+    // lzma_rs::lzma2_compress(&mut f_src, &mut f_dst).unwrap();
+    // let mut compressed = lzma::compress(test_string.as_bytes(), 6).unwrap();
 
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -79,7 +86,7 @@ mod tests {
         let hash = digest_file(path_dst.clone())?;
 
         // Compare
-        assert_eq!(hash, "e2f5ed829643c7670c5b429b57abc2c6209c46502fb21911f7db1d561ac16424");
+        assert_eq!(hash, "a4a62449deb847be376f523c527ddb8e37eda2a4a71dd293d3ddcd4c4a81941f");
 
         Ok(())
     }
@@ -141,4 +148,12 @@ mod tests {
         assert_eq!(res, searchstrings.len());
         Ok(())
     }
+
+    #[test]
+    fn test_compress_manual() -> anyhow::Result<()>{
+        // Create files
+        compress("/var/log/dpkg.log".to_string(), "/tmp/dpkg.gz".to_string())?;
+        Ok(())
+    }
+
 }
