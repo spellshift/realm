@@ -131,10 +131,12 @@ Testing isn't meant to be a barrier to contributing but instead a safety net so 
 4. Prevent regression.
 5. Test edge cases.
 
+**Tips**
 Any methods added to the Eldritch Standard Library should have tests collocated in the method's `<name>_impl.rs` file. Here are a few things to keep in mind:
 * Tests should be cross platform
     * Rely on [NamedTempFile](https://docs.rs/tempfile/1.1.1/tempfile/struct.NamedTempFile.html) for temporary files
     * Rely on [path.join](https://doc.rust-lang.org/stable/std/path/struct.Path.html) to construct OS-agnostic paths
+* Chunk out implementation code into discrete helper functions so each can be tested individually.
 
 ### Example PR for an Eldritch method.
 Check out [this simple example of a PR](https://github.com/KCarretto/realm/pull/69/files) to see what they should look like.
