@@ -3,7 +3,7 @@ title: Eldritch
 tags: 
  - Dev Guide
 description: Want to contribute to Eldritch? Start here!
-permalink: dev-guide/Eldritch
+permalink: dev-guide/eldritch
 ---
 
 # Overview
