@@ -122,6 +122,11 @@ mod tests {
     // More tests! 🚀
 }
 ```
+
+**Implementation tips:**
+* If working with files & network connections use streaming to avoid issues with large files.
+* If your function is likely to error implement additional eldritch function to proactively test if your function will work. Eg. Using `is_file` before performing file operations.
+
 ### Testing
 Testing can be really daunting especially with complex system functions required by security professionals.
 If you have any questions or hit any road blocks please reach out we'd love to help, also feel free to open a draft PR with what you have and mark it with the `help wanted` tag.
@@ -135,7 +140,7 @@ Testing isn't meant to be a barrier to contributing but instead a safety net so 
 5. Test edge cases.
 
 **Tips**
-Any methods added to the Eldritch Standard Library should have tests collocated in the method's `<name>_impl.rs` file. Here are a few things to keep in mind:
+Any methods added to the Eldritch Standard Library should have tests collocated in the method's `<function>_impl.rs` file. Here are a few things to keep in mind:
 * Tests should be cross platform
     * Rely on [NamedTempFile](https://docs.rs/tempfile/1.1.1/tempfile/struct.NamedTempFile.html) for temporary files
     * Rely on [path.join](https://doc.rust-lang.org/stable/std/path/struct.Path.html) to construct OS-agnostic paths
@@ -149,7 +154,7 @@ This PR implements the `file.is_file` function into Eldritch and is a simple exa
 ## Notes about asynchronous Eldritch code.
 ---
 ### Async example
-So you want to write async code in an Eldritch function. This section is for you.
+In order to run concurrent tasks we need to build an asynchronous function. This is useful if you're building a function that needs to do two things at once or that can benefit from running discrete jobs in parallel.
 
 The starlark bindings we're using to create Eldritch are not asynchronous therefore the Eldritch function itself cannot be asynchronous.
 To get around this we use the [`tokio::runtime::Runtime.block_on()`](https://docs.rs/tokio/latest/tokio/runtime/struct.Runtime.html#method.block_on) function in conjunction with two asynchronous helpers.
@@ -209,9 +214,11 @@ pub fn function(arg1: Vec<String>) -> Result<Vec<String>> {
 // Testing ...
 ```
 
-**Testing async code requires some additional work**
-An example of how async can be tested is found in this [PR for the Eldritch `pivot.ncat` implementation](https://github.com/KCarretto/realm/pull/44/files).
+**Implementation tips:**
+* If running a lot of concurrent tasks the system may run out of open file descriptors. Either handle this error with a wait and retry, or proactively rate limit your tasks well below the default limits. 
 
+
+### Testing async code requires some additional work
 You'll need to write tests for your synchronous and asynchronous code.
 Async tests will start 
 
@@ -252,21 +259,16 @@ mod tests {
     // the function call from synchronous space to asynchronous space.
     #[test]
     fn test_function_not_async() -> anyhow::Result<()> {
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-
-        let response = runtime.block_on(
-            function(["Test", "123"]);
-        );
-        let test_port = response.unwrap()[0];
+        //Mostly just testing that the code runs.
+        //Without an async setup function our code will likely return a fail state.
+        //If that's the case test for that state.
+        let response = function(["Test", "123"])?;
+        assert_eq!(response, false);
     }
 }
 ```
 
 ### Async PR example
-Check out [this an example of an async PR](https://github.com/KCarretto/realm/pull/45/files).
-This PR implements the `pivot.port_scan` function into Eldritch and is an example of how and when async functions are required.
+An example of how async can be used in testing: [PR for the Eldritch `pivot.ncat` implementation](https://github.com/KCarretto/realm/pull/44/files).
 
-
+An example of testing async functions with multiple concurrent functions: [PR for the Eldritch `pivot.port_scan` implementation](https://github.com/KCarretto/realm/pull/45/files).
