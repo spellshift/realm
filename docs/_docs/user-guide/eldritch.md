@@ -7,6 +7,21 @@ permalink: user-guide/eldritch
 ---
 # Overview
 ![/assets/img/coming-soon.gif](/assets/img/coming-soon.gif)
+## 
+## Data types
+Eldritch currently only supports the [default starlark data types.](https://github.com/facebookexperimental/starlark-rust/blob/main/docs/types.md)
+## Error handling
+Eldritch doesn't implement any form of error handling. If a function fails it will stop the tome from completing execution. There is no way to recover after a function has errored.
+
+If you're using a functions that has a chance to error (functions that do file / network IO) test preemptively with function like `is_file`, `is_dir`, `is_windows`, etc.
+
+For example:
+```Python
+if is_linux():
+    if is_file("/etc/passwd"):
+        file.read("/etc/passwd")
+```
+
 
 # Examples
 ![/assets/img/coming-soon.gif](/assets/img/coming-soon.gif)
