@@ -25,7 +25,8 @@
 	"extensions": [
 		"golang.Go",
 		"graphql.vscode-graphql",
-		"rust-lang.rust-analyzer"
+		"rust-lang.rust-analyzer",
+		"streetsidesoftware.code-spell-checker"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
