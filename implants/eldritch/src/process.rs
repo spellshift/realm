@@ -50,7 +50,7 @@ fn methods(builder: &mut MethodsBuilder) {
     fn kill(this: ProcessLibrary, pid: i32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         kill_impl::kill(pid)?;
-        Ok(NoneType)
+        Ok(NoneType{})
     }
     fn list(this: ProcessLibrary) -> anyhow::Result<Vec<String>> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
