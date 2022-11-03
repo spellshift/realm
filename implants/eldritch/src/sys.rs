@@ -49,18 +49,23 @@ impl<'v> UnpackValue<'v> for SysLibrary {
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
     fn exec(this: SysLibrary, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         exec_impl::exec(path, args, disown)
     }
     fn is_linux(this: SysLibrary) -> anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_linux_impl::is_linux()
     }
     fn is_windows(this: SysLibrary) -> anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_windows_impl::is_windows()
     }
     fn is_macos(this: SysLibrary) -> anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_macos_impl::is_macos()
     }
     fn shell(this: SysLibrary, cmd: String) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         shell_impl::shell(cmd)
     }
 }
