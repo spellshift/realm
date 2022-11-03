@@ -84,7 +84,8 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_dir_impl::is_dir(path)
     }
-    fn is_file(_this: FileLibrary, path: String) -> anyhow::Result<bool> {
+    fn is_file(this: FileLibrary, path: String) -> anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_file_impl::is_file(path)
     }
     fn mkdir(this: FileLibrary, path: String) -> anyhow::Result<NoneType> {
