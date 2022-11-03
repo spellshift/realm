@@ -61,17 +61,17 @@ fn methods(builder: &mut MethodsBuilder) {
     fn append(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         append_impl::append(path, content)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn copy(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         copy_impl::copy(src, dst)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn download(this: FileLibrary, uri: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         download_impl::download(uri, dst)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn exists(this: FileLibrary, path: String) -> anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -92,7 +92,7 @@ fn methods(builder: &mut MethodsBuilder) {
     fn mkdir(this: FileLibrary, path: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         mkdir_impl::mkdir(path)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn read(this: FileLibrary, path: String) -> anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -101,31 +101,31 @@ fn methods(builder: &mut MethodsBuilder) {
     fn remove(this: FileLibrary, path: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         remove_impl::remove(path)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn rename(this: FileLibrary, old: String, new: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         moveto_impl::moveto(old, new)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn replace_all(this: FileLibrary, path: String, pattern: String, value: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         replace_all_impl::replace_all(path, pattern, value)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn replace(this: FileLibrary, path: String, pattern: String, value: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         replace_impl::replace(path, pattern, value)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn timestomp(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         timestomp_impl::timestomp(src, dst)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
     fn write(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         write_impl::write(path, content)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
 }
