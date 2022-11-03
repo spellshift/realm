@@ -23,6 +23,7 @@ use starlark::{starlark_type, starlark_simple_value, starlark_module};
 use serde::{Serialize,Serializer};
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
+#[display(fmt = "FileLibrary")]
 pub struct FileLibrary();
 starlark_simple_value!(FileLibrary);
 
