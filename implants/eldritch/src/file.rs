@@ -17,21 +17,30 @@ mod write_impl;
 use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike};
 use starlark::values::none::NoneType;
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use serde::{Serialize,Serializer};
 
-#[derive(Copy, Clone, Debug, PartialEq, Display)]
-#[display(fmt = "FileLibrary")]
+#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
 pub struct FileLibrary();
 starlark_simple_value!(FileLibrary);
 
 impl<'v> StarlarkValue<'v> for FileLibrary {
     starlark_type!("file_library");
 
-    fn get_methods(&self) -> Option<&'static Methods> {
+    fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
         RES.methods(methods)
+    }
+}
+
+impl Serialize for FileLibrary {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_none()
     }
 }
 
@@ -48,59 +57,59 @@ impl<'v> UnpackValue<'v> for FileLibrary {
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn append(_this: FileLibrary, path: String, content: String) -> NoneType {
+    fn append(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {
         append_impl::append(path, content)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn copy(_this: FileLibrary, src: String, dst: String) -> NoneType {
+    fn copy(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         copy_impl::copy(src, dst)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn download(_this: FileLibrary, uri: String, dst: String) -> NoneType {
+    fn download(this: FileLibrary, uri: String, dst: String) -> anyhow::Result<NoneType> {
         download_impl::download(uri, dst)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn exists(_this: FileLibrary, path: String) -> bool {
-        exists_impl::exists(path)
+    fn exists(this: FileLibrary, path: String) -> anyhow::Result<bool> {
+        Ok(exists_impl::exists(path)?)
     }
-    fn hash(_this: FileLibrary, path: String) -> String {
-        hash_impl::hash(path)
+    fn hash(this: FileLibrary, path: String) -> anyhow::Result<String> {
+        Ok(hash_impl::hash(path)?)
     }
-    fn is_dir(_this: FileLibrary, path: String) -> bool {
-        is_dir_impl::is_dir(path)
+    fn is_dir(this: FileLibrary, path: String) -> anyhow::Result<bool> {
+        Ok(is_dir_impl::is_dir(path)?)
     }
-    fn is_file(_this: FileLibrary, path: String) -> bool {
+    fn is_file(_this: FileLibrary, path: String) -> anyhow::Result<bool> {
         is_file_impl::is_file(path)
     }
-    fn mkdir(_this: FileLibrary, path: String) -> NoneType {
+    fn mkdir(this: FileLibrary, path: String) -> anyhow::Result<NoneType> {
         mkdir_impl::mkdir(path)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn read(_this: FileLibrary, path: String) -> String {
-        read_impl::read(path)
+    fn read(this: FileLibrary, path: String) -> anyhow::Result<String> {
+        Ok(read_impl::read(path)?)
     }
-    fn remove(_this: FileLibrary, path: String) -> NoneType {
+    fn remove(this: FileLibrary, path: String) -> anyhow::Result<NoneType> {
         remove_impl::remove(path)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn rename(_this: FileLibrary, old: String, new: String) -> NoneType {
+    fn rename(this: FileLibrary, old: String, new: String) -> anyhow::Result<NoneType> {
         moveto_impl::moveto(old, new)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn replace_all(_this: FileLibrary, path: String, pattern: String, value: String) -> NoneType {
+    fn replace_all(this: FileLibrary, path: String, pattern: String, value: String) -> anyhow::Result<NoneType> {
         replace_all_impl::replace_all(path, pattern, value)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn replace(_this: FileLibrary, path: String, pattern: String, value: String) -> NoneType {
+    fn replace(this: FileLibrary, path: String, pattern: String, value: String) -> anyhow::Result<NoneType> {
         replace_impl::replace(path, pattern, value)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn timestomp(_this: FileLibrary, src: String, dst: String) -> NoneType {
+    fn timestomp(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         timestomp_impl::timestomp(src, dst)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn write(_this: FileLibrary, path: String, content: String) -> NoneType {
+    fn write(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {
         write_impl::write(path, content)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
 }

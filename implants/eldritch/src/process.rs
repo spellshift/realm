@@ -5,11 +5,13 @@ mod name_impl;
 use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike};
 use starlark::values::none::NoneType;
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
 
-#[derive(Copy, Clone, Debug, PartialEq, Display)]
+use serde::{Serialize,Serializer};
+
+#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
 #[display(fmt = "ProcessLibrary")]
 pub struct ProcessLibrary();
 starlark_simple_value!(ProcessLibrary);
@@ -17,9 +19,18 @@ starlark_simple_value!(ProcessLibrary);
 impl<'v> StarlarkValue<'v> for ProcessLibrary {
     starlark_type!("process_library");
 
-    fn get_methods(&self) -> Option<&'static Methods> {
+    fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
         RES.methods(methods)
+    }
+}
+
+impl Serialize for ProcessLibrary {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_none()
     }
 }
 
@@ -36,14 +47,14 @@ impl<'v> UnpackValue<'v> for ProcessLibrary {
 // This is where all of the "process.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn kill(_this: ProcessLibrary, pid: i32) -> NoneType {
+    fn kill(this: ProcessLibrary, pid: i32) -> anyhow::Result<NoneType> {
         kill_impl::kill(pid)?;
-        Ok(NoneType{})
+        Ok(NoneType)
     }
-    fn list(_this: ProcessLibrary) -> Vec<String> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
+    fn list(this: ProcessLibrary) -> anyhow::Result<Vec<String>> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
         list_impl::list()
     }
-    fn name(_this: ProcessLibrary, pid: i32) -> String {
+    fn name(this: ProcessLibrary, pid: i32) -> anyhow::Result<String> {
         name_impl::name(pid)
     }
 }
