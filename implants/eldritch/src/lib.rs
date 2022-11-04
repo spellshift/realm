@@ -25,9 +25,10 @@ mod tests {
 
         let mut a = Assert::new();
         a.globals_add(globals);
+        a.eq(r#"file.template('/tmp/tmp.j2','/tmp/tmp',{"jobs": [{"name":"test","jobid":1},{ "name":"test2","jobid":2},{ "name":"job3","jobid":3}]},True)"#, "Fail");
         a.all_true(
             r#"
-dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "timestomp", "template", "write"]
+dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all",  "template", "timestomp", "write"]
 dir(process) == ["kill", "list", "name"]
 dir(sys) == ["exec", "is_linux", "is_macos", "is_windows", "shell"]
 "#,
