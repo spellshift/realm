@@ -125,6 +125,7 @@ fn methods(builder: &mut MethodsBuilder) {
         timestomp_impl::timestomp(src, dst)?;
         Ok(NoneType{})
     }
+<<<<<<< HEAD
     fn template(this: FileLibrary, template_path: String, dst_path: String, args: SmallMap<String, Value>, autoescape: bool) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         template_impl::template(template_path, dst_path, args, autoescape)?;
@@ -132,6 +133,13 @@ fn methods(builder: &mut MethodsBuilder) {
     }
     fn write(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+=======
+    fn template(_this: FileLibrary, template_path: String, dst_path: String, args: SmallMap<String, Value>, autoescape: bool) -> NoneType {
+        template_impl::template(template_path, dst_path, args, autoescape)?;
+        Ok(NoneType{})
+    }
+    fn write(_this: FileLibrary, path: String, content: String) -> NoneType {
+>>>>>>> 91f941f952e155eaf629789e71429ef0b42e52ec
         write_impl::write(path, content)?;
         Ok(NoneType{})
     }
