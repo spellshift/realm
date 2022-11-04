@@ -17,6 +17,7 @@ mod write_impl;
 
 use derive_more::Display;
 
+use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
 use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
@@ -124,8 +125,12 @@ fn methods(builder: &mut MethodsBuilder) {
         timestomp_impl::timestomp(src, dst)?;
         Ok(NoneType{})
     }
+<<<<<<< HEAD
     fn template(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+=======
+    fn template(_this: FileLibrary, template_path: String, dst_path: String, args: SmallMap<String, Value>, autoescape: bool) -> NoneType {
+>>>>>>> Some progress need to upgrade from starlark 0.6.0 to use Value.serialize()
         template_impl::template(template_path, dst_path, args, autoescape)?;
         Ok(NoneType{})
     }

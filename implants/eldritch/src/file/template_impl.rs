@@ -1,11 +1,16 @@
 use std::fs;
 
 use anyhow::Result;
+use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
+use starlark::{collections::SmallMap};
+use starlark::values::{Value, FrozenValue};
 use tera::{Context, Tera};
-use serde_json::Value;
+// use serde_json::Value;
 
-fn build_context(json_data: String) -> Result<Context> {
-    let serde_dict: Value = serde_json::from_str(json_data.as_str())?;
+
+
+fn build_context_json(json_data: String) -> Result<Context> {
+    let serde_dict: serde_json::Value = serde_json::from_str(json_data.as_str())?;
     let mut context = Context::new();
     for (key, value) in serde_dict.as_object().unwrap() {
         context.insert(key.as_str(), &value);
@@ -13,7 +18,32 @@ fn build_context(json_data: String) -> Result<Context> {
     return Ok(context);
 }
 
-pub fn template(template_path: String, dst_path: String, args: String, autoescape: bool) -> Result<()> {
+fn build_context(dict_data: SmallMap<String, Value>) -> Result<Context> {
+    let mut context = Context::new();
+    // for (key, value) in dict_data {
+    //     println!("{}", value.get_type() );
+    //     if value.get_type() == "string" {
+    //         let tmp = String::unpack_value(value);
+    //         context.insert(key.as_str(), &tmp);
+    //     } else if value.get_type() == "int" {
+    //         let tmp = i32::unpack_value(value);
+    //         context.insert(key.as_str(), &tmp);
+    //     } else if value.get_type() == "bool" {
+    //         let tmp = bool::unpack_value(value);
+    //         context.insert(key.as_str(), &tmp);
+    //     } else {
+    //         let tmp = json!(value);
+    //         context.insert(key.as_str(), &tmp);
+    //     }
+    // }
+    for (key, value) in dict_data {
+        let tmp = value.serialize();
+        context.insert(key.as_str(), &tmp);
+    }
+    return Ok(context);
+}
+
+pub fn template(template_path: String, dst_path: String, args: SmallMap<String, Value>, autoescape: bool) -> Result<()> {
     let context = build_context(args)?;
     let template_content = fs::read_to_string(template_path)?;
     let res_content = Tera::one_off(template_content.as_str(), &context, autoescape)?;
@@ -24,22 +54,23 @@ pub fn template(template_path: String, dst_path: String, args: String, autoescap
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use starlark::smallmap;
+    use starlark::values::list::ListOf;
     use tempfile::NamedTempFile;
-
+    use starlark::const_frozen_string;
+    use starlark::values::{FrozenStringValue, FrozenValue};
+    
     use super::*;
 
     #[test]
     fn test_template_build_context() -> anyhow::Result<()>{
-        let res = build_context(r#"
-        {
-            "name": "test123",
-            "phone": "1237891",
-            "folks": [
-                { "name":"test" },
-                { "name":"test2" }
-            ]
-        }"#.to_string());
-        assert_eq!(format!("{:?}", res.unwrap()), r#"Context { data: {"folks": Array [Object {"name": String("test")}, Object {"name": String("test2")}], "name": String("test123"), "phone": String("1237891")} }"#);
+        let map: SmallMap<String, Value> = smallmap! {
+            "name".to_string() => Value::new_frozen(const_frozen_string!("greg").unpack()),
+            "age".to_string() => Value::new_int(29),
+            "admin".to_string() => Value::new_bool(true),
+        };
+        let res = build_context(map)?;
+        println!("{:?}", res);
         Ok(())
     }
 
@@ -65,8 +96,10 @@ Congratulations on making it that far.
             "age": 22
         }"#.to_string();
 
+        let dict_data: SmallMap<String, Value> = smallmap! {};
+
         // Run our code
-        template(path, dst_path.clone(), json_data, true)?;
+        template(path, dst_path.clone(), dict_data, true)?;
 
         // Verify output
         let res = fs::read_to_string(dst_path)?;
@@ -111,7 +144,10 @@ r#"name,jobid{% for job in jobs %}
                 }
             ]
         }"#.to_string();
-        template(path, dst_path.clone(), json_data, true)?;
+
+        let dict_data = smallmap! {};
+
+        template(path, dst_path.clone(), dict_data, true)?;
         
         let res = fs::read_to_string(dst_path)?;
         assert_eq!(res, 
