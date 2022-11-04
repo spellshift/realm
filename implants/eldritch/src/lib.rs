@@ -28,11 +28,7 @@ mod tests {
         a.eq(r#"file.template('/tmp/tmp.j2','/tmp/tmp',{"jobs": [{"name":"test","jobid":1},{ "name":"test2","jobid":2},{ "name":"job3","jobid":3}]},True)"#, "Fail");
         a.all_true(
             r#"
-<<<<<<< HEAD
 dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all",  "template", "timestomp", "write"]
-=======
-dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "timestomp", "template", "write"]
->>>>>>> 91f941f952e155eaf629789e71429ef0b42e52ec
 dir(process) == ["kill", "list", "name"]
 dir(sys) == ["exec", "is_linux", "is_macos", "is_windows", "shell"]
 "#,
