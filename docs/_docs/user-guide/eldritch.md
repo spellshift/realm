@@ -59,6 +59,11 @@ The <b>file.hash</b> takes a sha256 hash of the file specified in path.
 
 The <b>file.is_dir</b> checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return false.
 
+### file.is_file
+`file.is_file(path: str) -> bool`
+
+The <b>file.is_file</b> checks if a path exists and is a file. If it doesn't exist or is not a file it will return false.
+
 ### file.mkdir
 `file.mkdir(path: str) -> None`
 
