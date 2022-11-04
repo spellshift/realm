@@ -11,6 +11,7 @@ mod remove_impl;
 mod moveto_impl;
 mod replace_all_impl;
 mod replace_impl;
+mod template_impl;
 mod timestomp_impl;
 mod write_impl;
 
@@ -121,6 +122,11 @@ fn methods(builder: &mut MethodsBuilder) {
     fn timestomp(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         timestomp_impl::timestomp(src, dst)?;
+        Ok(NoneType{})
+    }
+    fn template(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        template_impl::template(src, dst)?;
         Ok(NoneType{})
     }
     fn write(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {
