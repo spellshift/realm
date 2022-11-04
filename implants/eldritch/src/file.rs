@@ -125,7 +125,7 @@ fn methods(builder: &mut MethodsBuilder) {
         timestomp_impl::timestomp(src, dst)?;
         Ok(NoneType{})
     }
-    fn template(_this: FileLibrary, template_path: String, dst_path: String, args: SmallMap<String, Value>, autoescape: bool) -> NoneType {
+    fn template(this: FileLibrary, template_path: String, dst_path: String, args: SmallMap<String, Value>, autoescape: bool) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         template_impl::template(template_path, dst_path, args, autoescape)?;
         Ok(NoneType{})
