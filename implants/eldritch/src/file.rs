@@ -126,7 +126,7 @@ fn methods(builder: &mut MethodsBuilder) {
     }
     fn template(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        template_impl::template(src, dst)?;
+        template_impl::template(template_path, dst_path, args, autoescape)?;
         Ok(NoneType{})
     }
     fn write(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {
