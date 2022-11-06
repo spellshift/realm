@@ -8,3 +8,4 @@ eldritch = { path = "../eldritch" }
 tokio = { version = "1", features = ["full"] }
 clap = { version = "3.0" }
 starlark = { git = "https://github.com/hulto/starlark-rust", branch = "v0.6.0-hulto" }
+anyhow = "1.0.55"
