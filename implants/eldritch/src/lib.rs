@@ -6,7 +6,7 @@ pub mod pivot;
 use anyhow::Error;
 
 use starlark::{starlark_module};
-use starlark::environment::{GlobalsBuilder, Module};
+use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::Value;
@@ -15,15 +15,7 @@ use file::FileLibrary;
 use process::ProcessLibrary;
 use sys::SysLibrary;
 
-
-
-pub fn eldritch_run(tome_filename: String, tome_contents: String) -> Result<String, Error> {
-    let ast: AstModule = AstModule::parse(
-        &tome_filename,
-        tome_contents.as_str().to_owned(),
-        &Dialect::Standard
-    ).unwrap();
-
+pub fn get_eldritch() -> anyhow::Result<Globals> {
     #[starlark_module]
     fn eldritch(builder: &mut GlobalsBuilder) {
         const file: FileLibrary = FileLibrary();
@@ -32,6 +24,17 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String) -> Result<Stri
     }
 
     let globals = GlobalsBuilder::extended().with(eldritch).build();
+    return Ok(globals);
+}
+
+pub fn eldritch_run(tome_filename: String, tome_contents: String) -> Result<String, Error> {
+    let ast: AstModule = AstModule::parse(
+        &tome_filename,
+        tome_contents.as_str().to_owned(),
+        &Dialect::Standard
+    ).unwrap();
+
+    let globals = get_eldritch()?;
     let module: Module = Module::new();
 
     let mut eval: Evaluator = Evaluator::new(&module);
