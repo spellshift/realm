@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 eldritch = { path = "../eldritch" }
-tokio = { version = "1", features = ["full"] }
-clap = { version = "3.0" }
-starlark = { git = "https://github.com/hulto/starlark-rust", branch = "v0.6.0-hulto" }
+tokio = { version = "1.19.1" , features = ["macros"] }
+clap = { version = "3.2.23" }
+starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "7c6986a189c45591da9346159f5ddd50685bbf96" }
 anyhow = "1.0.55"
