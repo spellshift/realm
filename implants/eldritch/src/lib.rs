@@ -3,8 +3,6 @@ pub mod process;
 pub mod sys;
 pub mod pivot;
 
-use anyhow::Error;
-
 use starlark::{starlark_module};
 use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
@@ -27,12 +25,16 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
     return Ok(globals);
 }
 
-pub fn eldritch_run(tome_filename: String, tome_contents: String) -> Result<String, Error> {
-    let ast: AstModule = AstModule::parse(
-        &tome_filename,
-        tome_contents.as_str().to_owned(),
-        &Dialect::Standard
-    ).unwrap();
+pub fn eldritch_run(tome_filename: String, tome_contents: String) -> anyhow::Result<String> {
+    let ast: AstModule;
+    match AstModule::parse(
+            &tome_filename,
+            tome_contents.as_str().to_owned(),
+            &Dialect::Standard
+        ) {
+            Ok(res) => ast = res,
+            Err(err) => return Err(err),
+    }
 
     let globals = get_eldritch()?;
     let module: Module = Module::new();

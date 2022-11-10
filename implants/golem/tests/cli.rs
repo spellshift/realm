@@ -10,10 +10,24 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
     cmd.arg("nonexistentdir/run.tome");
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains("Application error: No such file or directory (os error 2)"));
+        .stderr(predicate::str::contains("[TASK ERROR] nonexistentdir/run.tome: No such file or directory (os error 2)"));
 
     Ok(())
 }
+
+// Test running `./golem ./working_dir/tomes/syntax_fail.tome`
+#[test]
+fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
+    let mut cmd = Command::cargo_bin("golem")?;
+
+    cmd.arg("working_dir/tomes/syntax_fail.tome");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("[TASK ERROR] working_dir/tomes/syntax_fail.tome: error: Parse error: unexpected string literal 'win' here"));
+
+    Ok(())
+}
+
 
 // Test running `./golem ./working_dir/tomes/hello_world.tome`
 #[test]
