@@ -9,8 +9,7 @@ use eldritch::{eldritch_run};
 
 mod inter;
 
-async fn run(tome_path: String) -> Result<String, golem::Error> {
-    println!("Executing {}", tome_path);
+async fn run(tome_path: String) -> anyhow::Result<String> {
     // Read a tome script
     let tome_contents = fs::read_to_string(tome_path.clone())?;
     // Execute a tome script
@@ -20,7 +19,7 @@ async fn run(tome_path: String) -> Result<String, golem::Error> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), golem::Error> {
+async fn main() -> anyhow::Result<()> {
     let matches = Command::new("golem")
         .arg(Arg::with_name("INPUT")
             .help("Set the tomes to run")
@@ -38,7 +37,6 @@ async fn main() -> Result<(), golem::Error> {
         // Queue async tasks
         let mut all_tome_futures: Vec<_> = vec![];
         for tome in res{
-            println!("Queueing {}", tome.clone().to_string());
             let tome_execution_task = run(tome.to_string());
             all_tome_futures.push(task::spawn(tome_execution_task))
         }
@@ -51,12 +49,12 @@ async fn main() -> Result<(), golem::Error> {
                 Err(_err) => continue,
             }
         }
-
         println!("{:?}", result);
 
     } else {
-        println!("Interactive");
-        inter::interactive_main();
+        inter::interactive_main()?;
     }
     Ok(())
 }
+
+
