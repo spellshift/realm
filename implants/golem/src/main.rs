@@ -4,6 +4,7 @@ extern crate eldritch;
 use clap::{Command, Arg};
 use tokio::task;
 use std::fs;
+use std::process;
 
 use eldritch::{eldritch_run};
 
@@ -43,16 +44,20 @@ async fn main() -> anyhow::Result<()> {
             all_tome_futures.push(task::spawn(tome_execution_task))
         }
 
+        let mut error_code = 0;
         // Collect results
         let mut result: Vec<String> = Vec::new();
         for tome_task in all_tome_futures {
             match tome_task.await.unwrap() {
                 Ok(res) => result.push(res),
-                Err(_err) => continue,
+                Err(err) => {
+                    eprintln!("Application error: {err}");
+                    error_code = 1;
+                },
             }
         }
         println!("{:?}", result);
-
+        process::exit(error_code);
     } else {
         inter::interactive_main()?;
     }

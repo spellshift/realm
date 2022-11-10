@@ -2,6 +2,19 @@ use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
 use std::process::Command; // Run programs
 
+// Test running `./golem ./nonexistentdir/run.tome`
+#[test]
+fn test_golem_main_file_not_found() -> anyhow::Result<()> {
+    let mut cmd = Command::cargo_bin("golem")?;
+
+    cmd.arg("nonexistentdir/run.tome");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Application error: No such file or directory (os error 2)"));
+
+    Ok(())
+}
+
 // Test running `./golem ./working_dir/tomes/hello_world.tome`
 #[test]
 fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
@@ -29,7 +42,7 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
     Ok(())
 }
 
-
+// WIP currently only.
 // Test running `echo "dir(file)" | ./golem` for interactive mode.
 #[test]
 fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
