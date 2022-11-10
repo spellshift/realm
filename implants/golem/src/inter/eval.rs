@@ -17,7 +17,6 @@
 
 use std::collections::HashMap;
 use std::fs;
-use std::io;
 use std::iter;
 use std::path::Path;
 use std::path::PathBuf;
@@ -46,7 +45,6 @@ use anyhow::anyhow;
 
 #[derive(Debug)]
 pub(crate) enum ContextMode {
-    Check,
     Run,
 }
 
@@ -145,13 +143,10 @@ impl Context {
     }
 
     fn go(&self, file: &str, ast: AstModule) -> EvalResult<impl Iterator<Item = EvalMessage>> {
-        let mut warnings = Either::Left(iter::empty());
+        let warnings: Either<std::iter::Empty<EvalMessage>, std::iter::Empty<EvalMessage>> = Either::Left(iter::empty());
         let mut errors = Either::Left(iter::empty());
+        if errors.is_left() { } // Supress errors warning. We're no longer using a check mode so this code is dead.
         let final_ast = match self.mode {
-            ContextMode::Check => {
-                warnings = Either::Right(self.check(&ast));
-                Some(ast)
-            }
             ContextMode::Run => {
                 errors = Either::Right(self.run(file, ast).messages);
                 None
@@ -191,15 +186,6 @@ impl Context {
         )
     }
 
-    pub(crate) fn file(&self, file: &Path) -> EvalResult<impl Iterator<Item = EvalMessage>> {
-        let filename = &file.to_string_lossy();
-        Self::err(
-            filename,
-            fs::read_to_string(file)
-                .map(|content| self.file_with_contents(filename, content))
-                .map_err(|e| e.into()),
-        )
-    }
 
     pub(crate) fn file_with_contents(
         &self,
@@ -238,19 +224,6 @@ impl Context {
         )
     }
 
-    fn check(&self, module: &AstModule) -> impl Iterator<Item = EvalMessage> {
-        let mut globals = Vec::new();
-        for x in &self.prelude {
-            globals.extend(x.names().map(|s| s.as_str()));
-        }
-        let globals = if self.prelude.is_empty() {
-            None
-        } else {
-            Some(globals.as_slice())
-        };
-
-        module.lint(globals).into_iter().map(EvalMessage::from)
-    }
 }
 
 impl LspContext for Context {

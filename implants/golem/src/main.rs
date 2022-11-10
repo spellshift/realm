@@ -9,6 +9,7 @@ use eldritch::{eldritch_run};
 
 mod inter;
 
+
 async fn run(tome_path: String) -> anyhow::Result<String> {
     // Read a tome script
     let tome_contents = fs::read_to_string(tome_path.clone())?;
@@ -17,6 +18,7 @@ async fn run(tome_path: String) -> anyhow::Result<String> {
     // Return script output
     return Ok(tome_results)
 }
+
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
