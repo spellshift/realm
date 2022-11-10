@@ -46,8 +46,10 @@ async fn main() -> anyhow::Result<()> {
         // Collect results and do error handling
         let mut result: Vec<String> = Vec::new();
         for tome_task in all_tome_futures {
+            // Get the name of the file from our tuple.
             let tome_name: String = tome_task.0;
             match tome_task.1.await {
+                // Match on task results.
                 Ok(res) => match res {
                         Ok(task_res) => result.push(task_res),
                         Err(task_err) => {
@@ -55,6 +57,7 @@ async fn main() -> anyhow::Result<()> {
                             error_code = 1;        
                         }
                     },
+
                 Err(err) => {
                     eprintln!("[ERROR] {tome_name}: {err}");
                     error_code = 1;
