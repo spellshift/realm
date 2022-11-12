@@ -1,6 +1,7 @@
 pub mod file;
 pub mod process;
 pub mod sys;
+pub mod pivot;
 
 #[cfg(test)]
 mod tests {
@@ -26,9 +27,9 @@ mod tests {
         a.globals_add(globals);
         a.all_true(
             r#"
-dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "mkdir", "read", "remove", "rename", "replace", "replace_all", "timestomp", "write"]
+dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "timestomp", "write"]
 dir(process) == ["kill", "list", "name"]
-dir(sys) == ["exec", "is_linux", "is_windows", "shell"]
+dir(sys) == ["exec", "is_linux", "is_macos", "is_windows", "shell"]
 "#,
         );
     }
