@@ -12,9 +12,10 @@ import (
 
 func main() {
 	extensions, err := entgql.NewExtension(
+		entgql.WithSchemaGenerator(),
 		entgql.WithWhereFilters(true),
-		entgql.WithSchemaPath("../graphql/schema/ent.graphql"),
-		entgql.WithConfigPath("../graphql/gqlgen.yml"),
+		entgql.WithSchemaPath("./graphql/schema/schema.graphql"),
+		entgql.WithConfigPath("./graphql/gqlgen.yml"),
 	)
 	if err != nil {
 		log.Fatalf("creating entgql extension: %v", err)
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	if err := entc.Generate(
-		"./schema",
+		"./ent/schema",
 		&gen.Config{
 			Templates: entgql.AllTemplates,
 		},
