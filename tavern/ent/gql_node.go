@@ -102,7 +102,7 @@ func (u *User) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     u.ID,
 		Type:   "User",
-		Fields: make([]*Field, 6),
+		Fields: make([]*Field, 5),
 		Edges:  make([]*Edge, 0),
 	}
 	var buf []byte
@@ -130,18 +130,10 @@ func (u *User) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "PhotoURL",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(u.SessionToken); err != nil {
-		return nil, err
-	}
-	node.Fields[3] = &Field{
-		Type:  "string",
-		Name:  "SessionToken",
-		Value: string(buf),
-	}
 	if buf, err = json.Marshal(u.IsActivated); err != nil {
 		return nil, err
 	}
-	node.Fields[4] = &Field{
+	node.Fields[3] = &Field{
 		Type:  "bool",
 		Name:  "IsActivated",
 		Value: string(buf),
@@ -149,7 +141,7 @@ func (u *User) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(u.IsAdmin); err != nil {
 		return nil, err
 	}
-	node.Fields[5] = &Field{
+	node.Fields[4] = &Field{
 		Type:  "bool",
 		Name:  "IsAdmin",
 		Value: string(buf),

@@ -1,11 +1,21 @@
 schema:
+  - schema/scalars.graphql
   - schema/schema.graphql
   - schema/user.graphql
+
+model:
+  package: graphql
+
+exec:
+  layout: follow-schema
+  dir: ./generated
+  package: generated
 
 resolver:
   # Tell gqlgen to generate resolvers next to the schema file.
   layout: follow-schema
   dir: .
+  package: graphql
 
 # gqlgen will search for any type names in the schema in the generated
 # ent package. If they match it will use them, otherwise it will new ones.

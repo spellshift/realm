@@ -36,6 +36,9 @@ func (User) Fields() []ent.Field {
 			Unique().
 			Sensitive().
 			MaxLen(1000).
+			Annotations(
+				entgql.Skip(),
+			).
 			Comment("The session token currently authenticating the user"),
 		field.Bool("IsActivated").
 			Default(false).

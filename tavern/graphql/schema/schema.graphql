@@ -27,8 +27,6 @@ input CreateUserInput {
   oauthid: String!
   """URL to the user's profile photo."""
   photourl: String!
-  """The session token currently authenticating the user"""
-  sessiontoken: String
   """True if the user is active and able to authenticate"""
   isactivated: Boolean
   """True if the user is an Admin"""
@@ -207,8 +205,6 @@ input UpdateUserInput {
   name: String
   """URL to the user's profile photo."""
   photourl: String
-  """The session token currently authenticating the user"""
-  sessiontoken: String
   """True if the user is active and able to authenticate"""
   isactivated: Boolean
   """True if the user is an Admin"""

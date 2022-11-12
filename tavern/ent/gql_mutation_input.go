@@ -78,12 +78,11 @@ func (c *FileUpdateOne) SetInput(i UpdateFileInput) *FileUpdateOne {
 
 // CreateUserInput represents a mutation input for creating users.
 type CreateUserInput struct {
-	Name         string
-	OAuthID      string
-	PhotoURL     string
-	SessionToken *string
-	IsActivated  *bool
-	IsAdmin      *bool
+	Name        string
+	OAuthID     string
+	PhotoURL    string
+	IsActivated *bool
+	IsAdmin     *bool
 }
 
 // Mutate applies the CreateUserInput on the UserMutation builder.
@@ -91,9 +90,6 @@ func (i *CreateUserInput) Mutate(m *UserMutation) {
 	m.SetName(i.Name)
 	m.SetOAuthID(i.OAuthID)
 	m.SetPhotoURL(i.PhotoURL)
-	if v := i.SessionToken; v != nil {
-		m.SetSessionToken(*v)
-	}
 	if v := i.IsActivated; v != nil {
 		m.SetIsActivated(*v)
 	}
@@ -110,11 +106,10 @@ func (c *UserCreate) SetInput(i CreateUserInput) *UserCreate {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name         *string
-	PhotoURL     *string
-	SessionToken *string
-	IsActivated  *bool
-	IsAdmin      *bool
+	Name        *string
+	PhotoURL    *string
+	IsActivated *bool
+	IsAdmin     *bool
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -124,9 +119,6 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.PhotoURL; v != nil {
 		m.SetPhotoURL(*v)
-	}
-	if v := i.SessionToken; v != nil {
-		m.SetSessionToken(*v)
 	}
 	if v := i.IsActivated; v != nil {
 		m.SetIsActivated(*v)

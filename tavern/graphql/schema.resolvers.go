@@ -5,31 +5,33 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/graphql/generated"
 )
 
 // Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
-	return r.client.Noder(ctx, id)
+	panic(fmt.Errorf("not implemented: Node - node"))
 }
 
 // Nodes is the resolver for the nodes field.
 func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
-	return r.client.Noders(ctx, ids)
+	panic(fmt.Errorf("not implemented: Nodes - nodes"))
 }
 
 // Files is the resolver for the files field.
 func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
-	return r.client.File.Query().All(ctx)
+	panic(fmt.Errorf("not implemented: Files - files"))
 }
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
-	return r.client.User.Query().All(ctx)
+	panic(fmt.Errorf("not implemented: Users - users"))
 }
 
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+// Query returns generated.QueryResolver implementation.
+func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }

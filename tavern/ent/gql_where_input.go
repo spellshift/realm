@@ -408,21 +408,6 @@ type UserWhereInput struct {
 	PhotoURLEqualFold    *string  `json:"photourlEqualFold,omitempty"`
 	PhotoURLContainsFold *string  `json:"photourlContainsFold,omitempty"`
 
-	// "SessionToken" field predicates.
-	SessionToken             *string  `json:"sessiontoken,omitempty"`
-	SessionTokenNEQ          *string  `json:"sessiontokenNEQ,omitempty"`
-	SessionTokenIn           []string `json:"sessiontokenIn,omitempty"`
-	SessionTokenNotIn        []string `json:"sessiontokenNotIn,omitempty"`
-	SessionTokenGT           *string  `json:"sessiontokenGT,omitempty"`
-	SessionTokenGTE          *string  `json:"sessiontokenGTE,omitempty"`
-	SessionTokenLT           *string  `json:"sessiontokenLT,omitempty"`
-	SessionTokenLTE          *string  `json:"sessiontokenLTE,omitempty"`
-	SessionTokenContains     *string  `json:"sessiontokenContains,omitempty"`
-	SessionTokenHasPrefix    *string  `json:"sessiontokenHasPrefix,omitempty"`
-	SessionTokenHasSuffix    *string  `json:"sessiontokenHasSuffix,omitempty"`
-	SessionTokenEqualFold    *string  `json:"sessiontokenEqualFold,omitempty"`
-	SessionTokenContainsFold *string  `json:"sessiontokenContainsFold,omitempty"`
-
 	// "IsActivated" field predicates.
 	IsActivated    *bool `json:"isactivated,omitempty"`
 	IsActivatedNEQ *bool `json:"isactivatedNEQ,omitempty"`
@@ -643,45 +628,6 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 	}
 	if i.PhotoURLContainsFold != nil {
 		predicates = append(predicates, user.PhotoURLContainsFold(*i.PhotoURLContainsFold))
-	}
-	if i.SessionToken != nil {
-		predicates = append(predicates, user.SessionTokenEQ(*i.SessionToken))
-	}
-	if i.SessionTokenNEQ != nil {
-		predicates = append(predicates, user.SessionTokenNEQ(*i.SessionTokenNEQ))
-	}
-	if len(i.SessionTokenIn) > 0 {
-		predicates = append(predicates, user.SessionTokenIn(i.SessionTokenIn...))
-	}
-	if len(i.SessionTokenNotIn) > 0 {
-		predicates = append(predicates, user.SessionTokenNotIn(i.SessionTokenNotIn...))
-	}
-	if i.SessionTokenGT != nil {
-		predicates = append(predicates, user.SessionTokenGT(*i.SessionTokenGT))
-	}
-	if i.SessionTokenGTE != nil {
-		predicates = append(predicates, user.SessionTokenGTE(*i.SessionTokenGTE))
-	}
-	if i.SessionTokenLT != nil {
-		predicates = append(predicates, user.SessionTokenLT(*i.SessionTokenLT))
-	}
-	if i.SessionTokenLTE != nil {
-		predicates = append(predicates, user.SessionTokenLTE(*i.SessionTokenLTE))
-	}
-	if i.SessionTokenContains != nil {
-		predicates = append(predicates, user.SessionTokenContains(*i.SessionTokenContains))
-	}
-	if i.SessionTokenHasPrefix != nil {
-		predicates = append(predicates, user.SessionTokenHasPrefix(*i.SessionTokenHasPrefix))
-	}
-	if i.SessionTokenHasSuffix != nil {
-		predicates = append(predicates, user.SessionTokenHasSuffix(*i.SessionTokenHasSuffix))
-	}
-	if i.SessionTokenEqualFold != nil {
-		predicates = append(predicates, user.SessionTokenEqualFold(*i.SessionTokenEqualFold))
-	}
-	if i.SessionTokenContainsFold != nil {
-		predicates = append(predicates, user.SessionTokenContainsFold(*i.SessionTokenContainsFold))
 	}
 	if i.IsActivated != nil {
 		predicates = append(predicates, user.IsActivatedEQ(*i.IsActivated))

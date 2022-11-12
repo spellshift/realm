@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/graphql/generated"
 )
 
 // CreateUser is the resolver for the createUser field.
@@ -19,7 +20,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id int, input ent.Upd
 	return r.client.User.UpdateOneID(id).SetInput(input).Save(ctx)
 }
 
-// Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }
