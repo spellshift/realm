@@ -25,7 +25,7 @@ func TestUserMutations(t *testing.T) {
 	defer graph.Close()
 
 	// Initialize sample data
-	graph.User.Create().
+	testUser := graph.User.Create().
 		SetName("bobdylan").
 		SetIsActivated(false).
 		SetIsAdmin(true).
@@ -38,7 +38,9 @@ func TestUserMutations(t *testing.T) {
 
 	// Create a new GraphQL client (connected to our http server)
 	gqlClient := client.New(srv)
-	t.Run("New", newCreateUserTest(
+
+	// Run Tests
+	t.Run("Create", newCreateUserTest(
 		gqlClient,
 		ent.CreateUserInput{
 			Name:     "tonystark",
@@ -55,6 +57,22 @@ func TestUserMutations(t *testing.T) {
 			assert.Equal(t, "spoiler_alert:he_dies", tony.OAuthID)
 			assert.Equal(t, "https://upload.wikimedia.org/wikipedia/en/4/47/Iron_Man_%28circa_2018%29.png", tony.PhotoURL)
 			assert.NotEmpty(t, tony.SessionToken)
+		},
+	))
+	newName := "bobbyd"
+	t.Run("Update", newUpdateUserTest(
+		gqlClient,
+		testUser.ID,
+		ent.UpdateUserInput{
+			Name: &newName,
+		},
+		func(t *testing.T, id int, err error) {
+			require.NoError(t, err)
+			require.NotZero(t, id)
+			bobbyd := graph.User.GetX(ctx, id)
+			assert.Equal(t, newName, bobbyd.Name)
+			assert.Equal(t, "https://upload.wikimedia.org/wikipedia/commons/0/02/Bob_Dylan_-_Azkena_Rock_Festival_2010_2.jpg", bobbyd.PhotoURL)
+			assert.NotEmpty(t, bobbyd.SessionToken)
 		},
 	))
 }
@@ -81,6 +99,32 @@ func newCreateUserTest(gqlClient *client.Client, input ent.CreateUserInput, chec
 		// Run checks with error (if any) and resulting id
 		for _, check := range checks {
 			check(t, convertID(resp.CreateUser.ID), err)
+		}
+	}
+}
+
+func newUpdateUserTest(gqlClient *client.Client, id int, input ent.UpdateUserInput, checks ...func(t *testing.T, id int, err error)) func(t *testing.T) {
+	return func(t *testing.T) {
+		// Define the mutatation for testing, taking the input as a variable
+		mut := `mutation newUpdateUserTest($id: ID!, $input: UpdateUserInput!) { updateUser(id: $id, input:$input) { id } }`
+
+		// Make our request to the GraphQL API
+		var resp struct {
+			UpdateUser struct{ ID string }
+		}
+		err := gqlClient.Post(mut, &resp,
+			client.Var("id", id),
+			client.Var("input", map[string]interface{}{
+				"name":        input.Name,
+				"isactivated": input.IsActivated,
+				"isadmin":     input.IsAdmin,
+				"photourl":    input.PhotoURL,
+			}),
+		)
+
+		// Run checks with error (if any) and resulting id
+		for _, check := range checks {
+			check(t, convertID(resp.UpdateUser.ID), err)
 		}
 	}
 }
