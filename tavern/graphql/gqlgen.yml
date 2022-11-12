@@ -1,5 +1,6 @@
 schema:
   - schema/schema.graphql
+  - schema/user.graphql
 
 resolver:
   # Tell gqlgen to generate resolvers next to the schema file.
