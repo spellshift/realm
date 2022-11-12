@@ -21,11 +21,6 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, erro
 	panic(fmt.Errorf("not implemented: Nodes - nodes"))
 }
 
-// Files is the resolver for the files field.
-func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
-	panic(fmt.Errorf("not implemented: Files - files"))
-}
-
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
 	panic(fmt.Errorf("not implemented: Users - users"))
@@ -35,3 +30,13 @@ func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
+	panic(fmt.Errorf("not implemented: Files - files"))
+}
