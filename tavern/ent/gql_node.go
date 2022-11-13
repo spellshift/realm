@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/hashicorp/go-multierror"
 	"github.com/kcarretto/realm/tavern/ent/file"
+	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
 	"golang.org/x/sync/semaphore"
 )
@@ -91,6 +92,73 @@ func (f *File) Node(ctx context.Context) (node *Node, err error) {
 		return nil, err
 	}
 	node.Fields[4] = &Field{
+		Type:  "time.Time",
+		Name:  "lastModifiedAt",
+		Value: string(buf),
+	}
+	return node, nil
+}
+
+func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     t.ID,
+		Type:   "Tome",
+		Fields: make([]*Field, 7),
+		Edges:  make([]*Edge, 0),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(t.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Description); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "description",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Parameters); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "parameters",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Size); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "int",
+		Name:  "size",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Hash); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "string",
+		Name:  "hash",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.CreatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "time.Time",
+		Name:  "createdAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.LastModifiedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
 		Type:  "time.Time",
 		Name:  "lastModifiedAt",
 		Value: string(buf),
@@ -198,9 +266,8 @@ func (c *Client) newNodeOpts(opts []NodeOption) *nodeOptions {
 // Noder returns a Node by its id. If the NodeType was not provided, it will
 // be derived from the id value according to the universal-id configuration.
 //
-//		c.Noder(ctx, id)
-//		c.Noder(ctx, id, ent.WithNodeType(typeResolver))
-//
+//	c.Noder(ctx, id)
+//	c.Noder(ctx, id, ent.WithNodeType(typeResolver))
 func (c *Client) Noder(ctx context.Context, id int, opts ...NodeOption) (_ Noder, err error) {
 	defer func() {
 		if IsNotFound(err) {
@@ -220,6 +287,18 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		query := c.File.Query().
 			Where(file.ID(id))
 		query, err := query.CollectFields(ctx, "File")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case tome.Table:
+		query := c.Tome.Query().
+			Where(tome.ID(id))
+		query, err := query.CollectFields(ctx, "Tome")
 		if err != nil {
 			return nil, err
 		}
@@ -317,6 +396,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.File.Query().
 			Where(file.IDIn(ids...))
 		query, err := query.CollectFields(ctx, "File")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case tome.Table:
+		query := c.Tome.Query().
+			Where(tome.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Tome")
 		if err != nil {
 			return nil, err
 		}

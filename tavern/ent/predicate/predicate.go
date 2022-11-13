@@ -9,5 +9,8 @@ import (
 // File is the predicate function for file builders.
 type File func(*sql.Selector)
 
+// Tome is the predicate function for tome builders.
+type Tome func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

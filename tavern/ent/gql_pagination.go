@@ -15,6 +15,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/kcarretto/realm/tavern/ent/file"
+	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"github.com/vmihailenco/msgpack/v5"
@@ -555,6 +556,322 @@ func (f *File) ToEdge(order *FileOrder) *FileEdge {
 	return &FileEdge{
 		Node:   f,
 		Cursor: order.Field.toCursor(f),
+	}
+}
+
+// TomeEdge is the edge representation of Tome.
+type TomeEdge struct {
+	Node   *Tome  `json:"node"`
+	Cursor Cursor `json:"cursor"`
+}
+
+// TomeConnection is the connection containing edges to Tome.
+type TomeConnection struct {
+	Edges      []*TomeEdge `json:"edges"`
+	PageInfo   PageInfo    `json:"pageInfo"`
+	TotalCount int         `json:"totalCount"`
+}
+
+func (c *TomeConnection) build(nodes []*Tome, pager *tomePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Tome
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Tome {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Tome {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*TomeEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &TomeEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// TomePaginateOption enables pagination customization.
+type TomePaginateOption func(*tomePager) error
+
+// WithTomeOrder configures pagination ordering.
+func WithTomeOrder(order *TomeOrder) TomePaginateOption {
+	if order == nil {
+		order = DefaultTomeOrder
+	}
+	o := *order
+	return func(pager *tomePager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultTomeOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithTomeFilter configures pagination filter.
+func WithTomeFilter(filter func(*TomeQuery) (*TomeQuery, error)) TomePaginateOption {
+	return func(pager *tomePager) error {
+		if filter == nil {
+			return errors.New("TomeQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type tomePager struct {
+	order  *TomeOrder
+	filter func(*TomeQuery) (*TomeQuery, error)
+}
+
+func newTomePager(opts []TomePaginateOption) (*tomePager, error) {
+	pager := &tomePager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultTomeOrder
+	}
+	return pager, nil
+}
+
+func (p *tomePager) applyFilter(query *TomeQuery) (*TomeQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *tomePager) toCursor(t *Tome) Cursor {
+	return p.order.Field.toCursor(t)
+}
+
+func (p *tomePager) applyCursors(query *TomeQuery, after, before *Cursor) *TomeQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultTomeOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *tomePager) applyOrder(query *TomeQuery, reverse bool) *TomeQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultTomeOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultTomeOrder.Field.field))
+	}
+	return query
+}
+
+func (p *tomePager) orderExpr(reverse bool) sql.Querier {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.field).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultTomeOrder.Field {
+			b.Comma().Ident(DefaultTomeOrder.Field.field).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Tome.
+func (t *TomeQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...TomePaginateOption,
+) (*TomeConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newTomePager(opts)
+	if err != nil {
+		return nil, err
+	}
+	if t, err = pager.applyFilter(t); err != nil {
+		return nil, err
+	}
+	conn := &TomeConnection{Edges: []*TomeEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			if conn.TotalCount, err = t.Clone().Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+
+	t = pager.applyCursors(t, after, before)
+	t = pager.applyOrder(t, last != nil)
+	if limit := paginateLimit(first, last); limit != 0 {
+		t.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := t.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+
+	nodes, err := t.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// TomeOrderFieldName orders Tome by name.
+	TomeOrderFieldName = &TomeOrderField{
+		field: tome.FieldName,
+		toCursor: func(t *Tome) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.Name,
+			}
+		},
+	}
+	// TomeOrderFieldSize orders Tome by size.
+	TomeOrderFieldSize = &TomeOrderField{
+		field: tome.FieldSize,
+		toCursor: func(t *Tome) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.Size,
+			}
+		},
+	}
+	// TomeOrderFieldCreatedAt orders Tome by createdAt.
+	TomeOrderFieldCreatedAt = &TomeOrderField{
+		field: tome.FieldCreatedAt,
+		toCursor: func(t *Tome) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.CreatedAt,
+			}
+		},
+	}
+	// TomeOrderFieldLastModifiedAt orders Tome by lastModifiedAt.
+	TomeOrderFieldLastModifiedAt = &TomeOrderField{
+		field: tome.FieldLastModifiedAt,
+		toCursor: func(t *Tome) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.LastModifiedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f TomeOrderField) String() string {
+	var str string
+	switch f.field {
+	case tome.FieldName:
+		str = "NAME"
+	case tome.FieldSize:
+		str = "SIZE"
+	case tome.FieldCreatedAt:
+		str = "CREATED_AT"
+	case tome.FieldLastModifiedAt:
+		str = "LAST_MODIFIED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f TomeOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *TomeOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("TomeOrderField %T must be a string", v)
+	}
+	switch str {
+	case "NAME":
+		*f = *TomeOrderFieldName
+	case "SIZE":
+		*f = *TomeOrderFieldSize
+	case "CREATED_AT":
+		*f = *TomeOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *TomeOrderFieldLastModifiedAt
+	default:
+		return fmt.Errorf("%s is not a valid TomeOrderField", str)
+	}
+	return nil
+}
+
+// TomeOrderField defines the ordering field of Tome.
+type TomeOrderField struct {
+	field    string
+	toCursor func(*Tome) Cursor
+}
+
+// TomeOrder defines the ordering of Tome.
+type TomeOrder struct {
+	Direction OrderDirection  `json:"direction"`
+	Field     *TomeOrderField `json:"field"`
+}
+
+// DefaultTomeOrder is the default ordering of Tome.
+var DefaultTomeOrder = &TomeOrder{
+	Direction: OrderDirectionAsc,
+	Field: &TomeOrderField{
+		field: tome.FieldID,
+		toCursor: func(t *Tome) Cursor {
+			return Cursor{ID: t.ID}
+		},
+	},
+}
+
+// ToEdge converts Tome into TomeEdge.
+func (t *Tome) ToEdge(order *TomeOrder) *TomeEdge {
+	if order == nil {
+		order = DefaultTomeOrder
+	}
+	return &TomeEdge{
+		Node:   t,
+		Cursor: order.Field.toCursor(t),
 	}
 }
 

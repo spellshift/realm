@@ -9,6 +9,7 @@ import (
 
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
@@ -343,6 +344,448 @@ func (i *FileWhereInput) P() (predicate.File, error) {
 		return predicates[0], nil
 	default:
 		return file.And(predicates...), nil
+	}
+}
+
+// TomeWhereInput represents a where input for filtering Tome queries.
+type TomeWhereInput struct {
+	Predicates []predicate.Tome  `json:"-"`
+	Not        *TomeWhereInput   `json:"not,omitempty"`
+	Or         []*TomeWhereInput `json:"or,omitempty"`
+	And        []*TomeWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "description" field predicates.
+	Description             *string  `json:"description,omitempty"`
+	DescriptionNEQ          *string  `json:"descriptionNEQ,omitempty"`
+	DescriptionIn           []string `json:"descriptionIn,omitempty"`
+	DescriptionNotIn        []string `json:"descriptionNotIn,omitempty"`
+	DescriptionGT           *string  `json:"descriptionGT,omitempty"`
+	DescriptionGTE          *string  `json:"descriptionGTE,omitempty"`
+	DescriptionLT           *string  `json:"descriptionLT,omitempty"`
+	DescriptionLTE          *string  `json:"descriptionLTE,omitempty"`
+	DescriptionContains     *string  `json:"descriptionContains,omitempty"`
+	DescriptionHasPrefix    *string  `json:"descriptionHasPrefix,omitempty"`
+	DescriptionHasSuffix    *string  `json:"descriptionHasSuffix,omitempty"`
+	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
+	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
+
+	// "parameters" field predicates.
+	Parameters             *string  `json:"parameters,omitempty"`
+	ParametersNEQ          *string  `json:"parametersNEQ,omitempty"`
+	ParametersIn           []string `json:"parametersIn,omitempty"`
+	ParametersNotIn        []string `json:"parametersNotIn,omitempty"`
+	ParametersGT           *string  `json:"parametersGT,omitempty"`
+	ParametersGTE          *string  `json:"parametersGTE,omitempty"`
+	ParametersLT           *string  `json:"parametersLT,omitempty"`
+	ParametersLTE          *string  `json:"parametersLTE,omitempty"`
+	ParametersContains     *string  `json:"parametersContains,omitempty"`
+	ParametersHasPrefix    *string  `json:"parametersHasPrefix,omitempty"`
+	ParametersHasSuffix    *string  `json:"parametersHasSuffix,omitempty"`
+	ParametersEqualFold    *string  `json:"parametersEqualFold,omitempty"`
+	ParametersContainsFold *string  `json:"parametersContainsFold,omitempty"`
+
+	// "size" field predicates.
+	Size      *int  `json:"size,omitempty"`
+	SizeNEQ   *int  `json:"sizeNEQ,omitempty"`
+	SizeIn    []int `json:"sizeIn,omitempty"`
+	SizeNotIn []int `json:"sizeNotIn,omitempty"`
+	SizeGT    *int  `json:"sizeGT,omitempty"`
+	SizeGTE   *int  `json:"sizeGTE,omitempty"`
+	SizeLT    *int  `json:"sizeLT,omitempty"`
+	SizeLTE   *int  `json:"sizeLTE,omitempty"`
+
+	// "hash" field predicates.
+	Hash             *string  `json:"hash,omitempty"`
+	HashNEQ          *string  `json:"hashNEQ,omitempty"`
+	HashIn           []string `json:"hashIn,omitempty"`
+	HashNotIn        []string `json:"hashNotIn,omitempty"`
+	HashGT           *string  `json:"hashGT,omitempty"`
+	HashGTE          *string  `json:"hashGTE,omitempty"`
+	HashLT           *string  `json:"hashLT,omitempty"`
+	HashLTE          *string  `json:"hashLTE,omitempty"`
+	HashContains     *string  `json:"hashContains,omitempty"`
+	HashHasPrefix    *string  `json:"hashHasPrefix,omitempty"`
+	HashHasSuffix    *string  `json:"hashHasSuffix,omitempty"`
+	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
+	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
+
+	// "createdAt" field predicates.
+	CreatedAt      *time.Time  `json:"createdat,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdatNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdatIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdatNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdatGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdatGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdatLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdatLTE,omitempty"`
+
+	// "lastModifiedAt" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastmodifiedat,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastmodifiedatNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastmodifiedatIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastmodifiedatNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastmodifiedatGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastmodifiedatGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastmodifiedatLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastmodifiedatLTE,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *TomeWhereInput) AddPredicates(predicates ...predicate.Tome) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the TomeWhereInput filter on the TomeQuery builder.
+func (i *TomeWhereInput) Filter(q *TomeQuery) (*TomeQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyTomeWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyTomeWhereInput is returned in case the TomeWhereInput is empty.
+var ErrEmptyTomeWhereInput = errors.New("ent: empty predicate TomeWhereInput")
+
+// P returns a predicate for filtering tomes.
+// An error is returned if the input is empty or invalid.
+func (i *TomeWhereInput) P() (predicate.Tome, error) {
+	var predicates []predicate.Tome
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, tome.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Tome, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, tome.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Tome, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, tome.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, tome.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, tome.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, tome.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, tome.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, tome.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, tome.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, tome.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, tome.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, tome.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, tome.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, tome.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, tome.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, tome.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, tome.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, tome.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, tome.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, tome.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, tome.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, tome.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, tome.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, tome.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Description != nil {
+		predicates = append(predicates, tome.DescriptionEQ(*i.Description))
+	}
+	if i.DescriptionNEQ != nil {
+		predicates = append(predicates, tome.DescriptionNEQ(*i.DescriptionNEQ))
+	}
+	if len(i.DescriptionIn) > 0 {
+		predicates = append(predicates, tome.DescriptionIn(i.DescriptionIn...))
+	}
+	if len(i.DescriptionNotIn) > 0 {
+		predicates = append(predicates, tome.DescriptionNotIn(i.DescriptionNotIn...))
+	}
+	if i.DescriptionGT != nil {
+		predicates = append(predicates, tome.DescriptionGT(*i.DescriptionGT))
+	}
+	if i.DescriptionGTE != nil {
+		predicates = append(predicates, tome.DescriptionGTE(*i.DescriptionGTE))
+	}
+	if i.DescriptionLT != nil {
+		predicates = append(predicates, tome.DescriptionLT(*i.DescriptionLT))
+	}
+	if i.DescriptionLTE != nil {
+		predicates = append(predicates, tome.DescriptionLTE(*i.DescriptionLTE))
+	}
+	if i.DescriptionContains != nil {
+		predicates = append(predicates, tome.DescriptionContains(*i.DescriptionContains))
+	}
+	if i.DescriptionHasPrefix != nil {
+		predicates = append(predicates, tome.DescriptionHasPrefix(*i.DescriptionHasPrefix))
+	}
+	if i.DescriptionHasSuffix != nil {
+		predicates = append(predicates, tome.DescriptionHasSuffix(*i.DescriptionHasSuffix))
+	}
+	if i.DescriptionEqualFold != nil {
+		predicates = append(predicates, tome.DescriptionEqualFold(*i.DescriptionEqualFold))
+	}
+	if i.DescriptionContainsFold != nil {
+		predicates = append(predicates, tome.DescriptionContainsFold(*i.DescriptionContainsFold))
+	}
+	if i.Parameters != nil {
+		predicates = append(predicates, tome.ParametersEQ(*i.Parameters))
+	}
+	if i.ParametersNEQ != nil {
+		predicates = append(predicates, tome.ParametersNEQ(*i.ParametersNEQ))
+	}
+	if len(i.ParametersIn) > 0 {
+		predicates = append(predicates, tome.ParametersIn(i.ParametersIn...))
+	}
+	if len(i.ParametersNotIn) > 0 {
+		predicates = append(predicates, tome.ParametersNotIn(i.ParametersNotIn...))
+	}
+	if i.ParametersGT != nil {
+		predicates = append(predicates, tome.ParametersGT(*i.ParametersGT))
+	}
+	if i.ParametersGTE != nil {
+		predicates = append(predicates, tome.ParametersGTE(*i.ParametersGTE))
+	}
+	if i.ParametersLT != nil {
+		predicates = append(predicates, tome.ParametersLT(*i.ParametersLT))
+	}
+	if i.ParametersLTE != nil {
+		predicates = append(predicates, tome.ParametersLTE(*i.ParametersLTE))
+	}
+	if i.ParametersContains != nil {
+		predicates = append(predicates, tome.ParametersContains(*i.ParametersContains))
+	}
+	if i.ParametersHasPrefix != nil {
+		predicates = append(predicates, tome.ParametersHasPrefix(*i.ParametersHasPrefix))
+	}
+	if i.ParametersHasSuffix != nil {
+		predicates = append(predicates, tome.ParametersHasSuffix(*i.ParametersHasSuffix))
+	}
+	if i.ParametersEqualFold != nil {
+		predicates = append(predicates, tome.ParametersEqualFold(*i.ParametersEqualFold))
+	}
+	if i.ParametersContainsFold != nil {
+		predicates = append(predicates, tome.ParametersContainsFold(*i.ParametersContainsFold))
+	}
+	if i.Size != nil {
+		predicates = append(predicates, tome.SizeEQ(*i.Size))
+	}
+	if i.SizeNEQ != nil {
+		predicates = append(predicates, tome.SizeNEQ(*i.SizeNEQ))
+	}
+	if len(i.SizeIn) > 0 {
+		predicates = append(predicates, tome.SizeIn(i.SizeIn...))
+	}
+	if len(i.SizeNotIn) > 0 {
+		predicates = append(predicates, tome.SizeNotIn(i.SizeNotIn...))
+	}
+	if i.SizeGT != nil {
+		predicates = append(predicates, tome.SizeGT(*i.SizeGT))
+	}
+	if i.SizeGTE != nil {
+		predicates = append(predicates, tome.SizeGTE(*i.SizeGTE))
+	}
+	if i.SizeLT != nil {
+		predicates = append(predicates, tome.SizeLT(*i.SizeLT))
+	}
+	if i.SizeLTE != nil {
+		predicates = append(predicates, tome.SizeLTE(*i.SizeLTE))
+	}
+	if i.Hash != nil {
+		predicates = append(predicates, tome.HashEQ(*i.Hash))
+	}
+	if i.HashNEQ != nil {
+		predicates = append(predicates, tome.HashNEQ(*i.HashNEQ))
+	}
+	if len(i.HashIn) > 0 {
+		predicates = append(predicates, tome.HashIn(i.HashIn...))
+	}
+	if len(i.HashNotIn) > 0 {
+		predicates = append(predicates, tome.HashNotIn(i.HashNotIn...))
+	}
+	if i.HashGT != nil {
+		predicates = append(predicates, tome.HashGT(*i.HashGT))
+	}
+	if i.HashGTE != nil {
+		predicates = append(predicates, tome.HashGTE(*i.HashGTE))
+	}
+	if i.HashLT != nil {
+		predicates = append(predicates, tome.HashLT(*i.HashLT))
+	}
+	if i.HashLTE != nil {
+		predicates = append(predicates, tome.HashLTE(*i.HashLTE))
+	}
+	if i.HashContains != nil {
+		predicates = append(predicates, tome.HashContains(*i.HashContains))
+	}
+	if i.HashHasPrefix != nil {
+		predicates = append(predicates, tome.HashHasPrefix(*i.HashHasPrefix))
+	}
+	if i.HashHasSuffix != nil {
+		predicates = append(predicates, tome.HashHasSuffix(*i.HashHasSuffix))
+	}
+	if i.HashEqualFold != nil {
+		predicates = append(predicates, tome.HashEqualFold(*i.HashEqualFold))
+	}
+	if i.HashContainsFold != nil {
+		predicates = append(predicates, tome.HashContainsFold(*i.HashContainsFold))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, tome.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, tome.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, tome.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, tome.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, tome.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, tome.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, tome.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, tome.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, tome.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, tome.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, tome.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, tome.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, tome.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, tome.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, tome.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, tome.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyTomeWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return tome.And(predicates...), nil
 	}
 }
 

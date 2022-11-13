@@ -11,6 +11,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/migrate"
 
 	"github.com/kcarretto/realm/tavern/ent/file"
+	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
 
 	"entgo.io/ent/dialect"
@@ -24,6 +25,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// File is the client for interacting with the File builders.
 	File *FileClient
+	// Tome is the client for interacting with the Tome builders.
+	Tome *TomeClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// additional fields for node api
@@ -42,6 +45,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.File = NewFileClient(c.config)
+	c.Tome = NewTomeClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -77,6 +81,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:    ctx,
 		config: cfg,
 		File:   NewFileClient(cfg),
+		Tome:   NewTomeClient(cfg),
 		User:   NewUserClient(cfg),
 	}, nil
 }
@@ -98,6 +103,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:    ctx,
 		config: cfg,
 		File:   NewFileClient(cfg),
+		Tome:   NewTomeClient(cfg),
 		User:   NewUserClient(cfg),
 	}, nil
 }
@@ -108,7 +114,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 //		File.
 //		Query().
 //		Count(ctx)
-//
 func (c *Client) Debug() *Client {
 	if c.debug {
 		return c
@@ -129,6 +134,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.File.Use(hooks...)
+	c.Tome.Use(hooks...)
 	c.User.Use(hooks...)
 }
 
@@ -220,6 +226,96 @@ func (c *FileClient) GetX(ctx context.Context, id int) *File {
 // Hooks returns the client hooks.
 func (c *FileClient) Hooks() []Hook {
 	return c.hooks.File
+}
+
+// TomeClient is a client for the Tome schema.
+type TomeClient struct {
+	config
+}
+
+// NewTomeClient returns a client for the Tome from the given config.
+func NewTomeClient(c config) *TomeClient {
+	return &TomeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tome.Hooks(f(g(h())))`.
+func (c *TomeClient) Use(hooks ...Hook) {
+	c.hooks.Tome = append(c.hooks.Tome, hooks...)
+}
+
+// Create returns a builder for creating a Tome entity.
+func (c *TomeClient) Create() *TomeCreate {
+	mutation := newTomeMutation(c.config, OpCreate)
+	return &TomeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Tome entities.
+func (c *TomeClient) CreateBulk(builders ...*TomeCreate) *TomeCreateBulk {
+	return &TomeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Tome.
+func (c *TomeClient) Update() *TomeUpdate {
+	mutation := newTomeMutation(c.config, OpUpdate)
+	return &TomeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TomeClient) UpdateOne(t *Tome) *TomeUpdateOne {
+	mutation := newTomeMutation(c.config, OpUpdateOne, withTome(t))
+	return &TomeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TomeClient) UpdateOneID(id int) *TomeUpdateOne {
+	mutation := newTomeMutation(c.config, OpUpdateOne, withTomeID(id))
+	return &TomeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Tome.
+func (c *TomeClient) Delete() *TomeDelete {
+	mutation := newTomeMutation(c.config, OpDelete)
+	return &TomeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TomeClient) DeleteOne(t *Tome) *TomeDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TomeClient) DeleteOneID(id int) *TomeDeleteOne {
+	builder := c.Delete().Where(tome.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TomeDeleteOne{builder}
+}
+
+// Query returns a query builder for Tome.
+func (c *TomeClient) Query() *TomeQuery {
+	return &TomeQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Tome entity by its id.
+func (c *TomeClient) Get(ctx context.Context, id int) (*Tome, error) {
+	return c.Query().Where(tome.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TomeClient) GetX(ctx context.Context, id int) *Tome {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TomeClient) Hooks() []Hook {
+	return c.hooks.Tome
 }
 
 // UserClient is a client for the User schema.

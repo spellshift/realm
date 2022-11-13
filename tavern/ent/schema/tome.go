@@ -8,13 +8,13 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// File holds the schema definition for the File entity.
-type File struct {
+// Tome holds the schema definition for the Tome entity.
+type Tome struct {
 	ent.Schema
 }
 
-// Fields of the File.
-func (File) Fields() []ent.Field {
+// Fields of the Tome.
+func (Tome) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
 			NotEmpty().
@@ -22,14 +22,18 @@ func (File) Fields() []ent.Field {
 			Annotations(
 				entgql.OrderField("NAME"),
 			).
-			Comment("The name of the file, used to reference it for downloads"),
+			Comment("Name of the tome"),
+		field.String("description").
+			Comment("Information about the tome"),
+		field.String("parameters").
+			Comment("JSON string describing what parameters are used with the tome"),
 		field.Int("size").
 			Default(0).
 			Min(0).
 			Annotations(
 				entgql.OrderField("SIZE"),
 			).
-			Comment("The size of the file in bytes"),
+			Comment("The size of the tome in bytes"),
 		field.String("hash").
 			MaxLen(100).
 			Comment("A SHA3 digest of the content field"),
@@ -38,23 +42,22 @@ func (File) Fields() []ent.Field {
 			Annotations(
 				entgql.OrderField("CREATED_AT"),
 			).
-			Comment("The timestamp for when the File was created"),
+			Comment("The timestamp for when the Tome was created"),
 		field.Time("lastModifiedAt").
 			Default(time.Now).
 			Annotations(
 				entgql.OrderField("LAST_MODIFIED_AT"),
 			).
-			Comment("The timestamp for when the File was last modified"),
-
+			Comment("The timestamp for when the Tome was last modified"),
 		field.Bytes("content").
 			Annotations(
-				entgql.Skip(), // Don't return file content in GraphQL queries
+				entgql.Skip(), // Don't return tome content in GraphQL queries
 			).
-			Comment("The content of the file"),
+			Comment("The content of the tome"),
 	}
 }
 
-// Edges of the File.
-func (File) Edges() []ent.Edge {
+// Edges of the Tome.
+func (Tome) Edges() []ent.Edge {
 	return []ent.Edge{}
 }

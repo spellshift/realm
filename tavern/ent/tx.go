@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// File is the client for interacting with the File builders.
 	File *FileClient
+	// Tome is the client for interacting with the Tome builders.
+	Tome *TomeClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -148,6 +150,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.File = NewFileClient(tx.config)
+	tx.Tome = NewTomeClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

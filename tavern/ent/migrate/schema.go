@@ -24,6 +24,24 @@ var (
 		Columns:    FilesColumns,
 		PrimaryKey: []*schema.Column{FilesColumns[0]},
 	}
+	// TomesColumns holds the columns for the "tomes" table.
+	TomesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString},
+		{Name: "parameters", Type: field.TypeString},
+		{Name: "size", Type: field.TypeInt, Default: 0},
+		{Name: "hash", Type: field.TypeString, Size: 100},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "content", Type: field.TypeBytes},
+	}
+	// TomesTable holds the schema information for the "tomes" table.
+	TomesTable = &schema.Table{
+		Name:       "tomes",
+		Columns:    TomesColumns,
+		PrimaryKey: []*schema.Column{TomesColumns[0]},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -43,6 +61,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		FilesTable,
+		TomesTable,
 		UsersTable,
 	}
 )

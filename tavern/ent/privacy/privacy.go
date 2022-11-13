@@ -173,6 +173,30 @@ func (f FileMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) 
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.FileMutation", m)
 }
 
+// The TomeQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type TomeQueryRuleFunc func(context.Context, *ent.TomeQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f TomeQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.TomeQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.TomeQuery", q)
+}
+
+// The TomeMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type TomeMutationRuleFunc func(context.Context, *ent.TomeMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f TomeMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.TomeMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.TomeMutation", m)
+}
+
 // The UserQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type UserQueryRuleFunc func(context.Context, *ent.UserQuery) error

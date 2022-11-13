@@ -7,6 +7,7 @@ import (
 
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/schema"
+	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
@@ -38,6 +39,30 @@ func init() {
 	fileDescLastModifiedAt := fileFields[4].Descriptor()
 	// file.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
 	file.DefaultLastModifiedAt = fileDescLastModifiedAt.Default.(func() time.Time)
+	tomeFields := schema.Tome{}.Fields()
+	_ = tomeFields
+	// tomeDescName is the schema descriptor for name field.
+	tomeDescName := tomeFields[0].Descriptor()
+	// tome.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tome.NameValidator = tomeDescName.Validators[0].(func(string) error)
+	// tomeDescSize is the schema descriptor for size field.
+	tomeDescSize := tomeFields[3].Descriptor()
+	// tome.DefaultSize holds the default value on creation for the size field.
+	tome.DefaultSize = tomeDescSize.Default.(int)
+	// tome.SizeValidator is a validator for the "size" field. It is called by the builders before save.
+	tome.SizeValidator = tomeDescSize.Validators[0].(func(int) error)
+	// tomeDescHash is the schema descriptor for hash field.
+	tomeDescHash := tomeFields[4].Descriptor()
+	// tome.HashValidator is a validator for the "hash" field. It is called by the builders before save.
+	tome.HashValidator = tomeDescHash.Validators[0].(func(string) error)
+	// tomeDescCreatedAt is the schema descriptor for createdAt field.
+	tomeDescCreatedAt := tomeFields[5].Descriptor()
+	// tome.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	tome.DefaultCreatedAt = tomeDescCreatedAt.Default.(func() time.Time)
+	// tomeDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	tomeDescLastModifiedAt := tomeFields[6].Descriptor()
+	// tome.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	tome.DefaultLastModifiedAt = tomeDescLastModifiedAt.Default.(func() time.Time)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescName is the schema descriptor for Name field.
