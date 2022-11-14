@@ -24,4 +24,3 @@ window.onload=function(){
         toggleDarkMode.textContent = 'Dark mode';
     }
 }
-  

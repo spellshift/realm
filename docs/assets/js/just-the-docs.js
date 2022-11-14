@@ -157,50 +157,6 @@ function searchLoaded(index, docs) {
       query.term(tokens, {
         wildcard: lunr.Query.wildcard.TRAILING
       });
-  
-  // Show/hide mobile menu
-  
-  function initNav() {
-    jtd.addEvent(document, 'click', function(e){
-      var target = e.target;
-      while (target && !(target.classList && target.classList.contains('nav-list-expander'))) {
-        target = target.parentNode;
-      }
-      if (target) {
-        e.preventDefault();
-        target.parentNode.classList.toggle('active');
-      }
-    });
-
-  function update() {
-    currentSearchIndex++;
-
-    var input = searchInput.value;
-    if (input === '') {
-      hideSearch();
-    } else {
-      showSearch();
-      // scroll search input into view, workaround for iOS Safari
-      window.scroll(0, -1);
-      setTimeout(function(){ window.scroll(0, 0); }, 0);
-    }
-    if (input === currentInput) {
-      return;
-    }
-    currentInput = input;
-    searchResults.innerHTML = '';
-    if (input === '') {
-      return;
-    }
-
-    var results = index.query(function (query) {
-      var tokens = lunr.tokenizer(input)
-      query.term(tokens, {
-        boost: 10
-      });
-      query.term(tokens, {
-        wildcard: lunr.Query.wildcard.TRAILING
-      });
     });
 
     if ((results.length == 0) && (input.length > 2)) {
