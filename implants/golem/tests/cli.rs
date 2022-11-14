@@ -2,6 +2,7 @@ use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
 use std::process::{Command,Stdio}; // Run programs
 use std::io::prelude::*;
+use std::str;
 
 // Test running `./golem ./nonexistentdir/run.tome`
 #[test]
@@ -68,6 +69,7 @@ fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
     let mut child = Command::new(golem_exec_path)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .expect("Failed to spawn child process");
 
@@ -77,7 +79,7 @@ fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
     });
 
     let output = child.wait_with_output().expect("Failed to read stdout");
-    assert_eq!(output.status.code().unwrap(), 0);
+    assert_eq!(str::from_utf8(&output.stderr)?, "hello\n");
 
     Ok(())
 }
