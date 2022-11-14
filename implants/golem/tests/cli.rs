@@ -1,6 +1,7 @@
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
-use std::process::Command; // Run programs
+use std::process::{Command,Stdio}; // Run programs
+use std::io::prelude::*;
 
 // Test running `./golem ./nonexistentdir/run.tome`
 #[test]
@@ -56,33 +57,27 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
     Ok(())
 }
 
-// WIP currently only.
-// Test running `echo "dir(file)" | ./golem` for interactive mode.
+// Test running `echo -e "test_var = 'hello'\nprint(test_var)" | ./golem` for interactive mode.
+// verifies that the process exits successfully. Not the output of the command.
+// The way the interactive context returns data doesn't seem to work with how Command::stdout() works.
 #[test]
 fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
-    // let mut cmd: Command = Command::cargo_bin("golem")?;
+    let golem_exec = Command::cargo_bin("golem")?;
+    let golem_exec_path = golem_exec.get_program();
 
-    let mut cmd: Command = Command::cargo_bin("golem")?;
-    // let mut child = Command::new(cmd)?;
+    let mut child = Command::new(golem_exec_path)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn child process");
 
-    // let mut child = Command::new("cargo")
-    //     .stdin(Stdio::piped())
-    //     .stdout(Stdio::piped())
-    //     .spawn()?;
+    let mut stdin = child.stdin.take().expect("Failed to open stdin");
+    std::thread::spawn(move || {
+        let _ = stdin.write_all("test_var = 'hello'\nprint(test_var)".as_bytes());
+    });
 
-    // let child_stdin = child.stdin.as_mut().unwrap();
-    // child_stdin.write_all("test_var = 'hello'\nprint(test_var)".as_bytes())?;
-
-    // drop(child_stdin);
-
-    // let output = child.wait_with_output()?;
-
-    // let left_assert = format!("{:?}", output);
-    // assert_eq!(left_assert, "test".to_string());
-
-    cmd.assert()
-        .success();
-        // .stdout(predicate::str::contains("[\"[\\\"append\\\", \\\"copy\\\", \\\"download\\\", \\\"exists\\\", \\\"hash\\\", \\\"is_dir\\\", \\\"is_file\\\", \\\"mkdir\\\", \\\"read\\\", \\\"remove\\\", \\\"rename\\\", \\\"replace\\\", \\\"replace_all\\\", \\\"timestomp\\\", \\\"write\\\"]\"]"));
+    let output = child.wait_with_output().expect("Failed to read stdout");
+    assert_eq!(output.status.code().unwrap(), 0);
 
     Ok(())
 }

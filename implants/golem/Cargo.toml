@@ -18,5 +18,6 @@ thiserror = "1.0.30"
 lsp-types = "0.93.0"
 
 [dev-dependencies]
-assert_cmd = "2.0"
+assert_cmd = "2.0.6"
 predicates = "2.1"
+tempfile = "3.3.0"
