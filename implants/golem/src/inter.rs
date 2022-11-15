@@ -91,7 +91,7 @@ fn drain(xs: impl Iterator<Item = EvalMessage>, json: bool, stats: &mut Stats) {
             if !error.is_empty() && !error.ends_with('\n') {
                 error.push('\n');
             }
-            print!("{}", error);
+            eprint!("{}", error);
         } else {
             println!("{}", x);
         }
