@@ -5,6 +5,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 )
 
@@ -60,4 +61,11 @@ func (Tome) Fields() []ent.Field {
 // Edges of the Tome.
 func (Tome) Edges() []ent.Edge {
 	return []ent.Edge{}
+}
+
+// Annotations describes additional information for the ent.
+func (Tome) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.QueryField(),
+	}
 }

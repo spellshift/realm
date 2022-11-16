@@ -9,6 +9,18 @@ import (
 // File is the predicate function for file builders.
 type File func(*sql.Selector)
 
+// Job is the predicate function for job builders.
+type Job func(*sql.Selector)
+
+// Tag is the predicate function for tag builders.
+type Tag func(*sql.Selector)
+
+// Target is the predicate function for target builders.
+type Target func(*sql.Selector)
+
+// Task is the predicate function for task builders.
+type Task func(*sql.Selector)
+
 // Tome is the predicate function for tome builders.
 type Tome func(*sql.Selector)
 

@@ -6,7 +6,11 @@ import (
 	"time"
 
 	"github.com/kcarretto/realm/tavern/ent/file"
+	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/schema"
+	"github.com/kcarretto/realm/tavern/ent/tag"
+	"github.com/kcarretto/realm/tavern/ent/target"
+	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
 )
@@ -39,6 +43,30 @@ func init() {
 	fileDescLastModifiedAt := fileFields[4].Descriptor()
 	// file.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
 	file.DefaultLastModifiedAt = fileDescLastModifiedAt.Default.(func() time.Time)
+	jobFields := schema.Job{}.Fields()
+	_ = jobFields
+	// jobDescName is the schema descriptor for name field.
+	jobDescName := jobFields[0].Descriptor()
+	// job.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	job.NameValidator = jobDescName.Validators[0].(func(string) error)
+	tagFields := schema.Tag{}.Fields()
+	_ = tagFields
+	// tagDescName is the schema descriptor for name field.
+	tagDescName := tagFields[0].Descriptor()
+	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	targetFields := schema.Target{}.Fields()
+	_ = targetFields
+	// targetDescName is the schema descriptor for name field.
+	targetDescName := targetFields[0].Descriptor()
+	// target.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	target.NameValidator = targetDescName.Validators[0].(func(string) error)
+	taskFields := schema.Task{}.Fields()
+	_ = taskFields
+	// taskDescName is the schema descriptor for name field.
+	taskDescName := taskFields[0].Descriptor()
+	// task.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	task.NameValidator = taskDescName.Validators[0].(func(string) error)
 	tomeFields := schema.Tome{}.Fields()
 	_ = tomeFields
 	// tomeDescName is the schema descriptor for name field.

@@ -24,6 +24,75 @@ var (
 		Columns:    FilesColumns,
 		PrimaryKey: []*schema.Column{FilesColumns[0]},
 	}
+	// JobsColumns holds the columns for the "jobs" table.
+	JobsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "job_created_by", Type: field.TypeInt},
+		{Name: "job_tome", Type: field.TypeInt},
+	}
+	// JobsTable holds the schema information for the "jobs" table.
+	JobsTable = &schema.Table{
+		Name:       "jobs",
+		Columns:    JobsColumns,
+		PrimaryKey: []*schema.Column{JobsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "jobs_users_createdBy",
+				Columns:    []*schema.Column{JobsColumns[2]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "jobs_tomes_tome",
+				Columns:    []*schema.Column{JobsColumns[3]},
+				RefColumns: []*schema.Column{TomesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TagsColumns holds the columns for the "tags" table.
+	TagsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+	}
+	// TagsTable holds the schema information for the "tags" table.
+	TagsTable = &schema.Table{
+		Name:       "tags",
+		Columns:    TagsColumns,
+		PrimaryKey: []*schema.Column{TagsColumns[0]},
+	}
+	// TargetsColumns holds the columns for the "targets" table.
+	TargetsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+	}
+	// TargetsTable holds the schema information for the "targets" table.
+	TargetsTable = &schema.Table{
+		Name:       "targets",
+		Columns:    TargetsColumns,
+		PrimaryKey: []*schema.Column{TargetsColumns[0]},
+	}
+	// TasksColumns holds the columns for the "tasks" table.
+	TasksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "job_tasks", Type: field.TypeInt},
+	}
+	// TasksTable holds the schema information for the "tasks" table.
+	TasksTable = &schema.Table{
+		Name:       "tasks",
+		Columns:    TasksColumns,
+		PrimaryKey: []*schema.Column{TasksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tasks_jobs_tasks",
+				Columns:    []*schema.Column{TasksColumns[2]},
+				RefColumns: []*schema.Column{JobsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// TomesColumns holds the columns for the "tomes" table.
 	TomesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -58,13 +127,48 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
+	// TargetTagsColumns holds the columns for the "target_tags" table.
+	TargetTagsColumns = []*schema.Column{
+		{Name: "target_id", Type: field.TypeInt},
+		{Name: "tag_id", Type: field.TypeInt},
+	}
+	// TargetTagsTable holds the schema information for the "target_tags" table.
+	TargetTagsTable = &schema.Table{
+		Name:       "target_tags",
+		Columns:    TargetTagsColumns,
+		PrimaryKey: []*schema.Column{TargetTagsColumns[0], TargetTagsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "target_tags_target_id",
+				Columns:    []*schema.Column{TargetTagsColumns[0]},
+				RefColumns: []*schema.Column{TargetsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "target_tags_tag_id",
+				Columns:    []*schema.Column{TargetTagsColumns[1]},
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		FilesTable,
+		JobsTable,
+		TagsTable,
+		TargetsTable,
+		TasksTable,
 		TomesTable,
 		UsersTable,
+		TargetTagsTable,
 	}
 )
 
 func init() {
+	JobsTable.ForeignKeys[0].RefTable = UsersTable
+	JobsTable.ForeignKeys[1].RefTable = TomesTable
+	TasksTable.ForeignKeys[0].RefTable = JobsTable
+	TargetTagsTable.ForeignKeys[0].RefTable = TargetsTable
+	TargetTagsTable.ForeignKeys[1].RefTable = TagsTable
 }

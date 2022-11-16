@@ -47,6 +47,14 @@ type ComplexityRoot struct {
 		Size           func(childComplexity int) int
 	}
 
+	Job struct {
+		CreatedBy func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Tasks     func(childComplexity int) int
+		Tome      func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateUser func(childComplexity int, input ent.CreateUserInput) int
 		UpdateUser func(childComplexity int, id int, input ent.UpdateUserInput) int
@@ -60,9 +68,32 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Node  func(childComplexity int, id int) int
-		Nodes func(childComplexity int, ids []int) int
-		Users func(childComplexity int) int
+		Files   func(childComplexity int) int
+		Jobs    func(childComplexity int) int
+		Node    func(childComplexity int, id int) int
+		Nodes   func(childComplexity int, ids []int) int
+		Tags    func(childComplexity int) int
+		Targets func(childComplexity int) int
+		Tomes   func(childComplexity int) int
+		Users   func(childComplexity int) int
+	}
+
+	Tag struct {
+		ID      func(childComplexity int) int
+		Name    func(childComplexity int) int
+		Targets func(childComplexity int) int
+	}
+
+	Target struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
+		Tags func(childComplexity int) int
+	}
+
+	Task struct {
+		ID   func(childComplexity int) int
+		Job  func(childComplexity int) int
+		Name func(childComplexity int) int
 	}
 
 	Tome struct {
@@ -142,6 +173,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.File.Size(childComplexity), true
 
+	case "Job.createdby":
+		if e.complexity.Job.CreatedBy == nil {
+			break
+		}
+
+		return e.complexity.Job.CreatedBy(childComplexity), true
+
+	case "Job.id":
+		if e.complexity.Job.ID == nil {
+			break
+		}
+
+		return e.complexity.Job.ID(childComplexity), true
+
+	case "Job.name":
+		if e.complexity.Job.Name == nil {
+			break
+		}
+
+		return e.complexity.Job.Name(childComplexity), true
+
+	case "Job.tasks":
+		if e.complexity.Job.Tasks == nil {
+			break
+		}
+
+		return e.complexity.Job.Tasks(childComplexity), true
+
+	case "Job.tome":
+		if e.complexity.Job.Tome == nil {
+			break
+		}
+
+		return e.complexity.Job.Tome(childComplexity), true
+
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
 			break
@@ -194,6 +260,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "Query.files":
+		if e.complexity.Query.Files == nil {
+			break
+		}
+
+		return e.complexity.Query.Files(childComplexity), true
+
+	case "Query.jobs":
+		if e.complexity.Query.Jobs == nil {
+			break
+		}
+
+		return e.complexity.Query.Jobs(childComplexity), true
+
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
 			break
@@ -218,12 +298,96 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]int)), true
 
+	case "Query.tags":
+		if e.complexity.Query.Tags == nil {
+			break
+		}
+
+		return e.complexity.Query.Tags(childComplexity), true
+
+	case "Query.targets":
+		if e.complexity.Query.Targets == nil {
+			break
+		}
+
+		return e.complexity.Query.Targets(childComplexity), true
+
+	case "Query.tomes":
+		if e.complexity.Query.Tomes == nil {
+			break
+		}
+
+		return e.complexity.Query.Tomes(childComplexity), true
+
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
 			break
 		}
 
 		return e.complexity.Query.Users(childComplexity), true
+
+	case "Tag.id":
+		if e.complexity.Tag.ID == nil {
+			break
+		}
+
+		return e.complexity.Tag.ID(childComplexity), true
+
+	case "Tag.name":
+		if e.complexity.Tag.Name == nil {
+			break
+		}
+
+		return e.complexity.Tag.Name(childComplexity), true
+
+	case "Tag.targets":
+		if e.complexity.Tag.Targets == nil {
+			break
+		}
+
+		return e.complexity.Tag.Targets(childComplexity), true
+
+	case "Target.id":
+		if e.complexity.Target.ID == nil {
+			break
+		}
+
+		return e.complexity.Target.ID(childComplexity), true
+
+	case "Target.name":
+		if e.complexity.Target.Name == nil {
+			break
+		}
+
+		return e.complexity.Target.Name(childComplexity), true
+
+	case "Target.tags":
+		if e.complexity.Target.Tags == nil {
+			break
+		}
+
+		return e.complexity.Target.Tags(childComplexity), true
+
+	case "Task.id":
+		if e.complexity.Task.ID == nil {
+			break
+		}
+
+		return e.complexity.Task.ID(childComplexity), true
+
+	case "Task.job":
+		if e.complexity.Task.Job == nil {
+			break
+		}
+
+		return e.complexity.Task.Job(childComplexity), true
+
+	case "Task.name":
+		if e.complexity.Task.Name == nil {
+			break
+		}
+
+		return e.complexity.Task.Name(childComplexity), true
 
 	case "Tome.createdat":
 		if e.complexity.Tome.CreatedAt == nil {
@@ -327,6 +491,14 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
+		ec.unmarshalInputJobOrder,
+		ec.unmarshalInputJobWhereInput,
+		ec.unmarshalInputTagOrder,
+		ec.unmarshalInputTagWhereInput,
+		ec.unmarshalInputTargetOrder,
+		ec.unmarshalInputTargetWhereInput,
+		ec.unmarshalInputTaskOrder,
+		ec.unmarshalInputTaskWhereInput,
 		ec.unmarshalInputTomeOrder,
 		ec.unmarshalInputTomeWhereInput,
 		ec.unmarshalInputUpdateUserInput,
@@ -515,6 +687,66 @@ input FileWhereInput {
   lastmodifiedatLT: Time
   lastmodifiedatLTE: Time
 }
+type Job implements Node {
+  id: ID!
+  """Name of the job"""
+  name: String!
+  createdby: User! @goField(name: "CreatedBy", forceResolver: false)
+  tome: Tome!
+  tasks: [Task!]
+}
+"""Ordering options for Job connections"""
+input JobOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Jobs."""
+  field: JobOrderField!
+}
+"""Properties by which Job connections can be ordered."""
+enum JobOrderField {
+  NAME
+}
+"""
+JobWhereInput is used for filtering Job objects.
+Input was generated by ent.
+"""
+input JobWhereInput {
+  not: JobWhereInput
+  and: [JobWhereInput!]
+  or: [JobWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """name field predicates"""
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """createdBy edge predicates"""
+  hasCreatedBy: Boolean
+  hasCreatedByWith: [UserWhereInput!]
+  """tome edge predicates"""
+  hasTome: Boolean
+  hasTomeWith: [TomeWhereInput!]
+  """tasks edge predicates"""
+  hasTasks: Boolean
+  hasTasksWith: [TaskWhereInput!]
+}
 """
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
@@ -555,7 +787,168 @@ type Query {
     """The list of node IDs."""
     ids: [ID!]!
   ): [Node]!
+  files: [File!]!
+  jobs: [Job!]!
+  tags: [Tag!]!
+  targets: [Target!]!
+  tomes: [Tome!]!
   users: [User!]!
+}
+type Tag implements Node {
+  id: ID!
+  """Name of the tag"""
+  name: String!
+  targets: [Target!]!
+}
+"""Ordering options for Tag connections"""
+input TagOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Tags."""
+  field: TagOrderField!
+}
+"""Properties by which Tag connections can be ordered."""
+enum TagOrderField {
+  NAME
+}
+"""
+TagWhereInput is used for filtering Tag objects.
+Input was generated by ent.
+"""
+input TagWhereInput {
+  not: TagWhereInput
+  and: [TagWhereInput!]
+  or: [TagWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """name field predicates"""
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """targets edge predicates"""
+  hasTargets: Boolean
+  hasTargetsWith: [TargetWhereInput!]
+}
+type Target implements Node {
+  id: ID!
+  """Human-readable name of the target"""
+  name: String!
+  tags: [Tag!]
+}
+"""Ordering options for Target connections"""
+input TargetOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Targets."""
+  field: TargetOrderField!
+}
+"""Properties by which Target connections can be ordered."""
+enum TargetOrderField {
+  NAME
+}
+"""
+TargetWhereInput is used for filtering Target objects.
+Input was generated by ent.
+"""
+input TargetWhereInput {
+  not: TargetWhereInput
+  and: [TargetWhereInput!]
+  or: [TargetWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """name field predicates"""
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """tags edge predicates"""
+  hasTags: Boolean
+  hasTagsWith: [TagWhereInput!]
+}
+type Task implements Node {
+  id: ID!
+  """Name of the task"""
+  name: String!
+  job: Job!
+}
+"""Ordering options for Task connections"""
+input TaskOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Tasks."""
+  field: TaskOrderField!
+}
+"""Properties by which Task connections can be ordered."""
+enum TaskOrderField {
+  NAME
+}
+"""
+TaskWhereInput is used for filtering Task objects.
+Input was generated by ent.
+"""
+input TaskWhereInput {
+  not: TaskWhereInput
+  and: [TaskWhereInput!]
+  or: [TaskWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """name field predicates"""
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """job edge predicates"""
+  hasJob: Boolean
+  hasJobWith: [JobWhereInput!]
 }
 type Tome implements Node {
   id: ID!

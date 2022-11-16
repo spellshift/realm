@@ -23,7 +23,12 @@ autobind:
   - github.com/kcarretto/realm/tavern/ent
   - github.com/kcarretto/realm/tavern/ent/file
   - github.com/kcarretto/realm/tavern/ent/user
-
+  - github.com/kcarretto/realm/tavern/ent/tag
+  - github.com/kcarretto/realm/tavern/ent/target
+  - github.com/kcarretto/realm/tavern/ent/job
+  - github.com/kcarretto/realm/tavern/ent/task
+  - github.com/kcarretto/realm/tavern/ent/tome
+ 
 struct_tag: json
 
 models:

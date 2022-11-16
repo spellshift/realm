@@ -108,11 +108,12 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 ## Creating a New Model
 1. Initialize the schema `cd tavern && go run entgo.io/ent/cmd/ent init <NAME>`
 2. Update the generated file in `tavern/ent/schema/<NAME>.go`
-3. Update `tavern/graphql/gqlgen.yml` to include the ent types in the `autobind:` section (e.g.`- github.com/kcarretto/realm/tavern/ent/<NAME>`)
-4. **Optionally** update the `models:` section of `tavern/graphql/gqlgen.yml` to bind any GraphQL enum types to their respective `entgo` generated types (e.g. `github.com/kcarretto/realm/tavern/ent/<NAME>.<ENUM_FIELD>`)
-5. Run `go generate ./tavern/...` from the project root
+3. Ensure you include a `func (<NAME>) Annotations() []schema.Annotation` method which returns a `entgql.QueryField()` annotation to tell entgo to generate a GraphQL root query for this model (if you'd like it to be queryable from the root query).
+4. Update `tavern/graphql/gqlgen.yml` to include the ent types in the `autobind:` section (e.g.`- github.com/kcarretto/realm/tavern/ent/<NAME>`)
+5. **Optionally** update the `models:` section of `tavern/graphql/gqlgen.yml` to bind any GraphQL enum types to their respective `entgo` generated types (e.g. `github.com/kcarretto/realm/tavern/ent/<NAME>.<ENUM_FIELD>`)
+6. Run `go generate ./tavern/...` from the project root
     * **Note:** There is currently a bug with entgo & gqlgen where you may sometimes get the error `failed to load schema: schema/schema.graphql:15: Undefined type Time.`, this is usually fixed by running `go generate ./tavern/...` again
-6. You will notice auto-generated go "resolver" files have been updated with new methods to query your model (e.g. `func (r *queryResolver) <NAME>s ...`)
+7. You will notice auto-generated go "resolver" files have been updated with new methods to query your model (e.g. `func (r *queryResolver) <NAME>s ...`)
     * This must be implemented (e.g. `return r.client.<NAME>.Query().All(ctx)` where <NAME> is the name of your model)
 
 ## Adding Mutations

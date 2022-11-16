@@ -78,6 +78,360 @@ func newFilePaginateArgs(rv map[string]interface{}) *filePaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (j *JobQuery) CollectFields(ctx context.Context, satisfies ...string) (*JobQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return j, nil
+	}
+	if err := j.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return j, nil
+}
+
+func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "createdby":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &UserQuery{config: j.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			j.withCreatedBy = query
+		case "tome":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &TomeQuery{config: j.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			j.withTome = query
+		case "tasks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &TaskQuery{config: j.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			j.WithNamedTasks(alias, func(wq *TaskQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type jobPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []JobPaginateOption
+}
+
+func newJobPaginateArgs(rv map[string]interface{}) *jobPaginateArgs {
+	args := &jobPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				err1, err2 error
+				order      = &JobOrder{Field: &JobOrderField{}}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithJobOrder(order))
+			}
+		case *JobOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithJobOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*JobWhereInput); ok {
+		args.opts = append(args.opts, WithJobFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (t *TagQuery) CollectFields(ctx context.Context, satisfies ...string) (*TagQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return t, nil
+	}
+	if err := t.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (t *TagQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "targets":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &TargetQuery{config: t.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedTargets(alias, func(wq *TargetQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type tagPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []TagPaginateOption
+}
+
+func newTagPaginateArgs(rv map[string]interface{}) *tagPaginateArgs {
+	args := &tagPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				err1, err2 error
+				order      = &TagOrder{Field: &TagOrderField{}}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithTagOrder(order))
+			}
+		case *TagOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithTagOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*TagWhereInput); ok {
+		args.opts = append(args.opts, WithTagFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (t *TargetQuery) CollectFields(ctx context.Context, satisfies ...string) (*TargetQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return t, nil
+	}
+	if err := t.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (t *TargetQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "tags":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &TagQuery{config: t.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedTags(alias, func(wq *TagQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type targetPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []TargetPaginateOption
+}
+
+func newTargetPaginateArgs(rv map[string]interface{}) *targetPaginateArgs {
+	args := &targetPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				err1, err2 error
+				order      = &TargetOrder{Field: &TargetOrderField{}}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithTargetOrder(order))
+			}
+		case *TargetOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithTargetOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*TargetWhereInput); ok {
+		args.opts = append(args.opts, WithTargetFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (t *TaskQuery) CollectFields(ctx context.Context, satisfies ...string) (*TaskQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return t, nil
+	}
+	if err := t.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (t *TaskQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "job":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &JobQuery{config: t.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.withJob = query
+		}
+	}
+	return nil
+}
+
+type taskPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []TaskPaginateOption
+}
+
+func newTaskPaginateArgs(rv map[string]interface{}) *taskPaginateArgs {
+	args := &taskPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				err1, err2 error
+				order      = &TaskOrder{Field: &TaskOrderField{}}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithTaskOrder(order))
+			}
+		case *TaskOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithTaskOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*TaskWhereInput); ok {
+		args.opts = append(args.opts, WithTaskFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (t *TomeQuery) CollectFields(ctx context.Context, satisfies ...string) (*TomeQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
