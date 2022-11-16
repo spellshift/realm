@@ -25,6 +25,8 @@ Eg. port scanning could be implemented using a for loop and tcp\_connect however
 
 Want to contribute to Eldritch but aren't sure what to build check our ["good first issue" tickets.](https://github.com/KCarretto/realm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
+# Creating a function
+
 ## What files should I modify to make an Eldritch function.
 ---
 #### Documentation
@@ -151,7 +153,7 @@ Check out [this simple example of a PR](https://github.com/KCarretto/realm/pull/
 This PR implements the `file.is_file` function into Eldritch and is a simple example of how to get started.
 
 
-## Notes about asynchronous Eldritch code.
+# Notes about asynchronous Eldritch code
 ---
 ### Async example
 In order to run concurrent tasks we need to build an asynchronous function. This is useful if you're building a function that needs to do two things at once or that can benefit from running discrete jobs in parallel.
