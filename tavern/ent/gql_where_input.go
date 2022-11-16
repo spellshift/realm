@@ -627,6 +627,12 @@ type TagWhereInput struct {
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
 
+	// "kind" field predicates.
+	Kind      *tag.Kind  `json:"kind,omitempty"`
+	KindNEQ   *tag.Kind  `json:"kindNEQ,omitempty"`
+	KindIn    []tag.Kind `json:"kindIn,omitempty"`
+	KindNotIn []tag.Kind `json:"kindNotIn,omitempty"`
+
 	// "targets" edge predicates.
 	HasTargets     *bool               `json:"hasTargets,omitempty"`
 	HasTargetsWith []*TargetWhereInput `json:"hasTargetsWith,omitempty"`
@@ -765,6 +771,18 @@ func (i *TagWhereInput) P() (predicate.Tag, error) {
 	}
 	if i.NameContainsFold != nil {
 		predicates = append(predicates, tag.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Kind != nil {
+		predicates = append(predicates, tag.KindEQ(*i.Kind))
+	}
+	if i.KindNEQ != nil {
+		predicates = append(predicates, tag.KindNEQ(*i.KindNEQ))
+	}
+	if len(i.KindIn) > 0 {
+		predicates = append(predicates, tag.KindIn(i.KindIn...))
+	}
+	if len(i.KindNotIn) > 0 {
+		predicates = append(predicates, tag.KindNotIn(i.KindNotIn...))
 	}
 
 	if i.HasTargets != nil {

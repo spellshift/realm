@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -1040,6 +1041,8 @@ func (ec *executionContext) fieldContext_Query_tags(ctx context.Context, field g
 				return ec.fieldContext_Tag_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Tag_name(ctx, field)
+			case "kind":
+				return ec.fieldContext_Tag_kind(ctx, field)
 			case "targets":
 				return ec.fieldContext_Tag_targets(ctx, field)
 			}
@@ -1436,6 +1439,50 @@ func (ec *executionContext) fieldContext_Tag_name(ctx context.Context, field gra
 	return fc, nil
 }
 
+func (ec *executionContext) _Tag_kind(ctx context.Context, field graphql.CollectedField, obj *ent.Tag) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tag_kind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(tag.Kind)
+	fc.Result = res
+	return ec.marshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tag_kind(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tag",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type TagTagKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Tag_targets(ctx context.Context, field graphql.CollectedField, obj *ent.Tag) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Tag_targets(ctx, field)
 	if err != nil {
@@ -1616,6 +1663,8 @@ func (ec *executionContext) fieldContext_Target_tags(ctx context.Context, field 
 				return ec.fieldContext_Tag_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Tag_name(ctx, field)
+			case "kind":
+				return ec.fieldContext_Tag_kind(ctx, field)
 			case "targets":
 				return ec.fieldContext_Tag_targets(ctx, field)
 			}
@@ -3300,7 +3349,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasTargets", "hasTargetsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasTargets", "hasTargetsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3496,6 +3545,38 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContainsFold"))
 			it.NameContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "kind":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			it.Kind, err = ec.unmarshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "kindNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindNEQ"))
+			it.KindNEQ, err = ec.unmarshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "kindIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindIn"))
+			it.KindIn, err = ec.unmarshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "kindNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindNotIn"))
+			it.KindNotIn, err = ec.unmarshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5710,6 +5791,13 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "kind":
+
+			out.Values[i] = ec._Tag_kind(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "targets":
 			field := field
 
@@ -6258,6 +6346,16 @@ func (ec *executionContext) marshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋ
 	return v
 }
 
+func (ec *executionContext) unmarshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (tag.Kind, error) {
+	var res tag.Kind
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v tag.Kind) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInput(ctx context.Context, v interface{}) (*ent.TagWhereInput, error) {
 	res, err := ec.unmarshalInputTagWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -6632,6 +6730,89 @@ func (ec *executionContext) marshalOTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx context.Context, v interface{}) ([]tag.Kind, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]tag.Kind, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx context.Context, sel ast.SelectionSet, v []tag.Kind) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (*tag.Kind, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(tag.Kind)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v *tag.Kind) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TagWhereInput, error) {

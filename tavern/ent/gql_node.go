@@ -156,7 +156,7 @@ func (t *Tag) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Tag",
-		Fields: make([]*Field, 1),
+		Fields: make([]*Field, 2),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -166,6 +166,14 @@ func (t *Tag) Node(ctx context.Context) (node *Node, err error) {
 	node.Fields[0] = &Field{
 		Type:  "string",
 		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Kind); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "tag.Kind",
+		Name:  "kind",
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{

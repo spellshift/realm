@@ -232,6 +232,8 @@ type Tag implements Node {
   id: ID!
   """Name of the tag"""
   name: String!
+  """Describes the type of tag this is"""
+  kind: TagTagKind!
   targets: [Target!]!
 }
 """Ordering options for Tag connections"""
@@ -244,6 +246,11 @@ input TagOrder {
 """Properties by which Tag connections can be ordered."""
 enum TagOrderField {
   NAME
+}
+"""TagTagKind is enum for the field kind"""
+enum TagTagKind @goModel(model: "github.com/kcarretto/realm/tavern/ent/tag.Kind") {
+  group
+  service
 }
 """
 TagWhereInput is used for filtering Tag objects.
@@ -276,6 +283,11 @@ input TagWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
+  """kind field predicates"""
+  kind: TagTagKind
+  kindNEQ: TagTagKind
+  kindIn: [TagTagKind!]
+  kindNotIn: [TagTagKind!]
   """targets edge predicates"""
   hasTargets: Boolean
   hasTargetsWith: [TargetWhereInput!]

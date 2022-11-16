@@ -1185,6 +1185,7 @@ type TagMutation struct {
 	typ            string
 	id             *int
 	name           *string
+	kind           *tag.Kind
 	clearedFields  map[string]struct{}
 	targets        map[int]struct{}
 	removedtargets map[int]struct{}
@@ -1328,6 +1329,42 @@ func (m *TagMutation) ResetName() {
 	m.name = nil
 }
 
+// SetKind sets the "kind" field.
+func (m *TagMutation) SetKind(t tag.Kind) {
+	m.kind = &t
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *TagMutation) Kind() (r tag.Kind, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the Tag entity.
+// If the Tag object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TagMutation) OldKind(ctx context.Context) (v tag.Kind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *TagMutation) ResetKind() {
+	m.kind = nil
+}
+
 // AddTargetIDs adds the "targets" edge to the Target entity by ids.
 func (m *TagMutation) AddTargetIDs(ids ...int) {
 	if m.targets == nil {
@@ -1401,9 +1438,12 @@ func (m *TagMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TagMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.name != nil {
 		fields = append(fields, tag.FieldName)
+	}
+	if m.kind != nil {
+		fields = append(fields, tag.FieldKind)
 	}
 	return fields
 }
@@ -1415,6 +1455,8 @@ func (m *TagMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case tag.FieldName:
 		return m.Name()
+	case tag.FieldKind:
+		return m.Kind()
 	}
 	return nil, false
 }
@@ -1426,6 +1468,8 @@ func (m *TagMutation) OldField(ctx context.Context, name string) (ent.Value, err
 	switch name {
 	case tag.FieldName:
 		return m.OldName(ctx)
+	case tag.FieldKind:
+		return m.OldKind(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tag field %s", name)
 }
@@ -1441,6 +1485,13 @@ func (m *TagMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case tag.FieldKind:
+		v, ok := value.(tag.Kind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Tag field %s", name)
@@ -1493,6 +1544,9 @@ func (m *TagMutation) ResetField(name string) error {
 	switch name {
 	case tag.FieldName:
 		m.ResetName()
+		return nil
+	case tag.FieldKind:
+		m.ResetKind()
 		return nil
 	}
 	return fmt.Errorf("unknown Tag field %s", name)

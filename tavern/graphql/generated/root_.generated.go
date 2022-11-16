@@ -80,6 +80,7 @@ type ComplexityRoot struct {
 
 	Tag struct {
 		ID      func(childComplexity int) int
+		Kind    func(childComplexity int) int
 		Name    func(childComplexity int) int
 		Targets func(childComplexity int) int
 	}
@@ -332,6 +333,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tag.ID(childComplexity), true
+
+	case "Tag.kind":
+		if e.complexity.Tag.Kind == nil {
+			break
+		}
+
+		return e.complexity.Tag.Kind(childComplexity), true
 
 	case "Tag.name":
 		if e.complexity.Tag.Name == nil {
@@ -798,6 +806,8 @@ type Tag implements Node {
   id: ID!
   """Name of the tag"""
   name: String!
+  """Describes the type of tag this is"""
+  kind: TagTagKind!
   targets: [Target!]!
 }
 """Ordering options for Tag connections"""
@@ -810,6 +820,11 @@ input TagOrder {
 """Properties by which Tag connections can be ordered."""
 enum TagOrderField {
   NAME
+}
+"""TagTagKind is enum for the field kind"""
+enum TagTagKind @goModel(model: "github.com/kcarretto/realm/tavern/ent/tag.Kind") {
+  group
+  service
 }
 """
 TagWhereInput is used for filtering Tag objects.
@@ -842,6 +857,11 @@ input TagWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
+  """kind field predicates"""
+  kind: TagTagKind
+  kindNEQ: TagTagKind
+  kindIn: [TagTagKind!]
+  kindNotIn: [TagTagKind!]
   """targets edge predicates"""
   hasTargets: Boolean
   hasTargetsWith: [TargetWhereInput!]

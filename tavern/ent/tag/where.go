@@ -185,6 +185,42 @@ func NameContainsFold(v string) predicate.Tag {
 	})
 }
 
+// KindEQ applies the EQ predicate on the "kind" field.
+func KindEQ(v Kind) predicate.Tag {
+	return predicate.Tag(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldKind), v))
+	})
+}
+
+// KindNEQ applies the NEQ predicate on the "kind" field.
+func KindNEQ(v Kind) predicate.Tag {
+	return predicate.Tag(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldKind), v))
+	})
+}
+
+// KindIn applies the In predicate on the "kind" field.
+func KindIn(vs ...Kind) predicate.Tag {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Tag(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldKind), v...))
+	})
+}
+
+// KindNotIn applies the NotIn predicate on the "kind" field.
+func KindNotIn(vs ...Kind) predicate.Tag {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Tag(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldKind), v...))
+	})
+}
+
 // HasTargets applies the HasEdge predicate on the "targets" edge.
 func HasTargets() predicate.Tag {
 	return predicate.Tag(func(s *sql.Selector) {

@@ -26,6 +26,12 @@ func (tc *TagCreate) SetName(s string) *TagCreate {
 	return tc
 }
 
+// SetKind sets the "kind" field.
+func (tc *TagCreate) SetKind(t tag.Kind) *TagCreate {
+	tc.mutation.SetKind(t)
+	return tc
+}
+
 // AddTargetIDs adds the "targets" edge to the Target entity by IDs.
 func (tc *TagCreate) AddTargetIDs(ids ...int) *TagCreate {
 	tc.mutation.AddTargetIDs(ids...)
@@ -125,6 +131,14 @@ func (tc *TagCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tag.name": %w`, err)}
 		}
 	}
+	if _, ok := tc.mutation.Kind(); !ok {
+		return &ValidationError{Name: "kind", err: errors.New(`ent: missing required field "Tag.kind"`)}
+	}
+	if v, ok := tc.mutation.Kind(); ok {
+		if err := tag.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Tag.kind": %w`, err)}
+		}
+	}
 	if len(tc.mutation.TargetsIDs()) == 0 {
 		return &ValidationError{Name: "targets", err: errors.New(`ent: missing required edge "Tag.targets"`)}
 	}
@@ -158,6 +172,10 @@ func (tc *TagCreate) createSpec() (*Tag, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(tag.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := tc.mutation.Kind(); ok {
+		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
+		_node.Kind = value
 	}
 	if nodes := tc.mutation.TargetsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

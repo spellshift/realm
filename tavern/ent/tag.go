@@ -17,6 +17,8 @@ type Tag struct {
 	ID int `json:"id,omitempty"`
 	// Name of the tag
 	Name string `json:"name,omitempty"`
+	// Describes the type of tag this is
+	Kind tag.Kind `json:"kind,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TagQuery when eager-loading is set.
 	Edges TagEdges `json:"edges"`
@@ -51,7 +53,7 @@ func (*Tag) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tag.FieldID:
 			values[i] = new(sql.NullInt64)
-		case tag.FieldName:
+		case tag.FieldName, tag.FieldKind:
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Tag", columns[i])
@@ -79,6 +81,12 @@ func (t *Tag) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				t.Name = value.String
+			}
+		case tag.FieldKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field kind", values[i])
+			} else if value.Valid {
+				t.Kind = tag.Kind(value.String)
 			}
 		}
 	}
@@ -115,6 +123,9 @@ func (t *Tag) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
+	builder.WriteString(", ")
+	builder.WriteString("kind=")
+	builder.WriteString(fmt.Sprintf("%v", t.Kind))
 	builder.WriteByte(')')
 	return builder.String()
 }

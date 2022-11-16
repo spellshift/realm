@@ -34,6 +34,12 @@ func (tu *TagUpdate) SetName(s string) *TagUpdate {
 	return tu
 }
 
+// SetKind sets the "kind" field.
+func (tu *TagUpdate) SetKind(t tag.Kind) *TagUpdate {
+	tu.mutation.SetKind(t)
+	return tu
+}
+
 // AddTargetIDs adds the "targets" edge to the Target entity by IDs.
 func (tu *TagUpdate) AddTargetIDs(ids ...int) *TagUpdate {
 	tu.mutation.AddTargetIDs(ids...)
@@ -142,6 +148,11 @@ func (tu *TagUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tag.name": %w`, err)}
 		}
 	}
+	if v, ok := tu.mutation.Kind(); ok {
+		if err := tag.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Tag.kind": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -165,6 +176,9 @@ func (tu *TagUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(tag.FieldName, field.TypeString, value)
+	}
+	if value, ok := tu.mutation.Kind(); ok {
+		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
 	}
 	if tu.mutation.TargetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -242,6 +256,12 @@ type TagUpdateOne struct {
 // SetName sets the "name" field.
 func (tuo *TagUpdateOne) SetName(s string) *TagUpdateOne {
 	tuo.mutation.SetName(s)
+	return tuo
+}
+
+// SetKind sets the "kind" field.
+func (tuo *TagUpdateOne) SetKind(t tag.Kind) *TagUpdateOne {
+	tuo.mutation.SetKind(t)
 	return tuo
 }
 
@@ -366,6 +386,11 @@ func (tuo *TagUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tag.name": %w`, err)}
 		}
 	}
+	if v, ok := tuo.mutation.Kind(); ok {
+		if err := tag.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Tag.kind": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -406,6 +431,9 @@ func (tuo *TagUpdateOne) sqlSave(ctx context.Context) (_node *Tag, err error) {
 	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(tag.FieldName, field.TypeString, value)
+	}
+	if value, ok := tuo.mutation.Kind(); ok {
+		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
 	}
 	if tuo.mutation.TargetsCleared() {
 		edge := &sqlgraph.EdgeSpec{

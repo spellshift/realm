@@ -23,6 +23,9 @@ func (Tag) Fields() []ent.Field {
 				entgql.OrderField("NAME"),
 			).
 			Comment("Name of the tag"),
+		field.Enum("kind").
+			Values("group", "service").
+			Comment("Describes the type of tag this is"),
 	}
 }
 
