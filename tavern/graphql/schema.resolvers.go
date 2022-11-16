@@ -5,7 +5,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/graphql/generated"
@@ -28,22 +27,22 @@ func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
 
 // Jobs is the resolver for the jobs field.
 func (r *queryResolver) Jobs(ctx context.Context) ([]*ent.Job, error) {
-	panic(fmt.Errorf("not implemented: Jobs - jobs"))
+	return r.client.Job.Query().All(ctx)
 }
 
 // Tags is the resolver for the tags field.
 func (r *queryResolver) Tags(ctx context.Context) ([]*ent.Tag, error) {
-	panic(fmt.Errorf("not implemented: Tags - tags"))
+	return r.client.Tag.Query().All(ctx)
 }
 
 // Targets is the resolver for the targets field.
 func (r *queryResolver) Targets(ctx context.Context) ([]*ent.Target, error) {
-	panic(fmt.Errorf("not implemented: Targets - targets"))
+	return r.client.Target.Query().All(ctx)
 }
 
 // Tomes is the resolver for the tomes field.
 func (r *queryResolver) Tomes(ctx context.Context) ([]*ent.Tome, error) {
-	panic(fmt.Errorf("not implemented: Tomes - tomes"))
+	return r.client.Tome.Query().All(ctx)
 }
 
 // Users is the resolver for the users field.
