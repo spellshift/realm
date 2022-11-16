@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 )
 
@@ -34,6 +36,9 @@ func (User) Fields() []ent.Field {
 			Unique().
 			Sensitive().
 			MaxLen(1000).
+			Annotations(
+				entgql.Skip(),
+			).
 			Comment("The session token currently authenticating the user"),
 		field.Bool("IsActivated").
 			Default(false).
@@ -47,6 +52,17 @@ func (User) Fields() []ent.Field {
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return nil
+}
+
+// Annotations describes additional information for the ent.
+func (User) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.QueryField(),
+		entgql.Mutations(
+			entgql.MutationCreate(),
+			entgql.MutationUpdate(),
+		),
+	}
 }
 
 func newSessionToken() string {

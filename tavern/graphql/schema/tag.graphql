@@ -1,8 +1,0 @@
-# Types and Definitions for Tags
-
-type Tag implements Node {
-  id: ID!
-  name: String!
-
-  targets: [Target!]
-}

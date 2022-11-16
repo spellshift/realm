@@ -17,6 +17,6 @@ func main() {
 		ConfigureOAuthFromEnv("/oauth/authorize"),
 	)
 	if err := app.Run(os.Args); err != nil {
-		log.Fatalf("fatal error: %b", err)
+		log.Fatalf("fatal error: %v", err)
 	}
 }
