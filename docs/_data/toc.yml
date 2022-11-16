@@ -38,8 +38,12 @@
     - title: "Eldritch"
       url: "dev-guide/eldritch"
       children:
-        - title: "Adding a Method"
-          url: "dev-guide/eldritch#adding-a-method"
+        - title: "Overview"
+          url: "dev-guide/eldritch#Overview"
+        - title: "Creating a function"
+          url: "dev-guide/eldritch#creating-a-function"
+        - title: "Notes about asynchronous Eldritch code"
+          url: "dev-guide/eldritch#notes-about-asynchronous-eldritch-code"
   # links:
   #   - title: "Getting Started"
   #     url: "user-guide/getting-started"
