@@ -2,6 +2,30 @@
 
 package ent
 
+// CreateJobInput represents a mutation input for creating jobs.
+type CreateJobInput struct {
+	Name        string
+	CreatedByID int
+	TomeID      int
+	TaskIDs     []int
+}
+
+// Mutate applies the CreateJobInput on the JobMutation builder.
+func (i *CreateJobInput) Mutate(m *JobMutation) {
+	m.SetName(i.Name)
+	m.SetCreatedByID(i.CreatedByID)
+	m.SetTomeID(i.TomeID)
+	if v := i.TaskIDs; len(v) > 0 {
+		m.AddTaskIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateJobInput on the JobCreate builder.
+func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateUserInput represents a mutation input for creating users.
 type CreateUserInput struct {
 	Name        string
