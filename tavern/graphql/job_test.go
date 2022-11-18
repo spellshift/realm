@@ -1,7 +1,12 @@
 package graphql_test
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"io"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -38,6 +43,23 @@ func TestCreateJob(t *testing.T) {
 		SetEldritch(`print("Hello World!")`).
 		SaveX(ctx)
 
+	testFiles := []*ent.File{
+		graph.File.Create().
+			SetName("TestFile1").
+			SetContent([]byte("supersecretfile")).
+			SaveX(ctx),
+		graph.File.Create().
+			SetName("TestFile2").
+			SetContent([]byte("expect_this")).
+			SaveX(ctx),
+	}
+	testTomeWithFiles := graph.Tome.Create().
+		SetName("Test Tome With Files").
+		SetDescription("Ensures the world feels greeted").
+		SetEldritch(`print("Hello World!")`).
+		AddFiles(testFiles...).
+		SaveX(ctx)
+
 	// Create a new GraphQL server (needed for auth middleware)
 	srv := handler.NewDefaultServer(graphql.NewSchema(graph))
 
@@ -63,6 +85,59 @@ func TestCreateJob(t *testing.T) {
 			// Ensure tome edge was set
 			tomeID := job.QueryTome().OnlyIDX(ctx)
 			assert.Equal(t, testTome.ID, tomeID)
+
+			// Ensure tasks were created properly
+			tasks := job.QueryTasks().AllX(ctx)
+			assert.Len(t, tasks, 2)
+			for i, task := range tasks {
+				assert.WithinRange(t, task.CreatedAt, time.Now().Add(-1*time.Second), time.Now().Add(1*time.Second))
+				assert.WithinRange(t, task.LastModifiedAt, time.Now().Add(-1*time.Second), time.Now().Add(1*time.Second))
+				assert.Zero(t, task.ClaimedAt)
+				assert.Zero(t, task.ExecStartedAt)
+				assert.Zero(t, task.ExecFinishedAt)
+				assert.Empty(t, task.Output)
+				assert.Empty(t, task.Error)
+				assert.Equal(t, job.ID, task.QueryJob().OnlyIDX(ctx))
+				assert.Equal(t, testTargets[i].ID, task.QueryTarget().OnlyIDX(ctx))
+			}
+		},
+	))
+	t.Run("CreateWithFiles", newCreateJobTest(
+		gqlClient,
+		[]int{testTargets[0].ID, testTargets[1].ID},
+		ent.CreateJobInput{
+			Name:   "TestJobWithFiles",
+			TomeID: testTomeWithFiles.ID,
+		},
+		func(t *testing.T, id int, err error) {
+			require.NoError(t, err)
+			require.NotZero(t, id)
+
+			// Ensure job was created with proper fields
+			job := graph.Job.GetX(ctx, id)
+			assert.Equal(t, "TestJobWithFiles", job.Name)
+
+			// Ensure bundle was created properly
+			bundle := job.QueryBundle().OnlyX(ctx)
+			gr, err := gzip.NewReader(bytes.NewReader(bundle.Content))
+			require.NoError(t, err)
+			tarReader := tar.NewReader(gr)
+
+			// Read files from bundle and ensure they're correct
+			for i, testFile := range testFiles {
+				hdr, err := tarReader.Next()
+				require.NoError(t, err, "failed to read file header %q (index=%d)", testFile.Name, i)
+				assert.Equal(t, testFile.Name, hdr.Name)
+				fileContent, err := ioutil.ReadAll(tarReader)
+				require.NoError(t, err, "failed to read file %q (index=%d)", testFile.Name, i)
+				assert.Equal(t, string(testFile.Content), string(fileContent))
+			}
+			_, readerErr := tarReader.Next()
+			assert.ErrorIs(t, readerErr, io.EOF) // Ensure these are the only files present
+
+			// Ensure tome edge was set
+			tomeID := job.QueryTome().OnlyIDX(ctx)
+			assert.Equal(t, testTomeWithFiles.ID, tomeID)
 
 			// Ensure tasks were created properly
 			tasks := job.QueryTasks().AllX(ctx)
