@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"context"
 	"io"
-	"io/ioutil"
 	"testing"
 	"time"
 
@@ -132,7 +131,7 @@ func TestCreateJob(t *testing.T) {
 				hdr, err := tarReader.Next()
 				require.NoError(t, err, "failed to read file header %q (index=%d)", testFile.Name, i)
 				assert.Equal(t, testFile.Name, hdr.Name)
-				fileContent, err := ioutil.ReadAll(tarReader)
+				fileContent, err := io.ReadAll(tarReader)
 				require.NoError(t, err, "failed to read file %q (index=%d)", testFile.Name, i)
 				assert.Equal(t, string(testFile.Content), string(fileContent))
 			}
