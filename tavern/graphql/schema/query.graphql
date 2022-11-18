@@ -46,7 +46,6 @@ type File implements Node {
   size: Int!
   """A SHA3 digest of the content field"""
   hash: String!
-  createdby: User! @goField(name: "CreatedBy", forceResolver: false)
 }
 """Ordering options for File connections"""
 input FileOrder {
@@ -134,9 +133,6 @@ input FileWhereInput {
   hashHasSuffix: String
   hashEqualFold: String
   hashContainsFold: String
-  """createdBy edge predicates"""
-  hasCreatedBy: Boolean
-  hasCreatedByWith: [UserWhereInput!]
 }
 type Job implements Node {
   id: ID!
@@ -146,7 +142,6 @@ type Job implements Node {
   lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
   """Name of the job"""
   name: String!
-  createdby: User! @goField(name: "CreatedBy", forceResolver: false)
   tome: Tome!
   bundle: File
   tasks: [Task!]
@@ -213,9 +208,6 @@ input JobWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """createdBy edge predicates"""
-  hasCreatedBy: Boolean
-  hasCreatedByWith: [UserWhereInput!]
   """tome edge predicates"""
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]

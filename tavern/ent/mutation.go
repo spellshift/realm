@@ -42,22 +42,20 @@ const (
 // FileMutation represents an operation that mutates the File nodes in the graph.
 type FileMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	createdAt        *time.Time
-	lastModifiedAt   *time.Time
-	name             *string
-	size             *int
-	addsize          *int
-	hash             *string
-	content          *[]byte
-	clearedFields    map[string]struct{}
-	createdBy        *int
-	clearedcreatedBy bool
-	done             bool
-	oldValue         func(context.Context) (*File, error)
-	predicates       []predicate.File
+	op             Op
+	typ            string
+	id             *int
+	createdAt      *time.Time
+	lastModifiedAt *time.Time
+	name           *string
+	size           *int
+	addsize        *int
+	hash           *string
+	content        *[]byte
+	clearedFields  map[string]struct{}
+	done           bool
+	oldValue       func(context.Context) (*File, error)
+	predicates     []predicate.File
 }
 
 var _ ent.Mutation = (*FileMutation)(nil)
@@ -394,45 +392,6 @@ func (m *FileMutation) ResetContent() {
 	m.content = nil
 }
 
-// SetCreatedByID sets the "createdBy" edge to the User entity by id.
-func (m *FileMutation) SetCreatedByID(id int) {
-	m.createdBy = &id
-}
-
-// ClearCreatedBy clears the "createdBy" edge to the User entity.
-func (m *FileMutation) ClearCreatedBy() {
-	m.clearedcreatedBy = true
-}
-
-// CreatedByCleared reports if the "createdBy" edge to the User entity was cleared.
-func (m *FileMutation) CreatedByCleared() bool {
-	return m.clearedcreatedBy
-}
-
-// CreatedByID returns the "createdBy" edge ID in the mutation.
-func (m *FileMutation) CreatedByID() (id int, exists bool) {
-	if m.createdBy != nil {
-		return *m.createdBy, true
-	}
-	return
-}
-
-// CreatedByIDs returns the "createdBy" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// CreatedByID instead. It exists only for internal usage by the builders.
-func (m *FileMutation) CreatedByIDs() (ids []int) {
-	if id := m.createdBy; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetCreatedBy resets all changes to the "createdBy" edge.
-func (m *FileMutation) ResetCreatedBy() {
-	m.createdBy = nil
-	m.clearedcreatedBy = false
-}
-
 // Where appends a list predicates to the FileMutation builder.
 func (m *FileMutation) Where(ps ...predicate.File) {
 	m.predicates = append(m.predicates, ps...)
@@ -651,28 +610,19 @@ func (m *FileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *FileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.createdBy != nil {
-		edges = append(edges, file.EdgeCreatedBy)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *FileMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case file.EdgeCreatedBy:
-		if id := m.createdBy; id != nil {
-			return []ent.Value{*id}
-		}
-	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *FileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 0)
 	return edges
 }
 
@@ -684,67 +634,48 @@ func (m *FileMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *FileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedcreatedBy {
-		edges = append(edges, file.EdgeCreatedBy)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *FileMutation) EdgeCleared(name string) bool {
-	switch name {
-	case file.EdgeCreatedBy:
-		return m.clearedcreatedBy
-	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *FileMutation) ClearEdge(name string) error {
-	switch name {
-	case file.EdgeCreatedBy:
-		m.ClearCreatedBy()
-		return nil
-	}
 	return fmt.Errorf("unknown File unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *FileMutation) ResetEdge(name string) error {
-	switch name {
-	case file.EdgeCreatedBy:
-		m.ResetCreatedBy()
-		return nil
-	}
 	return fmt.Errorf("unknown File edge %s", name)
 }
 
 // JobMutation represents an operation that mutates the Job nodes in the graph.
 type JobMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	createdAt        *time.Time
-	lastModifiedAt   *time.Time
-	name             *string
-	clearedFields    map[string]struct{}
-	createdBy        *int
-	clearedcreatedBy bool
-	tome             *int
-	clearedtome      bool
-	bundle           *int
-	clearedbundle    bool
-	tasks            map[int]struct{}
-	removedtasks     map[int]struct{}
-	clearedtasks     bool
-	done             bool
-	oldValue         func(context.Context) (*Job, error)
-	predicates       []predicate.Job
+	op             Op
+	typ            string
+	id             *int
+	createdAt      *time.Time
+	lastModifiedAt *time.Time
+	name           *string
+	clearedFields  map[string]struct{}
+	tome           *int
+	clearedtome    bool
+	bundle         *int
+	clearedbundle  bool
+	tasks          map[int]struct{}
+	removedtasks   map[int]struct{}
+	clearedtasks   bool
+	done           bool
+	oldValue       func(context.Context) (*Job, error)
+	predicates     []predicate.Job
 }
 
 var _ ent.Mutation = (*JobMutation)(nil)
@@ -951,45 +882,6 @@ func (m *JobMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName resets all changes to the "name" field.
 func (m *JobMutation) ResetName() {
 	m.name = nil
-}
-
-// SetCreatedByID sets the "createdBy" edge to the User entity by id.
-func (m *JobMutation) SetCreatedByID(id int) {
-	m.createdBy = &id
-}
-
-// ClearCreatedBy clears the "createdBy" edge to the User entity.
-func (m *JobMutation) ClearCreatedBy() {
-	m.clearedcreatedBy = true
-}
-
-// CreatedByCleared reports if the "createdBy" edge to the User entity was cleared.
-func (m *JobMutation) CreatedByCleared() bool {
-	return m.clearedcreatedBy
-}
-
-// CreatedByID returns the "createdBy" edge ID in the mutation.
-func (m *JobMutation) CreatedByID() (id int, exists bool) {
-	if m.createdBy != nil {
-		return *m.createdBy, true
-	}
-	return
-}
-
-// CreatedByIDs returns the "createdBy" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// CreatedByID instead. It exists only for internal usage by the builders.
-func (m *JobMutation) CreatedByIDs() (ids []int) {
-	if id := m.createdBy; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetCreatedBy resets all changes to the "createdBy" edge.
-func (m *JobMutation) ResetCreatedBy() {
-	m.createdBy = nil
-	m.clearedcreatedBy = false
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by id.
@@ -1276,10 +1168,7 @@ func (m *JobMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *JobMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.createdBy != nil {
-		edges = append(edges, job.EdgeCreatedBy)
-	}
+	edges := make([]string, 0, 3)
 	if m.tome != nil {
 		edges = append(edges, job.EdgeTome)
 	}
@@ -1296,10 +1185,6 @@ func (m *JobMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *JobMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case job.EdgeCreatedBy:
-		if id := m.createdBy; id != nil {
-			return []ent.Value{*id}
-		}
 	case job.EdgeTome:
 		if id := m.tome; id != nil {
 			return []ent.Value{*id}
@@ -1320,7 +1205,7 @@ func (m *JobMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *JobMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
 	if m.removedtasks != nil {
 		edges = append(edges, job.EdgeTasks)
 	}
@@ -1343,10 +1228,7 @@ func (m *JobMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *JobMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.clearedcreatedBy {
-		edges = append(edges, job.EdgeCreatedBy)
-	}
+	edges := make([]string, 0, 3)
 	if m.clearedtome {
 		edges = append(edges, job.EdgeTome)
 	}
@@ -1363,8 +1245,6 @@ func (m *JobMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *JobMutation) EdgeCleared(name string) bool {
 	switch name {
-	case job.EdgeCreatedBy:
-		return m.clearedcreatedBy
 	case job.EdgeTome:
 		return m.clearedtome
 	case job.EdgeBundle:
@@ -1379,9 +1259,6 @@ func (m *JobMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *JobMutation) ClearEdge(name string) error {
 	switch name {
-	case job.EdgeCreatedBy:
-		m.ClearCreatedBy()
-		return nil
 	case job.EdgeTome:
 		m.ClearTome()
 		return nil
@@ -1396,9 +1273,6 @@ func (m *JobMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *JobMutation) ResetEdge(name string) error {
 	switch name {
-	case job.EdgeCreatedBy:
-		m.ResetCreatedBy()
-		return nil
 	case job.EdgeTome:
 		m.ResetTome()
 		return nil

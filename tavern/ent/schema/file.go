@@ -1,6 +1,12 @@
 package schema
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/kcarretto/realm/tavern/ent/hook"
+	"golang.org/x/crypto/sha3"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
@@ -59,21 +65,38 @@ func (File) Mixin() []ent.Mixin {
 	}
 }
 
-// Hooks of the File.
-// func (File) Hooks() []ent.Hook {
-// 	return []ent.Hook{
-// 		// First hook.
-// 		hook.On(
-// 			func(next ent.Mutator) ent.Mutator {
-// 				return hook.FileFunc(func(ctx context.Context, m *gen.FileMutation) (ent.Value, error) {
-// 					// if num, ok := m.Number(); ok && len(num) < 10 {
-// 					// 	return nil, fmt.Errorf("card number is too short")
-// 					// }
-// 					return next.Mutate(ctx, m)
-// 				})
-// 			},
-// 			// Limit the hook only for these operations.
-// 			ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne,
-// 		),
-// 	}
-// }
+func (File) Hooks() []ent.Hook {
+	return []ent.Hook{
+		hook.On(HookDeriveFileInfo(), ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne),
+	}
+}
+
+// HookDeriveFileInfo will update file info (e.g. size, hash) whenever it is mutated.
+func HookDeriveFileInfo() ent.Hook {
+	// Get the relevant methods from the File Mutation
+	// See this example: https://github.com/ent/ent/blob/master/entc/integration/hooks/ent/schema/user.go#L98
+	type fMutation interface {
+		Content() ([]byte, bool)
+		SetSize(i int)
+		SetHash(s string)
+	}
+
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			// Get the file mutation
+			f, ok := m.(fMutation)
+			if !ok {
+				return nil, fmt.Errorf("expected file mutation in schema hook, got: %+v", m)
+			}
+
+			// Set the new size
+			content, _ := f.Content()
+			f.SetSize(len(content))
+
+			// Set the new hash
+			f.SetHash(fmt.Sprintf("%x", sha3.Sum256(content)))
+
+			return next.Mutate(ctx, m)
+		})
+	}
+}

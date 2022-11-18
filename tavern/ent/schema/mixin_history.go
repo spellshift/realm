@@ -5,7 +5,6 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
-	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
 )
@@ -32,17 +31,5 @@ func (MixinHistory) Fields() []ent.Field {
 			Annotations(
 				entgql.OrderField("LAST_MODIFIED_AT"),
 			),
-	}
-}
-
-func (MixinHistory) Edges() []ent.Edge {
-	return []ent.Edge{
-		edge.To("createdBy", User.Type).
-			Annotations(
-				entgql.Skip(entgql.SkipMutationCreateInput),
-			).
-			Comment("User that created this entity").
-			Required().
-			Unique(),
 	}
 }

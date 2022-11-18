@@ -17,8 +17,6 @@ const (
 	FieldLastModifiedAt = "last_modified_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// EdgeCreatedBy holds the string denoting the createdby edge name in mutations.
-	EdgeCreatedBy = "createdBy"
 	// EdgeTome holds the string denoting the tome edge name in mutations.
 	EdgeTome = "tome"
 	// EdgeBundle holds the string denoting the bundle edge name in mutations.
@@ -27,13 +25,6 @@ const (
 	EdgeTasks = "tasks"
 	// Table holds the table name of the job in the database.
 	Table = "jobs"
-	// CreatedByTable is the table that holds the createdBy relation/edge.
-	CreatedByTable = "jobs"
-	// CreatedByInverseTable is the table name for the User entity.
-	// It exists in this package in order to avoid circular dependency with the "user" package.
-	CreatedByInverseTable = "users"
-	// CreatedByColumn is the table column denoting the createdBy relation/edge.
-	CreatedByColumn = "job_created_by"
 	// TomeTable is the table that holds the tome relation/edge.
 	TomeTable = "jobs"
 	// TomeInverseTable is the table name for the Tome entity.
@@ -68,7 +59,6 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "jobs"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"job_created_by",
 	"job_tome",
 	"job_bundle",
 }

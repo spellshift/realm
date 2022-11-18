@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 )
 
@@ -574,34 +573,6 @@ func ContentLT(v []byte) predicate.File {
 func ContentLTE(v []byte) predicate.File {
 	return predicate.File(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldContent), v))
-	})
-}
-
-// HasCreatedBy applies the HasEdge predicate on the "createdBy" edge.
-func HasCreatedBy() predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CreatedByTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, CreatedByTable, CreatedByColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasCreatedByWith applies the HasEdge predicate on the "createdBy" edge with a given conditions (other predicates).
-func HasCreatedByWith(preds ...predicate.User) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CreatedByInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, CreatedByTable, CreatedByColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
 	})
 }
 

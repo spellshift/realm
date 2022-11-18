@@ -14,7 +14,6 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
-	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // JobCreate is the builder for creating a Job entity.
@@ -56,17 +55,6 @@ func (jc *JobCreate) SetNillableLastModifiedAt(t *time.Time) *JobCreate {
 func (jc *JobCreate) SetName(s string) *JobCreate {
 	jc.mutation.SetName(s)
 	return jc
-}
-
-// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
-func (jc *JobCreate) SetCreatedByID(id int) *JobCreate {
-	jc.mutation.SetCreatedByID(id)
-	return jc
-}
-
-// SetCreatedBy sets the "createdBy" edge to the User entity.
-func (jc *JobCreate) SetCreatedBy(u *User) *JobCreate {
-	return jc.SetCreatedByID(u.ID)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
@@ -217,9 +205,6 @@ func (jc *JobCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Job.name": %w`, err)}
 		}
 	}
-	if _, ok := jc.mutation.CreatedByID(); !ok {
-		return &ValidationError{Name: "createdBy", err: errors.New(`ent: missing required edge "Job.createdBy"`)}
-	}
 	if _, ok := jc.mutation.TomeID(); !ok {
 		return &ValidationError{Name: "tome", err: errors.New(`ent: missing required edge "Job.tome"`)}
 	}
@@ -261,26 +246,6 @@ func (jc *JobCreate) createSpec() (*Job, *sqlgraph.CreateSpec) {
 	if value, ok := jc.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
 		_node.Name = value
-	}
-	if nodes := jc.mutation.CreatedByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.job_created_by = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := jc.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

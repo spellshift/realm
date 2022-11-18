@@ -23,20 +23,6 @@ func (f *FileQuery) CollectFields(ctx context.Context, satisfies ...string) (*Fi
 
 func (f *FileQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
-		switch field.Name {
-		case "createdby":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = &UserQuery{config: f.config}
-			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
-				return err
-			}
-			f.withCreatedBy = query
-		}
-	}
 	return nil
 }
 
@@ -107,16 +93,6 @@ func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContex
 	path = append([]string(nil), path...)
 	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
 		switch field.Name {
-		case "createdby":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = &UserQuery{config: j.config}
-			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
-				return err
-			}
-			j.withCreatedBy = query
 		case "tome":
 			var (
 				alias = field.Alias

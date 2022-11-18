@@ -57,7 +57,7 @@ func (f *File) Node(ctx context.Context) (node *Node, err error) {
 		ID:     f.ID,
 		Type:   "File",
 		Fields: make([]*Field, 5),
-		Edges:  make([]*Edge, 1),
+		Edges:  make([]*Edge, 0),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(f.CreatedAt); err != nil {
@@ -100,16 +100,6 @@ func (f *File) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "hash",
 		Value: string(buf),
 	}
-	node.Edges[0] = &Edge{
-		Type: "User",
-		Name: "createdBy",
-	}
-	err = f.QueryCreatedBy().
-		Select(user.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
 	return node, nil
 }
 
@@ -118,7 +108,7 @@ func (j *Job) Node(ctx context.Context) (node *Node, err error) {
 		ID:     j.ID,
 		Type:   "Job",
 		Fields: make([]*Field, 3),
-		Edges:  make([]*Edge, 4),
+		Edges:  make([]*Edge, 3),
 	}
 	var buf []byte
 	if buf, err = json.Marshal(j.CreatedAt); err != nil {
@@ -146,42 +136,32 @@ func (j *Job) Node(ctx context.Context) (node *Node, err error) {
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{
-		Type: "User",
-		Name: "createdBy",
-	}
-	err = j.QueryCreatedBy().
-		Select(user.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[1] = &Edge{
 		Type: "Tome",
 		Name: "tome",
 	}
 	err = j.QueryTome().
 		Select(tome.FieldID).
-		Scan(ctx, &node.Edges[1].IDs)
+		Scan(ctx, &node.Edges[0].IDs)
 	if err != nil {
 		return nil, err
 	}
-	node.Edges[2] = &Edge{
+	node.Edges[1] = &Edge{
 		Type: "File",
 		Name: "bundle",
 	}
 	err = j.QueryBundle().
 		Select(file.FieldID).
-		Scan(ctx, &node.Edges[2].IDs)
+		Scan(ctx, &node.Edges[1].IDs)
 	if err != nil {
 		return nil, err
 	}
-	node.Edges[3] = &Edge{
+	node.Edges[2] = &Edge{
 		Type: "Task",
 		Name: "tasks",
 	}
 	err = j.QueryTasks().
 		Select(task.FieldID).
-		Scan(ctx, &node.Edges[3].IDs)
+		Scan(ctx, &node.Edges[2].IDs)
 	if err != nil {
 		return nil, err
 	}

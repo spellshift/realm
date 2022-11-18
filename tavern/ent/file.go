@@ -9,7 +9,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // File is the model entity for the File schema.
@@ -28,36 +27,8 @@ type File struct {
 	// A SHA3 digest of the content field
 	Hash string `json:"hash,omitempty"`
 	// The content of the file
-	Content []byte `json:"content,omitempty"`
-	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the FileQuery when eager-loading is set.
-	Edges           FileEdges `json:"edges"`
-	file_created_by *int
-	tome_files      *int
-}
-
-// FileEdges holds the relations/edges for other nodes in the graph.
-type FileEdges struct {
-	// User that created this entity
-	CreatedBy *User `json:"createdBy,omitempty"`
-	// loadedTypes holds the information for reporting if a
-	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
-	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
-}
-
-// CreatedByOrErr returns the CreatedBy value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e FileEdges) CreatedByOrErr() (*User, error) {
-	if e.loadedTypes[0] {
-		if e.CreatedBy == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
-		}
-		return e.CreatedBy, nil
-	}
-	return nil, &NotLoadedError{edge: "createdBy"}
+	Content    []byte `json:"content,omitempty"`
+	tome_files *int
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -73,9 +44,7 @@ func (*File) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case file.FieldCreatedAt, file.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
-		case file.ForeignKeys[0]: // file_created_by
-			values[i] = new(sql.NullInt64)
-		case file.ForeignKeys[1]: // tome_files
+		case file.ForeignKeys[0]: // tome_files
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type File", columns[i])
@@ -136,13 +105,6 @@ func (f *File) assignValues(columns []string, values []any) error {
 			}
 		case file.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field file_created_by", value)
-			} else if value.Valid {
-				f.file_created_by = new(int)
-				*f.file_created_by = int(value.Int64)
-			}
-		case file.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field tome_files", value)
 			} else if value.Valid {
 				f.tome_files = new(int)
@@ -151,11 +113,6 @@ func (f *File) assignValues(columns []string, values []any) error {
 		}
 	}
 	return nil
-}
-
-// QueryCreatedBy queries the "createdBy" edge of the File entity.
-func (f *File) QueryCreatedBy() *UserQuery {
-	return (&FileClient{config: f.config}).QueryCreatedBy(f)
 }
 
 // Update returns a builder for updating this File.

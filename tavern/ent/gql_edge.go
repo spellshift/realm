@@ -8,22 +8,6 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (f *File) CreatedBy(ctx context.Context) (*User, error) {
-	result, err := f.Edges.CreatedByOrErr()
-	if IsNotLoaded(err) {
-		result, err = f.QueryCreatedBy().Only(ctx)
-	}
-	return result, err
-}
-
-func (j *Job) CreatedBy(ctx context.Context) (*User, error) {
-	result, err := j.Edges.CreatedByOrErr()
-	if IsNotLoaded(err) {
-		result, err = j.QueryCreatedBy().Only(ctx)
-	}
-	return result, err
-}
-
 func (j *Job) Tome(ctx context.Context) (*Tome, error) {
 	result, err := j.Edges.TomeOrErr()
 	if IsNotLoaded(err) {

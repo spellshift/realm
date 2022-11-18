@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
-	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // FileUpdate is the builder for updating File entities.
@@ -74,26 +73,9 @@ func (fu *FileUpdate) SetContent(b []byte) *FileUpdate {
 	return fu
 }
 
-// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
-func (fu *FileUpdate) SetCreatedByID(id int) *FileUpdate {
-	fu.mutation.SetCreatedByID(id)
-	return fu
-}
-
-// SetCreatedBy sets the "createdBy" edge to the User entity.
-func (fu *FileUpdate) SetCreatedBy(u *User) *FileUpdate {
-	return fu.SetCreatedByID(u.ID)
-}
-
 // Mutation returns the FileMutation object of the builder.
 func (fu *FileUpdate) Mutation() *FileMutation {
 	return fu.mutation
-}
-
-// ClearCreatedBy clears the "createdBy" edge to the User entity.
-func (fu *FileUpdate) ClearCreatedBy() *FileUpdate {
-	fu.mutation.ClearCreatedBy()
-	return fu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -102,7 +84,9 @@ func (fu *FileUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
-	fu.defaults()
+	if err := fu.defaults(); err != nil {
+		return 0, err
+	}
 	if len(fu.hooks) == 0 {
 		if err = fu.check(); err != nil {
 			return 0, err
@@ -158,11 +142,15 @@ func (fu *FileUpdate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (fu *FileUpdate) defaults() {
+func (fu *FileUpdate) defaults() error {
 	if _, ok := fu.mutation.LastModifiedAt(); !ok {
+		if file.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized file.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := file.UpdateDefaultLastModifiedAt()
 		fu.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -181,9 +169,6 @@ func (fu *FileUpdate) check() error {
 		if err := file.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "File.hash": %w`, err)}
 		}
-	}
-	if _, ok := fu.mutation.CreatedByID(); fu.mutation.CreatedByCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "File.createdBy"`)
 	}
 	return nil
 }
@@ -223,41 +208,6 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := fu.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
-	}
-	if fu.mutation.CreatedByCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   file.CreatedByTable,
-			Columns: []string{file.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := fu.mutation.CreatedByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   file.CreatedByTable,
-			Columns: []string{file.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, fu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -323,26 +273,9 @@ func (fuo *FileUpdateOne) SetContent(b []byte) *FileUpdateOne {
 	return fuo
 }
 
-// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
-func (fuo *FileUpdateOne) SetCreatedByID(id int) *FileUpdateOne {
-	fuo.mutation.SetCreatedByID(id)
-	return fuo
-}
-
-// SetCreatedBy sets the "createdBy" edge to the User entity.
-func (fuo *FileUpdateOne) SetCreatedBy(u *User) *FileUpdateOne {
-	return fuo.SetCreatedByID(u.ID)
-}
-
 // Mutation returns the FileMutation object of the builder.
 func (fuo *FileUpdateOne) Mutation() *FileMutation {
 	return fuo.mutation
-}
-
-// ClearCreatedBy clears the "createdBy" edge to the User entity.
-func (fuo *FileUpdateOne) ClearCreatedBy() *FileUpdateOne {
-	fuo.mutation.ClearCreatedBy()
-	return fuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -358,7 +291,9 @@ func (fuo *FileUpdateOne) Save(ctx context.Context) (*File, error) {
 		err  error
 		node *File
 	)
-	fuo.defaults()
+	if err := fuo.defaults(); err != nil {
+		return nil, err
+	}
 	if len(fuo.hooks) == 0 {
 		if err = fuo.check(); err != nil {
 			return nil, err
@@ -420,11 +355,15 @@ func (fuo *FileUpdateOne) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (fuo *FileUpdateOne) defaults() {
+func (fuo *FileUpdateOne) defaults() error {
 	if _, ok := fuo.mutation.LastModifiedAt(); !ok {
+		if file.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized file.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := file.UpdateDefaultLastModifiedAt()
 		fuo.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -443,9 +382,6 @@ func (fuo *FileUpdateOne) check() error {
 		if err := file.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "File.hash": %w`, err)}
 		}
-	}
-	if _, ok := fuo.mutation.CreatedByID(); fuo.mutation.CreatedByCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "File.createdBy"`)
 	}
 	return nil
 }
@@ -502,41 +438,6 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 	}
 	if value, ok := fuo.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
-	}
-	if fuo.mutation.CreatedByCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   file.CreatedByTable,
-			Columns: []string{file.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := fuo.mutation.CreatedByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   file.CreatedByTable,
-			Columns: []string{file.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &File{config: fuo.config}
 	_spec.Assign = _node.assignValues

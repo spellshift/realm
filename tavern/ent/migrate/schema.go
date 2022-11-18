@@ -17,7 +17,6 @@ var (
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "content", Type: field.TypeBytes},
-		{Name: "file_created_by", Type: field.TypeInt},
 		{Name: "tome_files", Type: field.TypeInt, Nullable: true},
 	}
 	// FilesTable holds the schema information for the "files" table.
@@ -27,14 +26,8 @@ var (
 		PrimaryKey: []*schema.Column{FilesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "files_users_createdBy",
-				Columns:    []*schema.Column{FilesColumns[7]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-			{
 				Symbol:     "files_tomes_files",
-				Columns:    []*schema.Column{FilesColumns[8]},
+				Columns:    []*schema.Column{FilesColumns[7]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -46,7 +39,6 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "job_created_by", Type: field.TypeInt},
 		{Name: "job_tome", Type: field.TypeInt},
 		{Name: "job_bundle", Type: field.TypeInt, Nullable: true},
 	}
@@ -57,20 +49,14 @@ var (
 		PrimaryKey: []*schema.Column{JobsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "jobs_users_createdBy",
-				Columns:    []*schema.Column{JobsColumns[4]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-			{
 				Symbol:     "jobs_tomes_tome",
-				Columns:    []*schema.Column{JobsColumns[5]},
+				Columns:    []*schema.Column{JobsColumns[4]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "jobs_files_bundle",
-				Columns:    []*schema.Column{JobsColumns[6]},
+				Columns:    []*schema.Column{JobsColumns[5]},
 				RefColumns: []*schema.Column{FilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -199,11 +185,9 @@ var (
 )
 
 func init() {
-	FilesTable.ForeignKeys[0].RefTable = UsersTable
-	FilesTable.ForeignKeys[1].RefTable = TomesTable
-	JobsTable.ForeignKeys[0].RefTable = UsersTable
-	JobsTable.ForeignKeys[1].RefTable = TomesTable
-	JobsTable.ForeignKeys[2].RefTable = FilesTable
+	FilesTable.ForeignKeys[0].RefTable = TomesTable
+	JobsTable.ForeignKeys[0].RefTable = TomesTable
+	JobsTable.ForeignKeys[1].RefTable = FilesTable
 	TasksTable.ForeignKeys[0].RefTable = JobsTable
 	TasksTable.ForeignKeys[1].RefTable = TargetsTable
 	TargetTagsTable.ForeignKeys[0].RefTable = TargetsTable

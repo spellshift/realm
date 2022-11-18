@@ -4,6 +4,8 @@ package file
 
 import (
 	"time"
+
+	"entgo.io/ent"
 )
 
 const (
@@ -23,17 +25,8 @@ const (
 	FieldHash = "hash"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
-	// EdgeCreatedBy holds the string denoting the createdby edge name in mutations.
-	EdgeCreatedBy = "createdBy"
 	// Table holds the table name of the file in the database.
 	Table = "files"
-	// CreatedByTable is the table that holds the createdBy relation/edge.
-	CreatedByTable = "files"
-	// CreatedByInverseTable is the table name for the User entity.
-	// It exists in this package in order to avoid circular dependency with the "user" package.
-	CreatedByInverseTable = "users"
-	// CreatedByColumn is the table column denoting the createdBy relation/edge.
-	CreatedByColumn = "file_created_by"
 )
 
 // Columns holds all SQL columns for file fields.
@@ -50,7 +43,6 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "files"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"file_created_by",
 	"tome_files",
 }
 
@@ -69,7 +61,13 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "github.com/kcarretto/realm/tavern/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.

@@ -16,7 +16,6 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
-	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // JobUpdate is the builder for updating Job entities.
@@ -42,17 +41,6 @@ func (ju *JobUpdate) SetLastModifiedAt(t time.Time) *JobUpdate {
 func (ju *JobUpdate) SetName(s string) *JobUpdate {
 	ju.mutation.SetName(s)
 	return ju
-}
-
-// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
-func (ju *JobUpdate) SetCreatedByID(id int) *JobUpdate {
-	ju.mutation.SetCreatedByID(id)
-	return ju
-}
-
-// SetCreatedBy sets the "createdBy" edge to the User entity.
-func (ju *JobUpdate) SetCreatedBy(u *User) *JobUpdate {
-	return ju.SetCreatedByID(u.ID)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
@@ -103,12 +91,6 @@ func (ju *JobUpdate) AddTasks(t ...*Task) *JobUpdate {
 // Mutation returns the JobMutation object of the builder.
 func (ju *JobUpdate) Mutation() *JobMutation {
 	return ju.mutation
-}
-
-// ClearCreatedBy clears the "createdBy" edge to the User entity.
-func (ju *JobUpdate) ClearCreatedBy() *JobUpdate {
-	ju.mutation.ClearCreatedBy()
-	return ju
 }
 
 // ClearTome clears the "tome" edge to the Tome entity.
@@ -220,9 +202,6 @@ func (ju *JobUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Job.name": %w`, err)}
 		}
 	}
-	if _, ok := ju.mutation.CreatedByID(); ju.mutation.CreatedByCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Job.createdBy"`)
-	}
 	if _, ok := ju.mutation.TomeID(); ju.mutation.TomeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Job.tome"`)
 	}
@@ -252,41 +231,6 @@ func (ju *JobUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := ju.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
-	}
-	if ju.mutation.CreatedByCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ju.mutation.CreatedByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if ju.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -443,17 +387,6 @@ func (juo *JobUpdateOne) SetName(s string) *JobUpdateOne {
 	return juo
 }
 
-// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
-func (juo *JobUpdateOne) SetCreatedByID(id int) *JobUpdateOne {
-	juo.mutation.SetCreatedByID(id)
-	return juo
-}
-
-// SetCreatedBy sets the "createdBy" edge to the User entity.
-func (juo *JobUpdateOne) SetCreatedBy(u *User) *JobUpdateOne {
-	return juo.SetCreatedByID(u.ID)
-}
-
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (juo *JobUpdateOne) SetTomeID(id int) *JobUpdateOne {
 	juo.mutation.SetTomeID(id)
@@ -502,12 +435,6 @@ func (juo *JobUpdateOne) AddTasks(t ...*Task) *JobUpdateOne {
 // Mutation returns the JobMutation object of the builder.
 func (juo *JobUpdateOne) Mutation() *JobMutation {
 	return juo.mutation
-}
-
-// ClearCreatedBy clears the "createdBy" edge to the User entity.
-func (juo *JobUpdateOne) ClearCreatedBy() *JobUpdateOne {
-	juo.mutation.ClearCreatedBy()
-	return juo
 }
 
 // ClearTome clears the "tome" edge to the Tome entity.
@@ -632,9 +559,6 @@ func (juo *JobUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Job.name": %w`, err)}
 		}
 	}
-	if _, ok := juo.mutation.CreatedByID(); juo.mutation.CreatedByCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Job.createdBy"`)
-	}
 	if _, ok := juo.mutation.TomeID(); juo.mutation.TomeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Job.tome"`)
 	}
@@ -681,41 +605,6 @@ func (juo *JobUpdateOne) sqlSave(ctx context.Context) (_node *Job, err error) {
 	}
 	if value, ok := juo.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
-	}
-	if juo.mutation.CreatedByCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := juo.mutation.CreatedByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if juo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{

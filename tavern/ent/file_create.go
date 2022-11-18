@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // FileCreate is the builder for creating a File entity.
@@ -81,17 +80,6 @@ func (fc *FileCreate) SetContent(b []byte) *FileCreate {
 	return fc
 }
 
-// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
-func (fc *FileCreate) SetCreatedByID(id int) *FileCreate {
-	fc.mutation.SetCreatedByID(id)
-	return fc
-}
-
-// SetCreatedBy sets the "createdBy" edge to the User entity.
-func (fc *FileCreate) SetCreatedBy(u *User) *FileCreate {
-	return fc.SetCreatedByID(u.ID)
-}
-
 // Mutation returns the FileMutation object of the builder.
 func (fc *FileCreate) Mutation() *FileMutation {
 	return fc.mutation
@@ -103,7 +91,9 @@ func (fc *FileCreate) Save(ctx context.Context) (*File, error) {
 		err  error
 		node *File
 	)
-	fc.defaults()
+	if err := fc.defaults(); err != nil {
+		return nil, err
+	}
 	if len(fc.hooks) == 0 {
 		if err = fc.check(); err != nil {
 			return nil, err
@@ -168,12 +158,18 @@ func (fc *FileCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (fc *FileCreate) defaults() {
+func (fc *FileCreate) defaults() error {
 	if _, ok := fc.mutation.CreatedAt(); !ok {
+		if file.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized file.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := file.DefaultCreatedAt()
 		fc.mutation.SetCreatedAt(v)
 	}
 	if _, ok := fc.mutation.LastModifiedAt(); !ok {
+		if file.DefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized file.DefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := file.DefaultLastModifiedAt()
 		fc.mutation.SetLastModifiedAt(v)
 	}
@@ -181,6 +177,7 @@ func (fc *FileCreate) defaults() {
 		v := file.DefaultSize
 		fc.mutation.SetSize(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -217,9 +214,6 @@ func (fc *FileCreate) check() error {
 	}
 	if _, ok := fc.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "File.content"`)}
-	}
-	if _, ok := fc.mutation.CreatedByID(); !ok {
-		return &ValidationError{Name: "createdBy", err: errors.New(`ent: missing required edge "File.createdBy"`)}
 	}
 	return nil
 }
@@ -271,26 +265,6 @@ func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 	if value, ok := fc.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
 		_node.Content = value
-	}
-	if nodes := fc.mutation.CreatedByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   file.CreatedByTable,
-			Columns: []string{file.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.file_created_by = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

@@ -329,34 +329,6 @@ func NameContainsFold(v string) predicate.Job {
 	})
 }
 
-// HasCreatedBy applies the HasEdge predicate on the "createdBy" edge.
-func HasCreatedBy() predicate.Job {
-	return predicate.Job(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CreatedByTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, CreatedByTable, CreatedByColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasCreatedByWith applies the HasEdge predicate on the "createdBy" edge with a given conditions (other predicates).
-func HasCreatedByWith(preds ...predicate.User) predicate.Job {
-	return predicate.Job(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CreatedByInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, CreatedByTable, CreatedByColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasTome applies the HasEdge predicate on the "tome" edge.
 func HasTome() predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {

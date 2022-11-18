@@ -93,10 +93,6 @@ type FileWhereInput struct {
 	HashHasSuffix    *string  `json:"hashHasSuffix,omitempty"`
 	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
 	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
-
-	// "createdBy" edge predicates.
-	HasCreatedBy     *bool             `json:"hasCreatedBy,omitempty"`
-	HasCreatedByWith []*UserWhereInput `json:"hasCreatedByWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -345,24 +341,6 @@ func (i *FileWhereInput) P() (predicate.File, error) {
 		predicates = append(predicates, file.HashContainsFold(*i.HashContainsFold))
 	}
 
-	if i.HasCreatedBy != nil {
-		p := file.HasCreatedBy()
-		if !*i.HasCreatedBy {
-			p = file.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasCreatedByWith) > 0 {
-		with := make([]predicate.User, 0, len(i.HasCreatedByWith))
-		for _, w := range i.HasCreatedByWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasCreatedByWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, file.HasCreatedByWith(with...))
-	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyFileWhereInput
@@ -424,10 +402,6 @@ type JobWhereInput struct {
 	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
-
-	// "createdBy" edge predicates.
-	HasCreatedBy     *bool             `json:"hasCreatedBy,omitempty"`
-	HasCreatedByWith []*UserWhereInput `json:"hasCreatedByWith,omitempty"`
 
 	// "tome" edge predicates.
 	HasTome     *bool             `json:"hasTome,omitempty"`
@@ -625,24 +599,6 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 		predicates = append(predicates, job.NameContainsFold(*i.NameContainsFold))
 	}
 
-	if i.HasCreatedBy != nil {
-		p := job.HasCreatedBy()
-		if !*i.HasCreatedBy {
-			p = job.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasCreatedByWith) > 0 {
-		with := make([]predicate.User, 0, len(i.HasCreatedByWith))
-		for _, w := range i.HasCreatedByWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasCreatedByWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, job.HasCreatedByWith(with...))
-	}
 	if i.HasTome != nil {
 		p := job.HasTome()
 		if !*i.HasTome {

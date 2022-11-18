@@ -352,62 +352,6 @@ func (ec *executionContext) fieldContext_File_hash(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _File_createdby(ctx context.Context, field graphql.CollectedField, obj *ent.File) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_File_createdby(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedBy(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_File_createdby(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "File",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			case "photourl":
-				return ec.fieldContext_User_photourl(ctx, field)
-			case "isactivated":
-				return ec.fieldContext_User_isactivated(ctx, field)
-			case "isadmin":
-				return ec.fieldContext_User_isadmin(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Job_id(ctx context.Context, field graphql.CollectedField, obj *ent.Job) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Job_id(ctx, field)
 	if err != nil {
@@ -584,62 +528,6 @@ func (ec *executionContext) fieldContext_Job_name(ctx context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Job_createdby(ctx context.Context, field graphql.CollectedField, obj *ent.Job) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Job_createdby(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedBy(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Job_createdby(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Job",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			case "photourl":
-				return ec.fieldContext_User_photourl(ctx, field)
-			case "isactivated":
-				return ec.fieldContext_User_isactivated(ctx, field)
-			case "isadmin":
-				return ec.fieldContext_User_isadmin(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Job_tome(ctx context.Context, field graphql.CollectedField, obj *ent.Job) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Job_tome(ctx, field)
 	if err != nil {
@@ -754,8 +642,6 @@ func (ec *executionContext) fieldContext_Job_bundle(ctx context.Context, field g
 				return ec.fieldContext_File_size(ctx, field)
 			case "hash":
 				return ec.fieldContext_File_hash(ctx, field)
-			case "createdby":
-				return ec.fieldContext_File_createdby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type File", field.Name)
 		},
@@ -1142,8 +1028,6 @@ func (ec *executionContext) fieldContext_Query_files(ctx context.Context, field 
 				return ec.fieldContext_File_size(ctx, field)
 			case "hash":
 				return ec.fieldContext_File_hash(ctx, field)
-			case "createdby":
-				return ec.fieldContext_File_createdby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type File", field.Name)
 		},
@@ -1198,8 +1082,6 @@ func (ec *executionContext) fieldContext_Query_jobs(ctx context.Context, field g
 				return ec.fieldContext_Job_lastmodifiedat(ctx, field)
 			case "name":
 				return ec.fieldContext_Job_name(ctx, field)
-			case "createdby":
-				return ec.fieldContext_Job_createdby(ctx, field)
 			case "tome":
 				return ec.fieldContext_Job_tome(ctx, field)
 			case "bundle":
@@ -2028,8 +1910,6 @@ func (ec *executionContext) fieldContext_Task_job(ctx context.Context, field gra
 				return ec.fieldContext_Job_lastmodifiedat(ctx, field)
 			case "name":
 				return ec.fieldContext_Job_name(ctx, field)
-			case "createdby":
-				return ec.fieldContext_Job_createdby(ctx, field)
 			case "tome":
 				return ec.fieldContext_Job_tome(ctx, field)
 			case "bundle":
@@ -2539,8 +2419,6 @@ func (ec *executionContext) fieldContext_Tome_files(ctx context.Context, field g
 				return ec.fieldContext_File_size(ctx, field)
 			case "hash":
 				return ec.fieldContext_File_hash(ctx, field)
-			case "createdby":
-				return ec.fieldContext_File_createdby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type File", field.Name)
 		},
@@ -2931,7 +2809,7 @@ func (ec *executionContext) unmarshalInputFileWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdat", "createdatNEQ", "createdatIn", "createdatNotIn", "createdatGT", "createdatGTE", "createdatLT", "createdatLTE", "lastmodifiedat", "lastmodifiedatNEQ", "lastmodifiedatIn", "lastmodifiedatNotIn", "lastmodifiedatGT", "lastmodifiedatGTE", "lastmodifiedatLT", "lastmodifiedatLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashEqualFold", "hashContainsFold", "hasCreatedBy", "hasCreatedByWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdat", "createdatNEQ", "createdatIn", "createdatNotIn", "createdatGT", "createdatGTE", "createdatLT", "createdatLTE", "lastmodifiedat", "lastmodifiedatNEQ", "lastmodifiedatIn", "lastmodifiedatNotIn", "lastmodifiedatGT", "lastmodifiedatGTE", "lastmodifiedatLT", "lastmodifiedatLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashEqualFold", "hashContainsFold"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3426,22 +3304,6 @@ func (ec *executionContext) unmarshalInputFileWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "hasCreatedBy":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatedBy"))
-			it.HasCreatedBy, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "hasCreatedByWith":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatedByWith"))
-			it.HasCreatedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -3495,7 +3357,7 @@ func (ec *executionContext) unmarshalInputJobWhereInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdat", "createdatNEQ", "createdatIn", "createdatNotIn", "createdatGT", "createdatGTE", "createdatLT", "createdatLTE", "lastmodifiedat", "lastmodifiedatNEQ", "lastmodifiedatIn", "lastmodifiedatNotIn", "lastmodifiedatGT", "lastmodifiedatGTE", "lastmodifiedatLT", "lastmodifiedatLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasCreatedBy", "hasCreatedByWith", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdat", "createdatNEQ", "createdatIn", "createdatNotIn", "createdatGT", "createdatGTE", "createdatLT", "createdatLTE", "lastmodifiedat", "lastmodifiedatNEQ", "lastmodifiedatIn", "lastmodifiedatNotIn", "lastmodifiedatGT", "lastmodifiedatGTE", "lastmodifiedatLT", "lastmodifiedatLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3819,22 +3681,6 @@ func (ec *executionContext) unmarshalInputJobWhereInput(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContainsFold"))
 			it.NameContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "hasCreatedBy":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatedBy"))
-			it.HasCreatedBy, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "hasCreatedByWith":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatedByWith"))
-			it.HasCreatedByWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6087,63 +5933,43 @@ func (ec *executionContext) _File(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._File_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "createdat":
 
 			out.Values[i] = ec._File_createdat(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "lastmodifiedat":
 
 			out.Values[i] = ec._File_lastmodifiedat(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "name":
 
 			out.Values[i] = ec._File_name(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "size":
 
 			out.Values[i] = ec._File_size(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "hash":
 
 			out.Values[i] = ec._File_hash(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
-		case "createdby":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._File_createdby(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6193,26 +6019,6 @@ func (ec *executionContext) _Job(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "createdby":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Job_createdby(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "tome":
 			field := field
 

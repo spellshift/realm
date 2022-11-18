@@ -40,7 +40,6 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	File struct {
 		CreatedAt      func(childComplexity int) int
-		CreatedBy      func(childComplexity int) int
 		Hash           func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
@@ -51,7 +50,6 @@ type ComplexityRoot struct {
 	Job struct {
 		Bundle         func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
-		CreatedBy      func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
@@ -147,13 +145,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.File.CreatedAt(childComplexity), true
 
-	case "File.createdby":
-		if e.complexity.File.CreatedBy == nil {
-			break
-		}
-
-		return e.complexity.File.CreatedBy(childComplexity), true
-
 	case "File.hash":
 		if e.complexity.File.Hash == nil {
 			break
@@ -202,13 +193,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Job.CreatedAt(childComplexity), true
-
-	case "Job.createdby":
-		if e.complexity.Job.CreatedBy == nil {
-			break
-		}
-
-		return e.complexity.Job.CreatedBy(childComplexity), true
 
 	case "Job.id":
 		if e.complexity.Job.ID == nil {
@@ -690,7 +674,6 @@ type File implements Node {
   size: Int!
   """A SHA3 digest of the content field"""
   hash: String!
-  createdby: User! @goField(name: "CreatedBy", forceResolver: false)
 }
 """Ordering options for File connections"""
 input FileOrder {
@@ -701,7 +684,7 @@ input FileOrder {
 }
 """Properties by which File connections can be ordered."""
 enum FileOrderField {
-  LAST_MODIFIED_AT
+  CREATED_AT
   LAST_MODIFIED_AT
   NAME
   SIZE
@@ -778,9 +761,6 @@ input FileWhereInput {
   hashHasSuffix: String
   hashEqualFold: String
   hashContainsFold: String
-  """createdBy edge predicates"""
-  hasCreatedBy: Boolean
-  hasCreatedByWith: [UserWhereInput!]
 }
 type Job implements Node {
   id: ID!
@@ -790,7 +770,6 @@ type Job implements Node {
   lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
   """Name of the job"""
   name: String!
-  createdby: User! @goField(name: "CreatedBy", forceResolver: false)
   tome: Tome!
   bundle: File
   tasks: [Task!]
@@ -804,7 +783,7 @@ input JobOrder {
 }
 """Properties by which Job connections can be ordered."""
 enum JobOrderField {
-  LAST_MODIFIED_AT
+  CREATED_AT
   LAST_MODIFIED_AT
   NAME
 }
@@ -857,9 +836,6 @@ input JobWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """createdBy edge predicates"""
-  hasCreatedBy: Boolean
-  hasCreatedByWith: [UserWhereInput!]
   """tome edge predicates"""
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]

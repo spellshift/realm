@@ -252,25 +252,10 @@ func (c *FileClient) GetX(ctx context.Context, id int) *File {
 	return obj
 }
 
-// QueryCreatedBy queries the createdBy edge of a File.
-func (c *FileClient) QueryCreatedBy(f *File) *UserQuery {
-	query := &UserQuery{config: c.config}
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := f.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(file.Table, file.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, file.CreatedByTable, file.CreatedByColumn),
-		)
-		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *FileClient) Hooks() []Hook {
-	return c.hooks.File
+	hooks := c.hooks.File
+	return append(hooks[:len(hooks):len(hooks)], file.Hooks[:]...)
 }
 
 // JobClient is a client for the Job schema.
@@ -356,22 +341,6 @@ func (c *JobClient) GetX(ctx context.Context, id int) *Job {
 		panic(err)
 	}
 	return obj
-}
-
-// QueryCreatedBy queries the createdBy edge of a Job.
-func (c *JobClient) QueryCreatedBy(j *Job) *UserQuery {
-	query := &UserQuery{config: c.config}
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := j.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(job.Table, job.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, job.CreatedByTable, job.CreatedByColumn),
-		)
-		fromV = sqlgraph.Neighbors(j.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
 }
 
 // QueryTome queries the tome edge of a Job.
