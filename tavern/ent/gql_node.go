@@ -238,16 +238,64 @@ func (t *Task) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Task",
-		Fields: make([]*Field, 1),
+		Fields: make([]*Field, 7),
 		Edges:  make([]*Edge, 2),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(t.Name); err != nil {
+	if buf, err = json.Marshal(t.CreatedAt); err != nil {
 		return nil, err
 	}
 	node.Fields[0] = &Field{
+		Type:  "time.Time",
+		Name:  "createdAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.LastModifiedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "lastModifiedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.ClaimedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "time.Time",
+		Name:  "claimedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.ExecStartedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "time.Time",
+		Name:  "execStartedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.ExecFinishedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "time.Time",
+		Name:  "execFinishedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Output); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
 		Type:  "string",
-		Name:  "name",
+		Name:  "output",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Error); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
+		Type:  "string",
+		Name:  "error",
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{

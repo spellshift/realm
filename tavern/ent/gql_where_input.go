@@ -1098,20 +1098,95 @@ type TaskWhereInput struct {
 	IDLT    *int  `json:"idLT,omitempty"`
 	IDLTE   *int  `json:"idLTE,omitempty"`
 
-	// "name" field predicates.
-	Name             *string  `json:"name,omitempty"`
-	NameNEQ          *string  `json:"nameNEQ,omitempty"`
-	NameIn           []string `json:"nameIn,omitempty"`
-	NameNotIn        []string `json:"nameNotIn,omitempty"`
-	NameGT           *string  `json:"nameGT,omitempty"`
-	NameGTE          *string  `json:"nameGTE,omitempty"`
-	NameLT           *string  `json:"nameLT,omitempty"`
-	NameLTE          *string  `json:"nameLTE,omitempty"`
-	NameContains     *string  `json:"nameContains,omitempty"`
-	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
-	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
-	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
-	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+	// "createdAt" field predicates.
+	CreatedAt      *time.Time  `json:"createdat,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdatNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdatIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdatNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdatGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdatGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdatLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdatLTE,omitempty"`
+
+	// "lastModifiedAt" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastmodifiedat,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastmodifiedatNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastmodifiedatIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastmodifiedatNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastmodifiedatGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastmodifiedatGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastmodifiedatLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastmodifiedatLTE,omitempty"`
+
+	// "claimedAt" field predicates.
+	ClaimedAt       *time.Time  `json:"claimedat,omitempty"`
+	ClaimedAtNEQ    *time.Time  `json:"claimedatNEQ,omitempty"`
+	ClaimedAtIn     []time.Time `json:"claimedatIn,omitempty"`
+	ClaimedAtNotIn  []time.Time `json:"claimedatNotIn,omitempty"`
+	ClaimedAtGT     *time.Time  `json:"claimedatGT,omitempty"`
+	ClaimedAtGTE    *time.Time  `json:"claimedatGTE,omitempty"`
+	ClaimedAtLT     *time.Time  `json:"claimedatLT,omitempty"`
+	ClaimedAtLTE    *time.Time  `json:"claimedatLTE,omitempty"`
+	ClaimedAtIsNil  bool        `json:"claimedatIsNil,omitempty"`
+	ClaimedAtNotNil bool        `json:"claimedatNotNil,omitempty"`
+
+	// "execStartedAt" field predicates.
+	ExecStartedAt       *time.Time  `json:"execstartedat,omitempty"`
+	ExecStartedAtNEQ    *time.Time  `json:"execstartedatNEQ,omitempty"`
+	ExecStartedAtIn     []time.Time `json:"execstartedatIn,omitempty"`
+	ExecStartedAtNotIn  []time.Time `json:"execstartedatNotIn,omitempty"`
+	ExecStartedAtGT     *time.Time  `json:"execstartedatGT,omitempty"`
+	ExecStartedAtGTE    *time.Time  `json:"execstartedatGTE,omitempty"`
+	ExecStartedAtLT     *time.Time  `json:"execstartedatLT,omitempty"`
+	ExecStartedAtLTE    *time.Time  `json:"execstartedatLTE,omitempty"`
+	ExecStartedAtIsNil  bool        `json:"execstartedatIsNil,omitempty"`
+	ExecStartedAtNotNil bool        `json:"execstartedatNotNil,omitempty"`
+
+	// "execFinishedAt" field predicates.
+	ExecFinishedAt       *time.Time  `json:"execfinishedat,omitempty"`
+	ExecFinishedAtNEQ    *time.Time  `json:"execfinishedatNEQ,omitempty"`
+	ExecFinishedAtIn     []time.Time `json:"execfinishedatIn,omitempty"`
+	ExecFinishedAtNotIn  []time.Time `json:"execfinishedatNotIn,omitempty"`
+	ExecFinishedAtGT     *time.Time  `json:"execfinishedatGT,omitempty"`
+	ExecFinishedAtGTE    *time.Time  `json:"execfinishedatGTE,omitempty"`
+	ExecFinishedAtLT     *time.Time  `json:"execfinishedatLT,omitempty"`
+	ExecFinishedAtLTE    *time.Time  `json:"execfinishedatLTE,omitempty"`
+	ExecFinishedAtIsNil  bool        `json:"execfinishedatIsNil,omitempty"`
+	ExecFinishedAtNotNil bool        `json:"execfinishedatNotNil,omitempty"`
+
+	// "output" field predicates.
+	Output             *string  `json:"output,omitempty"`
+	OutputNEQ          *string  `json:"outputNEQ,omitempty"`
+	OutputIn           []string `json:"outputIn,omitempty"`
+	OutputNotIn        []string `json:"outputNotIn,omitempty"`
+	OutputGT           *string  `json:"outputGT,omitempty"`
+	OutputGTE          *string  `json:"outputGTE,omitempty"`
+	OutputLT           *string  `json:"outputLT,omitempty"`
+	OutputLTE          *string  `json:"outputLTE,omitempty"`
+	OutputContains     *string  `json:"outputContains,omitempty"`
+	OutputHasPrefix    *string  `json:"outputHasPrefix,omitempty"`
+	OutputHasSuffix    *string  `json:"outputHasSuffix,omitempty"`
+	OutputIsNil        bool     `json:"outputIsNil,omitempty"`
+	OutputNotNil       bool     `json:"outputNotNil,omitempty"`
+	OutputEqualFold    *string  `json:"outputEqualFold,omitempty"`
+	OutputContainsFold *string  `json:"outputContainsFold,omitempty"`
+
+	// "error" field predicates.
+	Error             *string  `json:"error,omitempty"`
+	ErrorNEQ          *string  `json:"errorNEQ,omitempty"`
+	ErrorIn           []string `json:"errorIn,omitempty"`
+	ErrorNotIn        []string `json:"errorNotIn,omitempty"`
+	ErrorGT           *string  `json:"errorGT,omitempty"`
+	ErrorGTE          *string  `json:"errorGTE,omitempty"`
+	ErrorLT           *string  `json:"errorLT,omitempty"`
+	ErrorLTE          *string  `json:"errorLTE,omitempty"`
+	ErrorContains     *string  `json:"errorContains,omitempty"`
+	ErrorHasPrefix    *string  `json:"errorHasPrefix,omitempty"`
+	ErrorHasSuffix    *string  `json:"errorHasSuffix,omitempty"`
+	ErrorIsNil        bool     `json:"errorIsNil,omitempty"`
+	ErrorNotNil       bool     `json:"errorNotNil,omitempty"`
+	ErrorEqualFold    *string  `json:"errorEqualFold,omitempty"`
+	ErrorContainsFold *string  `json:"errorContainsFold,omitempty"`
 
 	// "job" edge predicates.
 	HasJob     *bool            `json:"hasJob,omitempty"`
@@ -1217,44 +1292,233 @@ func (i *TaskWhereInput) P() (predicate.Task, error) {
 	if i.IDLTE != nil {
 		predicates = append(predicates, task.IDLTE(*i.IDLTE))
 	}
-	if i.Name != nil {
-		predicates = append(predicates, task.NameEQ(*i.Name))
+	if i.CreatedAt != nil {
+		predicates = append(predicates, task.CreatedAtEQ(*i.CreatedAt))
 	}
-	if i.NameNEQ != nil {
-		predicates = append(predicates, task.NameNEQ(*i.NameNEQ))
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, task.CreatedAtNEQ(*i.CreatedAtNEQ))
 	}
-	if len(i.NameIn) > 0 {
-		predicates = append(predicates, task.NameIn(i.NameIn...))
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, task.CreatedAtIn(i.CreatedAtIn...))
 	}
-	if len(i.NameNotIn) > 0 {
-		predicates = append(predicates, task.NameNotIn(i.NameNotIn...))
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, task.CreatedAtNotIn(i.CreatedAtNotIn...))
 	}
-	if i.NameGT != nil {
-		predicates = append(predicates, task.NameGT(*i.NameGT))
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, task.CreatedAtGT(*i.CreatedAtGT))
 	}
-	if i.NameGTE != nil {
-		predicates = append(predicates, task.NameGTE(*i.NameGTE))
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, task.CreatedAtGTE(*i.CreatedAtGTE))
 	}
-	if i.NameLT != nil {
-		predicates = append(predicates, task.NameLT(*i.NameLT))
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, task.CreatedAtLT(*i.CreatedAtLT))
 	}
-	if i.NameLTE != nil {
-		predicates = append(predicates, task.NameLTE(*i.NameLTE))
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, task.CreatedAtLTE(*i.CreatedAtLTE))
 	}
-	if i.NameContains != nil {
-		predicates = append(predicates, task.NameContains(*i.NameContains))
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, task.LastModifiedAtEQ(*i.LastModifiedAt))
 	}
-	if i.NameHasPrefix != nil {
-		predicates = append(predicates, task.NameHasPrefix(*i.NameHasPrefix))
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, task.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
 	}
-	if i.NameHasSuffix != nil {
-		predicates = append(predicates, task.NameHasSuffix(*i.NameHasSuffix))
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, task.LastModifiedAtIn(i.LastModifiedAtIn...))
 	}
-	if i.NameEqualFold != nil {
-		predicates = append(predicates, task.NameEqualFold(*i.NameEqualFold))
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, task.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
 	}
-	if i.NameContainsFold != nil {
-		predicates = append(predicates, task.NameContainsFold(*i.NameContainsFold))
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, task.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, task.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, task.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, task.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.ClaimedAt != nil {
+		predicates = append(predicates, task.ClaimedAtEQ(*i.ClaimedAt))
+	}
+	if i.ClaimedAtNEQ != nil {
+		predicates = append(predicates, task.ClaimedAtNEQ(*i.ClaimedAtNEQ))
+	}
+	if len(i.ClaimedAtIn) > 0 {
+		predicates = append(predicates, task.ClaimedAtIn(i.ClaimedAtIn...))
+	}
+	if len(i.ClaimedAtNotIn) > 0 {
+		predicates = append(predicates, task.ClaimedAtNotIn(i.ClaimedAtNotIn...))
+	}
+	if i.ClaimedAtGT != nil {
+		predicates = append(predicates, task.ClaimedAtGT(*i.ClaimedAtGT))
+	}
+	if i.ClaimedAtGTE != nil {
+		predicates = append(predicates, task.ClaimedAtGTE(*i.ClaimedAtGTE))
+	}
+	if i.ClaimedAtLT != nil {
+		predicates = append(predicates, task.ClaimedAtLT(*i.ClaimedAtLT))
+	}
+	if i.ClaimedAtLTE != nil {
+		predicates = append(predicates, task.ClaimedAtLTE(*i.ClaimedAtLTE))
+	}
+	if i.ClaimedAtIsNil {
+		predicates = append(predicates, task.ClaimedAtIsNil())
+	}
+	if i.ClaimedAtNotNil {
+		predicates = append(predicates, task.ClaimedAtNotNil())
+	}
+	if i.ExecStartedAt != nil {
+		predicates = append(predicates, task.ExecStartedAtEQ(*i.ExecStartedAt))
+	}
+	if i.ExecStartedAtNEQ != nil {
+		predicates = append(predicates, task.ExecStartedAtNEQ(*i.ExecStartedAtNEQ))
+	}
+	if len(i.ExecStartedAtIn) > 0 {
+		predicates = append(predicates, task.ExecStartedAtIn(i.ExecStartedAtIn...))
+	}
+	if len(i.ExecStartedAtNotIn) > 0 {
+		predicates = append(predicates, task.ExecStartedAtNotIn(i.ExecStartedAtNotIn...))
+	}
+	if i.ExecStartedAtGT != nil {
+		predicates = append(predicates, task.ExecStartedAtGT(*i.ExecStartedAtGT))
+	}
+	if i.ExecStartedAtGTE != nil {
+		predicates = append(predicates, task.ExecStartedAtGTE(*i.ExecStartedAtGTE))
+	}
+	if i.ExecStartedAtLT != nil {
+		predicates = append(predicates, task.ExecStartedAtLT(*i.ExecStartedAtLT))
+	}
+	if i.ExecStartedAtLTE != nil {
+		predicates = append(predicates, task.ExecStartedAtLTE(*i.ExecStartedAtLTE))
+	}
+	if i.ExecStartedAtIsNil {
+		predicates = append(predicates, task.ExecStartedAtIsNil())
+	}
+	if i.ExecStartedAtNotNil {
+		predicates = append(predicates, task.ExecStartedAtNotNil())
+	}
+	if i.ExecFinishedAt != nil {
+		predicates = append(predicates, task.ExecFinishedAtEQ(*i.ExecFinishedAt))
+	}
+	if i.ExecFinishedAtNEQ != nil {
+		predicates = append(predicates, task.ExecFinishedAtNEQ(*i.ExecFinishedAtNEQ))
+	}
+	if len(i.ExecFinishedAtIn) > 0 {
+		predicates = append(predicates, task.ExecFinishedAtIn(i.ExecFinishedAtIn...))
+	}
+	if len(i.ExecFinishedAtNotIn) > 0 {
+		predicates = append(predicates, task.ExecFinishedAtNotIn(i.ExecFinishedAtNotIn...))
+	}
+	if i.ExecFinishedAtGT != nil {
+		predicates = append(predicates, task.ExecFinishedAtGT(*i.ExecFinishedAtGT))
+	}
+	if i.ExecFinishedAtGTE != nil {
+		predicates = append(predicates, task.ExecFinishedAtGTE(*i.ExecFinishedAtGTE))
+	}
+	if i.ExecFinishedAtLT != nil {
+		predicates = append(predicates, task.ExecFinishedAtLT(*i.ExecFinishedAtLT))
+	}
+	if i.ExecFinishedAtLTE != nil {
+		predicates = append(predicates, task.ExecFinishedAtLTE(*i.ExecFinishedAtLTE))
+	}
+	if i.ExecFinishedAtIsNil {
+		predicates = append(predicates, task.ExecFinishedAtIsNil())
+	}
+	if i.ExecFinishedAtNotNil {
+		predicates = append(predicates, task.ExecFinishedAtNotNil())
+	}
+	if i.Output != nil {
+		predicates = append(predicates, task.OutputEQ(*i.Output))
+	}
+	if i.OutputNEQ != nil {
+		predicates = append(predicates, task.OutputNEQ(*i.OutputNEQ))
+	}
+	if len(i.OutputIn) > 0 {
+		predicates = append(predicates, task.OutputIn(i.OutputIn...))
+	}
+	if len(i.OutputNotIn) > 0 {
+		predicates = append(predicates, task.OutputNotIn(i.OutputNotIn...))
+	}
+	if i.OutputGT != nil {
+		predicates = append(predicates, task.OutputGT(*i.OutputGT))
+	}
+	if i.OutputGTE != nil {
+		predicates = append(predicates, task.OutputGTE(*i.OutputGTE))
+	}
+	if i.OutputLT != nil {
+		predicates = append(predicates, task.OutputLT(*i.OutputLT))
+	}
+	if i.OutputLTE != nil {
+		predicates = append(predicates, task.OutputLTE(*i.OutputLTE))
+	}
+	if i.OutputContains != nil {
+		predicates = append(predicates, task.OutputContains(*i.OutputContains))
+	}
+	if i.OutputHasPrefix != nil {
+		predicates = append(predicates, task.OutputHasPrefix(*i.OutputHasPrefix))
+	}
+	if i.OutputHasSuffix != nil {
+		predicates = append(predicates, task.OutputHasSuffix(*i.OutputHasSuffix))
+	}
+	if i.OutputIsNil {
+		predicates = append(predicates, task.OutputIsNil())
+	}
+	if i.OutputNotNil {
+		predicates = append(predicates, task.OutputNotNil())
+	}
+	if i.OutputEqualFold != nil {
+		predicates = append(predicates, task.OutputEqualFold(*i.OutputEqualFold))
+	}
+	if i.OutputContainsFold != nil {
+		predicates = append(predicates, task.OutputContainsFold(*i.OutputContainsFold))
+	}
+	if i.Error != nil {
+		predicates = append(predicates, task.ErrorEQ(*i.Error))
+	}
+	if i.ErrorNEQ != nil {
+		predicates = append(predicates, task.ErrorNEQ(*i.ErrorNEQ))
+	}
+	if len(i.ErrorIn) > 0 {
+		predicates = append(predicates, task.ErrorIn(i.ErrorIn...))
+	}
+	if len(i.ErrorNotIn) > 0 {
+		predicates = append(predicates, task.ErrorNotIn(i.ErrorNotIn...))
+	}
+	if i.ErrorGT != nil {
+		predicates = append(predicates, task.ErrorGT(*i.ErrorGT))
+	}
+	if i.ErrorGTE != nil {
+		predicates = append(predicates, task.ErrorGTE(*i.ErrorGTE))
+	}
+	if i.ErrorLT != nil {
+		predicates = append(predicates, task.ErrorLT(*i.ErrorLT))
+	}
+	if i.ErrorLTE != nil {
+		predicates = append(predicates, task.ErrorLTE(*i.ErrorLTE))
+	}
+	if i.ErrorContains != nil {
+		predicates = append(predicates, task.ErrorContains(*i.ErrorContains))
+	}
+	if i.ErrorHasPrefix != nil {
+		predicates = append(predicates, task.ErrorHasPrefix(*i.ErrorHasPrefix))
+	}
+	if i.ErrorHasSuffix != nil {
+		predicates = append(predicates, task.ErrorHasSuffix(*i.ErrorHasSuffix))
+	}
+	if i.ErrorIsNil {
+		predicates = append(predicates, task.ErrorIsNil())
+	}
+	if i.ErrorNotNil {
+		predicates = append(predicates, task.ErrorNotNil())
+	}
+	if i.ErrorEqualFold != nil {
+		predicates = append(predicates, task.ErrorEqualFold(*i.ErrorEqualFold))
+	}
+	if i.ErrorContainsFold != nil {
+		predicates = append(predicates, task.ErrorContainsFold(*i.ErrorContainsFold))
 	}
 
 	if i.HasJob != nil {

@@ -95,10 +95,16 @@ type ComplexityRoot struct {
 	}
 
 	Task struct {
-		ID     func(childComplexity int) int
-		Job    func(childComplexity int) int
-		Name   func(childComplexity int) int
-		Target func(childComplexity int) int
+		ClaimedAt      func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Error          func(childComplexity int) int
+		ExecFinishedAt func(childComplexity int) int
+		ExecStartedAt  func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Job            func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Output         func(childComplexity int) int
+		Target         func(childComplexity int) int
 	}
 
 	Tome struct {
@@ -408,6 +414,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Target.Tags(childComplexity), true
 
+	case "Task.claimedat":
+		if e.complexity.Task.ClaimedAt == nil {
+			break
+		}
+
+		return e.complexity.Task.ClaimedAt(childComplexity), true
+
+	case "Task.createdat":
+		if e.complexity.Task.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Task.CreatedAt(childComplexity), true
+
+	case "Task.error":
+		if e.complexity.Task.Error == nil {
+			break
+		}
+
+		return e.complexity.Task.Error(childComplexity), true
+
+	case "Task.execfinishedat":
+		if e.complexity.Task.ExecFinishedAt == nil {
+			break
+		}
+
+		return e.complexity.Task.ExecFinishedAt(childComplexity), true
+
+	case "Task.execstartedat":
+		if e.complexity.Task.ExecStartedAt == nil {
+			break
+		}
+
+		return e.complexity.Task.ExecStartedAt(childComplexity), true
+
 	case "Task.id":
 		if e.complexity.Task.ID == nil {
 			break
@@ -422,12 +463,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Job(childComplexity), true
 
-	case "Task.name":
-		if e.complexity.Task.Name == nil {
+	case "Task.lastmodifiedat":
+		if e.complexity.Task.LastModifiedAt == nil {
 			break
 		}
 
-		return e.complexity.Task.Name(childComplexity), true
+		return e.complexity.Task.LastModifiedAt(childComplexity), true
+
+	case "Task.output":
+		if e.complexity.Task.Output == nil {
+			break
+		}
+
+		return e.complexity.Task.Output(childComplexity), true
 
 	case "Task.target":
 		if e.complexity.Task.Target == nil {
@@ -1011,8 +1059,20 @@ input TargetWhereInput {
 }
 type Task implements Node {
   id: ID!
-  """Name of the task"""
-  name: String!
+  """Timestamp of when this ent was created"""
+  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  """Timestamp of when this ent was last updated"""
+  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
+  """Timestamp of when the task was claimed, null if not yet claimed"""
+  claimedat: Time @goField(name: "ClaimedAt", forceResolver: false)
+  """Timestamp of when execution of the task started, null if not yet started"""
+  execstartedat: Time @goField(name: "ExecStartedAt", forceResolver: false)
+  """Timestamp of when execution of the task finished, null if not yet finished"""
+  execfinishedat: Time @goField(name: "ExecFinishedAt", forceResolver: false)
+  """Output from executing the task"""
+  output: String
+  """Error, if any, produced while executing the Task"""
+  error: String
   job: Job!
   target: Target!
 }
@@ -1025,7 +1085,11 @@ input TaskOrder {
 }
 """Properties by which Task connections can be ordered."""
 enum TaskOrderField {
-  NAME
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLAIMED_AT
+  EXEC_STARTED_AT
+  EXEC_FINISHED_AT
 }
 """
 TaskWhereInput is used for filtering Task objects.
@@ -1044,20 +1108,89 @@ input TaskWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """name field predicates"""
-  name: String
-  nameNEQ: String
-  nameIn: [String!]
-  nameNotIn: [String!]
-  nameGT: String
-  nameGTE: String
-  nameLT: String
-  nameLTE: String
-  nameContains: String
-  nameHasPrefix: String
-  nameHasSuffix: String
-  nameEqualFold: String
-  nameContainsFold: String
+  """createdAt field predicates"""
+  createdat: Time
+  createdatNEQ: Time
+  createdatIn: [Time!]
+  createdatNotIn: [Time!]
+  createdatGT: Time
+  createdatGTE: Time
+  createdatLT: Time
+  createdatLTE: Time
+  """lastModifiedAt field predicates"""
+  lastmodifiedat: Time
+  lastmodifiedatNEQ: Time
+  lastmodifiedatIn: [Time!]
+  lastmodifiedatNotIn: [Time!]
+  lastmodifiedatGT: Time
+  lastmodifiedatGTE: Time
+  lastmodifiedatLT: Time
+  lastmodifiedatLTE: Time
+  """claimedAt field predicates"""
+  claimedat: Time
+  claimedatNEQ: Time
+  claimedatIn: [Time!]
+  claimedatNotIn: [Time!]
+  claimedatGT: Time
+  claimedatGTE: Time
+  claimedatLT: Time
+  claimedatLTE: Time
+  claimedatIsNil: Boolean
+  claimedatNotNil: Boolean
+  """execStartedAt field predicates"""
+  execstartedat: Time
+  execstartedatNEQ: Time
+  execstartedatIn: [Time!]
+  execstartedatNotIn: [Time!]
+  execstartedatGT: Time
+  execstartedatGTE: Time
+  execstartedatLT: Time
+  execstartedatLTE: Time
+  execstartedatIsNil: Boolean
+  execstartedatNotNil: Boolean
+  """execFinishedAt field predicates"""
+  execfinishedat: Time
+  execfinishedatNEQ: Time
+  execfinishedatIn: [Time!]
+  execfinishedatNotIn: [Time!]
+  execfinishedatGT: Time
+  execfinishedatGTE: Time
+  execfinishedatLT: Time
+  execfinishedatLTE: Time
+  execfinishedatIsNil: Boolean
+  execfinishedatNotNil: Boolean
+  """output field predicates"""
+  output: String
+  outputNEQ: String
+  outputIn: [String!]
+  outputNotIn: [String!]
+  outputGT: String
+  outputGTE: String
+  outputLT: String
+  outputLTE: String
+  outputContains: String
+  outputHasPrefix: String
+  outputHasSuffix: String
+  outputIsNil: Boolean
+  outputNotNil: Boolean
+  outputEqualFold: String
+  outputContainsFold: String
+  """error field predicates"""
+  error: String
+  errorNEQ: String
+  errorIn: [String!]
+  errorNotIn: [String!]
+  errorGT: String
+  errorGTE: String
+  errorLT: String
+  errorLTE: String
+  errorContains: String
+  errorHasPrefix: String
+  errorHasSuffix: String
+  errorIsNil: Boolean
+  errorNotNil: Boolean
+  errorEqualFold: String
+  errorContainsFold: String
   """job edge predicates"""
   hasJob: Boolean
   hasJobWith: [JobWhereInput!]

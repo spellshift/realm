@@ -61,7 +61,7 @@ func (File) Annotations() []schema.Annotation {
 // Mixin defines common shared properties for the ent.
 func (File) Mixin() []ent.Mixin {
 	return []ent.Mixin{
-		MixinHistory{}, // createdAt, lastModifiedAt, createdBy
+		MixinHistory{}, // createdAt, lastModifiedAt
 	}
 }
 

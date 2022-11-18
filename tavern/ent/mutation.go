@@ -2151,18 +2151,24 @@ func (m *TargetMutation) ResetEdge(name string) error {
 // TaskMutation represents an operation that mutates the Task nodes in the graph.
 type TaskMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	clearedFields map[string]struct{}
-	job           *int
-	clearedjob    bool
-	target        *int
-	clearedtarget bool
-	done          bool
-	oldValue      func(context.Context) (*Task, error)
-	predicates    []predicate.Task
+	op             Op
+	typ            string
+	id             *int
+	createdAt      *time.Time
+	lastModifiedAt *time.Time
+	claimedAt      *time.Time
+	execStartedAt  *time.Time
+	execFinishedAt *time.Time
+	output         *string
+	error          *string
+	clearedFields  map[string]struct{}
+	job            *int
+	clearedjob     bool
+	target         *int
+	clearedtarget  bool
+	done           bool
+	oldValue       func(context.Context) (*Task, error)
+	predicates     []predicate.Task
 }
 
 var _ ent.Mutation = (*TaskMutation)(nil)
@@ -2263,40 +2269,321 @@ func (m *TaskMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetName sets the "name" field.
-func (m *TaskMutation) SetName(s string) {
-	m.name = &s
+// SetCreatedAt sets the "createdAt" field.
+func (m *TaskMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
 }
 
-// Name returns the value of the "name" field in the mutation.
-func (m *TaskMutation) Name() (r string, exists bool) {
-	v := m.name
+// CreatedAt returns the value of the "createdAt" field in the mutation.
+func (m *TaskMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldName returns the old "name" field's value of the Task entity.
+// OldCreatedAt returns the old "createdAt" field's value of the Task entity.
 // If the Task object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TaskMutation) OldName(ctx context.Context) (v string, err error) {
+func (m *TaskMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
 	}
-	return oldValue.Name, nil
+	return oldValue.CreatedAt, nil
 }
 
-// ResetName resets all changes to the "name" field.
-func (m *TaskMutation) ResetName() {
-	m.name = nil
+// ResetCreatedAt resets all changes to the "createdAt" field.
+func (m *TaskMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (m *TaskMutation) SetLastModifiedAt(t time.Time) {
+	m.lastModifiedAt = &t
+}
+
+// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
+func (m *TaskMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.lastModifiedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the Task entity.
+// If the Task object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
+func (m *TaskMutation) ResetLastModifiedAt() {
+	m.lastModifiedAt = nil
+}
+
+// SetClaimedAt sets the "claimedAt" field.
+func (m *TaskMutation) SetClaimedAt(t time.Time) {
+	m.claimedAt = &t
+}
+
+// ClaimedAt returns the value of the "claimedAt" field in the mutation.
+func (m *TaskMutation) ClaimedAt() (r time.Time, exists bool) {
+	v := m.claimedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClaimedAt returns the old "claimedAt" field's value of the Task entity.
+// If the Task object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskMutation) OldClaimedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClaimedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClaimedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClaimedAt: %w", err)
+	}
+	return oldValue.ClaimedAt, nil
+}
+
+// ClearClaimedAt clears the value of the "claimedAt" field.
+func (m *TaskMutation) ClearClaimedAt() {
+	m.claimedAt = nil
+	m.clearedFields[task.FieldClaimedAt] = struct{}{}
+}
+
+// ClaimedAtCleared returns if the "claimedAt" field was cleared in this mutation.
+func (m *TaskMutation) ClaimedAtCleared() bool {
+	_, ok := m.clearedFields[task.FieldClaimedAt]
+	return ok
+}
+
+// ResetClaimedAt resets all changes to the "claimedAt" field.
+func (m *TaskMutation) ResetClaimedAt() {
+	m.claimedAt = nil
+	delete(m.clearedFields, task.FieldClaimedAt)
+}
+
+// SetExecStartedAt sets the "execStartedAt" field.
+func (m *TaskMutation) SetExecStartedAt(t time.Time) {
+	m.execStartedAt = &t
+}
+
+// ExecStartedAt returns the value of the "execStartedAt" field in the mutation.
+func (m *TaskMutation) ExecStartedAt() (r time.Time, exists bool) {
+	v := m.execStartedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecStartedAt returns the old "execStartedAt" field's value of the Task entity.
+// If the Task object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskMutation) OldExecStartedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecStartedAt: %w", err)
+	}
+	return oldValue.ExecStartedAt, nil
+}
+
+// ClearExecStartedAt clears the value of the "execStartedAt" field.
+func (m *TaskMutation) ClearExecStartedAt() {
+	m.execStartedAt = nil
+	m.clearedFields[task.FieldExecStartedAt] = struct{}{}
+}
+
+// ExecStartedAtCleared returns if the "execStartedAt" field was cleared in this mutation.
+func (m *TaskMutation) ExecStartedAtCleared() bool {
+	_, ok := m.clearedFields[task.FieldExecStartedAt]
+	return ok
+}
+
+// ResetExecStartedAt resets all changes to the "execStartedAt" field.
+func (m *TaskMutation) ResetExecStartedAt() {
+	m.execStartedAt = nil
+	delete(m.clearedFields, task.FieldExecStartedAt)
+}
+
+// SetExecFinishedAt sets the "execFinishedAt" field.
+func (m *TaskMutation) SetExecFinishedAt(t time.Time) {
+	m.execFinishedAt = &t
+}
+
+// ExecFinishedAt returns the value of the "execFinishedAt" field in the mutation.
+func (m *TaskMutation) ExecFinishedAt() (r time.Time, exists bool) {
+	v := m.execFinishedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecFinishedAt returns the old "execFinishedAt" field's value of the Task entity.
+// If the Task object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskMutation) OldExecFinishedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecFinishedAt: %w", err)
+	}
+	return oldValue.ExecFinishedAt, nil
+}
+
+// ClearExecFinishedAt clears the value of the "execFinishedAt" field.
+func (m *TaskMutation) ClearExecFinishedAt() {
+	m.execFinishedAt = nil
+	m.clearedFields[task.FieldExecFinishedAt] = struct{}{}
+}
+
+// ExecFinishedAtCleared returns if the "execFinishedAt" field was cleared in this mutation.
+func (m *TaskMutation) ExecFinishedAtCleared() bool {
+	_, ok := m.clearedFields[task.FieldExecFinishedAt]
+	return ok
+}
+
+// ResetExecFinishedAt resets all changes to the "execFinishedAt" field.
+func (m *TaskMutation) ResetExecFinishedAt() {
+	m.execFinishedAt = nil
+	delete(m.clearedFields, task.FieldExecFinishedAt)
+}
+
+// SetOutput sets the "output" field.
+func (m *TaskMutation) SetOutput(s string) {
+	m.output = &s
+}
+
+// Output returns the value of the "output" field in the mutation.
+func (m *TaskMutation) Output() (r string, exists bool) {
+	v := m.output
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutput returns the old "output" field's value of the Task entity.
+// If the Task object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskMutation) OldOutput(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutput is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutput requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutput: %w", err)
+	}
+	return oldValue.Output, nil
+}
+
+// ClearOutput clears the value of the "output" field.
+func (m *TaskMutation) ClearOutput() {
+	m.output = nil
+	m.clearedFields[task.FieldOutput] = struct{}{}
+}
+
+// OutputCleared returns if the "output" field was cleared in this mutation.
+func (m *TaskMutation) OutputCleared() bool {
+	_, ok := m.clearedFields[task.FieldOutput]
+	return ok
+}
+
+// ResetOutput resets all changes to the "output" field.
+func (m *TaskMutation) ResetOutput() {
+	m.output = nil
+	delete(m.clearedFields, task.FieldOutput)
+}
+
+// SetError sets the "error" field.
+func (m *TaskMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *TaskMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the Task entity.
+// If the Task object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskMutation) OldError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ClearError clears the value of the "error" field.
+func (m *TaskMutation) ClearError() {
+	m.error = nil
+	m.clearedFields[task.FieldError] = struct{}{}
+}
+
+// ErrorCleared returns if the "error" field was cleared in this mutation.
+func (m *TaskMutation) ErrorCleared() bool {
+	_, ok := m.clearedFields[task.FieldError]
+	return ok
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *TaskMutation) ResetError() {
+	m.error = nil
+	delete(m.clearedFields, task.FieldError)
 }
 
 // SetJobID sets the "job" edge to the Job entity by id.
@@ -2396,9 +2683,27 @@ func (m *TaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TaskMutation) Fields() []string {
-	fields := make([]string, 0, 1)
-	if m.name != nil {
-		fields = append(fields, task.FieldName)
+	fields := make([]string, 0, 7)
+	if m.createdAt != nil {
+		fields = append(fields, task.FieldCreatedAt)
+	}
+	if m.lastModifiedAt != nil {
+		fields = append(fields, task.FieldLastModifiedAt)
+	}
+	if m.claimedAt != nil {
+		fields = append(fields, task.FieldClaimedAt)
+	}
+	if m.execStartedAt != nil {
+		fields = append(fields, task.FieldExecStartedAt)
+	}
+	if m.execFinishedAt != nil {
+		fields = append(fields, task.FieldExecFinishedAt)
+	}
+	if m.output != nil {
+		fields = append(fields, task.FieldOutput)
+	}
+	if m.error != nil {
+		fields = append(fields, task.FieldError)
 	}
 	return fields
 }
@@ -2408,8 +2713,20 @@ func (m *TaskMutation) Fields() []string {
 // schema.
 func (m *TaskMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case task.FieldName:
-		return m.Name()
+	case task.FieldCreatedAt:
+		return m.CreatedAt()
+	case task.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case task.FieldClaimedAt:
+		return m.ClaimedAt()
+	case task.FieldExecStartedAt:
+		return m.ExecStartedAt()
+	case task.FieldExecFinishedAt:
+		return m.ExecFinishedAt()
+	case task.FieldOutput:
+		return m.Output()
+	case task.FieldError:
+		return m.Error()
 	}
 	return nil, false
 }
@@ -2419,8 +2736,20 @@ func (m *TaskMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *TaskMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case task.FieldName:
-		return m.OldName(ctx)
+	case task.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case task.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case task.FieldClaimedAt:
+		return m.OldClaimedAt(ctx)
+	case task.FieldExecStartedAt:
+		return m.OldExecStartedAt(ctx)
+	case task.FieldExecFinishedAt:
+		return m.OldExecFinishedAt(ctx)
+	case task.FieldOutput:
+		return m.OldOutput(ctx)
+	case task.FieldError:
+		return m.OldError(ctx)
 	}
 	return nil, fmt.Errorf("unknown Task field %s", name)
 }
@@ -2430,12 +2759,54 @@ func (m *TaskMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *TaskMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case task.FieldName:
+	case task.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case task.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case task.FieldClaimedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClaimedAt(v)
+		return nil
+	case task.FieldExecStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecStartedAt(v)
+		return nil
+	case task.FieldExecFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecFinishedAt(v)
+		return nil
+	case task.FieldOutput:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetName(v)
+		m.SetOutput(v)
+		return nil
+	case task.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Task field %s", name)
@@ -2466,7 +2837,23 @@ func (m *TaskMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *TaskMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(task.FieldClaimedAt) {
+		fields = append(fields, task.FieldClaimedAt)
+	}
+	if m.FieldCleared(task.FieldExecStartedAt) {
+		fields = append(fields, task.FieldExecStartedAt)
+	}
+	if m.FieldCleared(task.FieldExecFinishedAt) {
+		fields = append(fields, task.FieldExecFinishedAt)
+	}
+	if m.FieldCleared(task.FieldOutput) {
+		fields = append(fields, task.FieldOutput)
+	}
+	if m.FieldCleared(task.FieldError) {
+		fields = append(fields, task.FieldError)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2479,6 +2866,23 @@ func (m *TaskMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *TaskMutation) ClearField(name string) error {
+	switch name {
+	case task.FieldClaimedAt:
+		m.ClearClaimedAt()
+		return nil
+	case task.FieldExecStartedAt:
+		m.ClearExecStartedAt()
+		return nil
+	case task.FieldExecFinishedAt:
+		m.ClearExecFinishedAt()
+		return nil
+	case task.FieldOutput:
+		m.ClearOutput()
+		return nil
+	case task.FieldError:
+		m.ClearError()
+		return nil
+	}
 	return fmt.Errorf("unknown Task nullable field %s", name)
 }
 
@@ -2486,8 +2890,26 @@ func (m *TaskMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *TaskMutation) ResetField(name string) error {
 	switch name {
-	case task.FieldName:
-		m.ResetName()
+	case task.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case task.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case task.FieldClaimedAt:
+		m.ResetClaimedAt()
+		return nil
+	case task.FieldExecStartedAt:
+		m.ResetExecStartedAt()
+		return nil
+	case task.FieldExecFinishedAt:
+		m.ResetExecFinishedAt()
+		return nil
+	case task.FieldOutput:
+		m.ResetOutput()
+		return nil
+	case task.FieldError:
+		m.ResetError()
 		return nil
 	}
 	return fmt.Errorf("unknown Task field %s", name)

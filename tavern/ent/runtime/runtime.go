@@ -81,12 +81,21 @@ func init() {
 	targetDescName := targetFields[0].Descriptor()
 	// target.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	target.NameValidator = targetDescName.Validators[0].(func(string) error)
+	taskMixin := schema.Task{}.Mixin()
+	taskMixinFields0 := taskMixin[0].Fields()
+	_ = taskMixinFields0
 	taskFields := schema.Task{}.Fields()
 	_ = taskFields
-	// taskDescName is the schema descriptor for name field.
-	taskDescName := taskFields[0].Descriptor()
-	// task.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	task.NameValidator = taskDescName.Validators[0].(func(string) error)
+	// taskDescCreatedAt is the schema descriptor for createdAt field.
+	taskDescCreatedAt := taskMixinFields0[0].Descriptor()
+	// task.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	task.DefaultCreatedAt = taskDescCreatedAt.Default.(func() time.Time)
+	// taskDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	taskDescLastModifiedAt := taskMixinFields0[1].Descriptor()
+	// task.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	task.DefaultLastModifiedAt = taskDescLastModifiedAt.Default.(func() time.Time)
+	// task.UpdateDefaultLastModifiedAt holds the default value on update for the lastModifiedAt field.
+	task.UpdateDefaultLastModifiedAt = taskDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	tomeFields := schema.Tome{}.Fields()
 	_ = tomeFields
 	// tomeDescName is the schema descriptor for name field.

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -21,9 +22,101 @@ type TaskCreate struct {
 	hooks    []Hook
 }
 
-// SetName sets the "name" field.
-func (tc *TaskCreate) SetName(s string) *TaskCreate {
-	tc.mutation.SetName(s)
+// SetCreatedAt sets the "createdAt" field.
+func (tc *TaskCreate) SetCreatedAt(t time.Time) *TaskCreate {
+	tc.mutation.SetCreatedAt(t)
+	return tc
+}
+
+// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableCreatedAt(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetCreatedAt(*t)
+	}
+	return tc
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (tc *TaskCreate) SetLastModifiedAt(t time.Time) *TaskCreate {
+	tc.mutation.SetLastModifiedAt(t)
+	return tc
+}
+
+// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableLastModifiedAt(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetLastModifiedAt(*t)
+	}
+	return tc
+}
+
+// SetClaimedAt sets the "claimedAt" field.
+func (tc *TaskCreate) SetClaimedAt(t time.Time) *TaskCreate {
+	tc.mutation.SetClaimedAt(t)
+	return tc
+}
+
+// SetNillableClaimedAt sets the "claimedAt" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableClaimedAt(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetClaimedAt(*t)
+	}
+	return tc
+}
+
+// SetExecStartedAt sets the "execStartedAt" field.
+func (tc *TaskCreate) SetExecStartedAt(t time.Time) *TaskCreate {
+	tc.mutation.SetExecStartedAt(t)
+	return tc
+}
+
+// SetNillableExecStartedAt sets the "execStartedAt" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableExecStartedAt(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetExecStartedAt(*t)
+	}
+	return tc
+}
+
+// SetExecFinishedAt sets the "execFinishedAt" field.
+func (tc *TaskCreate) SetExecFinishedAt(t time.Time) *TaskCreate {
+	tc.mutation.SetExecFinishedAt(t)
+	return tc
+}
+
+// SetNillableExecFinishedAt sets the "execFinishedAt" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableExecFinishedAt(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetExecFinishedAt(*t)
+	}
+	return tc
+}
+
+// SetOutput sets the "output" field.
+func (tc *TaskCreate) SetOutput(s string) *TaskCreate {
+	tc.mutation.SetOutput(s)
+	return tc
+}
+
+// SetNillableOutput sets the "output" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableOutput(s *string) *TaskCreate {
+	if s != nil {
+		tc.SetOutput(*s)
+	}
+	return tc
+}
+
+// SetError sets the "error" field.
+func (tc *TaskCreate) SetError(s string) *TaskCreate {
+	tc.mutation.SetError(s)
+	return tc
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableError(s *string) *TaskCreate {
+	if s != nil {
+		tc.SetError(*s)
+	}
 	return tc
 }
 
@@ -60,6 +153,7 @@ func (tc *TaskCreate) Save(ctx context.Context) (*Task, error) {
 		err  error
 		node *Task
 	)
+	tc.defaults()
 	if len(tc.hooks) == 0 {
 		if err = tc.check(); err != nil {
 			return nil, err
@@ -123,15 +217,25 @@ func (tc *TaskCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tc *TaskCreate) defaults() {
+	if _, ok := tc.mutation.CreatedAt(); !ok {
+		v := task.DefaultCreatedAt()
+		tc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := tc.mutation.LastModifiedAt(); !ok {
+		v := task.DefaultLastModifiedAt()
+		tc.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tc *TaskCreate) check() error {
-	if _, ok := tc.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Task.name"`)}
+	if _, ok := tc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Task.createdAt"`)}
 	}
-	if v, ok := tc.mutation.Name(); ok {
-		if err := task.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Task.name": %w`, err)}
-		}
+	if _, ok := tc.mutation.LastModifiedAt(); !ok {
+		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Task.lastModifiedAt"`)}
 	}
 	if _, ok := tc.mutation.JobID(); !ok {
 		return &ValidationError{Name: "job", err: errors.New(`ent: missing required edge "Task.job"`)}
@@ -166,9 +270,33 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
-	if value, ok := tc.mutation.Name(); ok {
-		_spec.SetField(task.FieldName, field.TypeString, value)
-		_node.Name = value
+	if value, ok := tc.mutation.CreatedAt(); ok {
+		_spec.SetField(task.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := tc.mutation.LastModifiedAt(); ok {
+		_spec.SetField(task.FieldLastModifiedAt, field.TypeTime, value)
+		_node.LastModifiedAt = value
+	}
+	if value, ok := tc.mutation.ClaimedAt(); ok {
+		_spec.SetField(task.FieldClaimedAt, field.TypeTime, value)
+		_node.ClaimedAt = value
+	}
+	if value, ok := tc.mutation.ExecStartedAt(); ok {
+		_spec.SetField(task.FieldExecStartedAt, field.TypeTime, value)
+		_node.ExecStartedAt = value
+	}
+	if value, ok := tc.mutation.ExecFinishedAt(); ok {
+		_spec.SetField(task.FieldExecFinishedAt, field.TypeTime, value)
+		_node.ExecFinishedAt = value
+	}
+	if value, ok := tc.mutation.Output(); ok {
+		_spec.SetField(task.FieldOutput, field.TypeString, value)
+		_node.Output = value
+	}
+	if value, ok := tc.mutation.Error(); ok {
+		_spec.SetField(task.FieldError, field.TypeString, value)
+		_node.Error = value
 	}
 	if nodes := tc.mutation.JobIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -227,6 +355,7 @@ func (tcb *TaskCreateBulk) Save(ctx context.Context) ([]*Task, error) {
 	for i := range tcb.builders {
 		func(i int, root context.Context) {
 			builder := tcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TaskMutation)
 				if !ok {

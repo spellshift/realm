@@ -1611,13 +1611,53 @@ func (t *TaskQuery) Paginate(
 }
 
 var (
-	// TaskOrderFieldName orders Task by name.
-	TaskOrderFieldName = &TaskOrderField{
-		field: task.FieldName,
+	// TaskOrderFieldCreatedAt orders Task by createdAt.
+	TaskOrderFieldCreatedAt = &TaskOrderField{
+		field: task.FieldCreatedAt,
 		toCursor: func(t *Task) Cursor {
 			return Cursor{
 				ID:    t.ID,
-				Value: t.Name,
+				Value: t.CreatedAt,
+			}
+		},
+	}
+	// TaskOrderFieldLastModifiedAt orders Task by lastModifiedAt.
+	TaskOrderFieldLastModifiedAt = &TaskOrderField{
+		field: task.FieldLastModifiedAt,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.LastModifiedAt,
+			}
+		},
+	}
+	// TaskOrderFieldClaimedAt orders Task by claimedAt.
+	TaskOrderFieldClaimedAt = &TaskOrderField{
+		field: task.FieldClaimedAt,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.ClaimedAt,
+			}
+		},
+	}
+	// TaskOrderFieldExecStartedAt orders Task by execStartedAt.
+	TaskOrderFieldExecStartedAt = &TaskOrderField{
+		field: task.FieldExecStartedAt,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.ExecStartedAt,
+			}
+		},
+	}
+	// TaskOrderFieldExecFinishedAt orders Task by execFinishedAt.
+	TaskOrderFieldExecFinishedAt = &TaskOrderField{
+		field: task.FieldExecFinishedAt,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.ExecFinishedAt,
 			}
 		},
 	}
@@ -1627,8 +1667,16 @@ var (
 func (f TaskOrderField) String() string {
 	var str string
 	switch f.field {
-	case task.FieldName:
-		str = "NAME"
+	case task.FieldCreatedAt:
+		str = "CREATED_AT"
+	case task.FieldLastModifiedAt:
+		str = "LAST_MODIFIED_AT"
+	case task.FieldClaimedAt:
+		str = "CLAIMED_AT"
+	case task.FieldExecStartedAt:
+		str = "EXEC_STARTED_AT"
+	case task.FieldExecFinishedAt:
+		str = "EXEC_FINISHED_AT"
 	}
 	return str
 }
@@ -1645,8 +1693,16 @@ func (f *TaskOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("TaskOrderField %T must be a string", v)
 	}
 	switch str {
-	case "NAME":
-		*f = *TaskOrderFieldName
+	case "CREATED_AT":
+		*f = *TaskOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *TaskOrderFieldLastModifiedAt
+	case "CLAIMED_AT":
+		*f = *TaskOrderFieldClaimedAt
+	case "EXEC_STARTED_AT":
+		*f = *TaskOrderFieldExecStartedAt
+	case "EXEC_FINISHED_AT":
+		*f = *TaskOrderFieldExecFinishedAt
 	default:
 		return fmt.Errorf("%s is not a valid TaskOrderField", str)
 	}
