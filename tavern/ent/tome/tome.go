@@ -4,6 +4,8 @@ package tome
 
 import (
 	"time"
+
+	"entgo.io/ent"
 )
 
 const (
@@ -11,20 +13,18 @@ const (
 	Label = "tome"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCreatedAt holds the string denoting the createdat field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldLastModifiedAt holds the string denoting the lastmodifiedat field in the database.
+	FieldLastModifiedAt = "last_modified_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
 	// FieldParameters holds the string denoting the parameters field in the database.
 	FieldParameters = "parameters"
-	// FieldSize holds the string denoting the size field in the database.
-	FieldSize = "size"
 	// FieldHash holds the string denoting the hash field in the database.
 	FieldHash = "hash"
-	// FieldCreatedAt holds the string denoting the createdat field in the database.
-	FieldCreatedAt = "created_at"
-	// FieldLastModifiedAt holds the string denoting the lastmodifiedat field in the database.
-	FieldLastModifiedAt = "last_modified_at"
 	// FieldEldritch holds the string denoting the eldritch field in the database.
 	FieldEldritch = "eldritch"
 	// EdgeFiles holds the string denoting the files edge name in mutations.
@@ -43,13 +43,12 @@ const (
 // Columns holds all SQL columns for tome fields.
 var Columns = []string{
 	FieldID,
+	FieldCreatedAt,
+	FieldLastModifiedAt,
 	FieldName,
 	FieldDescription,
 	FieldParameters,
-	FieldSize,
 	FieldHash,
-	FieldCreatedAt,
-	FieldLastModifiedAt,
 	FieldEldritch,
 }
 
@@ -63,17 +62,21 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "github.com/kcarretto/realm/tavern/ent/runtime"
 var (
-	// NameValidator is a validator for the "name" field. It is called by the builders before save.
-	NameValidator func(string) error
-	// DefaultSize holds the default value on creation for the "size" field.
-	DefaultSize int
-	// SizeValidator is a validator for the "size" field. It is called by the builders before save.
-	SizeValidator func(int) error
-	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
-	HashValidator func(string) error
+	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.
 	DefaultLastModifiedAt func() time.Time
+	// UpdateDefaultLastModifiedAt holds the default value on update for the "lastModifiedAt" field.
+	UpdateDefaultLastModifiedAt func() time.Time
+	// NameValidator is a validator for the "name" field. It is called by the builders before save.
+	NameValidator func(string) error
+	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
+	HashValidator func(string) error
 )

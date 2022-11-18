@@ -1941,26 +1941,6 @@ func (t *TomeQuery) Paginate(
 }
 
 var (
-	// TomeOrderFieldName orders Tome by name.
-	TomeOrderFieldName = &TomeOrderField{
-		field: tome.FieldName,
-		toCursor: func(t *Tome) Cursor {
-			return Cursor{
-				ID:    t.ID,
-				Value: t.Name,
-			}
-		},
-	}
-	// TomeOrderFieldSize orders Tome by size.
-	TomeOrderFieldSize = &TomeOrderField{
-		field: tome.FieldSize,
-		toCursor: func(t *Tome) Cursor {
-			return Cursor{
-				ID:    t.ID,
-				Value: t.Size,
-			}
-		},
-	}
 	// TomeOrderFieldCreatedAt orders Tome by createdAt.
 	TomeOrderFieldCreatedAt = &TomeOrderField{
 		field: tome.FieldCreatedAt,
@@ -1981,20 +1961,28 @@ var (
 			}
 		},
 	}
+	// TomeOrderFieldName orders Tome by name.
+	TomeOrderFieldName = &TomeOrderField{
+		field: tome.FieldName,
+		toCursor: func(t *Tome) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.Name,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
 func (f TomeOrderField) String() string {
 	var str string
 	switch f.field {
-	case tome.FieldName:
-		str = "NAME"
-	case tome.FieldSize:
-		str = "SIZE"
 	case tome.FieldCreatedAt:
 		str = "CREATED_AT"
 	case tome.FieldLastModifiedAt:
 		str = "LAST_MODIFIED_AT"
+	case tome.FieldName:
+		str = "NAME"
 	}
 	return str
 }
@@ -2011,14 +1999,12 @@ func (f *TomeOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("TomeOrderField %T must be a string", v)
 	}
 	switch str {
-	case "NAME":
-		*f = *TomeOrderFieldName
-	case "SIZE":
-		*f = *TomeOrderFieldSize
 	case "CREATED_AT":
 		*f = *TomeOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *TomeOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *TomeOrderFieldName
 	default:
 		return fmt.Errorf("%s is not a valid TomeOrderField", str)
 	}

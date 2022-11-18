@@ -121,13 +121,12 @@ var (
 	// TomesColumns holds the columns for the "tomes" table.
 	TomesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "description", Type: field.TypeString},
-		{Name: "parameters", Type: field.TypeString},
-		{Name: "size", Type: field.TypeInt, Default: 0},
-		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString},
+		{Name: "parameters", Type: field.TypeString, Nullable: true},
+		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString},
 	}
 	// TomesTable holds the schema information for the "tomes" table.

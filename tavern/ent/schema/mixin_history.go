@@ -23,6 +23,7 @@ func (MixinHistory) Fields() []ent.Field {
 			Default(time.Now).
 			Annotations(
 				entgql.OrderField("CREATED_AT"),
+				entgql.Skip(entgql.SkipMutationCreateInput),
 			),
 		field.Time("lastModifiedAt").
 			Comment("Timestamp of when this ent was last updated").
@@ -30,6 +31,7 @@ func (MixinHistory) Fields() []ent.Field {
 			UpdateDefault(time.Now).
 			Annotations(
 				entgql.OrderField("LAST_MODIFIED_AT"),
+				entgql.Skip(entgql.SkipMutationCreateInput),
 			),
 	}
 }

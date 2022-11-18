@@ -29,6 +29,12 @@ func (tu *TomeUpdate) Where(ps ...predicate.Tome) *TomeUpdate {
 	return tu
 }
 
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (tu *TomeUpdate) SetLastModifiedAt(t time.Time) *TomeUpdate {
+	tu.mutation.SetLastModifiedAt(t)
+	return tu
+}
+
 // SetName sets the "name" field.
 func (tu *TomeUpdate) SetName(s string) *TomeUpdate {
 	tu.mutation.SetName(s)
@@ -47,58 +53,23 @@ func (tu *TomeUpdate) SetParameters(s string) *TomeUpdate {
 	return tu
 }
 
-// SetSize sets the "size" field.
-func (tu *TomeUpdate) SetSize(i int) *TomeUpdate {
-	tu.mutation.ResetSize()
-	tu.mutation.SetSize(i)
-	return tu
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableSize(i *int) *TomeUpdate {
-	if i != nil {
-		tu.SetSize(*i)
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableParameters(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetParameters(*s)
 	}
 	return tu
 }
 
-// AddSize adds i to the "size" field.
-func (tu *TomeUpdate) AddSize(i int) *TomeUpdate {
-	tu.mutation.AddSize(i)
+// ClearParameters clears the value of the "parameters" field.
+func (tu *TomeUpdate) ClearParameters() *TomeUpdate {
+	tu.mutation.ClearParameters()
 	return tu
 }
 
 // SetHash sets the "hash" field.
 func (tu *TomeUpdate) SetHash(s string) *TomeUpdate {
 	tu.mutation.SetHash(s)
-	return tu
-}
-
-// SetCreatedAt sets the "createdAt" field.
-func (tu *TomeUpdate) SetCreatedAt(t time.Time) *TomeUpdate {
-	tu.mutation.SetCreatedAt(t)
-	return tu
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableCreatedAt(t *time.Time) *TomeUpdate {
-	if t != nil {
-		tu.SetCreatedAt(*t)
-	}
-	return tu
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (tu *TomeUpdate) SetLastModifiedAt(t time.Time) *TomeUpdate {
-	tu.mutation.SetLastModifiedAt(t)
-	return tu
-}
-
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableLastModifiedAt(t *time.Time) *TomeUpdate {
-	if t != nil {
-		tu.SetLastModifiedAt(*t)
-	}
 	return tu
 }
 
@@ -155,6 +126,9 @@ func (tu *TomeUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
+	if err := tu.defaults(); err != nil {
+		return 0, err
+	}
 	if len(tu.hooks) == 0 {
 		if err = tu.check(); err != nil {
 			return 0, err
@@ -209,16 +183,23 @@ func (tu *TomeUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tu *TomeUpdate) defaults() error {
+	if _, ok := tu.mutation.LastModifiedAt(); !ok {
+		if tome.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized tome.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
+		v := tome.UpdateDefaultLastModifiedAt()
+		tu.mutation.SetLastModifiedAt(v)
+	}
+	return nil
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tu *TomeUpdate) check() error {
 	if v, ok := tu.mutation.Name(); ok {
 		if err := tome.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
-		}
-	}
-	if v, ok := tu.mutation.Size(); ok {
-		if err := tome.SizeValidator(v); err != nil {
-			return &ValidationError{Name: "size", err: fmt.Errorf(`ent: validator failed for field "Tome.size": %w`, err)}
 		}
 	}
 	if v, ok := tu.mutation.Hash(); ok {
@@ -247,6 +228,9 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := tu.mutation.LastModifiedAt(); ok {
+		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(tome.FieldName, field.TypeString, value)
 	}
@@ -256,20 +240,11 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Parameters(); ok {
 		_spec.SetField(tome.FieldParameters, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Size(); ok {
-		_spec.SetField(tome.FieldSize, field.TypeInt, value)
-	}
-	if value, ok := tu.mutation.AddedSize(); ok {
-		_spec.AddField(tome.FieldSize, field.TypeInt, value)
+	if tu.mutation.ParametersCleared() {
+		_spec.ClearField(tome.FieldParameters, field.TypeString)
 	}
 	if value, ok := tu.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
-	}
-	if value, ok := tu.mutation.CreatedAt(); ok {
-		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
-	}
-	if value, ok := tu.mutation.LastModifiedAt(); ok {
-		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := tu.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
@@ -347,6 +322,12 @@ type TomeUpdateOne struct {
 	mutation *TomeMutation
 }
 
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (tuo *TomeUpdateOne) SetLastModifiedAt(t time.Time) *TomeUpdateOne {
+	tuo.mutation.SetLastModifiedAt(t)
+	return tuo
+}
+
 // SetName sets the "name" field.
 func (tuo *TomeUpdateOne) SetName(s string) *TomeUpdateOne {
 	tuo.mutation.SetName(s)
@@ -365,58 +346,23 @@ func (tuo *TomeUpdateOne) SetParameters(s string) *TomeUpdateOne {
 	return tuo
 }
 
-// SetSize sets the "size" field.
-func (tuo *TomeUpdateOne) SetSize(i int) *TomeUpdateOne {
-	tuo.mutation.ResetSize()
-	tuo.mutation.SetSize(i)
-	return tuo
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableSize(i *int) *TomeUpdateOne {
-	if i != nil {
-		tuo.SetSize(*i)
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableParameters(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetParameters(*s)
 	}
 	return tuo
 }
 
-// AddSize adds i to the "size" field.
-func (tuo *TomeUpdateOne) AddSize(i int) *TomeUpdateOne {
-	tuo.mutation.AddSize(i)
+// ClearParameters clears the value of the "parameters" field.
+func (tuo *TomeUpdateOne) ClearParameters() *TomeUpdateOne {
+	tuo.mutation.ClearParameters()
 	return tuo
 }
 
 // SetHash sets the "hash" field.
 func (tuo *TomeUpdateOne) SetHash(s string) *TomeUpdateOne {
 	tuo.mutation.SetHash(s)
-	return tuo
-}
-
-// SetCreatedAt sets the "createdAt" field.
-func (tuo *TomeUpdateOne) SetCreatedAt(t time.Time) *TomeUpdateOne {
-	tuo.mutation.SetCreatedAt(t)
-	return tuo
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableCreatedAt(t *time.Time) *TomeUpdateOne {
-	if t != nil {
-		tuo.SetCreatedAt(*t)
-	}
-	return tuo
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (tuo *TomeUpdateOne) SetLastModifiedAt(t time.Time) *TomeUpdateOne {
-	tuo.mutation.SetLastModifiedAt(t)
-	return tuo
-}
-
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableLastModifiedAt(t *time.Time) *TomeUpdateOne {
-	if t != nil {
-		tuo.SetLastModifiedAt(*t)
-	}
 	return tuo
 }
 
@@ -480,6 +426,9 @@ func (tuo *TomeUpdateOne) Save(ctx context.Context) (*Tome, error) {
 		err  error
 		node *Tome
 	)
+	if err := tuo.defaults(); err != nil {
+		return nil, err
+	}
 	if len(tuo.hooks) == 0 {
 		if err = tuo.check(); err != nil {
 			return nil, err
@@ -540,16 +489,23 @@ func (tuo *TomeUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tuo *TomeUpdateOne) defaults() error {
+	if _, ok := tuo.mutation.LastModifiedAt(); !ok {
+		if tome.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized tome.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
+		v := tome.UpdateDefaultLastModifiedAt()
+		tuo.mutation.SetLastModifiedAt(v)
+	}
+	return nil
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TomeUpdateOne) check() error {
 	if v, ok := tuo.mutation.Name(); ok {
 		if err := tome.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
-		}
-	}
-	if v, ok := tuo.mutation.Size(); ok {
-		if err := tome.SizeValidator(v); err != nil {
-			return &ValidationError{Name: "size", err: fmt.Errorf(`ent: validator failed for field "Tome.size": %w`, err)}
 		}
 	}
 	if v, ok := tuo.mutation.Hash(); ok {
@@ -595,6 +551,9 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 			}
 		}
 	}
+	if value, ok := tuo.mutation.LastModifiedAt(); ok {
+		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(tome.FieldName, field.TypeString, value)
 	}
@@ -604,20 +563,11 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Parameters(); ok {
 		_spec.SetField(tome.FieldParameters, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Size(); ok {
-		_spec.SetField(tome.FieldSize, field.TypeInt, value)
-	}
-	if value, ok := tuo.mutation.AddedSize(); ok {
-		_spec.AddField(tome.FieldSize, field.TypeInt, value)
+	if tuo.mutation.ParametersCleared() {
+		_spec.ClearField(tome.FieldParameters, field.TypeString)
 	}
 	if value, ok := tuo.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
-	}
-	if value, ok := tuo.mutation.CreatedAt(); ok {
-		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
-	}
-	if value, ok := tuo.mutation.LastModifiedAt(); ok {
-		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := tuo.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)

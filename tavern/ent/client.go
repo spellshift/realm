@@ -833,7 +833,8 @@ func (c *TomeClient) QueryFiles(t *Tome) *FileQuery {
 
 // Hooks returns the client hooks.
 func (c *TomeClient) Hooks() []Hook {
-	return c.hooks.Tome
+	hooks := c.hooks.Tome
+	return append(hooks[:len(hooks):len(hooks)], tome.Hooks[:]...)
 }
 
 // UserClient is a client for the User schema.

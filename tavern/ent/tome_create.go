@@ -21,44 +21,6 @@ type TomeCreate struct {
 	hooks    []Hook
 }
 
-// SetName sets the "name" field.
-func (tc *TomeCreate) SetName(s string) *TomeCreate {
-	tc.mutation.SetName(s)
-	return tc
-}
-
-// SetDescription sets the "description" field.
-func (tc *TomeCreate) SetDescription(s string) *TomeCreate {
-	tc.mutation.SetDescription(s)
-	return tc
-}
-
-// SetParameters sets the "parameters" field.
-func (tc *TomeCreate) SetParameters(s string) *TomeCreate {
-	tc.mutation.SetParameters(s)
-	return tc
-}
-
-// SetSize sets the "size" field.
-func (tc *TomeCreate) SetSize(i int) *TomeCreate {
-	tc.mutation.SetSize(i)
-	return tc
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableSize(i *int) *TomeCreate {
-	if i != nil {
-		tc.SetSize(*i)
-	}
-	return tc
-}
-
-// SetHash sets the "hash" field.
-func (tc *TomeCreate) SetHash(s string) *TomeCreate {
-	tc.mutation.SetHash(s)
-	return tc
-}
-
 // SetCreatedAt sets the "createdAt" field.
 func (tc *TomeCreate) SetCreatedAt(t time.Time) *TomeCreate {
 	tc.mutation.SetCreatedAt(t)
@@ -84,6 +46,38 @@ func (tc *TomeCreate) SetNillableLastModifiedAt(t *time.Time) *TomeCreate {
 	if t != nil {
 		tc.SetLastModifiedAt(*t)
 	}
+	return tc
+}
+
+// SetName sets the "name" field.
+func (tc *TomeCreate) SetName(s string) *TomeCreate {
+	tc.mutation.SetName(s)
+	return tc
+}
+
+// SetDescription sets the "description" field.
+func (tc *TomeCreate) SetDescription(s string) *TomeCreate {
+	tc.mutation.SetDescription(s)
+	return tc
+}
+
+// SetParameters sets the "parameters" field.
+func (tc *TomeCreate) SetParameters(s string) *TomeCreate {
+	tc.mutation.SetParameters(s)
+	return tc
+}
+
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableParameters(s *string) *TomeCreate {
+	if s != nil {
+		tc.SetParameters(*s)
+	}
+	return tc
+}
+
+// SetHash sets the "hash" field.
+func (tc *TomeCreate) SetHash(s string) *TomeCreate {
+	tc.mutation.SetHash(s)
 	return tc
 }
 
@@ -119,7 +113,9 @@ func (tc *TomeCreate) Save(ctx context.Context) (*Tome, error) {
 		err  error
 		node *Tome
 	)
-	tc.defaults()
+	if err := tc.defaults(); err != nil {
+		return nil, err
+	}
 	if len(tc.hooks) == 0 {
 		if err = tc.check(); err != nil {
 			return nil, err
@@ -184,23 +180,32 @@ func (tc *TomeCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (tc *TomeCreate) defaults() {
-	if _, ok := tc.mutation.Size(); !ok {
-		v := tome.DefaultSize
-		tc.mutation.SetSize(v)
-	}
+func (tc *TomeCreate) defaults() error {
 	if _, ok := tc.mutation.CreatedAt(); !ok {
+		if tome.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized tome.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := tome.DefaultCreatedAt()
 		tc.mutation.SetCreatedAt(v)
 	}
 	if _, ok := tc.mutation.LastModifiedAt(); !ok {
+		if tome.DefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized tome.DefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := tome.DefaultLastModifiedAt()
 		tc.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (tc *TomeCreate) check() error {
+	if _, ok := tc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Tome.createdAt"`)}
+	}
+	if _, ok := tc.mutation.LastModifiedAt(); !ok {
+		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Tome.lastModifiedAt"`)}
+	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Tome.name"`)}
 	}
@@ -212,17 +217,6 @@ func (tc *TomeCreate) check() error {
 	if _, ok := tc.mutation.Description(); !ok {
 		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Tome.description"`)}
 	}
-	if _, ok := tc.mutation.Parameters(); !ok {
-		return &ValidationError{Name: "parameters", err: errors.New(`ent: missing required field "Tome.parameters"`)}
-	}
-	if _, ok := tc.mutation.Size(); !ok {
-		return &ValidationError{Name: "size", err: errors.New(`ent: missing required field "Tome.size"`)}
-	}
-	if v, ok := tc.mutation.Size(); ok {
-		if err := tome.SizeValidator(v); err != nil {
-			return &ValidationError{Name: "size", err: fmt.Errorf(`ent: validator failed for field "Tome.size": %w`, err)}
-		}
-	}
 	if _, ok := tc.mutation.Hash(); !ok {
 		return &ValidationError{Name: "hash", err: errors.New(`ent: missing required field "Tome.hash"`)}
 	}
@@ -230,12 +224,6 @@ func (tc *TomeCreate) check() error {
 		if err := tome.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "Tome.hash": %w`, err)}
 		}
-	}
-	if _, ok := tc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Tome.createdAt"`)}
-	}
-	if _, ok := tc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Tome.lastModifiedAt"`)}
 	}
 	if _, ok := tc.mutation.Eldritch(); !ok {
 		return &ValidationError{Name: "eldritch", err: errors.New(`ent: missing required field "Tome.eldritch"`)}
@@ -267,6 +255,14 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	if value, ok := tc.mutation.CreatedAt(); ok {
+		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := tc.mutation.LastModifiedAt(); ok {
+		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
+		_node.LastModifiedAt = value
+	}
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(tome.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -279,21 +275,9 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldParameters, field.TypeString, value)
 		_node.Parameters = value
 	}
-	if value, ok := tc.mutation.Size(); ok {
-		_spec.SetField(tome.FieldSize, field.TypeInt, value)
-		_node.Size = value
-	}
 	if value, ok := tc.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
 		_node.Hash = value
-	}
-	if value, ok := tc.mutation.CreatedAt(); ok {
-		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
-		_node.CreatedAt = value
-	}
-	if value, ok := tc.mutation.LastModifiedAt(); ok {
-		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
-		_node.LastModifiedAt = value
 	}
 	if value, ok := tc.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)

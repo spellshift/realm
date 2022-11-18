@@ -3013,14 +3013,12 @@ type TomeMutation struct {
 	op             Op
 	typ            string
 	id             *int
+	createdAt      *time.Time
+	lastModifiedAt *time.Time
 	name           *string
 	description    *string
 	parameters     *string
-	size           *int
-	addsize        *int
 	hash           *string
-	createdAt      *time.Time
-	lastModifiedAt *time.Time
 	eldritch       *string
 	clearedFields  map[string]struct{}
 	files          map[int]struct{}
@@ -3129,6 +3127,78 @@ func (m *TomeMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
+// SetCreatedAt sets the "createdAt" field.
+func (m *TomeMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the value of the "createdAt" field in the mutation.
+func (m *TomeMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "createdAt" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "createdAt" field.
+func (m *TomeMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (m *TomeMutation) SetLastModifiedAt(t time.Time) {
+	m.lastModifiedAt = &t
+}
+
+// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
+func (m *TomeMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.lastModifiedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
+func (m *TomeMutation) ResetLastModifiedAt() {
+	m.lastModifiedAt = nil
+}
+
 // SetName sets the "name" field.
 func (m *TomeMutation) SetName(s string) {
 	m.name = &s
@@ -3232,65 +3302,22 @@ func (m *TomeMutation) OldParameters(ctx context.Context) (v string, err error) 
 	return oldValue.Parameters, nil
 }
 
+// ClearParameters clears the value of the "parameters" field.
+func (m *TomeMutation) ClearParameters() {
+	m.parameters = nil
+	m.clearedFields[tome.FieldParameters] = struct{}{}
+}
+
+// ParametersCleared returns if the "parameters" field was cleared in this mutation.
+func (m *TomeMutation) ParametersCleared() bool {
+	_, ok := m.clearedFields[tome.FieldParameters]
+	return ok
+}
+
 // ResetParameters resets all changes to the "parameters" field.
 func (m *TomeMutation) ResetParameters() {
 	m.parameters = nil
-}
-
-// SetSize sets the "size" field.
-func (m *TomeMutation) SetSize(i int) {
-	m.size = &i
-	m.addsize = nil
-}
-
-// Size returns the value of the "size" field in the mutation.
-func (m *TomeMutation) Size() (r int, exists bool) {
-	v := m.size
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSize returns the old "size" field's value of the Tome entity.
-// If the Tome object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldSize(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSize is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSize requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSize: %w", err)
-	}
-	return oldValue.Size, nil
-}
-
-// AddSize adds i to the "size" field.
-func (m *TomeMutation) AddSize(i int) {
-	if m.addsize != nil {
-		*m.addsize += i
-	} else {
-		m.addsize = &i
-	}
-}
-
-// AddedSize returns the value that was added to the "size" field in this mutation.
-func (m *TomeMutation) AddedSize() (r int, exists bool) {
-	v := m.addsize
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetSize resets all changes to the "size" field.
-func (m *TomeMutation) ResetSize() {
-	m.size = nil
-	m.addsize = nil
+	delete(m.clearedFields, tome.FieldParameters)
 }
 
 // SetHash sets the "hash" field.
@@ -3327,78 +3354,6 @@ func (m *TomeMutation) OldHash(ctx context.Context) (v string, err error) {
 // ResetHash resets all changes to the "hash" field.
 func (m *TomeMutation) ResetHash() {
 	m.hash = nil
-}
-
-// SetCreatedAt sets the "createdAt" field.
-func (m *TomeMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
-}
-
-// CreatedAt returns the value of the "createdAt" field in the mutation.
-func (m *TomeMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "createdAt" field's value of the Tome entity.
-// If the Tome object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "createdAt" field.
-func (m *TomeMutation) ResetCreatedAt() {
-	m.createdAt = nil
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (m *TomeMutation) SetLastModifiedAt(t time.Time) {
-	m.lastModifiedAt = &t
-}
-
-// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
-func (m *TomeMutation) LastModifiedAt() (r time.Time, exists bool) {
-	v := m.lastModifiedAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the Tome entity.
-// If the Tome object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
-	}
-	return oldValue.LastModifiedAt, nil
-}
-
-// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
-func (m *TomeMutation) ResetLastModifiedAt() {
-	m.lastModifiedAt = nil
 }
 
 // SetEldritch sets the "eldritch" field.
@@ -3510,7 +3465,13 @@ func (m *TomeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TomeMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 7)
+	if m.createdAt != nil {
+		fields = append(fields, tome.FieldCreatedAt)
+	}
+	if m.lastModifiedAt != nil {
+		fields = append(fields, tome.FieldLastModifiedAt)
+	}
 	if m.name != nil {
 		fields = append(fields, tome.FieldName)
 	}
@@ -3520,17 +3481,8 @@ func (m *TomeMutation) Fields() []string {
 	if m.parameters != nil {
 		fields = append(fields, tome.FieldParameters)
 	}
-	if m.size != nil {
-		fields = append(fields, tome.FieldSize)
-	}
 	if m.hash != nil {
 		fields = append(fields, tome.FieldHash)
-	}
-	if m.createdAt != nil {
-		fields = append(fields, tome.FieldCreatedAt)
-	}
-	if m.lastModifiedAt != nil {
-		fields = append(fields, tome.FieldLastModifiedAt)
 	}
 	if m.eldritch != nil {
 		fields = append(fields, tome.FieldEldritch)
@@ -3543,20 +3495,18 @@ func (m *TomeMutation) Fields() []string {
 // schema.
 func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case tome.FieldCreatedAt:
+		return m.CreatedAt()
+	case tome.FieldLastModifiedAt:
+		return m.LastModifiedAt()
 	case tome.FieldName:
 		return m.Name()
 	case tome.FieldDescription:
 		return m.Description()
 	case tome.FieldParameters:
 		return m.Parameters()
-	case tome.FieldSize:
-		return m.Size()
 	case tome.FieldHash:
 		return m.Hash()
-	case tome.FieldCreatedAt:
-		return m.CreatedAt()
-	case tome.FieldLastModifiedAt:
-		return m.LastModifiedAt()
 	case tome.FieldEldritch:
 		return m.Eldritch()
 	}
@@ -3568,20 +3518,18 @@ func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case tome.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case tome.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
 	case tome.FieldName:
 		return m.OldName(ctx)
 	case tome.FieldDescription:
 		return m.OldDescription(ctx)
 	case tome.FieldParameters:
 		return m.OldParameters(ctx)
-	case tome.FieldSize:
-		return m.OldSize(ctx)
 	case tome.FieldHash:
 		return m.OldHash(ctx)
-	case tome.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case tome.FieldLastModifiedAt:
-		return m.OldLastModifiedAt(ctx)
 	case tome.FieldEldritch:
 		return m.OldEldritch(ctx)
 	}
@@ -3593,6 +3541,20 @@ func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *TomeMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case tome.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case tome.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
 	case tome.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -3614,33 +3576,12 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetParameters(v)
 		return nil
-	case tome.FieldSize:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSize(v)
-		return nil
 	case tome.FieldHash:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetHash(v)
-		return nil
-	case tome.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case tome.FieldLastModifiedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastModifiedAt(v)
 		return nil
 	case tome.FieldEldritch:
 		v, ok := value.(string)
@@ -3656,21 +3597,13 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *TomeMutation) AddedFields() []string {
-	var fields []string
-	if m.addsize != nil {
-		fields = append(fields, tome.FieldSize)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *TomeMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case tome.FieldSize:
-		return m.AddedSize()
-	}
 	return nil, false
 }
 
@@ -3679,13 +3612,6 @@ func (m *TomeMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *TomeMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case tome.FieldSize:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddSize(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Tome numeric field %s", name)
 }
@@ -3693,7 +3619,11 @@ func (m *TomeMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *TomeMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(tome.FieldParameters) {
+		fields = append(fields, tome.FieldParameters)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -3706,6 +3636,11 @@ func (m *TomeMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *TomeMutation) ClearField(name string) error {
+	switch name {
+	case tome.FieldParameters:
+		m.ClearParameters()
+		return nil
+	}
 	return fmt.Errorf("unknown Tome nullable field %s", name)
 }
 
@@ -3713,6 +3648,12 @@ func (m *TomeMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *TomeMutation) ResetField(name string) error {
 	switch name {
+	case tome.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case tome.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
 	case tome.FieldName:
 		m.ResetName()
 		return nil
@@ -3722,17 +3663,8 @@ func (m *TomeMutation) ResetField(name string) error {
 	case tome.FieldParameters:
 		m.ResetParameters()
 		return nil
-	case tome.FieldSize:
-		m.ResetSize()
-		return nil
 	case tome.FieldHash:
 		m.ResetHash()
-		return nil
-	case tome.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case tome.FieldLastModifiedAt:
-		m.ResetLastModifiedAt()
 		return nil
 	case tome.FieldEldritch:
 		m.ResetEldritch()

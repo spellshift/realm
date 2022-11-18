@@ -325,54 +325,14 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Tome",
-		Fields: make([]*Field, 8),
+		Fields: make([]*Field, 7),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(t.Name); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "name",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Description); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "string",
-		Name:  "description",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Parameters); err != nil {
-		return nil, err
-	}
-	node.Fields[2] = &Field{
-		Type:  "string",
-		Name:  "parameters",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Size); err != nil {
-		return nil, err
-	}
-	node.Fields[3] = &Field{
-		Type:  "int",
-		Name:  "size",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Hash); err != nil {
-		return nil, err
-	}
-	node.Fields[4] = &Field{
-		Type:  "string",
-		Name:  "hash",
-		Value: string(buf),
-	}
 	if buf, err = json.Marshal(t.CreatedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[5] = &Field{
+	node.Fields[0] = &Field{
 		Type:  "time.Time",
 		Name:  "createdAt",
 		Value: string(buf),
@@ -380,15 +340,47 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(t.LastModifiedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[6] = &Field{
+	node.Fields[1] = &Field{
 		Type:  "time.Time",
 		Name:  "lastModifiedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Description); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "description",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Parameters); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "string",
+		Name:  "parameters",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Hash); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "string",
+		Name:  "hash",
 		Value: string(buf),
 	}
 	if buf, err = json.Marshal(t.Eldritch); err != nil {
 		return nil, err
 	}
-	node.Fields[7] = &Field{
+	node.Fields[6] = &Field{
 		Type:  "string",
 		Name:  "eldritch",
 		Value: string(buf),

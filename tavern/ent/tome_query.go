@@ -293,12 +293,12 @@ func (tq *TomeQuery) WithFiles(opts ...func(*FileQuery)) *TomeQuery {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreatedAt time.Time `json:"createdAt,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Tome.Query().
-//		GroupBy(tome.FieldName).
+//		GroupBy(tome.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (tq *TomeQuery) GroupBy(field string, fields ...string) *TomeGroupBy {
@@ -321,11 +321,11 @@ func (tq *TomeQuery) GroupBy(field string, fields ...string) *TomeGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreatedAt time.Time `json:"createdAt,omitempty"`
 //	}
 //
 //	client.Tome.Query().
-//		Select(tome.FieldName).
+//		Select(tome.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (tq *TomeQuery) Select(fields ...string) *TomeSelect {
 	tq.fields = append(tq.fields, fields...)

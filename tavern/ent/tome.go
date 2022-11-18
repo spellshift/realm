@@ -16,20 +16,18 @@ type Tome struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Timestamp of when this ent was created
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// Timestamp of when this ent was last updated
+	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
 	// Name of the tome
 	Name string `json:"name,omitempty"`
 	// Information about the tome
 	Description string `json:"description,omitempty"`
 	// JSON string describing what parameters are used with the tome
 	Parameters string `json:"parameters,omitempty"`
-	// The size of the tome in bytes
-	Size int `json:"size,omitempty"`
-	// A SHA3 digest of the content field
+	// A SHA3 digest of the eldritch field
 	Hash string `json:"hash,omitempty"`
-	// The timestamp for when the Tome was created
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-	// The timestamp for when the Tome was last modified
-	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
 	// Eldritch script that will be executed when the tome is run
 	Eldritch string `json:"eldritch,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -64,7 +62,7 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tome.FieldID, tome.FieldSize:
+		case tome.FieldID:
 			values[i] = new(sql.NullInt64)
 		case tome.FieldName, tome.FieldDescription, tome.FieldParameters, tome.FieldHash, tome.FieldEldritch:
 			values[i] = new(sql.NullString)
@@ -91,6 +89,18 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			t.ID = int(value.Int64)
+		case tome.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+			} else if value.Valid {
+				t.CreatedAt = value.Time
+			}
+		case tome.FieldLastModifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+			} else if value.Valid {
+				t.LastModifiedAt = value.Time
+			}
 		case tome.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -109,29 +119,11 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Parameters = value.String
 			}
-		case tome.FieldSize:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field size", values[i])
-			} else if value.Valid {
-				t.Size = int(value.Int64)
-			}
 		case tome.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hash", values[i])
 			} else if value.Valid {
 				t.Hash = value.String
-			}
-		case tome.FieldCreatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
-			} else if value.Valid {
-				t.CreatedAt = value.Time
-			}
-		case tome.FieldLastModifiedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
-			} else if value.Valid {
-				t.LastModifiedAt = value.Time
 			}
 		case tome.FieldEldritch:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -172,6 +164,12 @@ func (t *Tome) String() string {
 	var builder strings.Builder
 	builder.WriteString("Tome(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
+	builder.WriteString("createdAt=")
+	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("lastModifiedAt=")
+	builder.WriteString(t.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
 	builder.WriteString(", ")
@@ -181,17 +179,8 @@ func (t *Tome) String() string {
 	builder.WriteString("parameters=")
 	builder.WriteString(t.Parameters)
 	builder.WriteString(", ")
-	builder.WriteString("size=")
-	builder.WriteString(fmt.Sprintf("%v", t.Size))
-	builder.WriteString(", ")
 	builder.WriteString("hash=")
 	builder.WriteString(t.Hash)
-	builder.WriteString(", ")
-	builder.WriteString("createdAt=")
-	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("lastModifiedAt=")
-	builder.WriteString(t.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("eldritch=")
 	builder.WriteString(t.Eldritch)

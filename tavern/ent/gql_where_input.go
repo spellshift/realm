@@ -1584,6 +1584,26 @@ type TomeWhereInput struct {
 	IDLT    *int  `json:"idLT,omitempty"`
 	IDLTE   *int  `json:"idLTE,omitempty"`
 
+	// "createdAt" field predicates.
+	CreatedAt      *time.Time  `json:"createdat,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdatNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdatIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdatNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdatGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdatGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdatLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdatLTE,omitempty"`
+
+	// "lastModifiedAt" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastmodifiedat,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastmodifiedatNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastmodifiedatIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastmodifiedatNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastmodifiedatGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastmodifiedatGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastmodifiedatLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastmodifiedatLTE,omitempty"`
+
 	// "name" field predicates.
 	Name             *string  `json:"name,omitempty"`
 	NameNEQ          *string  `json:"nameNEQ,omitempty"`
@@ -1626,18 +1646,10 @@ type TomeWhereInput struct {
 	ParametersContains     *string  `json:"parametersContains,omitempty"`
 	ParametersHasPrefix    *string  `json:"parametersHasPrefix,omitempty"`
 	ParametersHasSuffix    *string  `json:"parametersHasSuffix,omitempty"`
+	ParametersIsNil        bool     `json:"parametersIsNil,omitempty"`
+	ParametersNotNil       bool     `json:"parametersNotNil,omitempty"`
 	ParametersEqualFold    *string  `json:"parametersEqualFold,omitempty"`
 	ParametersContainsFold *string  `json:"parametersContainsFold,omitempty"`
-
-	// "size" field predicates.
-	Size      *int  `json:"size,omitempty"`
-	SizeNEQ   *int  `json:"sizeNEQ,omitempty"`
-	SizeIn    []int `json:"sizeIn,omitempty"`
-	SizeNotIn []int `json:"sizeNotIn,omitempty"`
-	SizeGT    *int  `json:"sizeGT,omitempty"`
-	SizeGTE   *int  `json:"sizeGTE,omitempty"`
-	SizeLT    *int  `json:"sizeLT,omitempty"`
-	SizeLTE   *int  `json:"sizeLTE,omitempty"`
 
 	// "hash" field predicates.
 	Hash             *string  `json:"hash,omitempty"`
@@ -1653,26 +1665,6 @@ type TomeWhereInput struct {
 	HashHasSuffix    *string  `json:"hashHasSuffix,omitempty"`
 	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
 	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
-
-	// "createdAt" field predicates.
-	CreatedAt      *time.Time  `json:"createdat,omitempty"`
-	CreatedAtNEQ   *time.Time  `json:"createdatNEQ,omitempty"`
-	CreatedAtIn    []time.Time `json:"createdatIn,omitempty"`
-	CreatedAtNotIn []time.Time `json:"createdatNotIn,omitempty"`
-	CreatedAtGT    *time.Time  `json:"createdatGT,omitempty"`
-	CreatedAtGTE   *time.Time  `json:"createdatGTE,omitempty"`
-	CreatedAtLT    *time.Time  `json:"createdatLT,omitempty"`
-	CreatedAtLTE   *time.Time  `json:"createdatLTE,omitempty"`
-
-	// "lastModifiedAt" field predicates.
-	LastModifiedAt      *time.Time  `json:"lastmodifiedat,omitempty"`
-	LastModifiedAtNEQ   *time.Time  `json:"lastmodifiedatNEQ,omitempty"`
-	LastModifiedAtIn    []time.Time `json:"lastmodifiedatIn,omitempty"`
-	LastModifiedAtNotIn []time.Time `json:"lastmodifiedatNotIn,omitempty"`
-	LastModifiedAtGT    *time.Time  `json:"lastmodifiedatGT,omitempty"`
-	LastModifiedAtGTE   *time.Time  `json:"lastmodifiedatGTE,omitempty"`
-	LastModifiedAtLT    *time.Time  `json:"lastmodifiedatLT,omitempty"`
-	LastModifiedAtLTE   *time.Time  `json:"lastmodifiedatLTE,omitempty"`
 
 	// "eldritch" field predicates.
 	Eldritch             *string  `json:"eldritch,omitempty"`
@@ -1789,6 +1781,54 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	if i.IDLTE != nil {
 		predicates = append(predicates, tome.IDLTE(*i.IDLTE))
 	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, tome.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, tome.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, tome.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, tome.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, tome.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, tome.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, tome.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, tome.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, tome.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, tome.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, tome.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, tome.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, tome.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, tome.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, tome.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, tome.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
 	if i.Name != nil {
 		predicates = append(predicates, tome.NameEQ(*i.Name))
 	}
@@ -1900,35 +1940,17 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	if i.ParametersHasSuffix != nil {
 		predicates = append(predicates, tome.ParametersHasSuffix(*i.ParametersHasSuffix))
 	}
+	if i.ParametersIsNil {
+		predicates = append(predicates, tome.ParametersIsNil())
+	}
+	if i.ParametersNotNil {
+		predicates = append(predicates, tome.ParametersNotNil())
+	}
 	if i.ParametersEqualFold != nil {
 		predicates = append(predicates, tome.ParametersEqualFold(*i.ParametersEqualFold))
 	}
 	if i.ParametersContainsFold != nil {
 		predicates = append(predicates, tome.ParametersContainsFold(*i.ParametersContainsFold))
-	}
-	if i.Size != nil {
-		predicates = append(predicates, tome.SizeEQ(*i.Size))
-	}
-	if i.SizeNEQ != nil {
-		predicates = append(predicates, tome.SizeNEQ(*i.SizeNEQ))
-	}
-	if len(i.SizeIn) > 0 {
-		predicates = append(predicates, tome.SizeIn(i.SizeIn...))
-	}
-	if len(i.SizeNotIn) > 0 {
-		predicates = append(predicates, tome.SizeNotIn(i.SizeNotIn...))
-	}
-	if i.SizeGT != nil {
-		predicates = append(predicates, tome.SizeGT(*i.SizeGT))
-	}
-	if i.SizeGTE != nil {
-		predicates = append(predicates, tome.SizeGTE(*i.SizeGTE))
-	}
-	if i.SizeLT != nil {
-		predicates = append(predicates, tome.SizeLT(*i.SizeLT))
-	}
-	if i.SizeLTE != nil {
-		predicates = append(predicates, tome.SizeLTE(*i.SizeLTE))
 	}
 	if i.Hash != nil {
 		predicates = append(predicates, tome.HashEQ(*i.Hash))
@@ -1968,54 +1990,6 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	}
 	if i.HashContainsFold != nil {
 		predicates = append(predicates, tome.HashContainsFold(*i.HashContainsFold))
-	}
-	if i.CreatedAt != nil {
-		predicates = append(predicates, tome.CreatedAtEQ(*i.CreatedAt))
-	}
-	if i.CreatedAtNEQ != nil {
-		predicates = append(predicates, tome.CreatedAtNEQ(*i.CreatedAtNEQ))
-	}
-	if len(i.CreatedAtIn) > 0 {
-		predicates = append(predicates, tome.CreatedAtIn(i.CreatedAtIn...))
-	}
-	if len(i.CreatedAtNotIn) > 0 {
-		predicates = append(predicates, tome.CreatedAtNotIn(i.CreatedAtNotIn...))
-	}
-	if i.CreatedAtGT != nil {
-		predicates = append(predicates, tome.CreatedAtGT(*i.CreatedAtGT))
-	}
-	if i.CreatedAtGTE != nil {
-		predicates = append(predicates, tome.CreatedAtGTE(*i.CreatedAtGTE))
-	}
-	if i.CreatedAtLT != nil {
-		predicates = append(predicates, tome.CreatedAtLT(*i.CreatedAtLT))
-	}
-	if i.CreatedAtLTE != nil {
-		predicates = append(predicates, tome.CreatedAtLTE(*i.CreatedAtLTE))
-	}
-	if i.LastModifiedAt != nil {
-		predicates = append(predicates, tome.LastModifiedAtEQ(*i.LastModifiedAt))
-	}
-	if i.LastModifiedAtNEQ != nil {
-		predicates = append(predicates, tome.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
-	}
-	if len(i.LastModifiedAtIn) > 0 {
-		predicates = append(predicates, tome.LastModifiedAtIn(i.LastModifiedAtIn...))
-	}
-	if len(i.LastModifiedAtNotIn) > 0 {
-		predicates = append(predicates, tome.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
-	}
-	if i.LastModifiedAtGT != nil {
-		predicates = append(predicates, tome.LastModifiedAtGT(*i.LastModifiedAtGT))
-	}
-	if i.LastModifiedAtGTE != nil {
-		predicates = append(predicates, tome.LastModifiedAtGTE(*i.LastModifiedAtGTE))
-	}
-	if i.LastModifiedAtLT != nil {
-		predicates = append(predicates, tome.LastModifiedAtLT(*i.LastModifiedAtLT))
-	}
-	if i.LastModifiedAtLTE != nil {
-		predicates = append(predicates, tome.LastModifiedAtLTE(*i.LastModifiedAtLTE))
 	}
 	if i.Eldritch != nil {
 		predicates = append(predicates, tome.EldritchEQ(*i.Eldritch))
