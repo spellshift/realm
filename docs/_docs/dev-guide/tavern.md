@@ -121,7 +121,7 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 2. Run `go generate ./...`
 3. Implement generated the generated mutation resolver method in `tavern/graphql/mutation.resolvers.go`
     * Depending on the mutation you're trying to implement, a one liner such as `return r.client.<NAME>.Create().SetInput(input).Save(ctx)` might be sufficient
-5. Please write a unit test for your new mutation in `mutation_test.go` <3
+5. Please write a unit test for your new mutation in `<NAME>_test.go` <3
 
 ## Code Generation Reference
 * After making a change, remember to run `go generate ./...` from the project root.
