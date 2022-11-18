@@ -20,34 +20,6 @@ func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
 	return c
 }
 
-// CreateUserInput represents a mutation input for creating users.
-type CreateUserInput struct {
-	Name        string
-	OAuthID     string
-	PhotoURL    string
-	IsActivated *bool
-	IsAdmin     *bool
-}
-
-// Mutate applies the CreateUserInput on the UserMutation builder.
-func (i *CreateUserInput) Mutate(m *UserMutation) {
-	m.SetName(i.Name)
-	m.SetOAuthID(i.OAuthID)
-	m.SetPhotoURL(i.PhotoURL)
-	if v := i.IsActivated; v != nil {
-		m.SetIsActivated(*v)
-	}
-	if v := i.IsAdmin; v != nil {
-		m.SetIsAdmin(*v)
-	}
-}
-
-// SetInput applies the change-set in the CreateUserInput on the UserCreate builder.
-func (c *UserCreate) SetInput(i CreateUserInput) *UserCreate {
-	i.Mutate(c.Mutation())
-	return c
-}
-
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
 	Name        *string

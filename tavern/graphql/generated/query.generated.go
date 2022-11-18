@@ -2896,66 +2896,6 @@ func (ec *executionContext) unmarshalInputCreateJobInput(ctx context.Context, ob
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, obj interface{}) (ent.CreateUserInput, error) {
-	var it ent.CreateUserInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"name", "oauthid", "photourl", "isactivated", "isadmin"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "oauthid":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oauthid"))
-			it.OAuthID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "photourl":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("photourl"))
-			it.PhotoURL, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "isactivated":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isactivated"))
-			it.IsActivated, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "isadmin":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isadmin"))
-			it.IsAdmin, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputFileOrder(ctx context.Context, obj interface{}) (ent.FileOrder, error) {
 	var it ent.FileOrder
 	asMap := map[string]interface{}{}
@@ -7369,11 +7309,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 func (ec *executionContext) unmarshalNCreateJobInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateJobInput(ctx context.Context, v interface{}) (ent.CreateJobInput, error) {
 	res, err := ec.unmarshalInputCreateJobInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalNCreateUserInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateUserInput(ctx context.Context, v interface{}) (ent.CreateUserInput, error) {
-	res, err := ec.unmarshalInputCreateUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
