@@ -86,6 +86,10 @@ func TestCreateJob(t *testing.T) {
 			tomeID := job.QueryTome().OnlyIDX(ctx)
 			assert.Equal(t, testTome.ID, tomeID)
 
+			// Ensure no bundle was created
+			assert.Empty(t, job.QueryTome().QueryFiles().AllX(ctx))
+			assert.False(t, job.QueryBundle().ExistX(ctx))
+
 			// Ensure tasks were created properly
 			tasks := job.QueryTasks().AllX(ctx)
 			assert.Len(t, tasks, 2)

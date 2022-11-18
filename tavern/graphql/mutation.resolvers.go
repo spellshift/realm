@@ -30,7 +30,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targets []int, input e
 
 	// 3. Create bundle (if tome has files)
 	var bundleID *int
-	if bundleFiles != nil {
+	if len(bundleFiles) > 0 {
 		bundle, err := createBundle(ctx, r.client, bundleFiles)
 		if err != nil || bundle == nil {
 			return nil, fmt.Errorf("failed to create bundle: %w", err)
