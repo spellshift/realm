@@ -65,6 +65,7 @@ func (File) Mixin() []ent.Mixin {
 	}
 }
 
+// Hooks defines middleware for mutations for the ent.
 func (File) Hooks() []ent.Hook {
 	return []ent.Hook{
 		hook.On(HookDeriveFileInfo(), ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne),
