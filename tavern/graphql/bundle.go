@@ -4,15 +4,49 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"strings"
 
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"golang.org/x/crypto/sha3"
 )
 
-func newBundle(files ...*ent.File) ([]byte, error) {
+func createBundle(ctx context.Context, client *ent.Client, bundleFiles []*ent.File) (*ent.File, error) {
+	// Calculate Bundle Hash
+	bundleHash := newBundleHashDigest(bundleFiles...)
+	bundleName := fmt.Sprintf("Bundle-%s", bundleHash)
+
+	// Check if bundle exists
+	bundle, err := client.File.Query().
+		Where(file.Name(bundleName)).
+		First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to query tome bundle: %w", err)
+	}
+
+	// Create a new bundle if it doesn't yet exist
+	if bundle == nil || ent.IsNotFound(err) {
+		bundleContent, err := encodeBundle(bundleFiles...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode tome bundle: %w", err)
+		}
+
+		bundle, err = client.File.Create().
+			SetName(bundleName).
+			SetContent(bundleContent).
+			Save(ctx)
+		if err != nil || bundle == nil {
+			return nil, fmt.Errorf("failed to create tome bundle: %w", err)
+		}
+	}
+
+	return bundle, nil
+}
+
+func encodeBundle(files ...*ent.File) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	gw := gzip.NewWriter(buf)
 	tw := tar.NewWriter(gw)
@@ -38,6 +72,7 @@ func newBundle(files ...*ent.File) ([]byte, error) {
 
 	return buf.Bytes(), nil
 }
+
 func newBundleHashDigest(files ...*ent.File) string {
 	hashes := make([]string, 0, len(files))
 	for _, f := range files {

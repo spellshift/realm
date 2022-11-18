@@ -20,7 +20,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targets []int, input e
 		return nil, fmt.Errorf("failed to load tome: %w", err)
 	}
 
-	// 2. Load Tome Files
+	// 2. Load Tome Files (ordered so that hashing is always the same)
 	bundleFiles, err := jobTome.QueryFiles().
 		Order(ent.Asc(file.FieldID)).
 		All(ctx)
@@ -28,56 +28,35 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targets []int, input e
 		return nil, fmt.Errorf("failed to load tome files: %w", err)
 	}
 
-	// 3. Calculate Bundle Hash
-	bundleHash := newBundleHashDigest(bundleFiles...)
-	bundleName := fmt.Sprintf("Bundle-%s", bundleHash)
-
-	// 4. Check if bundle exists
-	bundle, err := r.client.File.Query().
-		Where(file.Name(bundleName)).
-		First(ctx)
-	if err != nil && !ent.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to query tome bundle: %w", err)
-	}
-
-	// 5. Create a new bundle if it doesn't yet exist
-	if bundle == nil || ent.IsNotFound(err) {
-		bundleContent, err := newBundle(bundleFiles...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to encode tome bundle: %w", err)
-		}
-
-		bundle, err = r.client.File.Create().
-			SetName(bundleName).
-			SetContent(bundleContent).
-			Save(ctx)
+	// 3. Create bundle (if tome has files)
+	var bundleID *int
+	if bundleFiles != nil {
+		bundle, err := createBundle(ctx, r.client, bundleFiles)
 		if err != nil || bundle == nil {
-			return nil, fmt.Errorf("failed to create tome bundle: %w", err)
+			return nil, fmt.Errorf("failed to create bundle: %w", err)
 		}
+		bundleID = &bundle.ID
 	}
 
-	// 6. Create Job
+	// 4. Create Job
 	job, err := r.client.Job.Create().
 		SetInput(input).
-		SetBundle(bundle).
+		SetNillableBundleID(bundleID).
 		SetTome(jobTome).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create job: %w", err)
 	}
-	_ = job.ID
 
-	// 7. Create tasks for each target
-	tasks := make([]*ent.Task, 0, len(targets))
+	// 5. Create tasks for each target
 	for _, tid := range targets {
-		t, err := r.client.Task.Create().
+		_, err := r.client.Task.Create().
 			SetJob(job).
 			SetTargetID(tid).
 			Save(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create task for target (%q): %w", tid, err)
 		}
-		tasks = append(tasks, t)
 	}
 
 	return job, nil
