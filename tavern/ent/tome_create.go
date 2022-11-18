@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 )
 
@@ -86,10 +87,25 @@ func (tc *TomeCreate) SetNillableLastModifiedAt(t *time.Time) *TomeCreate {
 	return tc
 }
 
-// SetContent sets the "content" field.
-func (tc *TomeCreate) SetContent(b []byte) *TomeCreate {
-	tc.mutation.SetContent(b)
+// SetEldritch sets the "eldritch" field.
+func (tc *TomeCreate) SetEldritch(s string) *TomeCreate {
+	tc.mutation.SetEldritch(s)
 	return tc
+}
+
+// AddFileIDs adds the "files" edge to the File entity by IDs.
+func (tc *TomeCreate) AddFileIDs(ids ...int) *TomeCreate {
+	tc.mutation.AddFileIDs(ids...)
+	return tc
+}
+
+// AddFiles adds the "files" edges to the File entity.
+func (tc *TomeCreate) AddFiles(f ...*File) *TomeCreate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return tc.AddFileIDs(ids...)
 }
 
 // Mutation returns the TomeMutation object of the builder.
@@ -221,8 +237,8 @@ func (tc *TomeCreate) check() error {
 	if _, ok := tc.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Tome.lastModifiedAt"`)}
 	}
-	if _, ok := tc.mutation.Content(); !ok {
-		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "Tome.content"`)}
+	if _, ok := tc.mutation.Eldritch(); !ok {
+		return &ValidationError{Name: "eldritch", err: errors.New(`ent: missing required field "Tome.eldritch"`)}
 	}
 	return nil
 }
@@ -279,9 +295,28 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := tc.mutation.Content(); ok {
-		_spec.SetField(tome.FieldContent, field.TypeBytes, value)
-		_node.Content = value
+	if value, ok := tc.mutation.Eldritch(); ok {
+		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
+		_node.Eldritch = value
+	}
+	if nodes := tc.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

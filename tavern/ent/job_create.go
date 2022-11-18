@@ -6,9 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -20,6 +22,34 @@ type JobCreate struct {
 	config
 	mutation *JobMutation
 	hooks    []Hook
+}
+
+// SetCreatedAt sets the "createdAt" field.
+func (jc *JobCreate) SetCreatedAt(t time.Time) *JobCreate {
+	jc.mutation.SetCreatedAt(t)
+	return jc
+}
+
+// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+func (jc *JobCreate) SetNillableCreatedAt(t *time.Time) *JobCreate {
+	if t != nil {
+		jc.SetCreatedAt(*t)
+	}
+	return jc
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (jc *JobCreate) SetLastModifiedAt(t time.Time) *JobCreate {
+	jc.mutation.SetLastModifiedAt(t)
+	return jc
+}
+
+// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+func (jc *JobCreate) SetNillableLastModifiedAt(t *time.Time) *JobCreate {
+	if t != nil {
+		jc.SetLastModifiedAt(*t)
+	}
+	return jc
 }
 
 // SetName sets the "name" field.
@@ -50,6 +80,25 @@ func (jc *JobCreate) SetTome(t *Tome) *JobCreate {
 	return jc.SetTomeID(t.ID)
 }
 
+// SetBundleID sets the "bundle" edge to the File entity by ID.
+func (jc *JobCreate) SetBundleID(id int) *JobCreate {
+	jc.mutation.SetBundleID(id)
+	return jc
+}
+
+// SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
+func (jc *JobCreate) SetNillableBundleID(id *int) *JobCreate {
+	if id != nil {
+		jc = jc.SetBundleID(*id)
+	}
+	return jc
+}
+
+// SetBundle sets the "bundle" edge to the File entity.
+func (jc *JobCreate) SetBundle(f *File) *JobCreate {
+	return jc.SetBundleID(f.ID)
+}
+
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
 func (jc *JobCreate) AddTaskIDs(ids ...int) *JobCreate {
 	jc.mutation.AddTaskIDs(ids...)
@@ -76,6 +125,7 @@ func (jc *JobCreate) Save(ctx context.Context) (*Job, error) {
 		err  error
 		node *Job
 	)
+	jc.defaults()
 	if len(jc.hooks) == 0 {
 		if err = jc.check(); err != nil {
 			return nil, err
@@ -139,8 +189,26 @@ func (jc *JobCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (jc *JobCreate) defaults() {
+	if _, ok := jc.mutation.CreatedAt(); !ok {
+		v := job.DefaultCreatedAt()
+		jc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := jc.mutation.LastModifiedAt(); !ok {
+		v := job.DefaultLastModifiedAt()
+		jc.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (jc *JobCreate) check() error {
+	if _, ok := jc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Job.createdAt"`)}
+	}
+	if _, ok := jc.mutation.LastModifiedAt(); !ok {
+		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Job.lastModifiedAt"`)}
+	}
 	if _, ok := jc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Job.name"`)}
 	}
@@ -182,6 +250,14 @@ func (jc *JobCreate) createSpec() (*Job, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	if value, ok := jc.mutation.CreatedAt(); ok {
+		_spec.SetField(job.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := jc.mutation.LastModifiedAt(); ok {
+		_spec.SetField(job.FieldLastModifiedAt, field.TypeTime, value)
+		_node.LastModifiedAt = value
+	}
 	if value, ok := jc.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -226,6 +302,26 @@ func (jc *JobCreate) createSpec() (*Job, *sqlgraph.CreateSpec) {
 		_node.job_tome = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := jc.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.BundleTable,
+			Columns: []string{job.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.job_bundle = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := jc.mutation.TasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -262,6 +358,7 @@ func (jcb *JobCreateBulk) Save(ctx context.Context) ([]*Job, error) {
 	for i := range jcb.builders {
 		func(i int, root context.Context) {
 			builder := jcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*JobMutation)
 				if !ok {

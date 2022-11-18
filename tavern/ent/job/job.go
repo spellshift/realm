@@ -2,17 +2,27 @@
 
 package job
 
+import (
+	"time"
+)
+
 const (
 	// Label holds the string label denoting the job type in the database.
 	Label = "job"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCreatedAt holds the string denoting the createdat field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldLastModifiedAt holds the string denoting the lastmodifiedat field in the database.
+	FieldLastModifiedAt = "last_modified_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// EdgeCreatedBy holds the string denoting the createdby edge name in mutations.
 	EdgeCreatedBy = "createdBy"
 	// EdgeTome holds the string denoting the tome edge name in mutations.
 	EdgeTome = "tome"
+	// EdgeBundle holds the string denoting the bundle edge name in mutations.
+	EdgeBundle = "bundle"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
 	EdgeTasks = "tasks"
 	// Table holds the table name of the job in the database.
@@ -31,6 +41,13 @@ const (
 	TomeInverseTable = "tomes"
 	// TomeColumn is the table column denoting the tome relation/edge.
 	TomeColumn = "job_tome"
+	// BundleTable is the table that holds the bundle relation/edge.
+	BundleTable = "jobs"
+	// BundleInverseTable is the table name for the File entity.
+	// It exists in this package in order to avoid circular dependency with the "file" package.
+	BundleInverseTable = "files"
+	// BundleColumn is the table column denoting the bundle relation/edge.
+	BundleColumn = "job_bundle"
 	// TasksTable is the table that holds the tasks relation/edge.
 	TasksTable = "tasks"
 	// TasksInverseTable is the table name for the Task entity.
@@ -43,6 +60,8 @@ const (
 // Columns holds all SQL columns for job fields.
 var Columns = []string{
 	FieldID,
+	FieldCreatedAt,
+	FieldLastModifiedAt,
 	FieldName,
 }
 
@@ -51,6 +70,7 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"job_created_by",
 	"job_tome",
+	"job_bundle",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -69,6 +89,12 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
+	DefaultCreatedAt func() time.Time
+	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.
+	DefaultLastModifiedAt func() time.Time
+	// UpdateDefaultLastModifiedAt holds the default value on update for the "lastModifiedAt" field.
+	UpdateDefaultLastModifiedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 )

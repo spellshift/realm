@@ -1,6 +1,6 @@
 module github.com/kcarretto/realm
 
-go 1.18
+go 1.19
 
 require (
 	entgo.io/contrib v0.3.4-0.20221106160343-59d2b3e87ec4

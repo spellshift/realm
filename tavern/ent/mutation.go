@@ -42,20 +42,22 @@ const (
 // FileMutation represents an operation that mutates the File nodes in the graph.
 type FileMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	name           *string
-	size           *int
-	addsize        *int
-	hash           *string
-	createdAt      *time.Time
-	lastModifiedAt *time.Time
-	content        *[]byte
-	clearedFields  map[string]struct{}
-	done           bool
-	oldValue       func(context.Context) (*File, error)
-	predicates     []predicate.File
+	op               Op
+	typ              string
+	id               *int
+	createdAt        *time.Time
+	lastModifiedAt   *time.Time
+	name             *string
+	size             *int
+	addsize          *int
+	hash             *string
+	content          *[]byte
+	clearedFields    map[string]struct{}
+	createdBy        *int
+	clearedcreatedBy bool
+	done             bool
+	oldValue         func(context.Context) (*File, error)
+	predicates       []predicate.File
 }
 
 var _ ent.Mutation = (*FileMutation)(nil)
@@ -154,6 +156,78 @@ func (m *FileMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetCreatedAt sets the "createdAt" field.
+func (m *FileMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the value of the "createdAt" field in the mutation.
+func (m *FileMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "createdAt" field's value of the File entity.
+// If the File object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "createdAt" field.
+func (m *FileMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (m *FileMutation) SetLastModifiedAt(t time.Time) {
+	m.lastModifiedAt = &t
+}
+
+// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
+func (m *FileMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.lastModifiedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the File entity.
+// If the File object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FileMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
+func (m *FileMutation) ResetLastModifiedAt() {
+	m.lastModifiedAt = nil
 }
 
 // SetName sets the "name" field.
@@ -284,78 +358,6 @@ func (m *FileMutation) ResetHash() {
 	m.hash = nil
 }
 
-// SetCreatedAt sets the "createdAt" field.
-func (m *FileMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
-}
-
-// CreatedAt returns the value of the "createdAt" field in the mutation.
-func (m *FileMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "createdAt" field's value of the File entity.
-// If the File object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *FileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "createdAt" field.
-func (m *FileMutation) ResetCreatedAt() {
-	m.createdAt = nil
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (m *FileMutation) SetLastModifiedAt(t time.Time) {
-	m.lastModifiedAt = &t
-}
-
-// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
-func (m *FileMutation) LastModifiedAt() (r time.Time, exists bool) {
-	v := m.lastModifiedAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the File entity.
-// If the File object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *FileMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
-	}
-	return oldValue.LastModifiedAt, nil
-}
-
-// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
-func (m *FileMutation) ResetLastModifiedAt() {
-	m.lastModifiedAt = nil
-}
-
 // SetContent sets the "content" field.
 func (m *FileMutation) SetContent(b []byte) {
 	m.content = &b
@@ -392,6 +394,45 @@ func (m *FileMutation) ResetContent() {
 	m.content = nil
 }
 
+// SetCreatedByID sets the "createdBy" edge to the User entity by id.
+func (m *FileMutation) SetCreatedByID(id int) {
+	m.createdBy = &id
+}
+
+// ClearCreatedBy clears the "createdBy" edge to the User entity.
+func (m *FileMutation) ClearCreatedBy() {
+	m.clearedcreatedBy = true
+}
+
+// CreatedByCleared reports if the "createdBy" edge to the User entity was cleared.
+func (m *FileMutation) CreatedByCleared() bool {
+	return m.clearedcreatedBy
+}
+
+// CreatedByID returns the "createdBy" edge ID in the mutation.
+func (m *FileMutation) CreatedByID() (id int, exists bool) {
+	if m.createdBy != nil {
+		return *m.createdBy, true
+	}
+	return
+}
+
+// CreatedByIDs returns the "createdBy" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatedByID instead. It exists only for internal usage by the builders.
+func (m *FileMutation) CreatedByIDs() (ids []int) {
+	if id := m.createdBy; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreatedBy resets all changes to the "createdBy" edge.
+func (m *FileMutation) ResetCreatedBy() {
+	m.createdBy = nil
+	m.clearedcreatedBy = false
+}
+
 // Where appends a list predicates to the FileMutation builder.
 func (m *FileMutation) Where(ps ...predicate.File) {
 	m.predicates = append(m.predicates, ps...)
@@ -412,6 +453,12 @@ func (m *FileMutation) Type() string {
 // AddedFields().
 func (m *FileMutation) Fields() []string {
 	fields := make([]string, 0, 6)
+	if m.createdAt != nil {
+		fields = append(fields, file.FieldCreatedAt)
+	}
+	if m.lastModifiedAt != nil {
+		fields = append(fields, file.FieldLastModifiedAt)
+	}
 	if m.name != nil {
 		fields = append(fields, file.FieldName)
 	}
@@ -420,12 +467,6 @@ func (m *FileMutation) Fields() []string {
 	}
 	if m.hash != nil {
 		fields = append(fields, file.FieldHash)
-	}
-	if m.createdAt != nil {
-		fields = append(fields, file.FieldCreatedAt)
-	}
-	if m.lastModifiedAt != nil {
-		fields = append(fields, file.FieldLastModifiedAt)
 	}
 	if m.content != nil {
 		fields = append(fields, file.FieldContent)
@@ -438,16 +479,16 @@ func (m *FileMutation) Fields() []string {
 // schema.
 func (m *FileMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case file.FieldCreatedAt:
+		return m.CreatedAt()
+	case file.FieldLastModifiedAt:
+		return m.LastModifiedAt()
 	case file.FieldName:
 		return m.Name()
 	case file.FieldSize:
 		return m.Size()
 	case file.FieldHash:
 		return m.Hash()
-	case file.FieldCreatedAt:
-		return m.CreatedAt()
-	case file.FieldLastModifiedAt:
-		return m.LastModifiedAt()
 	case file.FieldContent:
 		return m.Content()
 	}
@@ -459,16 +500,16 @@ func (m *FileMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *FileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case file.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case file.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
 	case file.FieldName:
 		return m.OldName(ctx)
 	case file.FieldSize:
 		return m.OldSize(ctx)
 	case file.FieldHash:
 		return m.OldHash(ctx)
-	case file.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case file.FieldLastModifiedAt:
-		return m.OldLastModifiedAt(ctx)
 	case file.FieldContent:
 		return m.OldContent(ctx)
 	}
@@ -480,6 +521,20 @@ func (m *FileMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *FileMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case file.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case file.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
 	case file.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -500,20 +555,6 @@ func (m *FileMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetHash(v)
-		return nil
-	case file.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case file.FieldLastModifiedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastModifiedAt(v)
 		return nil
 	case file.FieldContent:
 		v, ok := value.([]byte)
@@ -586,6 +627,12 @@ func (m *FileMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *FileMutation) ResetField(name string) error {
 	switch name {
+	case file.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case file.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
 	case file.FieldName:
 		m.ResetName()
 		return nil
@@ -594,12 +641,6 @@ func (m *FileMutation) ResetField(name string) error {
 		return nil
 	case file.FieldHash:
 		m.ResetHash()
-		return nil
-	case file.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case file.FieldLastModifiedAt:
-		m.ResetLastModifiedAt()
 		return nil
 	case file.FieldContent:
 		m.ResetContent()
@@ -610,19 +651,28 @@ func (m *FileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *FileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.createdBy != nil {
+		edges = append(edges, file.EdgeCreatedBy)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *FileMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case file.EdgeCreatedBy:
+		if id := m.createdBy; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *FileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -634,25 +684,42 @@ func (m *FileMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *FileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedcreatedBy {
+		edges = append(edges, file.EdgeCreatedBy)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *FileMutation) EdgeCleared(name string) bool {
+	switch name {
+	case file.EdgeCreatedBy:
+		return m.clearedcreatedBy
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *FileMutation) ClearEdge(name string) error {
+	switch name {
+	case file.EdgeCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	}
 	return fmt.Errorf("unknown File unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *FileMutation) ResetEdge(name string) error {
+	switch name {
+	case file.EdgeCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	}
 	return fmt.Errorf("unknown File edge %s", name)
 }
 
@@ -662,12 +729,16 @@ type JobMutation struct {
 	op               Op
 	typ              string
 	id               *int
+	createdAt        *time.Time
+	lastModifiedAt   *time.Time
 	name             *string
 	clearedFields    map[string]struct{}
 	createdBy        *int
 	clearedcreatedBy bool
 	tome             *int
 	clearedtome      bool
+	bundle           *int
+	clearedbundle    bool
 	tasks            map[int]struct{}
 	removedtasks     map[int]struct{}
 	clearedtasks     bool
@@ -772,6 +843,78 @@ func (m *JobMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetCreatedAt sets the "createdAt" field.
+func (m *JobMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the value of the "createdAt" field in the mutation.
+func (m *JobMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "createdAt" field's value of the Job entity.
+// If the Job object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JobMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "createdAt" field.
+func (m *JobMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (m *JobMutation) SetLastModifiedAt(t time.Time) {
+	m.lastModifiedAt = &t
+}
+
+// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
+func (m *JobMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.lastModifiedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the Job entity.
+// If the Job object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JobMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
+func (m *JobMutation) ResetLastModifiedAt() {
+	m.lastModifiedAt = nil
 }
 
 // SetName sets the "name" field.
@@ -888,6 +1031,45 @@ func (m *JobMutation) ResetTome() {
 	m.clearedtome = false
 }
 
+// SetBundleID sets the "bundle" edge to the File entity by id.
+func (m *JobMutation) SetBundleID(id int) {
+	m.bundle = &id
+}
+
+// ClearBundle clears the "bundle" edge to the File entity.
+func (m *JobMutation) ClearBundle() {
+	m.clearedbundle = true
+}
+
+// BundleCleared reports if the "bundle" edge to the File entity was cleared.
+func (m *JobMutation) BundleCleared() bool {
+	return m.clearedbundle
+}
+
+// BundleID returns the "bundle" edge ID in the mutation.
+func (m *JobMutation) BundleID() (id int, exists bool) {
+	if m.bundle != nil {
+		return *m.bundle, true
+	}
+	return
+}
+
+// BundleIDs returns the "bundle" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BundleID instead. It exists only for internal usage by the builders.
+func (m *JobMutation) BundleIDs() (ids []int) {
+	if id := m.bundle; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBundle resets all changes to the "bundle" edge.
+func (m *JobMutation) ResetBundle() {
+	m.bundle = nil
+	m.clearedbundle = false
+}
+
 // AddTaskIDs adds the "tasks" edge to the Task entity by ids.
 func (m *JobMutation) AddTaskIDs(ids ...int) {
 	if m.tasks == nil {
@@ -961,7 +1143,13 @@ func (m *JobMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *JobMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 3)
+	if m.createdAt != nil {
+		fields = append(fields, job.FieldCreatedAt)
+	}
+	if m.lastModifiedAt != nil {
+		fields = append(fields, job.FieldLastModifiedAt)
+	}
 	if m.name != nil {
 		fields = append(fields, job.FieldName)
 	}
@@ -973,6 +1161,10 @@ func (m *JobMutation) Fields() []string {
 // schema.
 func (m *JobMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case job.FieldCreatedAt:
+		return m.CreatedAt()
+	case job.FieldLastModifiedAt:
+		return m.LastModifiedAt()
 	case job.FieldName:
 		return m.Name()
 	}
@@ -984,6 +1176,10 @@ func (m *JobMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *JobMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case job.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case job.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
 	case job.FieldName:
 		return m.OldName(ctx)
 	}
@@ -995,6 +1191,20 @@ func (m *JobMutation) OldField(ctx context.Context, name string) (ent.Value, err
 // type.
 func (m *JobMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case job.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case job.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
 	case job.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -1051,6 +1261,12 @@ func (m *JobMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *JobMutation) ResetField(name string) error {
 	switch name {
+	case job.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case job.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
 	case job.FieldName:
 		m.ResetName()
 		return nil
@@ -1060,12 +1276,15 @@ func (m *JobMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *JobMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.createdBy != nil {
 		edges = append(edges, job.EdgeCreatedBy)
 	}
 	if m.tome != nil {
 		edges = append(edges, job.EdgeTome)
+	}
+	if m.bundle != nil {
+		edges = append(edges, job.EdgeBundle)
 	}
 	if m.tasks != nil {
 		edges = append(edges, job.EdgeTasks)
@@ -1085,6 +1304,10 @@ func (m *JobMutation) AddedIDs(name string) []ent.Value {
 		if id := m.tome; id != nil {
 			return []ent.Value{*id}
 		}
+	case job.EdgeBundle:
+		if id := m.bundle; id != nil {
+			return []ent.Value{*id}
+		}
 	case job.EdgeTasks:
 		ids := make([]ent.Value, 0, len(m.tasks))
 		for id := range m.tasks {
@@ -1097,7 +1320,7 @@ func (m *JobMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *JobMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtasks != nil {
 		edges = append(edges, job.EdgeTasks)
 	}
@@ -1120,12 +1343,15 @@ func (m *JobMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *JobMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedcreatedBy {
 		edges = append(edges, job.EdgeCreatedBy)
 	}
 	if m.clearedtome {
 		edges = append(edges, job.EdgeTome)
+	}
+	if m.clearedbundle {
+		edges = append(edges, job.EdgeBundle)
 	}
 	if m.clearedtasks {
 		edges = append(edges, job.EdgeTasks)
@@ -1141,6 +1367,8 @@ func (m *JobMutation) EdgeCleared(name string) bool {
 		return m.clearedcreatedBy
 	case job.EdgeTome:
 		return m.clearedtome
+	case job.EdgeBundle:
+		return m.clearedbundle
 	case job.EdgeTasks:
 		return m.clearedtasks
 	}
@@ -1157,6 +1385,9 @@ func (m *JobMutation) ClearEdge(name string) error {
 	case job.EdgeTome:
 		m.ClearTome()
 		return nil
+	case job.EdgeBundle:
+		m.ClearBundle()
+		return nil
 	}
 	return fmt.Errorf("unknown Job unique edge %s", name)
 }
@@ -1170,6 +1401,9 @@ func (m *JobMutation) ResetEdge(name string) error {
 		return nil
 	case job.EdgeTome:
 		m.ResetTome()
+		return nil
+	case job.EdgeBundle:
+		m.ResetBundle()
 		return nil
 	case job.EdgeTasks:
 		m.ResetTasks()
@@ -2050,6 +2284,8 @@ type TaskMutation struct {
 	clearedFields map[string]struct{}
 	job           *int
 	clearedjob    bool
+	target        *int
+	clearedtarget bool
 	done          bool
 	oldValue      func(context.Context) (*Task, error)
 	predicates    []predicate.Task
@@ -2228,6 +2464,45 @@ func (m *TaskMutation) ResetJob() {
 	m.clearedjob = false
 }
 
+// SetTargetID sets the "target" edge to the Target entity by id.
+func (m *TaskMutation) SetTargetID(id int) {
+	m.target = &id
+}
+
+// ClearTarget clears the "target" edge to the Target entity.
+func (m *TaskMutation) ClearTarget() {
+	m.clearedtarget = true
+}
+
+// TargetCleared reports if the "target" edge to the Target entity was cleared.
+func (m *TaskMutation) TargetCleared() bool {
+	return m.clearedtarget
+}
+
+// TargetID returns the "target" edge ID in the mutation.
+func (m *TaskMutation) TargetID() (id int, exists bool) {
+	if m.target != nil {
+		return *m.target, true
+	}
+	return
+}
+
+// TargetIDs returns the "target" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TargetID instead. It exists only for internal usage by the builders.
+func (m *TaskMutation) TargetIDs() (ids []int) {
+	if id := m.target; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTarget resets all changes to the "target" edge.
+func (m *TaskMutation) ResetTarget() {
+	m.target = nil
+	m.clearedtarget = false
+}
+
 // Where appends a list predicates to the TaskMutation builder.
 func (m *TaskMutation) Where(ps ...predicate.Task) {
 	m.predicates = append(m.predicates, ps...)
@@ -2346,9 +2621,12 @@ func (m *TaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.job != nil {
 		edges = append(edges, task.EdgeJob)
+	}
+	if m.target != nil {
+		edges = append(edges, task.EdgeTarget)
 	}
 	return edges
 }
@@ -2361,13 +2639,17 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 		if id := m.job; id != nil {
 			return []ent.Value{*id}
 		}
+	case task.EdgeTarget:
+		if id := m.target; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -2379,9 +2661,12 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedjob {
 		edges = append(edges, task.EdgeJob)
+	}
+	if m.clearedtarget {
+		edges = append(edges, task.EdgeTarget)
 	}
 	return edges
 }
@@ -2392,6 +2677,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 	switch name {
 	case task.EdgeJob:
 		return m.clearedjob
+	case task.EdgeTarget:
+		return m.clearedtarget
 	}
 	return false
 }
@@ -2403,6 +2690,9 @@ func (m *TaskMutation) ClearEdge(name string) error {
 	case task.EdgeJob:
 		m.ClearJob()
 		return nil
+	case task.EdgeTarget:
+		m.ClearTarget()
+		return nil
 	}
 	return fmt.Errorf("unknown Task unique edge %s", name)
 }
@@ -2413,6 +2703,9 @@ func (m *TaskMutation) ResetEdge(name string) error {
 	switch name {
 	case task.EdgeJob:
 		m.ResetJob()
+		return nil
+	case task.EdgeTarget:
+		m.ResetTarget()
 		return nil
 	}
 	return fmt.Errorf("unknown Task edge %s", name)
@@ -2432,8 +2725,11 @@ type TomeMutation struct {
 	hash           *string
 	createdAt      *time.Time
 	lastModifiedAt *time.Time
-	content        *[]byte
+	eldritch       *string
 	clearedFields  map[string]struct{}
+	files          map[int]struct{}
+	removedfiles   map[int]struct{}
+	clearedfiles   bool
 	done           bool
 	oldValue       func(context.Context) (*Tome, error)
 	predicates     []predicate.Tome
@@ -2809,40 +3105,94 @@ func (m *TomeMutation) ResetLastModifiedAt() {
 	m.lastModifiedAt = nil
 }
 
-// SetContent sets the "content" field.
-func (m *TomeMutation) SetContent(b []byte) {
-	m.content = &b
+// SetEldritch sets the "eldritch" field.
+func (m *TomeMutation) SetEldritch(s string) {
+	m.eldritch = &s
 }
 
-// Content returns the value of the "content" field in the mutation.
-func (m *TomeMutation) Content() (r []byte, exists bool) {
-	v := m.content
+// Eldritch returns the value of the "eldritch" field in the mutation.
+func (m *TomeMutation) Eldritch() (r string, exists bool) {
+	v := m.eldritch
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldContent returns the old "content" field's value of the Tome entity.
+// OldEldritch returns the old "eldritch" field's value of the Tome entity.
 // If the Tome object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldContent(ctx context.Context) (v []byte, err error) {
+func (m *TomeMutation) OldEldritch(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+		return v, errors.New("OldEldritch is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldContent requires an ID field in the mutation")
+		return v, errors.New("OldEldritch requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+		return v, fmt.Errorf("querying old value for OldEldritch: %w", err)
 	}
-	return oldValue.Content, nil
+	return oldValue.Eldritch, nil
 }
 
-// ResetContent resets all changes to the "content" field.
-func (m *TomeMutation) ResetContent() {
-	m.content = nil
+// ResetEldritch resets all changes to the "eldritch" field.
+func (m *TomeMutation) ResetEldritch() {
+	m.eldritch = nil
+}
+
+// AddFileIDs adds the "files" edge to the File entity by ids.
+func (m *TomeMutation) AddFileIDs(ids ...int) {
+	if m.files == nil {
+		m.files = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.files[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFiles clears the "files" edge to the File entity.
+func (m *TomeMutation) ClearFiles() {
+	m.clearedfiles = true
+}
+
+// FilesCleared reports if the "files" edge to the File entity was cleared.
+func (m *TomeMutation) FilesCleared() bool {
+	return m.clearedfiles
+}
+
+// RemoveFileIDs removes the "files" edge to the File entity by IDs.
+func (m *TomeMutation) RemoveFileIDs(ids ...int) {
+	if m.removedfiles == nil {
+		m.removedfiles = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.files, ids[i])
+		m.removedfiles[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFiles returns the removed IDs of the "files" edge to the File entity.
+func (m *TomeMutation) RemovedFilesIDs() (ids []int) {
+	for id := range m.removedfiles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FilesIDs returns the "files" edge IDs in the mutation.
+func (m *TomeMutation) FilesIDs() (ids []int) {
+	for id := range m.files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFiles resets all changes to the "files" edge.
+func (m *TomeMutation) ResetFiles() {
+	m.files = nil
+	m.clearedfiles = false
+	m.removedfiles = nil
 }
 
 // Where appends a list predicates to the TomeMutation builder.
@@ -2886,8 +3236,8 @@ func (m *TomeMutation) Fields() []string {
 	if m.lastModifiedAt != nil {
 		fields = append(fields, tome.FieldLastModifiedAt)
 	}
-	if m.content != nil {
-		fields = append(fields, tome.FieldContent)
+	if m.eldritch != nil {
+		fields = append(fields, tome.FieldEldritch)
 	}
 	return fields
 }
@@ -2911,8 +3261,8 @@ func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case tome.FieldLastModifiedAt:
 		return m.LastModifiedAt()
-	case tome.FieldContent:
-		return m.Content()
+	case tome.FieldEldritch:
+		return m.Eldritch()
 	}
 	return nil, false
 }
@@ -2936,8 +3286,8 @@ func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case tome.FieldLastModifiedAt:
 		return m.OldLastModifiedAt(ctx)
-	case tome.FieldContent:
-		return m.OldContent(ctx)
+	case tome.FieldEldritch:
+		return m.OldEldritch(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tome field %s", name)
 }
@@ -2996,12 +3346,12 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastModifiedAt(v)
 		return nil
-	case tome.FieldContent:
-		v, ok := value.([]byte)
+	case tome.FieldEldritch:
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetContent(v)
+		m.SetEldritch(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Tome field %s", name)
@@ -3088,8 +3438,8 @@ func (m *TomeMutation) ResetField(name string) error {
 	case tome.FieldLastModifiedAt:
 		m.ResetLastModifiedAt()
 		return nil
-	case tome.FieldContent:
-		m.ResetContent()
+	case tome.FieldEldritch:
+		m.ResetEldritch()
 		return nil
 	}
 	return fmt.Errorf("unknown Tome field %s", name)
@@ -3097,49 +3447,85 @@ func (m *TomeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TomeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.files != nil {
+		edges = append(edges, tome.EdgeFiles)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *TomeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case tome.EdgeFiles:
+		ids := make([]ent.Value, 0, len(m.files))
+		for id := range m.files {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TomeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedfiles != nil {
+		edges = append(edges, tome.EdgeFiles)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *TomeMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case tome.EdgeFiles:
+		ids := make([]ent.Value, 0, len(m.removedfiles))
+		for id := range m.removedfiles {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TomeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedfiles {
+		edges = append(edges, tome.EdgeFiles)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *TomeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case tome.EdgeFiles:
+		return m.clearedfiles
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *TomeMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Tome unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *TomeMutation) ResetEdge(name string) error {
+	switch name {
+	case tome.EdgeFiles:
+		m.ResetFiles()
+		return nil
+	}
 	return fmt.Errorf("unknown Tome edge %s", name)
 }
 

@@ -12,19 +12,22 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // FileQuery is the builder for querying File entities.
 type FileQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.File
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*File) error
+	limit         *int
+	offset        *int
+	unique        *bool
+	order         []OrderFunc
+	fields        []string
+	predicates    []predicate.File
+	withCreatedBy *UserQuery
+	withFKs       bool
+	modifiers     []func(*sql.Selector)
+	loadTotal     []func(context.Context, []*File) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -59,6 +62,28 @@ func (fq *FileQuery) Unique(unique bool) *FileQuery {
 func (fq *FileQuery) Order(o ...OrderFunc) *FileQuery {
 	fq.order = append(fq.order, o...)
 	return fq
+}
+
+// QueryCreatedBy chains the current query on the "createdBy" edge.
+func (fq *FileQuery) QueryCreatedBy() *UserQuery {
+	query := &UserQuery{config: fq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := fq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := fq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(file.Table, file.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, file.CreatedByTable, file.CreatedByColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(fq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first File entity from the query.
@@ -237,16 +262,28 @@ func (fq *FileQuery) Clone() *FileQuery {
 		return nil
 	}
 	return &FileQuery{
-		config:     fq.config,
-		limit:      fq.limit,
-		offset:     fq.offset,
-		order:      append([]OrderFunc{}, fq.order...),
-		predicates: append([]predicate.File{}, fq.predicates...),
+		config:        fq.config,
+		limit:         fq.limit,
+		offset:        fq.offset,
+		order:         append([]OrderFunc{}, fq.order...),
+		predicates:    append([]predicate.File{}, fq.predicates...),
+		withCreatedBy: fq.withCreatedBy.Clone(),
 		// clone intermediate query.
 		sql:    fq.sql.Clone(),
 		path:   fq.path,
 		unique: fq.unique,
 	}
+}
+
+// WithCreatedBy tells the query-builder to eager-load the nodes that are connected to
+// the "createdBy" edge. The optional arguments are used to configure the query builder of the edge.
+func (fq *FileQuery) WithCreatedBy(opts ...func(*UserQuery)) *FileQuery {
+	query := &UserQuery{config: fq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	fq.withCreatedBy = query
+	return fq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -255,12 +292,12 @@ func (fq *FileQuery) Clone() *FileQuery {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreatedAt time.Time `json:"createdAt,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.File.Query().
-//		GroupBy(file.FieldName).
+//		GroupBy(file.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (fq *FileQuery) GroupBy(field string, fields ...string) *FileGroupBy {
@@ -283,11 +320,11 @@ func (fq *FileQuery) GroupBy(field string, fields ...string) *FileGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreatedAt time.Time `json:"createdAt,omitempty"`
 //	}
 //
 //	client.File.Query().
-//		Select(file.FieldName).
+//		Select(file.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (fq *FileQuery) Select(fields ...string) *FileSelect {
 	fq.fields = append(fq.fields, fields...)
@@ -320,15 +357,26 @@ func (fq *FileQuery) prepareQuery(ctx context.Context) error {
 
 func (fq *FileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*File, error) {
 	var (
-		nodes = []*File{}
-		_spec = fq.querySpec()
+		nodes       = []*File{}
+		withFKs     = fq.withFKs
+		_spec       = fq.querySpec()
+		loadedTypes = [1]bool{
+			fq.withCreatedBy != nil,
+		}
 	)
+	if fq.withCreatedBy != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, file.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*File).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &File{config: fq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(fq.modifiers) > 0 {
@@ -343,12 +391,48 @@ func (fq *FileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*File, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := fq.withCreatedBy; query != nil {
+		if err := fq.loadCreatedBy(ctx, query, nodes, nil,
+			func(n *File, e *User) { n.Edges.CreatedBy = e }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range fq.loadTotal {
 		if err := fq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (fq *FileQuery) loadCreatedBy(ctx context.Context, query *UserQuery, nodes []*File, init func(*File), assign func(*File, *User)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*File)
+	for i := range nodes {
+		if nodes[i].file_created_by == nil {
+			continue
+		}
+		fk := *nodes[i].file_created_by
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "file_created_by" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (fq *FileQuery) sqlCount(ctx context.Context) (int, error) {

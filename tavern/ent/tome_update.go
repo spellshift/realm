@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 )
@@ -101,15 +102,51 @@ func (tu *TomeUpdate) SetNillableLastModifiedAt(t *time.Time) *TomeUpdate {
 	return tu
 }
 
-// SetContent sets the "content" field.
-func (tu *TomeUpdate) SetContent(b []byte) *TomeUpdate {
-	tu.mutation.SetContent(b)
+// SetEldritch sets the "eldritch" field.
+func (tu *TomeUpdate) SetEldritch(s string) *TomeUpdate {
+	tu.mutation.SetEldritch(s)
 	return tu
+}
+
+// AddFileIDs adds the "files" edge to the File entity by IDs.
+func (tu *TomeUpdate) AddFileIDs(ids ...int) *TomeUpdate {
+	tu.mutation.AddFileIDs(ids...)
+	return tu
+}
+
+// AddFiles adds the "files" edges to the File entity.
+func (tu *TomeUpdate) AddFiles(f ...*File) *TomeUpdate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return tu.AddFileIDs(ids...)
 }
 
 // Mutation returns the TomeMutation object of the builder.
 func (tu *TomeUpdate) Mutation() *TomeMutation {
 	return tu.mutation
+}
+
+// ClearFiles clears all "files" edges to the File entity.
+func (tu *TomeUpdate) ClearFiles() *TomeUpdate {
+	tu.mutation.ClearFiles()
+	return tu
+}
+
+// RemoveFileIDs removes the "files" edge to File entities by IDs.
+func (tu *TomeUpdate) RemoveFileIDs(ids ...int) *TomeUpdate {
+	tu.mutation.RemoveFileIDs(ids...)
+	return tu
+}
+
+// RemoveFiles removes "files" edges to File entities.
+func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return tu.RemoveFileIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -234,8 +271,62 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.LastModifiedAt(); ok {
 		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := tu.mutation.Content(); ok {
-		_spec.SetField(tome.FieldContent, field.TypeBytes, value)
+	if value, ok := tu.mutation.Eldritch(); ok {
+		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
+	}
+	if tu.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tu.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -329,15 +420,51 @@ func (tuo *TomeUpdateOne) SetNillableLastModifiedAt(t *time.Time) *TomeUpdateOne
 	return tuo
 }
 
-// SetContent sets the "content" field.
-func (tuo *TomeUpdateOne) SetContent(b []byte) *TomeUpdateOne {
-	tuo.mutation.SetContent(b)
+// SetEldritch sets the "eldritch" field.
+func (tuo *TomeUpdateOne) SetEldritch(s string) *TomeUpdateOne {
+	tuo.mutation.SetEldritch(s)
 	return tuo
+}
+
+// AddFileIDs adds the "files" edge to the File entity by IDs.
+func (tuo *TomeUpdateOne) AddFileIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.AddFileIDs(ids...)
+	return tuo
+}
+
+// AddFiles adds the "files" edges to the File entity.
+func (tuo *TomeUpdateOne) AddFiles(f ...*File) *TomeUpdateOne {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return tuo.AddFileIDs(ids...)
 }
 
 // Mutation returns the TomeMutation object of the builder.
 func (tuo *TomeUpdateOne) Mutation() *TomeMutation {
 	return tuo.mutation
+}
+
+// ClearFiles clears all "files" edges to the File entity.
+func (tuo *TomeUpdateOne) ClearFiles() *TomeUpdateOne {
+	tuo.mutation.ClearFiles()
+	return tuo
+}
+
+// RemoveFileIDs removes the "files" edge to File entities by IDs.
+func (tuo *TomeUpdateOne) RemoveFileIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.RemoveFileIDs(ids...)
+	return tuo
+}
+
+// RemoveFiles removes "files" edges to File entities.
+func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return tuo.RemoveFileIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -492,8 +619,62 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.LastModifiedAt(); ok {
 		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := tuo.mutation.Content(); ok {
-		_spec.SetField(tome.FieldContent, field.TypeBytes, value)
+	if value, ok := tuo.mutation.Eldritch(); ok {
+		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
+	}
+	if tuo.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tuo.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Tome{config: tuo.config}
 	_spec.Assign = _node.assignValues

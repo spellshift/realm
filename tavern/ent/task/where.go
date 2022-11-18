@@ -213,6 +213,34 @@ func HasJobWith(preds ...predicate.Job) predicate.Task {
 	})
 }
 
+// HasTarget applies the HasEdge predicate on the "target" edge.
+func HasTarget() predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TargetTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, TargetTable, TargetColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTargetWith applies the HasEdge predicate on the "target" edge with a given conditions (other predicates).
+func HasTargetWith(preds ...predicate.Target) predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TargetInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, TargetTable, TargetColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Task) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 	"github.com/kcarretto/realm/tavern/ent/task"
@@ -29,6 +30,7 @@ type JobQuery struct {
 	predicates     []predicate.Job
 	withCreatedBy  *UserQuery
 	withTome       *TomeQuery
+	withBundle     *FileQuery
 	withTasks      *TaskQuery
 	withFKs        bool
 	modifiers      []func(*sql.Selector)
@@ -107,6 +109,28 @@ func (jq *JobQuery) QueryTome() *TomeQuery {
 			sqlgraph.From(job.Table, job.FieldID, selector),
 			sqlgraph.To(tome.Table, tome.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, job.TomeTable, job.TomeColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(jq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBundle chains the current query on the "bundle" edge.
+func (jq *JobQuery) QueryBundle() *FileQuery {
+	query := &FileQuery{config: jq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := jq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := jq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(job.Table, job.FieldID, selector),
+			sqlgraph.To(file.Table, file.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, job.BundleTable, job.BundleColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(jq.driver.Dialect(), step)
 		return fromU, nil
@@ -319,6 +343,7 @@ func (jq *JobQuery) Clone() *JobQuery {
 		predicates:    append([]predicate.Job{}, jq.predicates...),
 		withCreatedBy: jq.withCreatedBy.Clone(),
 		withTome:      jq.withTome.Clone(),
+		withBundle:    jq.withBundle.Clone(),
 		withTasks:     jq.withTasks.Clone(),
 		// clone intermediate query.
 		sql:    jq.sql.Clone(),
@@ -349,6 +374,17 @@ func (jq *JobQuery) WithTome(opts ...func(*TomeQuery)) *JobQuery {
 	return jq
 }
 
+// WithBundle tells the query-builder to eager-load the nodes that are connected to
+// the "bundle" edge. The optional arguments are used to configure the query builder of the edge.
+func (jq *JobQuery) WithBundle(opts ...func(*FileQuery)) *JobQuery {
+	query := &FileQuery{config: jq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	jq.withBundle = query
+	return jq
+}
+
 // WithTasks tells the query-builder to eager-load the nodes that are connected to
 // the "tasks" edge. The optional arguments are used to configure the query builder of the edge.
 func (jq *JobQuery) WithTasks(opts ...func(*TaskQuery)) *JobQuery {
@@ -366,12 +402,12 @@ func (jq *JobQuery) WithTasks(opts ...func(*TaskQuery)) *JobQuery {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreatedAt time.Time `json:"createdAt,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Job.Query().
-//		GroupBy(job.FieldName).
+//		GroupBy(job.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (jq *JobQuery) GroupBy(field string, fields ...string) *JobGroupBy {
@@ -394,11 +430,11 @@ func (jq *JobQuery) GroupBy(field string, fields ...string) *JobGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreatedAt time.Time `json:"createdAt,omitempty"`
 //	}
 //
 //	client.Job.Query().
-//		Select(job.FieldName).
+//		Select(job.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (jq *JobQuery) Select(fields ...string) *JobSelect {
 	jq.fields = append(jq.fields, fields...)
@@ -434,13 +470,14 @@ func (jq *JobQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Job, err
 		nodes       = []*Job{}
 		withFKs     = jq.withFKs
 		_spec       = jq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			jq.withCreatedBy != nil,
 			jq.withTome != nil,
+			jq.withBundle != nil,
 			jq.withTasks != nil,
 		}
 	)
-	if jq.withCreatedBy != nil || jq.withTome != nil {
+	if jq.withCreatedBy != nil || jq.withTome != nil || jq.withBundle != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -476,6 +513,12 @@ func (jq *JobQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Job, err
 	if query := jq.withTome; query != nil {
 		if err := jq.loadTome(ctx, query, nodes, nil,
 			func(n *Job, e *Tome) { n.Edges.Tome = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := jq.withBundle; query != nil {
+		if err := jq.loadBundle(ctx, query, nodes, nil,
+			func(n *Job, e *File) { n.Edges.Bundle = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -552,6 +595,35 @@ func (jq *JobQuery) loadTome(ctx context.Context, query *TomeQuery, nodes []*Job
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "job_tome" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (jq *JobQuery) loadBundle(ctx context.Context, query *FileQuery, nodes []*Job, init func(*Job), assign func(*Job, *File)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Job)
+	for i := range nodes {
+		if nodes[i].job_bundle == nil {
+			continue
+		}
+		fk := *nodes[i].job_bundle
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(file.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "job_bundle" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

@@ -1,4 +1,8 @@
 type Mutation {
+    ###
+    # Job
+    ###
+    createJob(targets: [ID!]!, input: CreateJobInput!): Job
 
     ### 
     # User

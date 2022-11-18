@@ -445,26 +445,6 @@ func (f *FileQuery) Paginate(
 }
 
 var (
-	// FileOrderFieldName orders File by name.
-	FileOrderFieldName = &FileOrderField{
-		field: file.FieldName,
-		toCursor: func(f *File) Cursor {
-			return Cursor{
-				ID:    f.ID,
-				Value: f.Name,
-			}
-		},
-	}
-	// FileOrderFieldSize orders File by size.
-	FileOrderFieldSize = &FileOrderField{
-		field: file.FieldSize,
-		toCursor: func(f *File) Cursor {
-			return Cursor{
-				ID:    f.ID,
-				Value: f.Size,
-			}
-		},
-	}
 	// FileOrderFieldCreatedAt orders File by createdAt.
 	FileOrderFieldCreatedAt = &FileOrderField{
 		field: file.FieldCreatedAt,
@@ -485,20 +465,40 @@ var (
 			}
 		},
 	}
+	// FileOrderFieldName orders File by name.
+	FileOrderFieldName = &FileOrderField{
+		field: file.FieldName,
+		toCursor: func(f *File) Cursor {
+			return Cursor{
+				ID:    f.ID,
+				Value: f.Name,
+			}
+		},
+	}
+	// FileOrderFieldSize orders File by size.
+	FileOrderFieldSize = &FileOrderField{
+		field: file.FieldSize,
+		toCursor: func(f *File) Cursor {
+			return Cursor{
+				ID:    f.ID,
+				Value: f.Size,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
 func (f FileOrderField) String() string {
 	var str string
 	switch f.field {
-	case file.FieldName:
-		str = "NAME"
-	case file.FieldSize:
-		str = "SIZE"
 	case file.FieldCreatedAt:
 		str = "CREATED_AT"
 	case file.FieldLastModifiedAt:
 		str = "LAST_MODIFIED_AT"
+	case file.FieldName:
+		str = "NAME"
+	case file.FieldSize:
+		str = "SIZE"
 	}
 	return str
 }
@@ -515,14 +515,14 @@ func (f *FileOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("FileOrderField %T must be a string", v)
 	}
 	switch str {
-	case "NAME":
-		*f = *FileOrderFieldName
-	case "SIZE":
-		*f = *FileOrderFieldSize
 	case "CREATED_AT":
 		*f = *FileOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *FileOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *FileOrderFieldName
+	case "SIZE":
+		*f = *FileOrderFieldSize
 	default:
 		return fmt.Errorf("%s is not a valid FileOrderField", str)
 	}
@@ -761,6 +761,26 @@ func (j *JobQuery) Paginate(
 }
 
 var (
+	// JobOrderFieldCreatedAt orders Job by createdAt.
+	JobOrderFieldCreatedAt = &JobOrderField{
+		field: job.FieldCreatedAt,
+		toCursor: func(j *Job) Cursor {
+			return Cursor{
+				ID:    j.ID,
+				Value: j.CreatedAt,
+			}
+		},
+	}
+	// JobOrderFieldLastModifiedAt orders Job by lastModifiedAt.
+	JobOrderFieldLastModifiedAt = &JobOrderField{
+		field: job.FieldLastModifiedAt,
+		toCursor: func(j *Job) Cursor {
+			return Cursor{
+				ID:    j.ID,
+				Value: j.LastModifiedAt,
+			}
+		},
+	}
 	// JobOrderFieldName orders Job by name.
 	JobOrderFieldName = &JobOrderField{
 		field: job.FieldName,
@@ -777,6 +797,10 @@ var (
 func (f JobOrderField) String() string {
 	var str string
 	switch f.field {
+	case job.FieldCreatedAt:
+		str = "CREATED_AT"
+	case job.FieldLastModifiedAt:
+		str = "LAST_MODIFIED_AT"
 	case job.FieldName:
 		str = "NAME"
 	}
@@ -795,6 +819,10 @@ func (f *JobOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("JobOrderField %T must be a string", v)
 	}
 	switch str {
+	case "CREATED_AT":
+		*f = *JobOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *JobOrderFieldLastModifiedAt
 	case "NAME":
 		*f = *JobOrderFieldName
 	default:

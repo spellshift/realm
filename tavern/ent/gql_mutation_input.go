@@ -2,22 +2,28 @@
 
 package ent
 
+import (
+	"time"
+)
+
 // CreateJobInput represents a mutation input for creating jobs.
 type CreateJobInput struct {
-	Name        string
-	CreatedByID int
-	TomeID      int
-	TaskIDs     []int
+	CreatedAt      *time.Time
+	LastModifiedAt *time.Time
+	Name           string
+	TomeID         int
 }
 
 // Mutate applies the CreateJobInput on the JobMutation builder.
 func (i *CreateJobInput) Mutate(m *JobMutation) {
-	m.SetName(i.Name)
-	m.SetCreatedByID(i.CreatedByID)
-	m.SetTomeID(i.TomeID)
-	if v := i.TaskIDs; len(v) > 0 {
-		m.AddTaskIDs(v...)
+	if v := i.CreatedAt; v != nil {
+		m.SetCreatedAt(*v)
 	}
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	m.SetName(i.Name)
+	m.SetTomeID(i.TomeID)
 }
 
 // SetInput applies the change-set in the CreateJobInput on the JobCreate builder.

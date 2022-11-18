@@ -25,10 +25,19 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldLastModifiedAt holds the string denoting the lastmodifiedat field in the database.
 	FieldLastModifiedAt = "last_modified_at"
-	// FieldContent holds the string denoting the content field in the database.
-	FieldContent = "content"
+	// FieldEldritch holds the string denoting the eldritch field in the database.
+	FieldEldritch = "eldritch"
+	// EdgeFiles holds the string denoting the files edge name in mutations.
+	EdgeFiles = "files"
 	// Table holds the table name of the tome in the database.
 	Table = "tomes"
+	// FilesTable is the table that holds the files relation/edge.
+	FilesTable = "files"
+	// FilesInverseTable is the table name for the File entity.
+	// It exists in this package in order to avoid circular dependency with the "file" package.
+	FilesInverseTable = "files"
+	// FilesColumn is the table column denoting the files relation/edge.
+	FilesColumn = "tome_files"
 )
 
 // Columns holds all SQL columns for tome fields.
@@ -41,7 +50,7 @@ var Columns = []string{
 	FieldHash,
 	FieldCreatedAt,
 	FieldLastModifiedAt,
-	FieldContent,
+	FieldEldritch,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

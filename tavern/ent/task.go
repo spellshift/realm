@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -20,19 +21,22 @@ type Task struct {
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
-	Edges     TaskEdges `json:"edges"`
-	job_tasks *int
+	Edges       TaskEdges `json:"edges"`
+	job_tasks   *int
+	task_target *int
 }
 
 // TaskEdges holds the relations/edges for other nodes in the graph.
 type TaskEdges struct {
 	// Job holds the value of the job edge.
 	Job *Job `json:"job,omitempty"`
+	// Target holds the value of the target edge.
+	Target *Target `json:"target,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 }
 
 // JobOrErr returns the Job value or an error if the edge
@@ -48,6 +52,19 @@ func (e TaskEdges) JobOrErr() (*Job, error) {
 	return nil, &NotLoadedError{edge: "job"}
 }
 
+// TargetOrErr returns the Target value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskEdges) TargetOrErr() (*Target, error) {
+	if e.loadedTypes[1] {
+		if e.Target == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: target.Label}
+		}
+		return e.Target, nil
+	}
+	return nil, &NotLoadedError{edge: "target"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Task) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -58,6 +75,8 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 		case task.FieldName:
 			values[i] = new(sql.NullString)
 		case task.ForeignKeys[0]: // job_tasks
+			values[i] = new(sql.NullInt64)
+		case task.ForeignKeys[1]: // task_target
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Task", columns[i])
@@ -93,6 +112,13 @@ func (t *Task) assignValues(columns []string, values []any) error {
 				t.job_tasks = new(int)
 				*t.job_tasks = int(value.Int64)
 			}
+		case task.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field task_target", value)
+			} else if value.Valid {
+				t.task_target = new(int)
+				*t.task_target = int(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -101,6 +127,11 @@ func (t *Task) assignValues(columns []string, values []any) error {
 // QueryJob queries the "job" edge of the Task entity.
 func (t *Task) QueryJob() *JobQuery {
 	return (&TaskClient{config: t.config}).QueryJob(t)
+}
+
+// QueryTarget queries the "target" edge of the Task entity.
+func (t *Task) QueryTarget() *TargetQuery {
+	return (&TaskClient{config: t.config}).QueryTarget(t)
 }
 
 // Update returns a builder for updating this Task.

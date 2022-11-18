@@ -30,8 +30,33 @@ type Tome struct {
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 	// The timestamp for when the Tome was last modified
 	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
-	// The content of the tome
-	Content []byte `json:"content,omitempty"`
+	// Eldritch script that will be executed when the tome is run
+	Eldritch string `json:"eldritch,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the TomeQuery when eager-loading is set.
+	Edges TomeEdges `json:"edges"`
+}
+
+// TomeEdges holds the relations/edges for other nodes in the graph.
+type TomeEdges struct {
+	// Any files required for tome execution that will be bundled and provided to the agent for download
+	Files []*File `json:"files,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+
+	namedFiles map[string][]*File
+}
+
+// FilesOrErr returns the Files value or an error if the edge
+// was not loaded in eager-loading.
+func (e TomeEdges) FilesOrErr() ([]*File, error) {
+	if e.loadedTypes[0] {
+		return e.Files, nil
+	}
+	return nil, &NotLoadedError{edge: "files"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -39,11 +64,9 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tome.FieldContent:
-			values[i] = new([]byte)
 		case tome.FieldID, tome.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case tome.FieldName, tome.FieldDescription, tome.FieldParameters, tome.FieldHash:
+		case tome.FieldName, tome.FieldDescription, tome.FieldParameters, tome.FieldHash, tome.FieldEldritch:
 			values[i] = new(sql.NullString)
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -110,15 +133,20 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.LastModifiedAt = value.Time
 			}
-		case tome.FieldContent:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field content", values[i])
-			} else if value != nil {
-				t.Content = *value
+		case tome.FieldEldritch:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field eldritch", values[i])
+			} else if value.Valid {
+				t.Eldritch = value.String
 			}
 		}
 	}
 	return nil
+}
+
+// QueryFiles queries the "files" edge of the Tome entity.
+func (t *Tome) QueryFiles() *FileQuery {
+	return (&TomeClient{config: t.config}).QueryFiles(t)
 }
 
 // Update returns a builder for updating this Tome.
@@ -165,10 +193,34 @@ func (t *Tome) String() string {
 	builder.WriteString("lastModifiedAt=")
 	builder.WriteString(t.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("content=")
-	builder.WriteString(fmt.Sprintf("%v", t.Content))
+	builder.WriteString("eldritch=")
+	builder.WriteString(t.Eldritch)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedFiles returns the Files named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Tome) NamedFiles(name string) ([]*File, error) {
+	if t.Edges.namedFiles == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedFiles[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Tome) appendNamedFiles(name string, edges ...*File) {
+	if t.Edges.namedFiles == nil {
+		t.Edges.namedFiles = make(map[string][]*File)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedFiles[name] = []*File{}
+	} else {
+		t.Edges.namedFiles[name] = append(t.Edges.namedFiles[name], edges...)
+	}
 }
 
 // Tomes is a parsable slice of Tome.

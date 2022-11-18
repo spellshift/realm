@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 )
 
@@ -129,10 +130,10 @@ func LastModifiedAt(v time.Time) predicate.Tome {
 	})
 }
 
-// Content applies equality check predicate on the "content" field. It's identical to ContentEQ.
-func Content(v []byte) predicate.Tome {
+// Eldritch applies equality check predicate on the "eldritch" field. It's identical to EldritchEQ.
+func Eldritch(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldContent), v))
+		s.Where(sql.EQ(s.C(FieldEldritch), v))
 	})
 }
 
@@ -724,67 +725,130 @@ func LastModifiedAtLTE(v time.Time) predicate.Tome {
 	})
 }
 
-// ContentEQ applies the EQ predicate on the "content" field.
-func ContentEQ(v []byte) predicate.Tome {
+// EldritchEQ applies the EQ predicate on the "eldritch" field.
+func EldritchEQ(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldContent), v))
+		s.Where(sql.EQ(s.C(FieldEldritch), v))
 	})
 }
 
-// ContentNEQ applies the NEQ predicate on the "content" field.
-func ContentNEQ(v []byte) predicate.Tome {
+// EldritchNEQ applies the NEQ predicate on the "eldritch" field.
+func EldritchNEQ(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldContent), v))
+		s.Where(sql.NEQ(s.C(FieldEldritch), v))
 	})
 }
 
-// ContentIn applies the In predicate on the "content" field.
-func ContentIn(vs ...[]byte) predicate.Tome {
+// EldritchIn applies the In predicate on the "eldritch" field.
+func EldritchIn(vs ...string) predicate.Tome {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldContent), v...))
+		s.Where(sql.In(s.C(FieldEldritch), v...))
 	})
 }
 
-// ContentNotIn applies the NotIn predicate on the "content" field.
-func ContentNotIn(vs ...[]byte) predicate.Tome {
+// EldritchNotIn applies the NotIn predicate on the "eldritch" field.
+func EldritchNotIn(vs ...string) predicate.Tome {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldContent), v...))
+		s.Where(sql.NotIn(s.C(FieldEldritch), v...))
 	})
 }
 
-// ContentGT applies the GT predicate on the "content" field.
-func ContentGT(v []byte) predicate.Tome {
+// EldritchGT applies the GT predicate on the "eldritch" field.
+func EldritchGT(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldContent), v))
+		s.Where(sql.GT(s.C(FieldEldritch), v))
 	})
 }
 
-// ContentGTE applies the GTE predicate on the "content" field.
-func ContentGTE(v []byte) predicate.Tome {
+// EldritchGTE applies the GTE predicate on the "eldritch" field.
+func EldritchGTE(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldContent), v))
+		s.Where(sql.GTE(s.C(FieldEldritch), v))
 	})
 }
 
-// ContentLT applies the LT predicate on the "content" field.
-func ContentLT(v []byte) predicate.Tome {
+// EldritchLT applies the LT predicate on the "eldritch" field.
+func EldritchLT(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldContent), v))
+		s.Where(sql.LT(s.C(FieldEldritch), v))
 	})
 }
 
-// ContentLTE applies the LTE predicate on the "content" field.
-func ContentLTE(v []byte) predicate.Tome {
+// EldritchLTE applies the LTE predicate on the "eldritch" field.
+func EldritchLTE(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldContent), v))
+		s.Where(sql.LTE(s.C(FieldEldritch), v))
+	})
+}
+
+// EldritchContains applies the Contains predicate on the "eldritch" field.
+func EldritchContains(v string) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldEldritch), v))
+	})
+}
+
+// EldritchHasPrefix applies the HasPrefix predicate on the "eldritch" field.
+func EldritchHasPrefix(v string) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldEldritch), v))
+	})
+}
+
+// EldritchHasSuffix applies the HasSuffix predicate on the "eldritch" field.
+func EldritchHasSuffix(v string) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldEldritch), v))
+	})
+}
+
+// EldritchEqualFold applies the EqualFold predicate on the "eldritch" field.
+func EldritchEqualFold(v string) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldEldritch), v))
+	})
+}
+
+// EldritchContainsFold applies the ContainsFold predicate on the "eldritch" field.
+func EldritchContainsFold(v string) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldEldritch), v))
+	})
+}
+
+// HasFiles applies the HasEdge predicate on the "files" edge.
+func HasFiles() predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(FilesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFilesWith applies the HasEdge predicate on the "files" edge with a given conditions (other predicates).
+func HasFilesWith(preds ...predicate.File) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(FilesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

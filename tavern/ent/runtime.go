@@ -19,8 +19,21 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	fileMixin := schema.File{}.Mixin()
+	fileMixinFields0 := fileMixin[0].Fields()
+	_ = fileMixinFields0
 	fileFields := schema.File{}.Fields()
 	_ = fileFields
+	// fileDescCreatedAt is the schema descriptor for createdAt field.
+	fileDescCreatedAt := fileMixinFields0[0].Descriptor()
+	// file.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	file.DefaultCreatedAt = fileDescCreatedAt.Default.(func() time.Time)
+	// fileDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	fileDescLastModifiedAt := fileMixinFields0[1].Descriptor()
+	// file.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	file.DefaultLastModifiedAt = fileDescLastModifiedAt.Default.(func() time.Time)
+	// file.UpdateDefaultLastModifiedAt holds the default value on update for the lastModifiedAt field.
+	file.UpdateDefaultLastModifiedAt = fileDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// fileDescName is the schema descriptor for name field.
 	fileDescName := fileFields[0].Descriptor()
 	// file.NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -35,16 +48,21 @@ func init() {
 	fileDescHash := fileFields[2].Descriptor()
 	// file.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	file.HashValidator = fileDescHash.Validators[0].(func(string) error)
-	// fileDescCreatedAt is the schema descriptor for createdAt field.
-	fileDescCreatedAt := fileFields[3].Descriptor()
-	// file.DefaultCreatedAt holds the default value on creation for the createdAt field.
-	file.DefaultCreatedAt = fileDescCreatedAt.Default.(func() time.Time)
-	// fileDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
-	fileDescLastModifiedAt := fileFields[4].Descriptor()
-	// file.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
-	file.DefaultLastModifiedAt = fileDescLastModifiedAt.Default.(func() time.Time)
+	jobMixin := schema.Job{}.Mixin()
+	jobMixinFields0 := jobMixin[0].Fields()
+	_ = jobMixinFields0
 	jobFields := schema.Job{}.Fields()
 	_ = jobFields
+	// jobDescCreatedAt is the schema descriptor for createdAt field.
+	jobDescCreatedAt := jobMixinFields0[0].Descriptor()
+	// job.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	job.DefaultCreatedAt = jobDescCreatedAt.Default.(func() time.Time)
+	// jobDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	jobDescLastModifiedAt := jobMixinFields0[1].Descriptor()
+	// job.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	job.DefaultLastModifiedAt = jobDescLastModifiedAt.Default.(func() time.Time)
+	// job.UpdateDefaultLastModifiedAt holds the default value on update for the lastModifiedAt field.
+	job.UpdateDefaultLastModifiedAt = jobDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// jobDescName is the schema descriptor for name field.
 	jobDescName := jobFields[0].Descriptor()
 	// job.NameValidator is a validator for the "name" field. It is called by the builders before save.

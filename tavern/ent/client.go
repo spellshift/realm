@@ -252,6 +252,22 @@ func (c *FileClient) GetX(ctx context.Context, id int) *File {
 	return obj
 }
 
+// QueryCreatedBy queries the createdBy edge of a File.
+func (c *FileClient) QueryCreatedBy(f *File) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(file.Table, file.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, file.CreatedByTable, file.CreatedByColumn),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *FileClient) Hooks() []Hook {
 	return c.hooks.File
@@ -367,6 +383,22 @@ func (c *JobClient) QueryTome(j *Job) *TomeQuery {
 			sqlgraph.From(job.Table, job.FieldID, id),
 			sqlgraph.To(tome.Table, tome.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, job.TomeTable, job.TomeColumn),
+		)
+		fromV = sqlgraph.Neighbors(j.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBundle queries the bundle edge of a Job.
+func (c *JobClient) QueryBundle(j *Job) *FileQuery {
+	query := &FileQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := j.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(job.Table, job.FieldID, id),
+			sqlgraph.To(file.Table, file.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, job.BundleTable, job.BundleColumn),
 		)
 		fromV = sqlgraph.Neighbors(j.driver.Dialect(), step)
 		return fromV, nil
@@ -708,6 +740,22 @@ func (c *TaskClient) QueryJob(t *Task) *JobQuery {
 	return query
 }
 
+// QueryTarget queries the target edge of a Task.
+func (c *TaskClient) QueryTarget(t *Task) *TargetQuery {
+	query := &TargetQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(target.Table, target.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, task.TargetTable, task.TargetColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TaskClient) Hooks() []Hook {
 	return c.hooks.Task
@@ -796,6 +844,22 @@ func (c *TomeClient) GetX(ctx context.Context, id int) *Tome {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryFiles queries the files edge of a Tome.
+func (c *TomeClient) QueryFiles(t *Tome) *FileQuery {
+	query := &FileQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tome.Table, tome.FieldID, id),
+			sqlgraph.To(file.Table, file.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tome.FilesTable, tome.FilesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

@@ -6,6 +6,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -50,17 +51,17 @@ func (Tome) Fields() []ent.Field {
 				entgql.OrderField("LAST_MODIFIED_AT"),
 			).
 			Comment("The timestamp for when the Tome was last modified"),
-		field.Bytes("content").
-			Annotations(
-				entgql.Skip(), // Don't return tome content in GraphQL queries
-			).
-			Comment("The content of the tome"),
+		field.String("eldritch").
+			Comment("Eldritch script that will be executed when the tome is run"),
 	}
 }
 
 // Edges of the Tome.
 func (Tome) Edges() []ent.Edge {
-	return []ent.Edge{}
+	return []ent.Edge{
+		edge.To("files", File.Type).
+			Comment("Any files required for tome execution that will be bundled and provided to the agent for download"),
+	}
 }
 
 // Annotations describes additional information for the ent.

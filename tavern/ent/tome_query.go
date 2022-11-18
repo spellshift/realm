@@ -4,12 +4,14 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 )
@@ -17,14 +19,16 @@ import (
 // TomeQuery is the builder for querying Tome entities.
 type TomeQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.Tome
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Tome) error
+	limit          *int
+	offset         *int
+	unique         *bool
+	order          []OrderFunc
+	fields         []string
+	predicates     []predicate.Tome
+	withFiles      *FileQuery
+	modifiers      []func(*sql.Selector)
+	loadTotal      []func(context.Context, []*Tome) error
+	withNamedFiles map[string]*FileQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -59,6 +63,28 @@ func (tq *TomeQuery) Unique(unique bool) *TomeQuery {
 func (tq *TomeQuery) Order(o ...OrderFunc) *TomeQuery {
 	tq.order = append(tq.order, o...)
 	return tq
+}
+
+// QueryFiles chains the current query on the "files" edge.
+func (tq *TomeQuery) QueryFiles() *FileQuery {
+	query := &FileQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tome.Table, tome.FieldID, selector),
+			sqlgraph.To(file.Table, file.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tome.FilesTable, tome.FilesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Tome entity from the query.
@@ -242,11 +268,23 @@ func (tq *TomeQuery) Clone() *TomeQuery {
 		offset:     tq.offset,
 		order:      append([]OrderFunc{}, tq.order...),
 		predicates: append([]predicate.Tome{}, tq.predicates...),
+		withFiles:  tq.withFiles.Clone(),
 		// clone intermediate query.
 		sql:    tq.sql.Clone(),
 		path:   tq.path,
 		unique: tq.unique,
 	}
+}
+
+// WithFiles tells the query-builder to eager-load the nodes that are connected to
+// the "files" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TomeQuery) WithFiles(opts ...func(*FileQuery)) *TomeQuery {
+	query := &FileQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withFiles = query
+	return tq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -320,8 +358,11 @@ func (tq *TomeQuery) prepareQuery(ctx context.Context) error {
 
 func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, error) {
 	var (
-		nodes = []*Tome{}
-		_spec = tq.querySpec()
+		nodes       = []*Tome{}
+		_spec       = tq.querySpec()
+		loadedTypes = [1]bool{
+			tq.withFiles != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Tome).scanValues(nil, columns)
@@ -329,6 +370,7 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Tome{config: tq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(tq.modifiers) > 0 {
@@ -343,12 +385,58 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := tq.withFiles; query != nil {
+		if err := tq.loadFiles(ctx, query, nodes,
+			func(n *Tome) { n.Edges.Files = []*File{} },
+			func(n *Tome, e *File) { n.Edges.Files = append(n.Edges.Files, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedFiles {
+		if err := tq.loadFiles(ctx, query, nodes,
+			func(n *Tome) { n.appendNamedFiles(name) },
+			func(n *Tome, e *File) { n.appendNamedFiles(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range tq.loadTotal {
 		if err := tq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (tq *TomeQuery) loadFiles(ctx context.Context, query *FileQuery, nodes []*Tome, init func(*Tome), assign func(*Tome, *File)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Tome)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.File(func(s *sql.Selector) {
+		s.Where(sql.InValues(tome.FilesColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.tome_files
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "tome_files" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tome_files" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (tq *TomeQuery) sqlCount(ctx context.Context) (int, error) {
@@ -452,6 +540,20 @@ func (tq *TomeQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedFiles tells the query-builder to eager-load the nodes that are connected to the "files"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *TomeQuery) WithNamedFiles(name string, opts ...func(*FileQuery)) *TomeQuery {
+	query := &FileQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedFiles == nil {
+		tq.withNamedFiles = make(map[string]*FileQuery)
+	}
+	tq.withNamedFiles[name] = query
+	return tq
 }
 
 // TomeGroupBy is the group-by builder for Tome entities.

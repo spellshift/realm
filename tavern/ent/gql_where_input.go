@@ -34,6 +34,26 @@ type FileWhereInput struct {
 	IDLT    *int  `json:"idLT,omitempty"`
 	IDLTE   *int  `json:"idLTE,omitempty"`
 
+	// "createdAt" field predicates.
+	CreatedAt      *time.Time  `json:"createdat,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdatNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdatIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdatNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdatGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdatGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdatLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdatLTE,omitempty"`
+
+	// "lastModifiedAt" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastmodifiedat,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastmodifiedatNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastmodifiedatIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastmodifiedatNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastmodifiedatGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastmodifiedatGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastmodifiedatLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastmodifiedatLTE,omitempty"`
+
 	// "name" field predicates.
 	Name             *string  `json:"name,omitempty"`
 	NameNEQ          *string  `json:"nameNEQ,omitempty"`
@@ -74,25 +94,9 @@ type FileWhereInput struct {
 	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
 	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
 
-	// "createdAt" field predicates.
-	CreatedAt      *time.Time  `json:"createdat,omitempty"`
-	CreatedAtNEQ   *time.Time  `json:"createdatNEQ,omitempty"`
-	CreatedAtIn    []time.Time `json:"createdatIn,omitempty"`
-	CreatedAtNotIn []time.Time `json:"createdatNotIn,omitempty"`
-	CreatedAtGT    *time.Time  `json:"createdatGT,omitempty"`
-	CreatedAtGTE   *time.Time  `json:"createdatGTE,omitempty"`
-	CreatedAtLT    *time.Time  `json:"createdatLT,omitempty"`
-	CreatedAtLTE   *time.Time  `json:"createdatLTE,omitempty"`
-
-	// "lastModifiedAt" field predicates.
-	LastModifiedAt      *time.Time  `json:"lastmodifiedat,omitempty"`
-	LastModifiedAtNEQ   *time.Time  `json:"lastmodifiedatNEQ,omitempty"`
-	LastModifiedAtIn    []time.Time `json:"lastmodifiedatIn,omitempty"`
-	LastModifiedAtNotIn []time.Time `json:"lastmodifiedatNotIn,omitempty"`
-	LastModifiedAtGT    *time.Time  `json:"lastmodifiedatGT,omitempty"`
-	LastModifiedAtGTE   *time.Time  `json:"lastmodifiedatGTE,omitempty"`
-	LastModifiedAtLT    *time.Time  `json:"lastmodifiedatLT,omitempty"`
-	LastModifiedAtLTE   *time.Time  `json:"lastmodifiedatLTE,omitempty"`
+	// "createdBy" edge predicates.
+	HasCreatedBy     *bool             `json:"hasCreatedBy,omitempty"`
+	HasCreatedByWith []*UserWhereInput `json:"hasCreatedByWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -189,6 +193,54 @@ func (i *FileWhereInput) P() (predicate.File, error) {
 	}
 	if i.IDLTE != nil {
 		predicates = append(predicates, file.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, file.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, file.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, file.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, file.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, file.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, file.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, file.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, file.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, file.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, file.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, file.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, file.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, file.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, file.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, file.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, file.LastModifiedAtLTE(*i.LastModifiedAtLTE))
 	}
 	if i.Name != nil {
 		predicates = append(predicates, file.NameEQ(*i.Name))
@@ -292,55 +344,25 @@ func (i *FileWhereInput) P() (predicate.File, error) {
 	if i.HashContainsFold != nil {
 		predicates = append(predicates, file.HashContainsFold(*i.HashContainsFold))
 	}
-	if i.CreatedAt != nil {
-		predicates = append(predicates, file.CreatedAtEQ(*i.CreatedAt))
-	}
-	if i.CreatedAtNEQ != nil {
-		predicates = append(predicates, file.CreatedAtNEQ(*i.CreatedAtNEQ))
-	}
-	if len(i.CreatedAtIn) > 0 {
-		predicates = append(predicates, file.CreatedAtIn(i.CreatedAtIn...))
-	}
-	if len(i.CreatedAtNotIn) > 0 {
-		predicates = append(predicates, file.CreatedAtNotIn(i.CreatedAtNotIn...))
-	}
-	if i.CreatedAtGT != nil {
-		predicates = append(predicates, file.CreatedAtGT(*i.CreatedAtGT))
-	}
-	if i.CreatedAtGTE != nil {
-		predicates = append(predicates, file.CreatedAtGTE(*i.CreatedAtGTE))
-	}
-	if i.CreatedAtLT != nil {
-		predicates = append(predicates, file.CreatedAtLT(*i.CreatedAtLT))
-	}
-	if i.CreatedAtLTE != nil {
-		predicates = append(predicates, file.CreatedAtLTE(*i.CreatedAtLTE))
-	}
-	if i.LastModifiedAt != nil {
-		predicates = append(predicates, file.LastModifiedAtEQ(*i.LastModifiedAt))
-	}
-	if i.LastModifiedAtNEQ != nil {
-		predicates = append(predicates, file.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
-	}
-	if len(i.LastModifiedAtIn) > 0 {
-		predicates = append(predicates, file.LastModifiedAtIn(i.LastModifiedAtIn...))
-	}
-	if len(i.LastModifiedAtNotIn) > 0 {
-		predicates = append(predicates, file.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
-	}
-	if i.LastModifiedAtGT != nil {
-		predicates = append(predicates, file.LastModifiedAtGT(*i.LastModifiedAtGT))
-	}
-	if i.LastModifiedAtGTE != nil {
-		predicates = append(predicates, file.LastModifiedAtGTE(*i.LastModifiedAtGTE))
-	}
-	if i.LastModifiedAtLT != nil {
-		predicates = append(predicates, file.LastModifiedAtLT(*i.LastModifiedAtLT))
-	}
-	if i.LastModifiedAtLTE != nil {
-		predicates = append(predicates, file.LastModifiedAtLTE(*i.LastModifiedAtLTE))
-	}
 
+	if i.HasCreatedBy != nil {
+		p := file.HasCreatedBy()
+		if !*i.HasCreatedBy {
+			p = file.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCreatedByWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasCreatedByWith))
+		for _, w := range i.HasCreatedByWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCreatedByWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, file.HasCreatedByWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyFileWhereInput
@@ -368,6 +390,26 @@ type JobWhereInput struct {
 	IDLT    *int  `json:"idLT,omitempty"`
 	IDLTE   *int  `json:"idLTE,omitempty"`
 
+	// "createdAt" field predicates.
+	CreatedAt      *time.Time  `json:"createdat,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdatNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdatIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdatNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdatGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdatGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdatLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdatLTE,omitempty"`
+
+	// "lastModifiedAt" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastmodifiedat,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastmodifiedatNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastmodifiedatIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastmodifiedatNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastmodifiedatGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastmodifiedatGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastmodifiedatLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastmodifiedatLTE,omitempty"`
+
 	// "name" field predicates.
 	Name             *string  `json:"name,omitempty"`
 	NameNEQ          *string  `json:"nameNEQ,omitempty"`
@@ -390,6 +432,10 @@ type JobWhereInput struct {
 	// "tome" edge predicates.
 	HasTome     *bool             `json:"hasTome,omitempty"`
 	HasTomeWith []*TomeWhereInput `json:"hasTomeWith,omitempty"`
+
+	// "bundle" edge predicates.
+	HasBundle     *bool             `json:"hasBundle,omitempty"`
+	HasBundleWith []*FileWhereInput `json:"hasBundleWith,omitempty"`
 
 	// "tasks" edge predicates.
 	HasTasks     *bool             `json:"hasTasks,omitempty"`
@@ -491,6 +537,54 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 	if i.IDLTE != nil {
 		predicates = append(predicates, job.IDLTE(*i.IDLTE))
 	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, job.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, job.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, job.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, job.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, job.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, job.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, job.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, job.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, job.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, job.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, job.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, job.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, job.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, job.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, job.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, job.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
 	if i.Name != nil {
 		predicates = append(predicates, job.NameEQ(*i.Name))
 	}
@@ -566,6 +660,24 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, job.HasTomeWith(with...))
+	}
+	if i.HasBundle != nil {
+		p := job.HasBundle()
+		if !*i.HasBundle {
+			p = job.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBundleWith) > 0 {
+		with := make([]predicate.File, 0, len(i.HasBundleWith))
+		for _, w := range i.HasBundleWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBundleWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, job.HasBundleWith(with...))
 	}
 	if i.HasTasks != nil {
 		p := job.HasTasks()
@@ -1048,6 +1160,10 @@ type TaskWhereInput struct {
 	// "job" edge predicates.
 	HasJob     *bool            `json:"hasJob,omitempty"`
 	HasJobWith []*JobWhereInput `json:"hasJobWith,omitempty"`
+
+	// "target" edge predicates.
+	HasTarget     *bool               `json:"hasTarget,omitempty"`
+	HasTargetWith []*TargetWhereInput `json:"hasTargetWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1203,6 +1319,24 @@ func (i *TaskWhereInput) P() (predicate.Task, error) {
 		}
 		predicates = append(predicates, task.HasJobWith(with...))
 	}
+	if i.HasTarget != nil {
+		p := task.HasTarget()
+		if !*i.HasTarget {
+			p = task.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTargetWith) > 0 {
+		with := make([]predicate.Target, 0, len(i.HasTargetWith))
+		for _, w := range i.HasTargetWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTargetWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, task.HasTargetWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyTaskWhereInput
@@ -1319,6 +1453,25 @@ type TomeWhereInput struct {
 	LastModifiedAtGTE   *time.Time  `json:"lastmodifiedatGTE,omitempty"`
 	LastModifiedAtLT    *time.Time  `json:"lastmodifiedatLT,omitempty"`
 	LastModifiedAtLTE   *time.Time  `json:"lastmodifiedatLTE,omitempty"`
+
+	// "eldritch" field predicates.
+	Eldritch             *string  `json:"eldritch,omitempty"`
+	EldritchNEQ          *string  `json:"eldritchNEQ,omitempty"`
+	EldritchIn           []string `json:"eldritchIn,omitempty"`
+	EldritchNotIn        []string `json:"eldritchNotIn,omitempty"`
+	EldritchGT           *string  `json:"eldritchGT,omitempty"`
+	EldritchGTE          *string  `json:"eldritchGTE,omitempty"`
+	EldritchLT           *string  `json:"eldritchLT,omitempty"`
+	EldritchLTE          *string  `json:"eldritchLTE,omitempty"`
+	EldritchContains     *string  `json:"eldritchContains,omitempty"`
+	EldritchHasPrefix    *string  `json:"eldritchHasPrefix,omitempty"`
+	EldritchHasSuffix    *string  `json:"eldritchHasSuffix,omitempty"`
+	EldritchEqualFold    *string  `json:"eldritchEqualFold,omitempty"`
+	EldritchContainsFold *string  `json:"eldritchContainsFold,omitempty"`
+
+	// "files" edge predicates.
+	HasFiles     *bool             `json:"hasFiles,omitempty"`
+	HasFilesWith []*FileWhereInput `json:"hasFilesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1644,7 +1797,64 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	if i.LastModifiedAtLTE != nil {
 		predicates = append(predicates, tome.LastModifiedAtLTE(*i.LastModifiedAtLTE))
 	}
+	if i.Eldritch != nil {
+		predicates = append(predicates, tome.EldritchEQ(*i.Eldritch))
+	}
+	if i.EldritchNEQ != nil {
+		predicates = append(predicates, tome.EldritchNEQ(*i.EldritchNEQ))
+	}
+	if len(i.EldritchIn) > 0 {
+		predicates = append(predicates, tome.EldritchIn(i.EldritchIn...))
+	}
+	if len(i.EldritchNotIn) > 0 {
+		predicates = append(predicates, tome.EldritchNotIn(i.EldritchNotIn...))
+	}
+	if i.EldritchGT != nil {
+		predicates = append(predicates, tome.EldritchGT(*i.EldritchGT))
+	}
+	if i.EldritchGTE != nil {
+		predicates = append(predicates, tome.EldritchGTE(*i.EldritchGTE))
+	}
+	if i.EldritchLT != nil {
+		predicates = append(predicates, tome.EldritchLT(*i.EldritchLT))
+	}
+	if i.EldritchLTE != nil {
+		predicates = append(predicates, tome.EldritchLTE(*i.EldritchLTE))
+	}
+	if i.EldritchContains != nil {
+		predicates = append(predicates, tome.EldritchContains(*i.EldritchContains))
+	}
+	if i.EldritchHasPrefix != nil {
+		predicates = append(predicates, tome.EldritchHasPrefix(*i.EldritchHasPrefix))
+	}
+	if i.EldritchHasSuffix != nil {
+		predicates = append(predicates, tome.EldritchHasSuffix(*i.EldritchHasSuffix))
+	}
+	if i.EldritchEqualFold != nil {
+		predicates = append(predicates, tome.EldritchEqualFold(*i.EldritchEqualFold))
+	}
+	if i.EldritchContainsFold != nil {
+		predicates = append(predicates, tome.EldritchContainsFold(*i.EldritchContainsFold))
+	}
 
+	if i.HasFiles != nil {
+		p := tome.HasFiles()
+		if !*i.HasFiles {
+			p = tome.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasFilesWith) > 0 {
+		with := make([]predicate.File, 0, len(i.HasFilesWith))
+		for _, w := range i.HasFilesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasFilesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, tome.HasFilesWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyTomeWhereInput

@@ -5,8 +5,10 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
@@ -17,6 +19,10 @@ type Job struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Timestamp of when this ent was created
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// Timestamp of when this ent was last updated
+	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
 	// Name of the job
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -24,21 +30,24 @@ type Job struct {
 	Edges          JobEdges `json:"edges"`
 	job_created_by *int
 	job_tome       *int
+	job_bundle     *int
 }
 
 // JobEdges holds the relations/edges for other nodes in the graph.
 type JobEdges struct {
-	// CreatedBy holds the value of the createdBy edge.
+	// User that created this entity
 	CreatedBy *User `json:"createdBy,omitempty"`
-	// Tome holds the value of the tome edge.
+	// Tome that this job will be executing
 	Tome *Tome `json:"tome,omitempty"`
-	// Tasks holds the value of the tasks edge.
+	// Bundle file that the executing tome depends on (if any)
+	Bundle *File `json:"bundle,omitempty"`
+	// Tasks tracking the status and output of individual tome execution on targets
 	Tasks []*Task `json:"tasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedTasks map[string][]*Task
 }
@@ -69,10 +78,23 @@ func (e JobEdges) TomeOrErr() (*Tome, error) {
 	return nil, &NotLoadedError{edge: "tome"}
 }
 
+// BundleOrErr returns the Bundle value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e JobEdges) BundleOrErr() (*File, error) {
+	if e.loadedTypes[2] {
+		if e.Bundle == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: file.Label}
+		}
+		return e.Bundle, nil
+	}
+	return nil, &NotLoadedError{edge: "bundle"}
+}
+
 // TasksOrErr returns the Tasks value or an error if the edge
 // was not loaded in eager-loading.
 func (e JobEdges) TasksOrErr() ([]*Task, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Tasks, nil
 	}
 	return nil, &NotLoadedError{edge: "tasks"}
@@ -87,9 +109,13 @@ func (*Job) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case job.FieldName:
 			values[i] = new(sql.NullString)
+		case job.FieldCreatedAt, job.FieldLastModifiedAt:
+			values[i] = new(sql.NullTime)
 		case job.ForeignKeys[0]: // job_created_by
 			values[i] = new(sql.NullInt64)
 		case job.ForeignKeys[1]: // job_tome
+			values[i] = new(sql.NullInt64)
+		case job.ForeignKeys[2]: // job_bundle
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Job", columns[i])
@@ -112,6 +138,18 @@ func (j *Job) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			j.ID = int(value.Int64)
+		case job.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+			} else if value.Valid {
+				j.CreatedAt = value.Time
+			}
+		case job.FieldLastModifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+			} else if value.Valid {
+				j.LastModifiedAt = value.Time
+			}
 		case job.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -132,6 +170,13 @@ func (j *Job) assignValues(columns []string, values []any) error {
 				j.job_tome = new(int)
 				*j.job_tome = int(value.Int64)
 			}
+		case job.ForeignKeys[2]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field job_bundle", value)
+			} else if value.Valid {
+				j.job_bundle = new(int)
+				*j.job_bundle = int(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -145,6 +190,11 @@ func (j *Job) QueryCreatedBy() *UserQuery {
 // QueryTome queries the "tome" edge of the Job entity.
 func (j *Job) QueryTome() *TomeQuery {
 	return (&JobClient{config: j.config}).QueryTome(j)
+}
+
+// QueryBundle queries the "bundle" edge of the Job entity.
+func (j *Job) QueryBundle() *FileQuery {
+	return (&JobClient{config: j.config}).QueryBundle(j)
 }
 
 // QueryTasks queries the "tasks" edge of the Job entity.
@@ -175,6 +225,12 @@ func (j *Job) String() string {
 	var builder strings.Builder
 	builder.WriteString("Job(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", j.ID))
+	builder.WriteString("createdAt=")
+	builder.WriteString(j.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("lastModifiedAt=")
+	builder.WriteString(j.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(j.Name)
 	builder.WriteByte(')')

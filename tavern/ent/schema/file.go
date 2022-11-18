@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
@@ -34,19 +32,6 @@ func (File) Fields() []ent.Field {
 		field.String("hash").
 			MaxLen(100).
 			Comment("A SHA3 digest of the content field"),
-		field.Time("createdAt").
-			Default(time.Now).
-			Annotations(
-				entgql.OrderField("CREATED_AT"),
-			).
-			Comment("The timestamp for when the File was created"),
-		field.Time("lastModifiedAt").
-			Default(time.Now).
-			Annotations(
-				entgql.OrderField("LAST_MODIFIED_AT"),
-			).
-			Comment("The timestamp for when the File was last modified"),
-
 		field.Bytes("content").
 			Annotations(
 				entgql.Skip(), // Don't return file content in GraphQL queries
@@ -66,3 +51,29 @@ func (File) Annotations() []schema.Annotation {
 		entgql.QueryField(),
 	}
 }
+
+// Mixin defines common shared properties for the ent.
+func (File) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		MixinHistory{}, // createdAt, lastModifiedAt, createdBy
+	}
+}
+
+// Hooks of the File.
+// func (File) Hooks() []ent.Hook {
+// 	return []ent.Hook{
+// 		// First hook.
+// 		hook.On(
+// 			func(next ent.Mutator) ent.Mutator {
+// 				return hook.FileFunc(func(ctx context.Context, m *gen.FileMutation) (ent.Value, error) {
+// 					// if num, ok := m.Number(); ok && len(num) < 10 {
+// 					// 	return nil, fmt.Errorf("card number is too short")
+// 					// }
+// 					return next.Mutate(ctx, m)
+// 				})
+// 			},
+// 			// Limit the hook only for these operations.
+// 			ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne,
+// 		),
+// 	}
+// }

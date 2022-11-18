@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // FileUpdate is the builder for updating File entities.
@@ -25,6 +26,12 @@ type FileUpdate struct {
 // Where appends a list predicates to the FileUpdate builder.
 func (fu *FileUpdate) Where(ps ...predicate.File) *FileUpdate {
 	fu.mutation.Where(ps...)
+	return fu
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (fu *FileUpdate) SetLastModifiedAt(t time.Time) *FileUpdate {
+	fu.mutation.SetLastModifiedAt(t)
 	return fu
 }
 
@@ -61,43 +68,32 @@ func (fu *FileUpdate) SetHash(s string) *FileUpdate {
 	return fu
 }
 
-// SetCreatedAt sets the "createdAt" field.
-func (fu *FileUpdate) SetCreatedAt(t time.Time) *FileUpdate {
-	fu.mutation.SetCreatedAt(t)
-	return fu
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (fu *FileUpdate) SetNillableCreatedAt(t *time.Time) *FileUpdate {
-	if t != nil {
-		fu.SetCreatedAt(*t)
-	}
-	return fu
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (fu *FileUpdate) SetLastModifiedAt(t time.Time) *FileUpdate {
-	fu.mutation.SetLastModifiedAt(t)
-	return fu
-}
-
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
-func (fu *FileUpdate) SetNillableLastModifiedAt(t *time.Time) *FileUpdate {
-	if t != nil {
-		fu.SetLastModifiedAt(*t)
-	}
-	return fu
-}
-
 // SetContent sets the "content" field.
 func (fu *FileUpdate) SetContent(b []byte) *FileUpdate {
 	fu.mutation.SetContent(b)
 	return fu
 }
 
+// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
+func (fu *FileUpdate) SetCreatedByID(id int) *FileUpdate {
+	fu.mutation.SetCreatedByID(id)
+	return fu
+}
+
+// SetCreatedBy sets the "createdBy" edge to the User entity.
+func (fu *FileUpdate) SetCreatedBy(u *User) *FileUpdate {
+	return fu.SetCreatedByID(u.ID)
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (fu *FileUpdate) Mutation() *FileMutation {
 	return fu.mutation
+}
+
+// ClearCreatedBy clears the "createdBy" edge to the User entity.
+func (fu *FileUpdate) ClearCreatedBy() *FileUpdate {
+	fu.mutation.ClearCreatedBy()
+	return fu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -106,6 +102,7 @@ func (fu *FileUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
+	fu.defaults()
 	if len(fu.hooks) == 0 {
 		if err = fu.check(); err != nil {
 			return 0, err
@@ -160,6 +157,14 @@ func (fu *FileUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (fu *FileUpdate) defaults() {
+	if _, ok := fu.mutation.LastModifiedAt(); !ok {
+		v := file.UpdateDefaultLastModifiedAt()
+		fu.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (fu *FileUpdate) check() error {
 	if v, ok := fu.mutation.Name(); ok {
@@ -176,6 +181,9 @@ func (fu *FileUpdate) check() error {
 		if err := file.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "File.hash": %w`, err)}
 		}
+	}
+	if _, ok := fu.mutation.CreatedByID(); fu.mutation.CreatedByCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "File.createdBy"`)
 	}
 	return nil
 }
@@ -198,6 +206,9 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := fu.mutation.LastModifiedAt(); ok {
+		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := fu.mutation.Name(); ok {
 		_spec.SetField(file.FieldName, field.TypeString, value)
 	}
@@ -210,14 +221,43 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := fu.mutation.Hash(); ok {
 		_spec.SetField(file.FieldHash, field.TypeString, value)
 	}
-	if value, ok := fu.mutation.CreatedAt(); ok {
-		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
-	}
-	if value, ok := fu.mutation.LastModifiedAt(); ok {
-		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
-	}
 	if value, ok := fu.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
+	}
+	if fu.mutation.CreatedByCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   file.CreatedByTable,
+			Columns: []string{file.CreatedByColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fu.mutation.CreatedByIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   file.CreatedByTable,
+			Columns: []string{file.CreatedByColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, fu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -236,6 +276,12 @@ type FileUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *FileMutation
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (fuo *FileUpdateOne) SetLastModifiedAt(t time.Time) *FileUpdateOne {
+	fuo.mutation.SetLastModifiedAt(t)
+	return fuo
 }
 
 // SetName sets the "name" field.
@@ -271,43 +317,32 @@ func (fuo *FileUpdateOne) SetHash(s string) *FileUpdateOne {
 	return fuo
 }
 
-// SetCreatedAt sets the "createdAt" field.
-func (fuo *FileUpdateOne) SetCreatedAt(t time.Time) *FileUpdateOne {
-	fuo.mutation.SetCreatedAt(t)
-	return fuo
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (fuo *FileUpdateOne) SetNillableCreatedAt(t *time.Time) *FileUpdateOne {
-	if t != nil {
-		fuo.SetCreatedAt(*t)
-	}
-	return fuo
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (fuo *FileUpdateOne) SetLastModifiedAt(t time.Time) *FileUpdateOne {
-	fuo.mutation.SetLastModifiedAt(t)
-	return fuo
-}
-
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
-func (fuo *FileUpdateOne) SetNillableLastModifiedAt(t *time.Time) *FileUpdateOne {
-	if t != nil {
-		fuo.SetLastModifiedAt(*t)
-	}
-	return fuo
-}
-
 // SetContent sets the "content" field.
 func (fuo *FileUpdateOne) SetContent(b []byte) *FileUpdateOne {
 	fuo.mutation.SetContent(b)
 	return fuo
 }
 
+// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
+func (fuo *FileUpdateOne) SetCreatedByID(id int) *FileUpdateOne {
+	fuo.mutation.SetCreatedByID(id)
+	return fuo
+}
+
+// SetCreatedBy sets the "createdBy" edge to the User entity.
+func (fuo *FileUpdateOne) SetCreatedBy(u *User) *FileUpdateOne {
+	return fuo.SetCreatedByID(u.ID)
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (fuo *FileUpdateOne) Mutation() *FileMutation {
 	return fuo.mutation
+}
+
+// ClearCreatedBy clears the "createdBy" edge to the User entity.
+func (fuo *FileUpdateOne) ClearCreatedBy() *FileUpdateOne {
+	fuo.mutation.ClearCreatedBy()
+	return fuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -323,6 +358,7 @@ func (fuo *FileUpdateOne) Save(ctx context.Context) (*File, error) {
 		err  error
 		node *File
 	)
+	fuo.defaults()
 	if len(fuo.hooks) == 0 {
 		if err = fuo.check(); err != nil {
 			return nil, err
@@ -383,6 +419,14 @@ func (fuo *FileUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (fuo *FileUpdateOne) defaults() {
+	if _, ok := fuo.mutation.LastModifiedAt(); !ok {
+		v := file.UpdateDefaultLastModifiedAt()
+		fuo.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (fuo *FileUpdateOne) check() error {
 	if v, ok := fuo.mutation.Name(); ok {
@@ -399,6 +443,9 @@ func (fuo *FileUpdateOne) check() error {
 		if err := file.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "File.hash": %w`, err)}
 		}
+	}
+	if _, ok := fuo.mutation.CreatedByID(); fuo.mutation.CreatedByCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "File.createdBy"`)
 	}
 	return nil
 }
@@ -438,6 +485,9 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 			}
 		}
 	}
+	if value, ok := fuo.mutation.LastModifiedAt(); ok {
+		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := fuo.mutation.Name(); ok {
 		_spec.SetField(file.FieldName, field.TypeString, value)
 	}
@@ -450,14 +500,43 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 	if value, ok := fuo.mutation.Hash(); ok {
 		_spec.SetField(file.FieldHash, field.TypeString, value)
 	}
-	if value, ok := fuo.mutation.CreatedAt(); ok {
-		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
-	}
-	if value, ok := fuo.mutation.LastModifiedAt(); ok {
-		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
-	}
 	if value, ok := fuo.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
+	}
+	if fuo.mutation.CreatedByCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   file.CreatedByTable,
+			Columns: []string{file.CreatedByColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fuo.mutation.CreatedByIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   file.CreatedByTable,
+			Columns: []string{file.CreatedByColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &File{config: fuo.config}
 	_spec.Assign = _node.assignValues

@@ -11,6 +11,8 @@ const (
 	FieldName = "name"
 	// EdgeJob holds the string denoting the job edge name in mutations.
 	EdgeJob = "job"
+	// EdgeTarget holds the string denoting the target edge name in mutations.
+	EdgeTarget = "target"
 	// Table holds the table name of the task in the database.
 	Table = "tasks"
 	// JobTable is the table that holds the job relation/edge.
@@ -20,6 +22,13 @@ const (
 	JobInverseTable = "jobs"
 	// JobColumn is the table column denoting the job relation/edge.
 	JobColumn = "job_tasks"
+	// TargetTable is the table that holds the target relation/edge.
+	TargetTable = "tasks"
+	// TargetInverseTable is the table name for the Target entity.
+	// It exists in this package in order to avoid circular dependency with the "target" package.
+	TargetInverseTable = "targets"
+	// TargetColumn is the table column denoting the target relation/edge.
+	TargetColumn = "task_target"
 )
 
 // Columns holds all SQL columns for task fields.
@@ -32,6 +41,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"job_tasks",
+	"task_target",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

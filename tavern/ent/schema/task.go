@@ -32,5 +32,8 @@ func (Task) Edges() []ent.Edge {
 			Ref("tasks").
 			Required().
 			Unique(),
+		edge.To("target", Target.Type).
+			Required().
+			Unique(),
 	}
 }

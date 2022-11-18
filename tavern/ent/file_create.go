@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/file"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // FileCreate is the builder for creating a File entity.
@@ -18,32 +19,6 @@ type FileCreate struct {
 	config
 	mutation *FileMutation
 	hooks    []Hook
-}
-
-// SetName sets the "name" field.
-func (fc *FileCreate) SetName(s string) *FileCreate {
-	fc.mutation.SetName(s)
-	return fc
-}
-
-// SetSize sets the "size" field.
-func (fc *FileCreate) SetSize(i int) *FileCreate {
-	fc.mutation.SetSize(i)
-	return fc
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (fc *FileCreate) SetNillableSize(i *int) *FileCreate {
-	if i != nil {
-		fc.SetSize(*i)
-	}
-	return fc
-}
-
-// SetHash sets the "hash" field.
-func (fc *FileCreate) SetHash(s string) *FileCreate {
-	fc.mutation.SetHash(s)
-	return fc
 }
 
 // SetCreatedAt sets the "createdAt" field.
@@ -74,10 +49,47 @@ func (fc *FileCreate) SetNillableLastModifiedAt(t *time.Time) *FileCreate {
 	return fc
 }
 
+// SetName sets the "name" field.
+func (fc *FileCreate) SetName(s string) *FileCreate {
+	fc.mutation.SetName(s)
+	return fc
+}
+
+// SetSize sets the "size" field.
+func (fc *FileCreate) SetSize(i int) *FileCreate {
+	fc.mutation.SetSize(i)
+	return fc
+}
+
+// SetNillableSize sets the "size" field if the given value is not nil.
+func (fc *FileCreate) SetNillableSize(i *int) *FileCreate {
+	if i != nil {
+		fc.SetSize(*i)
+	}
+	return fc
+}
+
+// SetHash sets the "hash" field.
+func (fc *FileCreate) SetHash(s string) *FileCreate {
+	fc.mutation.SetHash(s)
+	return fc
+}
+
 // SetContent sets the "content" field.
 func (fc *FileCreate) SetContent(b []byte) *FileCreate {
 	fc.mutation.SetContent(b)
 	return fc
+}
+
+// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
+func (fc *FileCreate) SetCreatedByID(id int) *FileCreate {
+	fc.mutation.SetCreatedByID(id)
+	return fc
+}
+
+// SetCreatedBy sets the "createdBy" edge to the User entity.
+func (fc *FileCreate) SetCreatedBy(u *User) *FileCreate {
+	return fc.SetCreatedByID(u.ID)
 }
 
 // Mutation returns the FileMutation object of the builder.
@@ -157,10 +169,6 @@ func (fc *FileCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (fc *FileCreate) defaults() {
-	if _, ok := fc.mutation.Size(); !ok {
-		v := file.DefaultSize
-		fc.mutation.SetSize(v)
-	}
 	if _, ok := fc.mutation.CreatedAt(); !ok {
 		v := file.DefaultCreatedAt()
 		fc.mutation.SetCreatedAt(v)
@@ -169,10 +177,20 @@ func (fc *FileCreate) defaults() {
 		v := file.DefaultLastModifiedAt()
 		fc.mutation.SetLastModifiedAt(v)
 	}
+	if _, ok := fc.mutation.Size(); !ok {
+		v := file.DefaultSize
+		fc.mutation.SetSize(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (fc *FileCreate) check() error {
+	if _, ok := fc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "File.createdAt"`)}
+	}
+	if _, ok := fc.mutation.LastModifiedAt(); !ok {
+		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "File.lastModifiedAt"`)}
+	}
 	if _, ok := fc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "File.name"`)}
 	}
@@ -197,14 +215,11 @@ func (fc *FileCreate) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "File.hash": %w`, err)}
 		}
 	}
-	if _, ok := fc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "File.createdAt"`)}
-	}
-	if _, ok := fc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "File.lastModifiedAt"`)}
-	}
 	if _, ok := fc.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "File.content"`)}
+	}
+	if _, ok := fc.mutation.CreatedByID(); !ok {
+		return &ValidationError{Name: "createdBy", err: errors.New(`ent: missing required edge "File.createdBy"`)}
 	}
 	return nil
 }
@@ -233,6 +248,14 @@ func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	if value, ok := fc.mutation.CreatedAt(); ok {
+		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := fc.mutation.LastModifiedAt(); ok {
+		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
+		_node.LastModifiedAt = value
+	}
 	if value, ok := fc.mutation.Name(); ok {
 		_spec.SetField(file.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -245,17 +268,29 @@ func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 		_spec.SetField(file.FieldHash, field.TypeString, value)
 		_node.Hash = value
 	}
-	if value, ok := fc.mutation.CreatedAt(); ok {
-		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
-		_node.CreatedAt = value
-	}
-	if value, ok := fc.mutation.LastModifiedAt(); ok {
-		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
-		_node.LastModifiedAt = value
-	}
 	if value, ok := fc.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
 		_node.Content = value
+	}
+	if nodes := fc.mutation.CreatedByIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   file.CreatedByTable,
+			Columns: []string{file.CreatedByColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.file_created_by = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

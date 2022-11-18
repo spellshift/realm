@@ -11,31 +11,47 @@ const (
 	Label = "file"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCreatedAt holds the string denoting the createdat field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldLastModifiedAt holds the string denoting the lastmodifiedat field in the database.
+	FieldLastModifiedAt = "last_modified_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldSize holds the string denoting the size field in the database.
 	FieldSize = "size"
 	// FieldHash holds the string denoting the hash field in the database.
 	FieldHash = "hash"
-	// FieldCreatedAt holds the string denoting the createdat field in the database.
-	FieldCreatedAt = "created_at"
-	// FieldLastModifiedAt holds the string denoting the lastmodifiedat field in the database.
-	FieldLastModifiedAt = "last_modified_at"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
+	// EdgeCreatedBy holds the string denoting the createdby edge name in mutations.
+	EdgeCreatedBy = "createdBy"
 	// Table holds the table name of the file in the database.
 	Table = "files"
+	// CreatedByTable is the table that holds the createdBy relation/edge.
+	CreatedByTable = "files"
+	// CreatedByInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	CreatedByInverseTable = "users"
+	// CreatedByColumn is the table column denoting the createdBy relation/edge.
+	CreatedByColumn = "file_created_by"
 )
 
 // Columns holds all SQL columns for file fields.
 var Columns = []string{
 	FieldID,
+	FieldCreatedAt,
+	FieldLastModifiedAt,
 	FieldName,
 	FieldSize,
 	FieldHash,
-	FieldCreatedAt,
-	FieldLastModifiedAt,
 	FieldContent,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "files"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"file_created_by",
+	"tome_files",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -45,10 +61,21 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
+			return true
+		}
+	}
 	return false
 }
 
 var (
+	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
+	DefaultCreatedAt func() time.Time
+	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.
+	DefaultLastModifiedAt func() time.Time
+	// UpdateDefaultLastModifiedAt holds the default value on update for the "lastModifiedAt" field.
+	UpdateDefaultLastModifiedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// DefaultSize holds the default value on creation for the "size" field.
@@ -57,8 +84,4 @@ var (
 	SizeValidator func(int) error
 	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	HashValidator func(string) error
-	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
-	DefaultCreatedAt func() time.Time
-	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.
-	DefaultLastModifiedAt func() time.Time
 )
