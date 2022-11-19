@@ -14,13 +14,13 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-func createBundle(ctx context.Context, tx *ent.Tx, bundleFiles []*ent.File) (*ent.File, error) {
+func createBundle(ctx context.Context, client *ent.Client, bundleFiles []*ent.File) (*ent.File, error) {
 	// Calculate Bundle Hash
 	bundleHash := newBundleHashDigest(bundleFiles...)
 	bundleName := fmt.Sprintf("Bundle-%s", bundleHash)
 
 	// Check if bundle exists
-	bundle, err := tx.File.Query().
+	bundle, err := client.File.Query().
 		Where(file.Name(bundleName)).
 		First(ctx)
 	if err != nil && !ent.IsNotFound(err) {
@@ -34,7 +34,7 @@ func createBundle(ctx context.Context, tx *ent.Tx, bundleFiles []*ent.File) (*en
 			return nil, fmt.Errorf("failed to encode tome bundle: %w", err)
 		}
 
-		bundle, err = tx.File.Create().
+		bundle, err = client.File.Create().
 			SetName(bundleName).
 			SetContent(bundleContent).
 			Save(ctx)

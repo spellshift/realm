@@ -14,18 +14,28 @@ import (
 
 // CreateJob is the resolver for the createJob field.
 func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input ent.CreateJobInput) (*ent.Job, error) {
+	// 1. Begin Transaction
 	tx, err := r.client.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
 	}
+	client := tx.Client()
 
-	// 1. Load Tome
-	jobTome, err := tx.Tome.Get(ctx, input.TomeID)
+	// 2. Rollback transaction if we panic
+	defer func() {
+		if v := recover(); v != nil {
+			tx.Rollback()
+			panic(v)
+		}
+	}()
+
+	// 3. Load Tome
+	jobTome, err := client.Tome.Get(ctx, input.TomeID)
 	if err != nil {
 		return nil, rollback(tx, fmt.Errorf("failed to load tome: %w", err))
 	}
 
-	// 2. Load Tome Files (ordered so that hashing is always the same)
+	// 4. Load Tome Files (ordered so that hashing is always the same)
 	bundleFiles, err := jobTome.QueryFiles().
 		Order(ent.Asc(file.FieldID)).
 		All(ctx)
@@ -36,7 +46,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input
 	// 3. Create bundle (if tome has files)
 	var bundleID *int
 	if len(bundleFiles) > 0 {
-		bundle, err := createBundle(ctx, tx, bundleFiles)
+		bundle, err := createBundle(ctx, client, bundleFiles)
 		if err != nil || bundle == nil {
 			return nil, rollback(tx, fmt.Errorf("failed to create bundle: %w", err))
 		}
@@ -44,7 +54,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input
 	}
 
 	// 4. Create Job
-	job, err := tx.Job.Create().
+	job, err := client.Job.Create().
 		SetInput(input).
 		SetNillableBundleID(bundleID).
 		SetTome(jobTome).
@@ -55,7 +65,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input
 
 	// 5. Create tasks for each target
 	for _, tid := range targetIDs {
-		_, err := tx.Task.Create().
+		_, err := client.Task.Create().
 			SetJob(job).
 			SetTargetID(tid).
 			Save(ctx)
