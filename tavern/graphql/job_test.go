@@ -163,14 +163,14 @@ func TestCreateJob(t *testing.T) {
 func newCreateJobTest(gqlClient *client.Client, targetIDs []int, input ent.CreateJobInput, checks ...func(t *testing.T, id int, err error)) func(t *testing.T) {
 	return func(t *testing.T) {
 		// Define the mutatation for testing, taking the input as a variable
-		mut := `mutation newCreateJobTest($targets: [ID!]!, $input: CreateJobInput!) { createJob(targets:$targets, input:$input) { id } }`
+		mut := `mutation newCreateJobTest($targetIDs: [ID!]!, $input: CreateJobInput!) { createJob(targetIDs:$targetIDs, input:$input) { id } }`
 
 		// Make our request to the GraphQL API
 		var resp struct {
 			CreateJob struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp,
-			client.Var("targets", targetIDs),
+			client.Var("targetIDs", targetIDs),
 			client.Var("input", map[string]interface{}{
 				"name":   input.Name,
 				"tomeID": input.TomeID,

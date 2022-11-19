@@ -58,8 +58,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateJob  func(childComplexity int, targets []int, input ent.CreateJobInput) int
-		UpdateUser func(childComplexity int, id int, input ent.UpdateUserInput) int
+		ClaimTasks func(childComplexity int, targetID int) int
+		CreateJob  func(childComplexity int, targetIDs []int, input ent.CreateJobInput) int
+		UpdateUser func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -233,6 +234,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Job.Tome(childComplexity), true
 
+	case "Mutation.claimTasks":
+		if e.complexity.Mutation.ClaimTasks == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_claimTasks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ClaimTasks(childComplexity, args["targetID"].(int)), true
+
 	case "Mutation.createJob":
 		if e.complexity.Mutation.CreateJob == nil {
 			break
@@ -243,7 +256,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateJob(childComplexity, args["targets"].([]int), args["input"].(ent.CreateJobInput)), true
+		return e.complexity.Mutation.CreateJob(childComplexity, args["targetIDs"].([]int), args["input"].(ent.CreateJobInput)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -255,7 +268,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(int), args["input"].(ent.UpdateUserInput)), true
+		return e.complexity.Mutation.UpdateUser(childComplexity, args["userID"].(int), args["input"].(ent.UpdateUserInput)), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -1380,12 +1393,17 @@ input UserWhereInput {
     ###
     # Job
     ###
-    createJob(targets: [ID!]!, input: CreateJobInput!): Job
+    createJob(targetIDs: [ID!]!, input: CreateJobInput!): Job
+
+    ###
+    # Task
+    ###
+    claimTasks(targetID: ID!): [Task!]!
 
     ### 
     # User
     ###  
-    updateUser(id: ID!, input: UpdateUserInput!): User
+    updateUser(userID: ID!, input: UpdateUserInput!): User
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)

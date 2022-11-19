@@ -13,11 +13,16 @@ import (
 )
 
 // CreateJob is the resolver for the createJob field.
-func (r *mutationResolver) CreateJob(ctx context.Context, targets []int, input ent.CreateJobInput) (*ent.Job, error) {
-	// 1. Load Tome
-	jobTome, err := r.client.Tome.Get(ctx, input.TomeID)
+func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input ent.CreateJobInput) (*ent.Job, error) {
+	tx, err := r.client.Tx(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load tome: %w", err)
+		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
+	}
+
+	// 1. Load Tome
+	jobTome, err := tx.Tome.Get(ctx, input.TomeID)
+	if err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to load tome: %w", err))
 	}
 
 	// 2. Load Tome Files (ordered so that hashing is always the same)
@@ -25,46 +30,56 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targets []int, input e
 		Order(ent.Asc(file.FieldID)).
 		All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load tome files: %w", err)
+		return nil, rollback(tx, fmt.Errorf("failed to load tome files: %w", err))
 	}
 
 	// 3. Create bundle (if tome has files)
 	var bundleID *int
 	if len(bundleFiles) > 0 {
-		bundle, err := createBundle(ctx, r.client, bundleFiles)
+		bundle, err := createBundle(ctx, tx, bundleFiles)
 		if err != nil || bundle == nil {
-			return nil, fmt.Errorf("failed to create bundle: %w", err)
+			return nil, rollback(tx, fmt.Errorf("failed to create bundle: %w", err))
 		}
 		bundleID = &bundle.ID
 	}
 
 	// 4. Create Job
-	job, err := r.client.Job.Create().
+	job, err := tx.Job.Create().
 		SetInput(input).
 		SetNillableBundleID(bundleID).
 		SetTome(jobTome).
 		Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create job: %w", err)
+		return nil, rollback(tx, fmt.Errorf("failed to create job: %w", err))
 	}
 
 	// 5. Create tasks for each target
-	for _, tid := range targets {
-		_, err := r.client.Task.Create().
+	for _, tid := range targetIDs {
+		_, err := tx.Task.Create().
 			SetJob(job).
 			SetTargetID(tid).
 			Save(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create task for target (%q): %w", tid, err)
+			return nil, rollback(tx, fmt.Errorf("failed to create task for target (%q): %w", tid, err))
 		}
+	}
+
+	// 6. Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
 	return job, nil
 }
 
+// ClaimTasks is the resolver for the claimTasks field.
+func (r *mutationResolver) ClaimTasks(ctx context.Context, targetID int) ([]*ent.Task, error) {
+	panic(fmt.Errorf("not implemented: ClaimTasks - claimTasks"))
+}
+
 // UpdateUser is the resolver for the updateUser field.
-func (r *mutationResolver) UpdateUser(ctx context.Context, id int, input ent.UpdateUserInput) (*ent.User, error) {
-	return r.client.User.UpdateOneID(id).SetInput(input).Save(ctx)
+func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error) {
+	return r.client.User.UpdateOneID(userID).SetInput(input).Save(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.

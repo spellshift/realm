@@ -2,10 +2,15 @@ type Mutation {
     ###
     # Job
     ###
-    createJob(targets: [ID!]!, input: CreateJobInput!): Job
+    createJob(targetIDs: [ID!]!, input: CreateJobInput!): Job
+
+    ###
+    # Task
+    ###
+    claimTasks(targetID: ID!): [Task!]!
 
     ### 
     # User
     ###  
-    updateUser(id: ID!, input: UpdateUserInput!): User
+    updateUser(userID: ID!, input: UpdateUserInput!): User
 }

@@ -60,14 +60,14 @@ func TestUserMutations(t *testing.T) {
 func newUpdateUserTest(gqlClient *client.Client, id int, input ent.UpdateUserInput, checks ...func(t *testing.T, id int, err error)) func(t *testing.T) {
 	return func(t *testing.T) {
 		// Define the mutatation for testing, taking the input as a variable
-		mut := `mutation newUpdateUserTest($id: ID!, $input: UpdateUserInput!) { updateUser(id: $id, input:$input) { id } }`
+		mut := `mutation newUpdateUserTest($userID: ID!, $input: UpdateUserInput!) { updateUser(userID: $userID, input:$input) { id } }`
 
 		// Make our request to the GraphQL API
 		var resp struct {
 			UpdateUser struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp,
-			client.Var("id", id),
+			client.Var("userID", id),
 			client.Var("input", map[string]interface{}{
 				"name":        input.Name,
 				"isactivated": input.IsActivated,
