@@ -43,7 +43,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input
 		return nil, rollback(tx, fmt.Errorf("failed to load tome files: %w", err))
 	}
 
-	// 3. Create bundle (if tome has files)
+	// 5. Create bundle (if tome has files)
 	var bundleID *int
 	if len(bundleFiles) > 0 {
 		bundle, err := createBundle(ctx, client, bundleFiles)
@@ -53,7 +53,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input
 		bundleID = &bundle.ID
 	}
 
-	// 4. Create Job
+	// 6. Create Job
 	job, err := client.Job.Create().
 		SetInput(input).
 		SetNillableBundleID(bundleID).
@@ -63,7 +63,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input
 		return nil, rollback(tx, fmt.Errorf("failed to create job: %w", err))
 	}
 
-	// 5. Create tasks for each target
+	// 7. Create tasks for each target
 	for _, tid := range targetIDs {
 		_, err := client.Task.Create().
 			SetJob(job).
@@ -74,7 +74,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input
 		}
 	}
 
-	// 6. Commit the transaction
+	// 8. Commit the transaction
 	if err := tx.Commit(); err != nil {
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
