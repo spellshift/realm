@@ -1751,6 +1751,7 @@ type TargetMutation struct {
 	typ           string
 	id            *int
 	name          *string
+	lastSeenAt    *time.Time
 	clearedFields map[string]struct{}
 	tags          map[int]struct{}
 	removedtags   map[int]struct{}
@@ -1894,6 +1895,55 @@ func (m *TargetMutation) ResetName() {
 	m.name = nil
 }
 
+// SetLastSeenAt sets the "lastSeenAt" field.
+func (m *TargetMutation) SetLastSeenAt(t time.Time) {
+	m.lastSeenAt = &t
+}
+
+// LastSeenAt returns the value of the "lastSeenAt" field in the mutation.
+func (m *TargetMutation) LastSeenAt() (r time.Time, exists bool) {
+	v := m.lastSeenAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSeenAt returns the old "lastSeenAt" field's value of the Target entity.
+// If the Target object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TargetMutation) OldLastSeenAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSeenAt: %w", err)
+	}
+	return oldValue.LastSeenAt, nil
+}
+
+// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+func (m *TargetMutation) ClearLastSeenAt() {
+	m.lastSeenAt = nil
+	m.clearedFields[target.FieldLastSeenAt] = struct{}{}
+}
+
+// LastSeenAtCleared returns if the "lastSeenAt" field was cleared in this mutation.
+func (m *TargetMutation) LastSeenAtCleared() bool {
+	_, ok := m.clearedFields[target.FieldLastSeenAt]
+	return ok
+}
+
+// ResetLastSeenAt resets all changes to the "lastSeenAt" field.
+func (m *TargetMutation) ResetLastSeenAt() {
+	m.lastSeenAt = nil
+	delete(m.clearedFields, target.FieldLastSeenAt)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by ids.
 func (m *TargetMutation) AddTagIDs(ids ...int) {
 	if m.tags == nil {
@@ -1967,9 +2017,12 @@ func (m *TargetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TargetMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.name != nil {
 		fields = append(fields, target.FieldName)
+	}
+	if m.lastSeenAt != nil {
+		fields = append(fields, target.FieldLastSeenAt)
 	}
 	return fields
 }
@@ -1981,6 +2034,8 @@ func (m *TargetMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case target.FieldName:
 		return m.Name()
+	case target.FieldLastSeenAt:
+		return m.LastSeenAt()
 	}
 	return nil, false
 }
@@ -1992,6 +2047,8 @@ func (m *TargetMutation) OldField(ctx context.Context, name string) (ent.Value, 
 	switch name {
 	case target.FieldName:
 		return m.OldName(ctx)
+	case target.FieldLastSeenAt:
+		return m.OldLastSeenAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Target field %s", name)
 }
@@ -2007,6 +2064,13 @@ func (m *TargetMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case target.FieldLastSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSeenAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Target field %s", name)
@@ -2037,7 +2101,11 @@ func (m *TargetMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *TargetMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(target.FieldLastSeenAt) {
+		fields = append(fields, target.FieldLastSeenAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2050,6 +2118,11 @@ func (m *TargetMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *TargetMutation) ClearField(name string) error {
+	switch name {
+	case target.FieldLastSeenAt:
+		m.ClearLastSeenAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Target nullable field %s", name)
 }
 
@@ -2059,6 +2132,9 @@ func (m *TargetMutation) ResetField(name string) error {
 	switch name {
 	case target.FieldName:
 		m.ResetName()
+		return nil
+	case target.FieldLastSeenAt:
+		m.ResetLastSeenAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Target field %s", name)

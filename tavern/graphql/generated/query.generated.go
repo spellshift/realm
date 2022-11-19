@@ -1202,6 +1202,8 @@ func (ec *executionContext) fieldContext_Query_targets(ctx context.Context, fiel
 				return ec.fieldContext_Target_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Target_name(ctx, field)
+			case "lastseenat":
+				return ec.fieldContext_Target_lastseenat(ctx, field)
 			case "tags":
 				return ec.fieldContext_Target_tags(ctx, field)
 			}
@@ -1635,6 +1637,8 @@ func (ec *executionContext) fieldContext_Tag_targets(ctx context.Context, field 
 				return ec.fieldContext_Target_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Target_name(ctx, field)
+			case "lastseenat":
+				return ec.fieldContext_Target_lastseenat(ctx, field)
 			case "tags":
 				return ec.fieldContext_Target_tags(ctx, field)
 			}
@@ -1727,6 +1731,47 @@ func (ec *executionContext) fieldContext_Target_name(ctx context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Target_lastseenat(ctx context.Context, field graphql.CollectedField, obj *ent.Target) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Target_lastseenat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastSeenAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Target_lastseenat(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Target",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2223,6 +2268,8 @@ func (ec *executionContext) fieldContext_Task_target(ctx context.Context, field 
 				return ec.fieldContext_Target_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Target_name(ctx, field)
+			case "lastseenat":
+				return ec.fieldContext_Target_lastseenat(ctx, field)
 			case "tags":
 				return ec.fieldContext_Target_tags(ctx, field)
 			}
@@ -4219,7 +4266,7 @@ func (ec *executionContext) unmarshalInputTargetWhereInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasTags", "hasTagsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "lastseenat", "lastseenatNEQ", "lastseenatIn", "lastseenatNotIn", "lastseenatGT", "lastseenatGTE", "lastseenatLT", "lastseenatLTE", "lastseenatIsNil", "lastseenatNotNil", "hasTags", "hasTagsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4415,6 +4462,86 @@ func (ec *executionContext) unmarshalInputTargetWhereInput(ctx context.Context, 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContainsFold"))
 			it.NameContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenat":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenat"))
+			it.LastSeenAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatNEQ"))
+			it.LastSeenAtNEQ, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatIn"))
+			it.LastSeenAtIn, err = ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatNotIn"))
+			it.LastSeenAtNotIn, err = ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatGT"))
+			it.LastSeenAtGT, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatGTE"))
+			it.LastSeenAtGTE, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatLT"))
+			it.LastSeenAtLT, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatLTE"))
+			it.LastSeenAtLTE, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatIsNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatIsNil"))
+			it.LastSeenAtIsNil, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastseenatNotNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastseenatNotNil"))
+			it.LastSeenAtNotNil, err = ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7026,6 +7153,10 @@ func (ec *executionContext) _Target(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "lastseenat":
+
+			out.Values[i] = ec._Target_lastseenat(ctx, field, obj)
+
 		case "tags":
 			field := field
 

@@ -78,6 +78,7 @@ var (
 	TargetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// TargetsTable holds the schema information for the "targets" table.
 	TargetsTable = &schema.Table{

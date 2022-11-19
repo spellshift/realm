@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -23,6 +24,20 @@ type TargetCreate struct {
 // SetName sets the "name" field.
 func (tc *TargetCreate) SetName(s string) *TargetCreate {
 	tc.mutation.SetName(s)
+	return tc
+}
+
+// SetLastSeenAt sets the "lastSeenAt" field.
+func (tc *TargetCreate) SetLastSeenAt(t time.Time) *TargetCreate {
+	tc.mutation.SetLastSeenAt(t)
+	return tc
+}
+
+// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+func (tc *TargetCreate) SetNillableLastSeenAt(t *time.Time) *TargetCreate {
+	if t != nil {
+		tc.SetLastSeenAt(*t)
+	}
 	return tc
 }
 
@@ -155,6 +170,10 @@ func (tc *TargetCreate) createSpec() (*Target, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(target.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := tc.mutation.LastSeenAt(); ok {
+		_spec.SetField(target.FieldLastSeenAt, field.TypeTime, value)
+		_node.LastSeenAt = value
 	}
 	if nodes := tc.mutation.TagsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

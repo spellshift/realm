@@ -89,9 +89,10 @@ type ComplexityRoot struct {
 	}
 
 	Target struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
-		Tags func(childComplexity int) int
+		ID         func(childComplexity int) int
+		LastSeenAt func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Tags       func(childComplexity int) int
 	}
 
 	Task struct {
@@ -398,6 +399,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Target.ID(childComplexity), true
+
+	case "Target.lastseenat":
+		if e.complexity.Target.LastSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Target.LastSeenAt(childComplexity), true
 
 	case "Target.name":
 		if e.complexity.Target.Name == nil {
@@ -980,6 +988,8 @@ type Target implements Node {
   id: ID!
   """Human-readable name of the target"""
   name: String!
+  """Timestamp of when a task was last claimed or updated for a target"""
+  lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
   tags: [Tag!]
 }
 """Ordering options for Target connections"""
@@ -992,6 +1002,7 @@ input TargetOrder {
 """Properties by which Target connections can be ordered."""
 enum TargetOrderField {
   NAME
+  LAST_SEEN_AT
 }
 """
 TargetWhereInput is used for filtering Target objects.
@@ -1024,6 +1035,17 @@ input TargetWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
+  """lastSeenAt field predicates"""
+  lastseenat: Time
+  lastseenatNEQ: Time
+  lastseenatIn: [Time!]
+  lastseenatNotIn: [Time!]
+  lastseenatGT: Time
+  lastseenatGTE: Time
+  lastseenatLT: Time
+  lastseenatLTE: Time
+  lastseenatIsNil: Boolean
+  lastseenatNotNil: Boolean
   """tags edge predicates"""
   hasTags: Boolean
   hasTagsWith: [TagWhereInput!]

@@ -1347,6 +1347,16 @@ var (
 			}
 		},
 	}
+	// TargetOrderFieldLastSeenAt orders Target by lastSeenAt.
+	TargetOrderFieldLastSeenAt = &TargetOrderField{
+		field: target.FieldLastSeenAt,
+		toCursor: func(t *Target) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.LastSeenAt,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -1355,6 +1365,8 @@ func (f TargetOrderField) String() string {
 	switch f.field {
 	case target.FieldName:
 		str = "NAME"
+	case target.FieldLastSeenAt:
+		str = "LAST_SEEN_AT"
 	}
 	return str
 }
@@ -1373,6 +1385,8 @@ func (f *TargetOrderField) UnmarshalGQL(v interface{}) error {
 	switch str {
 	case "NAME":
 		*f = *TargetOrderFieldName
+	case "LAST_SEEN_AT":
+		*f = *TargetOrderFieldLastSeenAt
 	default:
 		return fmt.Errorf("%s is not a valid TargetOrderField", str)
 	}

@@ -313,6 +313,8 @@ type Target implements Node {
   id: ID!
   """Human-readable name of the target"""
   name: String!
+  """Timestamp of when a task was last claimed or updated for a target"""
+  lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
   tags: [Tag!]
 }
 """Ordering options for Target connections"""
@@ -325,6 +327,7 @@ input TargetOrder {
 """Properties by which Target connections can be ordered."""
 enum TargetOrderField {
   NAME
+  LAST_SEEN_AT
 }
 """
 TargetWhereInput is used for filtering Target objects.
@@ -357,6 +360,17 @@ input TargetWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
+  """lastSeenAt field predicates"""
+  lastseenat: Time
+  lastseenatNEQ: Time
+  lastseenatIn: [Time!]
+  lastseenatNotIn: [Time!]
+  lastseenatGT: Time
+  lastseenatGTE: Time
+  lastseenatLT: Time
+  lastseenatLTE: Time
+  lastseenatIsNil: Boolean
+  lastseenatNotNil: Boolean
   """tags edge predicates"""
   hasTags: Boolean
   hasTagsWith: [TagWhereInput!]

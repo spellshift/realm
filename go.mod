@@ -3,7 +3,7 @@ module github.com/kcarretto/realm
 go 1.19
 
 require (
-	entgo.io/contrib v0.3.4-0.20221106160343-59d2b3e87ec4
+	entgo.io/contrib v0.3.4
 	entgo.io/ent v0.11.5-0.20221031135557-521f9b57bc3d
 	github.com/99designs/gqlgen v0.17.20
 	github.com/go-sql-driver/mysql v1.6.0
@@ -20,7 +20,7 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.8.1 // indirect
+	ariga.io/atlas v0.8.2 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect

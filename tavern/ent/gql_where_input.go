@@ -913,6 +913,18 @@ type TargetWhereInput struct {
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
 
+	// "lastSeenAt" field predicates.
+	LastSeenAt       *time.Time  `json:"lastseenat,omitempty"`
+	LastSeenAtNEQ    *time.Time  `json:"lastseenatNEQ,omitempty"`
+	LastSeenAtIn     []time.Time `json:"lastseenatIn,omitempty"`
+	LastSeenAtNotIn  []time.Time `json:"lastseenatNotIn,omitempty"`
+	LastSeenAtGT     *time.Time  `json:"lastseenatGT,omitempty"`
+	LastSeenAtGTE    *time.Time  `json:"lastseenatGTE,omitempty"`
+	LastSeenAtLT     *time.Time  `json:"lastseenatLT,omitempty"`
+	LastSeenAtLTE    *time.Time  `json:"lastseenatLTE,omitempty"`
+	LastSeenAtIsNil  bool        `json:"lastseenatIsNil,omitempty"`
+	LastSeenAtNotNil bool        `json:"lastseenatNotNil,omitempty"`
+
 	// "tags" edge predicates.
 	HasTags     *bool            `json:"hasTags,omitempty"`
 	HasTagsWith []*TagWhereInput `json:"hasTagsWith,omitempty"`
@@ -1051,6 +1063,36 @@ func (i *TargetWhereInput) P() (predicate.Target, error) {
 	}
 	if i.NameContainsFold != nil {
 		predicates = append(predicates, target.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.LastSeenAt != nil {
+		predicates = append(predicates, target.LastSeenAtEQ(*i.LastSeenAt))
+	}
+	if i.LastSeenAtNEQ != nil {
+		predicates = append(predicates, target.LastSeenAtNEQ(*i.LastSeenAtNEQ))
+	}
+	if len(i.LastSeenAtIn) > 0 {
+		predicates = append(predicates, target.LastSeenAtIn(i.LastSeenAtIn...))
+	}
+	if len(i.LastSeenAtNotIn) > 0 {
+		predicates = append(predicates, target.LastSeenAtNotIn(i.LastSeenAtNotIn...))
+	}
+	if i.LastSeenAtGT != nil {
+		predicates = append(predicates, target.LastSeenAtGT(*i.LastSeenAtGT))
+	}
+	if i.LastSeenAtGTE != nil {
+		predicates = append(predicates, target.LastSeenAtGTE(*i.LastSeenAtGTE))
+	}
+	if i.LastSeenAtLT != nil {
+		predicates = append(predicates, target.LastSeenAtLT(*i.LastSeenAtLT))
+	}
+	if i.LastSeenAtLTE != nil {
+		predicates = append(predicates, target.LastSeenAtLTE(*i.LastSeenAtLTE))
+	}
+	if i.LastSeenAtIsNil {
+		predicates = append(predicates, target.LastSeenAtIsNil())
+	}
+	if i.LastSeenAtNotNil {
+		predicates = append(predicates, target.LastSeenAtNotNil())
 	}
 
 	if i.HasTags != nil {

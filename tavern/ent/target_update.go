@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -31,6 +32,26 @@ func (tu *TargetUpdate) Where(ps ...predicate.Target) *TargetUpdate {
 // SetName sets the "name" field.
 func (tu *TargetUpdate) SetName(s string) *TargetUpdate {
 	tu.mutation.SetName(s)
+	return tu
+}
+
+// SetLastSeenAt sets the "lastSeenAt" field.
+func (tu *TargetUpdate) SetLastSeenAt(t time.Time) *TargetUpdate {
+	tu.mutation.SetLastSeenAt(t)
+	return tu
+}
+
+// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+func (tu *TargetUpdate) SetNillableLastSeenAt(t *time.Time) *TargetUpdate {
+	if t != nil {
+		tu.SetLastSeenAt(*t)
+	}
+	return tu
+}
+
+// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+func (tu *TargetUpdate) ClearLastSeenAt() *TargetUpdate {
+	tu.mutation.ClearLastSeenAt()
 	return tu
 }
 
@@ -166,6 +187,12 @@ func (tu *TargetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(target.FieldName, field.TypeString, value)
 	}
+	if value, ok := tu.mutation.LastSeenAt(); ok {
+		_spec.SetField(target.FieldLastSeenAt, field.TypeTime, value)
+	}
+	if tu.mutation.LastSeenAtCleared() {
+		_spec.ClearField(target.FieldLastSeenAt, field.TypeTime)
+	}
 	if tu.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -242,6 +269,26 @@ type TargetUpdateOne struct {
 // SetName sets the "name" field.
 func (tuo *TargetUpdateOne) SetName(s string) *TargetUpdateOne {
 	tuo.mutation.SetName(s)
+	return tuo
+}
+
+// SetLastSeenAt sets the "lastSeenAt" field.
+func (tuo *TargetUpdateOne) SetLastSeenAt(t time.Time) *TargetUpdateOne {
+	tuo.mutation.SetLastSeenAt(t)
+	return tuo
+}
+
+// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+func (tuo *TargetUpdateOne) SetNillableLastSeenAt(t *time.Time) *TargetUpdateOne {
+	if t != nil {
+		tuo.SetLastSeenAt(*t)
+	}
+	return tuo
+}
+
+// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+func (tuo *TargetUpdateOne) ClearLastSeenAt() *TargetUpdateOne {
+	tuo.mutation.ClearLastSeenAt()
 	return tuo
 }
 
@@ -406,6 +453,12 @@ func (tuo *TargetUpdateOne) sqlSave(ctx context.Context) (_node *Target, err err
 	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(target.FieldName, field.TypeString, value)
+	}
+	if value, ok := tuo.mutation.LastSeenAt(); ok {
+		_spec.SetField(target.FieldLastSeenAt, field.TypeTime, value)
+	}
+	if tuo.mutation.LastSeenAtCleared() {
+		_spec.ClearField(target.FieldLastSeenAt, field.TypeTime)
 	}
 	if tuo.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
