@@ -40,7 +40,7 @@
 	// SPEEEEEEED on MacOS & Windows. Note that your local clone of realm will not be updated.
 	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
 	"workspaceFolder": "/workspaces/realm",
-	"postCreateCommand": "cd /workspaces && git clone ssh://git@github.com/kcarretto/realm", 
+	"postCreateCommand": "cd /workspaces && git clone https://github.com/KCarretto/realm.git", 
 
 	"mounts": [
 		"source=realm-bashhistory,target=/commandhistory,type=volume"
