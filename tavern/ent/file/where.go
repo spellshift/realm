@@ -80,6 +80,20 @@ func IDLTE(id int) predicate.File {
 	})
 }
 
+// CreatedAt applies equality check predicate on the "createdAt" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
+	})
+}
+
+// LastModifiedAt applies equality check predicate on the "lastModifiedAt" field. It's identical to LastModifiedAtEQ.
+func LastModifiedAt(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldLastModifiedAt), v))
+	})
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.File {
 	return predicate.File(func(s *sql.Selector) {
@@ -101,24 +115,138 @@ func Hash(v string) predicate.File {
 	})
 }
 
-// CreatedAt applies equality check predicate on the "createdAt" field. It's identical to CreatedAtEQ.
-func CreatedAt(v time.Time) predicate.File {
+// Content applies equality check predicate on the "content" field. It's identical to ContentEQ.
+func Content(v []byte) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldContent), v))
+	})
+}
+
+// CreatedAtEQ applies the EQ predicate on the "createdAt" field.
+func CreatedAtEQ(v time.Time) predicate.File {
 	return predicate.File(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
 	})
 }
 
-// LastModifiedAt applies equality check predicate on the "lastModifiedAt" field. It's identical to LastModifiedAtEQ.
-func LastModifiedAt(v time.Time) predicate.File {
+// CreatedAtNEQ applies the NEQ predicate on the "createdAt" field.
+func CreatedAtNEQ(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtIn applies the In predicate on the "createdAt" field.
+func CreatedAtIn(vs ...time.Time) predicate.File {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldCreatedAt), v...))
+	})
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "createdAt" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.File {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
+	})
+}
+
+// CreatedAtGT applies the GT predicate on the "createdAt" field.
+func CreatedAtGT(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtGTE applies the GTE predicate on the "createdAt" field.
+func CreatedAtGTE(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtLT applies the LT predicate on the "createdAt" field.
+func CreatedAtLT(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtLTE applies the LTE predicate on the "createdAt" field.
+func CreatedAtLTE(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
+	})
+}
+
+// LastModifiedAtEQ applies the EQ predicate on the "lastModifiedAt" field.
+func LastModifiedAtEQ(v time.Time) predicate.File {
 	return predicate.File(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldLastModifiedAt), v))
 	})
 }
 
-// Content applies equality check predicate on the "content" field. It's identical to ContentEQ.
-func Content(v []byte) predicate.File {
+// LastModifiedAtNEQ applies the NEQ predicate on the "lastModifiedAt" field.
+func LastModifiedAtNEQ(v time.Time) predicate.File {
 	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldContent), v))
+		s.Where(sql.NEQ(s.C(FieldLastModifiedAt), v))
+	})
+}
+
+// LastModifiedAtIn applies the In predicate on the "lastModifiedAt" field.
+func LastModifiedAtIn(vs ...time.Time) predicate.File {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldLastModifiedAt), v...))
+	})
+}
+
+// LastModifiedAtNotIn applies the NotIn predicate on the "lastModifiedAt" field.
+func LastModifiedAtNotIn(vs ...time.Time) predicate.File {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldLastModifiedAt), v...))
+	})
+}
+
+// LastModifiedAtGT applies the GT predicate on the "lastModifiedAt" field.
+func LastModifiedAtGT(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldLastModifiedAt), v))
+	})
+}
+
+// LastModifiedAtGTE applies the GTE predicate on the "lastModifiedAt" field.
+func LastModifiedAtGTE(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldLastModifiedAt), v))
+	})
+}
+
+// LastModifiedAtLT applies the LT predicate on the "lastModifiedAt" field.
+func LastModifiedAtLT(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldLastModifiedAt), v))
+	})
+}
+
+// LastModifiedAtLTE applies the LTE predicate on the "lastModifiedAt" field.
+func LastModifiedAtLTE(v time.Time) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldLastModifiedAt), v))
 	})
 }
 
@@ -381,134 +509,6 @@ func HashEqualFold(v string) predicate.File {
 func HashContainsFold(v string) predicate.File {
 	return predicate.File(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldHash), v))
-	})
-}
-
-// CreatedAtEQ applies the EQ predicate on the "createdAt" field.
-func CreatedAtEQ(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
-}
-
-// CreatedAtNEQ applies the NEQ predicate on the "createdAt" field.
-func CreatedAtNEQ(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
-	})
-}
-
-// CreatedAtIn applies the In predicate on the "createdAt" field.
-func CreatedAtIn(vs ...time.Time) predicate.File {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCreatedAt), v...))
-	})
-}
-
-// CreatedAtNotIn applies the NotIn predicate on the "createdAt" field.
-func CreatedAtNotIn(vs ...time.Time) predicate.File {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
-	})
-}
-
-// CreatedAtGT applies the GT predicate on the "createdAt" field.
-func CreatedAtGT(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCreatedAt), v))
-	})
-}
-
-// CreatedAtGTE applies the GTE predicate on the "createdAt" field.
-func CreatedAtGTE(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
-	})
-}
-
-// CreatedAtLT applies the LT predicate on the "createdAt" field.
-func CreatedAtLT(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCreatedAt), v))
-	})
-}
-
-// CreatedAtLTE applies the LTE predicate on the "createdAt" field.
-func CreatedAtLTE(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
-	})
-}
-
-// LastModifiedAtEQ applies the EQ predicate on the "lastModifiedAt" field.
-func LastModifiedAtEQ(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastModifiedAt), v))
-	})
-}
-
-// LastModifiedAtNEQ applies the NEQ predicate on the "lastModifiedAt" field.
-func LastModifiedAtNEQ(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldLastModifiedAt), v))
-	})
-}
-
-// LastModifiedAtIn applies the In predicate on the "lastModifiedAt" field.
-func LastModifiedAtIn(vs ...time.Time) predicate.File {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldLastModifiedAt), v...))
-	})
-}
-
-// LastModifiedAtNotIn applies the NotIn predicate on the "lastModifiedAt" field.
-func LastModifiedAtNotIn(vs ...time.Time) predicate.File {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldLastModifiedAt), v...))
-	})
-}
-
-// LastModifiedAtGT applies the GT predicate on the "lastModifiedAt" field.
-func LastModifiedAtGT(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldLastModifiedAt), v))
-	})
-}
-
-// LastModifiedAtGTE applies the GTE predicate on the "lastModifiedAt" field.
-func LastModifiedAtGTE(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldLastModifiedAt), v))
-	})
-}
-
-// LastModifiedAtLT applies the LT predicate on the "lastModifiedAt" field.
-func LastModifiedAtLT(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldLastModifiedAt), v))
-	})
-}
-
-// LastModifiedAtLTE applies the LTE predicate on the "lastModifiedAt" field.
-func LastModifiedAtLTE(v time.Time) predicate.File {
-	return predicate.File(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldLastModifiedAt), v))
 	})
 }
 

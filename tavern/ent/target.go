@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/ent/target"
@@ -17,6 +18,8 @@ type Target struct {
 	ID int `json:"id,omitempty"`
 	// Human-readable name of the target
 	Name string `json:"name,omitempty"`
+	// Timestamp of when a task was last claimed or updated for a target
+	LastSeenAt time.Time `json:"lastSeenAt,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TargetQuery when eager-loading is set.
 	Edges TargetEdges `json:"edges"`
@@ -53,6 +56,8 @@ func (*Target) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case target.FieldName:
 			values[i] = new(sql.NullString)
+		case target.FieldLastSeenAt:
+			values[i] = new(sql.NullTime)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Target", columns[i])
 		}
@@ -79,6 +84,12 @@ func (t *Target) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				t.Name = value.String
+			}
+		case target.FieldLastSeenAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lastSeenAt", values[i])
+			} else if value.Valid {
+				t.LastSeenAt = value.Time
 			}
 		}
 	}
@@ -115,6 +126,9 @@ func (t *Target) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
+	builder.WriteString(", ")
+	builder.WriteString("lastSeenAt=")
+	builder.WriteString(t.LastSeenAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

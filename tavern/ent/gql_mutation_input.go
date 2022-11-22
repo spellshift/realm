@@ -2,30 +2,20 @@
 
 package ent
 
-// CreateUserInput represents a mutation input for creating users.
-type CreateUserInput struct {
-	Name        string
-	OAuthID     string
-	PhotoURL    string
-	IsActivated *bool
-	IsAdmin     *bool
+// CreateJobInput represents a mutation input for creating jobs.
+type CreateJobInput struct {
+	Name   string
+	TomeID int
 }
 
-// Mutate applies the CreateUserInput on the UserMutation builder.
-func (i *CreateUserInput) Mutate(m *UserMutation) {
+// Mutate applies the CreateJobInput on the JobMutation builder.
+func (i *CreateJobInput) Mutate(m *JobMutation) {
 	m.SetName(i.Name)
-	m.SetOAuthID(i.OAuthID)
-	m.SetPhotoURL(i.PhotoURL)
-	if v := i.IsActivated; v != nil {
-		m.SetIsActivated(*v)
-	}
-	if v := i.IsAdmin; v != nil {
-		m.SetIsAdmin(*v)
-	}
+	m.SetTomeID(i.TomeID)
 }
 
-// SetInput applies the change-set in the CreateUserInput on the UserCreate builder.
-func (c *UserCreate) SetInput(i CreateUserInput) *UserCreate {
+// SetInput applies the change-set in the CreateJobInput on the JobCreate builder.
+func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
 	i.Mutate(c.Mutation())
 	return c
 }

@@ -1,0 +1,16 @@
+type Mutation {
+    ###
+    # Job
+    ###
+    createJob(targetIDs: [ID!]!, input: CreateJobInput!): Job
+
+    ###
+    # Task
+    ###
+    claimTasks(targetID: ID!): [Task!]!
+
+    ### 
+    # User
+    ###  
+    updateUser(userID: ID!, input: UpdateUserInput!): User
+}

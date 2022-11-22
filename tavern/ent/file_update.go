@@ -28,6 +28,12 @@ func (fu *FileUpdate) Where(ps ...predicate.File) *FileUpdate {
 	return fu
 }
 
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (fu *FileUpdate) SetLastModifiedAt(t time.Time) *FileUpdate {
+	fu.mutation.SetLastModifiedAt(t)
+	return fu
+}
+
 // SetName sets the "name" field.
 func (fu *FileUpdate) SetName(s string) *FileUpdate {
 	fu.mutation.SetName(s)
@@ -61,34 +67,6 @@ func (fu *FileUpdate) SetHash(s string) *FileUpdate {
 	return fu
 }
 
-// SetCreatedAt sets the "createdAt" field.
-func (fu *FileUpdate) SetCreatedAt(t time.Time) *FileUpdate {
-	fu.mutation.SetCreatedAt(t)
-	return fu
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (fu *FileUpdate) SetNillableCreatedAt(t *time.Time) *FileUpdate {
-	if t != nil {
-		fu.SetCreatedAt(*t)
-	}
-	return fu
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (fu *FileUpdate) SetLastModifiedAt(t time.Time) *FileUpdate {
-	fu.mutation.SetLastModifiedAt(t)
-	return fu
-}
-
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
-func (fu *FileUpdate) SetNillableLastModifiedAt(t *time.Time) *FileUpdate {
-	if t != nil {
-		fu.SetLastModifiedAt(*t)
-	}
-	return fu
-}
-
 // SetContent sets the "content" field.
 func (fu *FileUpdate) SetContent(b []byte) *FileUpdate {
 	fu.mutation.SetContent(b)
@@ -106,6 +84,9 @@ func (fu *FileUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
+	if err := fu.defaults(); err != nil {
+		return 0, err
+	}
 	if len(fu.hooks) == 0 {
 		if err = fu.check(); err != nil {
 			return 0, err
@@ -160,6 +141,18 @@ func (fu *FileUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (fu *FileUpdate) defaults() error {
+	if _, ok := fu.mutation.LastModifiedAt(); !ok {
+		if file.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized file.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
+		v := file.UpdateDefaultLastModifiedAt()
+		fu.mutation.SetLastModifiedAt(v)
+	}
+	return nil
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (fu *FileUpdate) check() error {
 	if v, ok := fu.mutation.Name(); ok {
@@ -198,6 +191,9 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := fu.mutation.LastModifiedAt(); ok {
+		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := fu.mutation.Name(); ok {
 		_spec.SetField(file.FieldName, field.TypeString, value)
 	}
@@ -209,12 +205,6 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := fu.mutation.Hash(); ok {
 		_spec.SetField(file.FieldHash, field.TypeString, value)
-	}
-	if value, ok := fu.mutation.CreatedAt(); ok {
-		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
-	}
-	if value, ok := fu.mutation.LastModifiedAt(); ok {
-		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := fu.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
@@ -236,6 +226,12 @@ type FileUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *FileMutation
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (fuo *FileUpdateOne) SetLastModifiedAt(t time.Time) *FileUpdateOne {
+	fuo.mutation.SetLastModifiedAt(t)
+	return fuo
 }
 
 // SetName sets the "name" field.
@@ -271,34 +267,6 @@ func (fuo *FileUpdateOne) SetHash(s string) *FileUpdateOne {
 	return fuo
 }
 
-// SetCreatedAt sets the "createdAt" field.
-func (fuo *FileUpdateOne) SetCreatedAt(t time.Time) *FileUpdateOne {
-	fuo.mutation.SetCreatedAt(t)
-	return fuo
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (fuo *FileUpdateOne) SetNillableCreatedAt(t *time.Time) *FileUpdateOne {
-	if t != nil {
-		fuo.SetCreatedAt(*t)
-	}
-	return fuo
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (fuo *FileUpdateOne) SetLastModifiedAt(t time.Time) *FileUpdateOne {
-	fuo.mutation.SetLastModifiedAt(t)
-	return fuo
-}
-
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
-func (fuo *FileUpdateOne) SetNillableLastModifiedAt(t *time.Time) *FileUpdateOne {
-	if t != nil {
-		fuo.SetLastModifiedAt(*t)
-	}
-	return fuo
-}
-
 // SetContent sets the "content" field.
 func (fuo *FileUpdateOne) SetContent(b []byte) *FileUpdateOne {
 	fuo.mutation.SetContent(b)
@@ -323,6 +291,9 @@ func (fuo *FileUpdateOne) Save(ctx context.Context) (*File, error) {
 		err  error
 		node *File
 	)
+	if err := fuo.defaults(); err != nil {
+		return nil, err
+	}
 	if len(fuo.hooks) == 0 {
 		if err = fuo.check(); err != nil {
 			return nil, err
@@ -383,6 +354,18 @@ func (fuo *FileUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (fuo *FileUpdateOne) defaults() error {
+	if _, ok := fuo.mutation.LastModifiedAt(); !ok {
+		if file.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized file.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
+		v := file.UpdateDefaultLastModifiedAt()
+		fuo.mutation.SetLastModifiedAt(v)
+	}
+	return nil
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (fuo *FileUpdateOne) check() error {
 	if v, ok := fuo.mutation.Name(); ok {
@@ -438,6 +421,9 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 			}
 		}
 	}
+	if value, ok := fuo.mutation.LastModifiedAt(); ok {
+		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := fuo.mutation.Name(); ok {
 		_spec.SetField(file.FieldName, field.TypeString, value)
 	}
@@ -449,12 +435,6 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 	}
 	if value, ok := fuo.mutation.Hash(); ok {
 		_spec.SetField(file.FieldHash, field.TypeString, value)
-	}
-	if value, ok := fuo.mutation.CreatedAt(); ok {
-		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
-	}
-	if value, ok := fuo.mutation.LastModifiedAt(); ok {
-		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := fuo.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)

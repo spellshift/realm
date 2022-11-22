@@ -8,20 +8,20 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (j *Job) CreatedBy(ctx context.Context) (*User, error) {
-	result, err := j.Edges.CreatedByOrErr()
-	if IsNotLoaded(err) {
-		result, err = j.QueryCreatedBy().Only(ctx)
-	}
-	return result, err
-}
-
 func (j *Job) Tome(ctx context.Context) (*Tome, error) {
 	result, err := j.Edges.TomeOrErr()
 	if IsNotLoaded(err) {
 		result, err = j.QueryTome().Only(ctx)
 	}
 	return result, err
+}
+
+func (j *Job) Bundle(ctx context.Context) (*File, error) {
+	result, err := j.Edges.BundleOrErr()
+	if IsNotLoaded(err) {
+		result, err = j.QueryBundle().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (j *Job) Tasks(ctx context.Context) (result []*Task, err error) {
@@ -64,6 +64,26 @@ func (t *Task) Job(ctx context.Context) (*Job, error) {
 	result, err := t.Edges.JobOrErr()
 	if IsNotLoaded(err) {
 		result, err = t.QueryJob().Only(ctx)
+	}
+	return result, err
+}
+
+func (t *Task) Target(ctx context.Context) (*Target, error) {
+	result, err := t.Edges.TargetOrErr()
+	if IsNotLoaded(err) {
+		result, err = t.QueryTarget().Only(ctx)
+	}
+	return result, err
+}
+
+func (t *Tome) Files(ctx context.Context) (result []*File, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = t.NamedFiles(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = t.Edges.FilesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = t.QueryFiles().All(ctx)
 	}
 	return result, err
 }

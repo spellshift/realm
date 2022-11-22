@@ -9,6 +9,8 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldLastSeenAt holds the string denoting the lastseenat field in the database.
+	FieldLastSeenAt = "last_seen_at"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// Table holds the table name of the target in the database.
@@ -24,6 +26,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldName,
+	FieldLastSeenAt,
 }
 
 var (

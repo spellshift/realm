@@ -16,18 +16,19 @@ type File struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Timestamp of when this ent was created
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// Timestamp of when this ent was last updated
+	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
 	// The name of the file, used to reference it for downloads
 	Name string `json:"name,omitempty"`
 	// The size of the file in bytes
 	Size int `json:"size,omitempty"`
 	// A SHA3 digest of the content field
 	Hash string `json:"hash,omitempty"`
-	// The timestamp for when the File was created
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-	// The timestamp for when the File was last modified
-	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
 	// The content of the file
-	Content []byte `json:"content,omitempty"`
+	Content    []byte `json:"content,omitempty"`
+	tome_files *int
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -43,6 +44,8 @@ func (*File) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case file.FieldCreatedAt, file.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
+		case file.ForeignKeys[0]: // tome_files
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type File", columns[i])
 		}
@@ -64,6 +67,18 @@ func (f *File) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			f.ID = int(value.Int64)
+		case file.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+			} else if value.Valid {
+				f.CreatedAt = value.Time
+			}
+		case file.FieldLastModifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+			} else if value.Valid {
+				f.LastModifiedAt = value.Time
+			}
 		case file.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -82,23 +97,18 @@ func (f *File) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				f.Hash = value.String
 			}
-		case file.FieldCreatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
-			} else if value.Valid {
-				f.CreatedAt = value.Time
-			}
-		case file.FieldLastModifiedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
-			} else if value.Valid {
-				f.LastModifiedAt = value.Time
-			}
 		case file.FieldContent:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value != nil {
 				f.Content = *value
+			}
+		case file.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field tome_files", value)
+			} else if value.Valid {
+				f.tome_files = new(int)
+				*f.tome_files = int(value.Int64)
 			}
 		}
 	}
@@ -128,6 +138,12 @@ func (f *File) String() string {
 	var builder strings.Builder
 	builder.WriteString("File(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", f.ID))
+	builder.WriteString("createdAt=")
+	builder.WriteString(f.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("lastModifiedAt=")
+	builder.WriteString(f.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(f.Name)
 	builder.WriteString(", ")
@@ -136,12 +152,6 @@ func (f *File) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("hash=")
 	builder.WriteString(f.Hash)
-	builder.WriteString(", ")
-	builder.WriteString("createdAt=")
-	builder.WriteString(f.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("lastModifiedAt=")
-	builder.WriteString(f.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(fmt.Sprintf("%v", f.Content))

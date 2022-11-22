@@ -11,25 +11,36 @@ var (
 	// FilesColumns holds the columns for the "files" table.
 	FilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "content", Type: field.TypeBytes},
+		{Name: "tome_files", Type: field.TypeInt, Nullable: true},
 	}
 	// FilesTable holds the schema information for the "files" table.
 	FilesTable = &schema.Table{
 		Name:       "files",
 		Columns:    FilesColumns,
 		PrimaryKey: []*schema.Column{FilesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "files_tomes_files",
+				Columns:    []*schema.Column{FilesColumns[7]},
+				RefColumns: []*schema.Column{TomesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// JobsColumns holds the columns for the "jobs" table.
 	JobsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "job_created_by", Type: field.TypeInt},
 		{Name: "job_tome", Type: field.TypeInt},
+		{Name: "job_bundle", Type: field.TypeInt, Nullable: true},
 	}
 	// JobsTable holds the schema information for the "jobs" table.
 	JobsTable = &schema.Table{
@@ -38,16 +49,16 @@ var (
 		PrimaryKey: []*schema.Column{JobsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "jobs_users_createdBy",
-				Columns:    []*schema.Column{JobsColumns[2]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
+				Symbol:     "jobs_tomes_tome",
+				Columns:    []*schema.Column{JobsColumns[4]},
+				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "jobs_tomes_tome",
-				Columns:    []*schema.Column{JobsColumns[3]},
-				RefColumns: []*schema.Column{TomesColumns[0]},
-				OnDelete:   schema.NoAction,
+				Symbol:     "jobs_files_bundle",
+				Columns:    []*schema.Column{JobsColumns[5]},
+				RefColumns: []*schema.Column{FilesColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -67,6 +78,7 @@ var (
 	TargetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// TargetsTable holds the schema information for the "targets" table.
 	TargetsTable = &schema.Table{
@@ -77,8 +89,15 @@ var (
 	// TasksColumns holds the columns for the "tasks" table.
 	TasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "exec_started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "exec_finished_at", Type: field.TypeTime, Nullable: true},
+		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "job_tasks", Type: field.TypeInt},
+		{Name: "task_target", Type: field.TypeInt},
 	}
 	// TasksTable holds the schema information for the "tasks" table.
 	TasksTable = &schema.Table{
@@ -88,8 +107,14 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tasks_jobs_tasks",
-				Columns:    []*schema.Column{TasksColumns[2]},
+				Columns:    []*schema.Column{TasksColumns[8]},
 				RefColumns: []*schema.Column{JobsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "tasks_targets_target",
+				Columns:    []*schema.Column{TasksColumns[9]},
+				RefColumns: []*schema.Column{TargetsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
@@ -97,14 +122,13 @@ var (
 	// TomesColumns holds the columns for the "tomes" table.
 	TomesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "description", Type: field.TypeString},
-		{Name: "parameters", Type: field.TypeString},
-		{Name: "size", Type: field.TypeInt, Default: 0},
-		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
-		{Name: "content", Type: field.TypeBytes},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString},
+		{Name: "parameters", Type: field.TypeString, Nullable: true},
+		{Name: "hash", Type: field.TypeString, Size: 100},
+		{Name: "eldritch", Type: field.TypeString},
 	}
 	// TomesTable holds the schema information for the "tomes" table.
 	TomesTable = &schema.Table{
@@ -167,9 +191,11 @@ var (
 )
 
 func init() {
-	JobsTable.ForeignKeys[0].RefTable = UsersTable
-	JobsTable.ForeignKeys[1].RefTable = TomesTable
+	FilesTable.ForeignKeys[0].RefTable = TomesTable
+	JobsTable.ForeignKeys[0].RefTable = TomesTable
+	JobsTable.ForeignKeys[1].RefTable = FilesTable
 	TasksTable.ForeignKeys[0].RefTable = JobsTable
+	TasksTable.ForeignKeys[1].RefTable = TargetsTable
 	TargetTagsTable.ForeignKeys[0].RefTable = TargetsTable
 	TargetTagsTable.ForeignKeys[1].RefTable = TagsTable
 }
