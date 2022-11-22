@@ -6,15 +6,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
-	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // JobUpdate is the builder for updating Job entities.
@@ -30,21 +31,16 @@ func (ju *JobUpdate) Where(ps ...predicate.Job) *JobUpdate {
 	return ju
 }
 
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (ju *JobUpdate) SetLastModifiedAt(t time.Time) *JobUpdate {
+	ju.mutation.SetLastModifiedAt(t)
+	return ju
+}
+
 // SetName sets the "name" field.
 func (ju *JobUpdate) SetName(s string) *JobUpdate {
 	ju.mutation.SetName(s)
 	return ju
-}
-
-// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
-func (ju *JobUpdate) SetCreatedByID(id int) *JobUpdate {
-	ju.mutation.SetCreatedByID(id)
-	return ju
-}
-
-// SetCreatedBy sets the "createdBy" edge to the User entity.
-func (ju *JobUpdate) SetCreatedBy(u *User) *JobUpdate {
-	return ju.SetCreatedByID(u.ID)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
@@ -56,6 +52,25 @@ func (ju *JobUpdate) SetTomeID(id int) *JobUpdate {
 // SetTome sets the "tome" edge to the Tome entity.
 func (ju *JobUpdate) SetTome(t *Tome) *JobUpdate {
 	return ju.SetTomeID(t.ID)
+}
+
+// SetBundleID sets the "bundle" edge to the File entity by ID.
+func (ju *JobUpdate) SetBundleID(id int) *JobUpdate {
+	ju.mutation.SetBundleID(id)
+	return ju
+}
+
+// SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
+func (ju *JobUpdate) SetNillableBundleID(id *int) *JobUpdate {
+	if id != nil {
+		ju = ju.SetBundleID(*id)
+	}
+	return ju
+}
+
+// SetBundle sets the "bundle" edge to the File entity.
+func (ju *JobUpdate) SetBundle(f *File) *JobUpdate {
+	return ju.SetBundleID(f.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
@@ -78,15 +93,15 @@ func (ju *JobUpdate) Mutation() *JobMutation {
 	return ju.mutation
 }
 
-// ClearCreatedBy clears the "createdBy" edge to the User entity.
-func (ju *JobUpdate) ClearCreatedBy() *JobUpdate {
-	ju.mutation.ClearCreatedBy()
-	return ju
-}
-
 // ClearTome clears the "tome" edge to the Tome entity.
 func (ju *JobUpdate) ClearTome() *JobUpdate {
 	ju.mutation.ClearTome()
+	return ju
+}
+
+// ClearBundle clears the "bundle" edge to the File entity.
+func (ju *JobUpdate) ClearBundle() *JobUpdate {
+	ju.mutation.ClearBundle()
 	return ju
 }
 
@@ -117,6 +132,7 @@ func (ju *JobUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
+	ju.defaults()
 	if len(ju.hooks) == 0 {
 		if err = ju.check(); err != nil {
 			return 0, err
@@ -171,15 +187,20 @@ func (ju *JobUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (ju *JobUpdate) defaults() {
+	if _, ok := ju.mutation.LastModifiedAt(); !ok {
+		v := job.UpdateDefaultLastModifiedAt()
+		ju.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (ju *JobUpdate) check() error {
 	if v, ok := ju.mutation.Name(); ok {
 		if err := job.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Job.name": %w`, err)}
 		}
-	}
-	if _, ok := ju.mutation.CreatedByID(); ju.mutation.CreatedByCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Job.createdBy"`)
 	}
 	if _, ok := ju.mutation.TomeID(); ju.mutation.TomeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Job.tome"`)
@@ -205,43 +226,11 @@ func (ju *JobUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := ju.mutation.LastModifiedAt(); ok {
+		_spec.SetField(job.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := ju.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
-	}
-	if ju.mutation.CreatedByCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ju.mutation.CreatedByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if ju.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -270,6 +259,41 @@ func (ju *JobUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: tome.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ju.mutation.BundleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.BundleTable,
+			Columns: []string{job.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ju.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.BundleTable,
+			Columns: []string{job.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
 				},
 			},
 		}
@@ -351,21 +375,16 @@ type JobUpdateOne struct {
 	mutation *JobMutation
 }
 
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (juo *JobUpdateOne) SetLastModifiedAt(t time.Time) *JobUpdateOne {
+	juo.mutation.SetLastModifiedAt(t)
+	return juo
+}
+
 // SetName sets the "name" field.
 func (juo *JobUpdateOne) SetName(s string) *JobUpdateOne {
 	juo.mutation.SetName(s)
 	return juo
-}
-
-// SetCreatedByID sets the "createdBy" edge to the User entity by ID.
-func (juo *JobUpdateOne) SetCreatedByID(id int) *JobUpdateOne {
-	juo.mutation.SetCreatedByID(id)
-	return juo
-}
-
-// SetCreatedBy sets the "createdBy" edge to the User entity.
-func (juo *JobUpdateOne) SetCreatedBy(u *User) *JobUpdateOne {
-	return juo.SetCreatedByID(u.ID)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
@@ -377,6 +396,25 @@ func (juo *JobUpdateOne) SetTomeID(id int) *JobUpdateOne {
 // SetTome sets the "tome" edge to the Tome entity.
 func (juo *JobUpdateOne) SetTome(t *Tome) *JobUpdateOne {
 	return juo.SetTomeID(t.ID)
+}
+
+// SetBundleID sets the "bundle" edge to the File entity by ID.
+func (juo *JobUpdateOne) SetBundleID(id int) *JobUpdateOne {
+	juo.mutation.SetBundleID(id)
+	return juo
+}
+
+// SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
+func (juo *JobUpdateOne) SetNillableBundleID(id *int) *JobUpdateOne {
+	if id != nil {
+		juo = juo.SetBundleID(*id)
+	}
+	return juo
+}
+
+// SetBundle sets the "bundle" edge to the File entity.
+func (juo *JobUpdateOne) SetBundle(f *File) *JobUpdateOne {
+	return juo.SetBundleID(f.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
@@ -399,15 +437,15 @@ func (juo *JobUpdateOne) Mutation() *JobMutation {
 	return juo.mutation
 }
 
-// ClearCreatedBy clears the "createdBy" edge to the User entity.
-func (juo *JobUpdateOne) ClearCreatedBy() *JobUpdateOne {
-	juo.mutation.ClearCreatedBy()
-	return juo
-}
-
 // ClearTome clears the "tome" edge to the Tome entity.
 func (juo *JobUpdateOne) ClearTome() *JobUpdateOne {
 	juo.mutation.ClearTome()
+	return juo
+}
+
+// ClearBundle clears the "bundle" edge to the File entity.
+func (juo *JobUpdateOne) ClearBundle() *JobUpdateOne {
+	juo.mutation.ClearBundle()
 	return juo
 }
 
@@ -445,6 +483,7 @@ func (juo *JobUpdateOne) Save(ctx context.Context) (*Job, error) {
 		err  error
 		node *Job
 	)
+	juo.defaults()
 	if len(juo.hooks) == 0 {
 		if err = juo.check(); err != nil {
 			return nil, err
@@ -505,15 +544,20 @@ func (juo *JobUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (juo *JobUpdateOne) defaults() {
+	if _, ok := juo.mutation.LastModifiedAt(); !ok {
+		v := job.UpdateDefaultLastModifiedAt()
+		juo.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (juo *JobUpdateOne) check() error {
 	if v, ok := juo.mutation.Name(); ok {
 		if err := job.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Job.name": %w`, err)}
 		}
-	}
-	if _, ok := juo.mutation.CreatedByID(); juo.mutation.CreatedByCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Job.createdBy"`)
 	}
 	if _, ok := juo.mutation.TomeID(); juo.mutation.TomeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Job.tome"`)
@@ -556,43 +600,11 @@ func (juo *JobUpdateOne) sqlSave(ctx context.Context) (_node *Job, err error) {
 			}
 		}
 	}
+	if value, ok := juo.mutation.LastModifiedAt(); ok {
+		_spec.SetField(job.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := juo.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
-	}
-	if juo.mutation.CreatedByCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := juo.mutation.CreatedByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   job.CreatedByTable,
-			Columns: []string{job.CreatedByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if juo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -621,6 +633,41 @@ func (juo *JobUpdateOne) sqlSave(ctx context.Context) (_node *Job, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: tome.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if juo.mutation.BundleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.BundleTable,
+			Columns: []string{job.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := juo.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.BundleTable,
+			Columns: []string{job.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
 				},
 			},
 		}

@@ -20,32 +20,6 @@ type FileCreate struct {
 	hooks    []Hook
 }
 
-// SetName sets the "name" field.
-func (fc *FileCreate) SetName(s string) *FileCreate {
-	fc.mutation.SetName(s)
-	return fc
-}
-
-// SetSize sets the "size" field.
-func (fc *FileCreate) SetSize(i int) *FileCreate {
-	fc.mutation.SetSize(i)
-	return fc
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (fc *FileCreate) SetNillableSize(i *int) *FileCreate {
-	if i != nil {
-		fc.SetSize(*i)
-	}
-	return fc
-}
-
-// SetHash sets the "hash" field.
-func (fc *FileCreate) SetHash(s string) *FileCreate {
-	fc.mutation.SetHash(s)
-	return fc
-}
-
 // SetCreatedAt sets the "createdAt" field.
 func (fc *FileCreate) SetCreatedAt(t time.Time) *FileCreate {
 	fc.mutation.SetCreatedAt(t)
@@ -74,6 +48,32 @@ func (fc *FileCreate) SetNillableLastModifiedAt(t *time.Time) *FileCreate {
 	return fc
 }
 
+// SetName sets the "name" field.
+func (fc *FileCreate) SetName(s string) *FileCreate {
+	fc.mutation.SetName(s)
+	return fc
+}
+
+// SetSize sets the "size" field.
+func (fc *FileCreate) SetSize(i int) *FileCreate {
+	fc.mutation.SetSize(i)
+	return fc
+}
+
+// SetNillableSize sets the "size" field if the given value is not nil.
+func (fc *FileCreate) SetNillableSize(i *int) *FileCreate {
+	if i != nil {
+		fc.SetSize(*i)
+	}
+	return fc
+}
+
+// SetHash sets the "hash" field.
+func (fc *FileCreate) SetHash(s string) *FileCreate {
+	fc.mutation.SetHash(s)
+	return fc
+}
+
 // SetContent sets the "content" field.
 func (fc *FileCreate) SetContent(b []byte) *FileCreate {
 	fc.mutation.SetContent(b)
@@ -91,7 +91,9 @@ func (fc *FileCreate) Save(ctx context.Context) (*File, error) {
 		err  error
 		node *File
 	)
-	fc.defaults()
+	if err := fc.defaults(); err != nil {
+		return nil, err
+	}
 	if len(fc.hooks) == 0 {
 		if err = fc.check(); err != nil {
 			return nil, err
@@ -156,23 +158,36 @@ func (fc *FileCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (fc *FileCreate) defaults() {
-	if _, ok := fc.mutation.Size(); !ok {
-		v := file.DefaultSize
-		fc.mutation.SetSize(v)
-	}
+func (fc *FileCreate) defaults() error {
 	if _, ok := fc.mutation.CreatedAt(); !ok {
+		if file.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized file.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := file.DefaultCreatedAt()
 		fc.mutation.SetCreatedAt(v)
 	}
 	if _, ok := fc.mutation.LastModifiedAt(); !ok {
+		if file.DefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized file.DefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := file.DefaultLastModifiedAt()
 		fc.mutation.SetLastModifiedAt(v)
 	}
+	if _, ok := fc.mutation.Size(); !ok {
+		v := file.DefaultSize
+		fc.mutation.SetSize(v)
+	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (fc *FileCreate) check() error {
+	if _, ok := fc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "File.createdAt"`)}
+	}
+	if _, ok := fc.mutation.LastModifiedAt(); !ok {
+		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "File.lastModifiedAt"`)}
+	}
 	if _, ok := fc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "File.name"`)}
 	}
@@ -196,12 +211,6 @@ func (fc *FileCreate) check() error {
 		if err := file.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "File.hash": %w`, err)}
 		}
-	}
-	if _, ok := fc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "File.createdAt"`)}
-	}
-	if _, ok := fc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "File.lastModifiedAt"`)}
 	}
 	if _, ok := fc.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "File.content"`)}
@@ -233,6 +242,14 @@ func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	if value, ok := fc.mutation.CreatedAt(); ok {
+		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := fc.mutation.LastModifiedAt(); ok {
+		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
+		_node.LastModifiedAt = value
+	}
 	if value, ok := fc.mutation.Name(); ok {
 		_spec.SetField(file.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -244,14 +261,6 @@ func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 	if value, ok := fc.mutation.Hash(); ok {
 		_spec.SetField(file.FieldHash, field.TypeString, value)
 		_node.Hash = value
-	}
-	if value, ok := fc.mutation.CreatedAt(); ok {
-		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
-		_node.CreatedAt = value
-	}
-	if value, ok := fc.mutation.LastModifiedAt(); ok {
-		_spec.SetField(file.FieldLastModifiedAt, field.TypeTime, value)
-		_node.LastModifiedAt = value
 	}
 	if value, ok := fc.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)

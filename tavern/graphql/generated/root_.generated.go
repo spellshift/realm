@@ -48,16 +48,19 @@ type ComplexityRoot struct {
 	}
 
 	Job struct {
-		CreatedBy func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Tasks     func(childComplexity int) int
-		Tome      func(childComplexity int) int
+		Bundle         func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Tasks          func(childComplexity int) int
+		Tome           func(childComplexity int) int
 	}
 
 	Mutation struct {
-		CreateUser func(childComplexity int, input ent.CreateUserInput) int
-		UpdateUser func(childComplexity int, id int, input ent.UpdateUserInput) int
+		ClaimTasks func(childComplexity int, targetID int) int
+		CreateJob  func(childComplexity int, targetIDs []int, input ent.CreateJobInput) int
+		UpdateUser func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -86,26 +89,35 @@ type ComplexityRoot struct {
 	}
 
 	Target struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
-		Tags func(childComplexity int) int
+		ID         func(childComplexity int) int
+		LastSeenAt func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Tags       func(childComplexity int) int
 	}
 
 	Task struct {
-		ID   func(childComplexity int) int
-		Job  func(childComplexity int) int
-		Name func(childComplexity int) int
+		ClaimedAt      func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Error          func(childComplexity int) int
+		ExecFinishedAt func(childComplexity int) int
+		ExecStartedAt  func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Job            func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Output         func(childComplexity int) int
+		Target         func(childComplexity int) int
 	}
 
 	Tome struct {
 		CreatedAt      func(childComplexity int) int
 		Description    func(childComplexity int) int
+		Eldritch       func(childComplexity int) int
+		Files          func(childComplexity int) int
 		Hash           func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Parameters     func(childComplexity int) int
-		Size           func(childComplexity int) int
 	}
 
 	User struct {
@@ -174,12 +186,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.File.Size(childComplexity), true
 
-	case "Job.createdby":
-		if e.complexity.Job.CreatedBy == nil {
+	case "Job.bundle":
+		if e.complexity.Job.Bundle == nil {
 			break
 		}
 
-		return e.complexity.Job.CreatedBy(childComplexity), true
+		return e.complexity.Job.Bundle(childComplexity), true
+
+	case "Job.createdat":
+		if e.complexity.Job.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Job.CreatedAt(childComplexity), true
 
 	case "Job.id":
 		if e.complexity.Job.ID == nil {
@@ -187,6 +206,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Job.ID(childComplexity), true
+
+	case "Job.lastmodifiedat":
+		if e.complexity.Job.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Job.LastModifiedAt(childComplexity), true
 
 	case "Job.name":
 		if e.complexity.Job.Name == nil {
@@ -209,17 +235,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Job.Tome(childComplexity), true
 
-	case "Mutation.createUser":
-		if e.complexity.Mutation.CreateUser == nil {
+	case "Mutation.claimTasks":
+		if e.complexity.Mutation.ClaimTasks == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_claimTasks_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(ent.CreateUserInput)), true
+		return e.complexity.Mutation.ClaimTasks(childComplexity, args["targetID"].(int)), true
+
+	case "Mutation.createJob":
+		if e.complexity.Mutation.CreateJob == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createJob_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateJob(childComplexity, args["targetIDs"].([]int), args["input"].(ent.CreateJobInput)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -231,7 +269,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(int), args["input"].(ent.UpdateUserInput)), true
+		return e.complexity.Mutation.UpdateUser(childComplexity, args["userID"].(int), args["input"].(ent.UpdateUserInput)), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -362,6 +400,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Target.ID(childComplexity), true
 
+	case "Target.lastseenat":
+		if e.complexity.Target.LastSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Target.LastSeenAt(childComplexity), true
+
 	case "Target.name":
 		if e.complexity.Target.Name == nil {
 			break
@@ -375,6 +420,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Target.Tags(childComplexity), true
+
+	case "Task.claimedat":
+		if e.complexity.Task.ClaimedAt == nil {
+			break
+		}
+
+		return e.complexity.Task.ClaimedAt(childComplexity), true
+
+	case "Task.createdat":
+		if e.complexity.Task.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Task.CreatedAt(childComplexity), true
+
+	case "Task.error":
+		if e.complexity.Task.Error == nil {
+			break
+		}
+
+		return e.complexity.Task.Error(childComplexity), true
+
+	case "Task.execfinishedat":
+		if e.complexity.Task.ExecFinishedAt == nil {
+			break
+		}
+
+		return e.complexity.Task.ExecFinishedAt(childComplexity), true
+
+	case "Task.execstartedat":
+		if e.complexity.Task.ExecStartedAt == nil {
+			break
+		}
+
+		return e.complexity.Task.ExecStartedAt(childComplexity), true
 
 	case "Task.id":
 		if e.complexity.Task.ID == nil {
@@ -390,12 +470,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Job(childComplexity), true
 
-	case "Task.name":
-		if e.complexity.Task.Name == nil {
+	case "Task.lastmodifiedat":
+		if e.complexity.Task.LastModifiedAt == nil {
 			break
 		}
 
-		return e.complexity.Task.Name(childComplexity), true
+		return e.complexity.Task.LastModifiedAt(childComplexity), true
+
+	case "Task.output":
+		if e.complexity.Task.Output == nil {
+			break
+		}
+
+		return e.complexity.Task.Output(childComplexity), true
+
+	case "Task.target":
+		if e.complexity.Task.Target == nil {
+			break
+		}
+
+		return e.complexity.Task.Target(childComplexity), true
 
 	case "Tome.createdat":
 		if e.complexity.Tome.CreatedAt == nil {
@@ -410,6 +504,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tome.Description(childComplexity), true
+
+	case "Tome.eldritch":
+		if e.complexity.Tome.Eldritch == nil {
+			break
+		}
+
+		return e.complexity.Tome.Eldritch(childComplexity), true
+
+	case "Tome.files":
+		if e.complexity.Tome.Files == nil {
+			break
+		}
+
+		return e.complexity.Tome.Files(childComplexity), true
 
 	case "Tome.hash":
 		if e.complexity.Tome.Hash == nil {
@@ -445,13 +553,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tome.Parameters(childComplexity), true
-
-	case "Tome.size":
-		if e.complexity.Tome.Size == nil {
-			break
-		}
-
-		return e.complexity.Tome.Size(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -496,7 +597,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
-		ec.unmarshalInputCreateUserInput,
+		ec.unmarshalInputCreateJobInput,
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
 		ec.unmarshalInputJobOrder,
@@ -572,23 +673,16 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "../schema/scalars.graphql", Input: `scalar Time`, BuiltIn: false},
-	{Name: "../schema/schema.graphql", Input: `directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+	{Name: "../schema/query.graphql", Input: `directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 """
-CreateUserInput is used for create User object.
+CreateJobInput is used for create Job object.
 Input was generated by ent.
 """
-input CreateUserInput {
-  """The name displayed for the user"""
+input CreateJobInput {
+  """Name of the job"""
   name: String!
-  """OAuth Subject ID of the user"""
-  oauthid: String!
-  """URL to the user's profile photo."""
-  photourl: String!
-  """True if the user is active and able to authenticate"""
-  isactivated: Boolean
-  """True if the user is an Admin"""
-  isadmin: Boolean
+  tomeID: ID!
 }
 """
 Define a Relay Cursor type:
@@ -597,16 +691,16 @@ https://relay.dev/graphql/connections.htm#sec-Cursor
 scalar Cursor
 type File implements Node {
   id: ID!
+  """Timestamp of when this ent was created"""
+  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  """Timestamp of when this ent was last updated"""
+  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
   """The name of the file, used to reference it for downloads"""
   name: String!
   """The size of the file in bytes"""
   size: Int!
   """A SHA3 digest of the content field"""
   hash: String!
-  """The timestamp for when the File was created"""
-  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
-  """The timestamp for when the File was last modified"""
-  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
 }
 """Ordering options for File connections"""
 input FileOrder {
@@ -617,10 +711,10 @@ input FileOrder {
 }
 """Properties by which File connections can be ordered."""
 enum FileOrderField {
-  NAME
-  SIZE
   CREATED_AT
   LAST_MODIFIED_AT
+  NAME
+  SIZE
 }
 """
 FileWhereInput is used for filtering File objects.
@@ -639,6 +733,24 @@ input FileWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """createdAt field predicates"""
+  createdat: Time
+  createdatNEQ: Time
+  createdatIn: [Time!]
+  createdatNotIn: [Time!]
+  createdatGT: Time
+  createdatGTE: Time
+  createdatLT: Time
+  createdatLTE: Time
+  """lastModifiedAt field predicates"""
+  lastmodifiedat: Time
+  lastmodifiedatNEQ: Time
+  lastmodifiedatIn: [Time!]
+  lastmodifiedatNotIn: [Time!]
+  lastmodifiedatGT: Time
+  lastmodifiedatGTE: Time
+  lastmodifiedatLT: Time
+  lastmodifiedatLTE: Time
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -676,31 +788,17 @@ input FileWhereInput {
   hashHasSuffix: String
   hashEqualFold: String
   hashContainsFold: String
-  """createdAt field predicates"""
-  createdat: Time
-  createdatNEQ: Time
-  createdatIn: [Time!]
-  createdatNotIn: [Time!]
-  createdatGT: Time
-  createdatGTE: Time
-  createdatLT: Time
-  createdatLTE: Time
-  """lastModifiedAt field predicates"""
-  lastmodifiedat: Time
-  lastmodifiedatNEQ: Time
-  lastmodifiedatIn: [Time!]
-  lastmodifiedatNotIn: [Time!]
-  lastmodifiedatGT: Time
-  lastmodifiedatGTE: Time
-  lastmodifiedatLT: Time
-  lastmodifiedatLTE: Time
 }
 type Job implements Node {
   id: ID!
+  """Timestamp of when this ent was created"""
+  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  """Timestamp of when this ent was last updated"""
+  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
   """Name of the job"""
   name: String!
-  createdby: User! @goField(name: "CreatedBy", forceResolver: false)
   tome: Tome!
+  bundle: File
   tasks: [Task!]
 }
 """Ordering options for Job connections"""
@@ -712,6 +810,8 @@ input JobOrder {
 }
 """Properties by which Job connections can be ordered."""
 enum JobOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
   NAME
 }
 """
@@ -731,6 +831,24 @@ input JobWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """createdAt field predicates"""
+  createdat: Time
+  createdatNEQ: Time
+  createdatIn: [Time!]
+  createdatNotIn: [Time!]
+  createdatGT: Time
+  createdatGTE: Time
+  createdatLT: Time
+  createdatLTE: Time
+  """lastModifiedAt field predicates"""
+  lastmodifiedat: Time
+  lastmodifiedatNEQ: Time
+  lastmodifiedatIn: [Time!]
+  lastmodifiedatNotIn: [Time!]
+  lastmodifiedatGT: Time
+  lastmodifiedatGTE: Time
+  lastmodifiedatLT: Time
+  lastmodifiedatLTE: Time
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -745,12 +863,12 @@ input JobWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """createdBy edge predicates"""
-  hasCreatedBy: Boolean
-  hasCreatedByWith: [UserWhereInput!]
   """tome edge predicates"""
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]
+  """bundle edge predicates"""
+  hasBundle: Boolean
+  hasBundleWith: [FileWhereInput!]
   """tasks edge predicates"""
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
@@ -870,6 +988,8 @@ type Target implements Node {
   id: ID!
   """Human-readable name of the target"""
   name: String!
+  """Timestamp of when a task was last claimed or updated for a target"""
+  lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
   tags: [Tag!]
 }
 """Ordering options for Target connections"""
@@ -882,6 +1002,7 @@ input TargetOrder {
 """Properties by which Target connections can be ordered."""
 enum TargetOrderField {
   NAME
+  LAST_SEEN_AT
 }
 """
 TargetWhereInput is used for filtering Target objects.
@@ -914,15 +1035,39 @@ input TargetWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
+  """lastSeenAt field predicates"""
+  lastseenat: Time
+  lastseenatNEQ: Time
+  lastseenatIn: [Time!]
+  lastseenatNotIn: [Time!]
+  lastseenatGT: Time
+  lastseenatGTE: Time
+  lastseenatLT: Time
+  lastseenatLTE: Time
+  lastseenatIsNil: Boolean
+  lastseenatNotNil: Boolean
   """tags edge predicates"""
   hasTags: Boolean
   hasTagsWith: [TagWhereInput!]
 }
 type Task implements Node {
   id: ID!
-  """Name of the task"""
-  name: String!
+  """Timestamp of when this ent was created"""
+  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  """Timestamp of when this ent was last updated"""
+  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
+  """Timestamp of when the task was claimed, null if not yet claimed"""
+  claimedat: Time @goField(name: "ClaimedAt", forceResolver: false)
+  """Timestamp of when execution of the task started, null if not yet started"""
+  execstartedat: Time @goField(name: "ExecStartedAt", forceResolver: false)
+  """Timestamp of when execution of the task finished, null if not yet finished"""
+  execfinishedat: Time @goField(name: "ExecFinishedAt", forceResolver: false)
+  """Output from executing the task"""
+  output: String
+  """Error, if any, produced while executing the Task"""
+  error: String
   job: Job!
+  target: Target!
 }
 """Ordering options for Task connections"""
 input TaskOrder {
@@ -933,7 +1078,11 @@ input TaskOrder {
 }
 """Properties by which Task connections can be ordered."""
 enum TaskOrderField {
-  NAME
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLAIMED_AT
+  EXEC_STARTED_AT
+  EXEC_FINISHED_AT
 }
 """
 TaskWhereInput is used for filtering Task objects.
@@ -952,40 +1101,113 @@ input TaskWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """name field predicates"""
-  name: String
-  nameNEQ: String
-  nameIn: [String!]
-  nameNotIn: [String!]
-  nameGT: String
-  nameGTE: String
-  nameLT: String
-  nameLTE: String
-  nameContains: String
-  nameHasPrefix: String
-  nameHasSuffix: String
-  nameEqualFold: String
-  nameContainsFold: String
+  """createdAt field predicates"""
+  createdat: Time
+  createdatNEQ: Time
+  createdatIn: [Time!]
+  createdatNotIn: [Time!]
+  createdatGT: Time
+  createdatGTE: Time
+  createdatLT: Time
+  createdatLTE: Time
+  """lastModifiedAt field predicates"""
+  lastmodifiedat: Time
+  lastmodifiedatNEQ: Time
+  lastmodifiedatIn: [Time!]
+  lastmodifiedatNotIn: [Time!]
+  lastmodifiedatGT: Time
+  lastmodifiedatGTE: Time
+  lastmodifiedatLT: Time
+  lastmodifiedatLTE: Time
+  """claimedAt field predicates"""
+  claimedat: Time
+  claimedatNEQ: Time
+  claimedatIn: [Time!]
+  claimedatNotIn: [Time!]
+  claimedatGT: Time
+  claimedatGTE: Time
+  claimedatLT: Time
+  claimedatLTE: Time
+  claimedatIsNil: Boolean
+  claimedatNotNil: Boolean
+  """execStartedAt field predicates"""
+  execstartedat: Time
+  execstartedatNEQ: Time
+  execstartedatIn: [Time!]
+  execstartedatNotIn: [Time!]
+  execstartedatGT: Time
+  execstartedatGTE: Time
+  execstartedatLT: Time
+  execstartedatLTE: Time
+  execstartedatIsNil: Boolean
+  execstartedatNotNil: Boolean
+  """execFinishedAt field predicates"""
+  execfinishedat: Time
+  execfinishedatNEQ: Time
+  execfinishedatIn: [Time!]
+  execfinishedatNotIn: [Time!]
+  execfinishedatGT: Time
+  execfinishedatGTE: Time
+  execfinishedatLT: Time
+  execfinishedatLTE: Time
+  execfinishedatIsNil: Boolean
+  execfinishedatNotNil: Boolean
+  """output field predicates"""
+  output: String
+  outputNEQ: String
+  outputIn: [String!]
+  outputNotIn: [String!]
+  outputGT: String
+  outputGTE: String
+  outputLT: String
+  outputLTE: String
+  outputContains: String
+  outputHasPrefix: String
+  outputHasSuffix: String
+  outputIsNil: Boolean
+  outputNotNil: Boolean
+  outputEqualFold: String
+  outputContainsFold: String
+  """error field predicates"""
+  error: String
+  errorNEQ: String
+  errorIn: [String!]
+  errorNotIn: [String!]
+  errorGT: String
+  errorGTE: String
+  errorLT: String
+  errorLTE: String
+  errorContains: String
+  errorHasPrefix: String
+  errorHasSuffix: String
+  errorIsNil: Boolean
+  errorNotNil: Boolean
+  errorEqualFold: String
+  errorContainsFold: String
   """job edge predicates"""
   hasJob: Boolean
   hasJobWith: [JobWhereInput!]
+  """target edge predicates"""
+  hasTarget: Boolean
+  hasTargetWith: [TargetWhereInput!]
 }
 type Tome implements Node {
   id: ID!
+  """Timestamp of when this ent was created"""
+  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  """Timestamp of when this ent was last updated"""
+  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
   """Name of the tome"""
   name: String!
   """Information about the tome"""
   description: String!
   """JSON string describing what parameters are used with the tome"""
-  parameters: String!
-  """The size of the tome in bytes"""
-  size: Int!
-  """A SHA3 digest of the content field"""
+  parameters: String
+  """A SHA3 digest of the eldritch field"""
   hash: String!
-  """The timestamp for when the Tome was created"""
-  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
-  """The timestamp for when the Tome was last modified"""
-  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
+  """Eldritch script that will be executed when the tome is run"""
+  eldritch: String!
+  files: [File!]
 }
 """Ordering options for Tome connections"""
 input TomeOrder {
@@ -996,10 +1218,9 @@ input TomeOrder {
 }
 """Properties by which Tome connections can be ordered."""
 enum TomeOrderField {
-  NAME
-  SIZE
   CREATED_AT
   LAST_MODIFIED_AT
+  NAME
 }
 """
 TomeWhereInput is used for filtering Tome objects.
@@ -1018,6 +1239,24 @@ input TomeWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """createdAt field predicates"""
+  createdat: Time
+  createdatNEQ: Time
+  createdatIn: [Time!]
+  createdatNotIn: [Time!]
+  createdatGT: Time
+  createdatGTE: Time
+  createdatLT: Time
+  createdatLTE: Time
+  """lastModifiedAt field predicates"""
+  lastmodifiedat: Time
+  lastmodifiedatNEQ: Time
+  lastmodifiedatIn: [Time!]
+  lastmodifiedatNotIn: [Time!]
+  lastmodifiedatGT: Time
+  lastmodifiedatGTE: Time
+  lastmodifiedatLT: Time
+  lastmodifiedatLTE: Time
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -1058,17 +1297,10 @@ input TomeWhereInput {
   parametersContains: String
   parametersHasPrefix: String
   parametersHasSuffix: String
+  parametersIsNil: Boolean
+  parametersNotNil: Boolean
   parametersEqualFold: String
   parametersContainsFold: String
-  """size field predicates"""
-  size: Int
-  sizeNEQ: Int
-  sizeIn: [Int!]
-  sizeNotIn: [Int!]
-  sizeGT: Int
-  sizeGTE: Int
-  sizeLT: Int
-  sizeLTE: Int
   """hash field predicates"""
   hash: String
   hashNEQ: String
@@ -1083,24 +1315,23 @@ input TomeWhereInput {
   hashHasSuffix: String
   hashEqualFold: String
   hashContainsFold: String
-  """createdAt field predicates"""
-  createdat: Time
-  createdatNEQ: Time
-  createdatIn: [Time!]
-  createdatNotIn: [Time!]
-  createdatGT: Time
-  createdatGTE: Time
-  createdatLT: Time
-  createdatLTE: Time
-  """lastModifiedAt field predicates"""
-  lastmodifiedat: Time
-  lastmodifiedatNEQ: Time
-  lastmodifiedatIn: [Time!]
-  lastmodifiedatNotIn: [Time!]
-  lastmodifiedatGT: Time
-  lastmodifiedatGTE: Time
-  lastmodifiedatLT: Time
-  lastmodifiedatLTE: Time
+  """eldritch field predicates"""
+  eldritch: String
+  eldritchNEQ: String
+  eldritchIn: [String!]
+  eldritchNotIn: [String!]
+  eldritchGT: String
+  eldritchGTE: String
+  eldritchLT: String
+  eldritchLTE: String
+  eldritchContains: String
+  eldritchHasPrefix: String
+  eldritchHasSuffix: String
+  eldritchEqualFold: String
+  eldritchContainsFold: String
+  """files edge predicates"""
+  hasFiles: Boolean
+  hasFilesWith: [FileWhereInput!]
 }
 """
 UpdateUserInput is used for update User object.
@@ -1180,10 +1411,21 @@ input UserWhereInput {
   isadminNEQ: Boolean
 }
 `, BuiltIn: false},
-	{Name: "../schema/user.graphql", Input: `type Mutation {
-    # The input and the output are types generated by Ent.
-    createUser(input: CreateUserInput!): User
-    updateUser(id: ID!, input: UpdateUserInput!): User
+	{Name: "../schema/mutation.graphql", Input: `type Mutation {
+    ###
+    # Job
+    ###
+    createJob(targetIDs: [ID!]!, input: CreateJobInput!): Job
+
+    ###
+    # Task
+    ###
+    claimTasks(targetID: ID!): [Task!]!
+
+    ### 
+    # User
+    ###  
+    updateUser(userID: ID!, input: UpdateUserInput!): User
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)

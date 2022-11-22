@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
@@ -137,9 +136,6 @@ func newUploadRequest(t *testing.T, fileName string, fileContent []byte) *http.R
 func newFile(graph *ent.Client, name string, content []byte) *ent.File {
 	return graph.File.Create().
 		SetName(name).
-		SetSize(len(content)).
-		SetHash(fmt.Sprintf("%x", sha3.Sum256(content))).
 		SetContent(content).
-		SetLastModifiedAt(time.Now()).
 		SaveX(context.Background())
 }

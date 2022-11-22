@@ -1,7 +1,11 @@
 package schema
 
 import (
-	"time"
+	"context"
+	"fmt"
+
+	"github.com/kcarretto/realm/tavern/ent/hook"
+	"golang.org/x/crypto/sha3"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
@@ -34,19 +38,6 @@ func (File) Fields() []ent.Field {
 		field.String("hash").
 			MaxLen(100).
 			Comment("A SHA3 digest of the content field"),
-		field.Time("createdAt").
-			Default(time.Now).
-			Annotations(
-				entgql.OrderField("CREATED_AT"),
-			).
-			Comment("The timestamp for when the File was created"),
-		field.Time("lastModifiedAt").
-			Default(time.Now).
-			Annotations(
-				entgql.OrderField("LAST_MODIFIED_AT"),
-			).
-			Comment("The timestamp for when the File was last modified"),
-
 		field.Bytes("content").
 			Annotations(
 				entgql.Skip(), // Don't return file content in GraphQL queries
@@ -64,5 +55,49 @@ func (File) Edges() []ent.Edge {
 func (File) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.QueryField(),
+	}
+}
+
+// Mixin defines common shared properties for the ent.
+func (File) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		MixinHistory{}, // createdAt, lastModifiedAt
+	}
+}
+
+// Hooks defines middleware for mutations for the ent.
+func (File) Hooks() []ent.Hook {
+	return []ent.Hook{
+		hook.On(HookDeriveFileInfo(), ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne),
+	}
+}
+
+// HookDeriveFileInfo will update file info (e.g. size, hash) whenever it is mutated.
+func HookDeriveFileInfo() ent.Hook {
+	// Get the relevant methods from the File Mutation
+	// See this example: https://github.com/ent/ent/blob/master/entc/integration/hooks/ent/schema/user.go#L98
+	type fMutation interface {
+		Content() ([]byte, bool)
+		SetSize(i int)
+		SetHash(s string)
+	}
+
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			// Get the file mutation
+			f, ok := m.(fMutation)
+			if !ok {
+				return nil, fmt.Errorf("expected file mutation in schema hook, got: %+v", m)
+			}
+
+			// Set the new size
+			content, _ := f.Content()
+			f.SetSize(len(content))
+
+			// Set the new hash
+			f.SetHash(fmt.Sprintf("%x", sha3.Sum256(content)))
+
+			return next.Mutate(ctx, m)
+		})
 	}
 }

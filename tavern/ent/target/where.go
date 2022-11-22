@@ -3,6 +3,8 @@
 package target
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
@@ -83,6 +85,13 @@ func IDLTE(id int) predicate.Target {
 func Name(v string) predicate.Target {
 	return predicate.Target(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldName), v))
+	})
+}
+
+// LastSeenAt applies equality check predicate on the "lastSeenAt" field. It's identical to LastSeenAtEQ.
+func LastSeenAt(v time.Time) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldLastSeenAt), v))
 	})
 }
 
@@ -182,6 +191,84 @@ func NameEqualFold(v string) predicate.Target {
 func NameContainsFold(v string) predicate.Target {
 	return predicate.Target(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldName), v))
+	})
+}
+
+// LastSeenAtEQ applies the EQ predicate on the "lastSeenAt" field.
+func LastSeenAtEQ(v time.Time) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldLastSeenAt), v))
+	})
+}
+
+// LastSeenAtNEQ applies the NEQ predicate on the "lastSeenAt" field.
+func LastSeenAtNEQ(v time.Time) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldLastSeenAt), v))
+	})
+}
+
+// LastSeenAtIn applies the In predicate on the "lastSeenAt" field.
+func LastSeenAtIn(vs ...time.Time) predicate.Target {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldLastSeenAt), v...))
+	})
+}
+
+// LastSeenAtNotIn applies the NotIn predicate on the "lastSeenAt" field.
+func LastSeenAtNotIn(vs ...time.Time) predicate.Target {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldLastSeenAt), v...))
+	})
+}
+
+// LastSeenAtGT applies the GT predicate on the "lastSeenAt" field.
+func LastSeenAtGT(v time.Time) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldLastSeenAt), v))
+	})
+}
+
+// LastSeenAtGTE applies the GTE predicate on the "lastSeenAt" field.
+func LastSeenAtGTE(v time.Time) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldLastSeenAt), v))
+	})
+}
+
+// LastSeenAtLT applies the LT predicate on the "lastSeenAt" field.
+func LastSeenAtLT(v time.Time) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldLastSeenAt), v))
+	})
+}
+
+// LastSeenAtLTE applies the LTE predicate on the "lastSeenAt" field.
+func LastSeenAtLTE(v time.Time) predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldLastSeenAt), v))
+	})
+}
+
+// LastSeenAtIsNil applies the IsNil predicate on the "lastSeenAt" field.
+func LastSeenAtIsNil() predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldLastSeenAt)))
+	})
+}
+
+// LastSeenAtNotNil applies the NotNil predicate on the "lastSeenAt" field.
+func LastSeenAtNotNil() predicate.Target {
+	return predicate.Target(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldLastSeenAt)))
 	})
 }
 

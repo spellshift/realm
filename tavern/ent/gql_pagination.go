@@ -445,26 +445,6 @@ func (f *FileQuery) Paginate(
 }
 
 var (
-	// FileOrderFieldName orders File by name.
-	FileOrderFieldName = &FileOrderField{
-		field: file.FieldName,
-		toCursor: func(f *File) Cursor {
-			return Cursor{
-				ID:    f.ID,
-				Value: f.Name,
-			}
-		},
-	}
-	// FileOrderFieldSize orders File by size.
-	FileOrderFieldSize = &FileOrderField{
-		field: file.FieldSize,
-		toCursor: func(f *File) Cursor {
-			return Cursor{
-				ID:    f.ID,
-				Value: f.Size,
-			}
-		},
-	}
 	// FileOrderFieldCreatedAt orders File by createdAt.
 	FileOrderFieldCreatedAt = &FileOrderField{
 		field: file.FieldCreatedAt,
@@ -485,20 +465,40 @@ var (
 			}
 		},
 	}
+	// FileOrderFieldName orders File by name.
+	FileOrderFieldName = &FileOrderField{
+		field: file.FieldName,
+		toCursor: func(f *File) Cursor {
+			return Cursor{
+				ID:    f.ID,
+				Value: f.Name,
+			}
+		},
+	}
+	// FileOrderFieldSize orders File by size.
+	FileOrderFieldSize = &FileOrderField{
+		field: file.FieldSize,
+		toCursor: func(f *File) Cursor {
+			return Cursor{
+				ID:    f.ID,
+				Value: f.Size,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
 func (f FileOrderField) String() string {
 	var str string
 	switch f.field {
-	case file.FieldName:
-		str = "NAME"
-	case file.FieldSize:
-		str = "SIZE"
 	case file.FieldCreatedAt:
 		str = "CREATED_AT"
 	case file.FieldLastModifiedAt:
 		str = "LAST_MODIFIED_AT"
+	case file.FieldName:
+		str = "NAME"
+	case file.FieldSize:
+		str = "SIZE"
 	}
 	return str
 }
@@ -515,14 +515,14 @@ func (f *FileOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("FileOrderField %T must be a string", v)
 	}
 	switch str {
-	case "NAME":
-		*f = *FileOrderFieldName
-	case "SIZE":
-		*f = *FileOrderFieldSize
 	case "CREATED_AT":
 		*f = *FileOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *FileOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *FileOrderFieldName
+	case "SIZE":
+		*f = *FileOrderFieldSize
 	default:
 		return fmt.Errorf("%s is not a valid FileOrderField", str)
 	}
@@ -761,6 +761,26 @@ func (j *JobQuery) Paginate(
 }
 
 var (
+	// JobOrderFieldCreatedAt orders Job by createdAt.
+	JobOrderFieldCreatedAt = &JobOrderField{
+		field: job.FieldCreatedAt,
+		toCursor: func(j *Job) Cursor {
+			return Cursor{
+				ID:    j.ID,
+				Value: j.CreatedAt,
+			}
+		},
+	}
+	// JobOrderFieldLastModifiedAt orders Job by lastModifiedAt.
+	JobOrderFieldLastModifiedAt = &JobOrderField{
+		field: job.FieldLastModifiedAt,
+		toCursor: func(j *Job) Cursor {
+			return Cursor{
+				ID:    j.ID,
+				Value: j.LastModifiedAt,
+			}
+		},
+	}
 	// JobOrderFieldName orders Job by name.
 	JobOrderFieldName = &JobOrderField{
 		field: job.FieldName,
@@ -777,6 +797,10 @@ var (
 func (f JobOrderField) String() string {
 	var str string
 	switch f.field {
+	case job.FieldCreatedAt:
+		str = "CREATED_AT"
+	case job.FieldLastModifiedAt:
+		str = "LAST_MODIFIED_AT"
 	case job.FieldName:
 		str = "NAME"
 	}
@@ -795,6 +819,10 @@ func (f *JobOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("JobOrderField %T must be a string", v)
 	}
 	switch str {
+	case "CREATED_AT":
+		*f = *JobOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *JobOrderFieldLastModifiedAt
 	case "NAME":
 		*f = *JobOrderFieldName
 	default:
@@ -1319,6 +1347,16 @@ var (
 			}
 		},
 	}
+	// TargetOrderFieldLastSeenAt orders Target by lastSeenAt.
+	TargetOrderFieldLastSeenAt = &TargetOrderField{
+		field: target.FieldLastSeenAt,
+		toCursor: func(t *Target) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.LastSeenAt,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -1327,6 +1365,8 @@ func (f TargetOrderField) String() string {
 	switch f.field {
 	case target.FieldName:
 		str = "NAME"
+	case target.FieldLastSeenAt:
+		str = "LAST_SEEN_AT"
 	}
 	return str
 }
@@ -1345,6 +1385,8 @@ func (f *TargetOrderField) UnmarshalGQL(v interface{}) error {
 	switch str {
 	case "NAME":
 		*f = *TargetOrderFieldName
+	case "LAST_SEEN_AT":
+		*f = *TargetOrderFieldLastSeenAt
 	default:
 		return fmt.Errorf("%s is not a valid TargetOrderField", str)
 	}
@@ -1583,13 +1625,53 @@ func (t *TaskQuery) Paginate(
 }
 
 var (
-	// TaskOrderFieldName orders Task by name.
-	TaskOrderFieldName = &TaskOrderField{
-		field: task.FieldName,
+	// TaskOrderFieldCreatedAt orders Task by createdAt.
+	TaskOrderFieldCreatedAt = &TaskOrderField{
+		field: task.FieldCreatedAt,
 		toCursor: func(t *Task) Cursor {
 			return Cursor{
 				ID:    t.ID,
-				Value: t.Name,
+				Value: t.CreatedAt,
+			}
+		},
+	}
+	// TaskOrderFieldLastModifiedAt orders Task by lastModifiedAt.
+	TaskOrderFieldLastModifiedAt = &TaskOrderField{
+		field: task.FieldLastModifiedAt,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.LastModifiedAt,
+			}
+		},
+	}
+	// TaskOrderFieldClaimedAt orders Task by claimedAt.
+	TaskOrderFieldClaimedAt = &TaskOrderField{
+		field: task.FieldClaimedAt,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.ClaimedAt,
+			}
+		},
+	}
+	// TaskOrderFieldExecStartedAt orders Task by execStartedAt.
+	TaskOrderFieldExecStartedAt = &TaskOrderField{
+		field: task.FieldExecStartedAt,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.ExecStartedAt,
+			}
+		},
+	}
+	// TaskOrderFieldExecFinishedAt orders Task by execFinishedAt.
+	TaskOrderFieldExecFinishedAt = &TaskOrderField{
+		field: task.FieldExecFinishedAt,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.ExecFinishedAt,
 			}
 		},
 	}
@@ -1599,8 +1681,16 @@ var (
 func (f TaskOrderField) String() string {
 	var str string
 	switch f.field {
-	case task.FieldName:
-		str = "NAME"
+	case task.FieldCreatedAt:
+		str = "CREATED_AT"
+	case task.FieldLastModifiedAt:
+		str = "LAST_MODIFIED_AT"
+	case task.FieldClaimedAt:
+		str = "CLAIMED_AT"
+	case task.FieldExecStartedAt:
+		str = "EXEC_STARTED_AT"
+	case task.FieldExecFinishedAt:
+		str = "EXEC_FINISHED_AT"
 	}
 	return str
 }
@@ -1617,8 +1707,16 @@ func (f *TaskOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("TaskOrderField %T must be a string", v)
 	}
 	switch str {
-	case "NAME":
-		*f = *TaskOrderFieldName
+	case "CREATED_AT":
+		*f = *TaskOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *TaskOrderFieldLastModifiedAt
+	case "CLAIMED_AT":
+		*f = *TaskOrderFieldClaimedAt
+	case "EXEC_STARTED_AT":
+		*f = *TaskOrderFieldExecStartedAt
+	case "EXEC_FINISHED_AT":
+		*f = *TaskOrderFieldExecFinishedAt
 	default:
 		return fmt.Errorf("%s is not a valid TaskOrderField", str)
 	}
@@ -1857,26 +1955,6 @@ func (t *TomeQuery) Paginate(
 }
 
 var (
-	// TomeOrderFieldName orders Tome by name.
-	TomeOrderFieldName = &TomeOrderField{
-		field: tome.FieldName,
-		toCursor: func(t *Tome) Cursor {
-			return Cursor{
-				ID:    t.ID,
-				Value: t.Name,
-			}
-		},
-	}
-	// TomeOrderFieldSize orders Tome by size.
-	TomeOrderFieldSize = &TomeOrderField{
-		field: tome.FieldSize,
-		toCursor: func(t *Tome) Cursor {
-			return Cursor{
-				ID:    t.ID,
-				Value: t.Size,
-			}
-		},
-	}
 	// TomeOrderFieldCreatedAt orders Tome by createdAt.
 	TomeOrderFieldCreatedAt = &TomeOrderField{
 		field: tome.FieldCreatedAt,
@@ -1897,20 +1975,28 @@ var (
 			}
 		},
 	}
+	// TomeOrderFieldName orders Tome by name.
+	TomeOrderFieldName = &TomeOrderField{
+		field: tome.FieldName,
+		toCursor: func(t *Tome) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.Name,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
 func (f TomeOrderField) String() string {
 	var str string
 	switch f.field {
-	case tome.FieldName:
-		str = "NAME"
-	case tome.FieldSize:
-		str = "SIZE"
 	case tome.FieldCreatedAt:
 		str = "CREATED_AT"
 	case tome.FieldLastModifiedAt:
 		str = "LAST_MODIFIED_AT"
+	case tome.FieldName:
+		str = "NAME"
 	}
 	return str
 }
@@ -1927,14 +2013,12 @@ func (f *TomeOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("TomeOrderField %T must be a string", v)
 	}
 	switch str {
-	case "NAME":
-		*f = *TomeOrderFieldName
-	case "SIZE":
-		*f = *TomeOrderFieldSize
 	case "CREATED_AT":
 		*f = *TomeOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *TomeOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *TomeOrderFieldName
 	default:
 		return fmt.Errorf("%s is not a valid TomeOrderField", str)
 	}
