@@ -5,9 +5,11 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -16,23 +18,38 @@ type Task struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// Name of the task
-	Name string `json:"name,omitempty"`
+	// Timestamp of when this ent was created
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// Timestamp of when this ent was last updated
+	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
+	// Timestamp of when the task was claimed, null if not yet claimed
+	ClaimedAt time.Time `json:"claimedAt,omitempty"`
+	// Timestamp of when execution of the task started, null if not yet started
+	ExecStartedAt time.Time `json:"execStartedAt,omitempty"`
+	// Timestamp of when execution of the task finished, null if not yet finished
+	ExecFinishedAt time.Time `json:"execFinishedAt,omitempty"`
+	// Output from executing the task
+	Output string `json:"output,omitempty"`
+	// Error, if any, produced while executing the Task
+	Error string `json:"error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
-	Edges     TaskEdges `json:"edges"`
-	job_tasks *int
+	Edges       TaskEdges `json:"edges"`
+	job_tasks   *int
+	task_target *int
 }
 
 // TaskEdges holds the relations/edges for other nodes in the graph.
 type TaskEdges struct {
 	// Job holds the value of the job edge.
 	Job *Job `json:"job,omitempty"`
+	// Target holds the value of the target edge.
+	Target *Target `json:"target,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 }
 
 // JobOrErr returns the Job value or an error if the edge
@@ -48,6 +65,19 @@ func (e TaskEdges) JobOrErr() (*Job, error) {
 	return nil, &NotLoadedError{edge: "job"}
 }
 
+// TargetOrErr returns the Target value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskEdges) TargetOrErr() (*Target, error) {
+	if e.loadedTypes[1] {
+		if e.Target == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: target.Label}
+		}
+		return e.Target, nil
+	}
+	return nil, &NotLoadedError{edge: "target"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Task) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -55,9 +85,13 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case task.FieldID:
 			values[i] = new(sql.NullInt64)
-		case task.FieldName:
+		case task.FieldOutput, task.FieldError:
 			values[i] = new(sql.NullString)
+		case task.FieldCreatedAt, task.FieldLastModifiedAt, task.FieldClaimedAt, task.FieldExecStartedAt, task.FieldExecFinishedAt:
+			values[i] = new(sql.NullTime)
 		case task.ForeignKeys[0]: // job_tasks
+			values[i] = new(sql.NullInt64)
+		case task.ForeignKeys[1]: // task_target
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Task", columns[i])
@@ -80,11 +114,47 @@ func (t *Task) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			t.ID = int(value.Int64)
-		case task.FieldName:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field name", values[i])
+		case task.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
 			} else if value.Valid {
-				t.Name = value.String
+				t.CreatedAt = value.Time
+			}
+		case task.FieldLastModifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+			} else if value.Valid {
+				t.LastModifiedAt = value.Time
+			}
+		case task.FieldClaimedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field claimedAt", values[i])
+			} else if value.Valid {
+				t.ClaimedAt = value.Time
+			}
+		case task.FieldExecStartedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field execStartedAt", values[i])
+			} else if value.Valid {
+				t.ExecStartedAt = value.Time
+			}
+		case task.FieldExecFinishedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field execFinishedAt", values[i])
+			} else if value.Valid {
+				t.ExecFinishedAt = value.Time
+			}
+		case task.FieldOutput:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field output", values[i])
+			} else if value.Valid {
+				t.Output = value.String
+			}
+		case task.FieldError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field error", values[i])
+			} else if value.Valid {
+				t.Error = value.String
 			}
 		case task.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -92,6 +162,13 @@ func (t *Task) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.job_tasks = new(int)
 				*t.job_tasks = int(value.Int64)
+			}
+		case task.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field task_target", value)
+			} else if value.Valid {
+				t.task_target = new(int)
+				*t.task_target = int(value.Int64)
 			}
 		}
 	}
@@ -101,6 +178,11 @@ func (t *Task) assignValues(columns []string, values []any) error {
 // QueryJob queries the "job" edge of the Task entity.
 func (t *Task) QueryJob() *JobQuery {
 	return (&TaskClient{config: t.config}).QueryJob(t)
+}
+
+// QueryTarget queries the "target" edge of the Task entity.
+func (t *Task) QueryTarget() *TargetQuery {
+	return (&TaskClient{config: t.config}).QueryTarget(t)
 }
 
 // Update returns a builder for updating this Task.
@@ -126,8 +208,26 @@ func (t *Task) String() string {
 	var builder strings.Builder
 	builder.WriteString("Task(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
-	builder.WriteString("name=")
-	builder.WriteString(t.Name)
+	builder.WriteString("createdAt=")
+	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("lastModifiedAt=")
+	builder.WriteString(t.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("claimedAt=")
+	builder.WriteString(t.ClaimedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("execStartedAt=")
+	builder.WriteString(t.ExecStartedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("execFinishedAt=")
+	builder.WriteString(t.ExecFinishedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("output=")
+	builder.WriteString(t.Output)
+	builder.WriteString(", ")
+	builder.WriteString("error=")
+	builder.WriteString(t.Error)
 	builder.WriteByte(')')
 	return builder.String()
 }

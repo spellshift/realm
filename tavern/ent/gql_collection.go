@@ -93,16 +93,6 @@ func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContex
 	path = append([]string(nil), path...)
 	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
 		switch field.Name {
-		case "createdby":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = &UserQuery{config: j.config}
-			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
-				return err
-			}
-			j.withCreatedBy = query
 		case "tome":
 			var (
 				alias = field.Alias
@@ -113,6 +103,16 @@ func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContex
 				return err
 			}
 			j.withTome = query
+		case "bundle":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &FileQuery{config: j.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			j.withBundle = query
 		case "tasks":
 			var (
 				alias = field.Alias
@@ -375,6 +375,16 @@ func (t *TaskQuery) collectField(ctx context.Context, op *graphql.OperationConte
 				return err
 			}
 			t.withJob = query
+		case "target":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &TargetQuery{config: t.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.withTarget = query
 		}
 	}
 	return nil
@@ -445,6 +455,22 @@ func (t *TomeQuery) CollectFields(ctx context.Context, satisfies ...string) (*To
 
 func (t *TomeQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "files":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &FileQuery{config: t.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedFiles(alias, func(wq *FileQuery) {
+				*wq = *query
+			})
+		}
+	}
 	return nil
 }
 

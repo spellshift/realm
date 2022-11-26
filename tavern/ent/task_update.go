@@ -6,12 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -28,9 +30,109 @@ func (tu *TaskUpdate) Where(ps ...predicate.Task) *TaskUpdate {
 	return tu
 }
 
-// SetName sets the "name" field.
-func (tu *TaskUpdate) SetName(s string) *TaskUpdate {
-	tu.mutation.SetName(s)
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (tu *TaskUpdate) SetLastModifiedAt(t time.Time) *TaskUpdate {
+	tu.mutation.SetLastModifiedAt(t)
+	return tu
+}
+
+// SetClaimedAt sets the "claimedAt" field.
+func (tu *TaskUpdate) SetClaimedAt(t time.Time) *TaskUpdate {
+	tu.mutation.SetClaimedAt(t)
+	return tu
+}
+
+// SetNillableClaimedAt sets the "claimedAt" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableClaimedAt(t *time.Time) *TaskUpdate {
+	if t != nil {
+		tu.SetClaimedAt(*t)
+	}
+	return tu
+}
+
+// ClearClaimedAt clears the value of the "claimedAt" field.
+func (tu *TaskUpdate) ClearClaimedAt() *TaskUpdate {
+	tu.mutation.ClearClaimedAt()
+	return tu
+}
+
+// SetExecStartedAt sets the "execStartedAt" field.
+func (tu *TaskUpdate) SetExecStartedAt(t time.Time) *TaskUpdate {
+	tu.mutation.SetExecStartedAt(t)
+	return tu
+}
+
+// SetNillableExecStartedAt sets the "execStartedAt" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableExecStartedAt(t *time.Time) *TaskUpdate {
+	if t != nil {
+		tu.SetExecStartedAt(*t)
+	}
+	return tu
+}
+
+// ClearExecStartedAt clears the value of the "execStartedAt" field.
+func (tu *TaskUpdate) ClearExecStartedAt() *TaskUpdate {
+	tu.mutation.ClearExecStartedAt()
+	return tu
+}
+
+// SetExecFinishedAt sets the "execFinishedAt" field.
+func (tu *TaskUpdate) SetExecFinishedAt(t time.Time) *TaskUpdate {
+	tu.mutation.SetExecFinishedAt(t)
+	return tu
+}
+
+// SetNillableExecFinishedAt sets the "execFinishedAt" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableExecFinishedAt(t *time.Time) *TaskUpdate {
+	if t != nil {
+		tu.SetExecFinishedAt(*t)
+	}
+	return tu
+}
+
+// ClearExecFinishedAt clears the value of the "execFinishedAt" field.
+func (tu *TaskUpdate) ClearExecFinishedAt() *TaskUpdate {
+	tu.mutation.ClearExecFinishedAt()
+	return tu
+}
+
+// SetOutput sets the "output" field.
+func (tu *TaskUpdate) SetOutput(s string) *TaskUpdate {
+	tu.mutation.SetOutput(s)
+	return tu
+}
+
+// SetNillableOutput sets the "output" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableOutput(s *string) *TaskUpdate {
+	if s != nil {
+		tu.SetOutput(*s)
+	}
+	return tu
+}
+
+// ClearOutput clears the value of the "output" field.
+func (tu *TaskUpdate) ClearOutput() *TaskUpdate {
+	tu.mutation.ClearOutput()
+	return tu
+}
+
+// SetError sets the "error" field.
+func (tu *TaskUpdate) SetError(s string) *TaskUpdate {
+	tu.mutation.SetError(s)
+	return tu
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableError(s *string) *TaskUpdate {
+	if s != nil {
+		tu.SetError(*s)
+	}
+	return tu
+}
+
+// ClearError clears the value of the "error" field.
+func (tu *TaskUpdate) ClearError() *TaskUpdate {
+	tu.mutation.ClearError()
 	return tu
 }
 
@@ -45,6 +147,17 @@ func (tu *TaskUpdate) SetJob(j *Job) *TaskUpdate {
 	return tu.SetJobID(j.ID)
 }
 
+// SetTargetID sets the "target" edge to the Target entity by ID.
+func (tu *TaskUpdate) SetTargetID(id int) *TaskUpdate {
+	tu.mutation.SetTargetID(id)
+	return tu
+}
+
+// SetTarget sets the "target" edge to the Target entity.
+func (tu *TaskUpdate) SetTarget(t *Target) *TaskUpdate {
+	return tu.SetTargetID(t.ID)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tu *TaskUpdate) Mutation() *TaskMutation {
 	return tu.mutation
@@ -56,12 +169,19 @@ func (tu *TaskUpdate) ClearJob() *TaskUpdate {
 	return tu
 }
 
+// ClearTarget clears the "target" edge to the Target entity.
+func (tu *TaskUpdate) ClearTarget() *TaskUpdate {
+	tu.mutation.ClearTarget()
+	return tu
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TaskUpdate) Save(ctx context.Context) (int, error) {
 	var (
 		err      error
 		affected int
 	)
+	tu.defaults()
 	if len(tu.hooks) == 0 {
 		if err = tu.check(); err != nil {
 			return 0, err
@@ -116,15 +236,21 @@ func (tu *TaskUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tu *TaskUpdate) defaults() {
+	if _, ok := tu.mutation.LastModifiedAt(); !ok {
+		v := task.UpdateDefaultLastModifiedAt()
+		tu.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tu *TaskUpdate) check() error {
-	if v, ok := tu.mutation.Name(); ok {
-		if err := task.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Task.name": %w`, err)}
-		}
-	}
 	if _, ok := tu.mutation.JobID(); tu.mutation.JobCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Task.job"`)
+	}
+	if _, ok := tu.mutation.TargetID(); tu.mutation.TargetCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.target"`)
 	}
 	return nil
 }
@@ -147,8 +273,38 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := tu.mutation.Name(); ok {
-		_spec.SetField(task.FieldName, field.TypeString, value)
+	if value, ok := tu.mutation.LastModifiedAt(); ok {
+		_spec.SetField(task.FieldLastModifiedAt, field.TypeTime, value)
+	}
+	if value, ok := tu.mutation.ClaimedAt(); ok {
+		_spec.SetField(task.FieldClaimedAt, field.TypeTime, value)
+	}
+	if tu.mutation.ClaimedAtCleared() {
+		_spec.ClearField(task.FieldClaimedAt, field.TypeTime)
+	}
+	if value, ok := tu.mutation.ExecStartedAt(); ok {
+		_spec.SetField(task.FieldExecStartedAt, field.TypeTime, value)
+	}
+	if tu.mutation.ExecStartedAtCleared() {
+		_spec.ClearField(task.FieldExecStartedAt, field.TypeTime)
+	}
+	if value, ok := tu.mutation.ExecFinishedAt(); ok {
+		_spec.SetField(task.FieldExecFinishedAt, field.TypeTime, value)
+	}
+	if tu.mutation.ExecFinishedAtCleared() {
+		_spec.ClearField(task.FieldExecFinishedAt, field.TypeTime)
+	}
+	if value, ok := tu.mutation.Output(); ok {
+		_spec.SetField(task.FieldOutput, field.TypeString, value)
+	}
+	if tu.mutation.OutputCleared() {
+		_spec.ClearField(task.FieldOutput, field.TypeString)
+	}
+	if value, ok := tu.mutation.Error(); ok {
+		_spec.SetField(task.FieldError, field.TypeString, value)
+	}
+	if tu.mutation.ErrorCleared() {
+		_spec.ClearField(task.FieldError, field.TypeString)
 	}
 	if tu.mutation.JobCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -185,6 +341,41 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.TargetCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   task.TargetTable,
+			Columns: []string{task.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.TargetIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   task.TargetTable,
+			Columns: []string{task.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
@@ -204,9 +395,109 @@ type TaskUpdateOne struct {
 	mutation *TaskMutation
 }
 
-// SetName sets the "name" field.
-func (tuo *TaskUpdateOne) SetName(s string) *TaskUpdateOne {
-	tuo.mutation.SetName(s)
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (tuo *TaskUpdateOne) SetLastModifiedAt(t time.Time) *TaskUpdateOne {
+	tuo.mutation.SetLastModifiedAt(t)
+	return tuo
+}
+
+// SetClaimedAt sets the "claimedAt" field.
+func (tuo *TaskUpdateOne) SetClaimedAt(t time.Time) *TaskUpdateOne {
+	tuo.mutation.SetClaimedAt(t)
+	return tuo
+}
+
+// SetNillableClaimedAt sets the "claimedAt" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableClaimedAt(t *time.Time) *TaskUpdateOne {
+	if t != nil {
+		tuo.SetClaimedAt(*t)
+	}
+	return tuo
+}
+
+// ClearClaimedAt clears the value of the "claimedAt" field.
+func (tuo *TaskUpdateOne) ClearClaimedAt() *TaskUpdateOne {
+	tuo.mutation.ClearClaimedAt()
+	return tuo
+}
+
+// SetExecStartedAt sets the "execStartedAt" field.
+func (tuo *TaskUpdateOne) SetExecStartedAt(t time.Time) *TaskUpdateOne {
+	tuo.mutation.SetExecStartedAt(t)
+	return tuo
+}
+
+// SetNillableExecStartedAt sets the "execStartedAt" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableExecStartedAt(t *time.Time) *TaskUpdateOne {
+	if t != nil {
+		tuo.SetExecStartedAt(*t)
+	}
+	return tuo
+}
+
+// ClearExecStartedAt clears the value of the "execStartedAt" field.
+func (tuo *TaskUpdateOne) ClearExecStartedAt() *TaskUpdateOne {
+	tuo.mutation.ClearExecStartedAt()
+	return tuo
+}
+
+// SetExecFinishedAt sets the "execFinishedAt" field.
+func (tuo *TaskUpdateOne) SetExecFinishedAt(t time.Time) *TaskUpdateOne {
+	tuo.mutation.SetExecFinishedAt(t)
+	return tuo
+}
+
+// SetNillableExecFinishedAt sets the "execFinishedAt" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableExecFinishedAt(t *time.Time) *TaskUpdateOne {
+	if t != nil {
+		tuo.SetExecFinishedAt(*t)
+	}
+	return tuo
+}
+
+// ClearExecFinishedAt clears the value of the "execFinishedAt" field.
+func (tuo *TaskUpdateOne) ClearExecFinishedAt() *TaskUpdateOne {
+	tuo.mutation.ClearExecFinishedAt()
+	return tuo
+}
+
+// SetOutput sets the "output" field.
+func (tuo *TaskUpdateOne) SetOutput(s string) *TaskUpdateOne {
+	tuo.mutation.SetOutput(s)
+	return tuo
+}
+
+// SetNillableOutput sets the "output" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableOutput(s *string) *TaskUpdateOne {
+	if s != nil {
+		tuo.SetOutput(*s)
+	}
+	return tuo
+}
+
+// ClearOutput clears the value of the "output" field.
+func (tuo *TaskUpdateOne) ClearOutput() *TaskUpdateOne {
+	tuo.mutation.ClearOutput()
+	return tuo
+}
+
+// SetError sets the "error" field.
+func (tuo *TaskUpdateOne) SetError(s string) *TaskUpdateOne {
+	tuo.mutation.SetError(s)
+	return tuo
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableError(s *string) *TaskUpdateOne {
+	if s != nil {
+		tuo.SetError(*s)
+	}
+	return tuo
+}
+
+// ClearError clears the value of the "error" field.
+func (tuo *TaskUpdateOne) ClearError() *TaskUpdateOne {
+	tuo.mutation.ClearError()
 	return tuo
 }
 
@@ -221,6 +512,17 @@ func (tuo *TaskUpdateOne) SetJob(j *Job) *TaskUpdateOne {
 	return tuo.SetJobID(j.ID)
 }
 
+// SetTargetID sets the "target" edge to the Target entity by ID.
+func (tuo *TaskUpdateOne) SetTargetID(id int) *TaskUpdateOne {
+	tuo.mutation.SetTargetID(id)
+	return tuo
+}
+
+// SetTarget sets the "target" edge to the Target entity.
+func (tuo *TaskUpdateOne) SetTarget(t *Target) *TaskUpdateOne {
+	return tuo.SetTargetID(t.ID)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
 	return tuo.mutation
@@ -229,6 +531,12 @@ func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
 // ClearJob clears the "job" edge to the Job entity.
 func (tuo *TaskUpdateOne) ClearJob() *TaskUpdateOne {
 	tuo.mutation.ClearJob()
+	return tuo
+}
+
+// ClearTarget clears the "target" edge to the Target entity.
+func (tuo *TaskUpdateOne) ClearTarget() *TaskUpdateOne {
+	tuo.mutation.ClearTarget()
 	return tuo
 }
 
@@ -245,6 +553,7 @@ func (tuo *TaskUpdateOne) Save(ctx context.Context) (*Task, error) {
 		err  error
 		node *Task
 	)
+	tuo.defaults()
 	if len(tuo.hooks) == 0 {
 		if err = tuo.check(); err != nil {
 			return nil, err
@@ -305,15 +614,21 @@ func (tuo *TaskUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tuo *TaskUpdateOne) defaults() {
+	if _, ok := tuo.mutation.LastModifiedAt(); !ok {
+		v := task.UpdateDefaultLastModifiedAt()
+		tuo.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TaskUpdateOne) check() error {
-	if v, ok := tuo.mutation.Name(); ok {
-		if err := task.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Task.name": %w`, err)}
-		}
-	}
 	if _, ok := tuo.mutation.JobID(); tuo.mutation.JobCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Task.job"`)
+	}
+	if _, ok := tuo.mutation.TargetID(); tuo.mutation.TargetCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.target"`)
 	}
 	return nil
 }
@@ -353,8 +668,38 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			}
 		}
 	}
-	if value, ok := tuo.mutation.Name(); ok {
-		_spec.SetField(task.FieldName, field.TypeString, value)
+	if value, ok := tuo.mutation.LastModifiedAt(); ok {
+		_spec.SetField(task.FieldLastModifiedAt, field.TypeTime, value)
+	}
+	if value, ok := tuo.mutation.ClaimedAt(); ok {
+		_spec.SetField(task.FieldClaimedAt, field.TypeTime, value)
+	}
+	if tuo.mutation.ClaimedAtCleared() {
+		_spec.ClearField(task.FieldClaimedAt, field.TypeTime)
+	}
+	if value, ok := tuo.mutation.ExecStartedAt(); ok {
+		_spec.SetField(task.FieldExecStartedAt, field.TypeTime, value)
+	}
+	if tuo.mutation.ExecStartedAtCleared() {
+		_spec.ClearField(task.FieldExecStartedAt, field.TypeTime)
+	}
+	if value, ok := tuo.mutation.ExecFinishedAt(); ok {
+		_spec.SetField(task.FieldExecFinishedAt, field.TypeTime, value)
+	}
+	if tuo.mutation.ExecFinishedAtCleared() {
+		_spec.ClearField(task.FieldExecFinishedAt, field.TypeTime)
+	}
+	if value, ok := tuo.mutation.Output(); ok {
+		_spec.SetField(task.FieldOutput, field.TypeString, value)
+	}
+	if tuo.mutation.OutputCleared() {
+		_spec.ClearField(task.FieldOutput, field.TypeString)
+	}
+	if value, ok := tuo.mutation.Error(); ok {
+		_spec.SetField(task.FieldError, field.TypeString, value)
+	}
+	if tuo.mutation.ErrorCleared() {
+		_spec.ClearField(task.FieldError, field.TypeString)
 	}
 	if tuo.mutation.JobCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -383,6 +728,41 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: job.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.TargetCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   task.TargetTable,
+			Columns: []string{task.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.TargetIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   task.TargetTable,
+			Columns: []string{task.TargetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: target.FieldID,
 				},
 			},
 		}

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 )
@@ -25,6 +26,12 @@ type TomeUpdate struct {
 // Where appends a list predicates to the TomeUpdate builder.
 func (tu *TomeUpdate) Where(ps ...predicate.Tome) *TomeUpdate {
 	tu.mutation.Where(ps...)
+	return tu
+}
+
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (tu *TomeUpdate) SetLastModifiedAt(t time.Time) *TomeUpdate {
+	tu.mutation.SetLastModifiedAt(t)
 	return tu
 }
 
@@ -46,24 +53,17 @@ func (tu *TomeUpdate) SetParameters(s string) *TomeUpdate {
 	return tu
 }
 
-// SetSize sets the "size" field.
-func (tu *TomeUpdate) SetSize(i int) *TomeUpdate {
-	tu.mutation.ResetSize()
-	tu.mutation.SetSize(i)
-	return tu
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableSize(i *int) *TomeUpdate {
-	if i != nil {
-		tu.SetSize(*i)
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableParameters(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetParameters(*s)
 	}
 	return tu
 }
 
-// AddSize adds i to the "size" field.
-func (tu *TomeUpdate) AddSize(i int) *TomeUpdate {
-	tu.mutation.AddSize(i)
+// ClearParameters clears the value of the "parameters" field.
+func (tu *TomeUpdate) ClearParameters() *TomeUpdate {
+	tu.mutation.ClearParameters()
 	return tu
 }
 
@@ -73,43 +73,51 @@ func (tu *TomeUpdate) SetHash(s string) *TomeUpdate {
 	return tu
 }
 
-// SetCreatedAt sets the "createdAt" field.
-func (tu *TomeUpdate) SetCreatedAt(t time.Time) *TomeUpdate {
-	tu.mutation.SetCreatedAt(t)
+// SetEldritch sets the "eldritch" field.
+func (tu *TomeUpdate) SetEldritch(s string) *TomeUpdate {
+	tu.mutation.SetEldritch(s)
 	return tu
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableCreatedAt(t *time.Time) *TomeUpdate {
-	if t != nil {
-		tu.SetCreatedAt(*t)
+// AddFileIDs adds the "files" edge to the File entity by IDs.
+func (tu *TomeUpdate) AddFileIDs(ids ...int) *TomeUpdate {
+	tu.mutation.AddFileIDs(ids...)
+	return tu
+}
+
+// AddFiles adds the "files" edges to the File entity.
+func (tu *TomeUpdate) AddFiles(f ...*File) *TomeUpdate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
 	}
-	return tu
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (tu *TomeUpdate) SetLastModifiedAt(t time.Time) *TomeUpdate {
-	tu.mutation.SetLastModifiedAt(t)
-	return tu
-}
-
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableLastModifiedAt(t *time.Time) *TomeUpdate {
-	if t != nil {
-		tu.SetLastModifiedAt(*t)
-	}
-	return tu
-}
-
-// SetContent sets the "content" field.
-func (tu *TomeUpdate) SetContent(b []byte) *TomeUpdate {
-	tu.mutation.SetContent(b)
-	return tu
+	return tu.AddFileIDs(ids...)
 }
 
 // Mutation returns the TomeMutation object of the builder.
 func (tu *TomeUpdate) Mutation() *TomeMutation {
 	return tu.mutation
+}
+
+// ClearFiles clears all "files" edges to the File entity.
+func (tu *TomeUpdate) ClearFiles() *TomeUpdate {
+	tu.mutation.ClearFiles()
+	return tu
+}
+
+// RemoveFileIDs removes the "files" edge to File entities by IDs.
+func (tu *TomeUpdate) RemoveFileIDs(ids ...int) *TomeUpdate {
+	tu.mutation.RemoveFileIDs(ids...)
+	return tu
+}
+
+// RemoveFiles removes "files" edges to File entities.
+func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return tu.RemoveFileIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -118,6 +126,9 @@ func (tu *TomeUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
+	if err := tu.defaults(); err != nil {
+		return 0, err
+	}
 	if len(tu.hooks) == 0 {
 		if err = tu.check(); err != nil {
 			return 0, err
@@ -172,16 +183,23 @@ func (tu *TomeUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tu *TomeUpdate) defaults() error {
+	if _, ok := tu.mutation.LastModifiedAt(); !ok {
+		if tome.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized tome.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
+		v := tome.UpdateDefaultLastModifiedAt()
+		tu.mutation.SetLastModifiedAt(v)
+	}
+	return nil
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tu *TomeUpdate) check() error {
 	if v, ok := tu.mutation.Name(); ok {
 		if err := tome.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
-		}
-	}
-	if v, ok := tu.mutation.Size(); ok {
-		if err := tome.SizeValidator(v); err != nil {
-			return &ValidationError{Name: "size", err: fmt.Errorf(`ent: validator failed for field "Tome.size": %w`, err)}
 		}
 	}
 	if v, ok := tu.mutation.Hash(); ok {
@@ -210,6 +228,9 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := tu.mutation.LastModifiedAt(); ok {
+		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(tome.FieldName, field.TypeString, value)
 	}
@@ -219,23 +240,68 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Parameters(); ok {
 		_spec.SetField(tome.FieldParameters, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Size(); ok {
-		_spec.SetField(tome.FieldSize, field.TypeInt, value)
-	}
-	if value, ok := tu.mutation.AddedSize(); ok {
-		_spec.AddField(tome.FieldSize, field.TypeInt, value)
+	if tu.mutation.ParametersCleared() {
+		_spec.ClearField(tome.FieldParameters, field.TypeString)
 	}
 	if value, ok := tu.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.CreatedAt(); ok {
-		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
+	if value, ok := tu.mutation.Eldritch(); ok {
+		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.LastModifiedAt(); ok {
-		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
+	if tu.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := tu.mutation.Content(); ok {
-		_spec.SetField(tome.FieldContent, field.TypeBytes, value)
+	if nodes := tu.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tu.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -256,6 +322,12 @@ type TomeUpdateOne struct {
 	mutation *TomeMutation
 }
 
+// SetLastModifiedAt sets the "lastModifiedAt" field.
+func (tuo *TomeUpdateOne) SetLastModifiedAt(t time.Time) *TomeUpdateOne {
+	tuo.mutation.SetLastModifiedAt(t)
+	return tuo
+}
+
 // SetName sets the "name" field.
 func (tuo *TomeUpdateOne) SetName(s string) *TomeUpdateOne {
 	tuo.mutation.SetName(s)
@@ -274,24 +346,17 @@ func (tuo *TomeUpdateOne) SetParameters(s string) *TomeUpdateOne {
 	return tuo
 }
 
-// SetSize sets the "size" field.
-func (tuo *TomeUpdateOne) SetSize(i int) *TomeUpdateOne {
-	tuo.mutation.ResetSize()
-	tuo.mutation.SetSize(i)
-	return tuo
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableSize(i *int) *TomeUpdateOne {
-	if i != nil {
-		tuo.SetSize(*i)
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableParameters(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetParameters(*s)
 	}
 	return tuo
 }
 
-// AddSize adds i to the "size" field.
-func (tuo *TomeUpdateOne) AddSize(i int) *TomeUpdateOne {
-	tuo.mutation.AddSize(i)
+// ClearParameters clears the value of the "parameters" field.
+func (tuo *TomeUpdateOne) ClearParameters() *TomeUpdateOne {
+	tuo.mutation.ClearParameters()
 	return tuo
 }
 
@@ -301,43 +366,51 @@ func (tuo *TomeUpdateOne) SetHash(s string) *TomeUpdateOne {
 	return tuo
 }
 
-// SetCreatedAt sets the "createdAt" field.
-func (tuo *TomeUpdateOne) SetCreatedAt(t time.Time) *TomeUpdateOne {
-	tuo.mutation.SetCreatedAt(t)
+// SetEldritch sets the "eldritch" field.
+func (tuo *TomeUpdateOne) SetEldritch(s string) *TomeUpdateOne {
+	tuo.mutation.SetEldritch(s)
 	return tuo
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableCreatedAt(t *time.Time) *TomeUpdateOne {
-	if t != nil {
-		tuo.SetCreatedAt(*t)
+// AddFileIDs adds the "files" edge to the File entity by IDs.
+func (tuo *TomeUpdateOne) AddFileIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.AddFileIDs(ids...)
+	return tuo
+}
+
+// AddFiles adds the "files" edges to the File entity.
+func (tuo *TomeUpdateOne) AddFiles(f ...*File) *TomeUpdateOne {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
 	}
-	return tuo
-}
-
-// SetLastModifiedAt sets the "lastModifiedAt" field.
-func (tuo *TomeUpdateOne) SetLastModifiedAt(t time.Time) *TomeUpdateOne {
-	tuo.mutation.SetLastModifiedAt(t)
-	return tuo
-}
-
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableLastModifiedAt(t *time.Time) *TomeUpdateOne {
-	if t != nil {
-		tuo.SetLastModifiedAt(*t)
-	}
-	return tuo
-}
-
-// SetContent sets the "content" field.
-func (tuo *TomeUpdateOne) SetContent(b []byte) *TomeUpdateOne {
-	tuo.mutation.SetContent(b)
-	return tuo
+	return tuo.AddFileIDs(ids...)
 }
 
 // Mutation returns the TomeMutation object of the builder.
 func (tuo *TomeUpdateOne) Mutation() *TomeMutation {
 	return tuo.mutation
+}
+
+// ClearFiles clears all "files" edges to the File entity.
+func (tuo *TomeUpdateOne) ClearFiles() *TomeUpdateOne {
+	tuo.mutation.ClearFiles()
+	return tuo
+}
+
+// RemoveFileIDs removes the "files" edge to File entities by IDs.
+func (tuo *TomeUpdateOne) RemoveFileIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.RemoveFileIDs(ids...)
+	return tuo
+}
+
+// RemoveFiles removes "files" edges to File entities.
+func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return tuo.RemoveFileIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -353,6 +426,9 @@ func (tuo *TomeUpdateOne) Save(ctx context.Context) (*Tome, error) {
 		err  error
 		node *Tome
 	)
+	if err := tuo.defaults(); err != nil {
+		return nil, err
+	}
 	if len(tuo.hooks) == 0 {
 		if err = tuo.check(); err != nil {
 			return nil, err
@@ -413,16 +489,23 @@ func (tuo *TomeUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tuo *TomeUpdateOne) defaults() error {
+	if _, ok := tuo.mutation.LastModifiedAt(); !ok {
+		if tome.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized tome.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
+		v := tome.UpdateDefaultLastModifiedAt()
+		tuo.mutation.SetLastModifiedAt(v)
+	}
+	return nil
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TomeUpdateOne) check() error {
 	if v, ok := tuo.mutation.Name(); ok {
 		if err := tome.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
-		}
-	}
-	if v, ok := tuo.mutation.Size(); ok {
-		if err := tome.SizeValidator(v); err != nil {
-			return &ValidationError{Name: "size", err: fmt.Errorf(`ent: validator failed for field "Tome.size": %w`, err)}
 		}
 	}
 	if v, ok := tuo.mutation.Hash(); ok {
@@ -468,6 +551,9 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 			}
 		}
 	}
+	if value, ok := tuo.mutation.LastModifiedAt(); ok {
+		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
+	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(tome.FieldName, field.TypeString, value)
 	}
@@ -477,23 +563,68 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Parameters(); ok {
 		_spec.SetField(tome.FieldParameters, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Size(); ok {
-		_spec.SetField(tome.FieldSize, field.TypeInt, value)
-	}
-	if value, ok := tuo.mutation.AddedSize(); ok {
-		_spec.AddField(tome.FieldSize, field.TypeInt, value)
+	if tuo.mutation.ParametersCleared() {
+		_spec.ClearField(tome.FieldParameters, field.TypeString)
 	}
 	if value, ok := tuo.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.CreatedAt(); ok {
-		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
+	if value, ok := tuo.mutation.Eldritch(); ok {
+		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.LastModifiedAt(); ok {
-		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
+	if tuo.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := tuo.mutation.Content(); ok {
-		_spec.SetField(tome.FieldContent, field.TypeBytes, value)
+	if nodes := tuo.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tuo.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.FilesTable,
+			Columns: []string{tome.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: file.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Tome{config: tuo.config}
 	_spec.Assign = _node.assignValues

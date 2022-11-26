@@ -23,6 +23,12 @@ func (Target) Fields() []ent.Field {
 				entgql.OrderField("NAME"),
 			).
 			Comment("Human-readable name of the target"),
+		field.Time("lastSeenAt").
+			Optional().
+			Annotations(
+				entgql.OrderField("LAST_SEEN_AT"),
+			).
+			Comment("Timestamp of when a task was last claimed or updated for a target"),
 	}
 }
 

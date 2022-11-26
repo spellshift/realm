@@ -15,13 +15,30 @@ type Task struct {
 // Fields of the Task.
 func (Task) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name").
-			NotEmpty().
-			Unique().
+		field.Time("claimedAt").
+			Optional().
 			Annotations(
-				entgql.OrderField("NAME"),
+				entgql.OrderField("CLAIMED_AT"),
 			).
-			Comment("Name of the task"),
+			Comment("Timestamp of when the task was claimed, null if not yet claimed"),
+		field.Time("execStartedAt").
+			Optional().
+			Annotations(
+				entgql.OrderField("EXEC_STARTED_AT"),
+			).
+			Comment("Timestamp of when execution of the task started, null if not yet started"),
+		field.Time("execFinishedAt").
+			Optional().
+			Annotations(
+				entgql.OrderField("EXEC_FINISHED_AT"),
+			).
+			Comment("Timestamp of when execution of the task finished, null if not yet finished"),
+		field.Text("output").
+			Optional().
+			Comment("Output from executing the task"),
+		field.String("error").
+			Optional().
+			Comment("Error, if any, produced while executing the Task"),
 	}
 }
 
@@ -32,5 +49,15 @@ func (Task) Edges() []ent.Edge {
 			Ref("tasks").
 			Required().
 			Unique(),
+		edge.To("target", Target.Type).
+			Required().
+			Unique(),
+	}
+}
+
+// Mixin defines common shared properties for the ent.
+func (Task) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		MixinHistory{}, // createdAt, lastModifiedAt
 	}
 }

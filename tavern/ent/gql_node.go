@@ -60,34 +60,10 @@ func (f *File) Node(ctx context.Context) (node *Node, err error) {
 		Edges:  make([]*Edge, 0),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(f.Name); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "name",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(f.Size); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "int",
-		Name:  "size",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(f.Hash); err != nil {
-		return nil, err
-	}
-	node.Fields[2] = &Field{
-		Type:  "string",
-		Name:  "hash",
-		Value: string(buf),
-	}
 	if buf, err = json.Marshal(f.CreatedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[3] = &Field{
+	node.Fields[0] = &Field{
 		Type:  "time.Time",
 		Name:  "createdAt",
 		Value: string(buf),
@@ -95,9 +71,33 @@ func (f *File) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(f.LastModifiedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[4] = &Field{
+	node.Fields[1] = &Field{
 		Type:  "time.Time",
 		Name:  "lastModifiedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(f.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(f.Size); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "int",
+		Name:  "size",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(f.Hash); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "string",
+		Name:  "hash",
 		Value: string(buf),
 	}
 	return node, nil
@@ -107,34 +107,50 @@ func (j *Job) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     j.ID,
 		Type:   "Job",
-		Fields: make([]*Field, 1),
+		Fields: make([]*Field, 3),
 		Edges:  make([]*Edge, 3),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(j.Name); err != nil {
+	if buf, err = json.Marshal(j.CreatedAt); err != nil {
 		return nil, err
 	}
 	node.Fields[0] = &Field{
+		Type:  "time.Time",
+		Name:  "createdAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(j.LastModifiedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "lastModifiedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(j.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
 		Type:  "string",
 		Name:  "name",
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{
-		Type: "User",
-		Name: "createdBy",
-	}
-	err = j.QueryCreatedBy().
-		Select(user.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	node.Edges[1] = &Edge{
 		Type: "Tome",
 		Name: "tome",
 	}
 	err = j.QueryTome().
 		Select(tome.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[1] = &Edge{
+		Type: "File",
+		Name: "bundle",
+	}
+	err = j.QueryBundle().
+		Select(file.FieldID).
 		Scan(ctx, &node.Edges[1].IDs)
 	if err != nil {
 		return nil, err
@@ -193,7 +209,7 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Target",
-		Fields: make([]*Field, 1),
+		Fields: make([]*Field, 2),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -203,6 +219,14 @@ func (t *Target) Node(ctx context.Context) (node *Node, err error) {
 	node.Fields[0] = &Field{
 		Type:  "string",
 		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.LastSeenAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "lastSeenAt",
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{
@@ -222,16 +246,64 @@ func (t *Task) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Task",
-		Fields: make([]*Field, 1),
-		Edges:  make([]*Edge, 1),
+		Fields: make([]*Field, 7),
+		Edges:  make([]*Edge, 2),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(t.Name); err != nil {
+	if buf, err = json.Marshal(t.CreatedAt); err != nil {
 		return nil, err
 	}
 	node.Fields[0] = &Field{
+		Type:  "time.Time",
+		Name:  "createdAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.LastModifiedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "lastModifiedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.ClaimedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "time.Time",
+		Name:  "claimedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.ExecStartedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "time.Time",
+		Name:  "execStartedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.ExecFinishedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "time.Time",
+		Name:  "execFinishedAt",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Output); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
 		Type:  "string",
-		Name:  "name",
+		Name:  "output",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Error); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
+		Type:  "string",
+		Name:  "error",
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{
@@ -244,6 +316,16 @@ func (t *Task) Node(ctx context.Context) (node *Node, err error) {
 	if err != nil {
 		return nil, err
 	}
+	node.Edges[1] = &Edge{
+		Type: "Target",
+		Name: "target",
+	}
+	err = t.QueryTarget().
+		Select(target.FieldID).
+		Scan(ctx, &node.Edges[1].IDs)
+	if err != nil {
+		return nil, err
+	}
 	return node, nil
 }
 
@@ -252,53 +334,13 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 		ID:     t.ID,
 		Type:   "Tome",
 		Fields: make([]*Field, 7),
-		Edges:  make([]*Edge, 0),
+		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(t.Name); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "name",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Description); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "string",
-		Name:  "description",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Parameters); err != nil {
-		return nil, err
-	}
-	node.Fields[2] = &Field{
-		Type:  "string",
-		Name:  "parameters",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Size); err != nil {
-		return nil, err
-	}
-	node.Fields[3] = &Field{
-		Type:  "int",
-		Name:  "size",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.Hash); err != nil {
-		return nil, err
-	}
-	node.Fields[4] = &Field{
-		Type:  "string",
-		Name:  "hash",
-		Value: string(buf),
-	}
 	if buf, err = json.Marshal(t.CreatedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[5] = &Field{
+	node.Fields[0] = &Field{
 		Type:  "time.Time",
 		Name:  "createdAt",
 		Value: string(buf),
@@ -306,10 +348,60 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(t.LastModifiedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[6] = &Field{
+	node.Fields[1] = &Field{
 		Type:  "time.Time",
 		Name:  "lastModifiedAt",
 		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Description); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "description",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Parameters); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "string",
+		Name:  "parameters",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Hash); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "string",
+		Name:  "hash",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(t.Eldritch); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
+		Type:  "string",
+		Name:  "eldritch",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "File",
+		Name: "files",
+	}
+	err = t.QueryFiles().
+		Select(file.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
 	}
 	return node, nil
 }

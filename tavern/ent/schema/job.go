@@ -29,13 +29,21 @@ func (Job) Fields() []ent.Field {
 // Edges of the Job.
 func (Job) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("createdBy", User.Type).
-			Required().
-			Unique(),
 		edge.To("tome", Tome.Type).
+			Comment("Tome that this job will be executing").
 			Required().
 			Unique(),
-		edge.To("tasks", Task.Type),
+		edge.To("bundle", File.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Bundle file that the executing tome depends on (if any)").
+			Unique(),
+		edge.To("tasks", Task.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Tasks tracking the status and output of individual tome execution on targets"),
 	}
 }
 
@@ -43,5 +51,15 @@ func (Job) Edges() []ent.Edge {
 func (Job) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.QueryField(),
+		entgql.Mutations(
+			entgql.MutationCreate(),
+		),
+	}
+}
+
+// Mixin defines common shared properties for the ent.
+func (Job) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		MixinHistory{}, // createdAt, lastModifiedAt
 	}
 }
