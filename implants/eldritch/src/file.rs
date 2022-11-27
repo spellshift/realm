@@ -69,7 +69,7 @@ fn methods(builder: &mut MethodsBuilder) {
         copy_impl::copy(src, dst)?;
         Ok(NoneType{})
     }
-    fn compress(_this: FileLibrary, src: String, dst: String) -> NoneType {
+    fn compress(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         compress_impl::compress(src, dst)?;
         Ok(NoneType{})

@@ -27,7 +27,7 @@ mod tests {
         a.globals_add(globals);
         a.all_true(
             r#"
-dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "timestomp", "write"]
+dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "timestomp", "write"]
 dir(process) == ["kill", "list", "name"]
 dir(sys) == ["exec", "is_linux", "is_macos", "is_windows", "shell"]
 "#,
