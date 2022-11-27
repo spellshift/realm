@@ -25,7 +25,7 @@ mod tests {
 
         let mut a = Assert::new();
         a.globals_add(globals);
-        a.eq(r#"file.template('/tmp/tmp.j2','/tmp/tmp',{"jobs": [{"name":"test","jobid":1},{ "name":"test2","jobid":2},{ "name":"job3","jobid":3}]},True)"#, "Fail");
+        a.eq(r#"file.template('/tmp/tmp.j2','/tmp/tmp',{"config": {"name":"nginx.config","path":"/etc/ngnix.config"}},True)"#, "Fail");
         a.all_true(
             r#"
 dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all",  "template", "timestomp", "write"]
