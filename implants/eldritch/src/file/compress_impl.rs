@@ -1,4 +1,4 @@
-use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write, BufWriter, BufReader, BufRead, self}};
+use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write}};
 
 use anyhow::Result;
 use flate2::{Compression};
@@ -44,7 +44,7 @@ pub fn compress(src: String, dst: String) -> Result<()> {
     let f_src = std::io::BufReader::new(std::fs::File::open(tmp_src.clone()).unwrap());
     let mut f_dst = std::io::BufWriter::new(
             OpenOptions::new()
-            .create(true) //Do we want to create the file if it doesn't exist? - Yes!
+            .create(true)
             .write(true)    
             .open(dst.clone())?
     );
@@ -78,7 +78,6 @@ mod tests {
         let path_src = String::from(tmp_file_src.path().to_str().unwrap());
         let tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
-        // let _res = tmp_file_dst.close();
 
         // Write to file
         tmp_file_src.write_all(b"Hello, world!")?;
