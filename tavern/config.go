@@ -50,7 +50,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 
 		// If none are set, default to auth disabled
 		if clientID == "" && clientSecret == "" && domain == "" {
-			log.Printf("WARNING: OAuth is not configured, authentication disabled")
+			log.Printf("[WARN] OAuth is not configured, authentication disabled")
 			return
 		}
 
@@ -79,40 +79,32 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 // ConfigureMySQLFromEnv sets MySQL config values from the environment
 func ConfigureMySQLFromEnv() func(*Config) {
 	return func(cfg *Config) {
-		var (
-			addr   = ""
-			net    = "tcp"
-			user   = "root"
-			passwd = ""
-			dbName = "tavern"
-		)
+		mysqlConfig := mysql.Config{
+			Net:       "tcp",
+			User:      "root",
+			DBName:    "tavern",
+			ParseTime: true,
+		}
+
 		if envAddr := os.Getenv("MYSQL_ADDR"); envAddr != "" {
-			addr = envAddr
+			mysqlConfig.Addr = envAddr
 		} else {
-			log.Printf("no value found for environment var 'MYSQL_ADDR', starting tavern with SQLite")
+			log.Printf("[WARN] MySQL is not configured, using SQLite")
 			return
 		}
 		if envNet := os.Getenv("MYSQL_NET"); envNet != "" {
-			net = envNet
+			mysqlConfig.Net = envNet
 		}
 		if envUser := os.Getenv("MYSQL_USER"); envUser != "" {
-			user = envUser
+			mysqlConfig.User = envUser
 		}
 		if envPasswd := os.Getenv("MYSQL_PASSWD"); envPasswd != "" {
-			passwd = envPasswd
+			mysqlConfig.Passwd = envPasswd
 		}
 		if envDB := os.Getenv("MYSQL_DB"); envDB != "" {
-			dbName = envDB
+			mysqlConfig.DBName = envDB
 		}
 
-		mysqlConfig := mysql.Config{
-			Addr:      addr,
-			Net:       net,
-			User:      user,
-			Passwd:    passwd,
-			DBName:    dbName,
-			ParseTime: true,
-		}
 		cfg.mysql = mysqlConfig.FormatDSN()
 	}
 }

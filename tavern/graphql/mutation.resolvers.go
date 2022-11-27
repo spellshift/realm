@@ -5,215 +5,94 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent"
-	"github.com/kcarretto/realm/tavern/ent/implant"
-	"github.com/kcarretto/realm/tavern/ent/implantconfig"
+	"github.com/kcarretto/realm/tavern/ent/file"
+	"github.com/kcarretto/realm/tavern/graphql/generated"
 )
 
-func (r *mutationResolver) Callback(ctx context.Context, info CallbackInput) (*CallbackResponse, error) {
-	// Get the viewer
-	vc, err := auth.ImplantFromContext(ctx)
+// CreateJob is the resolver for the createJob field.
+func (r *mutationResolver) CreateJob(ctx context.Context, targetIDs []int, input ent.CreateJobInput) (*ent.Job, error) {
+	// 1. Begin Transaction
+	tx, err := r.client.Tx(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
 	}
+	client := tx.Client()
 
-	// Get the implant config based on the viewer
-	configID, err := r.client.ImplantConfig.Query().
-		Where(
-			implantconfig.AuthToken(vc.AuthToken),
-		).
-		OnlyID(ctx)
+	// 2. Rollback transaction if we panic
+	defer func() {
+		if v := recover(); v != nil {
+			tx.Rollback()
+			panic(v)
+		}
+	}()
+
+	// 3. Load Tome
+	jobTome, err := client.Tome.Get(ctx, input.TomeID)
 	if err != nil {
-		return nil, err
+		return nil, rollback(tx, fmt.Errorf("failed to load tome: %w", err))
 	}
 
-	// Load the target
-	target, err := r.client.Target.Get(ctx, info.TargetID)
+	// 4. Load Tome Files (ordered so that hashing is always the same)
+	bundleFiles, err := jobTome.QueryFiles().
+		Order(ent.Asc(file.FieldID)).
+		All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, rollback(tx, fmt.Errorf("failed to load tome files: %w", err))
 	}
 
-	// Upsert the implant
-	impQuery := r.client.Implant.Query().
-		Where(implant.SessionID(info.SessionID))
-
-	var imp *ent.Implant
-	if exists := impQuery.Clone().ExistX(ctx); exists {
-		impID := impQuery.OnlyIDX(ctx)
-		imp = r.client.Implant.UpdateOneID(impID).
-			SetProcessName(info.ProcessName).
-			SaveX(ctx)
-	} else {
-		imp = r.client.Implant.Create().
-			SetSessionID(info.SessionID).
-			SetProcessName(info.ProcessName).
-			SetConfigID(configID).
-			SetTarget(target).
-			SaveX(ctx)
+	// 5. Create bundle (if tome has files)
+	var bundleID *int
+	if len(bundleFiles) > 0 {
+		bundle, err := createBundle(ctx, client, bundleFiles)
+		if err != nil || bundle == nil {
+			return nil, rollback(tx, fmt.Errorf("failed to create bundle: %w", err))
+		}
+		bundleID = &bundle.ID
 	}
 
-	// Format the response
-	resp := CallbackResponse{
-		Implant: imp,
-	}
-
-	return &resp, nil
-}
-
-func (r *mutationResolver) CreateImplantCallbackConfig(ctx context.Context, config CreateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error) {
-	return r.client.ImplantCallbackConfig.Create().
-		SetURI(config.URI).
-		SetNillableProxyURI(config.ProxyURI).
-		SetNillablePriority(config.Priority).
-		SetNillableTimeout(config.Timeout).
-		SetNillableInterval(config.Interval).
-		SetNillableJitter(config.Jitter).
+	// 6. Create Job
+	job, err := client.Job.Create().
+		SetInput(input).
+		SetNillableBundleID(bundleID).
+		SetTome(jobTome).
 		Save(ctx)
-}
-
-func (r *mutationResolver) UpdateImplantCallbackConfig(ctx context.Context, config UpdateImplantCallbackConfigInput) (*ent.ImplantCallbackConfig, error) {
-	cfg, err := r.client.ImplantCallbackConfig.Get(ctx, config.ID)
 	if err != nil {
-		return nil, err
+		return nil, rollback(tx, fmt.Errorf("failed to create job: %w", err))
 	}
 
-	mutation := cfg.Update().
-		SetNillableProxyURI(config.ProxyURI).
-		SetNillablePriority(config.Priority).
-		SetNillableTimeout(config.Timeout).
-		SetNillableInterval(config.Interval).
-		SetNillableJitter(config.Jitter)
-	if config.URI != nil {
-		mutation = mutation.SetURI(*config.URI)
-	}
-	return mutation.Save(ctx)
-}
-
-func (r *mutationResolver) DeleteImplantCallbackConfig(ctx context.Context, id int) (int, error) {
-	return id, r.client.ImplantCallbackConfig.DeleteOneID(id).Exec(ctx)
-}
-
-func (r *mutationResolver) CreateImplantServiceConfig(ctx context.Context, config CreateImplantServiceConfigInput) (*ent.ImplantServiceConfig, error) {
-	return r.client.ImplantServiceConfig.Create().
-		SetName(config.Name).
-		SetNillableDescription(config.Description).
-		SetExecutablePath(config.ExecutablePath).
-		Save(ctx)
-}
-
-func (r *mutationResolver) UpdateImplantServiceConfig(ctx context.Context, config UpdateImplantServiceConfigInput) (*ent.ImplantServiceConfig, error) {
-	cfg, err := r.client.ImplantServiceConfig.Get(ctx, config.ID)
-	if err != nil {
-		return nil, err
+	// 7. Create tasks for each target
+	for _, tid := range targetIDs {
+		_, err := client.Task.Create().
+			SetJob(job).
+			SetTargetID(tid).
+			Save(ctx)
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to create task for target (%q): %w", tid, err))
+		}
 	}
 
-	mutation := cfg.Update().
-		SetNillableDescription(config.Description)
-	if config.Name != nil {
-		mutation = mutation.SetName(*config.Name)
+	// 8. Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
-	if config.ExecutablePath != nil {
-		mutation = mutation.SetExecutablePath(*config.ExecutablePath)
-	}
-	return mutation.Save(ctx)
+
+	return job, nil
 }
 
-func (r *mutationResolver) DeleteImplantServiceConfig(ctx context.Context, id int) (int, error) {
-	return id, r.client.ImplantServiceConfig.DeleteOneID(id).Exec(ctx)
+// ClaimTasks is the resolver for the claimTasks field.
+func (r *mutationResolver) ClaimTasks(ctx context.Context, targetID int) ([]*ent.Task, error) {
+	panic(fmt.Errorf("not implemented: ClaimTasks - claimTasks"))
 }
 
-func (r *mutationResolver) CreateImplantConfig(ctx context.Context, config CreateImplantConfigInput) (*ent.ImplantConfig, error) {
-	return r.client.ImplantConfig.Create().
-		SetName(config.Name).
-		AddCallbackConfigIDs(config.CallbackConfigIDs...).
-		AddServiceConfigIDs(config.ServiceConfigIDs...).
-		Save(ctx)
+// UpdateUser is the resolver for the updateUser field.
+func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error) {
+	return r.client.User.UpdateOneID(userID).SetInput(input).Save(ctx)
 }
 
-func (r *mutationResolver) UpdateImplantConfig(ctx context.Context, config UpdateImplantConfigInput) (*ent.ImplantConfig, error) {
-	mutation := r.client.ImplantConfig.UpdateOneID(config.ID).
-		AddCallbackConfigIDs(config.AddCallbackConfigIDs...).
-		RemoveCallbackConfigIDs(config.RemoveCallbackConfigIDs...).
-		AddServiceConfigIDs(config.AddServiceConfigIDs...).
-		RemoveServiceConfigIDs(config.RemoveServiceConfigIDs...)
-	if config.Name != nil {
-		mutation.SetName(*config.Name)
-	}
-	return mutation.Save(ctx)
-}
-
-func (r *mutationResolver) DeleteImplantConfig(ctx context.Context, id int) (int, error) {
-	return id, r.client.ImplantConfig.DeleteOneID(id).Exec(ctx)
-}
-
-func (r *mutationResolver) CreateDeploymentConfig(ctx context.Context, config CreateDeploymentConfigInput) (*ent.DeploymentConfig, error) {
-	return r.client.DeploymentConfig.Create().
-		SetName(config.Name).
-		SetNillableCmd(config.Cmd).
-		SetNillableStartCmd(config.StartCmd).
-		SetNillableFileDst(config.FileDst).
-		SetNillableImplantConfigID(config.ImplantConfigID).
-		SetNillableFileID(config.FileID).
-		Save(ctx)
-}
-
-func (r *mutationResolver) UpdateDeploymentConfig(ctx context.Context, config UpdateDeploymentConfigInput) (*ent.DeploymentConfig, error) {
-	mutation := r.client.DeploymentConfig.UpdateOneID(config.ID).
-		SetNillableCmd(config.Cmd).
-		SetNillableStartCmd(config.StartCmd).
-		SetNillableFileDst(config.FileDst).
-		SetNillableImplantConfigID(config.ImplantConfigID).
-		SetNillableFileID(config.FileID)
-	if config.Name != nil {
-		mutation = mutation.SetName(*config.Name)
-	}
-	return mutation.Save(ctx)
-}
-
-func (r *mutationResolver) DeleteDeploymentConfig(ctx context.Context, id int) (int, error) {
-	return id, r.client.DeploymentConfig.DeleteOneID(id).Exec(ctx)
-}
-
-func (r *mutationResolver) CreateTag(ctx context.Context, tag CreateTagInput) (*ent.Tag, error) {
-	return r.client.Tag.Create().
-		SetName(tag.Name).
-		AddTargetIDs(tag.TargetIDs...).
-		Save(ctx)
-}
-
-func (r *mutationResolver) UpdateTag(ctx context.Context, tag UpdateTagInput) (*ent.Tag, error) {
-	mutation := r.client.Tag.UpdateOneID(tag.ID).
-		AddTargetIDs(tag.AddTargetIDs...).
-		RemoveTargetIDs(tag.RemoveTargetIDs...)
-	if tag.Name != nil {
-		mutation = mutation.SetName(*tag.Name)
-	}
-	return mutation.Save(ctx)
-}
-
-func (r *mutationResolver) DeleteTag(ctx context.Context, id int) (int, error) {
-	return id, r.client.Tag.DeleteOneID(id).Exec(ctx)
-}
-
-func (r *mutationResolver) CreateTarget(ctx context.Context, target CreateTargetInput) (*ent.Target, error) {
-	return r.client.Target.Create().
-		SetName(target.Name).
-		SetForwardConnectIP(target.ForwardConnectIP).
-		Save(ctx)
-}
-
-func (r *mutationResolver) CreateCredential(ctx context.Context, credential CreateCredentialInput) (*ent.Credential, error) {
-	return r.client.Credential.Create().
-		SetTargetID(credential.TargetID).
-		SetPrincipal(credential.Principal).
-		SetSecret(credential.Secret).
-		SetKind(credential.Kind).
-		Save(ctx)
-}
-
-// Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }

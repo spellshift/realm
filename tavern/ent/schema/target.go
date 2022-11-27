@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -16,37 +17,31 @@ type Target struct {
 func (Target) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
-			Unique().
 			NotEmpty().
-			MinLen(3).
-			MaxLen(50).
+			Unique().
 			Annotations(
 				entgql.OrderField("NAME"),
 			).
-			Comment("A human readable identifier for the target system."),
-		field.String("forwardConnectIP").
-			Unique().
-			NotEmpty().
+			Comment("Human-readable name of the target"),
+		field.Time("lastSeenAt").
+			Optional().
 			Annotations(
-				entgql.OrderField("FORWARD_CONNECT_IP"),
+				entgql.OrderField("LAST_SEEN_AT"),
 			).
-			Comment("The IP Address that can be used to connect to the target using a protocol like SSH."),
+			Comment("Timestamp of when a task was last claimed or updated for a target"),
 	}
 }
 
 // Edges of the Target.
 func (Target) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("implants", Implant.Type).
-			Ref("target").
-			Comment("Implants that are (or will be) installed on the target."),
-		edge.From("deployments", Deployment.Type).
-			Ref("target").
-			Comment("Deployments that occurred on this target."),
-		edge.To("credentials", Credential.Type).
-			Annotations(entgql.Bind()).
-			Comment("A Target can have many credentials connected to it"),
-		edge.To("tags", Tag.Type).
-			Comment("Tags to categorize the target system."),
+		edge.To("tags", Tag.Type),
+	}
+}
+
+// Annotations describes additional information for the ent.
+func (Target) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.QueryField(),
 	}
 }

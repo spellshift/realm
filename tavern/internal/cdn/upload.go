@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/internal/errors"
-	"golang.org/x/crypto/sha3"
 )
 
 // DefaultMaxUploadSize defines the maximum number of bytes an uploaded file can be.
@@ -46,23 +44,16 @@ func NewUploadHandler(graph *ent.Client) http.Handler {
 
 		// Create or Update the file
 		var fileID int
-		hash := fmt.Sprintf("%x", sha3.Sum256(fileContent))
 
 		if exists {
 			fileID = fileQuery.OnlyIDX(ctx)
 			graph.File.UpdateOneID(fileID).
-				SetSize(len(fileContent)).
-				SetHash(hash).
 				SetContent(fileContent).
-				SetLastModifiedAt(time.Now()).
 				SaveX(ctx)
 		} else {
 			fileID = graph.File.Create().
 				SetName(fileName).
-				SetSize(len(fileContent)).
-				SetHash(hash).
 				SetContent(fileContent).
-				SetLastModifiedAt(time.Now()).
 				SaveX(ctx).ID
 		}
 

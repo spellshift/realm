@@ -1,7 +1,9 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -15,10 +17,15 @@ type Tag struct {
 func (Tag) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
-			Unique().
 			NotEmpty().
-			MinLen(3).
-			Comment("The name of the tag."),
+			Unique().
+			Annotations(
+				entgql.OrderField("NAME"),
+			).
+			Comment("Name of the tag"),
+		field.Enum("kind").
+			Values("group", "service").
+			Comment("Describes the type of tag this is"),
 	}
 }
 
@@ -26,6 +33,14 @@ func (Tag) Fields() []ent.Field {
 func (Tag) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("targets", Target.Type).
-			Ref("tags"),
+			Ref("tags").
+			Required(),
+	}
+}
+
+// Annotations describes additional information for the ent.
+func (Tag) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.QueryField(),
 	}
 }

@@ -7,41 +7,50 @@ import (
 	"context"
 
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/graphql/generated"
 )
 
+// Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
 	return r.client.Noder(ctx, id)
 }
 
+// Nodes is the resolver for the nodes field.
 func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
 	return r.client.Noders(ctx, ids)
 }
 
-func (r *queryResolver) Targets(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.TargetOrder, where *ent.TargetWhereInput) (*ent.TargetConnection, error) {
-	return r.client.Target.Query().
-		Paginate(ctx, after, first, before, last,
-			ent.WithTargetOrder(orderBy),
-			ent.WithTargetFilter(where.Filter),
-		)
+// Files is the resolver for the files field.
+func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
+	return r.client.File.Query().All(ctx)
 }
 
-func (r *queryResolver) Credentials(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.CredentialOrder, where *ent.CredentialWhereInput) (*ent.CredentialConnection, error) {
-	return r.client.Credential.Query().
-		Paginate(ctx, after, first, before, last,
-			ent.WithCredentialOrder(orderBy),
-			ent.WithCredentialFilter(where.Filter),
-		)
+// Jobs is the resolver for the jobs field.
+func (r *queryResolver) Jobs(ctx context.Context) ([]*ent.Job, error) {
+	return r.client.Job.Query().All(ctx)
 }
 
-func (r *queryResolver) Files(ctx context.Context, after *ent.Cursor, first *int, before *ent.Cursor, last *int, orderBy *ent.FileOrder, where *ent.FileWhereInput) (*ent.FileConnection, error) {
-	return r.client.File.Query().
-		Paginate(ctx, after, first, before, last,
-			ent.WithFileOrder(orderBy),
-			ent.WithFileFilter(where.Filter),
-		)
+// Tags is the resolver for the tags field.
+func (r *queryResolver) Tags(ctx context.Context) ([]*ent.Tag, error) {
+	return r.client.Tag.Query().All(ctx)
 }
 
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+// Targets is the resolver for the targets field.
+func (r *queryResolver) Targets(ctx context.Context) ([]*ent.Target, error) {
+	return r.client.Target.Query().All(ctx)
+}
+
+// Tomes is the resolver for the tomes field.
+func (r *queryResolver) Tomes(ctx context.Context) ([]*ent.Tome, error) {
+	return r.client.Tome.Query().All(ctx)
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
+	return r.client.User.Query().All(ctx)
+}
+
+// Query returns generated.QueryResolver implementation.
+func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
