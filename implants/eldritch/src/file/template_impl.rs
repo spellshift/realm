@@ -4,16 +4,6 @@ use anyhow::Result;
 use starlark::{collections::SmallMap};
 use starlark::values::Value;
 use tera::{Context, Tera};
-// use serde_json::Value;
-
-// fn build_context_json(json_data: String) -> Result<Context> {
-//     let serde_dict: serde_json::Value = serde_json::from_str(json_data.as_str())?;
-//     let mut context = Context::new();
-//     for (key, value) in serde_dict.as_object().unwrap() {
-//         context.insert(key.as_str(), &value);
-//     }
-//     return Ok(context);
-// }
 
 fn build_context(dict_data: SmallMap<String, Value>) -> Result<Context> {
     let mut context = Context::new();
