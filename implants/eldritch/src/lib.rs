@@ -25,7 +25,6 @@ mod tests {
 
         let mut a = Assert::new();
         a.globals_add(globals);
-        a.eq(r#"file.template('/tmp/tmp.j2','/tmp/tmp',{"config": {"name":"nginx.config","path":"/etc/ngnix.config"}},True)"#, "Fail");
         a.all_true(
             r#"
 dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all",  "template", "timestomp", "write"]
