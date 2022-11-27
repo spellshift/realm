@@ -42,7 +42,7 @@ The <b>file.copy</b> copies a file from src path to dst path. If dst path doesn'
 ### file.compress
 `file.compress(src: str, dst: str) -> None`
 
-The <b>file.compress</b> function compresses a file using the XZ algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
+The <b>file.compress</b> function compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
 
 ### file.download
 `file.download(uri: str, dst: str) -> None`
