@@ -12,6 +12,7 @@ mod tests {
     use super::file::FileLibrary;
     use super::process::ProcessLibrary;
     use super::sys::SysLibrary;
+    use super::pivot::PivotLibrary;
 
     // just checks dir...
     #[test]
@@ -21,6 +22,7 @@ mod tests {
             const file: FileLibrary = FileLibrary();
             const process: ProcessLibrary = ProcessLibrary();
             const sys: SysLibrary = SysLibrary();
+            const pivot: PivotLibrary = PivotLibrary();
         }
 
         let mut a = Assert::new();
@@ -30,6 +32,7 @@ mod tests {
 dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "timestomp", "write"]
 dir(process) == ["kill", "list", "name"]
 dir(sys) == ["exec", "is_linux", "is_macos", "is_windows", "shell"]
+dir(pivot) == []
 "#,
         );
     }

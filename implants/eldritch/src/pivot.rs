@@ -9,7 +9,9 @@ mod bind_proxy_impl;
 
 use derive_more::Display;
 
+use starlark::values::dict::Dict;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
+use starlark::values::list::List;
 use starlark::values::none::NoneType;
 use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
@@ -65,9 +67,9 @@ fn methods(builder: &mut MethodsBuilder) {
         smb_exec_impl::smb_exec(target, port, username, password, hash, command)
     }     
     // May want these too: PSRemoting, WMI, WinRM
-    fn port_scan(this:  PivotLibrary, target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String) ->  anyhow::Result<Vec<String>> {
+    fn port_scan(this:  PivotLibrary, target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        port_scan_impl::port_scan(target_cidrs, ports, portocol)
+        port_scan_impl::port_scan(target_cidrs, ports, portocol, timeout)
     }
     fn arp_scan(this:  PivotLibrary, target_cidrs: Vec<String>) ->  anyhow::Result<Vec<String>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
