@@ -2,7 +2,8 @@ use std::net::Ipv4Addr;
 use anyhow::Result;
 use starlark::const_frozen_string;
 use starlark::values::dict::Dict;
-use starlark::values::Value;
+use starlark::values::list::List;
+use starlark::values::{Value, Heap, FrozenHeap};
 use starlark::collections::SmallMap;
 
 use tokio::task;
@@ -330,13 +331,34 @@ pub fn port_scan<'a>(target_cidrs: Vec<String>, ports: Vec<i32>, portocol: Strin
     match response {
         Ok(result) => {
             // Transform our vector
-            let mut final_res: Vec<Dict> = vec![];
-            let res_sm_one: SmallMap<Value, Value> = SmallMap::new();
-            let mut res_dict_one = Dict::new(res_sm_one);
-            res_dict_one.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), const_frozen_string!("127.0.0.1").to_value());
-            res_dict_one.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), const_frozen_string!("22").to_value());
-            res_dict_one.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), const_frozen_string!("open").to_value());
-            final_res.append(&mut vec![res_dict_one]);
+            // let mut final_res: Vec<Dict> = vec![];
+            // let res_sm_one: SmallMap<Value, Value> = SmallMap::new();
+            // let mut res_dict_one = Dict::new(res_sm_one);
+            // res_dict_one.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), "127.0.0.1".to);
+            // res_dict_one.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), const_frozen_string!("22").to_value());
+            // res_dict_one.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), const_frozen_string!("open").to_value());
+            // final_res.append(&mut vec![res_dict_one]);
+            let mut final_res = vec![];
+            for scan_row in result{
+                let mut scan_row_sm = SmallMap::new();
+                let mut scan_row_dict = Dict::new(scan_row_sm);
+                
+                // let ip_heap = FrozenHeap::new();
+                // let ip_value = ip_heap.alloc_str(scan_row.0.as_str());
+                // scan_row_dict.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), ip_value.to_value() );
+
+                // scan_row_dict.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), Value::new_int(scan_row.1) );
+
+                // let protocol_heap = FrozenHeap::new();
+                // let protocol_value = protocol_heap.alloc_str(scan_row.2.as_str());
+                // scan_row_dict.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed().unwrap(), protocol_value.to_value() );
+
+                // let status_heap = FrozenHeap::new();
+                // let status_value = status_heap.alloc_str(scan_row.3.as_str());
+                // scan_row_dict.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value.to_value() );
+
+                final_res.append(scan_row_dict)
+            }
             return Ok(final_res);
         },
         Err(err) => return Err(anyhow::anyhow!("The port_scan command failed: {:?}", err)),
@@ -352,6 +374,7 @@ mod tests {
     use starlark::assert::Assert;
     use starlark::const_frozen_string;
     use starlark::environment::GlobalsBuilder;
+    use starlark::starlark_module;
     use starlark::values::StringValue;
     use starlark::values::ValueLike;
     use starlark::values::string::StarlarkStr;
@@ -649,8 +672,7 @@ mod tests {
 
     #[test]
     fn test_starlark_dict_from_interpreter() -> anyhow::Result<()>{
-
-        // Setup environment
+        // Setup test ports
         let test_cidr =  vec!["127.0.0.1/32".to_string()];
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -661,66 +683,40 @@ mod tests {
             allocate_localhost_unused_ports(4,"tcp".to_string())
         );
 
-        // Set expected outcome variables
         let test_ip: String = "127.0.0.1".to_string();
         let test_ports = response.unwrap();
 
-        // Define starlark env.
-        // let globals = GlobalsBuilder::extended().with(eldritch).build();
+        // Create test script
+        let test_content = format!(r#"
+ports_to_scan=[{},{},{},{}]
+func_port_scan(ports_to_scan)
+"#, test_ports[0], test_ports[1], test_ports[2], test_ports[3]);
+        // Setup starlark interpreter with handle to our function
+        let ast: AstModule;
+        match AstModule::parse(
+                "test.eldritch",
+                test_content.to_owned(),
+                &Dialect::Standard
+            ) {
+                Ok(res) => ast = res,
+                Err(err) => return Err(err),
+        }
+    
+        #[starlark_module]
         fn func_port_scan(builder: &mut GlobalsBuilder) {
-            fn func_port_scan<'a>(func_test_ports: Vec<i32>) -> Result<Vec<Dict<'a>>> {
+            fn func_port_scan<'v>(func_test_ports: Vec<i32>) -> anyhow::Result<Vec<Dict<'v>>> {
                 Ok(port_scan(vec!["127.0.0.1/32".to_string()], func_test_ports.clone(), String::from("tcp"), 5)?)
             }
         }
-
-        fn globals(builder: &mut GlobalsBuilder) {
-            fn hello() -> Result<String> {
-                Ok("Hello World".to_string())
-            }
-        }
-
-
-        // let mut a = Assert::new();
-        // a.globals_add(test_func);
-
-        // Assert
-        // let result = port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5)?;
-
-
-//         let content = format!(r#"
-// ports_to_scan=[{}, {}, {}, {}]
-// expected_res=[{{"ip":"{test_ip}","port":{},"protocol":"tcp","status":"closed"}},{{"ip":"{test_ip}","port":{},"protocol":"tcp","status":"closed"}},{{"ip":"{test_ip}","port":{},"protocol":"tcp","status":"closed"}},{{"ip":"{test_ip}","port":{},"protocol":"tcp","status":"closed"}}]
-
-// hello()
-// "#, test_ports[0], test_ports[1], test_ports[2], test_ports[3], test_ports[0], test_ports[1], test_ports[2], test_ports[3]);
-
-        let content = r#"
-hello()
-"#;
-
-        // We first parse the content, giving a filename and the Starlark
-        // `Dialect` we'd like to use (we pick standard).
-        let ast: AstModule = AstModule::parse("hello_world.star", content.to_owned(), &Dialect::Standard)?;
-
-        // We create a `Globals`, defining the standard library functions available.
-        // The `standard` function uses those defined in the Starlark specification.
-        let globals = GlobalsBuilder::extended().with(globals).build();
-
-        // We create a `Module`, which stores the global variables for our calculation.
+    
+        let globals = GlobalsBuilder::extended().with(func_port_scan).build();
         let module: Module = Module::new();
-
-        // We create an evaluator, which controls how evaluation occurs.
+    
         let mut eval: Evaluator = Evaluator::new(&module);
-
-        // And finally we evaluate the code using the evaluator.
-        let res: Value = eval.eval_module(ast, &globals)?;
-
-        let tmp_dict = res.to_json().unwrap();
-
-        println!("{:?}", tmp_dict);
-        // println!("{:?}", result);
-        // assert_eq!(res.unpack_str(), Some("hello world!"));
-
+    
+        let res: Value = eval.eval_module(ast, &globals).unwrap();
+    
+        println!("{:?}", res);
         Ok(())
     }
 
