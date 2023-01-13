@@ -357,7 +357,7 @@ pub fn port_scan<'a>(target_cidrs: Vec<String>, ports: Vec<i32>, portocol: Strin
                 // let status_value = status_heap.alloc_str(scan_row.3.as_str());
                 // scan_row_dict.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value.to_value() );
 
-                final_res.append(scan_row_dict)
+                // final_res.append(scan_row_dict)
             }
             return Ok(final_res);
         },
