@@ -233,7 +233,7 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                         "An attempt was made to access a socket in a way forbidden by its access permissions. (os error 10013)" if cfg!(target_os = "windows") => {
                            return Err(anyhow::anyhow!("Low resources try again"));
                         },
-                        // This may also be a way windows can tell us it has run out of TCP sockets to bind.
+                        // This is also be a way windows can tell us it has run out of TCP sockets to bind.
                         "An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full. (os error 10055)" if cfg!(target_os = "windows") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
@@ -588,13 +588,13 @@ mod tests {
     // Test scanning a lot of ports all at once. Can the OS handle it.
     #[tokio::test]
     async fn test_portscan_tcp_max() -> anyhow::Result<()>{
-        if cfg!(target_os = "windows") {
-            let test_ports: Vec<i32> =  (1..65535).map(|x| x).collect();
+        // if cfg!(target_os = "windows") {
+        let test_ports: Vec<i32> =  (1..65535).map(|x| x).collect();
 
-            let test_cidr =  vec!["127.0.0.1/32".to_string()];
+        let test_cidr =  vec!["127.0.0.1/32".to_string()];
 
-            let _scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5).await?;
-        }
+        let _scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5).await?;
+        // }
         Ok(())
     }
 
