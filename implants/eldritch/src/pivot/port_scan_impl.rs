@@ -316,24 +316,9 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
 
 // Output should follow the format:
 // [
-//     { ip: "127.0.0.1", port: "22", status: "open", protocol: "tcp" },
-//     { ip: "127.0.0.1", port: "80", status: "closed", protocol: "tcp" }
+//     { ip: "127.0.0.1", port: "22", protocol: "tcp", status: "open",  },
+//     { ip: "127.0.0.1", port: "80", protocol: "tcp", status: "closed" }
 // ]
-// This works!
-// pub fn test_dict_return(func_heap: &Heap, inputstr: String) -> Result<Vec<Dict>> {
-//     let mut res: SmallMap<Value, Value> = SmallMap::new();
-//     let mut dict_res: Dict = Dict::new(res);
-
-//     dict_res.insert_hashed(const_frozen_string!("number").to_value().get_hashed().unwrap(), Value::new_int(1));
-//     dict_res.insert_hashed(const_frozen_string!("const_string").to_value().get_hashed().unwrap(), const_frozen_string!("helloworld").to_value());
-
-//     let tmp_value = func_heap.alloc_str(inputstr.as_str());
-//     dict_res.insert_hashed(const_frozen_string!("var_string").to_value().get_hashed().unwrap(), tmp_value.to_value());
-
-
-//     return Ok(vec![dict_res]);
-// }
-
 
 // Non-async wrapper for our async scan.
 pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout: i32) -> Result<Vec<Dict>> {
@@ -383,22 +368,15 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
 
 #[cfg(test)]
 mod tests {
-    use crate::pivot::port_scan_impl;
-
     use super::*;
-    use starlark::assert::Assert;
     use starlark::const_frozen_string;
     use starlark::environment::GlobalsBuilder;
-    use starlark::starlark_module;
-    use starlark::values::StringValue;
-    use starlark::values::ValueLike;
-    use starlark::values::string::StarlarkStr;
     use tokio::net::TcpListener;
     use tokio::net::UdpSocket;
     use tokio::task;
     use tokio::io::copy;
     use starlark::eval::Evaluator;
-    use starlark::environment::{Module, Globals};
+    use starlark::environment::Module;
     use starlark::values::Value;
     use starlark::syntax::{AstModule, Dialect};
 
@@ -535,11 +513,6 @@ mod tests {
         let (_a, _b, _c, actual_response) =
             tokio::join!(listen_task1,listen_task2,listen_task3,send_task);
 
-        // println!("{:?}",test_ports[0]);
-        // while true {
-
-        // }
-
         let host = "127.0.0.1".to_string();
         let proto = "tcp".to_string();
         let expected_response: Vec<(String, i32, String, String)>;
@@ -610,15 +583,6 @@ mod tests {
         );
 
         let test_ports = response.unwrap();
-
-        let host: String = "127.0.0.1".to_string();
-        let proto = "tcp".to_string();
-        // let expected_response: Vec<(String, i32,  String, String)>;
-        // // We have no test listeners and are just testing that our sync -> async call works.
-        // expected_response = vec![(host.clone(),test_ports[0],proto.clone(),"closed".to_string()),
-        //     (host.clone(),test_ports[1],proto.clone(),"closed".to_string()),
-        //     (host.clone(),test_ports[2],proto.clone(),"closed".to_string()),
-        //     (host.clone(),test_ports[3],proto.clone(),"closed".to_string())];
 
         let mut expected_response: Vec<Dict> = vec![];
         let res_sm_one: SmallMap<Value, Value> = SmallMap::new();
