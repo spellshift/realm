@@ -231,6 +231,10 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                         },
                         // This appears to be how windows tells us it has run out of TCP sockets to bind.
                         "An attempt was made to access a socket in a way forbidden by its access permissions. (os error 10013)" if cfg!(target_os = "windows") => {
+                           return Err(anyhow::anyhow!("Low resources try again"));
+                        },
+                        // This may also be a way windows can tell us it has run out of TCP sockets to bind.
+                        "An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full. (os error 10055)" if cfg!(target_os = "windows") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
                         _ => {
