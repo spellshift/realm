@@ -2,8 +2,7 @@ use std::net::Ipv4Addr;
 use anyhow::Result;
 use starlark::const_frozen_string;
 use starlark::values::dict::Dict;
-use starlark::values::list::List;
-use starlark::values::{Value, Heap, FrozenHeap, AllocValue, StringValue, StringValueLike};
+use starlark::values::{Value, Heap};
 use starlark::collections::SmallMap;
 
 use tokio::task;
@@ -369,12 +368,12 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starlark::const_frozen_string;
     use starlark::environment::GlobalsBuilder;
     use tokio::net::TcpListener;
     use tokio::net::UdpSocket;
     use tokio::task;
     use tokio::io::copy;
+    use starlark::starlark_module;
     use starlark::eval::Evaluator;
     use starlark::environment::Module;
     use starlark::values::Value;
@@ -569,60 +568,6 @@ mod tests {
         Ok(())
     }
 
-    // verify our non async call works.
-    #[test]
-    fn test_portscan_not_handle() -> anyhow::Result<()> {
-        let test_cidr =  vec!["127.0.0.1/32".to_string()];
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-
-        let response = runtime.block_on(
-            allocate_localhost_unused_ports(4,"tcp".to_string())
-        );
-
-        let test_ports = response.unwrap();
-
-        let mut expected_response: Vec<Dict> = vec![];
-        let res_sm_one: SmallMap<Value, Value> = SmallMap::new();
-        let mut res_dict_one = Dict::new(res_sm_one);
-        res_dict_one.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), const_frozen_string!("127.0.0.1").to_value());
-        res_dict_one.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), const_frozen_string!("22").to_value());
-        res_dict_one.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), const_frozen_string!("open").to_value());
-        expected_response.append(&mut vec![res_dict_one]);
-
-        let res_sm_two: SmallMap<Value, Value> = SmallMap::new();
-        let mut res_dict_two = Dict::new(res_sm_two);
-        res_dict_two.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), const_frozen_string!("127.0.0.1").to_value());
-        res_dict_two.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), const_frozen_string!("80").to_value());
-        res_dict_two.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), const_frozen_string!("open").to_value());
-        expected_response.append(&mut vec![res_dict_two]);
-
-        let res_sm_three: SmallMap<Value, Value> = SmallMap::new();
-        let mut res_dict_three = Dict::new(res_sm_three);
-        res_dict_three.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), const_frozen_string!("127.0.0.1").to_value());
-        res_dict_three.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), const_frozen_string!("443").to_value());
-        res_dict_three.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), const_frozen_string!("open").to_value());
-        expected_response.append(&mut vec![res_dict_three]);
-
-        let res_sm_four: SmallMap<Value, Value> = SmallMap::new();
-        let mut res_dict_four = Dict::new(res_sm_four);
-        res_dict_four.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), const_frozen_string!("127.0.0.1").to_value());
-        res_dict_four.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), const_frozen_string!("8080").to_value());
-        res_dict_four.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), const_frozen_string!("closed").to_value());
-        expected_response.append(&mut vec![res_dict_four]);
-
-
-        println!("{:?}", expected_response);
-
-
-        let tmp_heap = Heap::new();
-        let result = port_scan(&tmp_heap, test_cidr, test_ports, String::from("tcp"), 5)?;
-        // assert_eq!(result, expected_response);
-        Ok(())
-    }
-
     // // Test scanning a lot of ports all at once. Can the OS handle it.
     // // UDP scan is being very inconsitent seems to work every other scan.
     // #[tokio::test]
@@ -649,6 +594,7 @@ mod tests {
         Ok(())
     }
 
+    // verify our non async call works and Dict return type.
     #[test]
     fn test_starlark_dict_from_interpreter() -> anyhow::Result<()>{
         // Setup test ports

@@ -11,7 +11,6 @@ use derive_more::Display;
 
 use starlark::values::dict::Dict;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
-use starlark::values::list::List;
 use starlark::values::none::NoneType;
 use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap};
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
