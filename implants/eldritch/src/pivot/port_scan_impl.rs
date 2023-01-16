@@ -319,33 +319,24 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
 //     { ip: "127.0.0.1", port: "22", status: "open", protocol: "tcp" },
 //     { ip: "127.0.0.1", port: "80", status: "closed", protocol: "tcp" }
 // ]
+// This works!
+// pub fn test_dict_return(func_heap: &Heap, inputstr: String) -> Result<Vec<Dict>> {
+//     let mut res: SmallMap<Value, Value> = SmallMap::new();
+//     let mut dict_res: Dict = Dict::new(res);
 
-pub fn test_dict_return<'v>(inputstr: String) -> Result<Vec<Dict<'v>>> {
-    let mut res: SmallMap<Value, Value> = SmallMap::new();
-    let mut dict_res: Dict = Dict::new(res);
+//     dict_res.insert_hashed(const_frozen_string!("number").to_value().get_hashed().unwrap(), Value::new_int(1));
+//     dict_res.insert_hashed(const_frozen_string!("const_string").to_value().get_hashed().unwrap(), const_frozen_string!("helloworld").to_value());
 
-    dict_res.insert_hashed(const_frozen_string!("number").to_value().get_hashed().unwrap(), Value::new_int(1));
-    dict_res.insert_hashed(const_frozen_string!("const_string").to_value().get_hashed().unwrap(), const_frozen_string!("helloworld").to_value());
-
-    let tmp_heap = Heap::new();
-    let tmp_value = tmp_heap.alloc_str(inputstr.as_str());
-    dict_res.insert_hashed(const_frozen_string!("var_string").to_value().get_hashed().unwrap(), tmp_value.to_value());
-    
+//     let tmp_value = func_heap.alloc_str(inputstr.as_str());
+//     dict_res.insert_hashed(const_frozen_string!("var_string").to_value().get_hashed().unwrap(), tmp_value.to_value());
 
 
-
-
-
-
-
-
-
-    return Ok(vec![dict_res]);
-}
+//     return Ok(vec![dict_res]);
+// }
 
 
 // Non-async wrapper for our async scan.
-pub fn port_scan<'a>(target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout: i32) -> Result<Vec<Dict<'a>>> {
+pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout: i32) -> Result<Vec<Dict>> {
     if portocol != "tcp" && portocol != "udp" {
         return Err(anyhow::anyhow!("Unsupported protocol. Use 'tcp' or 'udp'."))
     }
@@ -360,52 +351,30 @@ pub fn port_scan<'a>(target_cidrs: Vec<String>, ports: Vec<i32>, portocol: Strin
     );
 
     match response {
-        Ok(result) => {
-            // Define underlying datastructure.
-            let mut res: SmallMap<Value, Value> = SmallMap::new();
-            // Create Dict type.
-            let mut final_res = Dict::new(res);
+        Ok(results) => {
+            let mut final_res: Vec<Dict> = Vec::new();
+            for row in results {
+                // Define underlying datastructure.
+                let res: SmallMap<Value, Value> = SmallMap::new();
+                // Create Dict type.
+                let mut tmp_res = Dict::new(res);
+
+                let tmp_value1 = starlark_heap.alloc_str(row.0.as_str());
+                tmp_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), tmp_value1.to_value());
+
+                tmp_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), Value::new_int(row.1));
+
+                let tmp_value2 = starlark_heap.alloc_str(row.2.as_str());
+                tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), tmp_value2.to_value());
+
+                let tmp_value3 = starlark_heap.alloc_str(row.3.as_str());
+                tmp_res.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed().unwrap(), tmp_value3.to_value());
+                final_res.push(tmp_res);
+            }
+
+            return Ok(final_res)
 
 
-            final_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), const_frozen_string!("ip").to_value());
-            // let ip_val: String = result.0;
-            // final_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), StringValue::alloc_value(self, ip_val) );
-
-            // final_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), );
-            // final_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), const_frozen_string!("tmp. this works.").to_value());
-
-            return Ok(vec!(final_res))
-
-            // Transform our vector
-            // let mut final_res: Vec<Dict> = vec![];
-            // let res_sm_one: SmallMap<Value, Value> = SmallMap::new();
-            // let mut res_dict_one = Dict::new(res_sm_one);
-            // res_dict_one.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), "127.0.0.1".to);
-            // res_dict_one.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), const_frozen_string!("22").to_value());
-            // res_dict_one.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), const_frozen_string!("open").to_value());
-            // final_res.append(&mut vec![res_dict_one]);
-            // let mut final_res = vec![];
-            // for scan_row in result{
-            //     let mut scan_row_sm = SmallMap::new();
-            //     let mut scan_row_dict = Dict::new(scan_row_sm);
-                
-                // let ip_heap = FrozenHeap::new();
-                // let ip_value = ip_heap.alloc_str(scan_row.0.as_str());
-                // scan_row_dict.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), ip_value.to_value() );
-
-                // scan_row_dict.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), Value::new_int(scan_row.1) );
-
-                // let protocol_heap = FrozenHeap::new();
-                // let protocol_value = protocol_heap.alloc_str(scan_row.2.as_str());
-                // scan_row_dict.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed().unwrap(), protocol_value.to_value() );
-
-                // let status_heap = FrozenHeap::new();
-                // let status_value = status_heap.alloc_str(scan_row.3.as_str());
-                // scan_row_dict.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value.to_value() );
-
-                // final_res.append(scan_row_dict)
-            // }
-            // return Ok(final_res);
         },
         Err(err) => return Err(anyhow::anyhow!("The port_scan command failed: {:?}", err)),
     }
@@ -684,8 +653,8 @@ mod tests {
         println!("{:?}", expected_response);
 
 
-
-        let result = port_scan(test_cidr, test_ports, String::from("tcp"), 5)?;
+        let tmp_heap = Heap::new();
+        let result = port_scan(&tmp_heap, test_cidr, test_ports, String::from("tcp"), 5)?;
         // assert_eq!(result, expected_response);
         Ok(())
     }
@@ -750,21 +719,41 @@ res
                 Err(err) => return Err(err),
         }
 
+        
+        
+        // #[starlark_module]
+        // fn func_port_scan(builder: &mut GlobalsBuilder) {
+        //     fn func_port_scan<'v>(func_test_ports: Vec<i32>) -> anyhow::Result<Vec<Dict<'v>>> {
+        //         // Ok(port_scan(vec!["127.0.0.1/32".to_string()], func_test_ports.clone(), String::from("tcp"), 5)?)
+        //         let mut tmp_heap: Heap = Heap::new();
+        //         let mut res = move || test_dict_return(&mut tmp_heap, "hey".to_string()).unwrap();
+        //         Ok(res())
+        //     }
+        // }
+
+        // #[starlark_module]
+        // fn func_test_starlark(builder: &mut GlobalsBuilder) {
+        //     fn func_test_starlark<'v>(test_input: String) -> anyhow::Result<Vec<Dict<'v>>> {
+        //         let mut tmp_heap: Heap = Heap::new();
+        //         let mut res = move || test_dict_return(&mut tmp_heap, test_input).unwrap();
+        //         Ok(res())
+        //     }
+        // }
+
         #[starlark_module]
         fn func_port_scan(builder: &mut GlobalsBuilder) {
-            fn func_port_scan<'v>(func_test_ports: Vec<i32>) -> anyhow::Result<Vec<Dict<'v>>> {
-                // Ok(port_scan(vec!["127.0.0.1/32".to_string()], func_test_ports.clone(), String::from("tcp"), 5)?)
-                Ok(test_dict_return("hey".to_string())?)
+            fn func_port_scan<'v>(ports: Vec<i32>, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
+                port_scan(starlark_heap, vec!["127.0.0.1/32".to_string()], ports, "tcp".to_string(), 3)
             }
         }
-    
+
+
         let globals = GlobalsBuilder::extended().with(func_port_scan).build();
         let module: Module = Module::new();
-        
-        let mut eval: Evaluator = Evaluator::new(&module);
 
+        let mut eval: Evaluator = Evaluator::new(&module);
         let res: Value = eval.eval_module(ast, &globals).unwrap();
-    
+
         println!("{:?}", res);
         Ok(())
     }
