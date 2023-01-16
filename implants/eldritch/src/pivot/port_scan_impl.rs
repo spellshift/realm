@@ -688,7 +688,6 @@ mod tests {
     #[test]
     fn test_starlark_dict_from_interpreter() -> anyhow::Result<()>{
         // Setup test ports
-        let test_cidr =  vec!["127.0.0.1/32".to_string()];
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -698,16 +697,15 @@ mod tests {
             allocate_localhost_unused_ports(4,"tcp".to_string())
         );
 
-        let test_ip: String = "127.0.0.1".to_string();
         let test_ports = response.unwrap();
 
         // Create test script
         let test_content = format!(r#"
 ports_to_scan=[{},{},{},{}]
 res = func_port_scan(ports_to_scan)
-print(res)
 res
 "#, test_ports[0], test_ports[1], test_ports[2], test_ports[3]);
+
         // Setup starlark interpreter with handle to our function
         let ast: AstModule;
         match AstModule::parse(
@@ -719,34 +717,13 @@ res
                 Err(err) => return Err(err),
         }
 
-        
-        
-        // #[starlark_module]
-        // fn func_port_scan(builder: &mut GlobalsBuilder) {
-        //     fn func_port_scan<'v>(func_test_ports: Vec<i32>) -> anyhow::Result<Vec<Dict<'v>>> {
-        //         // Ok(port_scan(vec!["127.0.0.1/32".to_string()], func_test_ports.clone(), String::from("tcp"), 5)?)
-        //         let mut tmp_heap: Heap = Heap::new();
-        //         let mut res = move || test_dict_return(&mut tmp_heap, "hey".to_string()).unwrap();
-        //         Ok(res())
-        //     }
-        // }
-
-        // #[starlark_module]
-        // fn func_test_starlark(builder: &mut GlobalsBuilder) {
-        //     fn func_test_starlark<'v>(test_input: String) -> anyhow::Result<Vec<Dict<'v>>> {
-        //         let mut tmp_heap: Heap = Heap::new();
-        //         let mut res = move || test_dict_return(&mut tmp_heap, test_input).unwrap();
-        //         Ok(res())
-        //     }
-        // }
-
         #[starlark_module]
         fn func_port_scan(builder: &mut GlobalsBuilder) {
             fn func_port_scan<'v>(ports: Vec<i32>, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
-                port_scan(starlark_heap, vec!["127.0.0.1/32".to_string()], ports, "tcp".to_string(), 3)
+                let test_cidr =  vec!["127.0.0.1/32".to_string()];
+                port_scan(starlark_heap, test_cidr, ports, "tcp".to_string(), 3)
             }
         }
-
 
         let globals = GlobalsBuilder::extended().with(func_port_scan).build();
         let module: Module = Module::new();
@@ -754,7 +731,10 @@ res
         let mut eval: Evaluator = Evaluator::new(&module);
         let res: Value = eval.eval_module(ast, &globals).unwrap();
 
-        println!("{:?}", res);
+        // println!("{:?}", res.to_string());
+        let expected_output = format!("[{{\"ip\": \"127.0.0.1\", \"port\": {}, \"protocol\": \"tcp\", \"status\": \"closed\"}}, {{\"ip\": \"127.0.0.1\", \"port\": {}, \"protocol\": \"tcp\", \"status\": \"closed\"}}, {{\"ip\": \"127.0.0.1\", \"port\": {}, \"protocol\": \"tcp\", \"status\": \"closed\"}}, {{\"ip\": \"127.0.0.1\", \"port\": {}, \"protocol\": \"tcp\", \"status\": \"closed\"}}]", test_ports[0], test_ports[1], test_ports[2], test_ports[3]);
+        println!("{}",expected_output);
+        assert_eq!(expected_output, res.to_string());
         Ok(())
     }
 
