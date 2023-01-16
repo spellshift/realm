@@ -230,9 +230,9 @@ async fn handle_scan(target_host: String, port: i32, protocol: String) -> Result
                             return Err(anyhow::anyhow!("Low resources try again"));
                         },
                         // This appears to be how windows tells us it has run out of TCP sockets to bind.
-                        // "An attempt was made to access a socket in a way forbidden by its access permissions. (os error 10013)" if cfg!(target_os = "windows") => {
-                        //    return Err(anyhow::anyhow!("Low resources try again"));
-                        // },
+                        "An attempt was made to access a socket in a way forbidden by its access permissions. (os error 10013)" if cfg!(target_os = "windows") => {
+                           return Err(anyhow::anyhow!("Low resources try again"));
+                        },
                         // This may also be a way windows can tell us it has run out of TCP sockets to bind.
                         "An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full. (os error 10055)" if cfg!(target_os = "windows") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
@@ -270,7 +270,7 @@ async fn handle_port_scan_timeout(target: String, port: i32, protocol: String, t
                 Err(scan_err) => match String::from(format!("{}", scan_err.to_string())).as_str() {
                     // If the OS is running out of resources wait and then try again.
                     "Low resources try again" => {
-                        sleep(Duration::from_secs(1)).await;
+                        sleep(Duration::from_secs(3)).await;
                         return Ok(handle_port_scan_timeout(target, port, protocol, timeout).await.unwrap());
                     },
                     _ => {
@@ -319,8 +319,8 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
 
 // Output should follow the format:
 // [
-//     { ip: "127.0.0.1", port: "22", protocol: "tcp", status: "open",  },
-//     { ip: "127.0.0.1", port: "80", protocol: "tcp", status: "closed" }
+//     { ip: "127.0.0.1", port: 22, protocol: "tcp", status: "open",  },
+//     { ip: "127.0.0.1", port: 80, protocol: "tcp", status: "closed" }
 // ]
 
 // Non-async wrapper for our async scan.
