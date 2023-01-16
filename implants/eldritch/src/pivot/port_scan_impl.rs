@@ -365,10 +365,10 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
                 tmp_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), Value::new_int(row.1));
 
                 let tmp_value2 = starlark_heap.alloc_str(row.2.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), tmp_value2.to_value());
+                tmp_res.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed().unwrap(), tmp_value2.to_value());
 
                 let tmp_value3 = starlark_heap.alloc_str(row.3.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed().unwrap(), tmp_value3.to_value());
+                tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), tmp_value3.to_value());
                 final_res.push(tmp_res);
             }
 
