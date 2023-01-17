@@ -68,12 +68,12 @@ mod tests {
             if res == "1001\n" || res == "0\n" {
                 bool_res = true;
             }
-            println!("{}", res);
             assert_eq!(bool_res, true);
         }
         else if cfg!(target_os = "macos") {
             let res = exec(String::from("/bin/zsh"),vec![String::from("id"), String::from("-u")], false)?;
             let mut bool_res = false;
+            println!("{}", res);
             if res == "501\n" || res == "0\n" {
                 bool_res = true;
             }
