@@ -120,9 +120,12 @@ The <b>process.name</b> method is very cool, and will be even cooler when Nick d
 The Sys Library is very cool, and will be even cooler when Nick documents it.
 
 ### sys.exec
-`sys.exec(path: str, args: List<str>, ?disown: bool) -> str`
+`sys.exec(path: str, args: List<str>, disown: bool) -> str`
 
-The <b>sys.exec</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
+Disown will run the process in the background disowned from the agent. This is done through double forking and only works on nix* systems.
+
+If disown is not used stdout from the process will be returned. When disown is true the return string will be `"No output"`.
 
 ### sys.is_linux
 `sys.is_linux() -> bool`
