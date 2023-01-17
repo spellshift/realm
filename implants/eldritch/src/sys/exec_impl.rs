@@ -68,6 +68,7 @@ mod tests {
             if res == "1000\n" || res == "0\n" {
                 bool_res = true;
             }
+            println!("{}", res);
             assert_eq!(bool_res, true);
         }
         else if cfg!(target_os = "macos") {
