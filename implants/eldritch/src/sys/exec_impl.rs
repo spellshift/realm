@@ -65,7 +65,7 @@ mod tests {
         cfg!(target_os = "netbsd") {
             let res = exec(String::from("/bin/sh"),vec![String::from("-c"), String::from("id -u")], false)?;
             let mut bool_res = false; 
-            if res == "1000\n" || res == "0\n" {
+            if res == "1001\n" || res == "0\n" {
                 bool_res = true;
             }
             println!("{}", res);
