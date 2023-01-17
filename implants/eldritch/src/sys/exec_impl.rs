@@ -1,5 +1,5 @@
 use anyhow::Result;
-use std::process::{Command, exit, id};
+use std::process::{Command, exit};
 use std::str;
 use nix::{
     sys::wait::waitpid,
@@ -9,7 +9,7 @@ use nix::{
 // https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
 
 pub fn exec(path: String, args: Vec<String>, disown: bool) -> Result<String> {
-    if !disown || cfg!(target_os = "windows") {
+    if !disown {
         let res = Command::new(path)
             .args(args)
             .output()
@@ -18,20 +18,21 @@ pub fn exec(path: String, args: Vec<String>, disown: bool) -> Result<String> {
         let resstr = str::from_utf8(&res.stdout).unwrap();
         return Ok(String::from(resstr));
     }else{
+        if cfg!(target_os = "windows") {
+            return Err(anyhow::anyhow!("Windows is not supported for disowned processes."))
+        }
         match unsafe{fork().expect("Failed to fork process")} {
-            ForkResult::Parent { child } => {
-                println!("Try to kill me to check if the target process will be killed");
-    
+            ForkResult::Parent { child } => {    
                 // Wait for intermediate process to exit.
                 waitpid(Some(child), None).unwrap();
-    
-                return Ok(format!("PID: {}\nchild PID: {}", id(), child.as_raw()).to_string());
+                return Ok("No output".to_string());
             }
     
             ForkResult::Child => {
                 match unsafe{fork().expect("Failed to fork process")} {
                     ForkResult::Parent { child } => {
-                        return Ok(format!("Background process started {}", child.as_raw()))
+                        if child.as_raw() < 0 { return Ok("Pid was negative. ERR".to_string()) }
+                        exit(0)
                     }
             
                     ForkResult::Child => {
@@ -39,10 +40,9 @@ pub fn exec(path: String, args: Vec<String>, disown: bool) -> Result<String> {
                             .args(args)
                             .output()
                             .expect("failed to execute process");
-                        return Ok("exit".to_string());
+                        exit(0)
                     }
                 }
-                // Kill ourselves after spawning the new process
             }
         }
     }
@@ -50,7 +50,9 @@ pub fn exec(path: String, args: Vec<String>, disown: bool) -> Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::{path::Path, time, thread, fs};
+
+    use tempfile::NamedTempFile;
 
     use super::*;
     #[test]
@@ -62,7 +64,6 @@ mod tests {
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
             let res = exec(String::from("/bin/sh"),vec![String::from("-c"), String::from("id -u")], false)?;
-            println!("{:?}", res);
             let mut bool_res = false; 
             if res == "1000\n" || res == "0\n" {
                 bool_res = true;
@@ -116,10 +117,17 @@ mod tests {
         cfg!(target_os = "freebsd") || 
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
-            let res = exec(String::from("/bin/sh"), vec![String::from("-c"), String::from("sleep 600")], true)?;
-            println!("{}", res);
-            let rs = Path::new("/tmp/win").exists();
-            assert_eq!(rs, true);
+            let tmp_file = NamedTempFile::new()?;
+            let path = String::from(tmp_file.path().to_str().unwrap());
+            tmp_file.close()?;
+    
+            let _res = exec(String::from("/bin/sh"), vec![String::from("-c"), String::from(format!("touch {}", path.clone()))], true)?;
+            thread::sleep(time::Duration::from_secs(2));
+
+            println!("{:?}", path.clone().as_str());
+            assert!(Path::new(path.clone().as_str()).exists());
+
+            let _ = fs::remove_file(path.as_str());
         }
         Ok(())
     }
