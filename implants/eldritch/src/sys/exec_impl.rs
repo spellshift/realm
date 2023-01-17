@@ -1,5 +1,5 @@
 use anyhow::Result;
-use std::process::{Command, exit};
+use std::process::{Command, exit, id};
 use std::str;
 use nix::{
     sys::wait::waitpid,
@@ -22,38 +22,27 @@ pub fn exec(path: String, args: Vec<String>, disown: bool) -> Result<String> {
             ForkResult::Parent { child } => {
                 println!("Try to kill me to check if the target process will be killed");
     
-                // Do not forget to wait for the fork in order to prevent it from becoming a zombie!!!
-                // waitpid(Some(child), None).unwrap();
+                // Wait for intermediate process to exit.
+                waitpid(Some(child), None).unwrap();
     
-                return Ok(format!("PID: {}", child.as_raw()).to_string());
+                return Ok(format!("PID: {}\nchild PID: {}", id(), child.as_raw()).to_string());
             }
     
             ForkResult::Child => {
                 match unsafe{fork().expect("Failed to fork process")} {
                     ForkResult::Parent { child } => {
-                        println!("Try to kill me to check if the target process will be killed");
-            
-                        // Do not forget to wait for the fork in order to prevent it from becoming a zombie!!!
-                        // waitpid(Some(child), None).unwrap();
-            
-                        // exit(0);
-                        // return Ok(format!("PID: {}", child.as_raw()).to_string());
+                        return Ok(format!("Background process started {}", child.as_raw()))
                     }
             
                     ForkResult::Child => {
-                        let res = Command::new(path)
+                        let _res = Command::new(path)
                             .args(args)
                             .output()
                             .expect("failed to execute process");
-        
-                        // Disowned processes won't report output.
-                        // let resstr = str::from_utf8(&res.stdout).unwrap();
-                        // return Ok(String::from(resstr));
                         return Ok("exit".to_string());
                     }
                 }
                 // Kill ourselves after spawning the new process
-                exit(0);
             }
         }
     }
@@ -113,6 +102,11 @@ mod tests {
         Ok(())
     }
 
+    // This is a manual test:
+    // Example results:
+    // 42284 pts/0    S      0:00 /workspaces/realm/implants/target/debug/deps/eldritch-a23fc08ee1443dc3 test_process_exec_disown_linux --nocapture
+    // 42285 pts/0    S      0:00  \_ /bin/sh -c sleep 600
+    // 42286 pts/0    S      0:00      \_ sleep 600
     #[test]
     fn test_process_exec_disown_linux() -> anyhow::Result<()>{
         if cfg!(target_os = "linux") || 
