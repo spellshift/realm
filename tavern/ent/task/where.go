@@ -746,25 +746,25 @@ func HasJobWith(preds ...predicate.Job) predicate.Task {
 	})
 }
 
-// HasTarget applies the HasEdge predicate on the "target" edge.
-func HasTarget() predicate.Task {
+// HasSession applies the HasEdge predicate on the "session" edge.
+func HasSession() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TargetTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, TargetTable, TargetColumn),
+			sqlgraph.To(SessionTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, SessionTable, SessionColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasTargetWith applies the HasEdge predicate on the "target" edge with a given conditions (other predicates).
-func HasTargetWith(preds ...predicate.Target) predicate.Task {
+// HasSessionWith applies the HasEdge predicate on the "session" edge with a given conditions (other predicates).
+func HasSessionWith(preds ...predicate.Session) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TargetInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, TargetTable, TargetColumn),
+			sqlgraph.To(SessionInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, SessionTable, SessionColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

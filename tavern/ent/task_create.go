@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/job"
-	"github.com/kcarretto/realm/tavern/ent/target"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -131,15 +131,15 @@ func (tc *TaskCreate) SetJob(j *Job) *TaskCreate {
 	return tc.SetJobID(j.ID)
 }
 
-// SetTargetID sets the "target" edge to the Target entity by ID.
-func (tc *TaskCreate) SetTargetID(id int) *TaskCreate {
-	tc.mutation.SetTargetID(id)
+// SetSessionID sets the "session" edge to the Session entity by ID.
+func (tc *TaskCreate) SetSessionID(id int) *TaskCreate {
+	tc.mutation.SetSessionID(id)
 	return tc
 }
 
-// SetTarget sets the "target" edge to the Target entity.
-func (tc *TaskCreate) SetTarget(t *Target) *TaskCreate {
-	return tc.SetTargetID(t.ID)
+// SetSession sets the "session" edge to the Session entity.
+func (tc *TaskCreate) SetSession(s *Session) *TaskCreate {
+	return tc.SetSessionID(s.ID)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -240,8 +240,8 @@ func (tc *TaskCreate) check() error {
 	if _, ok := tc.mutation.JobID(); !ok {
 		return &ValidationError{Name: "job", err: errors.New(`ent: missing required edge "Task.job"`)}
 	}
-	if _, ok := tc.mutation.TargetID(); !ok {
-		return &ValidationError{Name: "target", err: errors.New(`ent: missing required edge "Task.target"`)}
+	if _, ok := tc.mutation.SessionID(); !ok {
+		return &ValidationError{Name: "session", err: errors.New(`ent: missing required edge "Task.session"`)}
 	}
 	return nil
 }
@@ -318,24 +318,24 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 		_node.job_tasks = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := tc.mutation.TargetIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.SessionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.TargetTable,
-			Columns: []string{task.TargetColumn},
+			Table:   task.SessionTable,
+			Columns: []string{task.SessionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.task_target = &nodes[0]
+		_node.task_session = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

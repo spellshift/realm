@@ -2,12 +2,12 @@ type Mutation {
     ###
     # Job
     ###
-    createJob(targetIDs: [ID!]!, input: CreateJobInput!): Job
+    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job
 
     ###
     # Task
     ###
-    claimTasks(targetID: ID!): [Task!]!
+    claimTasks(input: ClaimTasksInput!,): [Task!]!
 
     ### 
     # User

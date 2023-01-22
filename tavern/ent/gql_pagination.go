@@ -16,8 +16,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
@@ -865,6 +865,280 @@ func (j *Job) ToEdge(order *JobOrder) *JobEdge {
 	}
 }
 
+// SessionEdge is the edge representation of Session.
+type SessionEdge struct {
+	Node   *Session `json:"node"`
+	Cursor Cursor   `json:"cursor"`
+}
+
+// SessionConnection is the connection containing edges to Session.
+type SessionConnection struct {
+	Edges      []*SessionEdge `json:"edges"`
+	PageInfo   PageInfo       `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (c *SessionConnection) build(nodes []*Session, pager *sessionPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Session
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Session {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Session {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*SessionEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &SessionEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// SessionPaginateOption enables pagination customization.
+type SessionPaginateOption func(*sessionPager) error
+
+// WithSessionOrder configures pagination ordering.
+func WithSessionOrder(order *SessionOrder) SessionPaginateOption {
+	if order == nil {
+		order = DefaultSessionOrder
+	}
+	o := *order
+	return func(pager *sessionPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultSessionOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithSessionFilter configures pagination filter.
+func WithSessionFilter(filter func(*SessionQuery) (*SessionQuery, error)) SessionPaginateOption {
+	return func(pager *sessionPager) error {
+		if filter == nil {
+			return errors.New("SessionQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type sessionPager struct {
+	order  *SessionOrder
+	filter func(*SessionQuery) (*SessionQuery, error)
+}
+
+func newSessionPager(opts []SessionPaginateOption) (*sessionPager, error) {
+	pager := &sessionPager{}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultSessionOrder
+	}
+	return pager, nil
+}
+
+func (p *sessionPager) applyFilter(query *SessionQuery) (*SessionQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *sessionPager) toCursor(s *Session) Cursor {
+	return p.order.Field.toCursor(s)
+}
+
+func (p *sessionPager) applyCursors(query *SessionQuery, after, before *Cursor) *SessionQuery {
+	for _, predicate := range cursorsToPredicates(
+		p.order.Direction, after, before,
+		p.order.Field.field, DefaultSessionOrder.Field.field,
+	) {
+		query = query.Where(predicate)
+	}
+	return query
+}
+
+func (p *sessionPager) applyOrder(query *SessionQuery, reverse bool) *SessionQuery {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	query = query.Order(direction.orderFunc(p.order.Field.field))
+	if p.order.Field != DefaultSessionOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultSessionOrder.Field.field))
+	}
+	return query
+}
+
+func (p *sessionPager) orderExpr(reverse bool) sql.Querier {
+	direction := p.order.Direction
+	if reverse {
+		direction = direction.reverse()
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.field).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultSessionOrder.Field {
+			b.Comma().Ident(DefaultSessionOrder.Field.field).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Session.
+func (s *SessionQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...SessionPaginateOption,
+) (*SessionConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newSessionPager(opts)
+	if err != nil {
+		return nil, err
+	}
+	if s, err = pager.applyFilter(s); err != nil {
+		return nil, err
+	}
+	conn := &SessionConnection{Edges: []*SessionEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			if conn.TotalCount, err = s.Clone().Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+
+	s = pager.applyCursors(s, after, before)
+	s = pager.applyOrder(s, last != nil)
+	if limit := paginateLimit(first, last); limit != 0 {
+		s.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := s.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+
+	nodes, err := s.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// SessionOrderFieldLastSeenAt orders Session by lastSeenAt.
+	SessionOrderFieldLastSeenAt = &SessionOrderField{
+		field: session.FieldLastSeenAt,
+		toCursor: func(s *Session) Cursor {
+			return Cursor{
+				ID:    s.ID,
+				Value: s.LastSeenAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f SessionOrderField) String() string {
+	var str string
+	switch f.field {
+	case session.FieldLastSeenAt:
+		str = "LAST_SEEN_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f SessionOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *SessionOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("SessionOrderField %T must be a string", v)
+	}
+	switch str {
+	case "LAST_SEEN_AT":
+		*f = *SessionOrderFieldLastSeenAt
+	default:
+		return fmt.Errorf("%s is not a valid SessionOrderField", str)
+	}
+	return nil
+}
+
+// SessionOrderField defines the ordering field of Session.
+type SessionOrderField struct {
+	field    string
+	toCursor func(*Session) Cursor
+}
+
+// SessionOrder defines the ordering of Session.
+type SessionOrder struct {
+	Direction OrderDirection     `json:"direction"`
+	Field     *SessionOrderField `json:"field"`
+}
+
+// DefaultSessionOrder is the default ordering of Session.
+var DefaultSessionOrder = &SessionOrder{
+	Direction: OrderDirectionAsc,
+	Field: &SessionOrderField{
+		field: session.FieldID,
+		toCursor: func(s *Session) Cursor {
+			return Cursor{ID: s.ID}
+		},
+	},
+}
+
+// ToEdge converts Session into SessionEdge.
+func (s *Session) ToEdge(order *SessionOrder) *SessionEdge {
+	if order == nil {
+		order = DefaultSessionOrder
+	}
+	return &SessionEdge{
+		Node:   s,
+		Cursor: order.Field.toCursor(s),
+	}
+}
+
 // TagEdge is the edge representation of Tag.
 type TagEdge struct {
 	Node   *Tag   `json:"node"`
@@ -1134,294 +1408,6 @@ func (t *Tag) ToEdge(order *TagOrder) *TagEdge {
 		order = DefaultTagOrder
 	}
 	return &TagEdge{
-		Node:   t,
-		Cursor: order.Field.toCursor(t),
-	}
-}
-
-// TargetEdge is the edge representation of Target.
-type TargetEdge struct {
-	Node   *Target `json:"node"`
-	Cursor Cursor  `json:"cursor"`
-}
-
-// TargetConnection is the connection containing edges to Target.
-type TargetConnection struct {
-	Edges      []*TargetEdge `json:"edges"`
-	PageInfo   PageInfo      `json:"pageInfo"`
-	TotalCount int           `json:"totalCount"`
-}
-
-func (c *TargetConnection) build(nodes []*Target, pager *targetPager, after *Cursor, first *int, before *Cursor, last *int) {
-	c.PageInfo.HasNextPage = before != nil
-	c.PageInfo.HasPreviousPage = after != nil
-	if first != nil && *first+1 == len(nodes) {
-		c.PageInfo.HasNextPage = true
-		nodes = nodes[:len(nodes)-1]
-	} else if last != nil && *last+1 == len(nodes) {
-		c.PageInfo.HasPreviousPage = true
-		nodes = nodes[:len(nodes)-1]
-	}
-	var nodeAt func(int) *Target
-	if last != nil {
-		n := len(nodes) - 1
-		nodeAt = func(i int) *Target {
-			return nodes[n-i]
-		}
-	} else {
-		nodeAt = func(i int) *Target {
-			return nodes[i]
-		}
-	}
-	c.Edges = make([]*TargetEdge, len(nodes))
-	for i := range nodes {
-		node := nodeAt(i)
-		c.Edges[i] = &TargetEdge{
-			Node:   node,
-			Cursor: pager.toCursor(node),
-		}
-	}
-	if l := len(c.Edges); l > 0 {
-		c.PageInfo.StartCursor = &c.Edges[0].Cursor
-		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
-	}
-	if c.TotalCount == 0 {
-		c.TotalCount = len(nodes)
-	}
-}
-
-// TargetPaginateOption enables pagination customization.
-type TargetPaginateOption func(*targetPager) error
-
-// WithTargetOrder configures pagination ordering.
-func WithTargetOrder(order *TargetOrder) TargetPaginateOption {
-	if order == nil {
-		order = DefaultTargetOrder
-	}
-	o := *order
-	return func(pager *targetPager) error {
-		if err := o.Direction.Validate(); err != nil {
-			return err
-		}
-		if o.Field == nil {
-			o.Field = DefaultTargetOrder.Field
-		}
-		pager.order = &o
-		return nil
-	}
-}
-
-// WithTargetFilter configures pagination filter.
-func WithTargetFilter(filter func(*TargetQuery) (*TargetQuery, error)) TargetPaginateOption {
-	return func(pager *targetPager) error {
-		if filter == nil {
-			return errors.New("TargetQuery filter cannot be nil")
-		}
-		pager.filter = filter
-		return nil
-	}
-}
-
-type targetPager struct {
-	order  *TargetOrder
-	filter func(*TargetQuery) (*TargetQuery, error)
-}
-
-func newTargetPager(opts []TargetPaginateOption) (*targetPager, error) {
-	pager := &targetPager{}
-	for _, opt := range opts {
-		if err := opt(pager); err != nil {
-			return nil, err
-		}
-	}
-	if pager.order == nil {
-		pager.order = DefaultTargetOrder
-	}
-	return pager, nil
-}
-
-func (p *targetPager) applyFilter(query *TargetQuery) (*TargetQuery, error) {
-	if p.filter != nil {
-		return p.filter(query)
-	}
-	return query, nil
-}
-
-func (p *targetPager) toCursor(t *Target) Cursor {
-	return p.order.Field.toCursor(t)
-}
-
-func (p *targetPager) applyCursors(query *TargetQuery, after, before *Cursor) *TargetQuery {
-	for _, predicate := range cursorsToPredicates(
-		p.order.Direction, after, before,
-		p.order.Field.field, DefaultTargetOrder.Field.field,
-	) {
-		query = query.Where(predicate)
-	}
-	return query
-}
-
-func (p *targetPager) applyOrder(query *TargetQuery, reverse bool) *TargetQuery {
-	direction := p.order.Direction
-	if reverse {
-		direction = direction.reverse()
-	}
-	query = query.Order(direction.orderFunc(p.order.Field.field))
-	if p.order.Field != DefaultTargetOrder.Field {
-		query = query.Order(direction.orderFunc(DefaultTargetOrder.Field.field))
-	}
-	return query
-}
-
-func (p *targetPager) orderExpr(reverse bool) sql.Querier {
-	direction := p.order.Direction
-	if reverse {
-		direction = direction.reverse()
-	}
-	return sql.ExprFunc(func(b *sql.Builder) {
-		b.Ident(p.order.Field.field).Pad().WriteString(string(direction))
-		if p.order.Field != DefaultTargetOrder.Field {
-			b.Comma().Ident(DefaultTargetOrder.Field.field).Pad().WriteString(string(direction))
-		}
-	})
-}
-
-// Paginate executes the query and returns a relay based cursor connection to Target.
-func (t *TargetQuery) Paginate(
-	ctx context.Context, after *Cursor, first *int,
-	before *Cursor, last *int, opts ...TargetPaginateOption,
-) (*TargetConnection, error) {
-	if err := validateFirstLast(first, last); err != nil {
-		return nil, err
-	}
-	pager, err := newTargetPager(opts)
-	if err != nil {
-		return nil, err
-	}
-	if t, err = pager.applyFilter(t); err != nil {
-		return nil, err
-	}
-	conn := &TargetConnection{Edges: []*TargetEdge{}}
-	ignoredEdges := !hasCollectedField(ctx, edgesField)
-	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
-		hasPagination := after != nil || first != nil || before != nil || last != nil
-		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = t.Clone().Count(ctx); err != nil {
-				return nil, err
-			}
-			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
-			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
-		}
-	}
-	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
-		return conn, nil
-	}
-
-	t = pager.applyCursors(t, after, before)
-	t = pager.applyOrder(t, last != nil)
-	if limit := paginateLimit(first, last); limit != 0 {
-		t.Limit(limit)
-	}
-	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := t.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
-			return nil, err
-		}
-	}
-
-	nodes, err := t.All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	conn.build(nodes, pager, after, first, before, last)
-	return conn, nil
-}
-
-var (
-	// TargetOrderFieldName orders Target by name.
-	TargetOrderFieldName = &TargetOrderField{
-		field: target.FieldName,
-		toCursor: func(t *Target) Cursor {
-			return Cursor{
-				ID:    t.ID,
-				Value: t.Name,
-			}
-		},
-	}
-	// TargetOrderFieldLastSeenAt orders Target by lastSeenAt.
-	TargetOrderFieldLastSeenAt = &TargetOrderField{
-		field: target.FieldLastSeenAt,
-		toCursor: func(t *Target) Cursor {
-			return Cursor{
-				ID:    t.ID,
-				Value: t.LastSeenAt,
-			}
-		},
-	}
-)
-
-// String implement fmt.Stringer interface.
-func (f TargetOrderField) String() string {
-	var str string
-	switch f.field {
-	case target.FieldName:
-		str = "NAME"
-	case target.FieldLastSeenAt:
-		str = "LAST_SEEN_AT"
-	}
-	return str
-}
-
-// MarshalGQL implements graphql.Marshaler interface.
-func (f TargetOrderField) MarshalGQL(w io.Writer) {
-	io.WriteString(w, strconv.Quote(f.String()))
-}
-
-// UnmarshalGQL implements graphql.Unmarshaler interface.
-func (f *TargetOrderField) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("TargetOrderField %T must be a string", v)
-	}
-	switch str {
-	case "NAME":
-		*f = *TargetOrderFieldName
-	case "LAST_SEEN_AT":
-		*f = *TargetOrderFieldLastSeenAt
-	default:
-		return fmt.Errorf("%s is not a valid TargetOrderField", str)
-	}
-	return nil
-}
-
-// TargetOrderField defines the ordering field of Target.
-type TargetOrderField struct {
-	field    string
-	toCursor func(*Target) Cursor
-}
-
-// TargetOrder defines the ordering of Target.
-type TargetOrder struct {
-	Direction OrderDirection    `json:"direction"`
-	Field     *TargetOrderField `json:"field"`
-}
-
-// DefaultTargetOrder is the default ordering of Target.
-var DefaultTargetOrder = &TargetOrder{
-	Direction: OrderDirectionAsc,
-	Field: &TargetOrderField{
-		field: target.FieldID,
-		toCursor: func(t *Target) Cursor {
-			return Cursor{ID: t.ID}
-		},
-	},
-}
-
-// ToEdge converts Target into TargetEdge.
-func (t *Target) ToEdge(order *TargetOrder) *TargetEdge {
-	if order == nil {
-		order = DefaultTargetOrder
-	}
-	return &TargetEdge{
 		Node:   t,
 		Cursor: order.Field.toCursor(t),
 	}
