@@ -13,7 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
-	"github.com/kcarretto/realm/tavern/ent/target"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -147,15 +147,15 @@ func (tu *TaskUpdate) SetJob(j *Job) *TaskUpdate {
 	return tu.SetJobID(j.ID)
 }
 
-// SetTargetID sets the "target" edge to the Target entity by ID.
-func (tu *TaskUpdate) SetTargetID(id int) *TaskUpdate {
-	tu.mutation.SetTargetID(id)
+// SetSessionID sets the "session" edge to the Session entity by ID.
+func (tu *TaskUpdate) SetSessionID(id int) *TaskUpdate {
+	tu.mutation.SetSessionID(id)
 	return tu
 }
 
-// SetTarget sets the "target" edge to the Target entity.
-func (tu *TaskUpdate) SetTarget(t *Target) *TaskUpdate {
-	return tu.SetTargetID(t.ID)
+// SetSession sets the "session" edge to the Session entity.
+func (tu *TaskUpdate) SetSession(s *Session) *TaskUpdate {
+	return tu.SetSessionID(s.ID)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -169,9 +169,9 @@ func (tu *TaskUpdate) ClearJob() *TaskUpdate {
 	return tu
 }
 
-// ClearTarget clears the "target" edge to the Target entity.
-func (tu *TaskUpdate) ClearTarget() *TaskUpdate {
-	tu.mutation.ClearTarget()
+// ClearSession clears the "session" edge to the Session entity.
+func (tu *TaskUpdate) ClearSession() *TaskUpdate {
+	tu.mutation.ClearSession()
 	return tu
 }
 
@@ -249,8 +249,8 @@ func (tu *TaskUpdate) check() error {
 	if _, ok := tu.mutation.JobID(); tu.mutation.JobCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Task.job"`)
 	}
-	if _, ok := tu.mutation.TargetID(); tu.mutation.TargetCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Task.target"`)
+	if _, ok := tu.mutation.SessionID(); tu.mutation.SessionCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.session"`)
 	}
 	return nil
 }
@@ -341,33 +341,33 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tu.mutation.TargetCleared() {
+	if tu.mutation.SessionCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.TargetTable,
-			Columns: []string{task.TargetColumn},
+			Table:   task.SessionTable,
+			Columns: []string{task.SessionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.TargetIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.SessionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.TargetTable,
-			Columns: []string{task.TargetColumn},
+			Table:   task.SessionTable,
+			Columns: []string{task.SessionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
@@ -512,15 +512,15 @@ func (tuo *TaskUpdateOne) SetJob(j *Job) *TaskUpdateOne {
 	return tuo.SetJobID(j.ID)
 }
 
-// SetTargetID sets the "target" edge to the Target entity by ID.
-func (tuo *TaskUpdateOne) SetTargetID(id int) *TaskUpdateOne {
-	tuo.mutation.SetTargetID(id)
+// SetSessionID sets the "session" edge to the Session entity by ID.
+func (tuo *TaskUpdateOne) SetSessionID(id int) *TaskUpdateOne {
+	tuo.mutation.SetSessionID(id)
 	return tuo
 }
 
-// SetTarget sets the "target" edge to the Target entity.
-func (tuo *TaskUpdateOne) SetTarget(t *Target) *TaskUpdateOne {
-	return tuo.SetTargetID(t.ID)
+// SetSession sets the "session" edge to the Session entity.
+func (tuo *TaskUpdateOne) SetSession(s *Session) *TaskUpdateOne {
+	return tuo.SetSessionID(s.ID)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -534,9 +534,9 @@ func (tuo *TaskUpdateOne) ClearJob() *TaskUpdateOne {
 	return tuo
 }
 
-// ClearTarget clears the "target" edge to the Target entity.
-func (tuo *TaskUpdateOne) ClearTarget() *TaskUpdateOne {
-	tuo.mutation.ClearTarget()
+// ClearSession clears the "session" edge to the Session entity.
+func (tuo *TaskUpdateOne) ClearSession() *TaskUpdateOne {
+	tuo.mutation.ClearSession()
 	return tuo
 }
 
@@ -627,8 +627,8 @@ func (tuo *TaskUpdateOne) check() error {
 	if _, ok := tuo.mutation.JobID(); tuo.mutation.JobCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Task.job"`)
 	}
-	if _, ok := tuo.mutation.TargetID(); tuo.mutation.TargetCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Task.target"`)
+	if _, ok := tuo.mutation.SessionID(); tuo.mutation.SessionCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.session"`)
 	}
 	return nil
 }
@@ -736,33 +736,33 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tuo.mutation.TargetCleared() {
+	if tuo.mutation.SessionCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.TargetTable,
-			Columns: []string{task.TargetColumn},
+			Table:   task.SessionTable,
+			Columns: []string{task.SessionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.TargetIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.SessionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.TargetTable,
-			Columns: []string{task.TargetColumn},
+			Table:   task.SessionTable,
+			Columns: []string{task.SessionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}

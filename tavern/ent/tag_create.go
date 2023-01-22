@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 )
 
 // TagCreate is the builder for creating a Tag entity.
@@ -32,19 +32,19 @@ func (tc *TagCreate) SetKind(t tag.Kind) *TagCreate {
 	return tc
 }
 
-// AddTargetIDs adds the "targets" edge to the Target entity by IDs.
-func (tc *TagCreate) AddTargetIDs(ids ...int) *TagCreate {
-	tc.mutation.AddTargetIDs(ids...)
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (tc *TagCreate) AddSessionIDs(ids ...int) *TagCreate {
+	tc.mutation.AddSessionIDs(ids...)
 	return tc
 }
 
-// AddTargets adds the "targets" edges to the Target entity.
-func (tc *TagCreate) AddTargets(t ...*Target) *TagCreate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+// AddSessions adds the "sessions" edges to the Session entity.
+func (tc *TagCreate) AddSessions(s ...*Session) *TagCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return tc.AddTargetIDs(ids...)
+	return tc.AddSessionIDs(ids...)
 }
 
 // Mutation returns the TagMutation object of the builder.
@@ -139,8 +139,8 @@ func (tc *TagCreate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Tag.kind": %w`, err)}
 		}
 	}
-	if len(tc.mutation.TargetsIDs()) == 0 {
-		return &ValidationError{Name: "targets", err: errors.New(`ent: missing required edge "Tag.targets"`)}
+	if len(tc.mutation.SessionsIDs()) == 0 {
+		return &ValidationError{Name: "sessions", err: errors.New(`ent: missing required edge "Tag.sessions"`)}
 	}
 	return nil
 }
@@ -177,17 +177,17 @@ func (tc *TagCreate) createSpec() (*Tag, *sqlgraph.CreateSpec) {
 		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
 	}
-	if nodes := tc.mutation.TargetsIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.SessionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.TargetsTable,
-			Columns: tag.TargetsPrimaryKey,
+			Table:   tag.SessionsTable,
+			Columns: tag.SessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}

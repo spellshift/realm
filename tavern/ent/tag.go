@@ -26,24 +26,24 @@ type Tag struct {
 
 // TagEdges holds the relations/edges for other nodes in the graph.
 type TagEdges struct {
-	// Targets holds the value of the targets edge.
-	Targets []*Target `json:"targets,omitempty"`
+	// Sessions holds the value of the sessions edge.
+	Sessions []*Session `json:"sessions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
 	totalCount [1]map[string]int
 
-	namedTargets map[string][]*Target
+	namedSessions map[string][]*Session
 }
 
-// TargetsOrErr returns the Targets value or an error if the edge
+// SessionsOrErr returns the Sessions value or an error if the edge
 // was not loaded in eager-loading.
-func (e TagEdges) TargetsOrErr() ([]*Target, error) {
+func (e TagEdges) SessionsOrErr() ([]*Session, error) {
 	if e.loadedTypes[0] {
-		return e.Targets, nil
+		return e.Sessions, nil
 	}
-	return nil, &NotLoadedError{edge: "targets"}
+	return nil, &NotLoadedError{edge: "sessions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -93,9 +93,9 @@ func (t *Tag) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// QueryTargets queries the "targets" edge of the Tag entity.
-func (t *Tag) QueryTargets() *TargetQuery {
-	return (&TagClient{config: t.config}).QueryTargets(t)
+// QuerySessions queries the "sessions" edge of the Tag entity.
+func (t *Tag) QuerySessions() *SessionQuery {
+	return (&TagClient{config: t.config}).QuerySessions(t)
 }
 
 // Update returns a builder for updating this Tag.
@@ -130,27 +130,27 @@ func (t *Tag) String() string {
 	return builder.String()
 }
 
-// NamedTargets returns the Targets named value or an error if the edge was not
+// NamedSessions returns the Sessions named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Tag) NamedTargets(name string) ([]*Target, error) {
-	if t.Edges.namedTargets == nil {
+func (t *Tag) NamedSessions(name string) ([]*Session, error) {
+	if t.Edges.namedSessions == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedTargets[name]
+	nodes, ok := t.Edges.namedSessions[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Tag) appendNamedTargets(name string, edges ...*Target) {
-	if t.Edges.namedTargets == nil {
-		t.Edges.namedTargets = make(map[string][]*Target)
+func (t *Tag) appendNamedSessions(name string, edges ...*Session) {
+	if t.Edges.namedSessions == nil {
+		t.Edges.namedSessions = make(map[string][]*Session)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedTargets[name] = []*Target{}
+		t.Edges.namedSessions[name] = []*Session{}
 	} else {
-		t.Edges.namedTargets[name] = append(t.Edges.namedTargets[name], edges...)
+		t.Edges.namedSessions[name] = append(t.Edges.namedSessions[name], edges...)
 	}
 }
 

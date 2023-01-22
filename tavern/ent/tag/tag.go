@@ -17,15 +17,15 @@ const (
 	FieldName = "name"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
-	// EdgeTargets holds the string denoting the targets edge name in mutations.
-	EdgeTargets = "targets"
+	// EdgeSessions holds the string denoting the sessions edge name in mutations.
+	EdgeSessions = "sessions"
 	// Table holds the table name of the tag in the database.
 	Table = "tags"
-	// TargetsTable is the table that holds the targets relation/edge. The primary key declared below.
-	TargetsTable = "target_tags"
-	// TargetsInverseTable is the table name for the Target entity.
-	// It exists in this package in order to avoid circular dependency with the "target" package.
-	TargetsInverseTable = "targets"
+	// SessionsTable is the table that holds the sessions relation/edge. The primary key declared below.
+	SessionsTable = "session_tags"
+	// SessionsInverseTable is the table name for the Session entity.
+	// It exists in this package in order to avoid circular dependency with the "session" package.
+	SessionsInverseTable = "sessions"
 )
 
 // Columns holds all SQL columns for tag fields.
@@ -36,9 +36,9 @@ var Columns = []string{
 }
 
 var (
-	// TargetsPrimaryKey and TargetsColumn2 are the table columns denoting the
-	// primary key for the targets relation (M2M).
-	TargetsPrimaryKey = []string{"target_id", "tag_id"}
+	// SessionsPrimaryKey and SessionsColumn2 are the table columns denoting the
+	// primary key for the sessions relation (M2M).
+	SessionsPrimaryKey = []string{"session_id", "tag_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

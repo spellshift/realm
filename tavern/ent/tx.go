@@ -16,10 +16,10 @@ type Tx struct {
 	File *FileClient
 	// Job is the client for interacting with the Job builders.
 	Job *JobClient
+	// Session is the client for interacting with the Session builders.
+	Session *SessionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
-	// Target is the client for interacting with the Target builders.
-	Target *TargetClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// Tome is the client for interacting with the Tome builders.
@@ -159,8 +159,8 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.File = NewFileClient(tx.config)
 	tx.Job = NewJobClient(tx.config)
+	tx.Session = NewSessionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
-	tx.Target = NewTargetClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.Tome = NewTomeClient(tx.config)
 	tx.User = NewUserClient(tx.config)
