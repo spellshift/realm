@@ -70,7 +70,7 @@ mod tests {
             assert_eq!(bool_res, true);
         }
         else if cfg!(target_os = "macos") {
-            let res = exec(String::from("/bin/zsh"),vec![String::from("id"), String::from("-u")], false)?;
+            let res = exec(String::from("/bin/echo"),vec![String::from("hello"), String::from("-u")], false)?;
             let mut bool_res = false;
             println!("{}", res);
             assert_eq!(res, "501\n");
