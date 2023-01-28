@@ -1,10 +1,8 @@
 use anyhow::Result;
 use std::process::{Command, exit};
 use std::str;
-use nix::{
-    sys::wait::waitpid,
-    unistd::{fork, ForkResult},
-};
+#[cfg(target_os = "linux") || cfg(target_os = "macos")]
+use nix::{sys::wait::waitpid, unistd::{fork, ForkResult}};
 
 // https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
 
