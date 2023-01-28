@@ -70,14 +70,8 @@ mod tests {
             assert_eq!(bool_res, true);
         }
         else if cfg!(target_os = "macos") {
-            let res = exec(String::from("/bin/echo"),vec![String::from("hello"), String::from("-u")], false)?;
-            let mut bool_res = false;
-            println!("{}", res);
-            assert_eq!(res, "501\n");
-            if res == "501\n" || res == "0\n" {
-                bool_res = true;
-            }
-            assert_eq!(bool_res, true);
+            let res = exec(String::from("/bin/echo"),vec![String::from("hello")], false)?;
+            assert_eq!(res, "hello\n");
         }
         else if cfg!(target_os = "windows") {
             let res = exec(String::from("C:\\Windows\\System32\\cmd.exe"), vec![String::from("/c"), String::from("whoami")], false)?;
