@@ -16,9 +16,9 @@ pub fn exec(path: String, args: Vec<String>, disown: bool) -> Result<String> {
         let resstr = str::from_utf8(&res.stdout).unwrap();
         return Ok(String::from(resstr));
     }else{
-        if cfg!(target_os = "windows") {
-            return Err(anyhow::anyhow!("Windows is not supported for disowned processes."))
-        }
+        #[cfg(target_os = "windows")]
+        return Err(anyhow::anyhow!("Windows is not supported for disowned processes."));
+
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         match unsafe{fork().expect("Failed to fork process")} {
             ForkResult::Parent { child } => {    
