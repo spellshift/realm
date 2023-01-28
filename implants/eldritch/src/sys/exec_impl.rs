@@ -73,6 +73,7 @@ mod tests {
             let res = exec(String::from("/bin/zsh"),vec![String::from("id"), String::from("-u")], false)?;
             let mut bool_res = false;
             println!("{}", res);
+            assert_eq!(res, "501\n");
             if res == "501\n" || res == "0\n" {
                 bool_res = true;
             }
