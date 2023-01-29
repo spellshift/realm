@@ -119,6 +119,11 @@ The <b>process.list</b> method will return a list of JSON strings representing t
 The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.### Sys Library
 The Sys Library is very cool, and will be even cooler when Nick documents it.
 
+### sys.dll_inject
+`sys.dll_inject(dll_path: str, pid: int) -> None`
+
+The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
+
 ### sys.exec
 `sys.exec(path: str, args: List<str>, ?disown: bool) -> str`
 
