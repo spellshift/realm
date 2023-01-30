@@ -42,6 +42,7 @@ mod tests {
     use core::time;
     use std::{process::Command, thread, path::Path, fs};
     use sysinfo::{Pid, Signal};
+    use tempfile::NamedTempFile;
 
     fn find_first_process_of_name(process_name: String) -> Result<u32> {
         let mut sys = System::new();
@@ -56,26 +57,43 @@ mod tests {
     
     #[test]
     fn test_dll_inject() -> anyhow::Result<()>{
-        
+        // Get unique and unused temp file path
+        let tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        tmp_file.close()?;
+
+        // Out test DLL file path
         let test_dll_path = "C:\\Users\\Jack McKenna\\Documents\\test_dll\\target\\debug\\test_dll.dll".to_string();
 
-        let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", "C:\\Users\\Jack McKenna\\Desktop\\win3.txt").spawn();
+        // Out target process is notepad for stability and control.
+        let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();
         let target_pid = expected_process.unwrap().id();
 
+        // Run our code.
         let _res = dll_inject(test_dll_path, target_pid);
-        
+
         let delay = time::Duration::from_secs(1);
         thread::sleep(delay);
-        let test_path = Path::new("C:\\Users\\Jack McKenna\\Desktop\\win3.txt");
 
+        // Test that the test file was created
+        let test_path = Path::new(path.as_str());
         assert!(test_path.is_file());
 
-        // Delete test file and kill process
-        // let _ = fs::remove_file(test_path);
-        thread::sleep(delay);
-
-        let sys = System::new();
-        let get_proc_res = sys.process(Pid::from_u32(target_pid)).unwrap();
+        // Delete test file
+        let _ = fs::remove_file(test_path);
+        
+        // kill the target process notepad
+        let mut sys = System::new();
+        sys.refresh_processes();
+        match sys.process(Pid::from_u32(target_pid)) {
+            Some(res) => {
+                res.kill_with(Signal::Kill);
+                println!("Killing {}", res.pid());
+            },
+            None => {
+                println!("Failed to kill target PID");
+            },
+        }
 
         Ok(())
     }
