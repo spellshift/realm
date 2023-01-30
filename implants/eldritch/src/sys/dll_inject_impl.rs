@@ -1,9 +1,7 @@
 use std::ffi::c_void;
-use std::{time, thread, process};
 
 use anyhow::Result;
 use starlark::values::none::NoneType;
-use sysinfo::{ProcessExt,System,SystemExt,PidExt};
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
 use windows_sys::Win32::System::Threading::OpenProcess;
@@ -19,19 +17,48 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
         // Get the kernel32.dll base address
         let h_kernel32 = GetModuleHandleA("kernel32.dll\0".as_bytes().as_ptr() as *const u8);
         // Get the address of the kernel function LoadLibraryA
-        let lb = GetProcAddress(h_kernel32, "LoadLibraryA\0".as_bytes().as_ptr() as *const u8).unwrap();
+        let loadlibrary_function_ref = GetProcAddress(
+            h_kernel32, 
+            "LoadLibraryA\0".as_bytes().as_ptr() as *const u8
+        ).unwrap();
 
         // Open a handle to the remote process
-        let ph = OpenProcess(PROCESS_ALL_ACCESS, 0, pid);
+        let target_process_memory_handle = OpenProcess(
+            PROCESS_ALL_ACCESS,
+            0,
+            pid
+        );
 
         // Allocate memory in the remote process that we'll copy the DLL path string to.
-        let rb = VirtualAllocEx(ph, 0 as *const c_void, dll_path.len()+1, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+        let target_process_allocated_memory_handle = VirtualAllocEx(
+            target_process_memory_handle, 
+            0 as *const c_void, 
+            dll_path.len()+1, 
+            MEM_RESERVE | MEM_COMMIT, 
+            PAGE_EXECUTE_READWRITE
+        );
 
         // Write the DLL path into the remote processes newly allocated memory
-        let write_proccess_memory_res = WriteProcessMemory(ph, rb, dll_path.as_bytes().as_ptr() as *const c_void, dll_path.len(), 0 as *mut usize);
+        let _write_proccess_memory_res = WriteProcessMemory(
+            target_process_memory_handle, 
+            target_process_allocated_memory_handle, 
+            dll_path.as_bytes().as_ptr() as *const c_void, 
+            dll_path.len(), 
+            0 as *mut usize
+        );
 
-        let rt = CreateRemoteThread(ph, 0 as *const SECURITY_ATTRIBUTES, 0, Some(std::mem::transmute::<_, extern "system" fn(_) -> _>(lb)), rb, 0, 0 as *mut u32);
-        CloseHandle(ph);
+        // Kickoff our DLL in the remote process
+        let _remote_thread_return_val = CreateRemoteThread(
+            target_process_memory_handle, 
+            0 as *const SECURITY_ATTRIBUTES, 
+            0, 
+            Some(std::mem::transmute::<_, extern "system" fn(_) -> _>(loadlibrary_function_ref)), 
+            target_process_allocated_memory_handle, 
+            0, 
+            0 as *mut u32
+        );
+
+        CloseHandle(target_process_memory_handle);
     }
     Ok(NoneType)
 }
@@ -43,6 +70,8 @@ mod tests {
     use std::{process::Command, thread, path::Path, fs};
     use sysinfo::{Pid, Signal};
     use tempfile::NamedTempFile;
+    use sysinfo::{ProcessExt,System,SystemExt,PidExt};
+
 
     fn find_first_process_of_name(process_name: String) -> Result<u32> {
         let mut sys = System::new();
@@ -56,7 +85,7 @@ mod tests {
     }
     
     #[test]
-    fn test_dll_inject() -> anyhow::Result<()>{
+    fn test_dll_inject_simple() -> anyhow::Result<()>{
         // Get unique and unused temp file path
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
@@ -88,10 +117,8 @@ mod tests {
         match sys.process(Pid::from_u32(target_pid)) {
             Some(res) => {
                 res.kill_with(Signal::Kill);
-                println!("Killing {}", res.pid());
             },
             None => {
-                println!("Failed to kill target PID");
             },
         }
 
@@ -99,9 +126,9 @@ mod tests {
     }
 
     #[test]
-    fn test_find_first_process_of_name() -> anyhow::Result<()>{
-        let process_name = "notepad.exe";
-        let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").spawn();
+    fn test_dll_inject_find_first_process_of_name() -> anyhow::Result<()>{
+        let process_name = "calc.exe";
+        let expected_process = Command::new("C:\\Windows\\System32\\calc.exe").spawn();
         
         let expected_pid = expected_process.unwrap().id();
         let process_pid = find_first_process_of_name(process_name.to_string());
