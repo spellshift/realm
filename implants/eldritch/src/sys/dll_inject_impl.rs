@@ -32,13 +32,6 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
 
         let rt = CreateRemoteThread(ph, 0 as *const SECURITY_ATTRIBUTES, 0, Some(std::mem::transmute::<_, extern "system" fn(_) -> _>(lb)), rb, 0, 0 as *mut u32);
         CloseHandle(ph);
-      
-        // println!("{}", process::id());
-        // println!("kernel32 {:?}", h_kernel32 as *const isize);
-        // println!("lb {:?}", lb as *const ());
-        // println!("ph {:?}", ph as *const isize);
-        // println!("rb {:?}", rb as *const c_void);
-        // println!("phmodule {:?}", phmodule);
     }
     Ok(NoneType)
 }
@@ -66,18 +59,24 @@ mod tests {
         
         let test_dll_path = "C:\\Users\\Jack McKenna\\Documents\\test_dll\\target\\debug\\test_dll.dll".to_string();
 
-        let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").spawn();
+        let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", "C:\\Users\\Jack McKenna\\Desktop\\win3.txt").spawn();
         let target_pid = expected_process.unwrap().id();
 
         let _res = dll_inject(test_dll_path, target_pid);
         
         let delay = time::Duration::from_secs(1);
         thread::sleep(delay);
-        let test_path = Path::new("C:\\Users\\Jack McKenna\\Desktop\\win2.txt");
+        let test_path = Path::new("C:\\Users\\Jack McKenna\\Desktop\\win3.txt");
 
         assert!(test_path.is_file());
 
-        let _ = fs::remove_file(test_path);
+        // Delete test file and kill process
+        // let _ = fs::remove_file(test_path);
+        thread::sleep(delay);
+
+        let sys = System::new();
+        let get_proc_res = sys.process(Pid::from_u32(target_pid)).unwrap();
+
         Ok(())
     }
 
