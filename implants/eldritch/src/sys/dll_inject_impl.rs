@@ -79,15 +79,19 @@ mod tests {
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
         tmp_file.close()?;
 
-        // Out test DLL file path
-        let test_dll_path = "C:\\Users\\Jack McKenna\\Documents\\test_dll\\target\\debug\\test_dll.dll".to_string();
+        // Get the path to our test dll file.
+        let cargo_root = env!("CARGO_MANIFEST_DIR");
+        let relative_path_to_test_dll = "..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll";
+        let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll);
+        assert!(test_dll_path.is_file());
 
         // Out target process is notepad for stability and control.
+        // The temp file is passed through an environment variable.
         let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();
         let target_pid = expected_process.unwrap().id();
 
         // Run our code.
-        let _res = dll_inject(test_dll_path, target_pid);
+        let _res = dll_inject(test_dll_path.to_string_lossy().to_string(), target_pid);
 
         let delay = time::Duration::from_secs(1);
         thread::sleep(delay);
