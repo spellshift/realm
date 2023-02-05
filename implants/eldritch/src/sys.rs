@@ -54,7 +54,6 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         exec_impl::exec(path, args, disown)
     }
-    #[cfg(target_os = "windows")]
     fn dll_inject(this: SysLibrary, dll_path: String, pid: u32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         dll_inject_impl::dll_inject(dll_path, pid)

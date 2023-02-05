@@ -1,18 +1,26 @@
-use std::ffi::c_void;
 
 use anyhow::Result;
 use starlark::values::none::NoneType;
-use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
-use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleA, GetProcAddress};
-use windows_sys::Win32::System::Threading::OpenProcess;
-use windows_sys::Win32::System::Threading::PROCESS_ALL_ACCESS;
-use windows_sys::Win32::System::Memory::VirtualAllocEx;
-use windows_sys::Win32::System::Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE};
-use windows_sys::Win32::System::Diagnostics::Debug::WriteProcessMemory;
-use windows_sys::Win32::System::Threading::CreateRemoteThread;
-use windows_sys::Win32::Foundation::CloseHandle;
+#[cfg(target_os = "windows")]
+use windows_sys::Win32::{
+    System::{
+        Threading::{OpenProcess,PROCESS_ALL_ACCESS,CreateRemoteThread},
+        System::LibraryLoader::{GetModuleHandleA, GetProcAddress},
+        Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
+        Diagnostics::Debug::WriteProcessMemory,
+        Security::SECURITY_ATTRIBUTES
+    },
+    Foundation::CloseHandle
+};
+#[cfg(target_os = "windows")]
+use std::ffi::c_void;
+
 
 pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
+    if false { println!("Ignore unused vars dll_path: {}, pid: {}", dll_path, pid); }
+    #[cfg(not(target_os = "windows"))]
+    return Err(anyhow::anyhow!("This OS isn't supported by the dll_inject function.\nOnly windows systems are supported"));
+    #[cfg(target_os = "windows")]
     unsafe {
         // Get the kernel32.dll base address
         let h_kernel32 = GetModuleHandleA("kernel32.dll\0".as_bytes().as_ptr() as *const u8);
@@ -59,10 +67,11 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
         );
 
         CloseHandle(target_process_memory_handle);
+        Ok(NoneType)
     }
-    Ok(NoneType)
 }
 
+#[cfg(target_os = "windows")]
 #[cfg(test)]
 mod tests {
     use super::*;
