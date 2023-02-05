@@ -5,12 +5,12 @@ use starlark::values::none::NoneType;
 use windows_sys::Win32::{
     System::{
         Threading::{OpenProcess,PROCESS_ALL_ACCESS,CreateRemoteThread},
-        System::LibraryLoader::{GetModuleHandleA, GetProcAddress},
-        Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
+        LibraryLoader::{GetModuleHandleA, GetProcAddress},
+        Memory::{VirtualAllocEx,MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
         Diagnostics::Debug::WriteProcessMemory,
-        Security::SECURITY_ATTRIBUTES
     },
-    Foundation::CloseHandle
+    Foundation::CloseHandle,
+    Security::SECURITY_ATTRIBUTES
 };
 #[cfg(target_os = "windows")]
 use std::ffi::c_void;
