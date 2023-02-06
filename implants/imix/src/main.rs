@@ -25,6 +25,9 @@ async fn run(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
     let config: imix::Config = serde_json::from_reader(config_file)?;
 
+
+    return Ok(imix::common::main_loop().await);
+
     #[cfg(target_os = "windows")]
         return imix::windows::run(config).await;
 
