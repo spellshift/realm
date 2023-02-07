@@ -10,8 +10,13 @@ type Mutation {
     claimTasks(input: ClaimTasksInput!,): [Task!]!
     submitTaskResult(input: SubmitTaskResultInput!,): Task
 
-    ### 
+    ###
+    # Tome
+    ###
+    createTome(input: CreateTomeInput!,): Tome!
+
+    ###
     # User
-    ###  
+    ###
     updateUser(userID: ID!, input: UpdateUserInput!): User
 }

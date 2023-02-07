@@ -1,6 +1,8 @@
 package graphql_test
 
-import "strconv"
+import (
+	"strconv"
+)
 
 // convertID turns a GraphQL string ID response into an int.
 func convertID(id string) int {

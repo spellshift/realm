@@ -193,6 +193,11 @@ func (r *mutationResolver) SubmitTaskResult(ctx context.Context, input models.Su
 	return t, nil
 }
 
+// CreateTome is the resolver for the createTome field.
+func (r *mutationResolver) CreateTome(ctx context.Context, input ent.CreateTomeInput) (*ent.Tome, error) {
+	return r.client.Tome.Create().SetInput(input).Save(ctx)
+}
+
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error) {
 	return r.client.User.UpdateOneID(userID).SetInput(input).Save(ctx)
