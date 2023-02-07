@@ -32,7 +32,7 @@ func (Tag) Fields() []ent.Field {
 // Edges of the Tag.
 func (Tag) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("targets", Target.Type).
+		edge.From("sessions", Session.Type).
 			Ref("tags").
 			Required(),
 	}

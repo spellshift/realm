@@ -36,26 +36,38 @@ func (j *Job) Tasks(ctx context.Context) (result []*Task, err error) {
 	return result, err
 }
 
-func (t *Tag) Targets(ctx context.Context) (result []*Target, err error) {
+func (s *Session) Tags(ctx context.Context) (result []*Tag, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedTargets(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = s.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = t.Edges.TargetsOrErr()
+		result, err = s.Edges.TagsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = t.QueryTargets().All(ctx)
+		result, err = s.QueryTags().All(ctx)
 	}
 	return result, err
 }
 
-func (t *Target) Tags(ctx context.Context) (result []*Tag, err error) {
+func (s *Session) Tasks(ctx context.Context) (result []*Task, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = s.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = t.Edges.TagsOrErr()
+		result, err = s.Edges.TasksOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = t.QueryTags().All(ctx)
+		result, err = s.QueryTasks().All(ctx)
+	}
+	return result, err
+}
+
+func (t *Tag) Sessions(ctx context.Context) (result []*Session, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = t.NamedSessions(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = t.Edges.SessionsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = t.QuerySessions().All(ctx)
 	}
 	return result, err
 }
@@ -68,10 +80,10 @@ func (t *Task) Job(ctx context.Context) (*Job, error) {
 	return result, err
 }
 
-func (t *Task) Target(ctx context.Context) (*Target, error) {
-	result, err := t.Edges.TargetOrErr()
+func (t *Task) Session(ctx context.Context) (*Session, error) {
+	result, err := t.Edges.SessionOrErr()
 	if IsNotLoaded(err) {
-		result, err = t.QueryTarget().Only(ctx)
+		result, err = t.QuerySession().Only(ctx)
 	}
 	return result, err
 }

@@ -8,8 +8,8 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/schema"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
@@ -69,18 +69,36 @@ func init() {
 	jobDescName := jobFields[0].Descriptor()
 	// job.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	job.NameValidator = jobDescName.Validators[0].(func(string) error)
+	sessionFields := schema.Session{}.Fields()
+	_ = sessionFields
+	// sessionDescPrincipal is the schema descriptor for principal field.
+	sessionDescPrincipal := sessionFields[0].Descriptor()
+	// session.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
+	session.PrincipalValidator = sessionDescPrincipal.Validators[0].(func(string) error)
+	// sessionDescHostname is the schema descriptor for hostname field.
+	sessionDescHostname := sessionFields[1].Descriptor()
+	// session.HostnameValidator is a validator for the "hostname" field. It is called by the builders before save.
+	session.HostnameValidator = sessionDescHostname.Validators[0].(func(string) error)
+	// sessionDescIdentifier is the schema descriptor for identifier field.
+	sessionDescIdentifier := sessionFields[2].Descriptor()
+	// session.DefaultIdentifier holds the default value on creation for the identifier field.
+	session.DefaultIdentifier = sessionDescIdentifier.Default.(func() string)
+	// session.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
+	session.IdentifierValidator = sessionDescIdentifier.Validators[0].(func(string) error)
+	// sessionDescAgentIdentifier is the schema descriptor for agentIdentifier field.
+	sessionDescAgentIdentifier := sessionFields[3].Descriptor()
+	// session.AgentIdentifierValidator is a validator for the "agentIdentifier" field. It is called by the builders before save.
+	session.AgentIdentifierValidator = sessionDescAgentIdentifier.Validators[0].(func(string) error)
+	// sessionDescHostIdentifier is the schema descriptor for hostIdentifier field.
+	sessionDescHostIdentifier := sessionFields[4].Descriptor()
+	// session.HostIdentifierValidator is a validator for the "hostIdentifier" field. It is called by the builders before save.
+	session.HostIdentifierValidator = sessionDescHostIdentifier.Validators[0].(func(string) error)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.
 	tagDescName := tagFields[0].Descriptor()
 	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
-	targetFields := schema.Target{}.Fields()
-	_ = targetFields
-	// targetDescName is the schema descriptor for name field.
-	targetDescName := targetFields[0].Descriptor()
-	// target.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	target.NameValidator = targetDescName.Validators[0].(func(string) error)
 	taskMixin := schema.Task{}.Mixin()
 	taskMixinFields0 := taskMixin[0].Fields()
 	_ = taskMixinFields0
