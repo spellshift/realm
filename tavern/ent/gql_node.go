@@ -375,7 +375,7 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Tome",
-		Fields: make([]*Field, 7),
+		Fields: make([]*Field, 6),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -419,18 +419,10 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "parameters",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(t.Hash); err != nil {
-		return nil, err
-	}
-	node.Fields[5] = &Field{
-		Type:  "string",
-		Name:  "hash",
-		Value: string(buf),
-	}
 	if buf, err = json.Marshal(t.Eldritch); err != nil {
 		return nil, err
 	}
-	node.Fields[6] = &Field{
+	node.Fields[5] = &Field{
 		Type:  "string",
 		Name:  "eldritch",
 		Value: string(buf),
