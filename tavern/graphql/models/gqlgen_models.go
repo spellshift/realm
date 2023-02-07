@@ -2,6 +2,10 @@
 
 package models
 
+import (
+	"time"
+)
+
 type ClaimTasksInput struct {
 	// The identity the session is authenticated as (e.g. 'root')
 	Principal string `json:"principal"`
@@ -13,4 +17,18 @@ type ClaimTasksInput struct {
 	HostIdentifier string `json:"hostIdentifier"`
 	// Name of the agent program the session is running as (e.g. 'imix')
 	AgentIdentifier string `json:"agentIdentifier"`
+}
+
+type SubmitTaskResultInput struct {
+	// ID of the task to submit results for.
+	TaskID int `json:"taskID"`
+	// Timestamp of when the task execution began. Format as RFC3339Nano.
+	ExecStartedAt time.Time `json:"execStartedAt"`
+	// Timestamp of when the task execution finished (set only if it has completed). Format as RFC3339Nano.
+	ExecFinishedAt *time.Time `json:"execFinishedAt"`
+	// Output captured as the result of task execution.
+	// Submitting multiple outputs will result in appending new output to the previous output.
+	Output string `json:"output"`
+	// Error message captured as the result of task execution failure.
+	Error *string `json:"error"`
 }
