@@ -1963,21 +1963,6 @@ type TomeWhereInput struct {
 	ParametersEqualFold    *string  `json:"parametersEqualFold,omitempty"`
 	ParametersContainsFold *string  `json:"parametersContainsFold,omitempty"`
 
-	// "hash" field predicates.
-	Hash             *string  `json:"hash,omitempty"`
-	HashNEQ          *string  `json:"hashNEQ,omitempty"`
-	HashIn           []string `json:"hashIn,omitempty"`
-	HashNotIn        []string `json:"hashNotIn,omitempty"`
-	HashGT           *string  `json:"hashGT,omitempty"`
-	HashGTE          *string  `json:"hashGTE,omitempty"`
-	HashLT           *string  `json:"hashLT,omitempty"`
-	HashLTE          *string  `json:"hashLTE,omitempty"`
-	HashContains     *string  `json:"hashContains,omitempty"`
-	HashHasPrefix    *string  `json:"hashHasPrefix,omitempty"`
-	HashHasSuffix    *string  `json:"hashHasSuffix,omitempty"`
-	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
-	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
-
 	// "eldritch" field predicates.
 	Eldritch             *string  `json:"eldritch,omitempty"`
 	EldritchNEQ          *string  `json:"eldritchNEQ,omitempty"`
@@ -2263,45 +2248,6 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	}
 	if i.ParametersContainsFold != nil {
 		predicates = append(predicates, tome.ParametersContainsFold(*i.ParametersContainsFold))
-	}
-	if i.Hash != nil {
-		predicates = append(predicates, tome.HashEQ(*i.Hash))
-	}
-	if i.HashNEQ != nil {
-		predicates = append(predicates, tome.HashNEQ(*i.HashNEQ))
-	}
-	if len(i.HashIn) > 0 {
-		predicates = append(predicates, tome.HashIn(i.HashIn...))
-	}
-	if len(i.HashNotIn) > 0 {
-		predicates = append(predicates, tome.HashNotIn(i.HashNotIn...))
-	}
-	if i.HashGT != nil {
-		predicates = append(predicates, tome.HashGT(*i.HashGT))
-	}
-	if i.HashGTE != nil {
-		predicates = append(predicates, tome.HashGTE(*i.HashGTE))
-	}
-	if i.HashLT != nil {
-		predicates = append(predicates, tome.HashLT(*i.HashLT))
-	}
-	if i.HashLTE != nil {
-		predicates = append(predicates, tome.HashLTE(*i.HashLTE))
-	}
-	if i.HashContains != nil {
-		predicates = append(predicates, tome.HashContains(*i.HashContains))
-	}
-	if i.HashHasPrefix != nil {
-		predicates = append(predicates, tome.HashHasPrefix(*i.HashHasPrefix))
-	}
-	if i.HashHasSuffix != nil {
-		predicates = append(predicates, tome.HashHasSuffix(*i.HashHasSuffix))
-	}
-	if i.HashEqualFold != nil {
-		predicates = append(predicates, tome.HashEqualFold(*i.HashEqualFold))
-	}
-	if i.HashContainsFold != nil {
-		predicates = append(predicates, tome.HashContainsFold(*i.HashContainsFold))
 	}
 	if i.Eldritch != nil {
 		predicates = append(predicates, tome.EldritchEQ(*i.Eldritch))

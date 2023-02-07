@@ -20,6 +20,34 @@ func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
 	return c
 }
 
+// CreateTomeInput represents a mutation input for creating tomes.
+type CreateTomeInput struct {
+	Name        string
+	Description string
+	Parameters  *string
+	Eldritch    string
+	FileIDs     []int
+}
+
+// Mutate applies the CreateTomeInput on the TomeMutation builder.
+func (i *CreateTomeInput) Mutate(m *TomeMutation) {
+	m.SetName(i.Name)
+	m.SetDescription(i.Description)
+	if v := i.Parameters; v != nil {
+		m.SetParameters(*v)
+	}
+	m.SetEldritch(i.Eldritch)
+	if v := i.FileIDs; len(v) > 0 {
+		m.AddFileIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateTomeInput on the TomeCreate builder.
+func (c *TomeCreate) SetInput(i CreateTomeInput) *TomeCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
 	Name        *string

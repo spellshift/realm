@@ -17,12 +17,12 @@ import (
 )
 
 func TestSessionMutations(t *testing.T) {
-	// Initialize Test Context
+	// Setup
 	ctx := context.Background()
-
-	// Initialize DB Backend
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
+	srv := handler.NewDefaultServer(graphql.NewSchema(graph))
+	gqlClient := client.New(srv)
 
 	// Initialize sample data
 	testSessions := []*ent.Session{
@@ -50,12 +50,6 @@ func TestSessionMutations(t *testing.T) {
 			SetSession(testSessions[0]).
 			SaveX(ctx),
 	}
-
-	// Create a new GraphQL server (needed for auth middleware)
-	srv := handler.NewDefaultServer(graphql.NewSchema(graph))
-
-	// Create a new GraphQL client (connected to our http server)
-	gqlClient := client.New(srv)
 
 	t.Run("ClaimTasks", func(t *testing.T) {
 		// Define the ClaimTasks mutation
