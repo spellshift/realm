@@ -9,14 +9,15 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/graphql/models"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
 // region    ************************** generated!.gotpl **************************
 
 type MutationResolver interface {
-	CreateJob(ctx context.Context, targetIDs []int, input ent.CreateJobInput) (*ent.Job, error)
-	ClaimTasks(ctx context.Context, targetID int) ([]*ent.Task, error)
+	CreateJob(ctx context.Context, sessionIDs []int, input ent.CreateJobInput) (*ent.Job, error)
+	ClaimTasks(ctx context.Context, input models.ClaimTasksInput) ([]*ent.Task, error)
 	UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error)
 }
 
@@ -27,15 +28,15 @@ type MutationResolver interface {
 func (ec *executionContext) field_Mutation_claimTasks_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["targetID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+	var arg0 models.ClaimTasksInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNClaimTasksInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐClaimTasksInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["targetID"] = arg0
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -43,14 +44,14 @@ func (ec *executionContext) field_Mutation_createJob_args(ctx context.Context, r
 	var err error
 	args := map[string]interface{}{}
 	var arg0 []int
-	if tmp, ok := rawArgs["targetIDs"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetIDs"))
+	if tmp, ok := rawArgs["sessionIDs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sessionIDs"))
 		arg0, err = ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["targetIDs"] = arg0
+	args["sessionIDs"] = arg0
 	var arg1 ent.CreateJobInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
@@ -109,7 +110,7 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateJob(rctx, fc.Args["targetIDs"].([]int), fc.Args["input"].(ent.CreateJobInput))
+		return ec.resolvers.Mutation().CreateJob(rctx, fc.Args["sessionIDs"].([]int), fc.Args["input"].(ent.CreateJobInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -177,7 +178,7 @@ func (ec *executionContext) _Mutation_claimTasks(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ClaimTasks(rctx, fc.Args["targetID"].(int))
+		return ec.resolvers.Mutation().ClaimTasks(rctx, fc.Args["input"].(models.ClaimTasksInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -220,8 +221,8 @@ func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context
 				return ec.fieldContext_Task_error(ctx, field)
 			case "job":
 				return ec.fieldContext_Task_job(ctx, field)
-			case "target":
-				return ec.fieldContext_Task_target(ctx, field)
+			case "session":
+				return ec.fieldContext_Task_session(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
 		},

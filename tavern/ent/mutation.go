@@ -12,8 +12,8 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
@@ -30,13 +30,13 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeFile   = "File"
-	TypeJob    = "Job"
-	TypeTag    = "Tag"
-	TypeTarget = "Target"
-	TypeTask   = "Task"
-	TypeTome   = "Tome"
-	TypeUser   = "User"
+	TypeFile    = "File"
+	TypeJob     = "Job"
+	TypeSession = "Session"
+	TypeTag     = "Tag"
+	TypeTask    = "Task"
+	TypeTome    = "Tome"
+	TypeUser    = "User"
 )
 
 // FileMutation represents an operation that mutates the File nodes in the graph.
@@ -1286,21 +1286,876 @@ func (m *JobMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Job edge %s", name)
 }
 
+// SessionMutation represents an operation that mutates the Session nodes in the graph.
+type SessionMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	principal       *string
+	hostname        *string
+	identifier      *string
+	agentIdentifier *string
+	hostIdentifier  *string
+	lastSeenAt      *time.Time
+	clearedFields   map[string]struct{}
+	tags            map[int]struct{}
+	removedtags     map[int]struct{}
+	clearedtags     bool
+	tasks           map[int]struct{}
+	removedtasks    map[int]struct{}
+	clearedtasks    bool
+	done            bool
+	oldValue        func(context.Context) (*Session, error)
+	predicates      []predicate.Session
+}
+
+var _ ent.Mutation = (*SessionMutation)(nil)
+
+// sessionOption allows management of the mutation configuration using functional options.
+type sessionOption func(*SessionMutation)
+
+// newSessionMutation creates new mutation for the Session entity.
+func newSessionMutation(c config, op Op, opts ...sessionOption) *SessionMutation {
+	m := &SessionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSession,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSessionID sets the ID field of the mutation.
+func withSessionID(id int) sessionOption {
+	return func(m *SessionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Session
+		)
+		m.oldValue = func(ctx context.Context) (*Session, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Session.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSession sets the old Session of the mutation.
+func withSession(node *Session) sessionOption {
+	return func(m *SessionMutation) {
+		m.oldValue = func(context.Context) (*Session, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SessionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SessionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SessionMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SessionMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Session.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPrincipal sets the "principal" field.
+func (m *SessionMutation) SetPrincipal(s string) {
+	m.principal = &s
+}
+
+// Principal returns the value of the "principal" field in the mutation.
+func (m *SessionMutation) Principal() (r string, exists bool) {
+	v := m.principal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrincipal returns the old "principal" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldPrincipal(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrincipal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrincipal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrincipal: %w", err)
+	}
+	return oldValue.Principal, nil
+}
+
+// ClearPrincipal clears the value of the "principal" field.
+func (m *SessionMutation) ClearPrincipal() {
+	m.principal = nil
+	m.clearedFields[session.FieldPrincipal] = struct{}{}
+}
+
+// PrincipalCleared returns if the "principal" field was cleared in this mutation.
+func (m *SessionMutation) PrincipalCleared() bool {
+	_, ok := m.clearedFields[session.FieldPrincipal]
+	return ok
+}
+
+// ResetPrincipal resets all changes to the "principal" field.
+func (m *SessionMutation) ResetPrincipal() {
+	m.principal = nil
+	delete(m.clearedFields, session.FieldPrincipal)
+}
+
+// SetHostname sets the "hostname" field.
+func (m *SessionMutation) SetHostname(s string) {
+	m.hostname = &s
+}
+
+// Hostname returns the value of the "hostname" field in the mutation.
+func (m *SessionMutation) Hostname() (r string, exists bool) {
+	v := m.hostname
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHostname returns the old "hostname" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldHostname(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHostname is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHostname requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHostname: %w", err)
+	}
+	return oldValue.Hostname, nil
+}
+
+// ClearHostname clears the value of the "hostname" field.
+func (m *SessionMutation) ClearHostname() {
+	m.hostname = nil
+	m.clearedFields[session.FieldHostname] = struct{}{}
+}
+
+// HostnameCleared returns if the "hostname" field was cleared in this mutation.
+func (m *SessionMutation) HostnameCleared() bool {
+	_, ok := m.clearedFields[session.FieldHostname]
+	return ok
+}
+
+// ResetHostname resets all changes to the "hostname" field.
+func (m *SessionMutation) ResetHostname() {
+	m.hostname = nil
+	delete(m.clearedFields, session.FieldHostname)
+}
+
+// SetIdentifier sets the "identifier" field.
+func (m *SessionMutation) SetIdentifier(s string) {
+	m.identifier = &s
+}
+
+// Identifier returns the value of the "identifier" field in the mutation.
+func (m *SessionMutation) Identifier() (r string, exists bool) {
+	v := m.identifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdentifier returns the old "identifier" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldIdentifier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdentifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdentifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdentifier: %w", err)
+	}
+	return oldValue.Identifier, nil
+}
+
+// ResetIdentifier resets all changes to the "identifier" field.
+func (m *SessionMutation) ResetIdentifier() {
+	m.identifier = nil
+}
+
+// SetAgentIdentifier sets the "agentIdentifier" field.
+func (m *SessionMutation) SetAgentIdentifier(s string) {
+	m.agentIdentifier = &s
+}
+
+// AgentIdentifier returns the value of the "agentIdentifier" field in the mutation.
+func (m *SessionMutation) AgentIdentifier() (r string, exists bool) {
+	v := m.agentIdentifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAgentIdentifier returns the old "agentIdentifier" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldAgentIdentifier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAgentIdentifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAgentIdentifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAgentIdentifier: %w", err)
+	}
+	return oldValue.AgentIdentifier, nil
+}
+
+// ClearAgentIdentifier clears the value of the "agentIdentifier" field.
+func (m *SessionMutation) ClearAgentIdentifier() {
+	m.agentIdentifier = nil
+	m.clearedFields[session.FieldAgentIdentifier] = struct{}{}
+}
+
+// AgentIdentifierCleared returns if the "agentIdentifier" field was cleared in this mutation.
+func (m *SessionMutation) AgentIdentifierCleared() bool {
+	_, ok := m.clearedFields[session.FieldAgentIdentifier]
+	return ok
+}
+
+// ResetAgentIdentifier resets all changes to the "agentIdentifier" field.
+func (m *SessionMutation) ResetAgentIdentifier() {
+	m.agentIdentifier = nil
+	delete(m.clearedFields, session.FieldAgentIdentifier)
+}
+
+// SetHostIdentifier sets the "hostIdentifier" field.
+func (m *SessionMutation) SetHostIdentifier(s string) {
+	m.hostIdentifier = &s
+}
+
+// HostIdentifier returns the value of the "hostIdentifier" field in the mutation.
+func (m *SessionMutation) HostIdentifier() (r string, exists bool) {
+	v := m.hostIdentifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHostIdentifier returns the old "hostIdentifier" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldHostIdentifier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHostIdentifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHostIdentifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHostIdentifier: %w", err)
+	}
+	return oldValue.HostIdentifier, nil
+}
+
+// ClearHostIdentifier clears the value of the "hostIdentifier" field.
+func (m *SessionMutation) ClearHostIdentifier() {
+	m.hostIdentifier = nil
+	m.clearedFields[session.FieldHostIdentifier] = struct{}{}
+}
+
+// HostIdentifierCleared returns if the "hostIdentifier" field was cleared in this mutation.
+func (m *SessionMutation) HostIdentifierCleared() bool {
+	_, ok := m.clearedFields[session.FieldHostIdentifier]
+	return ok
+}
+
+// ResetHostIdentifier resets all changes to the "hostIdentifier" field.
+func (m *SessionMutation) ResetHostIdentifier() {
+	m.hostIdentifier = nil
+	delete(m.clearedFields, session.FieldHostIdentifier)
+}
+
+// SetLastSeenAt sets the "lastSeenAt" field.
+func (m *SessionMutation) SetLastSeenAt(t time.Time) {
+	m.lastSeenAt = &t
+}
+
+// LastSeenAt returns the value of the "lastSeenAt" field in the mutation.
+func (m *SessionMutation) LastSeenAt() (r time.Time, exists bool) {
+	v := m.lastSeenAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSeenAt returns the old "lastSeenAt" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldLastSeenAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSeenAt: %w", err)
+	}
+	return oldValue.LastSeenAt, nil
+}
+
+// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+func (m *SessionMutation) ClearLastSeenAt() {
+	m.lastSeenAt = nil
+	m.clearedFields[session.FieldLastSeenAt] = struct{}{}
+}
+
+// LastSeenAtCleared returns if the "lastSeenAt" field was cleared in this mutation.
+func (m *SessionMutation) LastSeenAtCleared() bool {
+	_, ok := m.clearedFields[session.FieldLastSeenAt]
+	return ok
+}
+
+// ResetLastSeenAt resets all changes to the "lastSeenAt" field.
+func (m *SessionMutation) ResetLastSeenAt() {
+	m.lastSeenAt = nil
+	delete(m.clearedFields, session.FieldLastSeenAt)
+}
+
+// AddTagIDs adds the "tags" edge to the Tag entity by ids.
+func (m *SessionMutation) AddTagIDs(ids ...int) {
+	if m.tags == nil {
+		m.tags = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tags[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTags clears the "tags" edge to the Tag entity.
+func (m *SessionMutation) ClearTags() {
+	m.clearedtags = true
+}
+
+// TagsCleared reports if the "tags" edge to the Tag entity was cleared.
+func (m *SessionMutation) TagsCleared() bool {
+	return m.clearedtags
+}
+
+// RemoveTagIDs removes the "tags" edge to the Tag entity by IDs.
+func (m *SessionMutation) RemoveTagIDs(ids ...int) {
+	if m.removedtags == nil {
+		m.removedtags = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.tags, ids[i])
+		m.removedtags[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTags returns the removed IDs of the "tags" edge to the Tag entity.
+func (m *SessionMutation) RemovedTagsIDs() (ids []int) {
+	for id := range m.removedtags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TagsIDs returns the "tags" edge IDs in the mutation.
+func (m *SessionMutation) TagsIDs() (ids []int) {
+	for id := range m.tags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTags resets all changes to the "tags" edge.
+func (m *SessionMutation) ResetTags() {
+	m.tags = nil
+	m.clearedtags = false
+	m.removedtags = nil
+}
+
+// AddTaskIDs adds the "tasks" edge to the Task entity by ids.
+func (m *SessionMutation) AddTaskIDs(ids ...int) {
+	if m.tasks == nil {
+		m.tasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tasks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTasks clears the "tasks" edge to the Task entity.
+func (m *SessionMutation) ClearTasks() {
+	m.clearedtasks = true
+}
+
+// TasksCleared reports if the "tasks" edge to the Task entity was cleared.
+func (m *SessionMutation) TasksCleared() bool {
+	return m.clearedtasks
+}
+
+// RemoveTaskIDs removes the "tasks" edge to the Task entity by IDs.
+func (m *SessionMutation) RemoveTaskIDs(ids ...int) {
+	if m.removedtasks == nil {
+		m.removedtasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.tasks, ids[i])
+		m.removedtasks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTasks returns the removed IDs of the "tasks" edge to the Task entity.
+func (m *SessionMutation) RemovedTasksIDs() (ids []int) {
+	for id := range m.removedtasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TasksIDs returns the "tasks" edge IDs in the mutation.
+func (m *SessionMutation) TasksIDs() (ids []int) {
+	for id := range m.tasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTasks resets all changes to the "tasks" edge.
+func (m *SessionMutation) ResetTasks() {
+	m.tasks = nil
+	m.clearedtasks = false
+	m.removedtasks = nil
+}
+
+// Where appends a list predicates to the SessionMutation builder.
+func (m *SessionMutation) Where(ps ...predicate.Session) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *SessionMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Session).
+func (m *SessionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SessionMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.principal != nil {
+		fields = append(fields, session.FieldPrincipal)
+	}
+	if m.hostname != nil {
+		fields = append(fields, session.FieldHostname)
+	}
+	if m.identifier != nil {
+		fields = append(fields, session.FieldIdentifier)
+	}
+	if m.agentIdentifier != nil {
+		fields = append(fields, session.FieldAgentIdentifier)
+	}
+	if m.hostIdentifier != nil {
+		fields = append(fields, session.FieldHostIdentifier)
+	}
+	if m.lastSeenAt != nil {
+		fields = append(fields, session.FieldLastSeenAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SessionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case session.FieldPrincipal:
+		return m.Principal()
+	case session.FieldHostname:
+		return m.Hostname()
+	case session.FieldIdentifier:
+		return m.Identifier()
+	case session.FieldAgentIdentifier:
+		return m.AgentIdentifier()
+	case session.FieldHostIdentifier:
+		return m.HostIdentifier()
+	case session.FieldLastSeenAt:
+		return m.LastSeenAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case session.FieldPrincipal:
+		return m.OldPrincipal(ctx)
+	case session.FieldHostname:
+		return m.OldHostname(ctx)
+	case session.FieldIdentifier:
+		return m.OldIdentifier(ctx)
+	case session.FieldAgentIdentifier:
+		return m.OldAgentIdentifier(ctx)
+	case session.FieldHostIdentifier:
+		return m.OldHostIdentifier(ctx)
+	case session.FieldLastSeenAt:
+		return m.OldLastSeenAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Session field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SessionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case session.FieldPrincipal:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrincipal(v)
+		return nil
+	case session.FieldHostname:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHostname(v)
+		return nil
+	case session.FieldIdentifier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdentifier(v)
+		return nil
+	case session.FieldAgentIdentifier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAgentIdentifier(v)
+		return nil
+	case session.FieldHostIdentifier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHostIdentifier(v)
+		return nil
+	case session.FieldLastSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSeenAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Session field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SessionMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SessionMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SessionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Session numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SessionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(session.FieldPrincipal) {
+		fields = append(fields, session.FieldPrincipal)
+	}
+	if m.FieldCleared(session.FieldHostname) {
+		fields = append(fields, session.FieldHostname)
+	}
+	if m.FieldCleared(session.FieldAgentIdentifier) {
+		fields = append(fields, session.FieldAgentIdentifier)
+	}
+	if m.FieldCleared(session.FieldHostIdentifier) {
+		fields = append(fields, session.FieldHostIdentifier)
+	}
+	if m.FieldCleared(session.FieldLastSeenAt) {
+		fields = append(fields, session.FieldLastSeenAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SessionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SessionMutation) ClearField(name string) error {
+	switch name {
+	case session.FieldPrincipal:
+		m.ClearPrincipal()
+		return nil
+	case session.FieldHostname:
+		m.ClearHostname()
+		return nil
+	case session.FieldAgentIdentifier:
+		m.ClearAgentIdentifier()
+		return nil
+	case session.FieldHostIdentifier:
+		m.ClearHostIdentifier()
+		return nil
+	case session.FieldLastSeenAt:
+		m.ClearLastSeenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Session nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SessionMutation) ResetField(name string) error {
+	switch name {
+	case session.FieldPrincipal:
+		m.ResetPrincipal()
+		return nil
+	case session.FieldHostname:
+		m.ResetHostname()
+		return nil
+	case session.FieldIdentifier:
+		m.ResetIdentifier()
+		return nil
+	case session.FieldAgentIdentifier:
+		m.ResetAgentIdentifier()
+		return nil
+	case session.FieldHostIdentifier:
+		m.ResetHostIdentifier()
+		return nil
+	case session.FieldLastSeenAt:
+		m.ResetLastSeenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Session field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SessionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.tags != nil {
+		edges = append(edges, session.EdgeTags)
+	}
+	if m.tasks != nil {
+		edges = append(edges, session.EdgeTasks)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SessionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case session.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.tags))
+		for id := range m.tags {
+			ids = append(ids, id)
+		}
+		return ids
+	case session.EdgeTasks:
+		ids := make([]ent.Value, 0, len(m.tasks))
+		for id := range m.tasks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SessionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedtags != nil {
+		edges = append(edges, session.EdgeTags)
+	}
+	if m.removedtasks != nil {
+		edges = append(edges, session.EdgeTasks)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SessionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case session.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.removedtags))
+		for id := range m.removedtags {
+			ids = append(ids, id)
+		}
+		return ids
+	case session.EdgeTasks:
+		ids := make([]ent.Value, 0, len(m.removedtasks))
+		for id := range m.removedtasks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SessionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedtags {
+		edges = append(edges, session.EdgeTags)
+	}
+	if m.clearedtasks {
+		edges = append(edges, session.EdgeTasks)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SessionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case session.EdgeTags:
+		return m.clearedtags
+	case session.EdgeTasks:
+		return m.clearedtasks
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SessionMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Session unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SessionMutation) ResetEdge(name string) error {
+	switch name {
+	case session.EdgeTags:
+		m.ResetTags()
+		return nil
+	case session.EdgeTasks:
+		m.ResetTasks()
+		return nil
+	}
+	return fmt.Errorf("unknown Session edge %s", name)
+}
+
 // TagMutation represents an operation that mutates the Tag nodes in the graph.
 type TagMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	name           *string
-	kind           *tag.Kind
-	clearedFields  map[string]struct{}
-	targets        map[int]struct{}
-	removedtargets map[int]struct{}
-	clearedtargets bool
-	done           bool
-	oldValue       func(context.Context) (*Tag, error)
-	predicates     []predicate.Tag
+	op              Op
+	typ             string
+	id              *int
+	name            *string
+	kind            *tag.Kind
+	clearedFields   map[string]struct{}
+	sessions        map[int]struct{}
+	removedsessions map[int]struct{}
+	clearedsessions bool
+	done            bool
+	oldValue        func(context.Context) (*Tag, error)
+	predicates      []predicate.Tag
 }
 
 var _ ent.Mutation = (*TagMutation)(nil)
@@ -1473,58 +2328,58 @@ func (m *TagMutation) ResetKind() {
 	m.kind = nil
 }
 
-// AddTargetIDs adds the "targets" edge to the Target entity by ids.
-func (m *TagMutation) AddTargetIDs(ids ...int) {
-	if m.targets == nil {
-		m.targets = make(map[int]struct{})
+// AddSessionIDs adds the "sessions" edge to the Session entity by ids.
+func (m *TagMutation) AddSessionIDs(ids ...int) {
+	if m.sessions == nil {
+		m.sessions = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.targets[ids[i]] = struct{}{}
+		m.sessions[ids[i]] = struct{}{}
 	}
 }
 
-// ClearTargets clears the "targets" edge to the Target entity.
-func (m *TagMutation) ClearTargets() {
-	m.clearedtargets = true
+// ClearSessions clears the "sessions" edge to the Session entity.
+func (m *TagMutation) ClearSessions() {
+	m.clearedsessions = true
 }
 
-// TargetsCleared reports if the "targets" edge to the Target entity was cleared.
-func (m *TagMutation) TargetsCleared() bool {
-	return m.clearedtargets
+// SessionsCleared reports if the "sessions" edge to the Session entity was cleared.
+func (m *TagMutation) SessionsCleared() bool {
+	return m.clearedsessions
 }
 
-// RemoveTargetIDs removes the "targets" edge to the Target entity by IDs.
-func (m *TagMutation) RemoveTargetIDs(ids ...int) {
-	if m.removedtargets == nil {
-		m.removedtargets = make(map[int]struct{})
+// RemoveSessionIDs removes the "sessions" edge to the Session entity by IDs.
+func (m *TagMutation) RemoveSessionIDs(ids ...int) {
+	if m.removedsessions == nil {
+		m.removedsessions = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.targets, ids[i])
-		m.removedtargets[ids[i]] = struct{}{}
+		delete(m.sessions, ids[i])
+		m.removedsessions[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedTargets returns the removed IDs of the "targets" edge to the Target entity.
-func (m *TagMutation) RemovedTargetsIDs() (ids []int) {
-	for id := range m.removedtargets {
+// RemovedSessions returns the removed IDs of the "sessions" edge to the Session entity.
+func (m *TagMutation) RemovedSessionsIDs() (ids []int) {
+	for id := range m.removedsessions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// TargetsIDs returns the "targets" edge IDs in the mutation.
-func (m *TagMutation) TargetsIDs() (ids []int) {
-	for id := range m.targets {
+// SessionsIDs returns the "sessions" edge IDs in the mutation.
+func (m *TagMutation) SessionsIDs() (ids []int) {
+	for id := range m.sessions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetTargets resets all changes to the "targets" edge.
-func (m *TagMutation) ResetTargets() {
-	m.targets = nil
-	m.clearedtargets = false
-	m.removedtargets = nil
+// ResetSessions resets all changes to the "sessions" edge.
+func (m *TagMutation) ResetSessions() {
+	m.sessions = nil
+	m.clearedsessions = false
+	m.removedsessions = nil
 }
 
 // Where appends a list predicates to the TagMutation builder.
@@ -1663,8 +2518,8 @@ func (m *TagMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TagMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.targets != nil {
-		edges = append(edges, tag.EdgeTargets)
+	if m.sessions != nil {
+		edges = append(edges, tag.EdgeSessions)
 	}
 	return edges
 }
@@ -1673,9 +2528,9 @@ func (m *TagMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *TagMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case tag.EdgeTargets:
-		ids := make([]ent.Value, 0, len(m.targets))
-		for id := range m.targets {
+	case tag.EdgeSessions:
+		ids := make([]ent.Value, 0, len(m.sessions))
+		for id := range m.sessions {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1686,8 +2541,8 @@ func (m *TagMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TagMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removedtargets != nil {
-		edges = append(edges, tag.EdgeTargets)
+	if m.removedsessions != nil {
+		edges = append(edges, tag.EdgeSessions)
 	}
 	return edges
 }
@@ -1696,9 +2551,9 @@ func (m *TagMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *TagMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case tag.EdgeTargets:
-		ids := make([]ent.Value, 0, len(m.removedtargets))
-		for id := range m.removedtargets {
+	case tag.EdgeSessions:
+		ids := make([]ent.Value, 0, len(m.removedsessions))
+		for id := range m.removedsessions {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1709,8 +2564,8 @@ func (m *TagMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TagMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedtargets {
-		edges = append(edges, tag.EdgeTargets)
+	if m.clearedsessions {
+		edges = append(edges, tag.EdgeSessions)
 	}
 	return edges
 }
@@ -1719,8 +2574,8 @@ func (m *TagMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *TagMutation) EdgeCleared(name string) bool {
 	switch name {
-	case tag.EdgeTargets:
-		return m.clearedtargets
+	case tag.EdgeSessions:
+		return m.clearedsessions
 	}
 	return false
 }
@@ -1737,491 +2592,11 @@ func (m *TagMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *TagMutation) ResetEdge(name string) error {
 	switch name {
-	case tag.EdgeTargets:
-		m.ResetTargets()
+	case tag.EdgeSessions:
+		m.ResetSessions()
 		return nil
 	}
 	return fmt.Errorf("unknown Tag edge %s", name)
-}
-
-// TargetMutation represents an operation that mutates the Target nodes in the graph.
-type TargetMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	lastSeenAt    *time.Time
-	clearedFields map[string]struct{}
-	tags          map[int]struct{}
-	removedtags   map[int]struct{}
-	clearedtags   bool
-	done          bool
-	oldValue      func(context.Context) (*Target, error)
-	predicates    []predicate.Target
-}
-
-var _ ent.Mutation = (*TargetMutation)(nil)
-
-// targetOption allows management of the mutation configuration using functional options.
-type targetOption func(*TargetMutation)
-
-// newTargetMutation creates new mutation for the Target entity.
-func newTargetMutation(c config, op Op, opts ...targetOption) *TargetMutation {
-	m := &TargetMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeTarget,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withTargetID sets the ID field of the mutation.
-func withTargetID(id int) targetOption {
-	return func(m *TargetMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Target
-		)
-		m.oldValue = func(ctx context.Context) (*Target, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Target.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withTarget sets the old Target of the mutation.
-func withTarget(node *Target) targetOption {
-	return func(m *TargetMutation) {
-		m.oldValue = func(context.Context) (*Target, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m TargetMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m TargetMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *TargetMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *TargetMutation) IDs(ctx context.Context) ([]int, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []int{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Target.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetName sets the "name" field.
-func (m *TargetMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the value of the "name" field in the mutation.
-func (m *TargetMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old "name" field's value of the Target entity.
-// If the Target object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TargetMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName resets all changes to the "name" field.
-func (m *TargetMutation) ResetName() {
-	m.name = nil
-}
-
-// SetLastSeenAt sets the "lastSeenAt" field.
-func (m *TargetMutation) SetLastSeenAt(t time.Time) {
-	m.lastSeenAt = &t
-}
-
-// LastSeenAt returns the value of the "lastSeenAt" field in the mutation.
-func (m *TargetMutation) LastSeenAt() (r time.Time, exists bool) {
-	v := m.lastSeenAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastSeenAt returns the old "lastSeenAt" field's value of the Target entity.
-// If the Target object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TargetMutation) OldLastSeenAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastSeenAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastSeenAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastSeenAt: %w", err)
-	}
-	return oldValue.LastSeenAt, nil
-}
-
-// ClearLastSeenAt clears the value of the "lastSeenAt" field.
-func (m *TargetMutation) ClearLastSeenAt() {
-	m.lastSeenAt = nil
-	m.clearedFields[target.FieldLastSeenAt] = struct{}{}
-}
-
-// LastSeenAtCleared returns if the "lastSeenAt" field was cleared in this mutation.
-func (m *TargetMutation) LastSeenAtCleared() bool {
-	_, ok := m.clearedFields[target.FieldLastSeenAt]
-	return ok
-}
-
-// ResetLastSeenAt resets all changes to the "lastSeenAt" field.
-func (m *TargetMutation) ResetLastSeenAt() {
-	m.lastSeenAt = nil
-	delete(m.clearedFields, target.FieldLastSeenAt)
-}
-
-// AddTagIDs adds the "tags" edge to the Tag entity by ids.
-func (m *TargetMutation) AddTagIDs(ids ...int) {
-	if m.tags == nil {
-		m.tags = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.tags[ids[i]] = struct{}{}
-	}
-}
-
-// ClearTags clears the "tags" edge to the Tag entity.
-func (m *TargetMutation) ClearTags() {
-	m.clearedtags = true
-}
-
-// TagsCleared reports if the "tags" edge to the Tag entity was cleared.
-func (m *TargetMutation) TagsCleared() bool {
-	return m.clearedtags
-}
-
-// RemoveTagIDs removes the "tags" edge to the Tag entity by IDs.
-func (m *TargetMutation) RemoveTagIDs(ids ...int) {
-	if m.removedtags == nil {
-		m.removedtags = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.tags, ids[i])
-		m.removedtags[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedTags returns the removed IDs of the "tags" edge to the Tag entity.
-func (m *TargetMutation) RemovedTagsIDs() (ids []int) {
-	for id := range m.removedtags {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// TagsIDs returns the "tags" edge IDs in the mutation.
-func (m *TargetMutation) TagsIDs() (ids []int) {
-	for id := range m.tags {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetTags resets all changes to the "tags" edge.
-func (m *TargetMutation) ResetTags() {
-	m.tags = nil
-	m.clearedtags = false
-	m.removedtags = nil
-}
-
-// Where appends a list predicates to the TargetMutation builder.
-func (m *TargetMutation) Where(ps ...predicate.Target) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *TargetMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (Target).
-func (m *TargetMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *TargetMutation) Fields() []string {
-	fields := make([]string, 0, 2)
-	if m.name != nil {
-		fields = append(fields, target.FieldName)
-	}
-	if m.lastSeenAt != nil {
-		fields = append(fields, target.FieldLastSeenAt)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *TargetMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case target.FieldName:
-		return m.Name()
-	case target.FieldLastSeenAt:
-		return m.LastSeenAt()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *TargetMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case target.FieldName:
-		return m.OldName(ctx)
-	case target.FieldLastSeenAt:
-		return m.OldLastSeenAt(ctx)
-	}
-	return nil, fmt.Errorf("unknown Target field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *TargetMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case target.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
-	case target.FieldLastSeenAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastSeenAt(v)
-		return nil
-	}
-	return fmt.Errorf("unknown Target field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *TargetMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *TargetMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *TargetMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Target numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *TargetMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(target.FieldLastSeenAt) {
-		fields = append(fields, target.FieldLastSeenAt)
-	}
-	return fields
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *TargetMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *TargetMutation) ClearField(name string) error {
-	switch name {
-	case target.FieldLastSeenAt:
-		m.ClearLastSeenAt()
-		return nil
-	}
-	return fmt.Errorf("unknown Target nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *TargetMutation) ResetField(name string) error {
-	switch name {
-	case target.FieldName:
-		m.ResetName()
-		return nil
-	case target.FieldLastSeenAt:
-		m.ResetLastSeenAt()
-		return nil
-	}
-	return fmt.Errorf("unknown Target field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *TargetMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.tags != nil {
-		edges = append(edges, target.EdgeTags)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *TargetMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case target.EdgeTags:
-		ids := make([]ent.Value, 0, len(m.tags))
-		for id := range m.tags {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *TargetMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.removedtags != nil {
-		edges = append(edges, target.EdgeTags)
-	}
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *TargetMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case target.EdgeTags:
-		ids := make([]ent.Value, 0, len(m.removedtags))
-		for id := range m.removedtags {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *TargetMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedtags {
-		edges = append(edges, target.EdgeTags)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *TargetMutation) EdgeCleared(name string) bool {
-	switch name {
-	case target.EdgeTags:
-		return m.clearedtags
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *TargetMutation) ClearEdge(name string) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Target unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *TargetMutation) ResetEdge(name string) error {
-	switch name {
-	case target.EdgeTags:
-		m.ResetTags()
-		return nil
-	}
-	return fmt.Errorf("unknown Target edge %s", name)
 }
 
 // TaskMutation represents an operation that mutates the Task nodes in the graph.
@@ -2240,8 +2615,8 @@ type TaskMutation struct {
 	clearedFields  map[string]struct{}
 	job            *int
 	clearedjob     bool
-	target         *int
-	clearedtarget  bool
+	session        *int
+	clearedsession bool
 	done           bool
 	oldValue       func(context.Context) (*Task, error)
 	predicates     []predicate.Task
@@ -2701,43 +3076,43 @@ func (m *TaskMutation) ResetJob() {
 	m.clearedjob = false
 }
 
-// SetTargetID sets the "target" edge to the Target entity by id.
-func (m *TaskMutation) SetTargetID(id int) {
-	m.target = &id
+// SetSessionID sets the "session" edge to the Session entity by id.
+func (m *TaskMutation) SetSessionID(id int) {
+	m.session = &id
 }
 
-// ClearTarget clears the "target" edge to the Target entity.
-func (m *TaskMutation) ClearTarget() {
-	m.clearedtarget = true
+// ClearSession clears the "session" edge to the Session entity.
+func (m *TaskMutation) ClearSession() {
+	m.clearedsession = true
 }
 
-// TargetCleared reports if the "target" edge to the Target entity was cleared.
-func (m *TaskMutation) TargetCleared() bool {
-	return m.clearedtarget
+// SessionCleared reports if the "session" edge to the Session entity was cleared.
+func (m *TaskMutation) SessionCleared() bool {
+	return m.clearedsession
 }
 
-// TargetID returns the "target" edge ID in the mutation.
-func (m *TaskMutation) TargetID() (id int, exists bool) {
-	if m.target != nil {
-		return *m.target, true
+// SessionID returns the "session" edge ID in the mutation.
+func (m *TaskMutation) SessionID() (id int, exists bool) {
+	if m.session != nil {
+		return *m.session, true
 	}
 	return
 }
 
-// TargetIDs returns the "target" edge IDs in the mutation.
+// SessionIDs returns the "session" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TargetID instead. It exists only for internal usage by the builders.
-func (m *TaskMutation) TargetIDs() (ids []int) {
-	if id := m.target; id != nil {
+// SessionID instead. It exists only for internal usage by the builders.
+func (m *TaskMutation) SessionIDs() (ids []int) {
+	if id := m.session; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetTarget resets all changes to the "target" edge.
-func (m *TaskMutation) ResetTarget() {
-	m.target = nil
-	m.clearedtarget = false
+// ResetSession resets all changes to the "session" edge.
+func (m *TaskMutation) ResetSession() {
+	m.session = nil
+	m.clearedsession = false
 }
 
 // Where appends a list predicates to the TaskMutation builder.
@@ -2997,8 +3372,8 @@ func (m *TaskMutation) AddedEdges() []string {
 	if m.job != nil {
 		edges = append(edges, task.EdgeJob)
 	}
-	if m.target != nil {
-		edges = append(edges, task.EdgeTarget)
+	if m.session != nil {
+		edges = append(edges, task.EdgeSession)
 	}
 	return edges
 }
@@ -3011,8 +3386,8 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 		if id := m.job; id != nil {
 			return []ent.Value{*id}
 		}
-	case task.EdgeTarget:
-		if id := m.target; id != nil {
+	case task.EdgeSession:
+		if id := m.session; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -3037,8 +3412,8 @@ func (m *TaskMutation) ClearedEdges() []string {
 	if m.clearedjob {
 		edges = append(edges, task.EdgeJob)
 	}
-	if m.clearedtarget {
-		edges = append(edges, task.EdgeTarget)
+	if m.clearedsession {
+		edges = append(edges, task.EdgeSession)
 	}
 	return edges
 }
@@ -3049,8 +3424,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 	switch name {
 	case task.EdgeJob:
 		return m.clearedjob
-	case task.EdgeTarget:
-		return m.clearedtarget
+	case task.EdgeSession:
+		return m.clearedsession
 	}
 	return false
 }
@@ -3062,8 +3437,8 @@ func (m *TaskMutation) ClearEdge(name string) error {
 	case task.EdgeJob:
 		m.ClearJob()
 		return nil
-	case task.EdgeTarget:
-		m.ClearTarget()
+	case task.EdgeSession:
+		m.ClearSession()
 		return nil
 	}
 	return fmt.Errorf("unknown Task unique edge %s", name)
@@ -3076,8 +3451,8 @@ func (m *TaskMutation) ResetEdge(name string) error {
 	case task.EdgeJob:
 		m.ResetJob()
 		return nil
-	case task.EdgeTarget:
-		m.ResetTarget()
+	case task.EdgeSession:
+		m.ResetSession()
 		return nil
 	}
 	return fmt.Errorf("unknown Task edge %s", name)

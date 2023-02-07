@@ -12,23 +12,23 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 )
 
 // TagQuery is the builder for querying Tag entities.
 type TagQuery struct {
 	config
-	limit            *int
-	offset           *int
-	unique           *bool
-	order            []OrderFunc
-	fields           []string
-	predicates       []predicate.Tag
-	withTargets      *TargetQuery
-	modifiers        []func(*sql.Selector)
-	loadTotal        []func(context.Context, []*Tag) error
-	withNamedTargets map[string]*TargetQuery
+	limit             *int
+	offset            *int
+	unique            *bool
+	order             []OrderFunc
+	fields            []string
+	predicates        []predicate.Tag
+	withSessions      *SessionQuery
+	modifiers         []func(*sql.Selector)
+	loadTotal         []func(context.Context, []*Tag) error
+	withNamedSessions map[string]*SessionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -65,9 +65,9 @@ func (tq *TagQuery) Order(o ...OrderFunc) *TagQuery {
 	return tq
 }
 
-// QueryTargets chains the current query on the "targets" edge.
-func (tq *TagQuery) QueryTargets() *TargetQuery {
-	query := &TargetQuery{config: tq.config}
+// QuerySessions chains the current query on the "sessions" edge.
+func (tq *TagQuery) QuerySessions() *SessionQuery {
+	query := &SessionQuery{config: tq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -78,8 +78,8 @@ func (tq *TagQuery) QueryTargets() *TargetQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tag.Table, tag.FieldID, selector),
-			sqlgraph.To(target.Table, target.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, tag.TargetsTable, tag.TargetsPrimaryKey...),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.SessionsTable, tag.SessionsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -263,12 +263,12 @@ func (tq *TagQuery) Clone() *TagQuery {
 		return nil
 	}
 	return &TagQuery{
-		config:      tq.config,
-		limit:       tq.limit,
-		offset:      tq.offset,
-		order:       append([]OrderFunc{}, tq.order...),
-		predicates:  append([]predicate.Tag{}, tq.predicates...),
-		withTargets: tq.withTargets.Clone(),
+		config:       tq.config,
+		limit:        tq.limit,
+		offset:       tq.offset,
+		order:        append([]OrderFunc{}, tq.order...),
+		predicates:   append([]predicate.Tag{}, tq.predicates...),
+		withSessions: tq.withSessions.Clone(),
 		// clone intermediate query.
 		sql:    tq.sql.Clone(),
 		path:   tq.path,
@@ -276,14 +276,14 @@ func (tq *TagQuery) Clone() *TagQuery {
 	}
 }
 
-// WithTargets tells the query-builder to eager-load the nodes that are connected to
-// the "targets" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TagQuery) WithTargets(opts ...func(*TargetQuery)) *TagQuery {
-	query := &TargetQuery{config: tq.config}
+// WithSessions tells the query-builder to eager-load the nodes that are connected to
+// the "sessions" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TagQuery) WithSessions(opts ...func(*SessionQuery)) *TagQuery {
+	query := &SessionQuery{config: tq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	tq.withTargets = query
+	tq.withSessions = query
 	return tq
 }
 
@@ -361,7 +361,7 @@ func (tq *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 		nodes       = []*Tag{}
 		_spec       = tq.querySpec()
 		loadedTypes = [1]bool{
-			tq.withTargets != nil,
+			tq.withSessions != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -385,17 +385,17 @@ func (tq *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := tq.withTargets; query != nil {
-		if err := tq.loadTargets(ctx, query, nodes,
-			func(n *Tag) { n.Edges.Targets = []*Target{} },
-			func(n *Tag, e *Target) { n.Edges.Targets = append(n.Edges.Targets, e) }); err != nil {
+	if query := tq.withSessions; query != nil {
+		if err := tq.loadSessions(ctx, query, nodes,
+			func(n *Tag) { n.Edges.Sessions = []*Session{} },
+			func(n *Tag, e *Session) { n.Edges.Sessions = append(n.Edges.Sessions, e) }); err != nil {
 			return nil, err
 		}
 	}
-	for name, query := range tq.withNamedTargets {
-		if err := tq.loadTargets(ctx, query, nodes,
-			func(n *Tag) { n.appendNamedTargets(name) },
-			func(n *Tag, e *Target) { n.appendNamedTargets(name, e) }); err != nil {
+	for name, query := range tq.withNamedSessions {
+		if err := tq.loadSessions(ctx, query, nodes,
+			func(n *Tag) { n.appendNamedSessions(name) },
+			func(n *Tag, e *Session) { n.appendNamedSessions(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -407,7 +407,7 @@ func (tq *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 	return nodes, nil
 }
 
-func (tq *TagQuery) loadTargets(ctx context.Context, query *TargetQuery, nodes []*Tag, init func(*Tag), assign func(*Tag, *Target)) error {
+func (tq *TagQuery) loadSessions(ctx context.Context, query *SessionQuery, nodes []*Tag, init func(*Tag), assign func(*Tag, *Session)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[int]*Tag)
 	nids := make(map[int]map[*Tag]struct{})
@@ -419,11 +419,11 @@ func (tq *TagQuery) loadTargets(ctx context.Context, query *TargetQuery, nodes [
 		}
 	}
 	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(tag.TargetsTable)
-		s.Join(joinT).On(s.C(target.FieldID), joinT.C(tag.TargetsPrimaryKey[0]))
-		s.Where(sql.InValues(joinT.C(tag.TargetsPrimaryKey[1]), edgeIDs...))
+		joinT := sql.Table(tag.SessionsTable)
+		s.Join(joinT).On(s.C(session.FieldID), joinT.C(tag.SessionsPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(tag.SessionsPrimaryKey[1]), edgeIDs...))
 		columns := s.SelectedColumns()
-		s.Select(joinT.C(tag.TargetsPrimaryKey[1]))
+		s.Select(joinT.C(tag.SessionsPrimaryKey[1]))
 		s.AppendSelect(columns...)
 		s.SetDistinct(false)
 	})
@@ -457,7 +457,7 @@ func (tq *TagQuery) loadTargets(ctx context.Context, query *TargetQuery, nodes [
 	for _, n := range neighbors {
 		nodes, ok := nids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "targets" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected "sessions" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)
@@ -569,17 +569,17 @@ func (tq *TagQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// WithNamedTargets tells the query-builder to eager-load the nodes that are connected to the "targets"
+// WithNamedSessions tells the query-builder to eager-load the nodes that are connected to the "sessions"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (tq *TagQuery) WithNamedTargets(name string, opts ...func(*TargetQuery)) *TagQuery {
-	query := &TargetQuery{config: tq.config}
+func (tq *TagQuery) WithNamedSessions(name string, opts ...func(*SessionQuery)) *TagQuery {
+	query := &SessionQuery{config: tq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	if tq.withNamedTargets == nil {
-		tq.withNamedTargets = make(map[string]*TargetQuery)
+	if tq.withNamedSessions == nil {
+		tq.withNamedSessions = make(map[string]*SessionQuery)
 	}
-	tq.withNamedTargets[name] = query
+	tq.withNamedSessions[name] = query
 	return tq
 }
 

@@ -12,8 +12,8 @@ import (
 
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
@@ -32,10 +32,10 @@ type Client struct {
 	File *FileClient
 	// Job is the client for interacting with the Job builders.
 	Job *JobClient
+	// Session is the client for interacting with the Session builders.
+	Session *SessionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
-	// Target is the client for interacting with the Target builders.
-	Target *TargetClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// Tome is the client for interacting with the Tome builders.
@@ -59,8 +59,8 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.File = NewFileClient(c.config)
 	c.Job = NewJobClient(c.config)
+	c.Session = NewSessionClient(c.config)
 	c.Tag = NewTagClient(c.config)
-	c.Target = NewTargetClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tome = NewTomeClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -95,15 +95,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		File:   NewFileClient(cfg),
-		Job:    NewJobClient(cfg),
-		Tag:    NewTagClient(cfg),
-		Target: NewTargetClient(cfg),
-		Task:   NewTaskClient(cfg),
-		Tome:   NewTomeClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		File:    NewFileClient(cfg),
+		Job:     NewJobClient(cfg),
+		Session: NewSessionClient(cfg),
+		Tag:     NewTagClient(cfg),
+		Task:    NewTaskClient(cfg),
+		Tome:    NewTomeClient(cfg),
+		User:    NewUserClient(cfg),
 	}, nil
 }
 
@@ -121,15 +121,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		File:   NewFileClient(cfg),
-		Job:    NewJobClient(cfg),
-		Tag:    NewTagClient(cfg),
-		Target: NewTargetClient(cfg),
-		Task:   NewTaskClient(cfg),
-		Tome:   NewTomeClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		File:    NewFileClient(cfg),
+		Job:     NewJobClient(cfg),
+		Session: NewSessionClient(cfg),
+		Tag:     NewTagClient(cfg),
+		Task:    NewTaskClient(cfg),
+		Tome:    NewTomeClient(cfg),
+		User:    NewUserClient(cfg),
 	}, nil
 }
 
@@ -160,8 +160,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.File.Use(hooks...)
 	c.Job.Use(hooks...)
+	c.Session.Use(hooks...)
 	c.Tag.Use(hooks...)
-	c.Target.Use(hooks...)
 	c.Task.Use(hooks...)
 	c.Tome.Use(hooks...)
 	c.User.Use(hooks...)
@@ -396,6 +396,128 @@ func (c *JobClient) Hooks() []Hook {
 	return c.hooks.Job
 }
 
+// SessionClient is a client for the Session schema.
+type SessionClient struct {
+	config
+}
+
+// NewSessionClient returns a client for the Session from the given config.
+func NewSessionClient(c config) *SessionClient {
+	return &SessionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `session.Hooks(f(g(h())))`.
+func (c *SessionClient) Use(hooks ...Hook) {
+	c.hooks.Session = append(c.hooks.Session, hooks...)
+}
+
+// Create returns a builder for creating a Session entity.
+func (c *SessionClient) Create() *SessionCreate {
+	mutation := newSessionMutation(c.config, OpCreate)
+	return &SessionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Session entities.
+func (c *SessionClient) CreateBulk(builders ...*SessionCreate) *SessionCreateBulk {
+	return &SessionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Session.
+func (c *SessionClient) Update() *SessionUpdate {
+	mutation := newSessionMutation(c.config, OpUpdate)
+	return &SessionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SessionClient) UpdateOne(s *Session) *SessionUpdateOne {
+	mutation := newSessionMutation(c.config, OpUpdateOne, withSession(s))
+	return &SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SessionClient) UpdateOneID(id int) *SessionUpdateOne {
+	mutation := newSessionMutation(c.config, OpUpdateOne, withSessionID(id))
+	return &SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Session.
+func (c *SessionClient) Delete() *SessionDelete {
+	mutation := newSessionMutation(c.config, OpDelete)
+	return &SessionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SessionClient) DeleteOne(s *Session) *SessionDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SessionClient) DeleteOneID(id int) *SessionDeleteOne {
+	builder := c.Delete().Where(session.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SessionDeleteOne{builder}
+}
+
+// Query returns a query builder for Session.
+func (c *SessionClient) Query() *SessionQuery {
+	return &SessionQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Session entity by its id.
+func (c *SessionClient) Get(ctx context.Context, id int) (*Session, error) {
+	return c.Query().Where(session.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SessionClient) GetX(ctx context.Context, id int) *Session {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTags queries the tags edge of a Session.
+func (c *SessionClient) QueryTags(s *Session) *TagQuery {
+	query := &TagQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, session.TagsTable, session.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTasks queries the tasks edge of a Session.
+func (c *SessionClient) QueryTasks(s *Session) *TaskQuery {
+	query := &TaskQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, session.TasksTable, session.TasksColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SessionClient) Hooks() []Hook {
+	return c.hooks.Session
+}
+
 // TagClient is a client for the Tag schema.
 type TagClient struct {
 	config
@@ -481,15 +603,15 @@ func (c *TagClient) GetX(ctx context.Context, id int) *Tag {
 	return obj
 }
 
-// QueryTargets queries the targets edge of a Tag.
-func (c *TagClient) QueryTargets(t *Tag) *TargetQuery {
-	query := &TargetQuery{config: c.config}
+// QuerySessions queries the sessions edge of a Tag.
+func (c *TagClient) QuerySessions(t *Tag) *SessionQuery {
+	query := &SessionQuery{config: c.config}
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tag.Table, tag.FieldID, id),
-			sqlgraph.To(target.Table, target.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, tag.TargetsTable, tag.TargetsPrimaryKey...),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.SessionsTable, tag.SessionsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -500,112 +622,6 @@ func (c *TagClient) QueryTargets(t *Tag) *TargetQuery {
 // Hooks returns the client hooks.
 func (c *TagClient) Hooks() []Hook {
 	return c.hooks.Tag
-}
-
-// TargetClient is a client for the Target schema.
-type TargetClient struct {
-	config
-}
-
-// NewTargetClient returns a client for the Target from the given config.
-func NewTargetClient(c config) *TargetClient {
-	return &TargetClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `target.Hooks(f(g(h())))`.
-func (c *TargetClient) Use(hooks ...Hook) {
-	c.hooks.Target = append(c.hooks.Target, hooks...)
-}
-
-// Create returns a builder for creating a Target entity.
-func (c *TargetClient) Create() *TargetCreate {
-	mutation := newTargetMutation(c.config, OpCreate)
-	return &TargetCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Target entities.
-func (c *TargetClient) CreateBulk(builders ...*TargetCreate) *TargetCreateBulk {
-	return &TargetCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Target.
-func (c *TargetClient) Update() *TargetUpdate {
-	mutation := newTargetMutation(c.config, OpUpdate)
-	return &TargetUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TargetClient) UpdateOne(t *Target) *TargetUpdateOne {
-	mutation := newTargetMutation(c.config, OpUpdateOne, withTarget(t))
-	return &TargetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TargetClient) UpdateOneID(id int) *TargetUpdateOne {
-	mutation := newTargetMutation(c.config, OpUpdateOne, withTargetID(id))
-	return &TargetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Target.
-func (c *TargetClient) Delete() *TargetDelete {
-	mutation := newTargetMutation(c.config, OpDelete)
-	return &TargetDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TargetClient) DeleteOne(t *Target) *TargetDeleteOne {
-	return c.DeleteOneID(t.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TargetClient) DeleteOneID(id int) *TargetDeleteOne {
-	builder := c.Delete().Where(target.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TargetDeleteOne{builder}
-}
-
-// Query returns a query builder for Target.
-func (c *TargetClient) Query() *TargetQuery {
-	return &TargetQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a Target entity by its id.
-func (c *TargetClient) Get(ctx context.Context, id int) (*Target, error) {
-	return c.Query().Where(target.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TargetClient) GetX(ctx context.Context, id int) *Target {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTags queries the tags edge of a Target.
-func (c *TargetClient) QueryTags(t *Target) *TagQuery {
-	query := &TagQuery{config: c.config}
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(target.Table, target.FieldID, id),
-			sqlgraph.To(tag.Table, tag.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, target.TagsTable, target.TagsPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *TargetClient) Hooks() []Hook {
-	return c.hooks.Target
 }
 
 // TaskClient is a client for the Task schema.
@@ -709,15 +725,15 @@ func (c *TaskClient) QueryJob(t *Task) *JobQuery {
 	return query
 }
 
-// QueryTarget queries the target edge of a Task.
-func (c *TaskClient) QueryTarget(t *Task) *TargetQuery {
-	query := &TargetQuery{config: c.config}
+// QuerySession queries the session edge of a Task.
+func (c *TaskClient) QuerySession(t *Task) *SessionQuery {
+	query := &SessionQuery{config: c.config}
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(task.Table, task.FieldID, id),
-			sqlgraph.To(target.Table, target.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, task.TargetTable, task.TargetColumn),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, task.SessionTable, task.SessionColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
