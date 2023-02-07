@@ -8,6 +8,7 @@ type Mutation {
     # Task
     ###
     claimTasks(input: ClaimTasksInput!,): [Task!]!
+    submitTaskResult(input: SubmitTaskResultInput!,): Task
 
     ### 
     # User

@@ -172,6 +172,27 @@ func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTas
 	return result, nil
 }
 
+// SubmitTaskResult is the resolver for the submitTaskResult field.
+func (r *mutationResolver) SubmitTaskResult(ctx context.Context, input models.SubmitTaskResultInput) (*ent.Task, error) {
+	// 1. Load the task
+	t, err := r.client.Task.Get(ctx, input.TaskID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit task result: %w", err)
+	}
+
+	t, err = t.Update().
+		SetExecStartedAt(input.ExecStartedAt).
+		SetOutput(fmt.Sprintf("%s%s", t.Output, input.Output)).
+		SetNillableExecFinishedAt(input.ExecFinishedAt).
+		SetNillableError(input.Error).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save submitted task result: %w", err)
+	}
+
+	return t, nil
+}
+
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error) {
 	return r.client.User.UpdateOneID(userID).SetInput(input).Save(ctx)

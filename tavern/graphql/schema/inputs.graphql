@@ -14,3 +14,23 @@ input ClaimTasksInput {
   """Name of the agent program the session is running as (e.g. 'imix')"""
   agentIdentifier: String!
 }
+
+input SubmitTaskResultInput {
+  """ID of the task to submit results for."""
+  taskID: ID!
+
+  """Timestamp of when the task execution began. Format as RFC3339Nano."""
+  execStartedAt: Time!
+
+  """Timestamp of when the task execution finished (set only if it has completed). Format as RFC3339Nano."""
+  execFinishedAt: Time 
+
+  """
+  Output captured as the result of task execution.
+  Submitting multiple outputs will result in appending new output to the previous output.
+  """
+  output: String!
+
+  """Error message captured as the result of task execution failure."""
+  error: String 
+}

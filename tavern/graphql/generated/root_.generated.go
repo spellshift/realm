@@ -59,9 +59,10 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ClaimTasks func(childComplexity int, input models.ClaimTasksInput) int
-		CreateJob  func(childComplexity int, sessionIDs []int, input ent.CreateJobInput) int
-		UpdateUser func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		ClaimTasks       func(childComplexity int, input models.ClaimTasksInput) int
+		CreateJob        func(childComplexity int, sessionIDs []int, input ent.CreateJobInput) int
+		SubmitTaskResult func(childComplexity int, input models.SubmitTaskResultInput) int
+		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -264,6 +265,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateJob(childComplexity, args["sessionIDs"].([]int), args["input"].(ent.CreateJobInput)), true
+
+	case "Mutation.submitTaskResult":
+		if e.complexity.Mutation.SubmitTaskResult == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_submitTaskResult_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SubmitTaskResult(childComplexity, args["input"].(models.SubmitTaskResultInput)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -646,6 +659,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputJobWhereInput,
 		ec.unmarshalInputSessionOrder,
 		ec.unmarshalInputSessionWhereInput,
+		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
 		ec.unmarshalInputTagWhereInput,
 		ec.unmarshalInputTaskOrder,
@@ -1538,6 +1552,7 @@ input UserWhereInput {
     # Task
     ###
     claimTasks(input: ClaimTasksInput!,): [Task!]!
+    submitTaskResult(input: SubmitTaskResultInput!,): Task
 
     ### 
     # User
@@ -1560,6 +1575,25 @@ input UserWhereInput {
   """Name of the agent program the session is running as (e.g. 'imix')"""
   agentIdentifier: String!
 }
-`, BuiltIn: false},
+
+input SubmitTaskResultInput {
+  """ID of the task to submit results for."""
+  taskID: ID!
+
+  """Timestamp of when the task execution began. Format as RFC3339Nano."""
+  execStartedAt: Time!
+
+  """Timestamp of when the task execution finished (set only if it has completed). Format as RFC3339Nano."""
+  execFinishedAt: Time 
+
+  """
+  Output captured as the result of task execution.
+  Submitting multiple outputs will result in appending new output to the previous output.
+  """
+  output: String!
+
+  """Error message captured as the result of task execution failure."""
+  error: String 
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
