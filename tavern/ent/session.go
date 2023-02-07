@@ -35,9 +35,9 @@ type Session struct {
 
 // SessionEdges holds the relations/edges for other nodes in the graph.
 type SessionEdges struct {
-	// Tags holds the value of the tags edge.
+	// Tags used to group the session with other sessions
 	Tags []*Tag `json:"tags,omitempty"`
-	// Tasks holds the value of the tasks edge.
+	// Tasks that have been assigned to the session
 	Tasks []*Task `json:"tasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.

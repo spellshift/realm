@@ -139,9 +139,6 @@ func (tc *TagCreate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Tag.kind": %w`, err)}
 		}
 	}
-	if len(tc.mutation.SessionsIDs()) == 0 {
-		return &ValidationError{Name: "sessions", err: errors.New(`ent: missing required edge "Tag.sessions"`)}
-	}
 	return nil
 }
 

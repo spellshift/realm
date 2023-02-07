@@ -11,6 +11,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/ent/session"
+	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,6 +26,16 @@ func TestSessionMutations(t *testing.T) {
 	gqlClient := client.New(srv)
 
 	// Initialize sample data
+	testTags := []*ent.Tag{
+		graph.Tag.Create().
+			SetKind(tag.KindGroup).
+			SetName("TestTag1").
+			SaveX(ctx),
+		graph.Tag.Create().
+			SetKind(tag.KindGroup).
+			SetName("TestTag2").
+			SaveX(ctx),
+	}
 	testSessions := []*ent.Session{
 		graph.Session.Create().
 			SetPrincipal("admin").
@@ -33,6 +44,12 @@ func TestSessionMutations(t *testing.T) {
 			SetHostIdentifier("SOME_HOST_ID").
 			SetHostname("SOME_HOSTNAME").
 			SetLastSeenAt(time.Now().Add(-10 * time.Minute)).
+			SaveX(ctx),
+		graph.Session.Create().
+			SetIdentifier("ANOTHER_ID").
+			SetHostname("BAD_HOSTNAME").
+			SetLastSeenAt(time.Now().Add(-10 * time.Minute)).
+			AddTags(testTags[1]).
 			SaveX(ctx),
 	}
 	testTome := graph.Tome.Create().
@@ -216,6 +233,56 @@ mutation newSubmitTaskResultTest($input: SubmitTaskResultInput!) {
 			assert.Equal(t, expectedExecFinishedAt.UnixNano(), testTask.ExecFinishedAt.UnixNano())
 			assert.Equal(t, expected["error"], testTask.Error)
 		})
+	})
 
+	t.Run("UpdateSession", func(t *testing.T) {
+		// Define the UpdateSession mutation
+		mut := `
+mutation newUpdateSessionTest($sessionID: ID!, $input: UpdateSessionInput!) {
+	updateSession(sessionID: $sessionID, input: $input) {
+		id
+	}
+}`
+		// Create a closure to execute the mutation
+		updateSession := func(sessionID int, input map[string]any) (int, error) {
+			// Make our request to the GraphQL API
+			var resp struct {
+				UpdateSession struct{ ID string }
+			}
+			err := gqlClient.Post(
+				mut,
+				&resp,
+				client.Var("sessionID", sessionID),
+				client.Var("input", input),
+			)
+			if err != nil {
+				return 0, err
+			}
+
+			return convertID(resp.UpdateSession.ID), nil
+		}
+
+		/*
+		* Test updating tags and changing hostname for an existing session.
+		*
+		* Expected that the session is updated with the new set of tags and a better hostname.
+		 */
+		t.Run("UpdateSession", func(t *testing.T) {
+			expected := map[string]any{
+				"hostname":     "BETTER_HOSTNAME",
+				"addTagIDs":    testTags[0].ID,
+				"removeTagIDs": testTags[1].ID,
+			}
+			id, err := updateSession(testSessions[1].ID, expected)
+			require.NoError(t, err)
+			require.NotZero(t, id)
+			assert.Equal(t, testSessions[1].ID, id)
+			testSession := graph.Session.GetX(ctx, id)
+			assert.Equal(t, expected["hostname"], testSession.Hostname)
+			testSessionTags, err := testSession.Tags(ctx)
+			require.NoError(t, err)
+			assert.Len(t, testSessionTags, 1)
+			assert.Equal(t, testTags[0].ID, testSessionTags[0].ID)
+		})
 	})
 }
