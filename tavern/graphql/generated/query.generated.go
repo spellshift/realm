@@ -9174,6 +9174,13 @@ func (ec *executionContext) marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
+func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTask(ctx context.Context, sel ast.SelectionSet, v *ent.Task) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Task(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TaskWhereInput, error) {
 	if v == nil {
 		return nil, nil
