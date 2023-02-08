@@ -110,7 +110,7 @@ fn parse_cidr(target_cidrs: Vec<String>) -> Result<Vec<String>> {
             result.push(int_to_string(host_u32).unwrap());
         }
 
-        // boardcast_u32-1 will not add the broadcast address for the net. Eg. 255.
+        // broadcast_u32-1 will not add the broadcast address for the net. Eg. 255.
         while host_u32 < (broadcast_u32-1) {
             // Skip network address Eg. 10.10.0.0
             host_u32 = host_u32 + 1;
@@ -651,8 +651,7 @@ res
         let mut eval: Evaluator = Evaluator::new(&module);
         let res: Value = eval.eval_module(ast, &globals).unwrap();
 
-        // println!("{:?}", res.to_string());
-        let expected_output = format!("[{{\"ip\": \"127.0.0.1\", \"port\": {}, \"protocol\": \"tcp\", \"status\": \"closed\"}}, {{\"ip\": \"127.0.0.1\", \"port\": {}, \"protocol\": \"tcp\", \"status\": \"closed\"}}, {{\"ip\": \"127.0.0.1\", \"port\": {}, \"protocol\": \"tcp\", \"status\": \"closed\"}}, {{\"ip\": \"127.0.0.1\", \"port\": {}, \"protocol\": \"tcp\", \"status\": \"closed\"}}]", test_ports[0], test_ports[1], test_ports[2], test_ports[3]);
+        let expected_output = format!(r#"[{{"ip": "127.0.0.1", "port": {}, "protocol": "tcp", "status": "closed"}}, {{"ip": "127.0.0.1", "port": {}, "protocol": "tcp", "status": "closed"}}, {{"ip": "127.0.0.1", "port": {}, "protocol": "tcp", "status": "closed"}}, {{"ip": "127.0.0.1", "port": {}, "protocol": "tcp", "status": "closed"}}]"#, test_ports[0], test_ports[1], test_ports[2], test_ports[3]);
         println!("{}",expected_output);
         assert_eq!(expected_output, res.to_string());
         Ok(())
