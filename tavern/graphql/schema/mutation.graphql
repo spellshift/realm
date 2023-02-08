@@ -10,6 +10,12 @@ type Mutation {
     updateSession(sessionID: ID!, input: UpdateSessionInput!): Session!
 
     ###
+    # Tag
+    ###
+    createTag(input: CreateTagInput!): Tag!
+    updateTag(tagID: ID!, input: UpdateTagInput!): Tag!
+
+    ###
     # Task
     ###
     claimTasks(input: ClaimTasksInput!,): [Task!]!
