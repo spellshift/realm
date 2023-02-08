@@ -18,3 +18,4 @@ async-recursion = "1.0.0"
 tokio-stream = "0.1.9"
 serde = { version = "1.0", features = ["derive"] }
 gazebo.version = "0.8.1"
+eval = "0.4.3"
