@@ -11,7 +11,7 @@ fn build_context(dict_data: SmallMap<String, Value>) -> Result<Context> {
         let tmp = value;
         context.insert(key.as_str(), &tmp);
     }
-    return Ok(context);
+    Ok(context)
 }
 
 pub fn template(template_path: String, dst_path: String, args: SmallMap<String, Value>, autoescape: bool) -> Result<()> {
