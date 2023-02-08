@@ -88,4 +88,4 @@ jobs:
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
-      run: cd implants/eldritch && cargo test --verbose --test-threads=256
+      run: cd implants/eldritch && cargo test --verbose -- --test-threads=256

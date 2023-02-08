@@ -40,7 +40,6 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String) -> anyhow::Res
     let module: Module = Module::new();
 
     let mut eval: Evaluator = Evaluator::new(&module);
-
     let res: Value = eval.eval_module(ast, &globals).unwrap();
 
     Ok(res.unpack_str().unwrap().to_string())
