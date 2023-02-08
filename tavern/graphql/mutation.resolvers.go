@@ -91,6 +91,16 @@ func (r *mutationResolver) UpdateSession(ctx context.Context, sessionID int, inp
 	return r.client.Session.UpdateOneID(sessionID).SetInput(input).Save(ctx)
 }
 
+// CreateTag is the resolver for the createTag field.
+func (r *mutationResolver) CreateTag(ctx context.Context, input ent.CreateTagInput) (*ent.Tag, error) {
+	return r.client.Tag.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateTag is the resolver for the updateTag field.
+func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error) {
+	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
+}
+
 // ClaimTasks is the resolver for the claimTasks field.
 func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTasksInput) ([]*ent.Task, error) {
 	// 1. Check if session already exists

@@ -2,6 +2,8 @@
 
 package ent
 
+import "github.com/kcarretto/realm/tavern/ent/tag"
+
 // CreateJobInput represents a mutation input for creating jobs.
 type CreateJobInput struct {
 	Name   string
@@ -52,6 +54,64 @@ func (c *SessionUpdate) SetInput(i UpdateSessionInput) *SessionUpdate {
 
 // SetInput applies the change-set in the UpdateSessionInput on the SessionUpdateOne builder.
 func (c *SessionUpdateOne) SetInput(i UpdateSessionInput) *SessionUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateTagInput represents a mutation input for creating tags.
+type CreateTagInput struct {
+	Name       string
+	Kind       tag.Kind
+	SessionIDs []int
+}
+
+// Mutate applies the CreateTagInput on the TagMutation builder.
+func (i *CreateTagInput) Mutate(m *TagMutation) {
+	m.SetName(i.Name)
+	m.SetKind(i.Kind)
+	if v := i.SessionIDs; len(v) > 0 {
+		m.AddSessionIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateTagInput on the TagCreate builder.
+func (c *TagCreate) SetInput(i CreateTagInput) *TagCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateTagInput represents a mutation input for updating tags.
+type UpdateTagInput struct {
+	Name             *string
+	Kind             *tag.Kind
+	AddSessionIDs    []int
+	RemoveSessionIDs []int
+}
+
+// Mutate applies the UpdateTagInput on the TagMutation builder.
+func (i *UpdateTagInput) Mutate(m *TagMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Kind; v != nil {
+		m.SetKind(*v)
+	}
+	if v := i.AddSessionIDs; len(v) > 0 {
+		m.AddSessionIDs(v...)
+	}
+	if v := i.RemoveSessionIDs; len(v) > 0 {
+		m.RemoveSessionIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateTagInput on the TagUpdate builder.
+func (c *TagUpdate) SetInput(i UpdateTagInput) *TagUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateTagInput on the TagUpdateOne builder.
+func (c *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }
