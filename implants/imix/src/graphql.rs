@@ -16,6 +16,22 @@ struct GraphQLRequest {
 }
 
 #[derive(Serialize, Deserialize)]
+pub(crate) struct TaskResult {
+    task_id: String,
+    exec_finished_at: u64,
+    output: String,
+    error: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub(crate) struct TaskRequest {
+    task_id: String,
+    exec_finished_at: u64,
+    output: String,
+    error: String,
+}
+
+#[derive(Serialize, Deserialize)]
 struct GraphQLCallbackResponse {
     id: u64
 }
@@ -28,6 +44,11 @@ struct GraphQLMutationsResponse {
 #[derive(Serialize, Deserialize)]
 pub struct GraphQLResponse {
     data: GraphQLMutationsResponse
+
+}
+
+pub async fn graphql_submit_task_result(task_id: String, output: String) -> graphql::GraphQLResponse {
+    unimplemented!("graphql will callback to the c2 server. Update the ")
 }
 
 pub async fn call(variables: String, uri: String, timeout: u64) -> Result<GraphQLResponse, super::Error>{
