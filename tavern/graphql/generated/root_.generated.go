@@ -10,6 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/graphql/models"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -58,9 +59,14 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ClaimTasks func(childComplexity int, targetID int) int
-		CreateJob  func(childComplexity int, targetIDs []int, input ent.CreateJobInput) int
-		UpdateUser func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		ClaimTasks       func(childComplexity int, input models.ClaimTasksInput) int
+		CreateJob        func(childComplexity int, sessionIDs []int, input ent.CreateJobInput) int
+		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
+		SubmitTaskResult func(childComplexity int, input models.SubmitTaskResultInput) int
+		UpdateSession    func(childComplexity int, sessionID int, input ent.UpdateSessionInput) int
+		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -71,28 +77,33 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Files   func(childComplexity int) int
-		Jobs    func(childComplexity int) int
-		Node    func(childComplexity int, id int) int
-		Nodes   func(childComplexity int, ids []int) int
-		Tags    func(childComplexity int) int
-		Targets func(childComplexity int) int
-		Tomes   func(childComplexity int) int
-		Users   func(childComplexity int) int
+		Files    func(childComplexity int) int
+		Jobs     func(childComplexity int) int
+		Node     func(childComplexity int, id int) int
+		Nodes    func(childComplexity int, ids []int) int
+		Sessions func(childComplexity int) int
+		Tags     func(childComplexity int) int
+		Tomes    func(childComplexity int) int
+		Users    func(childComplexity int) int
+	}
+
+	Session struct {
+		AgentIdentifier func(childComplexity int) int
+		HostIdentifier  func(childComplexity int) int
+		Hostname        func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Identifier      func(childComplexity int) int
+		LastSeenAt      func(childComplexity int) int
+		Principal       func(childComplexity int) int
+		Tags            func(childComplexity int) int
+		Tasks           func(childComplexity int) int
 	}
 
 	Tag struct {
-		ID      func(childComplexity int) int
-		Kind    func(childComplexity int) int
-		Name    func(childComplexity int) int
-		Targets func(childComplexity int) int
-	}
-
-	Target struct {
-		ID         func(childComplexity int) int
-		LastSeenAt func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Tags       func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Kind     func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Sessions func(childComplexity int) int
 	}
 
 	Task struct {
@@ -105,7 +116,7 @@ type ComplexityRoot struct {
 		Job            func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
-		Target         func(childComplexity int) int
+		Session        func(childComplexity int) int
 	}
 
 	Tome struct {
@@ -113,7 +124,6 @@ type ComplexityRoot struct {
 		Description    func(childComplexity int) int
 		Eldritch       func(childComplexity int) int
 		Files          func(childComplexity int) int
-		Hash           func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
@@ -245,7 +255,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ClaimTasks(childComplexity, args["targetID"].(int)), true
+		return e.complexity.Mutation.ClaimTasks(childComplexity, args["input"].(models.ClaimTasksInput)), true
 
 	case "Mutation.createJob":
 		if e.complexity.Mutation.CreateJob == nil {
@@ -257,7 +267,67 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateJob(childComplexity, args["targetIDs"].([]int), args["input"].(ent.CreateJobInput)), true
+		return e.complexity.Mutation.CreateJob(childComplexity, args["sessionIDs"].([]int), args["input"].(ent.CreateJobInput)), true
+
+	case "Mutation.createTag":
+		if e.complexity.Mutation.CreateTag == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createTag_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateTag(childComplexity, args["input"].(ent.CreateTagInput)), true
+
+	case "Mutation.createTome":
+		if e.complexity.Mutation.CreateTome == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createTome_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateTome(childComplexity, args["input"].(ent.CreateTomeInput)), true
+
+	case "Mutation.submitTaskResult":
+		if e.complexity.Mutation.SubmitTaskResult == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_submitTaskResult_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SubmitTaskResult(childComplexity, args["input"].(models.SubmitTaskResultInput)), true
+
+	case "Mutation.updateSession":
+		if e.complexity.Mutation.UpdateSession == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateSession_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateSession(childComplexity, args["sessionID"].(int), args["input"].(ent.UpdateSessionInput)), true
+
+	case "Mutation.updateTag":
+		if e.complexity.Mutation.UpdateTag == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateTag_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateTag(childComplexity, args["tagID"].(int), args["input"].(ent.UpdateTagInput)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -337,19 +407,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]int)), true
 
+	case "Query.sessions":
+		if e.complexity.Query.Sessions == nil {
+			break
+		}
+
+		return e.complexity.Query.Sessions(childComplexity), true
+
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
 			break
 		}
 
 		return e.complexity.Query.Tags(childComplexity), true
-
-	case "Query.targets":
-		if e.complexity.Query.Targets == nil {
-			break
-		}
-
-		return e.complexity.Query.Targets(childComplexity), true
 
 	case "Query.tomes":
 		if e.complexity.Query.Tomes == nil {
@@ -364,6 +434,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Users(childComplexity), true
+
+	case "Session.agentidentifier":
+		if e.complexity.Session.AgentIdentifier == nil {
+			break
+		}
+
+		return e.complexity.Session.AgentIdentifier(childComplexity), true
+
+	case "Session.hostidentifier":
+		if e.complexity.Session.HostIdentifier == nil {
+			break
+		}
+
+		return e.complexity.Session.HostIdentifier(childComplexity), true
+
+	case "Session.hostname":
+		if e.complexity.Session.Hostname == nil {
+			break
+		}
+
+		return e.complexity.Session.Hostname(childComplexity), true
+
+	case "Session.id":
+		if e.complexity.Session.ID == nil {
+			break
+		}
+
+		return e.complexity.Session.ID(childComplexity), true
+
+	case "Session.identifier":
+		if e.complexity.Session.Identifier == nil {
+			break
+		}
+
+		return e.complexity.Session.Identifier(childComplexity), true
+
+	case "Session.lastseenat":
+		if e.complexity.Session.LastSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Session.LastSeenAt(childComplexity), true
+
+	case "Session.principal":
+		if e.complexity.Session.Principal == nil {
+			break
+		}
+
+		return e.complexity.Session.Principal(childComplexity), true
+
+	case "Session.tags":
+		if e.complexity.Session.Tags == nil {
+			break
+		}
+
+		return e.complexity.Session.Tags(childComplexity), true
+
+	case "Session.tasks":
+		if e.complexity.Session.Tasks == nil {
+			break
+		}
+
+		return e.complexity.Session.Tasks(childComplexity), true
 
 	case "Tag.id":
 		if e.complexity.Tag.ID == nil {
@@ -386,40 +519,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tag.Name(childComplexity), true
 
-	case "Tag.targets":
-		if e.complexity.Tag.Targets == nil {
+	case "Tag.sessions":
+		if e.complexity.Tag.Sessions == nil {
 			break
 		}
 
-		return e.complexity.Tag.Targets(childComplexity), true
-
-	case "Target.id":
-		if e.complexity.Target.ID == nil {
-			break
-		}
-
-		return e.complexity.Target.ID(childComplexity), true
-
-	case "Target.lastseenat":
-		if e.complexity.Target.LastSeenAt == nil {
-			break
-		}
-
-		return e.complexity.Target.LastSeenAt(childComplexity), true
-
-	case "Target.name":
-		if e.complexity.Target.Name == nil {
-			break
-		}
-
-		return e.complexity.Target.Name(childComplexity), true
-
-	case "Target.tags":
-		if e.complexity.Target.Tags == nil {
-			break
-		}
-
-		return e.complexity.Target.Tags(childComplexity), true
+		return e.complexity.Tag.Sessions(childComplexity), true
 
 	case "Task.claimedat":
 		if e.complexity.Task.ClaimedAt == nil {
@@ -484,12 +589,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Output(childComplexity), true
 
-	case "Task.target":
-		if e.complexity.Task.Target == nil {
+	case "Task.session":
+		if e.complexity.Task.Session == nil {
 			break
 		}
 
-		return e.complexity.Task.Target(childComplexity), true
+		return e.complexity.Task.Session(childComplexity), true
 
 	case "Tome.createdat":
 		if e.complexity.Tome.CreatedAt == nil {
@@ -518,13 +623,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tome.Files(childComplexity), true
-
-	case "Tome.hash":
-		if e.complexity.Tome.Hash == nil {
-			break
-		}
-
-		return e.complexity.Tome.Hash(childComplexity), true
 
 	case "Tome.id":
 		if e.complexity.Tome.ID == nil {
@@ -597,19 +695,25 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateJobInput,
+		ec.unmarshalInputCreateTagInput,
+		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
 		ec.unmarshalInputJobOrder,
 		ec.unmarshalInputJobWhereInput,
+		ec.unmarshalInputSessionOrder,
+		ec.unmarshalInputSessionWhereInput,
+		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
 		ec.unmarshalInputTagWhereInput,
-		ec.unmarshalInputTargetOrder,
-		ec.unmarshalInputTargetWhereInput,
 		ec.unmarshalInputTaskOrder,
 		ec.unmarshalInputTaskWhereInput,
 		ec.unmarshalInputTomeOrder,
 		ec.unmarshalInputTomeWhereInput,
+		ec.unmarshalInputUpdateSessionInput,
+		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateUserInput,
 		ec.unmarshalInputUserWhereInput,
 	)
@@ -683,6 +787,32 @@ input CreateJobInput {
   """Name of the job"""
   name: String!
   tomeID: ID!
+}
+"""
+CreateTagInput is used for create Tag object.
+Input was generated by ent.
+"""
+input CreateTagInput {
+  """Name of the tag"""
+  name: String!
+  """Describes the type of tag this is"""
+  kind: TagTagKind!
+  sessionIDs: [ID!]
+}
+"""
+CreateTomeInput is used for create Tome object.
+Input was generated by ent.
+"""
+input CreateTomeInput {
+  """Name of the tome"""
+  name: String!
+  """Information about the tome"""
+  description: String!
+  """JSON string describing what parameters are used with the tome"""
+  parameters: String
+  """Eldritch script that will be executed when the tome is run"""
+  eldritch: String!
+  fileIDs: [ID!]
 }
 """
 Define a Relay Cursor type:
@@ -915,10 +1045,151 @@ type Query {
   ): [Node]!
   files: [File!]!
   jobs: [Job!]!
+  sessions: [Session!]!
   tags: [Tag!]!
-  targets: [Target!]!
   tomes: [Tome!]!
   users: [User!]!
+}
+type Session implements Node {
+  id: ID!
+  """The identity the session is authenticated as (e.g. 'root')"""
+  principal: String
+  """The hostname of the system the session is running on."""
+  hostname: String
+  """Unique identifier for the session. Unique to each instance of the session."""
+  identifier: String!
+  """Identifies the agent that the session is running as (e.g. 'imix')."""
+  agentidentifier: String @goField(name: "AgentIdentifier", forceResolver: false)
+  """Unique identifier for the host the session is running on."""
+  hostidentifier: String @goField(name: "HostIdentifier", forceResolver: false)
+  """Timestamp of when a task was last claimed or updated for a target"""
+  lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
+  tags: [Tag!]
+  tasks: [Task!]
+}
+"""Ordering options for Session connections"""
+input SessionOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Sessions."""
+  field: SessionOrderField!
+}
+"""Properties by which Session connections can be ordered."""
+enum SessionOrderField {
+  LAST_SEEN_AT
+}
+"""
+SessionWhereInput is used for filtering Session objects.
+Input was generated by ent.
+"""
+input SessionWhereInput {
+  not: SessionWhereInput
+  and: [SessionWhereInput!]
+  or: [SessionWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """principal field predicates"""
+  principal: String
+  principalNEQ: String
+  principalIn: [String!]
+  principalNotIn: [String!]
+  principalGT: String
+  principalGTE: String
+  principalLT: String
+  principalLTE: String
+  principalContains: String
+  principalHasPrefix: String
+  principalHasSuffix: String
+  principalIsNil: Boolean
+  principalNotNil: Boolean
+  principalEqualFold: String
+  principalContainsFold: String
+  """hostname field predicates"""
+  hostname: String
+  hostnameNEQ: String
+  hostnameIn: [String!]
+  hostnameNotIn: [String!]
+  hostnameGT: String
+  hostnameGTE: String
+  hostnameLT: String
+  hostnameLTE: String
+  hostnameContains: String
+  hostnameHasPrefix: String
+  hostnameHasSuffix: String
+  hostnameIsNil: Boolean
+  hostnameNotNil: Boolean
+  hostnameEqualFold: String
+  hostnameContainsFold: String
+  """identifier field predicates"""
+  identifier: String
+  identifierNEQ: String
+  identifierIn: [String!]
+  identifierNotIn: [String!]
+  identifierGT: String
+  identifierGTE: String
+  identifierLT: String
+  identifierLTE: String
+  identifierContains: String
+  identifierHasPrefix: String
+  identifierHasSuffix: String
+  identifierEqualFold: String
+  identifierContainsFold: String
+  """agentIdentifier field predicates"""
+  agentidentifier: String
+  agentidentifierNEQ: String
+  agentidentifierIn: [String!]
+  agentidentifierNotIn: [String!]
+  agentidentifierGT: String
+  agentidentifierGTE: String
+  agentidentifierLT: String
+  agentidentifierLTE: String
+  agentidentifierContains: String
+  agentidentifierHasPrefix: String
+  agentidentifierHasSuffix: String
+  agentidentifierIsNil: Boolean
+  agentidentifierNotNil: Boolean
+  agentidentifierEqualFold: String
+  agentidentifierContainsFold: String
+  """hostIdentifier field predicates"""
+  hostidentifier: String
+  hostidentifierNEQ: String
+  hostidentifierIn: [String!]
+  hostidentifierNotIn: [String!]
+  hostidentifierGT: String
+  hostidentifierGTE: String
+  hostidentifierLT: String
+  hostidentifierLTE: String
+  hostidentifierContains: String
+  hostidentifierHasPrefix: String
+  hostidentifierHasSuffix: String
+  hostidentifierIsNil: Boolean
+  hostidentifierNotNil: Boolean
+  hostidentifierEqualFold: String
+  hostidentifierContainsFold: String
+  """lastSeenAt field predicates"""
+  lastseenat: Time
+  lastseenatNEQ: Time
+  lastseenatIn: [Time!]
+  lastseenatNotIn: [Time!]
+  lastseenatGT: Time
+  lastseenatGTE: Time
+  lastseenatLT: Time
+  lastseenatLTE: Time
+  lastseenatIsNil: Boolean
+  lastseenatNotNil: Boolean
+  """tags edge predicates"""
+  hasTags: Boolean
+  hasTagsWith: [TagWhereInput!]
+  """tasks edge predicates"""
+  hasTasks: Boolean
+  hasTasksWith: [TaskWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -926,7 +1197,7 @@ type Tag implements Node {
   name: String!
   """Describes the type of tag this is"""
   kind: TagTagKind!
-  targets: [Target!]!
+  sessions: [Session!]
 }
 """Ordering options for Tag connections"""
 input TagOrder {
@@ -980,75 +1251,9 @@ input TagWhereInput {
   kindNEQ: TagTagKind
   kindIn: [TagTagKind!]
   kindNotIn: [TagTagKind!]
-  """targets edge predicates"""
-  hasTargets: Boolean
-  hasTargetsWith: [TargetWhereInput!]
-}
-type Target implements Node {
-  id: ID!
-  """Human-readable name of the target"""
-  name: String!
-  """Timestamp of when a task was last claimed or updated for a target"""
-  lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
-  tags: [Tag!]
-}
-"""Ordering options for Target connections"""
-input TargetOrder {
-  """The ordering direction."""
-  direction: OrderDirection! = ASC
-  """The field by which to order Targets."""
-  field: TargetOrderField!
-}
-"""Properties by which Target connections can be ordered."""
-enum TargetOrderField {
-  NAME
-  LAST_SEEN_AT
-}
-"""
-TargetWhereInput is used for filtering Target objects.
-Input was generated by ent.
-"""
-input TargetWhereInput {
-  not: TargetWhereInput
-  and: [TargetWhereInput!]
-  or: [TargetWhereInput!]
-  """id field predicates"""
-  id: ID
-  idNEQ: ID
-  idIn: [ID!]
-  idNotIn: [ID!]
-  idGT: ID
-  idGTE: ID
-  idLT: ID
-  idLTE: ID
-  """name field predicates"""
-  name: String
-  nameNEQ: String
-  nameIn: [String!]
-  nameNotIn: [String!]
-  nameGT: String
-  nameGTE: String
-  nameLT: String
-  nameLTE: String
-  nameContains: String
-  nameHasPrefix: String
-  nameHasSuffix: String
-  nameEqualFold: String
-  nameContainsFold: String
-  """lastSeenAt field predicates"""
-  lastseenat: Time
-  lastseenatNEQ: Time
-  lastseenatIn: [Time!]
-  lastseenatNotIn: [Time!]
-  lastseenatGT: Time
-  lastseenatGTE: Time
-  lastseenatLT: Time
-  lastseenatLTE: Time
-  lastseenatIsNil: Boolean
-  lastseenatNotNil: Boolean
-  """tags edge predicates"""
-  hasTags: Boolean
-  hasTagsWith: [TagWhereInput!]
+  """sessions edge predicates"""
+  hasSessions: Boolean
+  hasSessionsWith: [SessionWhereInput!]
 }
 type Task implements Node {
   id: ID!
@@ -1067,7 +1272,7 @@ type Task implements Node {
   """Error, if any, produced while executing the Task"""
   error: String
   job: Job!
-  target: Target!
+  session: Session!
 }
 """Ordering options for Task connections"""
 input TaskOrder {
@@ -1187,9 +1392,9 @@ input TaskWhereInput {
   """job edge predicates"""
   hasJob: Boolean
   hasJobWith: [JobWhereInput!]
-  """target edge predicates"""
-  hasTarget: Boolean
-  hasTargetWith: [TargetWhereInput!]
+  """session edge predicates"""
+  hasSession: Boolean
+  hasSessionWith: [SessionWhereInput!]
 }
 type Tome implements Node {
   id: ID!
@@ -1203,8 +1408,6 @@ type Tome implements Node {
   description: String!
   """JSON string describing what parameters are used with the tome"""
   parameters: String
-  """A SHA3 digest of the eldritch field"""
-  hash: String!
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   files: [File!]
@@ -1301,20 +1504,6 @@ input TomeWhereInput {
   parametersNotNil: Boolean
   parametersEqualFold: String
   parametersContainsFold: String
-  """hash field predicates"""
-  hash: String
-  hashNEQ: String
-  hashIn: [String!]
-  hashNotIn: [String!]
-  hashGT: String
-  hashGTE: String
-  hashLT: String
-  hashLTE: String
-  hashContains: String
-  hashHasPrefix: String
-  hashHasSuffix: String
-  hashEqualFold: String
-  hashContainsFold: String
   """eldritch field predicates"""
   eldritch: String
   eldritchNEQ: String
@@ -1332,6 +1521,29 @@ input TomeWhereInput {
   """files edge predicates"""
   hasFiles: Boolean
   hasFilesWith: [FileWhereInput!]
+}
+"""
+UpdateSessionInput is used for update Session object.
+Input was generated by ent.
+"""
+input UpdateSessionInput {
+  clearHostname: Boolean
+  """The hostname of the system the session is running on."""
+  hostname: String
+  addTagIDs: [ID!]
+  removeTagIDs: [ID!]
+}
+"""
+UpdateTagInput is used for update Tag object.
+Input was generated by ent.
+"""
+input UpdateTagInput {
+  """Name of the tag"""
+  name: String
+  """Describes the type of tag this is"""
+  kind: TagTagKind
+  addSessionIDs: [ID!]
+  removeSessionIDs: [ID!]
 }
 """
 UpdateUserInput is used for update User object.
@@ -1415,17 +1627,70 @@ input UserWhereInput {
     ###
     # Job
     ###
-    createJob(targetIDs: [ID!]!, input: CreateJobInput!): Job
+    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job
+
+    ###
+    # Session
+    ###
+    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session!
+
+    ###
+    # Tag
+    ###
+    createTag(input: CreateTagInput!): Tag!
+    updateTag(tagID: ID!, input: UpdateTagInput!): Tag!
 
     ###
     # Task
     ###
-    claimTasks(targetID: ID!): [Task!]!
+    claimTasks(input: ClaimTasksInput!,): [Task!]!
+    submitTaskResult(input: SubmitTaskResultInput!,): Task
 
-    ### 
+    ###
+    # Tome
+    ###
+    createTome(input: CreateTomeInput!,): Tome!
+
+    ###
     # User
-    ###  
+    ###
     updateUser(userID: ID!, input: UpdateUserInput!): User
+}`, BuiltIn: false},
+	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
+  """The identity the session is authenticated as (e.g. 'root')"""
+  principal: String!
+
+  """The hostname of the system the session is running on."""
+  hostname: String!
+
+  """Unique identifier of the session, each running instance will be different."""
+  sessionIdentifier: String!
+
+  """Unique identifier of the underlying host system the session is running on."""
+  hostIdentifier: String!
+
+  """Name of the agent program the session is running as (e.g. 'imix')"""
+  agentIdentifier: String!
+}
+
+input SubmitTaskResultInput {
+  """ID of the task to submit results for."""
+  taskID: ID!
+
+  """Timestamp of when the task execution began. Format as RFC3339Nano."""
+  execStartedAt: Time!
+
+  """Timestamp of when the task execution finished (set only if it has completed). Format as RFC3339Nano."""
+  execFinishedAt: Time 
+
+  """
+  Output captured as the result of task execution.
+  Submitting multiple outputs will result in appending new output to the previous output.
+  """
+  output: String!
+
+  """Error message captured as the result of task execution failure."""
+  error: String 
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)

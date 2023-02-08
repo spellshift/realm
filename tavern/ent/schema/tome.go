@@ -35,6 +35,9 @@ func (Tome) Fields() []ent.Field {
 			Comment("JSON string describing what parameters are used with the tome"),
 		field.String("hash").
 			MaxLen(100).
+			Annotations(
+				entgql.Skip(entgql.SkipAll),
+			).
 			Comment("A SHA3 digest of the eldritch field"),
 		field.String("eldritch").
 			Comment("Eldritch script that will be executed when the tome is run"),
@@ -53,6 +56,9 @@ func (Tome) Edges() []ent.Edge {
 func (Tome) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.QueryField(),
+		entgql.Mutations(
+			entgql.MutationCreate(),
+		),
 	}
 }
 

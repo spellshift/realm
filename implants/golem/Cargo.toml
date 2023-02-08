@@ -1,0 +1,23 @@
+[package]
+name = "golem"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eldritch = { path = "../eldritch" }
+tokio = { version = "1.19.1" , features = ["macros"] }
+clap = { version = "3.2.23" }
+starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "7c6986a189c45591da9346159f5ddd50685bbf96" }
+anyhow = "1.0.55"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.87"
+structopt = "0.3.23"
+gazebo.version = "0.8.1"
+itertools = "0.10"
+thiserror = "1.0.30"
+lsp-types = "0.93.0"
+
+[dev-dependencies]
+assert_cmd = "2.0.6"
+predicates = "2.1"
+tempfile = "3.3.0"
