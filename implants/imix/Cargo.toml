@@ -14,3 +14,4 @@ hyper = { version = "0.14", features = ["full"] }
 hyper-timeout = "0.4"
 hyper-tls = "0.5.0"
 tokio = { version = "1", features = ["full"] }
+anyhow = "1.0.55"
