@@ -6,8 +6,13 @@ use nix::{sys::wait::waitpid, unistd::{fork, ForkResult}};
 
 // https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
 
-pub fn exec(path: String, args: Vec<String>, disown: bool) -> Result<String> {
-    if !disown {
+pub fn exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<String> {
+    let should_disown = match disown {
+        Some(disown_option) => disown_option,
+        None => false,
+    };
+    
+    if !should_disown {
         let res = Command::new(path)
             .args(args)
             .output()
@@ -62,7 +67,7 @@ mod tests {
         cfg!(target_os = "freebsd") || 
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
-            let res = exec(String::from("/bin/sh"),vec![String::from("-c"), String::from("id -u")], false)?;
+            let res = exec(String::from("/bin/sh"),vec![String::from("-c"), String::from("id -u")], Some(false))?;
             let mut bool_res = false; 
             if res == "1001\n" || res == "0\n" {
                 bool_res = true;
@@ -70,11 +75,11 @@ mod tests {
             assert_eq!(bool_res, true);
         }
         else if cfg!(target_os = "macos") {
-            let res = exec(String::from("/bin/echo"),vec![String::from("hello")], false)?;
+            let res = exec(String::from("/bin/echo"),vec![String::from("hello")], Some(false))?;
             assert_eq!(res, "hello\n");
         }
         else if cfg!(target_os = "windows") {
-            let res = exec(String::from("C:\\Windows\\System32\\cmd.exe"), vec![String::from("/c"), String::from("whoami")], false)?;
+            let res = exec(String::from("C:\\Windows\\System32\\cmd.exe"), vec![String::from("/c"), String::from("whoami")], Some(false))?;
             let mut bool_res = false;
             if res.contains("runneradmin") || res.contains("Administrator") {
                 bool_res = true;
@@ -92,7 +97,7 @@ mod tests {
         cfg!(target_os = "freebsd") || 
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
-            let res = exec(String::from("/bin/sh"), vec![String::from("-c"), String::from("cat /etc/passwd | awk '{print $1}' | grep -E '^root:' | awk -F \":\" '{print $3}'")], false)?;
+            let res = exec(String::from("/bin/sh"), vec![String::from("-c"), String::from("cat /etc/passwd | awk '{print $1}' | grep -E '^root:' | awk -F \":\" '{print $3}'")], Some(false))?;
             assert_eq!(res, "0\n");
         }
         Ok(())
@@ -116,7 +121,7 @@ mod tests {
             let path = String::from(tmp_file.path().to_str().unwrap());
             tmp_file.close()?;
     
-            let _res = exec(String::from("/bin/sh"), vec![String::from("-c"), String::from(format!("touch {}", path.clone()))], true)?;
+            let _res = exec(String::from("/bin/sh"), vec![String::from("-c"), String::from(format!("touch {}", path.clone()))], Some(true))?;
             thread::sleep(time::Duration::from_secs(2));
 
             println!("{:?}", path.clone().as_str());
@@ -129,7 +134,7 @@ mod tests {
     #[test]
     fn test_process_exec_complex_windows() -> anyhow::Result<()>{
         if cfg!(target_os = "windows") {
-            let res = exec(String::from("C:\\Windows\\System32\\cmd.exe"), vec![String::from("/c"), String::from("wmic useraccount get name | findstr /i admin")], false)?;
+            let res = exec(String::from("C:\\Windows\\System32\\cmd.exe"), vec![String::from("/c"), String::from("wmic useraccount get name | findstr /i admin")], Some(false))?;
             assert_eq!(res.contains("runneradmin") || res.contains("Administrator"), true);
         }
         Ok(())
