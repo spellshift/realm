@@ -182,7 +182,26 @@ In the above example, `$input` is used to pass variables from code to the GraphQ
 
 ## Claiming Tasks
 
-The first GraphQL mutation an agent should utilize is `claimTasks`. This mutation is used to fetch new tasks from Tavern that should be executed by the agent.
+The first GraphQL mutation an agent should utilize is `claimTasks`. This mutation is used to fetch new tasks from Tavern that should be executed by the agent. In order to fetch execution information, the agent should perform a graph traversal to obtain information about the associated job. For example:
+
+```graphql
+mutation ClaimTasks($input: ClaimTasksInput!) {
+  claimTasks(input: $input) {
+    id 
+    job {
+      tome {
+        id
+        eldritch
+      }
+      bundle {
+        id
+      }
+    }
+  }
+}
+```
+
+If the mutation returns a bundle, it should be fetched from the CDN to provide necessary assets (a tar.gz) for eldrich execution.
 
 ## Submitting Results
 
