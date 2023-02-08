@@ -606,7 +606,7 @@ mod tests {
 
     // verify our non async call works and Dict return type.
     #[test]
-    fn test_starlark_dict_from_interpreter() -> anyhow::Result<()>{
+    fn test_portscan_return_type_starlark_dict_from_interpreter() -> anyhow::Result<()>{
         // Setup test ports
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
