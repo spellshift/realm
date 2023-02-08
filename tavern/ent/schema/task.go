@@ -49,7 +49,7 @@ func (Task) Edges() []ent.Edge {
 			Ref("tasks").
 			Required().
 			Unique(),
-		edge.To("target", Target.Type).
+		edge.To("session", Session.Type).
 			Required().
 			Unique(),
 	}

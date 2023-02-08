@@ -2,15 +2,32 @@ type Mutation {
     ###
     # Job
     ###
-    createJob(targetIDs: [ID!]!, input: CreateJobInput!): Job
+    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job
+
+    ###
+    # Session
+    ###
+    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session!
+
+    ###
+    # Tag
+    ###
+    createTag(input: CreateTagInput!): Tag!
+    updateTag(tagID: ID!, input: UpdateTagInput!): Tag!
 
     ###
     # Task
     ###
-    claimTasks(targetID: ID!): [Task!]!
+    claimTasks(input: ClaimTasksInput!,): [Task!]!
+    submitTaskResult(input: SubmitTaskResultInput!,): Task
 
-    ### 
+    ###
+    # Tome
+    ###
+    createTome(input: CreateTomeInput!,): Tome!
+
+    ###
     # User
-    ###  
+    ###
     updateUser(userID: ID!, input: UpdateUserInput!): User
 }
