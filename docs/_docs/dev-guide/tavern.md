@@ -139,3 +139,51 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 * [Ent + GraphQL Tutorial](https://entgo.io/docs/tutorial-todo-gql)
 * [Example Ent + GraphQL project](https://github.com/ent/contrib/tree/master/entgql/internal/todo)
 * [GQLGen Repo](https://github.com/99designs/gqlgen)
+
+# Agent Development
+
+## Overview
+
+Tavern provides an HTTP(s) GraphQL API that agents may use directly to claim tasks and submit execution results. This is the standard request flow, and is supported as a core function of realm. To learn more about how to interface with GraphQL APIs, please read [this documentation](https://www.graphql.com/tutorials/#clients) or read on for a simple example.
+
+![/assets/img/tavern/standard-usage-arch.png](/assets/img/tavern/standard-usage-arch.png)
+
+This however restricts the available transport methods the agent may use to communicate with the teamserver e.g. only HTTP(s). If you wish to develop an agent using a different transport method (e.g. DNS), your development will need to include a C2. The role of the C2 is to handle agent communication, and translate the chosen transport method into HTTP(s) requests to Tavern's GraphQL API. This enables developers to use any transport mechanism with Tavern. If you plan to build a C2 for a common protocol for use with Tavern, consider [submitting a PR](https://github.com/KCarretto/realm/pulls).
+
+![/assets/img/tavern/custom-usage-arch.png](/assets/img/tavern/custom-usage-arch.png)
+
+## GraphQL Example
+
+GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supports a variety of different mutations for interacting with the graph ([see schema](https://github.com/KCarretto/realm/blob/main/tavern/graphql/schema/mutation.graphql)). The two mutations agents rely on are `claimTasks` and `submitTaskResult` (covered in more detail below). GraphQL requests are submitted as HTTP POST requests to Tavern, with a JSON body including the GraphQL mutation. Below is an example JSON body that may be sent to the Tavern GraphQL API:
+
+```json
+{
+  "request": {
+    "operation": "ClaimTasks",
+    "query": "mutation ClaimTasks($input: ClaimTasksInput!) {
+      claimTasks(input: $input) {
+        id
+      }
+    }",
+    "variables": {
+      "input": {
+        "principal": "root",
+        "hostname": "some_hostname",
+        "sessionIdentifier": "random_id_generated_by_agent",
+        "hostIdentifier": "uniquely_identifies_host.For_example_a_serial_number",
+        "agentIdentifier": "uniquely_identifies_this_agent"
+      }
+    }
+  }
+}
+```
+
+In the above example, `$input` is used to pass variables from code to the GraphQL mutation while avoiding sketchy string parsing. Fields that should be present in the output are included in the body of the query (e.g. 'id').
+
+## Claiming Tasks
+
+The first GraphQL mutation an agent should utilize is `claimTasks`. This mutation is used to fetch new tasks from Tavern that should be executed by the agent.
+
+## Submitting Results
+
+After task execution has been completed (or as it is being completed), an agent should utilize the `submitTaskResult` mutation to update Tavern with execution output and status information. When task execution is finished, the agent should provide a value for the `execFinishedAt` parameter. If a task fails to complete, the agent should provide a value for the `error` parameter.
