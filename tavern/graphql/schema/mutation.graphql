@@ -5,6 +5,11 @@ type Mutation {
     createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job
 
     ###
+    # Session
+    ###
+    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session!
+
+    ###
     # Task
     ###
     claimTasks(input: ClaimTasksInput!,): [Task!]!

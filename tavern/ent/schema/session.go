@@ -24,6 +24,9 @@ func (Session) Fields() []ent.Field {
 		field.String("principal").
 			Optional().
 			NotEmpty().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
 			Comment("The identity the session is authenticated as (e.g. 'root')"),
 		field.String("hostname").
 			Optional().
@@ -33,19 +36,29 @@ func (Session) Fields() []ent.Field {
 			DefaultFunc(newRandomIdentifier).
 			NotEmpty().
 			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
 			Comment("Unique identifier for the session. Unique to each instance of the session."),
 		field.String("agentIdentifier").
 			Optional().
 			NotEmpty().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
 			Comment("Identifies the agent that the session is running as (e.g. 'imix')."),
 		field.String("hostIdentifier").
 			Optional().
 			NotEmpty().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
 			Comment("Unique identifier for the host the session is running on."),
 		field.Time("lastSeenAt").
 			Optional().
 			Annotations(
 				entgql.OrderField("LAST_SEEN_AT"),
+				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Timestamp of when a task was last claimed or updated for a target"),
 	}
@@ -54,9 +67,14 @@ func (Session) Fields() []ent.Field {
 // Edges of the Target.
 func (Session) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("tags", Tag.Type),
+		edge.To("tags", Tag.Type).
+			Comment("Tags used to group the session with other sessions"),
 		edge.From("tasks", Task.Type).
-			Ref("session"),
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Ref("session").
+			Comment("Tasks that have been assigned to the session"),
 	}
 }
 
@@ -64,6 +82,9 @@ func (Session) Edges() []ent.Edge {
 func (Session) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.QueryField(),
+		entgql.Mutations(
+			entgql.MutationUpdate(),
+		),
 	}
 }
 

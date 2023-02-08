@@ -20,6 +20,42 @@ func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
 	return c
 }
 
+// UpdateSessionInput represents a mutation input for updating sessions.
+type UpdateSessionInput struct {
+	ClearHostname bool
+	Hostname      *string
+	AddTagIDs     []int
+	RemoveTagIDs  []int
+}
+
+// Mutate applies the UpdateSessionInput on the SessionMutation builder.
+func (i *UpdateSessionInput) Mutate(m *SessionMutation) {
+	if i.ClearHostname {
+		m.ClearHostname()
+	}
+	if v := i.Hostname; v != nil {
+		m.SetHostname(*v)
+	}
+	if v := i.AddTagIDs; len(v) > 0 {
+		m.AddTagIDs(v...)
+	}
+	if v := i.RemoveTagIDs; len(v) > 0 {
+		m.RemoveTagIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateSessionInput on the SessionUpdate builder.
+func (c *SessionUpdate) SetInput(i UpdateSessionInput) *SessionUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateSessionInput on the SessionUpdateOne builder.
+func (c *SessionUpdateOne) SetInput(i UpdateSessionInput) *SessionUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateTomeInput represents a mutation input for creating tomes.
 type CreateTomeInput struct {
 	Name        string

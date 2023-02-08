@@ -86,6 +86,11 @@ func (r *mutationResolver) CreateJob(ctx context.Context, sessionIDs []int, inpu
 	return job, nil
 }
 
+// UpdateSession is the resolver for the updateSession field.
+func (r *mutationResolver) UpdateSession(ctx context.Context, sessionID int, input ent.UpdateSessionInput) (*ent.Session, error) {
+	return r.client.Session.UpdateOneID(sessionID).SetInput(input).Save(ctx)
+}
+
 // ClaimTasks is the resolver for the claimTasks field.
 func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTasksInput) ([]*ent.Task, error) {
 	// 1. Check if session already exists
