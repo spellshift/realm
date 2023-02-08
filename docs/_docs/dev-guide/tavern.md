@@ -187,7 +187,7 @@ The first GraphQL mutation an agent should utilize is `claimTasks`. This mutatio
 ```graphql
 mutation ClaimTasks($input: ClaimTasksInput!) {
   claimTasks(input: $input) {
-    id 
+    id
     job {
       tome {
         id
@@ -201,7 +201,7 @@ mutation ClaimTasks($input: ClaimTasksInput!) {
 }
 ```
 
-If the mutation returns a bundle, it should be fetched from the CDN to provide necessary assets (a tar.gz) for eldrich execution.
+If the mutation returns a bundle, it should be fetched from the CDN to provide necessary assets (a tar.gz) for eldritch execution. The Task ID should be saved for later reporting results of task execution.
 
 ## Submitting Results
 
