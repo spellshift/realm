@@ -123,7 +123,7 @@ The Sys Library is very cool, and will be even cooler when Nick documents it.
 `sys.exec(path: str, args: List<str>, disown: bool) -> str`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
-Disown will run the process in the background disowned from the agent. This is done through double forking and only works on nix* systems.
+Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
 
 If disown is not used stdout from the process will be returned. When disown is true the return string will be `"No output"`.
 
