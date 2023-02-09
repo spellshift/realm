@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
@@ -37,13 +37,13 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		file.Table:   file.ValidColumn,
-		job.Table:    job.ValidColumn,
-		tag.Table:    tag.ValidColumn,
-		target.Table: target.ValidColumn,
-		task.Table:   task.ValidColumn,
-		tome.Table:   tome.ValidColumn,
-		user.Table:   user.ValidColumn,
+		file.Table:    file.ValidColumn,
+		job.Table:     job.ValidColumn,
+		session.Table: session.ValidColumn,
+		tag.Table:     tag.ValidColumn,
+		task.Table:    task.ValidColumn,
+		tome.Table:    tome.ValidColumn,
+		user.Table:    user.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {
