@@ -2,18 +2,18 @@ type Mutation {
     ###
     # Job
     ###
-    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job
+    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
 
     ###
     # Session
     ###
-    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session!
+    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session! @requireRole(role: USER)
 
     ###
     # Tag
     ###
-    createTag(input: CreateTagInput!): Tag!
-    updateTag(tagID: ID!, input: UpdateTagInput!): Tag!
+    createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
+    updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
 
     ###
     # Task
@@ -24,10 +24,10 @@ type Mutation {
     ###
     # Tome
     ###
-    createTome(input: CreateTomeInput!,): Tome!
+    createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
 
     ###
     # User
     ###
-    updateUser(userID: ID!, input: UpdateUserInput!): User
+    updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
 }

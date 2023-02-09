@@ -5,7 +5,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/graphql/generated"
@@ -33,7 +32,7 @@ func (r *queryResolver) Jobs(ctx context.Context) ([]*ent.Job, error) {
 
 // Sessions is the resolver for the sessions field.
 func (r *queryResolver) Sessions(ctx context.Context) ([]*ent.Session, error) {
-	panic(fmt.Errorf("not implemented: Sessions - sessions"))
+	return r.client.Session.Query().All(ctx)
 }
 
 // Tags is the resolver for the tags field.
