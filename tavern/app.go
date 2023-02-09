@@ -15,6 +15,7 @@ import (
 	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent/migrate"
 	"github.com/kcarretto/realm/tavern/graphql"
+	"github.com/kcarretto/realm/tavern/internal/cdn"
 	"github.com/urfave/cli"
 )
 
@@ -80,6 +81,8 @@ func run(ctx context.Context, options ...func(*Config)) error {
 	}))
 	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
 	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
+	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
+	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
 
 	// Auth Middleware
 	var endpoint http.Handler
