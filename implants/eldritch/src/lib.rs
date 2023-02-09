@@ -40,7 +40,6 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String) -> anyhow::Res
     let module: Module = Module::new();
 
     let mut eval: Evaluator = Evaluator::new(&module);
-
     let res: Value = eval.eval_module(ast, &globals).unwrap();
 
     Ok(res.unpack_str().unwrap().to_string())
@@ -55,6 +54,7 @@ mod tests {
     use super::file::FileLibrary;
     use super::process::ProcessLibrary;
     use super::sys::SysLibrary;
+    use super::pivot::PivotLibrary;
 
     // just checks dir...
     #[test]
@@ -64,6 +64,7 @@ mod tests {
             const file: FileLibrary = FileLibrary();
             const process: ProcessLibrary = ProcessLibrary();
             const sys: SysLibrary = SysLibrary();
+            const pivot: PivotLibrary = PivotLibrary();
         }
 
         let mut a = Assert::new();
@@ -73,6 +74,7 @@ mod tests {
 dir(file) == ["append", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all",  "template", "timestomp", "write"]
 dir(process) == ["kill", "list", "name"]
 dir(sys) == ["exec", "is_linux", "is_macos", "is_windows", "shell"]
+dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_exec", "ssh_password_spray"]
 "#,
         );
     }
