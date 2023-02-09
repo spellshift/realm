@@ -81,10 +81,18 @@ func run(ctx context.Context, options ...func(*Config)) error {
 	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
 	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
 
+	// Auth Middleware
+	var endpoint http.Handler
+	if cfg.oauth.ClientID != "" {
+		endpoint = auth.Middleware(router, cfg.client)
+	} else {
+		endpoint = auth.AuthDisabledMiddleware(router)
+	}
+
 	// Listen & Serve HTTP Traffic
 	addr := "0.0.0.0:80"
 	log.Printf("listening on %s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
+	if err := http.ListenAndServe(addr, endpoint); err != nil {
 		return fmt.Errorf("stopped http server: %w", err)
 	}
 

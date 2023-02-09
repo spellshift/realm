@@ -36,6 +36,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	RequireRole func(ctx context.Context, obj interface{}, next graphql.Resolver, role models.Role) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -776,6 +777,12 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "../schema/directives.graphql", Input: `directive @requireRole(role: Role!) on FIELD_DEFINITION
+
+enum Role {
+    ADMIN
+    USER
+}`, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time`, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
@@ -1627,18 +1634,18 @@ input UserWhereInput {
     ###
     # Job
     ###
-    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job
+    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
 
     ###
     # Session
     ###
-    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session!
+    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session! @requireRole(role: USER)
 
     ###
     # Tag
     ###
-    createTag(input: CreateTagInput!): Tag!
-    updateTag(tagID: ID!, input: UpdateTagInput!): Tag!
+    createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
+    updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
 
     ###
     # Task
@@ -1649,12 +1656,12 @@ input UserWhereInput {
     ###
     # Tome
     ###
-    createTome(input: CreateTomeInput!,): Tome!
+    createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
 
     ###
     # User
     ###
-    updateUser(userID: ID!, input: UpdateUserInput!): User
+    updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
 }`, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
   """The identity the session is authenticated as (e.g. 'root')"""
