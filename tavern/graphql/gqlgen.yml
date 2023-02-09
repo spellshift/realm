@@ -1,4 +1,5 @@
 schema:
+  - schema/directives.graphql
   - schema/scalars.graphql
   - schema/query.graphql
   - schema/mutation.graphql
@@ -30,7 +31,7 @@ autobind:
   - github.com/kcarretto/realm/tavern/ent/job
   - github.com/kcarretto/realm/tavern/ent/task
   - github.com/kcarretto/realm/tavern/ent/tome
- 
+
 struct_tag: json
 
 models:

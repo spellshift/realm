@@ -7,6 +7,7 @@ import (
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/kcarretto/realm/tavern/auth/authtest"
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/ent/tag"
@@ -20,7 +21,7 @@ func TestTagMutations(t *testing.T) {
 	ctx := context.Background()
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
-	srv := handler.NewDefaultServer(graphql.NewSchema(graph))
+	srv := authtest.Middleware(handler.NewDefaultServer(graphql.NewSchema(graph)))
 	gqlClient := client.New(srv)
 
 	// Initialize sample data

@@ -11,6 +11,7 @@ import (
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/kcarretto/realm/tavern/auth/authtest"
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/graphql"
@@ -20,12 +21,12 @@ import (
 
 // TestCreateJob ensures the createJob mutation functions as expected
 func TestCreateJob(t *testing.T) {
-	// Initialize Test Context
+	// Setup
 	ctx := context.Background()
-
-	// Initialize DB Backend
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
+	srv := authtest.Middleware(handler.NewDefaultServer(graphql.NewSchema(graph)))
+	gqlClient := client.New(srv)
 
 	// Initialize sample data
 	testSessions := []*ent.Session{
@@ -56,12 +57,6 @@ func TestCreateJob(t *testing.T) {
 		SetEldritch(`print("Hello World!")`).
 		AddFiles(testFiles...).
 		SaveX(ctx)
-
-	// Create a new GraphQL server (needed for auth middleware)
-	srv := handler.NewDefaultServer(graphql.NewSchema(graph))
-
-	// Create a new GraphQL client (connected to our http server)
-	gqlClient := client.New(srv)
 
 	// Run Tests
 	t.Run("CreateWithoutFiles", newCreateJobTest(
