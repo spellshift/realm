@@ -120,9 +120,12 @@ The <b>process.name</b> method is very cool, and will be even cooler when Nick d
 The Sys Library is very cool, and will be even cooler when Nick documents it.
 
 ### sys.exec
-`sys.exec(path: str, args: List<str>, ?disown: bool) -> str`
+`sys.exec(path: str, args: List<str>, disown: bool) -> str`
 
-The <b>sys.exec</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
+Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
+
+If disown is not used stdout from the process will be returned. When disown is true the return string will be `"No output"`.
 
 ### sys.is_linux
 `sys.is_linux() -> bool`
@@ -160,9 +163,34 @@ The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a wa
 The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb.
 
 ### pivot.port_scan
-`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, portocol: str) -> List<str>`
+`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int) -> List<str>`
 
-The <b>pivot.port_scan</b> method is being proposed to allow users to scan the network for open ports. It will take a list of CIDRs and/or IPs and return the results in a grepable format similar to nmap.
+The <b>pivot.port_scan</b> method allows users to scan TCP/UDP ports within the eldritch language.
+Inputs:
+- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
+- `ports` can be a list of any number of integers between 1 and 65535.
+- `protocol` must be: `tcp` or `udp`. These are the only supported options.
+- `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`
+
+Results will be in the format:
+```JSON
+[
+    { "ip": "127.0.0.1", "port": 22, "protocol": "tcp", "status": "open"},
+    { "ip": "127.0.0.1", "port": 21, "protocol": "tcp", "status": "closed"},
+    { "ip": "127.0.0.1", "port": 80, "protocol": "tcp", "status": "timeout"},
+]
+```
+A ports status can be open, closed, or timeout:
+|**State**|**Protocol**| **Meaning**                                          |
+|---------|------------|------------------------------------------------------|
+| open    | tcp        | Connection successful.                               |
+| close   | tcp        | Connection refused.                                  |
+| timeout | udp        | Connection was refused, dropped, or didn't respond   |
+
+Each IP in the specified CIDR will be returned regardless of if it returns any open ports.
+Be mindful of this when scanning large CIDRs as it may create largo return objects.
+
+NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or hang indefinitely.
 
 ### pivot.arp_scan
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
