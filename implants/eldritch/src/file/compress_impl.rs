@@ -9,18 +9,34 @@ fn tar_dir(src: String, dst: String) -> Result<String> {
     let src_path = Path::new(&src);
 
     // Create the tar bulider
-    let tmp_tar_file = File::create(dst.clone()).unwrap();
+    let tmp_tar_file = match File::create(dst.clone()) {
+        Ok(file) => file,
+        Err(error) => return Err(anyhow::anyhow!("File {} failed to create.\n{:?}", dst.clone(), error)),
+    };
     let mut tar_builder = Builder::new(tmp_tar_file);
     tar_builder.mode(
         HeaderMode::Deterministic
     );
 
+    let src_path_obj = src_path.clone().file_name().unwrap().to_str().unwrap();
+
     // Add all files from source dir with the name of the dir.
-    let _ = tar_builder.append_dir_all(
-        src_path.clone().file_name().unwrap().to_str().unwrap(), 
-        src_path.clone()
-    );
-    let _ = tar_builder.finish();
+    match tar_builder.append_dir_all(src_path_obj.clone(), src_path.clone() ) {
+        Ok(_) => {},
+        Err(error) => {
+            return Err(
+                anyhow::anyhow!("Appending dir {} failed.\n{:?}", 
+                    src_path_obj.clone(),
+                    error
+                )
+            )
+        },
+    }
+
+    match tar_builder.finish() {
+        Ok(_) => {},
+        Err(error) => return Err(anyhow::anyhow!("Error creating tar ball failed\n{:?}", error)),
+    }
 
     Ok(dst.clone())
 }
@@ -35,7 +51,10 @@ pub fn compress(src: String, dst: String) -> Result<()> {
 
     // If our source is a dir create a tarball and update the src file to the tar ball.
     if src_path.clone().is_dir() {
-        tmp_src = tar_dir(tmp_src, tmp_tar_file_src_path).unwrap();
+        tmp_src = match tar_dir(tmp_src, tmp_tar_file_src_path) {
+            Ok(new_file_path) => new_file_path,
+            Err(err) => return Err(err),
+        }
     } else {
         let _ = tmp_tar_file_src.close();
     }
@@ -68,7 +87,7 @@ pub fn compress(src: String, dst: String) -> Result<()> {
 mod tests {
     use super::*;
     use std::{io::{prelude::*, BufReader}, fs};
-    use sha256::digest_file;
+    use sha256::try_digest;
     use tempfile::{tempdir, NamedTempFile};
     
     #[test]
@@ -86,7 +105,7 @@ mod tests {
         compress(path_src, path_dst.clone())?;
 
         // Hash
-        let hash = digest_file(path_dst.clone())?;
+        let hash = try_digest(tmp_file_dst.path())?;
 
         // Compare
         assert_eq!(hash, "a4a62449deb847be376f523c527ddb8e37eda2a4a71dd293d3ddcd4c4a81941f");
