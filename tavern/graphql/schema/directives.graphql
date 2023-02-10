@@ -1,0 +1,6 @@
+directive @requireRole(role: Role!) on FIELD_DEFINITION
+
+enum Role {
+    ADMIN
+    USER
+}

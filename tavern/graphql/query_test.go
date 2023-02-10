@@ -6,6 +6,7 @@ import (
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/kcarretto/realm/tavern/auth/authtest"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/graphql"
 	"github.com/stretchr/testify/assert"
@@ -14,12 +15,12 @@ import (
 
 // TestUsersQuery ensures that the users query works as expected.
 func TestUsersQuery(t *testing.T) {
-	// Initialize Test Context
+	// Setup
 	ctx := context.Background()
-
-	// Initialize DB Backend
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
+	srv := authtest.Middleware(handler.NewDefaultServer(graphql.NewSchema(graph)))
+	gqlClient := client.New(srv)
 
 	// Initialize sample data
 	testUser := graph.User.Create().
@@ -29,12 +30,6 @@ func TestUsersQuery(t *testing.T) {
 		SetOAuthID("likearollingstone").
 		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/0/02/Bob_Dylan_-_Azkena_Rock_Festival_2010_2.jpg").
 		SaveX(ctx)
-
-	// Create a new GraphQL server (needed for auth middleware)
-	srv := handler.NewDefaultServer(graphql.NewSchema(graph))
-
-	// Create a new GraphQL client (connected to our http server)
-	gqlClient := client.New(srv)
 
 	// Run Tests
 	t.Run("QueryAll", newUsersQueryTest(

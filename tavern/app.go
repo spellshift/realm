@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kcarretto/realm/contrib/tomes"
+
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/debug"
@@ -15,6 +17,7 @@ import (
 	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent/migrate"
 	"github.com/kcarretto/realm/tavern/graphql"
+	"github.com/kcarretto/realm/tavern/internal/cdn"
 	"github.com/urfave/cli"
 )
 
@@ -60,6 +63,11 @@ func run(ctx context.Context, options ...func(*Config)) error {
 		return fmt.Errorf("failed to initialize graph schema: %w", err)
 	}
 
+	// Load Default Tomes
+	if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
+		return fmt.Errorf("failed to upload default tomes: %w", err)
+	}
+
 	// Initialize Test Data
 	createTestData(ctx, client)
 
@@ -80,11 +88,21 @@ func run(ctx context.Context, options ...func(*Config)) error {
 	}))
 	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
 	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
+	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
+	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
+
+	// Auth Middleware
+	var endpoint http.Handler
+	if cfg.oauth.ClientID != "" {
+		endpoint = auth.Middleware(router, cfg.client)
+	} else {
+		endpoint = auth.AuthDisabledMiddleware(router)
+	}
 
 	// Listen & Serve HTTP Traffic
 	addr := "0.0.0.0:80"
 	log.Printf("listening on %s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
+	if err := http.ListenAndServe(addr, endpoint); err != nil {
 		return fmt.Errorf("stopped http server: %w", err)
 	}
 

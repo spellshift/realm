@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "imix",
-    "eldritch"
+    "eldritch",
+    "golem"
 ]

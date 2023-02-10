@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 )
 
 // TagUpdate is the builder for updating Tag entities.
@@ -40,19 +40,19 @@ func (tu *TagUpdate) SetKind(t tag.Kind) *TagUpdate {
 	return tu
 }
 
-// AddTargetIDs adds the "targets" edge to the Target entity by IDs.
-func (tu *TagUpdate) AddTargetIDs(ids ...int) *TagUpdate {
-	tu.mutation.AddTargetIDs(ids...)
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (tu *TagUpdate) AddSessionIDs(ids ...int) *TagUpdate {
+	tu.mutation.AddSessionIDs(ids...)
 	return tu
 }
 
-// AddTargets adds the "targets" edges to the Target entity.
-func (tu *TagUpdate) AddTargets(t ...*Target) *TagUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+// AddSessions adds the "sessions" edges to the Session entity.
+func (tu *TagUpdate) AddSessions(s ...*Session) *TagUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return tu.AddTargetIDs(ids...)
+	return tu.AddSessionIDs(ids...)
 }
 
 // Mutation returns the TagMutation object of the builder.
@@ -60,25 +60,25 @@ func (tu *TagUpdate) Mutation() *TagMutation {
 	return tu.mutation
 }
 
-// ClearTargets clears all "targets" edges to the Target entity.
-func (tu *TagUpdate) ClearTargets() *TagUpdate {
-	tu.mutation.ClearTargets()
+// ClearSessions clears all "sessions" edges to the Session entity.
+func (tu *TagUpdate) ClearSessions() *TagUpdate {
+	tu.mutation.ClearSessions()
 	return tu
 }
 
-// RemoveTargetIDs removes the "targets" edge to Target entities by IDs.
-func (tu *TagUpdate) RemoveTargetIDs(ids ...int) *TagUpdate {
-	tu.mutation.RemoveTargetIDs(ids...)
+// RemoveSessionIDs removes the "sessions" edge to Session entities by IDs.
+func (tu *TagUpdate) RemoveSessionIDs(ids ...int) *TagUpdate {
+	tu.mutation.RemoveSessionIDs(ids...)
 	return tu
 }
 
-// RemoveTargets removes "targets" edges to Target entities.
-func (tu *TagUpdate) RemoveTargets(t ...*Target) *TagUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+// RemoveSessions removes "sessions" edges to Session entities.
+func (tu *TagUpdate) RemoveSessions(s ...*Session) *TagUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return tu.RemoveTargetIDs(ids...)
+	return tu.RemoveSessionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -180,33 +180,33 @@ func (tu *TagUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Kind(); ok {
 		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
 	}
-	if tu.mutation.TargetsCleared() {
+	if tu.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.TargetsTable,
-			Columns: tag.TargetsPrimaryKey,
+			Table:   tag.SessionsTable,
+			Columns: tag.SessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.RemovedTargetsIDs(); len(nodes) > 0 && !tu.mutation.TargetsCleared() {
+	if nodes := tu.mutation.RemovedSessionsIDs(); len(nodes) > 0 && !tu.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.TargetsTable,
-			Columns: tag.TargetsPrimaryKey,
+			Table:   tag.SessionsTable,
+			Columns: tag.SessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
@@ -215,17 +215,17 @@ func (tu *TagUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.TargetsIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.SessionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.TargetsTable,
-			Columns: tag.TargetsPrimaryKey,
+			Table:   tag.SessionsTable,
+			Columns: tag.SessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
@@ -265,19 +265,19 @@ func (tuo *TagUpdateOne) SetKind(t tag.Kind) *TagUpdateOne {
 	return tuo
 }
 
-// AddTargetIDs adds the "targets" edge to the Target entity by IDs.
-func (tuo *TagUpdateOne) AddTargetIDs(ids ...int) *TagUpdateOne {
-	tuo.mutation.AddTargetIDs(ids...)
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (tuo *TagUpdateOne) AddSessionIDs(ids ...int) *TagUpdateOne {
+	tuo.mutation.AddSessionIDs(ids...)
 	return tuo
 }
 
-// AddTargets adds the "targets" edges to the Target entity.
-func (tuo *TagUpdateOne) AddTargets(t ...*Target) *TagUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+// AddSessions adds the "sessions" edges to the Session entity.
+func (tuo *TagUpdateOne) AddSessions(s ...*Session) *TagUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return tuo.AddTargetIDs(ids...)
+	return tuo.AddSessionIDs(ids...)
 }
 
 // Mutation returns the TagMutation object of the builder.
@@ -285,25 +285,25 @@ func (tuo *TagUpdateOne) Mutation() *TagMutation {
 	return tuo.mutation
 }
 
-// ClearTargets clears all "targets" edges to the Target entity.
-func (tuo *TagUpdateOne) ClearTargets() *TagUpdateOne {
-	tuo.mutation.ClearTargets()
+// ClearSessions clears all "sessions" edges to the Session entity.
+func (tuo *TagUpdateOne) ClearSessions() *TagUpdateOne {
+	tuo.mutation.ClearSessions()
 	return tuo
 }
 
-// RemoveTargetIDs removes the "targets" edge to Target entities by IDs.
-func (tuo *TagUpdateOne) RemoveTargetIDs(ids ...int) *TagUpdateOne {
-	tuo.mutation.RemoveTargetIDs(ids...)
+// RemoveSessionIDs removes the "sessions" edge to Session entities by IDs.
+func (tuo *TagUpdateOne) RemoveSessionIDs(ids ...int) *TagUpdateOne {
+	tuo.mutation.RemoveSessionIDs(ids...)
 	return tuo
 }
 
-// RemoveTargets removes "targets" edges to Target entities.
-func (tuo *TagUpdateOne) RemoveTargets(t ...*Target) *TagUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+// RemoveSessions removes "sessions" edges to Session entities.
+func (tuo *TagUpdateOne) RemoveSessions(s ...*Session) *TagUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return tuo.RemoveTargetIDs(ids...)
+	return tuo.RemoveSessionIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -435,33 +435,33 @@ func (tuo *TagUpdateOne) sqlSave(ctx context.Context) (_node *Tag, err error) {
 	if value, ok := tuo.mutation.Kind(); ok {
 		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
 	}
-	if tuo.mutation.TargetsCleared() {
+	if tuo.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.TargetsTable,
-			Columns: tag.TargetsPrimaryKey,
+			Table:   tag.SessionsTable,
+			Columns: tag.SessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.RemovedTargetsIDs(); len(nodes) > 0 && !tuo.mutation.TargetsCleared() {
+	if nodes := tuo.mutation.RemovedSessionsIDs(); len(nodes) > 0 && !tuo.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.TargetsTable,
-			Columns: tag.TargetsPrimaryKey,
+			Table:   tag.SessionsTable,
+			Columns: tag.SessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}
@@ -470,17 +470,17 @@ func (tuo *TagUpdateOne) sqlSave(ctx context.Context) (_node *Tag, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.TargetsIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.SessionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.TargetsTable,
-			Columns: tag.TargetsPrimaryKey,
+			Table:   tag.SessionsTable,
+			Columns: tag.SessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: target.FieldID,
+					Column: session.FieldID,
 				},
 			},
 		}

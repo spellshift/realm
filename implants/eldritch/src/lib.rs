@@ -3,6 +3,48 @@ pub mod process;
 pub mod sys;
 pub mod pivot;
 
+use starlark::{starlark_module};
+use starlark::environment::{GlobalsBuilder, Module, Globals};
+use starlark::syntax::{AstModule, Dialect};
+use starlark::eval::Evaluator;
+use starlark::values::Value;
+
+use file::FileLibrary;
+use process::ProcessLibrary;
+use sys::SysLibrary;
+
+pub fn get_eldritch() -> anyhow::Result<Globals> {
+    #[starlark_module]
+    fn eldritch(builder: &mut GlobalsBuilder) {
+        const file: FileLibrary = FileLibrary();
+        const process: ProcessLibrary = ProcessLibrary();
+        const sys: SysLibrary = SysLibrary();
+    }
+
+    let globals = GlobalsBuilder::extended().with(eldritch).build();
+    return Ok(globals);
+}
+
+pub fn eldritch_run(tome_filename: String, tome_contents: String) -> anyhow::Result<String> {
+    let ast: AstModule;
+    match AstModule::parse(
+            &tome_filename,
+            tome_contents.as_str().to_owned(),
+            &Dialect::Standard
+        ) {
+            Ok(res) => ast = res,
+            Err(err) => return Err(err),
+    }
+
+    let globals = get_eldritch()?;
+    let module: Module = Module::new();
+
+    let mut eval: Evaluator = Evaluator::new(&module);
+    let res: Value = eval.eval_module(ast, &globals).unwrap();
+
+    Ok(res.unpack_str().unwrap().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use starlark::environment::{GlobalsBuilder};
@@ -12,6 +54,7 @@ mod tests {
     use super::file::FileLibrary;
     use super::process::ProcessLibrary;
     use super::sys::SysLibrary;
+    use super::pivot::PivotLibrary;
 
     // just checks dir...
     #[test]
@@ -21,15 +64,17 @@ mod tests {
             const file: FileLibrary = FileLibrary();
             const process: ProcessLibrary = ProcessLibrary();
             const sys: SysLibrary = SysLibrary();
+            const pivot: PivotLibrary = PivotLibrary();
         }
 
         let mut a = Assert::new();
         a.globals_add(globals);
         a.all_true(
             r#"
-dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "timestomp", "write"]
+dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
 dir(process) == ["kill", "list", "name"]
 dir(sys) == ["exec", "is_linux", "is_macos", "is_windows", "shell"]
+dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_exec", "ssh_password_spray"]
 "#,
         );
     }
