@@ -39,6 +39,11 @@ The <b>file.append</b> Append content str to file at path. If no file exists at 
 
 The <b>file.copy</b> copies a file from src path to dst path. If dst path doesn't exist it will be created.
 
+### file.compress
+`file.compress(src: str, dst: str) -> None`
+
+The <b>file.compress</b> function compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
+
 ### file.download
 `file.download(uri: str, dst: str) -> None`
 
