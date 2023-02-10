@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kcarretto/realm/contrib/tomes"
+
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/debug"
@@ -59,6 +61,11 @@ func run(ctx context.Context, options ...func(*Config)) error {
 		migrate.WithGlobalUniqueID(true),
 	); err != nil {
 		return fmt.Errorf("failed to initialize graph schema: %w", err)
+	}
+
+	// Load Default Tomes
+	if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
+		return fmt.Errorf("failed to upload default tomes: %w", err)
 	}
 
 	// Initialize Test Data
