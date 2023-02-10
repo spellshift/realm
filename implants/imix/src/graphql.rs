@@ -19,10 +19,10 @@ struct GraphQLVariableEnvelope {
 
 #[derive(Serialize, Deserialize)]
 struct GraphQLRequestEnvelope {
-    #[serde(rename="operationName")]
-    operation_name: String,
     query: String,
     variables: GraphQLVariableEnvelope,
+    #[serde(rename="operationName")]
+    operation_name: String,
 }
 
 pub async fn gql_claim_task(){
@@ -36,19 +36,15 @@ pub async fn gql_claim_task(){
         }};
     let req_body = serde_json::to_string(&GraphQLRequestEnvelope {
         operation_name: String::from("ImixCallback"),
-        query: String::from(r#"
-        mutation ImixCallback($input: ClaimTasksInput!) {
-            claimTasks(input: $input) {
-                id
-            }
-        }"#),
+        query: String::from(r#"mutation ImixCallback($input: ClaimTasksInput!) { claimTasks(input: $input) { id }}"#),
         variables: taskinput,
     }).unwrap();
     println!("{}", req_body);
 
     let client = reqwest::Client::new();
     match client.post("http://127.0.0.1:80/graphql")
-    .json(&req_body)
+    .header("Content-Type", "application/json")
+    .body(req_body)
     .send()
     .await {
         Ok(http_response) => {
