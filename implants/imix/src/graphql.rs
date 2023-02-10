@@ -12,26 +12,53 @@ struct GraphQLClaimTasksInput {
     agent_identifier: String,
 }
 
+#[derive(Serialize, Deserialize)]
+struct GraphQLVariableEnvelope {
+    input: GraphQLClaimTasksInput,
+}
 
+#[derive(Serialize, Deserialize)]
+struct GraphQLRequestEnvelope {
+    #[serde(rename="operationName")]
+    operation_name: String,
+    query: String,
+    variables: GraphQLVariableEnvelope,
+}
 
 pub async fn gql_claim_task(){
-    let data = GraphQLClaimTasksInput{
-        principal: "root".to_string(),
-        hostname: "localhost".to_string(),
-        session_identifier: "s1234".to_string(),
-        host_identifier: "h1234".to_string(),
-        agent_identifier: "a1234".to_string(),
-    };
+    let taskinput = GraphQLVariableEnvelope{
+        input: GraphQLClaimTasksInput {
+            principal: "root".to_string(),
+            hostname: "localhost".to_string(),
+            session_identifier: "s1234".to_string(),
+            host_identifier: "h1234".to_string(),
+            agent_identifier: "a1234".to_string(),
+        }};
+    let req_body = serde_json::to_string(&GraphQLRequestEnvelope {
+        operation_name: String::from("ImixCallback"),
+        query: String::from(r#"
+        mutation ImixCallback($input: ClaimTasksInput!) {
+            claimTasks(input: $input) {
+                id
+            }
+        }"#),
+        variables: taskinput,
+    }).unwrap();
+    println!("{}", req_body);
+
     let client = reqwest::Client::new();
-    match client.post("http://27.0.0.1:80/")
-    .json(&data)
+    match client.post("http://127.0.0.1:80/graphql")
+    .json(&req_body)
     .send()
     .await {
-        Ok(response) => {
-            println!("Okay.\n{:?}", response);
+        Ok(http_response) => {
+            match http_response.text().await {
+                Ok(text_recieved) => println!("Okay.\n{:?}", text_recieved),
+                Err(text_error) => println!("Error.\n{:?}", text_error),
+            }
         },
-        Err(error) => {
-            println!("Error.\n{:?}", error);
+        Err(http_error) => {
+            println!("Error.\n{:?}", http_error);
         },
     }
 }
