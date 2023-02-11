@@ -158,23 +158,17 @@ GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supp
 
 ```json
 {
-  "request": {
-    "operation": "ClaimTasks",
-    "query": "mutation ClaimTasks($input: ClaimTasksInput!) {
-      claimTasks(input: $input) {
-        id
-      }
-    }",
-    "variables": {
-      "input": {
-        "principal": "root",
-        "hostname": "some_hostname",
-        "sessionIdentifier": "random_id_generated_by_agent",
-        "hostIdentifier": "uniquely_identifies_host.For_example_a_serial_number",
-        "agentIdentifier": "uniquely_identifies_this_agent"
-      }
+  "query": "mutation ClaimTasks($input: ClaimTasksInput!) {\n  claimTasks(input: $input) {\n    id\n  }\n}",
+  "variables": {
+    "input": {
+      "principal": "root",
+      "hostname": "test",
+      "hostIdentifier": "dodo",
+      "agentIdentifier": "bleep",
+      "sessionIdentifier": "123"
     }
-  }
+  },
+  "operationName": "ClaimTasks"
 }
 ```
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/kcarretto/realm/tavern/ent"
@@ -12,6 +13,8 @@ import (
 
 // Config holds information that controls the behaviour of Tavern
 type Config struct {
+	srv *http.Server
+
 	mysql  string
 	client *ent.Client
 	oauth  oauth2.Config
@@ -37,6 +40,20 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 		mysql,
 		options...,
 	)
+}
+
+// ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be
+// overwritten with Tavern's HTTP handler when Tavern is run.
+func ConfigureHTTPServer(address string, options ...func(*http.Server)) func(*Config) {
+	srv := &http.Server{
+		Addr: address,
+	}
+	for _, opt := range options {
+		opt(srv)
+	}
+	return func(cfg *Config) {
+		cfg.srv = srv
+	}
 }
 
 // ConfigureOAuthFromEnv sets OAuth config values from the environment
@@ -106,5 +123,12 @@ func ConfigureMySQLFromEnv() func(*Config) {
 		}
 
 		cfg.mysql = mysqlConfig.FormatDSN()
+	}
+}
+
+// ConfigureMySQLFromClient sets the provided Ent client as the main interface for DB access.
+func ConfigureMySQLFromClient(client *ent.Client) func(*Config) {
+	return func(cfg *Config) {
+		cfg.client = client
 	}
 }
