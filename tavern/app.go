@@ -37,6 +37,21 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 }
 
 func run(ctx context.Context, options ...func(*Config)) error {
+	srv, err := NewServer(ctx, options...)
+	if err != nil {
+		return err
+	}
+
+	// Listen & Serve HTTP Traffic
+	log.Printf("Starting HTTP server on %s", srv.Addr)
+	if err := srv.ListenAndServe(); err != nil {
+		return fmt.Errorf("stopped http server: %w", err)
+	}
+
+	return nil
+}
+
+func NewServer(ctx context.Context, options ...func(*Config)) (*http.Server, error) {
 	// Generate server key pair
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -51,7 +66,7 @@ func run(ctx context.Context, options ...func(*Config)) error {
 	// Create Ent Client
 	client, err := cfg.Connect()
 	if err != nil {
-		return fmt.Errorf("failed to open graph: %w", err)
+		return nil, fmt.Errorf("failed to open graph: %w", err)
 	}
 	defer client.Close()
 
@@ -60,12 +75,12 @@ func run(ctx context.Context, options ...func(*Config)) error {
 		ctx,
 		migrate.WithGlobalUniqueID(true),
 	); err != nil {
-		return fmt.Errorf("failed to initialize graph schema: %w", err)
+		return nil, fmt.Errorf("failed to initialize graph schema: %w", err)
 	}
 
 	// Load Default Tomes
 	if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
-		return fmt.Errorf("failed to upload default tomes: %w", err)
+		return nil, fmt.Errorf("failed to upload default tomes: %w", err)
 	}
 
 	// Initialize Test Data
@@ -78,6 +93,7 @@ func run(ctx context.Context, options ...func(*Config)) error {
 
 	// Setup HTTP Handler
 	router := http.NewServeMux()
+	router.Handle("/status", newStatusHandler())
 	router.Handle("/",
 		playground.Handler("Tavern", "/graphql"),
 	)
@@ -99,12 +115,24 @@ func run(ctx context.Context, options ...func(*Config)) error {
 		endpoint = auth.AuthDisabledMiddleware(router)
 	}
 
-	// Listen & Serve HTTP Traffic
-	addr := "0.0.0.0:80"
-	log.Printf("listening on %s", addr)
-	if err := http.ListenAndServe(addr, endpoint); err != nil {
-		return fmt.Errorf("stopped http server: %w", err)
+	// Initialize HTTP Server
+	if cfg.srv == nil {
+		cfg.srv = &http.Server{
+			Addr:    "0.0.0.0:80",
+			Handler: endpoint,
+		}
+	} else {
+		cfg.srv.Handler = endpoint
 	}
 
-	return nil
+	return cfg.srv, nil
+
+	// // Listen & Serve HTTP Traffic
+	// addr := "0.0.0.0:80"
+	// log.Printf("listening on %s", addr)
+	// if err := http.ListenAndServe(addr, endpoint); err != nil {
+	// 	return fmt.Errorf("stopped http server: %w", err)
+	// }
+
+	// return nil
 }
