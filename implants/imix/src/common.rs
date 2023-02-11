@@ -19,7 +19,7 @@ struct Task {
     task_id: String, // Task ID from tavern
     start_time: String, // When the task was started
     status: TaskStatus, // Wating, Running, Finished
-    future_handle: JoinHandle<Result<(String), Error>>, // Handle to the task
+    future_handle: JoinHandle<Result<String, Error>>, // Handle to the task
     data: TaskData, //Not sure
 }
 
@@ -30,6 +30,6 @@ async fn execute_tome(tome_path: String) -> String {
 }
 
 pub async fn main_loop() {
-    graphql::gql_claim_task();
+    graphql::gql_claim_tasks("http://127.0.0.1:80/graphql".to_string()).await;
     unimplemented!("Nothing here yet. ")
 }

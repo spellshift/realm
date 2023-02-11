@@ -25,10 +25,11 @@ async fn run(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
     let config: imix::Config = serde_json::from_reader(config_file)?;
 
-    #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
-    return Ok(imix::common::main_loop().await);
+    #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
+    unimplemented!("The current OS/Manager is not supported");
 
-    unimplemented!("The current OS/Manager is not supported")
+    Ok(imix::common::main_loop().await)
+
 }
 
 #[tokio::main]
