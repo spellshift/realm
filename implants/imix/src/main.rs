@@ -2,9 +2,42 @@ extern crate imix;
 extern crate eldritch;
 
 use clap::{Command, arg};
+pub use imix::graphql;
 use std::fs::File;
 use std::path::Path;
+use std::{time, thread};
 
+use anyhow::Error;
+use tokio::task::JoinHandle;
+
+enum TaskStatus {
+    Waiting,
+    Running,
+    Finished,
+}
+
+struct TaskData {
+    tome: String,
+}
+
+struct Task {
+    task_id: String, // Task ID from tavern
+    start_time: String, // When the task was started
+    status: TaskStatus, // Wating, Running, Finished
+    future_handle: JoinHandle<Result<String, Error>>, // Handle to the task
+    data: TaskData, //Not sure
+}
+
+async fn execute_tome(tome_path: String) -> String {
+    let ten_millis = time::Duration::from_secs(10);
+    thread::sleep(ten_millis);
+    return "A String".to_string()
+}
+
+async fn main_loop() {
+    graphql::gql_claim_tasks("http://127.0.0.1:80/graphql".to_string()).await;
+    unimplemented!("Nothing here yet. ")
+}
 
 async fn install(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
@@ -28,7 +61,7 @@ async fn run(config_path: String) -> Result<(), imix::Error> {
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
     unimplemented!("The current OS/Manager is not supported");
 
-    Ok(imix::common::main_loop().await)
+    Ok(main_loop().await)
 
 }
 

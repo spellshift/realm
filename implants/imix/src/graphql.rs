@@ -73,7 +73,7 @@ struct GraphQLResponseEnvelope {
 }
 
 
-pub async fn gql_claim_tasks(uri: String) -> Result<String, Error> {
+async fn gql_claim_tasks(uri: String) -> Result<Vec<GraphQLTask>, Error> {
     let input_variable = GraphQLClaimTasksInput {
         principal: "root".to_string(),
         hostname: "localhost".to_string(),
@@ -141,13 +141,12 @@ mutation ImixCallback($input: ClaimTasksInput!) {
 
     println!("{}", response_text);
 
-    let new_tasks: GraphQLResponseEnvelope = match serde_json::from_str(&response_text) {
+    let graphql_response: GraphQLResponseEnvelope = match serde_json::from_str(&response_text) {
         Ok(new_tasks_object) => new_tasks_object,
         Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}", error)),
     };
-
-    println!("{:?}", new_tasks.data.claim_tasks.len());
-    Ok(response_text)
+    let new_tasks = graphql_response.data.claim_tasks;
+    Ok(new_tasks)
 }
 
 #[cfg(test)]
@@ -165,7 +164,9 @@ mod tests {
         let response = runtime.block_on(
             gql_claim_tasks("http://127.0.0.1:80/graphql".to_string())
         );
-        println!("{:?}", response.unwrap())
+        for task in response.unwrap() {
+            println!("{}", serde_json::to_string(&task).unwrap())
+        }
         
     }
 }
