@@ -15,19 +15,21 @@ use windows_sys::Win32::{
 #[cfg(target_os = "windows")]
 use std::ffi::c_void;
 
-
 pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
     if false { println!("Ignore unused vars dll_path: {}, pid: {}", dll_path, pid); }
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_inject function.\nOnly windows systems are supported"));
     #[cfg(target_os = "windows")]
     unsafe {
+        let dll_path_null_terminated: String = format!("{}\0",dll_path);
+
         // Get the kernel32.dll base address
-        let h_kernel32 = GetModuleHandleA("kernel32.dll\0".as_bytes().as_ptr() as *const u8);
+        let h_kernel32 = GetModuleHandleA( "kernel32.dll\0".as_ptr() );
+
         // Get the address of the kernel function LoadLibraryA
         let loadlibrary_function_ref = GetProcAddress(
             h_kernel32, 
-            "LoadLibraryA\0".as_bytes().as_ptr() as *const u8
+            "LoadLibraryA\0".as_ptr()
         ).unwrap();
 
         // Open a handle to the remote process
@@ -41,7 +43,7 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
         let target_process_allocated_memory_handle = VirtualAllocEx(
             target_process_memory_handle, 
             0 as *const c_void, 
-            dll_path.len()+1, 
+            dll_path_null_terminated.len()+1, 
             MEM_RESERVE | MEM_COMMIT, 
             PAGE_EXECUTE_READWRITE
         );
@@ -50,8 +52,8 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
         let _write_proccess_memory_res = WriteProcessMemory(
             target_process_memory_handle, 
             target_process_allocated_memory_handle, 
-            dll_path.as_bytes().as_ptr() as *const c_void, 
-            dll_path.len(), 
+            dll_path_null_terminated.as_bytes().as_ptr() as *const c_void, 
+            dll_path_null_terminated.len(), 
             0 as *mut usize
         );
 
