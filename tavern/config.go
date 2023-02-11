@@ -125,3 +125,10 @@ func ConfigureMySQLFromEnv() func(*Config) {
 		cfg.mysql = mysqlConfig.FormatDSN()
 	}
 }
+
+// ConfigureMySQLFromClient sets the provided Ent client as the main interface for DB access.
+func ConfigureMySQLFromClient(client *ent.Client) func(*Config) {
+	return func(cfg *Config) {
+		cfg.client = client
+	}
+}
