@@ -83,6 +83,12 @@ func (r *mutationResolver) CreateJob(ctx context.Context, sessionIDs []int, inpu
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
+	// 9. Load the job with our non transactional client (cannot use transaction after commit)
+	job, err = r.client.Job.Get(ctx, job.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load created job: %w", err)
+	}
+
 	return job, nil
 }
 
@@ -167,7 +173,7 @@ func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTas
 
 	// 7. Update all ClaimedAt timestamps to claim tasks
 	// ** Note: If one fails to update, we roll back the transaction and return the error
-	result := make([]*ent.Task, 0, len(tasks))
+	taskIDs := make([]int, 0, len(tasks))
 	for _, t := range tasks {
 		_, err := client.Task.UpdateOne(t).
 			SetClaimedAt(time.Now()).
@@ -175,7 +181,7 @@ func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTas
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to update task %d: %w", t.ID, err))
 		}
-		result = append(result, t)
+		taskIDs = append(taskIDs, t.ID)
 	}
 
 	// 8. Commit the transaction
@@ -183,7 +189,17 @@ func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTas
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
-	// 9. Return claimed tasks
+	// 9. Load the tasks with our non transactional client (cannot use transaction after commit)
+	result := make([]*ent.Task, 0, len(taskIDs))
+	for _, taskID := range taskIDs {
+		updatedTask, err := r.client.Task.Get(ctx, taskID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load updated task (but they were still updated) %d: %w", taskID, err)
+		}
+		result = append(result, updatedTask)
+	}
+
+	// 10. Return claimed tasks
 	return result, nil
 }
 
