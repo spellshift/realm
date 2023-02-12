@@ -57,6 +57,20 @@ func (jc *JobCreate) SetName(s string) *JobCreate {
 	return jc
 }
 
+// SetParams sets the "params" field.
+func (jc *JobCreate) SetParams(s string) *JobCreate {
+	jc.mutation.SetParams(s)
+	return jc
+}
+
+// SetNillableParams sets the "params" field if the given value is not nil.
+func (jc *JobCreate) SetNillableParams(s *string) *JobCreate {
+	if s != nil {
+		jc.SetParams(*s)
+	}
+	return jc
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (jc *JobCreate) SetTomeID(id int) *JobCreate {
 	jc.mutation.SetTomeID(id)
@@ -246,6 +260,10 @@ func (jc *JobCreate) createSpec() (*Job, *sqlgraph.CreateSpec) {
 	if value, ok := jc.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := jc.mutation.Params(); ok {
+		_spec.SetField(job.FieldParams, field.TypeString, value)
+		_node.Params = value
 	}
 	if nodes := jc.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

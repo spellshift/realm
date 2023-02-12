@@ -39,6 +39,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "params", Type: field.TypeString, Nullable: true},
 		{Name: "job_tome", Type: field.TypeInt},
 		{Name: "job_bundle", Type: field.TypeInt, Nullable: true},
 	}
@@ -50,13 +51,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "jobs_tomes_tome",
-				Columns:    []*schema.Column{JobsColumns[4]},
+				Columns:    []*schema.Column{JobsColumns[5]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "jobs_files_bundle",
-				Columns:    []*schema.Column{JobsColumns[5]},
+				Columns:    []*schema.Column{JobsColumns[6]},
 				RefColumns: []*schema.Column{FilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

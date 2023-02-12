@@ -43,6 +43,26 @@ func (ju *JobUpdate) SetName(s string) *JobUpdate {
 	return ju
 }
 
+// SetParams sets the "params" field.
+func (ju *JobUpdate) SetParams(s string) *JobUpdate {
+	ju.mutation.SetParams(s)
+	return ju
+}
+
+// SetNillableParams sets the "params" field if the given value is not nil.
+func (ju *JobUpdate) SetNillableParams(s *string) *JobUpdate {
+	if s != nil {
+		ju.SetParams(*s)
+	}
+	return ju
+}
+
+// ClearParams clears the value of the "params" field.
+func (ju *JobUpdate) ClearParams() *JobUpdate {
+	ju.mutation.ClearParams()
+	return ju
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (ju *JobUpdate) SetTomeID(id int) *JobUpdate {
 	ju.mutation.SetTomeID(id)
@@ -232,6 +252,12 @@ func (ju *JobUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := ju.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
 	}
+	if value, ok := ju.mutation.Params(); ok {
+		_spec.SetField(job.FieldParams, field.TypeString, value)
+	}
+	if ju.mutation.ParamsCleared() {
+		_spec.ClearField(job.FieldParams, field.TypeString)
+	}
 	if ju.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -384,6 +410,26 @@ func (juo *JobUpdateOne) SetLastModifiedAt(t time.Time) *JobUpdateOne {
 // SetName sets the "name" field.
 func (juo *JobUpdateOne) SetName(s string) *JobUpdateOne {
 	juo.mutation.SetName(s)
+	return juo
+}
+
+// SetParams sets the "params" field.
+func (juo *JobUpdateOne) SetParams(s string) *JobUpdateOne {
+	juo.mutation.SetParams(s)
+	return juo
+}
+
+// SetNillableParams sets the "params" field if the given value is not nil.
+func (juo *JobUpdateOne) SetNillableParams(s *string) *JobUpdateOne {
+	if s != nil {
+		juo.SetParams(*s)
+	}
+	return juo
+}
+
+// ClearParams clears the value of the "params" field.
+func (juo *JobUpdateOne) ClearParams() *JobUpdateOne {
+	juo.mutation.ClearParams()
 	return juo
 }
 
@@ -605,6 +651,12 @@ func (juo *JobUpdateOne) sqlSave(ctx context.Context) (_node *Job, err error) {
 	}
 	if value, ok := juo.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
+	}
+	if value, ok := juo.mutation.Params(); ok {
+		_spec.SetField(job.FieldParams, field.TypeString, value)
+	}
+	if juo.mutation.ParamsCleared() {
+		_spec.ClearField(job.FieldParams, field.TypeString)
 	}
 	if juo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
