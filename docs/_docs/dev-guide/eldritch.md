@@ -20,7 +20,7 @@ sys.execute("C:/temp/payload.exe")
 ```
 
 _Exceptions to the rule above exist if performing the activities requires the performance of rust._
-_Eg. port scanning could be implemented using a for loop and tcp\_connect however due to the performance demand of port scanning a direct implementation in rust makes more sense_
+_Eg. port scanning could be implemented using a for loop and `tcp_connect` however due to the performance demand of port scanning a direct implementation in rust makes more sense_
 
 Want to contribute to Eldritch but aren't sure what to build check our ["good first issue" tickets.](https://github.com/KCarretto/realm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 

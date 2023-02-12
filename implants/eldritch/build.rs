@@ -7,7 +7,7 @@ fn build_tests_create_file_dll(){
     println!("cargo:rerun-if-changed=tests/create_file_dll/src/main.rs");
     println!("cargo:rerun-if-changed=tests/create_file_dll/Cargo.toml");
 
-    // Get the path of the creat_file_dll workspace member
+    // Get the path of the create_file_dll workspace member
     let cargo_root = env!("CARGO_MANIFEST_DIR");
     let relative_path_to_test_dll = "..\\..\\tests\\create_file_dll\\";
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll);
@@ -28,7 +28,6 @@ fn build_tests_create_file_dll(){
     let relative_path_to_test_dll_file = "..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll";
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll_file);
     assert!(test_dll_path.is_file());
-    // println!("RES: {:?}", res.unwrap().stderr);
 }
 
 fn main() {
