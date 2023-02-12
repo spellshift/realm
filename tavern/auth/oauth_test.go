@@ -73,7 +73,7 @@ func TestNewOAuthLoginHandler(t *testing.T) {
 
 	// JWT assertions
 	assert.Equal(t, state, claims.Id)
-	assert.GreaterOrEqual(t, claims.IssuedAt, time.Now().Unix())
+	assert.GreaterOrEqual(t, claims.IssuedAt, time.Now().Add(-60*time.Second).Unix())
 	assert.Greater(t, claims.ExpiresAt, time.Now().Add(9*time.Minute).Unix())
 	assert.Less(t, claims.ExpiresAt, time.Now().Add(11*time.Minute).Unix())
 }

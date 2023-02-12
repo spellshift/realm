@@ -11,6 +11,7 @@ import (
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/kcarretto/realm/tavern/auth/authtest"
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/graphql"
@@ -20,20 +21,18 @@ import (
 
 // TestCreateJob ensures the createJob mutation functions as expected
 func TestCreateJob(t *testing.T) {
-	// Initialize Test Context
+	// Setup
 	ctx := context.Background()
-
-	// Initialize DB Backend
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
+	srv := authtest.Middleware(handler.NewDefaultServer(graphql.NewSchema(graph)))
+	gqlClient := client.New(srv)
 
 	// Initialize sample data
-	testTargets := []*ent.Target{
-		graph.Target.Create().
-			SetName("target1").
+	testSessions := []*ent.Session{
+		graph.Session.Create().
 			SaveX(ctx),
-		graph.Target.Create().
-			SetName("target2").
+		graph.Session.Create().
 			SaveX(ctx),
 	}
 	testTome := graph.Tome.Create().
@@ -59,16 +58,10 @@ func TestCreateJob(t *testing.T) {
 		AddFiles(testFiles...).
 		SaveX(ctx)
 
-	// Create a new GraphQL server (needed for auth middleware)
-	srv := handler.NewDefaultServer(graphql.NewSchema(graph))
-
-	// Create a new GraphQL client (connected to our http server)
-	gqlClient := client.New(srv)
-
 	// Run Tests
 	t.Run("CreateWithoutFiles", newCreateJobTest(
 		gqlClient,
-		[]int{testTargets[0].ID, testTargets[1].ID},
+		[]int{testSessions[0].ID, testSessions[1].ID},
 		ent.CreateJobInput{
 			Name:   "TestJob",
 			TomeID: testTome.ID,
@@ -101,13 +94,13 @@ func TestCreateJob(t *testing.T) {
 				assert.Empty(t, task.Output)
 				assert.Empty(t, task.Error)
 				assert.Equal(t, job.ID, task.QueryJob().OnlyIDX(ctx))
-				assert.Equal(t, testTargets[i].ID, task.QueryTarget().OnlyIDX(ctx))
+				assert.Equal(t, testSessions[i].ID, task.QuerySession().OnlyIDX(ctx))
 			}
 		},
 	))
 	t.Run("CreateWithFiles", newCreateJobTest(
 		gqlClient,
-		[]int{testTargets[0].ID, testTargets[1].ID},
+		[]int{testSessions[0].ID, testSessions[1].ID},
 		ent.CreateJobInput{
 			Name:   "TestJobWithFiles",
 			TomeID: testTomeWithFiles.ID,
@@ -154,23 +147,23 @@ func TestCreateJob(t *testing.T) {
 				assert.Empty(t, task.Output)
 				assert.Empty(t, task.Error)
 				assert.Equal(t, job.ID, task.QueryJob().OnlyIDX(ctx))
-				assert.Equal(t, testTargets[i].ID, task.QueryTarget().OnlyIDX(ctx))
+				assert.Equal(t, testSessions[i].ID, task.QuerySession().OnlyIDX(ctx))
 			}
 		},
 	))
 }
 
-func newCreateJobTest(gqlClient *client.Client, targetIDs []int, input ent.CreateJobInput, checks ...func(t *testing.T, id int, err error)) func(t *testing.T) {
+func newCreateJobTest(gqlClient *client.Client, sessionIDs []int, input ent.CreateJobInput, checks ...func(t *testing.T, id int, err error)) func(t *testing.T) {
 	return func(t *testing.T) {
 		// Define the mutatation for testing, taking the input as a variable
-		mut := `mutation newCreateJobTest($targetIDs: [ID!]!, $input: CreateJobInput!) { createJob(targetIDs:$targetIDs, input:$input) { id } }`
+		mut := `mutation newCreateJobTest($sessionIDs: [ID!]!, $input: CreateJobInput!) { createJob(sessionIDs:$sessionIDs, input:$input) { id } }`
 
 		// Make our request to the GraphQL API
 		var resp struct {
 			CreateJob struct{ ID string }
 		}
 		err := gqlClient.Post(mut, &resp,
-			client.Var("targetIDs", targetIDs),
+			client.Var("sessionIDs", sessionIDs),
 			client.Var("input", map[string]interface{}{
 				"name":   input.Name,
 				"tomeID": input.TomeID,

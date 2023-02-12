@@ -8,13 +8,17 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kcarretto/realm/contrib/tomes"
+
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/debug"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/kcarretto/realm/tavern/auth"
+	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/migrate"
 	"github.com/kcarretto/realm/tavern/graphql"
+	"github.com/kcarretto/realm/tavern/internal/cdn"
 	"github.com/urfave/cli"
 )
 
@@ -34,6 +38,34 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 }
 
 func run(ctx context.Context, options ...func(*Config)) error {
+	srv, err := NewServer(ctx, options...)
+	if err != nil {
+		return err
+	}
+	defer srv.client.Close()
+
+	// Listen & Serve HTTP Traffic
+	log.Printf("Starting HTTP server on %s", srv.HTTP.Addr)
+	if err := srv.HTTP.ListenAndServe(); err != nil {
+		return fmt.Errorf("stopped http server: %w", err)
+	}
+
+	return nil
+}
+
+// Server responsible for handling Tavern requests.
+type Server struct {
+	HTTP   *http.Server
+	client *ent.Client
+}
+
+// Close should always be called to clean up a Tavern server.
+func (srv *Server) Close() error {
+	return srv.client.Close()
+}
+
+// NewServer initializes a Tavern HTTP server with the provided configuration.
+func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Generate server key pair
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -48,16 +80,22 @@ func run(ctx context.Context, options ...func(*Config)) error {
 	// Create Ent Client
 	client, err := cfg.Connect()
 	if err != nil {
-		return fmt.Errorf("failed to open graph: %w", err)
+		return nil, fmt.Errorf("failed to open graph: %w", err)
 	}
-	defer client.Close()
 
 	// Initialize Graph Schema
 	if err := client.Schema.Create(
 		ctx,
 		migrate.WithGlobalUniqueID(true),
 	); err != nil {
-		return fmt.Errorf("failed to initialize graph schema: %w", err)
+		client.Close()
+		return nil, fmt.Errorf("failed to initialize graph schema: %w", err)
+	}
+
+	// Load Default Tomes
+	if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to upload default tomes: %w", err)
 	}
 
 	// Initialize Test Data
@@ -70,6 +108,7 @@ func run(ctx context.Context, options ...func(*Config)) error {
 
 	// Setup HTTP Handler
 	router := http.NewServeMux()
+	router.Handle("/status", newStatusHandler())
 	router.Handle("/",
 		playground.Handler("Tavern", "/graphql"),
 	)
@@ -80,13 +119,29 @@ func run(ctx context.Context, options ...func(*Config)) error {
 	}))
 	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
 	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
+	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
+	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
 
-	// Listen & Serve HTTP Traffic
-	addr := "0.0.0.0:80"
-	log.Printf("listening on %s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
-		return fmt.Errorf("stopped http server: %w", err)
+	// Auth Middleware
+	var endpoint http.Handler
+	if cfg.oauth.ClientID != "" {
+		endpoint = auth.Middleware(router, cfg.client)
+	} else {
+		endpoint = auth.AuthDisabledMiddleware(router)
 	}
 
-	return nil
+	// Initialize HTTP Server
+	if cfg.srv == nil {
+		cfg.srv = &http.Server{
+			Addr:    "0.0.0.0:80",
+			Handler: endpoint,
+		}
+	} else {
+		cfg.srv.Handler = endpoint
+	}
+
+	return &Server{
+		HTTP:   cfg.srv,
+		client: client,
+	}, nil
 }

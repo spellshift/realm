@@ -32,9 +32,8 @@ func (Tag) Fields() []ent.Field {
 // Edges of the Tag.
 func (Tag) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("targets", Target.Type).
-			Ref("tags").
-			Required(),
+		edge.From("sessions", Session.Type).
+			Ref("tags"),
 	}
 }
 
@@ -42,5 +41,9 @@ func (Tag) Edges() []ent.Edge {
 func (Tag) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.QueryField(),
+		entgql.Mutations(
+			entgql.MutationCreate(),
+			entgql.MutationUpdate(),
+		),
 	}
 }

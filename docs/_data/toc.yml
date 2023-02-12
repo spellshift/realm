@@ -35,6 +35,8 @@
           url: "dev-guide/tavern#cdn-api"
         - title: "GraphQL API"
           url: "dev-guide/tavern#graphql-api"
+        - title: "Agent Development"
+          url: "dev-guide/tavern#agent-development"
     - title: "Eldritch"
       url: "dev-guide/eldritch"
       children:
