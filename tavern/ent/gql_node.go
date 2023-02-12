@@ -17,8 +17,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
-	"github.com/kcarretto/realm/tavern/ent/target"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
@@ -107,7 +107,7 @@ func (j *Job) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     j.ID,
 		Type:   "Job",
-		Fields: make([]*Field, 3),
+		Fields: make([]*Field, 4),
 		Edges:  make([]*Edge, 3),
 	}
 	var buf []byte
@@ -133,6 +133,14 @@ func (j *Job) Node(ctx context.Context) (node *Node, err error) {
 	node.Fields[2] = &Field{
 		Type:  "string",
 		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(j.Params); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "params",
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{
@@ -168,6 +176,85 @@ func (j *Job) Node(ctx context.Context) (node *Node, err error) {
 	return node, nil
 }
 
+func (s *Session) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     s.ID,
+		Type:   "Session",
+		Fields: make([]*Field, 6),
+		Edges:  make([]*Edge, 2),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(s.Principal); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "principal",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(s.Hostname); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "string",
+		Name:  "hostname",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(s.Identifier); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "identifier",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(s.AgentIdentifier); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "agentIdentifier",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(s.HostIdentifier); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "string",
+		Name:  "hostIdentifier",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(s.LastSeenAt); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "time.Time",
+		Name:  "lastSeenAt",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Tag",
+		Name: "tags",
+	}
+	err = s.QueryTags().
+		Select(tag.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	node.Edges[1] = &Edge{
+		Type: "Task",
+		Name: "tasks",
+	}
+	err = s.QueryTasks().
+		Select(task.FieldID).
+		Scan(ctx, &node.Edges[1].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
 func (t *Tag) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
@@ -193,48 +280,11 @@ func (t *Tag) Node(ctx context.Context) (node *Node, err error) {
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{
-		Type: "Target",
-		Name: "targets",
+		Type: "Session",
+		Name: "sessions",
 	}
-	err = t.QueryTargets().
-		Select(target.FieldID).
-		Scan(ctx, &node.Edges[0].IDs)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
-}
-
-func (t *Target) Node(ctx context.Context) (node *Node, err error) {
-	node = &Node{
-		ID:     t.ID,
-		Type:   "Target",
-		Fields: make([]*Field, 2),
-		Edges:  make([]*Edge, 1),
-	}
-	var buf []byte
-	if buf, err = json.Marshal(t.Name); err != nil {
-		return nil, err
-	}
-	node.Fields[0] = &Field{
-		Type:  "string",
-		Name:  "name",
-		Value: string(buf),
-	}
-	if buf, err = json.Marshal(t.LastSeenAt); err != nil {
-		return nil, err
-	}
-	node.Fields[1] = &Field{
-		Type:  "time.Time",
-		Name:  "lastSeenAt",
-		Value: string(buf),
-	}
-	node.Edges[0] = &Edge{
-		Type: "Tag",
-		Name: "tags",
-	}
-	err = t.QueryTags().
-		Select(tag.FieldID).
+	err = t.QuerySessions().
+		Select(session.FieldID).
 		Scan(ctx, &node.Edges[0].IDs)
 	if err != nil {
 		return nil, err
@@ -317,11 +367,11 @@ func (t *Task) Node(ctx context.Context) (node *Node, err error) {
 		return nil, err
 	}
 	node.Edges[1] = &Edge{
-		Type: "Target",
-		Name: "target",
+		Type: "Session",
+		Name: "session",
 	}
-	err = t.QueryTarget().
-		Select(target.FieldID).
+	err = t.QuerySession().
+		Select(session.FieldID).
 		Scan(ctx, &node.Edges[1].IDs)
 	if err != nil {
 		return nil, err
@@ -333,7 +383,7 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Tome",
-		Fields: make([]*Field, 7),
+		Fields: make([]*Field, 6),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -377,18 +427,10 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "parameters",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(t.Hash); err != nil {
-		return nil, err
-	}
-	node.Fields[5] = &Field{
-		Type:  "string",
-		Name:  "hash",
-		Value: string(buf),
-	}
 	if buf, err = json.Marshal(t.Eldritch); err != nil {
 		return nil, err
 	}
-	node.Fields[6] = &Field{
+	node.Fields[5] = &Field{
 		Type:  "string",
 		Name:  "eldritch",
 		Value: string(buf),
@@ -547,10 +589,10 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			return nil, err
 		}
 		return n, nil
-	case tag.Table:
-		query := c.Tag.Query().
-			Where(tag.ID(id))
-		query, err := query.CollectFields(ctx, "Tag")
+	case session.Table:
+		query := c.Session.Query().
+			Where(session.ID(id))
+		query, err := query.CollectFields(ctx, "Session")
 		if err != nil {
 			return nil, err
 		}
@@ -559,10 +601,10 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			return nil, err
 		}
 		return n, nil
-	case target.Table:
-		query := c.Target.Query().
-			Where(target.ID(id))
-		query, err := query.CollectFields(ctx, "Target")
+	case tag.Table:
+		query := c.Tag.Query().
+			Where(tag.ID(id))
+		query, err := query.CollectFields(ctx, "Tag")
 		if err != nil {
 			return nil, err
 		}
@@ -712,10 +754,10 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 				*noder = node
 			}
 		}
-	case tag.Table:
-		query := c.Tag.Query().
-			Where(tag.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Tag")
+	case session.Table:
+		query := c.Session.Query().
+			Where(session.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Session")
 		if err != nil {
 			return nil, err
 		}
@@ -728,10 +770,10 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 				*noder = node
 			}
 		}
-	case target.Table:
-		query := c.Target.Query().
-			Where(target.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Target")
+	case tag.Table:
+		query := c.Tag.Query().
+			Where(tag.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Tag")
 		if err != nil {
 			return nil, err
 		}

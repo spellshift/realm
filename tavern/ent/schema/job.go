@@ -23,6 +23,9 @@ func (Job) Fields() []ent.Field {
 				entgql.OrderField("NAME"),
 			).
 			Comment("Name of the job"),
+		field.String("params").
+			Optional().
+			Comment("Value of parameters that were specified for the job (as a JSON string)."),
 	}
 }
 

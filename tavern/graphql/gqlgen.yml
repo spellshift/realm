@@ -1,10 +1,13 @@
 schema:
+  - schema/directives.graphql
   - schema/scalars.graphql
   - schema/query.graphql
   - schema/mutation.graphql
+  - schema/inputs.graphql
 
 model:
-  package: graphql
+  package: models
+  filename: ./models/gqlgen_models.go
 
 exec:
   layout: follow-schema
@@ -24,11 +27,11 @@ autobind:
   - github.com/kcarretto/realm/tavern/ent/file
   - github.com/kcarretto/realm/tavern/ent/user
   - github.com/kcarretto/realm/tavern/ent/tag
-  - github.com/kcarretto/realm/tavern/ent/target
+  - github.com/kcarretto/realm/tavern/ent/session
   - github.com/kcarretto/realm/tavern/ent/job
   - github.com/kcarretto/realm/tavern/ent/task
   - github.com/kcarretto/realm/tavern/ent/tome
- 
+
 struct_tag: json
 
 models:

@@ -30,14 +30,14 @@ func (r *queryResolver) Jobs(ctx context.Context) ([]*ent.Job, error) {
 	return r.client.Job.Query().All(ctx)
 }
 
+// Sessions is the resolver for the sessions field.
+func (r *queryResolver) Sessions(ctx context.Context) ([]*ent.Session, error) {
+	return r.client.Session.Query().All(ctx)
+}
+
 // Tags is the resolver for the tags field.
 func (r *queryResolver) Tags(ctx context.Context) ([]*ent.Tag, error) {
 	return r.client.Tag.Query().All(ctx)
-}
-
-// Targets is the resolver for the targets field.
-func (r *queryResolver) Targets(ctx context.Context) ([]*ent.Target, error) {
-	return r.client.Target.Query().All(ctx)
 }
 
 // Tomes is the resolver for the tomes field.

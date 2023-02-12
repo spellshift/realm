@@ -1,5 +1,6 @@
 mod append_impl;
 mod copy_impl;
+mod compress_impl;
 mod download_impl;
 mod exists_impl;
 mod hash_impl;
@@ -11,11 +12,13 @@ mod remove_impl;
 mod moveto_impl;
 mod replace_all_impl;
 mod replace_impl;
+mod template_impl;
 mod timestomp_impl;
 mod write_impl;
 
 use derive_more::Display;
 
+use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
 use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
@@ -66,6 +69,11 @@ fn methods(builder: &mut MethodsBuilder) {
     fn copy(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         copy_impl::copy(src, dst)?;
+        Ok(NoneType{})
+    }
+    fn compress(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        compress_impl::compress(src, dst)?;
         Ok(NoneType{})
     }
     fn download(this: FileLibrary, uri: String, dst: String) -> anyhow::Result<NoneType> {
@@ -121,6 +129,11 @@ fn methods(builder: &mut MethodsBuilder) {
     fn timestomp(this: FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         timestomp_impl::timestomp(src, dst)?;
+        Ok(NoneType{})
+    }
+    fn template(this: FileLibrary, template_path: String, dst_path: String, args: SmallMap<String, Value>, autoescape: bool) -> anyhow::Result<NoneType> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        template_impl::template(template_path, dst_path, args, autoescape)?;
         Ok(NoneType{})
     }
     fn write(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {

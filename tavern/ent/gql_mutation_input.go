@@ -2,20 +2,148 @@
 
 package ent
 
+import "github.com/kcarretto/realm/tavern/ent/tag"
+
 // CreateJobInput represents a mutation input for creating jobs.
 type CreateJobInput struct {
 	Name   string
+	Params *string
 	TomeID int
 }
 
 // Mutate applies the CreateJobInput on the JobMutation builder.
 func (i *CreateJobInput) Mutate(m *JobMutation) {
 	m.SetName(i.Name)
+	if v := i.Params; v != nil {
+		m.SetParams(*v)
+	}
 	m.SetTomeID(i.TomeID)
 }
 
 // SetInput applies the change-set in the CreateJobInput on the JobCreate builder.
 func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateSessionInput represents a mutation input for updating sessions.
+type UpdateSessionInput struct {
+	ClearHostname bool
+	Hostname      *string
+	AddTagIDs     []int
+	RemoveTagIDs  []int
+}
+
+// Mutate applies the UpdateSessionInput on the SessionMutation builder.
+func (i *UpdateSessionInput) Mutate(m *SessionMutation) {
+	if i.ClearHostname {
+		m.ClearHostname()
+	}
+	if v := i.Hostname; v != nil {
+		m.SetHostname(*v)
+	}
+	if v := i.AddTagIDs; len(v) > 0 {
+		m.AddTagIDs(v...)
+	}
+	if v := i.RemoveTagIDs; len(v) > 0 {
+		m.RemoveTagIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateSessionInput on the SessionUpdate builder.
+func (c *SessionUpdate) SetInput(i UpdateSessionInput) *SessionUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateSessionInput on the SessionUpdateOne builder.
+func (c *SessionUpdateOne) SetInput(i UpdateSessionInput) *SessionUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateTagInput represents a mutation input for creating tags.
+type CreateTagInput struct {
+	Name       string
+	Kind       tag.Kind
+	SessionIDs []int
+}
+
+// Mutate applies the CreateTagInput on the TagMutation builder.
+func (i *CreateTagInput) Mutate(m *TagMutation) {
+	m.SetName(i.Name)
+	m.SetKind(i.Kind)
+	if v := i.SessionIDs; len(v) > 0 {
+		m.AddSessionIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateTagInput on the TagCreate builder.
+func (c *TagCreate) SetInput(i CreateTagInput) *TagCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateTagInput represents a mutation input for updating tags.
+type UpdateTagInput struct {
+	Name             *string
+	Kind             *tag.Kind
+	AddSessionIDs    []int
+	RemoveSessionIDs []int
+}
+
+// Mutate applies the UpdateTagInput on the TagMutation builder.
+func (i *UpdateTagInput) Mutate(m *TagMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Kind; v != nil {
+		m.SetKind(*v)
+	}
+	if v := i.AddSessionIDs; len(v) > 0 {
+		m.AddSessionIDs(v...)
+	}
+	if v := i.RemoveSessionIDs; len(v) > 0 {
+		m.RemoveSessionIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateTagInput on the TagUpdate builder.
+func (c *TagUpdate) SetInput(i UpdateTagInput) *TagUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateTagInput on the TagUpdateOne builder.
+func (c *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateTomeInput represents a mutation input for creating tomes.
+type CreateTomeInput struct {
+	Name        string
+	Description string
+	Parameters  *string
+	Eldritch    string
+	FileIDs     []int
+}
+
+// Mutate applies the CreateTomeInput on the TomeMutation builder.
+func (i *CreateTomeInput) Mutate(m *TomeMutation) {
+	m.SetName(i.Name)
+	m.SetDescription(i.Description)
+	if v := i.Parameters; v != nil {
+		m.SetParameters(*v)
+	}
+	m.SetEldritch(i.Eldritch)
+	if v := i.FileIDs; len(v) > 0 {
+		m.AddFileIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateTomeInput on the TomeCreate builder.
+func (c *TomeCreate) SetInput(i CreateTomeInput) *TomeCreate {
 	i.Mutate(c.Mutation())
 	return c
 }

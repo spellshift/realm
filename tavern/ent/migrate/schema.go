@@ -39,6 +39,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "params", Type: field.TypeString, Nullable: true},
 		{Name: "job_tome", Type: field.TypeInt},
 		{Name: "job_bundle", Type: field.TypeInt, Nullable: true},
 	}
@@ -50,17 +51,33 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "jobs_tomes_tome",
-				Columns:    []*schema.Column{JobsColumns[4]},
+				Columns:    []*schema.Column{JobsColumns[5]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "jobs_files_bundle",
-				Columns:    []*schema.Column{JobsColumns[5]},
+				Columns:    []*schema.Column{JobsColumns[6]},
 				RefColumns: []*schema.Column{FilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
+	}
+	// SessionsColumns holds the columns for the "sessions" table.
+	SessionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "principal", Type: field.TypeString, Nullable: true},
+		{Name: "hostname", Type: field.TypeString, Nullable: true},
+		{Name: "identifier", Type: field.TypeString, Unique: true},
+		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
+		{Name: "host_identifier", Type: field.TypeString, Nullable: true},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+	}
+	// SessionsTable holds the schema information for the "sessions" table.
+	SessionsTable = &schema.Table{
+		Name:       "sessions",
+		Columns:    SessionsColumns,
+		PrimaryKey: []*schema.Column{SessionsColumns[0]},
 	}
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
@@ -74,18 +91,6 @@ var (
 		Columns:    TagsColumns,
 		PrimaryKey: []*schema.Column{TagsColumns[0]},
 	}
-	// TargetsColumns holds the columns for the "targets" table.
-	TargetsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
-	}
-	// TargetsTable holds the schema information for the "targets" table.
-	TargetsTable = &schema.Table{
-		Name:       "targets",
-		Columns:    TargetsColumns,
-		PrimaryKey: []*schema.Column{TargetsColumns[0]},
-	}
 	// TasksColumns holds the columns for the "tasks" table.
 	TasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -97,7 +102,7 @@ var (
 		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "job_tasks", Type: field.TypeInt},
-		{Name: "task_target", Type: field.TypeInt},
+		{Name: "task_session", Type: field.TypeInt},
 	}
 	// TasksTable holds the schema information for the "tasks" table.
 	TasksTable = &schema.Table{
@@ -112,9 +117,9 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "tasks_targets_target",
+				Symbol:     "tasks_sessions_session",
 				Columns:    []*schema.Column{TasksColumns[9]},
-				RefColumns: []*schema.Column{TargetsColumns[0]},
+				RefColumns: []*schema.Column{SessionsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
@@ -152,26 +157,26 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
-	// TargetTagsColumns holds the columns for the "target_tags" table.
-	TargetTagsColumns = []*schema.Column{
-		{Name: "target_id", Type: field.TypeInt},
+	// SessionTagsColumns holds the columns for the "session_tags" table.
+	SessionTagsColumns = []*schema.Column{
+		{Name: "session_id", Type: field.TypeInt},
 		{Name: "tag_id", Type: field.TypeInt},
 	}
-	// TargetTagsTable holds the schema information for the "target_tags" table.
-	TargetTagsTable = &schema.Table{
-		Name:       "target_tags",
-		Columns:    TargetTagsColumns,
-		PrimaryKey: []*schema.Column{TargetTagsColumns[0], TargetTagsColumns[1]},
+	// SessionTagsTable holds the schema information for the "session_tags" table.
+	SessionTagsTable = &schema.Table{
+		Name:       "session_tags",
+		Columns:    SessionTagsColumns,
+		PrimaryKey: []*schema.Column{SessionTagsColumns[0], SessionTagsColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "target_tags_target_id",
-				Columns:    []*schema.Column{TargetTagsColumns[0]},
-				RefColumns: []*schema.Column{TargetsColumns[0]},
+				Symbol:     "session_tags_session_id",
+				Columns:    []*schema.Column{SessionTagsColumns[0]},
+				RefColumns: []*schema.Column{SessionsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "target_tags_tag_id",
-				Columns:    []*schema.Column{TargetTagsColumns[1]},
+				Symbol:     "session_tags_tag_id",
+				Columns:    []*schema.Column{SessionTagsColumns[1]},
 				RefColumns: []*schema.Column{TagsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -181,12 +186,12 @@ var (
 	Tables = []*schema.Table{
 		FilesTable,
 		JobsTable,
+		SessionsTable,
 		TagsTable,
-		TargetsTable,
 		TasksTable,
 		TomesTable,
 		UsersTable,
-		TargetTagsTable,
+		SessionTagsTable,
 	}
 )
 
@@ -195,7 +200,7 @@ func init() {
 	JobsTable.ForeignKeys[0].RefTable = TomesTable
 	JobsTable.ForeignKeys[1].RefTable = FilesTable
 	TasksTable.ForeignKeys[0].RefTable = JobsTable
-	TasksTable.ForeignKeys[1].RefTable = TargetsTable
-	TargetTagsTable.ForeignKeys[0].RefTable = TargetsTable
-	TargetTagsTable.ForeignKeys[1].RefTable = TagsTable
+	TasksTable.ForeignKeys[1].RefTable = SessionsTable
+	SessionTagsTable.ForeignKeys[0].RefTable = SessionsTable
+	SessionTagsTable.ForeignKeys[1].RefTable = TagsTable
 }

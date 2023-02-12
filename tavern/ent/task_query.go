@@ -12,24 +12,24 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
-	"github.com/kcarretto/realm/tavern/ent/target"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
 // TaskQuery is the builder for querying Task entities.
 type TaskQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.Task
-	withJob    *JobQuery
-	withTarget *TargetQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Task) error
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	predicates  []predicate.Task
+	withJob     *JobQuery
+	withSession *SessionQuery
+	withFKs     bool
+	modifiers   []func(*sql.Selector)
+	loadTotal   []func(context.Context, []*Task) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -88,9 +88,9 @@ func (tq *TaskQuery) QueryJob() *JobQuery {
 	return query
 }
 
-// QueryTarget chains the current query on the "target" edge.
-func (tq *TaskQuery) QueryTarget() *TargetQuery {
-	query := &TargetQuery{config: tq.config}
+// QuerySession chains the current query on the "session" edge.
+func (tq *TaskQuery) QuerySession() *SessionQuery {
+	query := &SessionQuery{config: tq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -101,8 +101,8 @@ func (tq *TaskQuery) QueryTarget() *TargetQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(task.Table, task.FieldID, selector),
-			sqlgraph.To(target.Table, target.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, task.TargetTable, task.TargetColumn),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, task.SessionTable, task.SessionColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -286,13 +286,13 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		return nil
 	}
 	return &TaskQuery{
-		config:     tq.config,
-		limit:      tq.limit,
-		offset:     tq.offset,
-		order:      append([]OrderFunc{}, tq.order...),
-		predicates: append([]predicate.Task{}, tq.predicates...),
-		withJob:    tq.withJob.Clone(),
-		withTarget: tq.withTarget.Clone(),
+		config:      tq.config,
+		limit:       tq.limit,
+		offset:      tq.offset,
+		order:       append([]OrderFunc{}, tq.order...),
+		predicates:  append([]predicate.Task{}, tq.predicates...),
+		withJob:     tq.withJob.Clone(),
+		withSession: tq.withSession.Clone(),
 		// clone intermediate query.
 		sql:    tq.sql.Clone(),
 		path:   tq.path,
@@ -311,14 +311,14 @@ func (tq *TaskQuery) WithJob(opts ...func(*JobQuery)) *TaskQuery {
 	return tq
 }
 
-// WithTarget tells the query-builder to eager-load the nodes that are connected to
-// the "target" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TaskQuery) WithTarget(opts ...func(*TargetQuery)) *TaskQuery {
-	query := &TargetQuery{config: tq.config}
+// WithSession tells the query-builder to eager-load the nodes that are connected to
+// the "session" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithSession(opts ...func(*SessionQuery)) *TaskQuery {
+	query := &SessionQuery{config: tq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	tq.withTarget = query
+	tq.withSession = query
 	return tq
 }
 
@@ -398,10 +398,10 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		_spec       = tq.querySpec()
 		loadedTypes = [2]bool{
 			tq.withJob != nil,
-			tq.withTarget != nil,
+			tq.withSession != nil,
 		}
 	)
-	if tq.withJob != nil || tq.withTarget != nil {
+	if tq.withJob != nil || tq.withSession != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -434,9 +434,9 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 			return nil, err
 		}
 	}
-	if query := tq.withTarget; query != nil {
-		if err := tq.loadTarget(ctx, query, nodes, nil,
-			func(n *Task, e *Target) { n.Edges.Target = e }); err != nil {
+	if query := tq.withSession; query != nil {
+		if err := tq.loadSession(ctx, query, nodes, nil,
+			func(n *Task, e *Session) { n.Edges.Session = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -477,20 +477,20 @@ func (tq *TaskQuery) loadJob(ctx context.Context, query *JobQuery, nodes []*Task
 	}
 	return nil
 }
-func (tq *TaskQuery) loadTarget(ctx context.Context, query *TargetQuery, nodes []*Task, init func(*Task), assign func(*Task, *Target)) error {
+func (tq *TaskQuery) loadSession(ctx context.Context, query *SessionQuery, nodes []*Task, init func(*Task), assign func(*Task, *Session)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Task)
 	for i := range nodes {
-		if nodes[i].task_target == nil {
+		if nodes[i].task_session == nil {
 			continue
 		}
-		fk := *nodes[i].task_target
+		fk := *nodes[i].task_session
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(target.IDIn(ids...))
+	query.Where(session.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -498,7 +498,7 @@ func (tq *TaskQuery) loadTarget(ctx context.Context, query *TargetQuery, nodes [
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "task_target" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "task_session" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
