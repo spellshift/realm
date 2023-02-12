@@ -30,35 +30,35 @@ struct GraphQLRequestEnvelope {
 // ------------- GraphQL claimTasks response -------------
 
 #[derive(Serialize, Deserialize)]
-struct GraphQLTome {
-    id: String,
-    name: String,
-    description: String,
-    parameters: Option<String>,
-    eldritch: String,
-    files: Vec<GraphQLFile>
+pub struct GraphQLTome {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub parameters: Option<String>,
+    pub eldritch: String,
+    pub files: Vec<GraphQLFile>
 }
 
 #[derive(Serialize, Deserialize)]
-struct GraphQLFile {
-    id: String,
-    name: String,
-    size: u32,
-    hash: String,
+pub struct GraphQLFile {
+    pub id: String,
+    pub name: String,
+    pub size: u32,
+    pub hash: String,
 }
 
 #[derive(Serialize, Deserialize)]
-struct GraphQLJob {
-    id: String,
-    name: String,
-    tome: GraphQLTome,
-    bundle: Option<GraphQLFile>,
+pub struct GraphQLJob {
+    pub id: String,
+    pub name: String,
+    pub tome: GraphQLTome,
+    pub bundle: Option<GraphQLFile>,
 }
 
 #[derive(Serialize, Deserialize)]
-struct GraphQLTask {
-    id: String,
-    job: GraphQLJob
+pub struct GraphQLTask {
+    pub id: String,
+    pub job: GraphQLJob
 }
 
 #[derive(Serialize, Deserialize)]
@@ -73,7 +73,7 @@ struct GraphQLResponseEnvelope {
 }
 
 
-async fn gql_claim_tasks(uri: String) -> Result<Vec<GraphQLTask>, Error> {
+pub async fn gql_claim_tasks(uri: String) -> Result<Vec<GraphQLTask>, Error> {
     let input_variable = GraphQLClaimTasksInput {
         principal: "root".to_string(),
         hostname: "localhost".to_string(),
@@ -138,8 +138,6 @@ mutation ImixCallback($input: ClaimTasksInput!) {
         },
         Err(http_error) => return Err(anyhow::anyhow!("Error making http request.\n{}", http_error)),
     };
-
-    println!("{}", response_text);
 
     let graphql_response: GraphQLResponseEnvelope = match serde_json::from_str(&response_text) {
         Ok(new_tasks_object) => new_tasks_object,
