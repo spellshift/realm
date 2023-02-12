@@ -74,14 +74,22 @@ func TestSessionMutations(t *testing.T) {
 		mut := `
 mutation newClaimTasksTest($input: ClaimTasksInput!) {
 	claimTasks(input: $input) {
-		id 
+		id
+		job {
+			id
+		}
 	}
 }`
 		// Create a closure to execute the mutation
 		claimTasks := func(input map[string]any) ([]int, error) {
 			// Make our request to the GraphQL API
 			var resp struct {
-				ClaimTasks []struct{ ID string }
+				ClaimTasks []struct {
+					ID  string
+					Job struct {
+						ID string
+					} `json:"job"`
+				}
 			}
 			err := gqlClient.Post(mut, &resp, client.Var("input", input))
 			if err != nil {
@@ -163,7 +171,7 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 		mut := `
 mutation newSubmitTaskResultTest($input: SubmitTaskResultInput!) {
 	submitTaskResult(input: $input) {
-		id 
+		id
 	}
 }`
 		// Create a closure to execute the mutation
