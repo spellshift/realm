@@ -72,7 +72,6 @@ struct GraphQLResponseEnvelope {
     data: GraphQLClaimTasksOutput,
 }
 
-
 pub async fn gql_claim_tasks(uri: String) -> Result<Vec<GraphQLTask>, Error> {
     let input_variable = GraphQLClaimTasksInput {
         principal: "root".to_string(),
@@ -147,18 +146,50 @@ mutation ImixCallback($input: ClaimTasksInput!) {
     Ok(new_tasks)
 }
 
-pub async fn gql_post_task_result(uri: String) -> Result<Vec<GraphQLTask>, Error> {
-    let input_variable = GraphQLClaimTasksInput {
-        principal: "root".to_string(),
-        hostname: "localhost".to_string(),
-        session_identifier: "s1234".to_string(),
-        host_identifier: "h1234".to_string(),
-        agent_identifier: "a1234".to_string(),
-    };
 
-    let req_body = match serde_json::to_string(
+// ------------- GraphQL SubmitTaskResultInput request -------------
 
-    ) {
+#[derive(Serialize, Deserialize)]
+pub struct SubmitTaskResultInput {
+    #[serde(rename="taskID")]
+    pub task_id: String,
+    #[serde(rename="execFinishedAt")]
+    pub exec_started_at: String,
+    #[serde(rename="execFinishedAt")]
+    pub exec_finished_at: Option<String>,
+    pub output: String,
+    pub error: String,
+}
+
+pub async fn gql_post_task_result(uri: String, task_res: SubmitTaskResultInput) -> Result<Vec<GraphQLTask>, Error> {
+/*
+{
+  "query": "mutation ImixPostResult($input: SubmitTaskResultInput!) { submitTaskResult(input: $input) { \n\tid\n}}",
+  "variables": {
+    "input": {
+      "taskID": "17179869186",
+      "execStartedAt": "1985-04-12T23:20:50.52Z",
+      "execFinishedAt": "1995-04-12T23:20:50.52Z",
+      "output": "root!",
+      "error": ""
+    }
+  },
+  "operationName": "ImixPostResult"
+}
+*/
+    let req_body = match serde_json::to_string(&
+        GraphQLRequestEnvelope {
+            operation_name: String::from("ImixCallback"),
+            query: String::from(r#"
+    mutation ImixPostResult($input: ClaimTasksInput!) {
+        submitTaskResult(input: $input) { 
+            id
+        }
+    }"#),
+        variables: GraphQLVariableEnvelope{
+            input: task_res
+        },
+    }) {
         Ok(json_req_body) => json_req_body,
         Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
     };
