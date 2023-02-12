@@ -7,12 +7,16 @@ import "github.com/kcarretto/realm/tavern/ent/tag"
 // CreateJobInput represents a mutation input for creating jobs.
 type CreateJobInput struct {
 	Name   string
+	Params *string
 	TomeID int
 }
 
 // Mutate applies the CreateJobInput on the JobMutation builder.
 func (i *CreateJobInput) Mutate(m *JobMutation) {
 	m.SetName(i.Name)
+	if v := i.Params; v != nil {
+		m.SetParams(*v)
+	}
 	m.SetTomeID(i.TomeID)
 }
 

@@ -58,12 +58,14 @@ func TestCreateJob(t *testing.T) {
 		AddFiles(testFiles...).
 		SaveX(ctx)
 
+	expectedJobParams := `{"exampleParam":"Hello World"}`
 	// Run Tests
 	t.Run("CreateWithoutFiles", newCreateJobTest(
 		gqlClient,
 		[]int{testSessions[0].ID, testSessions[1].ID},
 		ent.CreateJobInput{
 			Name:   "TestJob",
+			Params: &expectedJobParams,
 			TomeID: testTome.ID,
 		},
 		func(t *testing.T, id int, err error) {
@@ -73,6 +75,7 @@ func TestCreateJob(t *testing.T) {
 			// Ensure job was created with proper fields
 			job := graph.Job.GetX(ctx, id)
 			assert.Equal(t, "TestJob", job.Name)
+			assert.Equal(t, `{"exampleParam":"Hello World"}`, job.Params)
 
 			// Ensure tome edge was set
 			tomeID := job.QueryTome().OnlyIDX(ctx)
@@ -166,6 +169,7 @@ func newCreateJobTest(gqlClient *client.Client, sessionIDs []int, input ent.Crea
 			client.Var("sessionIDs", sessionIDs),
 			client.Var("input", map[string]interface{}{
 				"name":   input.Name,
+				"params": input.Params,
 				"tomeID": input.TomeID,
 			}),
 		)

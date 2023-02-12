@@ -403,6 +403,23 @@ type JobWhereInput struct {
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
 
+	// "params" field predicates.
+	Params             *string  `json:"params,omitempty"`
+	ParamsNEQ          *string  `json:"paramsNEQ,omitempty"`
+	ParamsIn           []string `json:"paramsIn,omitempty"`
+	ParamsNotIn        []string `json:"paramsNotIn,omitempty"`
+	ParamsGT           *string  `json:"paramsGT,omitempty"`
+	ParamsGTE          *string  `json:"paramsGTE,omitempty"`
+	ParamsLT           *string  `json:"paramsLT,omitempty"`
+	ParamsLTE          *string  `json:"paramsLTE,omitempty"`
+	ParamsContains     *string  `json:"paramsContains,omitempty"`
+	ParamsHasPrefix    *string  `json:"paramsHasPrefix,omitempty"`
+	ParamsHasSuffix    *string  `json:"paramsHasSuffix,omitempty"`
+	ParamsIsNil        bool     `json:"paramsIsNil,omitempty"`
+	ParamsNotNil       bool     `json:"paramsNotNil,omitempty"`
+	ParamsEqualFold    *string  `json:"paramsEqualFold,omitempty"`
+	ParamsContainsFold *string  `json:"paramsContainsFold,omitempty"`
+
 	// "tome" edge predicates.
 	HasTome     *bool             `json:"hasTome,omitempty"`
 	HasTomeWith []*TomeWhereInput `json:"hasTomeWith,omitempty"`
@@ -597,6 +614,51 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 	}
 	if i.NameContainsFold != nil {
 		predicates = append(predicates, job.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Params != nil {
+		predicates = append(predicates, job.ParamsEQ(*i.Params))
+	}
+	if i.ParamsNEQ != nil {
+		predicates = append(predicates, job.ParamsNEQ(*i.ParamsNEQ))
+	}
+	if len(i.ParamsIn) > 0 {
+		predicates = append(predicates, job.ParamsIn(i.ParamsIn...))
+	}
+	if len(i.ParamsNotIn) > 0 {
+		predicates = append(predicates, job.ParamsNotIn(i.ParamsNotIn...))
+	}
+	if i.ParamsGT != nil {
+		predicates = append(predicates, job.ParamsGT(*i.ParamsGT))
+	}
+	if i.ParamsGTE != nil {
+		predicates = append(predicates, job.ParamsGTE(*i.ParamsGTE))
+	}
+	if i.ParamsLT != nil {
+		predicates = append(predicates, job.ParamsLT(*i.ParamsLT))
+	}
+	if i.ParamsLTE != nil {
+		predicates = append(predicates, job.ParamsLTE(*i.ParamsLTE))
+	}
+	if i.ParamsContains != nil {
+		predicates = append(predicates, job.ParamsContains(*i.ParamsContains))
+	}
+	if i.ParamsHasPrefix != nil {
+		predicates = append(predicates, job.ParamsHasPrefix(*i.ParamsHasPrefix))
+	}
+	if i.ParamsHasSuffix != nil {
+		predicates = append(predicates, job.ParamsHasSuffix(*i.ParamsHasSuffix))
+	}
+	if i.ParamsIsNil {
+		predicates = append(predicates, job.ParamsIsNil())
+	}
+	if i.ParamsNotNil {
+		predicates = append(predicates, job.ParamsNotNil())
+	}
+	if i.ParamsEqualFold != nil {
+		predicates = append(predicates, job.ParamsEqualFold(*i.ParamsEqualFold))
+	}
+	if i.ParamsContainsFold != nil {
+		predicates = append(predicates, job.ParamsContainsFold(*i.ParamsContainsFold))
 	}
 
 	if i.HasTome != nil {

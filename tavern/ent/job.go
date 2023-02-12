@@ -24,6 +24,8 @@ type Job struct {
 	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
 	// Name of the job
 	Name string `json:"name,omitempty"`
+	// Value of parameters that were specified for the job (as a JSON string).
+	Params string `json:"params,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the JobQuery when eager-loading is set.
 	Edges      JobEdges `json:"edges"`
@@ -90,7 +92,7 @@ func (*Job) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case job.FieldID:
 			values[i] = new(sql.NullInt64)
-		case job.FieldName:
+		case job.FieldName, job.FieldParams:
 			values[i] = new(sql.NullString)
 		case job.FieldCreatedAt, job.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -136,6 +138,12 @@ func (j *Job) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				j.Name = value.String
+			}
+		case job.FieldParams:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field params", values[i])
+			} else if value.Valid {
+				j.Params = value.String
 			}
 		case job.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -202,6 +210,9 @@ func (j *Job) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(j.Name)
+	builder.WriteString(", ")
+	builder.WriteString("params=")
+	builder.WriteString(j.Params)
 	builder.WriteByte(')')
 	return builder.String()
 }
