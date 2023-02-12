@@ -62,7 +62,12 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
             target_process_memory_handle, 
             0 as *const SECURITY_ATTRIBUTES, 
             0, 
-            Some(std::mem::transmute::<_, extern "system" fn(_) -> _>(loadlibrary_function_ref)), 
+            Some( // Translate our existing function return to the one LoadLibraryA wants.
+                std::mem::transmute::<
+                    unsafe extern "system" fn() -> isize, 
+                    extern "system" fn(*mut c_void) -> u32
+                >(loadlibrary_function_ref)
+            ), 
             target_process_allocated_memory_handle, 
             0, 
             0 as *mut u32
