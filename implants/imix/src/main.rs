@@ -47,13 +47,13 @@ async fn install(config_path: String) -> Result<(), imix::Error> {
     let config: imix::Config = serde_json::from_reader(config_file)?;
 
     #[cfg(target_os = "windows")]
-	    return imix::windows::install(config).await;
+    return imix::windows::install(config).await;
 	
     #[cfg(target_os = "linux")]
-        if Path::new(imix::linux::SYSTEMD_DIR).is_dir() {
-            return imix::linux::install(config).await;
-        }
-	
+    if Path::new(imix::linux::SYSTEMD_DIR).is_dir() {
+        return imix::linux::install(config).await;
+    }
+	 
 	unimplemented!("The current OS/Service Manager is not supported")
 }
 

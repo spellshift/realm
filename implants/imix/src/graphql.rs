@@ -127,6 +127,7 @@ mutation ImixCallback($input: ClaimTasksInput!) {
 
     let response_text = match client.post(uri)
     .header("Content-Type", "application/json")
+    .header("X-Realm-Auth", "letmeinnn")
     .body(req_body)
     .send()
     .await {
