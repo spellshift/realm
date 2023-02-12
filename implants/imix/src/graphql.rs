@@ -1,6 +1,6 @@
 use anyhow::{Error};
 use serde::{Serialize, Deserialize};
-
+// https://time-rs.github.io/api/time/format_description/well_known/struct.Rfc3339.html
 // ------------- GraphQL claimTasks request -------------
 #[derive(Serialize, Deserialize)]
 pub(crate) struct GraphQLClaimTasksInput {
@@ -122,7 +122,6 @@ mutation ImixCallback($input: ClaimTasksInput!) {
         Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
     };
 
-    // println!("{}", req_body);
     let client = reqwest::Client::new();
 
     let response_text = match client.post(uri)
@@ -148,13 +147,56 @@ mutation ImixCallback($input: ClaimTasksInput!) {
     Ok(new_tasks)
 }
 
+pub async fn gql_post_task_result(uri: String) -> Result<Vec<GraphQLTask>, Error> {
+    let input_variable = GraphQLClaimTasksInput {
+        principal: "root".to_string(),
+        hostname: "localhost".to_string(),
+        session_identifier: "s1234".to_string(),
+        host_identifier: "h1234".to_string(),
+        agent_identifier: "a1234".to_string(),
+    };
+
+    let req_body = match serde_json::to_string(
+
+    ) {
+        Ok(json_req_body) => json_req_body,
+        Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
+    };
+
+    let client = reqwest::Client::new();
+
+    let response_text = match client.post(uri)
+    .header("Content-Type", "application/json")
+    .header("X-Realm-Auth", "letmeinnn")
+    .body(req_body)
+    .send()
+    .await {
+        Ok(http_response) => {
+            match http_response.text().await {
+                Ok(text_recieved) => text_recieved,
+                Err(text_error) => return Err(anyhow::anyhow!("Error decoding http response.\n{}", text_error)),
+            }
+        },
+        Err(http_error) => return Err(anyhow::anyhow!("Error making http request.\n{}", http_error)),
+    };
+
+    let graphql_response: GraphQLResponseEnvelope = match serde_json::from_str(&response_text) {
+        Ok(new_tasks_object) => new_tasks_object,
+        Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}", error)),
+    };
+    let new_tasks = graphql_response.data.claim_tasks;
+    Ok(new_tasks)
+}
+
+
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn imix_graphql_claim_task_test_standard() {
-        println!("HERE");
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -166,6 +208,9 @@ mod tests {
         for task in response.unwrap() {
             println!("{}", serde_json::to_string(&task).unwrap())
         }
-        
+        /*
+        {"id":"17179869205","job":{"id":"4294967317","name":"990","tome":{"id":"21474836485","name":"Shell Execute","description":"Execute a shell script using the default interpreter. /bin/bash for macos & linux, and cmd.exe for windows.","parameters":"{\"cmd\":\"string\"}","eldritch":"sys.shell(cmd);","files":[]},"bundle":null}}
+        {"id":"17179869206","job":{"id":"4294967318","name":"989","tome":{"id":"21474836485","name":"Shell Execute","description":"Execute a shell script using the default interpreter. /bin/bash for macos & linux, and cmd.exe for windows.","parameters":"{\"cmd\":\"string\"}","eldritch":"sys.shell(cmd);","files":[]},"bundle":null}}
+        */
     }
 }
