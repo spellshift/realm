@@ -161,63 +161,63 @@ pub struct SubmitTaskResultInput {
     pub error: String,
 }
 
-pub async fn gql_post_task_result(uri: String, task_res: SubmitTaskResultInput) -> Result<Vec<GraphQLTask>, Error> {
-/*
-{
-  "query": "mutation ImixPostResult($input: SubmitTaskResultInput!) { submitTaskResult(input: $input) { \n\tid\n}}",
-  "variables": {
-    "input": {
-      "taskID": "17179869186",
-      "execStartedAt": "1985-04-12T23:20:50.52Z",
-      "execFinishedAt": "1995-04-12T23:20:50.52Z",
-      "output": "root!",
-      "error": ""
-    }
-  },
-  "operationName": "ImixPostResult"
-}
-*/
-    let req_body = match serde_json::to_string(&
-        GraphQLRequestEnvelope {
-            operation_name: String::from("ImixCallback"),
-            query: String::from(r#"
-    mutation ImixPostResult($input: ClaimTasksInput!) {
-        submitTaskResult(input: $input) { 
-            id
-        }
-    }"#),
-        variables: GraphQLVariableEnvelope{
-            input: task_res
-        },
-    }) {
-        Ok(json_req_body) => json_req_body,
-        Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
-    };
+// pub async fn gql_post_task_result(uri: String, task_res: SubmitTaskResultInput) -> Result<Vec<GraphQLTask>, Error> {
+// /*
+// {
+//   "query": "mutation ImixPostResult($input: SubmitTaskResultInput!) { submitTaskResult(input: $input) { \n\tid\n}}",
+//   "variables": {
+//     "input": {
+//       "taskID": "17179869186",
+//       "execStartedAt": "1985-04-12T23:20:50.52Z",
+//       "execFinishedAt": "1995-04-12T23:20:50.52Z",
+//       "output": "root!",
+//       "error": ""
+//     }
+//   },
+//   "operationName": "ImixPostResult"
+// }
+// */
+//     let req_body = match serde_json::to_string(&
+//         GraphQLRequestEnvelope {
+//             operation_name: String::from("ImixCallback"),
+//             query: String::from(r#"
+//     mutation ImixPostResult($input: ClaimTasksInput!) {
+//         submitTaskResult(input: $input) { 
+//             id
+//         }
+//     }"#),
+//         variables: GraphQLVariableEnvelope{
+//             input: task_res
+//         },
+//     }) {
+//         Ok(json_req_body) => json_req_body,
+//         Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
+//     };
 
-    let client = reqwest::Client::new();
+//     let client = reqwest::Client::new();
 
-    let response_text = match client.post(uri)
-    .header("Content-Type", "application/json")
-    .header("X-Realm-Auth", "letmeinnn")
-    .body(req_body)
-    .send()
-    .await {
-        Ok(http_response) => {
-            match http_response.text().await {
-                Ok(text_recieved) => text_recieved,
-                Err(text_error) => return Err(anyhow::anyhow!("Error decoding http response.\n{}", text_error)),
-            }
-        },
-        Err(http_error) => return Err(anyhow::anyhow!("Error making http request.\n{}", http_error)),
-    };
+//     let response_text = match client.post(uri)
+//     .header("Content-Type", "application/json")
+//     .header("X-Realm-Auth", "letmeinnn")
+//     .body(req_body)
+//     .send()
+//     .await {
+//         Ok(http_response) => {
+//             match http_response.text().await {
+//                 Ok(text_recieved) => text_recieved,
+//                 Err(text_error) => return Err(anyhow::anyhow!("Error decoding http response.\n{}", text_error)),
+//             }
+//         },
+//         Err(http_error) => return Err(anyhow::anyhow!("Error making http request.\n{}", http_error)),
+//     };
 
-    let graphql_response: GraphQLResponseEnvelope = match serde_json::from_str(&response_text) {
-        Ok(new_tasks_object) => new_tasks_object,
-        Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}", error)),
-    };
-    let new_tasks = graphql_response.data.claim_tasks;
-    Ok(new_tasks)
-}
+//     let graphql_response: GraphQLResponseEnvelope = match serde_json::from_str(&response_text) {
+//         Ok(new_tasks_object) => new_tasks_object,
+//         Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}", error)),
+//     };
+//     let new_tasks = graphql_response.data.claim_tasks;
+//     Ok(new_tasks)
+// }
 
 
 
@@ -225,23 +225,57 @@ pub async fn gql_post_task_result(uri: String, task_res: SubmitTaskResultInput) 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use httptest::{Server, Expectation, matchers::*, responders::*};
 
     #[test]
     fn imix_graphql_claim_task_test_standard() {
+        let server = Server::run();
+        server.expect(Expectation::matching(request::method_path("POST", "/graphql"))
+            .respond_with(status_code(200).body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"test_exe3","tome":{"id":"21474836482","name":"Shell Execute","description":"Execute a shell script using the default interpreter. /bin/bash for macos \u0026 linux, and cmd.exe for windows.","parameters":"{\"cmd\":\"string\"}","eldritch":"sys.shell(eld.get_param('cmd'))","files":[]},"bundle":null}},{"id":"17179869186","job":{"id":"4294967298","name":"test_exe2","tome":{"id":"21474836482","name":"Shell Execute","description":"Execute a shell script using the default interpreter. /bin/bash for macos \u0026 linux, and cmd.exe for windows.","parameters":"{\"cmd\":\"string\"}","eldritch":"sys.shell(eld.get_param('cmd'))","files":[]},"bundle":null}}]}}"#))
+        );
+
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
 
         let response = runtime.block_on(
-            gql_claim_tasks("http://127.0.0.1:80/graphql".to_string())
-        );
-        for task in response.unwrap() {
-            println!("{}", serde_json::to_string(&task).unwrap())
+            gql_claim_tasks(server.url("/graphql").to_string())
+        ).unwrap();
+        for task in response {
+            assert!(task.job.name.contains("test_exe"))
         }
-        /*
-        {"id":"17179869205","job":{"id":"4294967317","name":"990","tome":{"id":"21474836485","name":"Shell Execute","description":"Execute a shell script using the default interpreter. /bin/bash for macos & linux, and cmd.exe for windows.","parameters":"{\"cmd\":\"string\"}","eldritch":"sys.shell(cmd);","files":[]},"bundle":null}}
-        {"id":"17179869206","job":{"id":"4294967318","name":"989","tome":{"id":"21474836485","name":"Shell Execute","description":"Execute a shell script using the default interpreter. /bin/bash for macos & linux, and cmd.exe for windows.","parameters":"{\"cmd\":\"string\"}","eldritch":"sys.shell(cmd);","files":[]},"bundle":null}}
-        */
     }
 }
+
+/*
+iQL script
+# Create tome
+mutation CreateTome ($input: CreateTomeInput!) {
+  createTome(input: $input) {
+    id
+  }
+}
+
+{
+  "input": {
+    "name": "Shell Execute",
+    "description": "Execute a shell script using the default interpreter. /bin/bash for macos & linux, and cmd.exe for windows.",
+    "parameters": "{\"cmd\":\"string\"}",
+    "eldritch": "sys.shell(eld.get_param('cmd'))",
+    "fileIDs": []
+  }
+}
+
+# Get session IDs
+query get_sessions {
+	sessions {
+    id
+    identifier
+  }
+}
+
+# Queue Job with tome and session
+
+
+*/
