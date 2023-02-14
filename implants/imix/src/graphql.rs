@@ -1,5 +1,6 @@
 use anyhow::{Error};
 use serde::{Serialize, Deserialize};
+use chrono::{DateTime, Utc};
 // https://time-rs.github.io/api/time/format_description/well_known/struct.Rfc3339.html
 // ------------- GraphQL claimTasks request -------------
 #[derive(Serialize, Deserialize)]
@@ -15,14 +16,14 @@ pub(crate) struct GraphQLClaimTasksInput {
 }
 
 #[derive(Serialize, Deserialize)]
-struct GraphQLVariableEnvelope {
-    input: GraphQLClaimTasksInput,
+struct GraphQLClaimTaskVariableEnvelope {
+    input: GraphQLClaimTasksInput
 }
 
 #[derive(Serialize, Deserialize)]
-struct GraphQLRequestEnvelope {
+struct GraphQLClaimRequestEnvelope {
     query: String,
-    variables: GraphQLVariableEnvelope,
+    variables: GraphQLClaimTaskVariableEnvelope,
     #[serde(rename="operationName")]
     operation_name: String,
 }
@@ -58,7 +59,7 @@ pub struct GraphQLJob {
 #[derive(Serialize, Deserialize)]
 pub struct GraphQLTask {
     pub id: String,
-    pub job: GraphQLJob
+    pub job: Option<GraphQLJob>
 }
 
 #[derive(Serialize, Deserialize)]
@@ -68,7 +69,7 @@ struct GraphQLClaimTasksOutput {
 }
 
 #[derive(Serialize, Deserialize)]
-struct GraphQLResponseEnvelope {
+struct GraphQLClaimTaskResponseEnvelope {
     data: GraphQLClaimTasksOutput,
 }
 
@@ -82,7 +83,7 @@ pub async fn gql_claim_tasks(uri: String) -> Result<Vec<GraphQLTask>, Error> {
     };
 
     let req_body = match serde_json::to_string(&
-    GraphQLRequestEnvelope {
+    GraphQLClaimRequestEnvelope {
         operation_name: String::from("ImixCallback"),
         query: String::from(r#"
 mutation ImixCallback($input: ClaimTasksInput!) {
@@ -113,7 +114,7 @@ mutation ImixCallback($input: ClaimTasksInput!) {
         }
     }
 }"#),
-        variables: GraphQLVariableEnvelope{
+        variables: GraphQLClaimTaskVariableEnvelope{
             input: input_variable
         },
     }) {
@@ -138,7 +139,7 @@ mutation ImixCallback($input: ClaimTasksInput!) {
         Err(http_error) => return Err(anyhow::anyhow!("Error making http request.\n{}", http_error)),
     };
 
-    let graphql_response: GraphQLResponseEnvelope = match serde_json::from_str(&response_text) {
+    let graphql_response: GraphQLClaimTaskResponseEnvelope = match serde_json::from_str(&response_text) {
         Ok(new_tasks_object) => new_tasks_object,
         Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}", error)),
     };
@@ -147,83 +148,97 @@ mutation ImixCallback($input: ClaimTasksInput!) {
 }
 
 
-// ------------- GraphQL SubmitTaskResultInput request -------------
 
+// ------------- GraphQL SubmitTaskResultInput request -------------
 #[derive(Serialize, Deserialize)]
-pub struct SubmitTaskResultInput {
+pub struct GraphQLSubmitTaskResultInput {
     #[serde(rename="taskID")]
     pub task_id: String,
+    #[serde(rename="execStartedAt")]
+    pub exec_started_at: DateTime<Utc>,
     #[serde(rename="execFinishedAt")]
-    pub exec_started_at: String,
-    #[serde(rename="execFinishedAt")]
-    pub exec_finished_at: Option<String>,
+    pub exec_finished_at: Option<DateTime<Utc>>,
     pub output: String,
     pub error: String,
 }
 
-// pub async fn gql_post_task_result(uri: String, task_res: SubmitTaskResultInput) -> Result<Vec<GraphQLTask>, Error> {
-// /*
-// {
-//   "query": "mutation ImixPostResult($input: SubmitTaskResultInput!) { submitTaskResult(input: $input) { \n\tid\n}}",
-//   "variables": {
-//     "input": {
-//       "taskID": "17179869186",
-//       "execStartedAt": "1985-04-12T23:20:50.52Z",
-//       "execFinishedAt": "1995-04-12T23:20:50.52Z",
-//       "output": "root!",
-//       "error": ""
-//     }
-//   },
-//   "operationName": "ImixPostResult"
-// }
-// */
-//     let req_body = match serde_json::to_string(&
-//         GraphQLRequestEnvelope {
-//             operation_name: String::from("ImixCallback"),
-//             query: String::from(r#"
-//     mutation ImixPostResult($input: ClaimTasksInput!) {
-//         submitTaskResult(input: $input) { 
-//             id
-//         }
-//     }"#),
-//         variables: GraphQLVariableEnvelope{
-//             input: task_res
-//         },
-//     }) {
-//         Ok(json_req_body) => json_req_body,
-//         Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
-//     };
+#[derive(Serialize, Deserialize)]
+pub struct GraphQLSubmitTaskVariableEnvelope {
+    pub input: GraphQLSubmitTaskResultInput
+}
 
-//     let client = reqwest::Client::new();
+#[derive(Serialize, Deserialize)]
+struct GraphQLSubmitTaskRequestEnvelope {
+    query: String,
+    variables: GraphQLSubmitTaskVariableEnvelope,
+    #[serde(rename="operationName")]
+    operation_name: String,
+}
 
-//     let response_text = match client.post(uri)
-//     .header("Content-Type", "application/json")
-//     .header("X-Realm-Auth", "letmeinnn")
-//     .body(req_body)
-//     .send()
-//     .await {
-//         Ok(http_response) => {
-//             match http_response.text().await {
-//                 Ok(text_recieved) => text_recieved,
-//                 Err(text_error) => return Err(anyhow::anyhow!("Error decoding http response.\n{}", text_error)),
-//             }
-//         },
-//         Err(http_error) => return Err(anyhow::anyhow!("Error making http request.\n{}", http_error)),
-//     };
+// ------------- GraphQL submitTask response -------------
 
-//     let graphql_response: GraphQLResponseEnvelope = match serde_json::from_str(&response_text) {
-//         Ok(new_tasks_object) => new_tasks_object,
-//         Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}", error)),
-//     };
-//     let new_tasks = graphql_response.data.claim_tasks;
-//     Ok(new_tasks)
-// }
+#[derive(Serialize, Deserialize)]
+struct GraphQLSubmitTasksOutput {
+    #[serde(rename="submitTaskResult")]
+    submit_task_result: GraphQLTask,
+}
+
+#[derive(Serialize, Deserialize)]
+struct GraphQLSubmitTaskResponseEnvelope {
+    data: GraphQLSubmitTasksOutput,
+}
+
+
+pub async fn gql_post_task_result(uri: String, task_result: GraphQLSubmitTaskResultInput) -> Result<GraphQLTask, Error> {
+    let req_body = match serde_json::to_string(&
+        GraphQLSubmitTaskRequestEnvelope {
+            operation_name: String::from("ImixPostResult"),
+            query: String::from(r#"
+    mutation ImixPostResult($input: SubmitTaskResultInput!) {
+        submitTaskResult(input: $input) { 
+            id
+        }
+    }"#),
+        variables: GraphQLSubmitTaskVariableEnvelope{
+            input: task_result
+        },
+    }) {
+        Ok(json_req_body) => json_req_body,
+        Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
+    };
+
+    let client = reqwest::Client::new();
+
+    let response_text = match client.post(uri)
+    .header("Content-Type", "application/json")
+    .header("X-Realm-Auth", "letmeinnn")
+    .body(req_body)
+    .send()
+    .await {
+        Ok(http_response) => {
+            match http_response.text().await {
+                Ok(text_recieved) => text_recieved,
+                Err(text_error) => return Err(anyhow::anyhow!("Error decoding http response.\n{}", text_error)),
+            }
+        },
+        Err(http_error) => return Err(anyhow::anyhow!("Error making http request.\n{}", http_error)),
+    };
+
+    let graphql_response: GraphQLSubmitTaskResponseEnvelope = match serde_json::from_str(&response_text) {
+        Ok(new_tasks_object) => new_tasks_object,
+        Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}", error)),
+    };
+    let new_tasks = graphql_response.data.submit_task_result;
+    Ok(new_tasks)
+}
 
 
 
 
 #[cfg(test)]
 mod tests {
+    use std::{ptr::null, str::FromStr};
+
     use super::*;
     use httptest::{Server, Expectation, matchers::*, responders::*};
 
@@ -243,8 +258,34 @@ mod tests {
             gql_claim_tasks(server.url("/graphql").to_string())
         ).unwrap();
         for task in response {
-            assert!(task.job.name.contains("test_exe"))
+            assert!(task.job.unwrap().name.contains("test_exe"))
         }
+    }
+    #[test]
+    fn imix_graphql_post_task_output_standard() {
+        let start_time = Utc::now();
+
+        let server = Server::run();
+        server.expect(Expectation::matching(request::method_path("POST", "/graphql"))
+            .respond_with(status_code(200).body(r#"{"data":{"submitTaskResult":{"id":"17179869186"}}}"#))
+        );
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let test_task_response = GraphQLSubmitTaskResultInput {
+            task_id: "17179869186".to_string(),
+            exec_started_at: start_time,
+            exec_finished_at: Some(Utc::now()),
+            output: "whoami".to_string(),
+            error: "".to_string(),
+        };
+        let response = runtime.block_on(
+            gql_post_task_result(server.url("/graphql").to_string(), test_task_response)
+        ).unwrap();
+
+        assert_eq!(response.id,"17179869186".to_string());
     }
 }
 
@@ -276,6 +317,24 @@ query get_sessions {
 }
 
 # Queue Job with tome and session
+
+
+# Post task results
+mutation postTaskResults($input: SubmitTaskResultInput!) {
+  submitTaskResult(input: $input) {
+    id
+  }
+}
+
+{
+  "input": {
+    "taskID": "17179869186",
+    "execStartedAt": "1985-04-12T23:20:50.52Z",
+    "execFinishedAt": "1985-04-12T23:40:50.52Z",
+    "output": "root",
+    "error": ""
+  }
+}
 
 
 */

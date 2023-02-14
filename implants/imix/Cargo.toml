@@ -14,3 +14,4 @@ reqwest = { version = "0.11.4" , features = ["blocking", "stream", "json"] }
 tokio = { version = "1", features = ["full"] }
 anyhow = "1.0.55"
 httptest = "0.15.4"
+chrono = { version = "0.4.23" , features = ["serde"] }
