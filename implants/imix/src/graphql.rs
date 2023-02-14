@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 // https://time-rs.github.io/api/time/format_description/well_known/struct.Rfc3339.html
 // ------------- GraphQL claimTasks request -------------
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub(crate) struct GraphQLClaimTasksInput {
     pub(crate) principal: String,
     pub(crate) hostname: String,
@@ -30,7 +30,7 @@ struct GraphQLClaimRequestEnvelope {
 
 // ------------- GraphQL claimTasks response -------------
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GraphQLTome {
     pub id: String,
     pub name: String,
@@ -40,7 +40,7 @@ pub struct GraphQLTome {
     pub files: Vec<GraphQLFile>
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GraphQLFile {
     pub id: String,
     pub name: String,
@@ -48,7 +48,7 @@ pub struct GraphQLFile {
     pub hash: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GraphQLJob {
     pub id: String,
     pub name: String,
@@ -56,7 +56,7 @@ pub struct GraphQLJob {
     pub bundle: Option<GraphQLFile>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GraphQLTask {
     pub id: String,
     pub job: Option<GraphQLJob>
@@ -237,8 +237,6 @@ pub async fn gql_post_task_result(uri: String, task_result: GraphQLSubmitTaskRes
 
 #[cfg(test)]
 mod tests {
-    use std::{ptr::null, str::FromStr};
-
     use super::*;
     use httptest::{Server, Expectation, matchers::*, responders::*};
 
@@ -290,8 +288,8 @@ mod tests {
 }
 
 /*
-iQL script
-# Create tome
+# iQL script
+## Create tome
 mutation CreateTome ($input: CreateTomeInput!) {
   createTome(input: $input) {
     id
@@ -308,7 +306,7 @@ mutation CreateTome ($input: CreateTomeInput!) {
   }
 }
 
-# Get session IDs
+## Get session IDs
 query get_sessions {
 	sessions {
     id
@@ -316,10 +314,63 @@ query get_sessions {
   }
 }
 
-# Queue Job with tome and session
+## imixCallback
+mutation ImixCallback($input: ClaimTasksInput!) {
+    claimTasks(input: $input) { 
+        id,
+        job { 
+            id,
+            name,
+            tome {
+                id,
+                name,
+                description,
+                parameters,
+                eldritch,
+                files {
+                    id,
+                    name,
+                    size,
+                    hash,
+                }
+            },
+            bundle {
+                id,
+                name,
+                size,
+                hash,
+            }
+        }
+    }
+}
 
+{
+  "input": {
+        "principal": "root",
+        "hostname": "localhost",
+        "sessionIdentifier": "s1234",
+        "hostIdentifier": "h1234",
+        "agentIdentifier": "a1234"
+    }
+}
 
-# Post task results
+## Queue Job with tome and session
+mutation createJob($input: CreateJobInput!, $sess:[ID!]!){
+  createJob(input: $input, sessionIDs: $sess) {
+    id
+  }
+}
+
+{
+  "input": {
+    "name": "test_exe1",
+    "params": "{}",
+    "tomeID": "21474836482"
+  },
+  "sess": ["8589934593"]
+}
+
+## Post task results
 mutation postTaskResults($input: SubmitTaskResultInput!) {
   submitTaskResult(input: $input) {
     id
