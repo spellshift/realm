@@ -56,6 +56,8 @@ async fn main_loop(imix_config: imix::Config) {
     let debug = true;
     let mut active_tasks: HashMap<String,Task> = HashMap::new();
     loop {
+        // 0. Get loop start time
+
         // 1. Pull down new tasks
         let new_tasks = match graphql::gql_claim_tasks(imix_config.callback_config.c2_configs[0].uri.clone()).await {
             Ok(tasks) => tasks,
@@ -78,10 +80,14 @@ async fn main_loop(imix_config: imix::Config) {
                 None => {},
             }
         }    
-        // 3. Send task output
+        // 3. Sleep till callback time
+
+        // 4. Collect task output
         for task in &active_tasks {
             
         }
+
+        // 5. Send task output 
 
     }
     unimplemented!("Nothing here yet. ")
