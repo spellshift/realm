@@ -18,6 +18,9 @@ type ctxKey struct{}
 
 // An Identity making a request.
 type Identity interface {
+	// String representation of the identity, used for logging
+	String() string
+
 	// IsAuthenticated should only return true if the identity has been authenticated.
 	IsAuthenticated() bool
 
@@ -32,6 +35,11 @@ type Identity interface {
 type userIdentity struct {
 	Authenticated bool
 	*ent.User
+}
+
+// String returns the underlying user identities username.
+func (u *userIdentity) String() string {
+	return u.Name
 }
 
 // IsAuthenticated returns true if the user has been authenticated.
@@ -73,6 +81,16 @@ func ContextFromSessionToken(ctx context.Context, graph *ent.Client, token strin
 	}
 
 	return ContextFromIdentity(ctx, &userIdentity{true, u}), nil
+}
+
+// IdentityFromContext returns the identity associated with the provided context, or nil if no identity is associated.
+func IdentityFromContext(ctx context.Context) Identity {
+	val := ctx.Value(ctxKey{})
+	id, ok := val.(Identity)
+	if !ok {
+		return nil
+	}
+	return id
 }
 
 // IsAuthenticatedContext returns true if the context is associated with an authenticated identity, false otherwise.
