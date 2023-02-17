@@ -9,6 +9,7 @@ import (
 // authDisabledIdentity is used whenever authentication has been disabled.
 type authDisabledIdentity struct{}
 
+func (id authDisabledIdentity) String() string        { return "auth_disabled" }
 func (id authDisabledIdentity) IsAuthenticated() bool { return true }
 func (id authDisabledIdentity) IsActivated() bool     { return true }
 func (id authDisabledIdentity) IsAdmin() bool         { return true }
