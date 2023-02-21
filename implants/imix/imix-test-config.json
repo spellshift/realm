@@ -1,0 +1,16 @@
+{
+  "service_configs": [],
+  "target_forward_connect_ip": "127.0.0.1",
+  "target_name": "test1234",
+  "callback_config": {
+    "interval": 3,
+    "jitter": 1,
+    "timeout": 4,
+    "c2_configs": [
+      {
+        "priority": 1,
+        "uri": "http://localhost:80/graphql"
+      }
+    ]
+  }
+}

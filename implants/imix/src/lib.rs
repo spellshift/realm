@@ -24,14 +24,14 @@ pub struct C2Config {
     pub priority: u8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ServiceConfig {
     name: String,
     description: String,
     executable_path: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct CallbackConfig {
     pub interval: u64,
     pub jitter: u64,
@@ -39,7 +39,7 @@ pub struct CallbackConfig {
     pub c2_configs: Vec<C2Config>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
     pub target_name: String,
     pub target_forward_connect_ip: String,
