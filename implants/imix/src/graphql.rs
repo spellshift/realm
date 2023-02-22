@@ -168,11 +168,11 @@ pub struct GraphQLSubmitTaskVariableEnvelope {
 }
 
 #[derive(Serialize, Deserialize)]
-struct GraphQLSubmitTaskRequestEnvelope {
-    query: String,
-    variables: GraphQLSubmitTaskVariableEnvelope,
+pub struct GraphQLSubmitTaskRequestEnvelope {
+    pub query: String,
+    pub variables: GraphQLSubmitTaskVariableEnvelope,
     #[serde(rename="operationName")]
-    operation_name: String,
+    pub operation_name: String,
 }
 
 // ------------- GraphQL submitTask response -------------
