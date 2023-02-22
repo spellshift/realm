@@ -95,7 +95,6 @@ async fn main_loop(config_path: String) -> Result<()> {
         // 0. Get loop start time
         let loop_start_time = Instant::now();
 
-
         // 1. Pull down new tasks
         // 1a) calculate callback uri
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
@@ -120,7 +119,7 @@ async fn main_loop(config_path: String) -> Result<()> {
                         println!("main_loop: error adding new task. Non-unique taskID\n");
                     }
                 },
-                None => {},
+                None => {}, // Task queued successfully
             }
         }
 
