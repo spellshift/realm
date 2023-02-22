@@ -27,7 +27,7 @@ async fn install(config_path: String) -> Result<(), imix::Error> {
 }
 
 async fn handle_exec_tome(task: GraphQLTask) -> Result<(String,String)> {
-    // Download auxillary files from CDN
+    // TODO: Download auxillary files from CDN
 
     // Read a tome script
     let task_job = match task.job {
@@ -63,10 +63,7 @@ async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graph
                 Err(tome_error) => ("".to_string(), tome_error.to_string()),
             }
         },
-        // If our timeout timer has expired set the port state to timeout and return.
-        Err(_timer_elapsed) => {
-            return Err(anyhow::anyhow!("Eldritch timeout elapsed"));
-        },
+        Err(timer_elapsed) => ("".to_string(), format!("Time elapsed task {} has been running for {} seconds", task.id, timer_elapsed.to_string())),
     };
 
     // Send task response
