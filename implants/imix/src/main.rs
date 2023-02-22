@@ -1,16 +1,15 @@
 use std::collections::HashMap;
-use std::fs::{File, OpenOptions};
-use std::io::{BufReader, Write};
+use std::fs::File;
+use std::io::BufReader;
 use std::path::Path;
 use std::time::Instant;
-use chrono::{DateTime, Utc};
-
+use chrono::Utc;
 use clap::{Command, arg};
 use anyhow::{Result, Error};
 use tokio::task;
-use tokio::time::{Duration,sleep};
+use tokio::time::Duration;
 use imix::graphql::{GraphQLTask, self};
-use eldritch::{eldritch_run};
+use eldritch::eldritch_run;
 
 async fn install(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
@@ -196,9 +195,8 @@ pub fn main() -> Result<(), imix::Error> {
 
 #[cfg(test)]
 mod tests {
-    use imix::{graphql::{GraphQLJob, GraphQLTome}, CallbackConfig, ServiceConfig, C2Config};
+    use imix::{graphql::{GraphQLJob, GraphQLTome}};
     use super::*;
-    use httptest::{Server, Expectation, matchers::*, responders::*};
 
     #[test]
     fn imix_handle_exec_tome() {
