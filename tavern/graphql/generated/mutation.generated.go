@@ -354,6 +354,8 @@ func (ec *executionContext) fieldContext_Mutation_updateSession(ctx context.Cont
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Session_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Session_name(ctx, field)
 			case "principal":
 				return ec.fieldContext_Session_principal(ctx, field)
 			case "hostname":

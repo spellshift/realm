@@ -16,6 +16,8 @@ type Session struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// A human readable identifier for the session.
+	Name string `json:"name,omitempty"`
 	// The identity the session is authenticated as (e.g. 'root')
 	Principal string `json:"principal,omitempty"`
 	// The hostname of the system the session is running on.
@@ -74,7 +76,7 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case session.FieldID:
 			values[i] = new(sql.NullInt64)
-		case session.FieldPrincipal, session.FieldHostname, session.FieldIdentifier, session.FieldAgentIdentifier, session.FieldHostIdentifier:
+		case session.FieldName, session.FieldPrincipal, session.FieldHostname, session.FieldIdentifier, session.FieldAgentIdentifier, session.FieldHostIdentifier:
 			values[i] = new(sql.NullString)
 		case session.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
@@ -99,6 +101,12 @@ func (s *Session) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			s.ID = int(value.Int64)
+		case session.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				s.Name = value.String
+			}
 		case session.FieldPrincipal:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field principal", values[i])
@@ -173,6 +181,9 @@ func (s *Session) String() string {
 	var builder strings.Builder
 	builder.WriteString("Session(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString("name=")
+	builder.WriteString(s.Name)
+	builder.WriteString(", ")
 	builder.WriteString("principal=")
 	builder.WriteString(s.Principal)
 	builder.WriteString(", ")
