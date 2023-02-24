@@ -22,6 +22,20 @@ type SessionCreate struct {
 	hooks    []Hook
 }
 
+// SetName sets the "name" field.
+func (sc *SessionCreate) SetName(s string) *SessionCreate {
+	sc.mutation.SetName(s)
+	return sc
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (sc *SessionCreate) SetNillableName(s *string) *SessionCreate {
+	if s != nil {
+		sc.SetName(*s)
+	}
+	return sc
+}
+
 // SetPrincipal sets the "principal" field.
 func (sc *SessionCreate) SetPrincipal(s string) *SessionCreate {
 	sc.mutation.SetPrincipal(s)
@@ -213,6 +227,10 @@ func (sc *SessionCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (sc *SessionCreate) defaults() {
+	if _, ok := sc.mutation.Name(); !ok {
+		v := session.DefaultName()
+		sc.mutation.SetName(v)
+	}
 	if _, ok := sc.mutation.Identifier(); !ok {
 		v := session.DefaultIdentifier()
 		sc.mutation.SetIdentifier(v)
@@ -221,6 +239,14 @@ func (sc *SessionCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (sc *SessionCreate) check() error {
+	if _, ok := sc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Session.name"`)}
+	}
+	if v, ok := sc.mutation.Name(); ok {
+		if err := session.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Session.name": %w`, err)}
+		}
+	}
 	if v, ok := sc.mutation.Principal(); ok {
 		if err := session.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Session.principal": %w`, err)}
@@ -276,6 +302,10 @@ func (sc *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	if value, ok := sc.mutation.Name(); ok {
+		_spec.SetField(session.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
 	if value, ok := sc.mutation.Principal(); ok {
 		_spec.SetField(session.FieldPrincipal, field.TypeString, value)
 		_node.Principal = value

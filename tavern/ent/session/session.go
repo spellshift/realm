@@ -7,6 +7,8 @@ const (
 	Label = "session"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// FieldPrincipal holds the string denoting the principal field in the database.
 	FieldPrincipal = "principal"
 	// FieldHostname holds the string denoting the hostname field in the database.
@@ -42,6 +44,7 @@ const (
 // Columns holds all SQL columns for session fields.
 var Columns = []string{
 	FieldID,
+	FieldName,
 	FieldPrincipal,
 	FieldHostname,
 	FieldIdentifier,
@@ -67,6 +70,10 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultName holds the default value on creation for the "name" field.
+	DefaultName func() string
+	// NameValidator is a validator for the "name" field. It is called by the builders before save.
+	NameValidator func(string) error
 	// PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
 	PrincipalValidator func(string) error
 	// HostnameValidator is a validator for the "hostname" field. It is called by the builders before save.

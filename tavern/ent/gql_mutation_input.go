@@ -28,6 +28,7 @@ func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
 
 // UpdateSessionInput represents a mutation input for updating sessions.
 type UpdateSessionInput struct {
+	Name          *string
 	ClearHostname bool
 	Hostname      *string
 	AddTagIDs     []int
@@ -36,6 +37,9 @@ type UpdateSessionInput struct {
 
 // Mutate applies the UpdateSessionInput on the SessionMutation builder.
 func (i *UpdateSessionInput) Mutate(m *SessionMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
 	if i.ClearHostname {
 		m.ClearHostname()
 	}
