@@ -35,3 +35,4 @@ build/**
 
 # Credentials
 .creds/**
+implants/imix/imix-test-config.json
