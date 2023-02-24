@@ -114,7 +114,9 @@ mutation ImixCallback($input: ClaimTasksInput!) {
         Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
     };
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()?;
 
     let response_text = match client.post(uri)
     .header("Content-Type", "application/json")
@@ -199,7 +201,9 @@ pub async fn gql_post_task_result(uri: String, task_result: GraphQLSubmitTaskRes
         Err(error) => return Err(anyhow::anyhow!("Failed encode request to JSON\n{}", error)),
     };
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()?;
 
     let response_text = match client.post(uri)
     .header("Content-Type", "application/json")
