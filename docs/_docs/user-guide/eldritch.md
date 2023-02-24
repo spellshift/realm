@@ -7,9 +7,10 @@ permalink: user-guide/eldritch
 ---
 # Overview
 ![/assets/img/coming-soon.gif](/assets/img/coming-soon.gif)
-## 
+
 ## Data types
 Eldritch currently only supports the [default starlark data types.](https://github.com/facebookexperimental/starlark-rust/blob/main/docs/types.md)
+
 ## Error handling
 Eldritch doesn't implement any form of error handling. If a function fails it will stop the tome from completing execution. There is no way to recover after a function has errored.
 
@@ -23,9 +24,6 @@ if is_linux():
 ```
 
 
-# Examples
-![/assets/img/coming-soon.gif](/assets/img/coming-soon.gif)
-
 # Standard Library
 The Standard Library is very cool, and will be even cooler when Nick documents it.
 
@@ -37,7 +35,7 @@ The <b>file.append</b> Append content str to file at path. If no file exists at 
 ### file.copy
 `file.copy(src: str, dst: str) -> None`
 
-The <b>file.copy</b> copies a file from src path to dst path. If dst path doesn't exist it will be created.
+The <b>file.copy</b> copies a file from src path to dst path. If dst file doesn't exist it will be created.
 
 ### file.compress
 `file.compress(src: str, dst: str) -> None`
@@ -121,8 +119,7 @@ The <b>process.list</b> method will return a list of JSON strings representing t
 ### process.name
 `process.name(pid: int) -> str`
 
-The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.### Sys Library
-The Sys Library is very cool, and will be even cooler when Nick documents it.
+The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
 
 ### sys.dll_inject
 `sys.dll_inject(dll_path: str, pid: int) -> None`
@@ -140,17 +137,17 @@ If disown is not used stdout from the process will be returned. When disown is t
 ### sys.is_linux
 `sys.is_linux() -> bool`
 
-The <b>sys.is_linux</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>sys.is_linux</b> method returns true if on a linux system and fales on everything else.
 
 ### sys.is_windows
 `sys.is_windows() -> bool`
 
-The <b>sys.is_windows</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>sys.is_windows</b> method returns true if on a windows system and fales on everything else.
 
 ### sys.is_macos
 `sys.is_macos() -> bool`
 
-The <b>sys.is_macos</b> method returns true if on a mac os system and fales on everything else.
+The <b>sys.is_macos</b> method returns true if on a mac os system and false on everything else.
 
 ### sys.shell
 `sys.shell(cmd: str) -> str`
@@ -200,7 +197,7 @@ A ports status can be open, closed, or timeout:
 Each IP in the specified CIDR will be returned regardless of if it returns any open ports.
 Be mindful of this when scanning large CIDRs as it may create largo return objects.
 
-NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or hang indefinitely.
+NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely.
 
 ### pivot.arp_scan
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
@@ -213,7 +210,7 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 The <b>pivot.port_forward</b> method is being proposed to providde socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
 ### pivot.ncat
-`pivot.ncat(address: str, port: int, data: str, str: portocol ) -> String`
+`pivot.ncat(address: str, port: int, data: str, str: portocol ) -> str`
 
 The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
 
