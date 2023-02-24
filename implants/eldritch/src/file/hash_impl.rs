@@ -1,8 +1,11 @@
+use std::path::Path;
+
 use anyhow::Result;
-use sha256::digest_file;
+use sha256::try_digest;
 
 pub fn hash(path: String) -> Result<String> {
-    let val = digest_file(path)?;
+    let file_path = Path::new(&path);
+    let val = try_digest(file_path)?;
     Ok(val)
 }
 
