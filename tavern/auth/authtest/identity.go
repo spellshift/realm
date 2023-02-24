@@ -7,6 +7,11 @@ type TestIdentity struct {
 	Admin         bool
 }
 
+// String representation of a TestIdentity will be reported as "test_identity".
+func (t TestIdentity) String() string {
+	return "test_identity"
+}
+
 // IsAuthenticated returns true if the test has configured it to.
 func (t TestIdentity) IsAuthenticated() bool {
 	return t.Authenticated

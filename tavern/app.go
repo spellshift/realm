@@ -4,13 +4,16 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/kcarretto/realm/contrib/tomes"
 
 	"entgo.io/contrib/entgql"
+	gqlgraphql "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/debug"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -106,6 +109,26 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	srv.Use(entgql.Transactioner{TxOpener: client})
 	srv.Use(&debug.Tracer{})
 
+	// GraphQL Logging
+	gqlLogger := log.New(os.Stderr, "[GraphQL] ", log.Flags())
+	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
+		oc := gqlgraphql.GetOperationContext(ctx)
+		reqVars, err := json.Marshal(oc.Variables)
+		if err != nil {
+			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v", err)
+			return next(ctx)
+		}
+
+		authName := "unknown"
+		id := auth.IdentityFromContext(ctx)
+		if id != nil {
+			authName = id.String()
+		}
+
+		gqlLogger.Printf("%s (%s): %s", oc.OperationName, authName, string(reqVars))
+		return next(ctx)
+	})
+
 	// Setup HTTP Handler
 	router := http.NewServeMux()
 	router.Handle("/status", newStatusHandler())
@@ -122,12 +145,25 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
 	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
 
+	// Log Middleware
+	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
+	handlerWithLogging := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authName := "unknown"
+		id := auth.IdentityFromContext(r.Context())
+		if id != nil {
+			authName = id.String()
+		}
+
+		httpLogger.Printf("%s (%s) %s %s\n", r.RemoteAddr, authName, r.Method, r.URL)
+		router.ServeHTTP(w, r)
+	})
+
 	// Auth Middleware
 	var endpoint http.Handler
 	if cfg.oauth.ClientID != "" {
-		endpoint = auth.Middleware(router, cfg.client)
+		endpoint = auth.Middleware(handlerWithLogging, cfg.client)
 	} else {
-		endpoint = auth.AuthDisabledMiddleware(router)
+		endpoint = auth.AuthDisabledMiddleware(handlerWithLogging)
 	}
 
 	// Initialize HTTP Server
