@@ -129,11 +129,22 @@ async fn main_loop(config_path: String) -> Result<()> {
         let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs() ;
         tokio::time::sleep(std::time::Duration::new(time_to_sleep, 67812)).await;
 
+        // :clap: :clap: make new map!
+        let mut running_exec_futures: HashMap<String, _> = HashMap::new();
+
         // Check status
-        for exec_future in all_exec_futures.iter() {
-            println!("{}: {:?}", exec_future.0, exec_future.1.is_finished());
-            // TODO: Dequeue finished tasks.
+        for exec_future in all_exec_futures.into_iter() {
+            if debug {
+                println!("{}: {:?}", exec_future.0, exec_future.1.is_finished());
+            }
+            // Only re-insert the runnine exec futures
+            if !exec_future.1.is_finished() {
+                running_exec_futures.insert(exec_future.0, exec_future.1);
+            }
         }
+
+        // change the reference! This is insane but okay.
+        all_exec_futures = running_exec_futures;
     }
 }
 
@@ -242,3 +253,4 @@ mod tests {
 
     }
 }
+
