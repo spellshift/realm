@@ -290,6 +290,32 @@ mod tests {
 
         assert_eq!(response.id,"17179869186".to_string());
     }
+    // #[test] // This works.
+    // fn imix_graphql_ssl_test() {
+    //     let start_time = Utc::now();
+
+    //     let runtime = tokio::runtime::Builder::new_current_thread()
+    //         .enable_all()
+    //         .build()
+    //         .unwrap();
+
+    //     let response = runtime.block_on(
+    //     {
+    //             let client = reqwest::Client::builder()
+    //             .danger_accept_invalid_certs(true)
+    //             .build().unwrap();
+        
+    //             client.get("https://google.com/")
+    //             .header("Content-Type", "application/json")
+    //             .header("X-Realm-Auth", "letmeinnn")
+    //             .body("")
+    //             .send()
+    //         }
+    //     ).unwrap();
+
+    //     assert_eq!(response.status(), reqwest::StatusCode::OK);
+    // }
+
 }
 
 /*
