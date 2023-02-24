@@ -68,7 +68,7 @@ async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graph
     };
 
     // Send task response
-    let test_task_response = graphql::GraphQLSubmitTaskResultInput {
+    let task_response = graphql::GraphQLSubmitTaskResultInput {
         task_id: task.id.clone(),
         exec_started_at: start_time,
         exec_finished_at: Some(Utc::now()),
@@ -76,7 +76,7 @@ async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graph
         error: tome_output.1.clone(),
     };
 
-    let submit_task_result = graphql::gql_post_task_result(imix_callback_uri, test_task_response).await;
+    let submit_task_result = graphql::gql_post_task_result(imix_callback_uri, task_response).await;
     match submit_task_result {
         Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
         Err(error) => Err(error),
