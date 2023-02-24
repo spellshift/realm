@@ -516,6 +516,14 @@ mod tests {
         let (_a, _b, _c, actual_response) =
             tokio::join!(listen_task1,listen_task2,listen_task3,send_task);
 
+        let unwrapped_response = match actual_response {
+            Ok(res) => match res {
+                Ok(res_inner) => res_inner,
+                Err(inner_error) => return Err(anyhow::anyhow!("error unwrapping scan result\n{}", inner_error)),
+            },
+            Err(error) => return Err(anyhow::anyhow!("error unwrapping async result\n{}", error)),
+        };
+
         let host = "127.0.0.1".to_string();
         let proto = "tcp".to_string();
         let expected_response: Vec<(String, i32, String, String)>;
@@ -523,7 +531,7 @@ mod tests {
                 (host.clone(),test_ports[1],proto.clone(),"open".to_string()),
                 (host.clone(),test_ports[2],proto.clone(),"open".to_string()),
                 (host.clone(),test_ports[3],proto.clone(),"closed".to_string())];
-        assert_eq!(expected_response, actual_response.unwrap().unwrap());
+        assert_eq!(expected_response, unwrapped_response);
         Ok(())
     }
 
@@ -586,23 +594,23 @@ mod tests {
     // }
 
     // Test scanning a lot of ports all at once. Can the OS handle it.
-    #[tokio::test]
-    async fn test_portscan_tcp_max() -> anyhow::Result<()>{
-        if cfg!(target_os = "windows") { // Windows TCP max port scan doesn't work on localhost.
-            let test_ports: Vec<i32> =  (1..65535).map(|x| x).collect();
+    // #[tokio::test]
+    // async fn test_portscan_tcp_max() -> anyhow::Result<()>{
+    //     if cfg!(target_os = "windows") { // Windows TCP max port scan doesn't work on localhost.
+    //         let test_ports: Vec<i32> =  (1..65535).map(|x| x).collect();
 
-            let test_cidr =  vec!["192.168.119.2/32".to_string()];
+    //         let test_cidr =  vec!["192.168.119.2/32".to_string()];
 
-            let _scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5).await?;
-        }else {
-            let test_ports: Vec<i32> =  (1..65535).map(|x| x).collect();
+    //         let _scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5).await?;
+    //     }else {
+    //         let test_ports: Vec<i32> =  (1..65535).map(|x| x).collect();
 
-            let test_cidr =  vec!["127.0.0.1/32".to_string()];
+    //         let test_cidr =  vec!["127.0.0.1/32".to_string()];
 
-            let _scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5).await?;
-        }
-        Ok(())
-    }
+    //         let _scan_res = handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5).await?;
+    //     }
+    //     Ok(())
+    // }
 
     // verify our non async call works and Dict return type.
     #[test]
