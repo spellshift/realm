@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kcarretto/realm/contrib/tomes"
+	"github.com/kcarretto/realm/tavern/tomes"
 
 	"entgo.io/contrib/entgql"
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
@@ -102,7 +102,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	// Initialize Test Data
-	createTestData(ctx, client)
+	if cfg.IsTestDataEnabled() {
+		createTestData(ctx, client)
+	}
 
 	// Create GraphQL Handler
 	srv := handler.NewDefaultServer(graphql.NewSchema(client))

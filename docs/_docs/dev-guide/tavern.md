@@ -74,6 +74,18 @@ OAUTH_CLIENT_ID=123 go run ./tavern
 exit status 1
 ```
 
+## Test Data
+
+Running Tavern with the `ENABLE_TEST_DATA` environment variable set will populate the database with test data. This is useful for UI development, testing, or just interacting with Tavern and seeing how it works.
+
+```sh
+ENABLE_TEST_DATA=1 go run ./tavern
+2023/02/24 01:02:37 [WARN] MySQL is not configured, using SQLite
+2023/02/24 01:02:37 [WARN] OAuth is not configured, authentication disabled
+2023/02/24 01:02:37 [WARN] Test data is enabled
+2023/02/24 01:02:37 Starting HTTP server on 0.0.0.0:80
+```
+
 #### How it Works
 
 Tavern hosts two endpoints to support OAuth:
