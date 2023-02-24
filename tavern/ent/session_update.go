@@ -30,6 +30,20 @@ func (su *SessionUpdate) Where(ps ...predicate.Session) *SessionUpdate {
 	return su
 }
 
+// SetName sets the "name" field.
+func (su *SessionUpdate) SetName(s string) *SessionUpdate {
+	su.mutation.SetName(s)
+	return su
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (su *SessionUpdate) SetNillableName(s *string) *SessionUpdate {
+	if s != nil {
+		su.SetName(*s)
+	}
+	return su
+}
+
 // SetPrincipal sets the "principal" field.
 func (su *SessionUpdate) SetPrincipal(s string) *SessionUpdate {
 	su.mutation.SetPrincipal(s)
@@ -283,6 +297,11 @@ func (su *SessionUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (su *SessionUpdate) check() error {
+	if v, ok := su.mutation.Name(); ok {
+		if err := session.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Session.name": %w`, err)}
+		}
+	}
 	if v, ok := su.mutation.Principal(); ok {
 		if err := session.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Session.principal": %w`, err)}
@@ -328,6 +347,9 @@ func (su *SessionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := su.mutation.Name(); ok {
+		_spec.SetField(session.FieldName, field.TypeString, value)
 	}
 	if value, ok := su.mutation.Principal(); ok {
 		_spec.SetField(session.FieldPrincipal, field.TypeString, value)
@@ -487,6 +509,20 @@ type SessionUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *SessionMutation
+}
+
+// SetName sets the "name" field.
+func (suo *SessionUpdateOne) SetName(s string) *SessionUpdateOne {
+	suo.mutation.SetName(s)
+	return suo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (suo *SessionUpdateOne) SetNillableName(s *string) *SessionUpdateOne {
+	if s != nil {
+		suo.SetName(*s)
+	}
+	return suo
 }
 
 // SetPrincipal sets the "principal" field.
@@ -755,6 +791,11 @@ func (suo *SessionUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (suo *SessionUpdateOne) check() error {
+	if v, ok := suo.mutation.Name(); ok {
+		if err := session.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Session.name": %w`, err)}
+		}
+	}
 	if v, ok := suo.mutation.Principal(); ok {
 		if err := session.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Session.principal": %w`, err)}
@@ -817,6 +858,9 @@ func (suo *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err e
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := suo.mutation.Name(); ok {
+		_spec.SetField(session.FieldName, field.TypeString, value)
 	}
 	if value, ok := suo.mutation.Principal(); ok {
 		_spec.SetField(session.FieldPrincipal, field.TypeString, value)

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/kcarretto/realm/tavern/namegen"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
@@ -21,6 +23,11 @@ type Session struct {
 // Fields of the Session.
 func (Session) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("name").
+			NotEmpty().
+			Unique().
+			DefaultFunc(namegen.GetRandomName).
+			Comment("A human readable identifier for the session."),
 		field.String("principal").
 			Optional().
 			NotEmpty().

@@ -71,26 +71,32 @@ func init() {
 	job.NameValidator = jobDescName.Validators[0].(func(string) error)
 	sessionFields := schema.Session{}.Fields()
 	_ = sessionFields
+	// sessionDescName is the schema descriptor for name field.
+	sessionDescName := sessionFields[0].Descriptor()
+	// session.DefaultName holds the default value on creation for the name field.
+	session.DefaultName = sessionDescName.Default.(func() string)
+	// session.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	session.NameValidator = sessionDescName.Validators[0].(func(string) error)
 	// sessionDescPrincipal is the schema descriptor for principal field.
-	sessionDescPrincipal := sessionFields[0].Descriptor()
+	sessionDescPrincipal := sessionFields[1].Descriptor()
 	// session.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
 	session.PrincipalValidator = sessionDescPrincipal.Validators[0].(func(string) error)
 	// sessionDescHostname is the schema descriptor for hostname field.
-	sessionDescHostname := sessionFields[1].Descriptor()
+	sessionDescHostname := sessionFields[2].Descriptor()
 	// session.HostnameValidator is a validator for the "hostname" field. It is called by the builders before save.
 	session.HostnameValidator = sessionDescHostname.Validators[0].(func(string) error)
 	// sessionDescIdentifier is the schema descriptor for identifier field.
-	sessionDescIdentifier := sessionFields[2].Descriptor()
+	sessionDescIdentifier := sessionFields[3].Descriptor()
 	// session.DefaultIdentifier holds the default value on creation for the identifier field.
 	session.DefaultIdentifier = sessionDescIdentifier.Default.(func() string)
 	// session.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	session.IdentifierValidator = sessionDescIdentifier.Validators[0].(func(string) error)
 	// sessionDescAgentIdentifier is the schema descriptor for agentIdentifier field.
-	sessionDescAgentIdentifier := sessionFields[3].Descriptor()
+	sessionDescAgentIdentifier := sessionFields[4].Descriptor()
 	// session.AgentIdentifierValidator is a validator for the "agentIdentifier" field. It is called by the builders before save.
 	session.AgentIdentifierValidator = sessionDescAgentIdentifier.Validators[0].(func(string) error)
 	// sessionDescHostIdentifier is the schema descriptor for hostIdentifier field.
-	sessionDescHostIdentifier := sessionFields[4].Descriptor()
+	sessionDescHostIdentifier := sessionFields[5].Descriptor()
 	// session.HostIdentifierValidator is a validator for the "hostIdentifier" field. It is called by the builders before save.
 	session.HostIdentifierValidator = sessionDescHostIdentifier.Validators[0].(func(string) error)
 	tagFields := schema.Tag{}.Fields()
