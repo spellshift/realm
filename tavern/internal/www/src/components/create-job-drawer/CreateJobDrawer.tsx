@@ -10,12 +10,17 @@ import { StepJobStatus } from "./step-job-status";
 export const CreateJobDrawer = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [currStep, setCurrStep] = useState<number>(0);
+
+    const handleClose = () => {
+      setCurrStep(0);
+      onClose();
+    }
     
 
     return (
       <>
         <Button onClick={onOpen}>Open</Button>
-        <Drawer isOpen={isOpen} onClose={onClose} size="lg">
+        <Drawer isOpen={isOpen} onClose={handleClose} size="lg">
           <DrawerOverlay />
           <DrawerContent>
             <DrawerCloseButton />

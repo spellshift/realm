@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import Select from "react-select";
 import { StepIcon } from "../step-icon";
 import {MdFilterList} from "react-icons/md";
+import { m } from "framer-motion";
+import { TabFilterTargets } from "./tab-filter-targets";
 
 type StepSelectTargetsParams = {
     step: number;
@@ -20,30 +22,96 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
         setCurrStep(step -1);
     }
 
-    const options = [
-        { 
-        label: "Group 1", 
-        options:[
-            { value: "Abe", label: "Abe", customAbbreviation: ["ABC", "xyz"] },
-            { value: "Abe", label: "Abe", customAbbreviation: ["ABC", "xyz"] },
-            { value: "Abe", label: "Abe", customAbbreviation: ["ABC", "xyz"] },
-            { value: "Abe", label: "Abe", customAbbreviation: ["ABC", "xyz"] },
-            { value: "John", label: "John", customAbbreviation: ["JAF"] },
-            { value: "Dustin", label: "Dustin", customAbbreviation: ["DAD"] }
-        ]
+    const sessions = [
+        {
+            id: "15b9ec70-b3db-11ed-afa1-0242ac120002",
+            principal: "admin",
+            hostname:  "15b9ec70-b3db-11ed-afa1-0242ac120002",
+            identifier: "",
+            agentidentifier: "",
+            hostidentifier: "",
+            lastseenat: "",
+            tags: [{
+                id: "Relay",
+                name: "Relay",
+                kind: "service",
+                sessions: []
+                },
+                {
+                    id: "Team 1",
+                    name: "Team 1",
+                    kind: "group",
+                    sessions: []
+                }],
+            tasks: [],
         },
-        { 
-            label: "Group 2", 
-            options:[
-                { value: "Abe", label: "Abe", customAbbreviation: ["ABC", "xyz"] },
-                { value: "Abe", label: "Abe", customAbbreviation: ["ABC", "xyz"] },
-                { value: "Abe", label: "Abe", customAbbreviation: ["ABC", "xyz"] },
-                { value: "Abe", label: "Abe", customAbbreviation: ["ABC", "xyz"] },
-                { value: "John", label: "John", customAbbreviation: ["JAF"] },
-                { value: "Dustin", label: "Dustin", customAbbreviation: ["DAD"] }
-            ]
+        {
+            id: "15b9f04e-b3db-11ed-afa1-0242ac120002",
+            principal: "admin",
+            hostname:  "15b9f04e-b3db-11ed-afa1-0242ac120002",
+            identifier: "",
+            agentidentifier: "",
+            hostidentifier: "",
+            lastseenat: "",
+            tags: [{
+                id: "Web",
+                name: "Web",
+                kind: "service",
+                sessions: []
+                },
+                {
+                    id: "Team 1",
+                    name: "Team 1",
+                    kind: "group",
+                    sessions: []
+                }],
+            tasks: [],
+        },
+        {
+            id: "15b9f99a-b3db-11ed-afa1-0242ac120002",
+            principal: "admin",
+            hostname:  "15b9f99a-b3db-11ed-afa1-0242ac120002",
+            identifier: "",
+            agentidentifier: "",
+            hostidentifier: "",
+            lastseenat: "",
+            tags: [{
+                id: "Relay",
+                name: "Relay",
+                kind: "service",
+                sessions: []
+                },
+                {
+                    id: "Team 1",
+                    name: "Team 1",
+                    kind: "group",
+                    sessions: []
+                }],
+            tasks: [],
+        },
+        {
+            id: "25b9ffb2-b3db-11ed-afa1-0242ac120002",
+            principal: "admin",
+            hostname:  "25b9ffb2-b3db-11ed-afa1-0242ac120002",
+            identifier: "",
+            agentidentifier: "",
+            hostidentifier: "",
+            lastseenat: "",
+            tags: [{
+                id: "Web",
+                name: "Web",
+                kind: "service",
+                sessions: []
+                },
+                {
+                    id: "Team 3",
+                    name: "Team 3",
+                    kind: "group",
+                    sessions: []
+                }],
+            tasks: [],
         }
-    ];
+    ]
 
     const formatOptionLabel = ({ value , label, customAbbreviation }: {value: string, label: string, customAbbreviation: Array<string>}) => (
         <Stack direction={"row"} align={"start"} >
@@ -71,79 +139,11 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
                     <StackItem>
                     <Tabs size='md' variant='enclosed' colorScheme="purple">
                         <TabList>
-                            <Tab>Hosts to select</Tab>
-                            <Tab>Hosts selected (0)</Tab>
+                            <Tab>Targets to select</Tab>
+                            <Tab>Targets selected (0)</Tab>
                         </TabList>
                         <TabPanels>
-                            <TabPanel >
-                                <Stack direction={"row"} gap="1">
-                                    <StackItem>
-                                        <Icon as={MdFilterList} />
-                                    </StackItem>
-                                    <StackItem>
-                                        <Heading size="sm"> Filter by selecting service, group, or host:</Heading>
-                                    </StackItem>
-                                </Stack>
-                                <Select 
-                                    isMulti
-                                    options={options}
-                                />  
-                                {/* <Grid templateColumns='repeat(12, 1fr)' gap={1}>
-                                    <GridItem colSpan={6}>
-                                        Team:
-                                        <Select 
-                                                isMulti
-                                                options={options}
-                                            />          
-                                    </GridItem>
-                                    <GridItem colSpan={6}>
-                                        Service:
-                                        <Select 
-                                                isMulti
-                                                options={options}
-                                            />          
-                                    </GridItem>
-                                </Grid> */}
-                                <Container mt={4} p={2} className="md-scroll-container" borderRadius={"md"}>
-                                    <Stack direction="column" gap={1}>
-                                        <StackItem>
-                                            <Button>Select all options below</Button>
-                                        </StackItem>
-                                        <StackItem>
-                                            <Card>
-                                                <CardBody>
-                                                    <Checkbox colorScheme={"purple"} size="lg">
-                                                        <Stack ml={4} w={"xl"}>
-                                                            <StackItem>
-                                                                <Heading size={"sm"}>Host</Heading>
-                                                            </StackItem>
-                                                            <StackItem>
-                                                                Team | Service
-                                                            </StackItem>
-                                                        </Stack>
-                                                    </Checkbox>
-                                                </CardBody>
-                                            </Card>
-                                        </StackItem>
-                                        <StackItem>
-                                            <Card>
-                                                <CardBody>
-                                                    <Checkbox colorScheme={"purple"} size="lg">
-                                                        <Stack ml={4} w={"xl"}>
-                                                            <StackItem>
-                                                                <Heading size={"sm"}>Host</Heading>
-                                                            </StackItem>
-                                                            <StackItem>
-                                                                Team | Service
-                                                            </StackItem>
-                                                        </Stack>
-                                                    </Checkbox>
-                                                </CardBody>
-                                            </Card>
-                                        </StackItem>
-                                    </Stack>
-                                </Container>
-                            </TabPanel>
+                            <TabFilterTargets sessions={sessions}/>
                             <TabPanel>
                             <p>two!</p>
                             </TabPanel>
