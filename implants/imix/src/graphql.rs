@@ -4,15 +4,15 @@ use chrono::{DateTime, Utc};
 // https://time-rs.github.io/api/time/format_description/well_known/struct.Rfc3339.html
 // ------------- GraphQL claimTasks request -------------
 #[derive(Serialize, Deserialize, Clone)]
-pub(crate) struct GraphQLClaimTasksInput {
-    pub(crate) principal: String,
-    pub(crate) hostname: String,
+pub struct GraphQLClaimTasksInput {
+    pub principal: String,
+    pub hostname: String,
     #[serde(rename="sessionIdentifier")]
-    pub(crate) session_identifier: String,
+    pub session_identifier: String,
     #[serde(rename="hostIdentifier")]
-    pub(crate) host_identifier: String,
+    pub host_identifier: String,
     #[serde(rename="agentIdentifier")]
-    pub(crate) agent_identifier: String,
+    pub agent_identifier: String,
 }
 
 #[derive(Serialize, Deserialize)]
