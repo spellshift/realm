@@ -42,6 +42,11 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	)
 }
 
+// IsTestDataEnabled returns true if a value for the "ENABLE_TEST_DATA" environment variable is set.
+func (cfg *Config) IsTestDataEnabled() bool {
+	return os.Getenv("ENABLE_TEST_DATA") != ""
+}
+
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be
 // overwritten with Tavern's HTTP handler when Tavern is run.
 func ConfigureHTTPServer(address string, options ...func(*http.Server)) func(*Config) {

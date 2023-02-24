@@ -180,14 +180,22 @@ func (s *Session) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     s.ID,
 		Type:   "Session",
-		Fields: make([]*Field, 6),
+		Fields: make([]*Field, 7),
 		Edges:  make([]*Edge, 2),
 	}
 	var buf []byte
-	if buf, err = json.Marshal(s.Principal); err != nil {
+	if buf, err = json.Marshal(s.Name); err != nil {
 		return nil, err
 	}
 	node.Fields[0] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(s.Principal); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
 		Type:  "string",
 		Name:  "principal",
 		Value: string(buf),
@@ -195,7 +203,7 @@ func (s *Session) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(s.Hostname); err != nil {
 		return nil, err
 	}
-	node.Fields[1] = &Field{
+	node.Fields[2] = &Field{
 		Type:  "string",
 		Name:  "hostname",
 		Value: string(buf),
@@ -203,7 +211,7 @@ func (s *Session) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(s.Identifier); err != nil {
 		return nil, err
 	}
-	node.Fields[2] = &Field{
+	node.Fields[3] = &Field{
 		Type:  "string",
 		Name:  "identifier",
 		Value: string(buf),
@@ -211,7 +219,7 @@ func (s *Session) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(s.AgentIdentifier); err != nil {
 		return nil, err
 	}
-	node.Fields[3] = &Field{
+	node.Fields[4] = &Field{
 		Type:  "string",
 		Name:  "agentIdentifier",
 		Value: string(buf),
@@ -219,7 +227,7 @@ func (s *Session) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(s.HostIdentifier); err != nil {
 		return nil, err
 	}
-	node.Fields[4] = &Field{
+	node.Fields[5] = &Field{
 		Type:  "string",
 		Name:  "hostIdentifier",
 		Value: string(buf),
@@ -227,7 +235,7 @@ func (s *Session) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(s.LastSeenAt); err != nil {
 		return nil, err
 	}
-	node.Fields[5] = &Field{
+	node.Fields[6] = &Field{
 		Type:  "time.Time",
 		Name:  "lastSeenAt",
 		Value: string(buf),
