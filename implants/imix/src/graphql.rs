@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anyhow::{Error};
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
@@ -115,6 +117,7 @@ mutation ImixCallback($input: ClaimTasksInput!) {
     };
 
     let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
         .danger_accept_invalid_certs(true)
         .build()?;
 
@@ -202,6 +205,7 @@ pub async fn gql_post_task_result(uri: String, task_result: GraphQLSubmitTaskRes
     };
 
     let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
         .danger_accept_invalid_certs(true)
         .build()?;
 
@@ -290,31 +294,32 @@ mod tests {
 
         assert_eq!(response.id,"17179869186".to_string());
     }
-    // #[test] // This works.
-    // fn imix_graphql_ssl_test() {
-    //     let start_time = Utc::now();
+    #[test] // This works.
+    fn imix_graphql_ssl_test() {
+        let start_time = Utc::now();
 
-    //     let runtime = tokio::runtime::Builder::new_current_thread()
-    //         .enable_all()
-    //         .build()
-    //         .unwrap();
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
 
-    //     let response = runtime.block_on(
-    //     {
-    //             let client = reqwest::Client::builder()
-    //             .danger_accept_invalid_certs(true)
-    //             .build().unwrap();
+        let response = runtime.block_on(
+        {
+                let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(5))
+                .danger_accept_invalid_certs(true)
+                .build().unwrap();
         
-    //             client.get("https://google.com/")
-    //             .header("Content-Type", "application/json")
-    //             .header("X-Realm-Auth", "letmeinnn")
-    //             .body("")
-    //             .send()
-    //         }
-    //     ).unwrap();
+                client.get("https://google.com/")
+                .header("Content-Type", "application/json")
+                .header("X-Realm-Auth", "letmeinnn")
+                .body("")
+                .send()
+            }
+        ).unwrap();
 
-    //     assert_eq!(response.status(), reqwest::StatusCode::OK);
-    // }
+        assert_eq!(response.status(), reqwest::StatusCode::OK);
+    }
 
 }
 
