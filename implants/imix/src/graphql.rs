@@ -73,15 +73,7 @@ struct GraphQLClaimTaskResponseEnvelope {
     data: GraphQLClaimTasksOutput,
 }
 
-pub async fn gql_claim_tasks(uri: String) -> Result<Vec<GraphQLTask>, Error> {
-    let input_variable = GraphQLClaimTasksInput {
-        principal: "root".to_string(),
-        hostname: "localhost".to_string(),
-        session_identifier: "s1234".to_string(),
-        host_identifier: "h1234".to_string(),
-        agent_identifier: "a1234".to_string(),
-    };
-
+pub async fn gql_claim_tasks(uri: String, claim_task_input_variable: GraphQLClaimTasksInput) -> Result<Vec<GraphQLTask>, Error> {
     let req_body = match serde_json::to_string(&
     GraphQLClaimRequestEnvelope {
         operation_name: String::from("ImixCallback"),
@@ -115,7 +107,7 @@ mutation ImixCallback($input: ClaimTasksInput!) {
     }
 }"#),
         variables: GraphQLClaimTaskVariableEnvelope{
-            input: input_variable
+            input: claim_task_input_variable
         },
     }) {
         Ok(json_req_body) => json_req_body,
@@ -247,13 +239,22 @@ mod tests {
             .respond_with(status_code(200).body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"test_exe3","tome":{"id":"21474836482","name":"Shell Execute","description":"Execute a shell script using the default interpreter. /bin/bash for macos \u0026 linux, and cmd.exe for windows.","parameters":"{\"cmd\":\"string\"}","eldritch":"sys.shell(eld.get_param('cmd'))","files":[]},"bundle":null}},{"id":"17179869186","job":{"id":"4294967298","name":"test_exe2","tome":{"id":"21474836482","name":"Shell Execute","description":"Execute a shell script using the default interpreter. /bin/bash for macos \u0026 linux, and cmd.exe for windows.","parameters":"{\"cmd\":\"string\"}","eldritch":"sys.shell(eld.get_param('cmd'))","files":[]},"bundle":null}}]}}"#))
         );
 
+        let input_variable = GraphQLClaimTasksInput {
+            principal: "root".to_string(),
+            hostname: "localhost".to_string(),
+            session_identifier: "bdf0b788-b32b-4faf-8719-93cd3955b043".to_string(),
+            host_identifier: "bdf0b788-b32b-4faf-8719-93cd3955b043".to_string(),
+            agent_identifier: "imix".to_string(),
+        };
+    
+
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
 
         let response = runtime.block_on(
-            gql_claim_tasks(server.url("/graphql").to_string())
+            gql_claim_tasks(server.url("/graphql").to_string(), input_variable)
         ).unwrap();
         for task in response {
             assert!(task.job.unwrap().name.contains("test_exe"))
