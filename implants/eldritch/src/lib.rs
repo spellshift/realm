@@ -4,11 +4,15 @@ pub mod sys;
 pub mod params;
 pub mod pivot;
 
-use starlark::{starlark_module};
+use std::collections::HashMap;
+
+use starlark::collections::SmallMap;
+use starlark::values::dict::{FrozenDict, Dict};
+use starlark::{starlark_module, const_frozen_string};
 use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
-use starlark::values::{Value, AllocValue};
+use starlark::values::{Value, FrozenValue, FrozenHeap, Heap};
 
 use file::FileLibrary;
 use process::ProcessLibrary;
@@ -20,13 +24,14 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const file: FileLibrary = FileLibrary();
         const process: ProcessLibrary = ProcessLibrary();
         const sys: SysLibrary = SysLibrary();
+        const input_vars: FrozenValue = input_vars;
     }
 
     let globals = GlobalsBuilder::extended().with(eldritch).build();
     return Ok(globals);
 }
 
-pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_params: Option<String>) -> anyhow::Result<String> {
+pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameters: Option<String>) -> anyhow::Result<String> {
     let ast: AstModule;
     match AstModule::parse(
             &tome_filename,
@@ -53,7 +58,6 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_params: O
         Err(eval_error) => return Err(anyhow::anyhow!("Eldritch eval_module failed:\n{}", eval_error)),
     };
 
-    // Ok(res.unpack_str().unwrap().to_string())
     let res_str = match res.unpack_str() {
         Some(res) => res.to_string(),
         None => return Err(anyhow::anyhow!("Failed to unpack result as str")),
@@ -96,7 +100,7 @@ dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "s
 "#,
         );
     }
-
+    
     #[test]
     fn test_library_parameter_input() -> anyhow::Result<()>{
         // Create test script
