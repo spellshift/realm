@@ -190,7 +190,8 @@ async fn main_loop(config_path: String) -> Result<()> {
                 if debug {
                     println!("main_loop: error claiming task\n{:?}", error)
                 }
-                continue;
+                let empty_vec = vec![];
+                empty_vec
             },
         };
 
@@ -275,8 +276,8 @@ pub fn main() -> Result<(), imix::Error> {
 
     if let Some(config_path) = matches.value_of("config") {
         match runtime.block_on(main_loop(config_path.to_string())) {
-            Ok(_) => todo!(),
-            Err(_) => todo!(),
+            Ok(_) => {},
+            Err(error) => println!("Imix mail_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
         }
     }
     Ok(())
