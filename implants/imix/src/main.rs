@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 use std::fs::File;
-use std::io::{BufReader, Write};
+use std::io::Write;
 use std::path::Path;
 use std::time::Instant;
 use chrono::Utc;
@@ -123,8 +123,7 @@ async fn main_loop(config_path: String) -> Result<()> {
     let debug = true;
     let version_string = "v0.1.0";
     let config_file = File::open(config_path)?;
-    let reader = BufReader::new(config_file);
-    let imix_config: imix::Config = serde_json::from_reader(reader)?;
+    let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
     let mut all_exec_futures: HashMap<String, _> = HashMap::new();
 
@@ -132,7 +131,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         Ok(username) => username,
         Err(error) => {
             if debug {
-                return Err(anyhow::anyhow!("Unable to get process username"));
+                return Err(anyhow::anyhow!("Unable to get process username\n{}", error));
             }
             "UNKNOWN".to_string()
         },
@@ -142,7 +141,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         Ok(tmp_hostname) => tmp_hostname,
         Err(error) => {
             if debug {
-                return Err(anyhow::anyhow!("Unable to get system hostname"));
+                return Err(anyhow::anyhow!("Unable to get system hostname\n{}", error));
             }
             "UNKNOWN".to_string()
         },
@@ -152,7 +151,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         Ok(tmp_session_id) => tmp_session_id,
         Err(error) => {
             if debug {
-                return Err(anyhow::anyhow!("Unable to get a random session id"));
+                return Err(anyhow::anyhow!("Unable to get a random session id\n{}", error));
             }
             "DANGER-UNKNOWN".to_string()
         },
@@ -162,7 +161,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         Ok(tmp_host_id) => tmp_host_id,
         Err(error) => {
             if debug {
-                return Err(anyhow::anyhow!("Unable to get or create a host id"));
+                return Err(anyhow::anyhow!("Unable to get or create a host id\n{}", error));
             }
             "DANGER-UNKNOWN".to_string()
         },
@@ -185,7 +184,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
 
         // 1b) Collect new tasks
-        let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri.clone(), claim_tasks_input).await {
+        let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri.clone(), claim_tasks_input.clone()).await {
             Ok(tasks) => tasks,
             Err(error) => {
                 if debug {
@@ -212,7 +211,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         // 3. Sleep till callback time
         //                                  time_to_wait          -         time_elapsed
         let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs() ;
-        tokio::time::sleep(std::time::Duration::new(time_to_sleep, 67812)).await;
+        tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await;
 
         // :clap: :clap: make new map!
         let mut running_exec_futures: HashMap<String, _> = HashMap::new();
