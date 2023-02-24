@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kcarretto/realm/contrib/tomes"
+	"github.com/kcarretto/realm/tavern/tomes"
 
 	"entgo.io/contrib/entgql"
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
