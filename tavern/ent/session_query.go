@@ -330,12 +330,12 @@ func (sq *SessionQuery) WithTasks(opts ...func(*TaskQuery)) *SessionQuery {
 // Example:
 //
 //	var v []struct {
-//		Principal string `json:"principal,omitempty"`
+//		Name string `json:"name,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Session.Query().
-//		GroupBy(session.FieldPrincipal).
+//		GroupBy(session.FieldName).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (sq *SessionQuery) GroupBy(field string, fields ...string) *SessionGroupBy {
@@ -358,11 +358,11 @@ func (sq *SessionQuery) GroupBy(field string, fields ...string) *SessionGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Principal string `json:"principal,omitempty"`
+//		Name string `json:"name,omitempty"`
 //	}
 //
 //	client.Session.Query().
-//		Select(session.FieldPrincipal).
+//		Select(session.FieldName).
 //		Scan(ctx, &v)
 func (sq *SessionQuery) Select(fields ...string) *SessionSelect {
 	sq.fields = append(sq.fields, fields...)
