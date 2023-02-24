@@ -1,120 +1,56 @@
-import React from 'react';
-import graphql from 'babel-plugin-relay/macro';
+import * as React from "react"
 import {
-  RelayEnvironmentProvider,
-  loadQuery, 
-  usePreloadedQuery,
-} from 'react-relay/hooks';
-import RelayEnvironment from './RelayEnvironment';
-import node from './__generated__/AppTargetsQuery.graphql';
-import Drawer from '@mui/material/Drawer';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Divider from '@mui/material/Divider';
-import Toolbar from '@mui/material/Toolbar';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
+  ChakraProvider,
+  Box,
+  Text,
+  Link,
+  VStack,
+  Code,
+  Grid,
+  theme,
+  GridItem,
+  Card,
+  CardHeader,
+  Heading,
+  CardBody,
+  CardFooter,
+  Drawer,
+} from "@chakra-ui/react";
+import { ColorModeSwitcher } from "./ColorModeSwitcher";
+import { Logo } from "./Logo";
+import './style.css';
 
-const { Suspense } = React;
+import { CreateJobDrawer } from "./components/create-job-drawer/CreateJobDrawer";
 
-// Define a query
-const AppTargetsQuery = graphql`
-query AppTargetsQuery {
-  targets(where:{name:"Test"}) {
-    edges {
-      node {
-        id
-        name
-        forwardConnectIP
-        credentials {
-          id 
-          kind
-          principal
-          secret
-        }
-      }
-    }
-  }
-}
-`;
+export const App = () => (
+  <ChakraProvider theme={theme}>
+    <CreateJobDrawer />
+    {/* <Box p={8}>
+    <Grid templateColumns='repeat(4, 1fr)' gap={8}>
+      <GridItem colSpan={3}>
+        <Grid templateColumns='repeat(4, 1fr)' gap={8}>
+          <GridItem>
+            <Card>
+              <CardHeader>
+                <Heading size="md">Shell execution</Heading>
+                <Text size="sm">Remote execution tome</Text>
+              </CardHeader>
+              <CardBody>
+              <Text size="sm">
+                Execute a shell script using the default interpreter. /bin/bash for macos & linux, and cmd.exe for windows.
+              </Text> 
+              </CardBody>
+              <CardFooter>
 
-// Immediately load the query as our app starts. For a real app, we'd move this
-// into our routing configuration, preloading data as we transition to new routes.
-const preloadedQuery = loadQuery(RelayEnvironment, AppTargetsQuery, {
-  /* query variables */
-});
-
-// Inner component that reads the preloaded query results via `usePreloadedQuery()`.
-// This works as follows:
-// - If the query has completed, it returns the results of the query.
-// - If the query is still pending, it "suspends" (indicates to React that the
-//   component isn't ready to render yet). This will show the nearest <Suspense>
-//   fallback.
-// - If the query failed, it throws the failure error. For simplicity we aren't
-//   handling the failure case here.
-function App(props: any) {
-  const data: any = usePreloadedQuery(AppTargetsQuery, props.preloadedQuery);
-
-  return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Tavern</h1>
-        <p>{data.targets.edges.map((target: any) => <li key={target.node.id}>{target.node.name}: {target.node.forwardConnectIP}</li>)}</p>
-      </header>
-      <Drawer
-        // sx={{
-        //   width: drawerWidth,
-        //   flexShrink: 0,
-        //   '& .MuiDrawer-paper': {
-        //     width: drawerWidth,
-        //     boxSizing: 'border-box',
-        //   },
-        // }}
-        variant="permanent"
-        anchor="left"
-      >
-        <Toolbar />
-        <Divider />
-        <List>
-          {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-            <ListItem button key={text}>
-              <ListItemIcon>
-                <InboxIcon />
-              </ListItemIcon>
-              <ListItemText primary={text} />
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
-        <List>
-          {['All mail', 'Trash', 'Spam'].map((text, index) => (
-            <ListItem button key={text}>
-              <ListItemIcon>
-                <InboxIcon />
-              </ListItemIcon>
-              <ListItemText primary={text} />
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
-    </div>
-  );
-}
-
-// The above component needs to know how to access the Relay environment, and we
-// need to specify a fallback in case it suspends:
-// - <RelayEnvironmentProvider> tells child components how to talk to the current
-//   Relay Environment instance
-// - <Suspense> specifies a fallback in case a child suspends.
-function AppRoot(props: any) {
-  return (
-    <RelayEnvironmentProvider environment={RelayEnvironment}>
-      <Suspense fallback={'Loading...'}>
-        <App preloadedQuery={preloadedQuery} />
-      </Suspense>
-    </RelayEnvironmentProvider>
-  );
-}
-
-export default AppRoot;
+              </CardFooter>
+            </Card>
+          </GridItem>
+        </Grid>
+      </GridItem>
+      <GridItem colSpan={1}>
+        Cart
+      </GridItem>
+    </Grid>
+    </Box> */}
+  </ChakraProvider>
+)
