@@ -102,7 +102,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	// Initialize Test Data
-	createTestData(ctx, client)
+	if cfg.IsTestDataEnabled() {
+		createTestData(ctx, client)
+	}
 
 	// Create GraphQL Handler
 	srv := handler.NewDefaultServer(graphql.NewSchema(client))
