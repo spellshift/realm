@@ -40,9 +40,18 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String) -> anyhow::Res
     let module: Module = Module::new();
 
     let mut eval: Evaluator = Evaluator::new(&module);
-    let res: Value = eval.eval_module(ast, &globals).unwrap();
+    let res: Value = match eval.eval_module(ast, &globals) {
+        Ok(eval_val) => eval_val,
+        Err(eval_error) => return Err(anyhow::anyhow!("Eldritch eval_module failed:\n{}", eval_error)),
+    };
 
-    Ok(res.unpack_str().unwrap().to_string())
+    // Ok(res.unpack_str().unwrap().to_string())
+    let res_str = match res.unpack_str() {
+        Some(res) => res.to_string(),
+        None => return Err(anyhow::anyhow!("Failed to unpack result as str")),
+    };
+
+    Ok(res_str)
 }
 
 #[cfg(test)]
