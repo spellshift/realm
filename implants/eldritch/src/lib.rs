@@ -71,9 +71,9 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
             let tmp_value: i32 = match value.as_i64() {
                 Some(tmp_i64) => match tmp_i64.try_into() {
                     Ok(tmp_i32) => tmp_i32,
-                    Err(_) => std::i32::MAX.into(),
+                    Err(_) => i32::MAX.into(),
                 },
-                None => std::i32::MAX.into(),
+                None => i32::MAX.into(),
             };
             new_value = Value::new_int(tmp_value);
         }
@@ -149,6 +149,20 @@ input_vars["number"]
         let param_string = r#"{"number":1}"#.to_string();
         let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
         assert_eq!(test_res.unwrap(), "1".to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_library_parameter_input_max_u64() -> anyhow::Result<()>{
+        // Create test script
+        let test_content = format!(r#"
+x = input_vars["number"] - 1
+x
+"#);
+        let param_string = format!("{{\"number\":{}}}", u64::MAX);
+        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
+        // println!("{:?}", test_res);
+        assert_eq!(test_res.unwrap(), "2147483646".to_string()); // i32::MAX-1
         Ok(())
     }
 
