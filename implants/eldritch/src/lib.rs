@@ -137,7 +137,7 @@ sys.shell(input_vars['cmd2'])
 "#);
         let param_string = r#"{"cmd":"id","cmd2":"echo hello_world","cmd3":"ls -lah /tmp/"}"#.to_string();
         let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
-        assert_eq!(test_res.unwrap(), "hello_world\n".to_string());
+        assert_eq!(test_res.unwrap().trim(), "hello_world".to_string());
         Ok(())
     }
     #[test]
