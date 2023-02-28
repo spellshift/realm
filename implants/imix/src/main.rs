@@ -40,7 +40,7 @@ async fn handle_exec_tome(task: GraphQLTask) -> Result<(String,String)> {
     let tome_contents = task_job.tome.eldritch;
 
     // Execute a tome script
-    let res = eldritch_run(tome_name, tome_contents, None);
+    let res = eldritch_run(tome_name, tome_contents, task_job.tome.parameters);
     match res {
         Ok(tome_output) => Ok((tome_output, "".to_string())),
         Err(tome_error) => Ok(("".to_string(), tome_error.to_string())),
