@@ -43,7 +43,6 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
         None => "".to_string(),
     };
 
-
     let globals = get_eldritch()?;
 
     let module: Module = Module::new();
