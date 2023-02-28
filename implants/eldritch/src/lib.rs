@@ -9,7 +9,8 @@ use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
-use starlark::values::{Value, AllocValue};
+use starlark::values::list::List;
+use starlark::values::{Value, AllocValue, ValueTyped};
 
 use file::FileLibrary;
 use process::ProcessLibrary;
@@ -53,9 +54,34 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
     let parsed: serde_json::Value = serde_json::from_str(&tome_params_str)?;
     let obj: serde_json::Map<String, serde_json::Value> = parsed.as_object().unwrap().clone();
     for (key, value) in obj.iter() {
+        let mut new_value: Value = Value::new_none();
         let new_key = module.heap().alloc_str(&key);
-        let new_value = module.heap().alloc_str(value.as_str().unwrap());
-        input_vars.insert_hashed(new_key.to_value().get_hashed().unwrap(), new_value.to_value());
+
+        if value.is_string() {
+            new_value = module.heap().alloc_str(value.as_str().unwrap()).to_value();
+        }else if value.is_array() {
+            let mut tmp_list: Vec<Value> = Vec::new();
+            for sub_value in value.as_array().unwrap() {
+                if sub_value.is_string() {
+                    tmp_list.push(module.heap().alloc_str(sub_value.as_str().unwrap()).to_value());
+                }
+            }
+            new_value = module.heap().alloc_list(tmp_list.as_slice());
+        }else if value.is_u64() || value.is_i64() || value.is_f64() || value.is_number() {
+            // Down cast the number to i32. On failure return max i32.
+            let tmp_value: i32 = match value.as_i64() {
+                Some(tmp_i64) => match tmp_i64.try_into() {
+                    Ok(tmp_i32) => tmp_i32,
+                    Err(_) => std::i32::MAX.into(),
+                },
+                None => std::i32::MAX.into(),
+            };
+            new_value = Value::new_int(tmp_value);
+        } else {
+            return Err(anyhow::anyhow!("Unsupported type for param value"));
+        }
+
+        input_vars.insert_hashed(new_key.to_value().get_hashed().unwrap(), new_value);
     }
 
     module.set("input_vars", input_vars.alloc_value(module.heap()));
@@ -66,10 +92,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
         Err(eval_error) => return Err(anyhow::anyhow!("Eldritch eval_module failed:\n{}", eval_error)),
     };
 
-    let res_str = match res.unpack_str() {
-        Some(res) => res.to_string(),
-        None => return Err(anyhow::anyhow!("Failed to unpack result as str")),
-    };
+    let res_str = res.to_string();
 
     Ok(res_str)
 }
@@ -110,7 +133,7 @@ dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "s
     }
     
     #[test]
-    fn test_library_parameter_input() -> anyhow::Result<()>{
+    fn test_library_parameter_input_string() -> anyhow::Result<()>{
         // Create test script
         let test_content = format!(r#"
 sys.shell(input_vars['cmd2'])
@@ -120,4 +143,16 @@ sys.shell(input_vars['cmd2'])
         assert_eq!(test_res.unwrap(), "hello_world\n".to_string());
         Ok(())
     }
+    #[test]
+    fn test_library_parameter_input_number() -> anyhow::Result<()>{
+        // Create test script
+        let test_content = format!(r#"
+input_vars["number"]
+"#);
+        let param_string = r#"{"number":1}"#.to_string();
+        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
+        assert_eq!(test_res.unwrap(), "1".to_string());
+        Ok(())
+    }
+
 }
