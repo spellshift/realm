@@ -1,7 +1,6 @@
 pub mod file;
 pub mod process;
 pub mod sys;
-pub mod params;
 pub mod pivot;
 
 use starlark::collections::SmallMap;
@@ -10,8 +9,7 @@ use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
-use starlark::values::none::NoneType;
-use starlark::values::{Value, AllocValue, ValueTyped};
+use starlark::values::{Value, AllocValue};
 
 use file::FileLibrary;
 use process::ProcessLibrary;
