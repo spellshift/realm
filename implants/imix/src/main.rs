@@ -303,7 +303,7 @@ mod tests {
                     description: "Execute a command in the default system shell".to_string(),
                     parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
                     eldritch: r#"
-sys.shell(params.get("cmd"))
+sys.shell(input_vars["cmd"])
 "#.to_string(),
                     files: [].to_vec(),
                 },
