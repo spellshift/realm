@@ -1,13 +1,14 @@
 pub mod file;
 pub mod process;
 pub mod sys;
+pub mod params;
 pub mod pivot;
 
 use starlark::{starlark_module};
 use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
-use starlark::values::Value;
+use starlark::values::{Value, AllocValue};
 
 use file::FileLibrary;
 use process::ProcessLibrary;
@@ -25,7 +26,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
     return Ok(globals);
 }
 
-pub fn eldritch_run(tome_filename: String, tome_contents: String) -> anyhow::Result<String> {
+pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_params: Option<String>) -> anyhow::Result<String> {
     let ast: AstModule;
     match AstModule::parse(
             &tome_filename,
@@ -36,8 +37,15 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String) -> anyhow::Res
             Err(err) => return Err(err),
     }
 
+    let tome_params_str: String = match tome_params {
+        Some(param_string) => param_string,
+        None => "".to_string(),
+    };
+    let mod_params = params::get(tome_params_str);
+
     let globals = get_eldritch()?;
     let module: Module = Module::new();
+    module.set("params", mod_params.alloc_value(module.heap()));
 
     let mut eval: Evaluator = Evaluator::new(&module);
     let res: Value = match eval.eval_module(ast, &globals) {
@@ -56,6 +64,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String) -> anyhow::Res
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use starlark::environment::{GlobalsBuilder};
     use starlark::{starlark_module};
     use starlark::assert::Assert;
@@ -86,5 +95,17 @@ dir(sys) == ["dll_inject", "exec", "is_linux", "is_macos", "is_windows", "shell"
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_exec", "ssh_password_spray"]
 "#,
         );
+    }
+
+    #[test]
+    fn test_library_parameter_input() -> anyhow::Result<()>{
+        // Create test script
+        let test_content = format!(r#"
+print(params.get("cmd"))
+"#);
+        let param_string = r#"{"cmd":"id"}"#.to_string();
+        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
+        println!("{:?}", test_res);
+        Ok(())
     }
 }
