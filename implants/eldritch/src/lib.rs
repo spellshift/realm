@@ -4,11 +4,14 @@ pub mod sys;
 pub mod params;
 pub mod pivot;
 
+use starlark::collections::SmallMap;
 use starlark::starlark_module;
 use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
-use starlark::values::{Value, AllocValue};
+use starlark::values::dict::Dict;
+use starlark::values::none::NoneType;
+use starlark::values::{Value, AllocValue, ValueTyped};
 
 use file::FileLibrary;
 use process::ProcessLibrary;
@@ -41,11 +44,24 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
         Some(param_string) => param_string,
         None => "".to_string(),
     };
-    let mod_params = params::get(tome_params_str);
+
 
     let globals = get_eldritch()?;
+
     let module: Module = Module::new();
-    module.set("params", mod_params.alloc_value(module.heap()));
+
+    let res: SmallMap<Value, Value> = SmallMap::new();
+    let mut input_vars: Dict = Dict::new(res);
+
+    let parsed: serde_json::Value = serde_json::from_str(&tome_params_str)?;
+    let obj: serde_json::Map<String, serde_json::Value> = parsed.as_object().unwrap().clone();
+    for (key, value) in obj.iter() {
+        let new_key = module.heap().alloc_str(&key);
+        let new_value = module.heap().alloc_str(value.as_str().unwrap());
+        input_vars.insert_hashed(new_key.to_value().get_hashed().unwrap(), new_value.to_value());
+    }
+
+    module.set("input_vars", input_vars.alloc_value(module.heap()));
 
     let mut eval: Evaluator = Evaluator::new(&module);
     let res: Value = match eval.eval_module(ast, &globals) {
@@ -100,7 +116,7 @@ dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "s
     fn test_library_parameter_input() -> anyhow::Result<()>{
         // Create test script
         let test_content = format!(r#"
-sys.shell(params.get("cmd2"))
+sys.shell(input_vars['cmd2'])
 "#);
         let param_string = r#"{"cmd":"id","cmd2":"echo hello_world","cmd3":"ls -lah /tmp/"}"#.to_string();
         let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
