@@ -9,8 +9,7 @@ use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
-use starlark::values::list::List;
-use starlark::values::{Value, AllocValue, ValueTyped};
+use starlark::values::{Value, AllocValue};
 
 use file::FileLibrary;
 use process::ProcessLibrary;
@@ -77,8 +76,6 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
                 None => std::i32::MAX.into(),
             };
             new_value = Value::new_int(tmp_value);
-        } else {
-            return Err(anyhow::anyhow!("Unsupported type for param value"));
         }
 
         input_vars.insert_hashed(new_key.to_value().get_hashed().unwrap(), new_value);
@@ -92,7 +89,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
         Err(eval_error) => return Err(anyhow::anyhow!("Eldritch eval_module failed:\n{}", eval_error)),
     };
 
-    let res_str = res.to_string();
+    let res_str = res.to_str();
 
     Ok(res_str)
 }
@@ -152,6 +149,18 @@ input_vars["number"]
         let param_string = r#"{"number":1}"#.to_string();
         let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
         assert_eq!(test_res.unwrap(), "1".to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_library_parameter_input_str_array() -> anyhow::Result<()>{
+        // Create test script
+        let test_content = format!(r#"
+input_vars
+"#);
+        let param_string = r#"{"list_key":["item1","item2","item3"]}"#.to_string();
+        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
+        assert_eq!(test_res.unwrap(), r#"{"list_key": ["item1", "item2", "item3"]}"#);
         Ok(())
     }
 
