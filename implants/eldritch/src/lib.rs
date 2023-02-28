@@ -4,15 +4,11 @@ pub mod sys;
 pub mod params;
 pub mod pivot;
 
-use std::collections::HashMap;
-
-use starlark::collections::SmallMap;
-use starlark::values::dict::{FrozenDict, Dict};
-use starlark::{starlark_module, const_frozen_string};
+use starlark::starlark_module;
 use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
-use starlark::values::{Value, FrozenValue, FrozenHeap, Heap};
+use starlark::values::{Value, AllocValue};
 
 use file::FileLibrary;
 use process::ProcessLibrary;
@@ -41,7 +37,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
             Err(err) => return Err(err),
     }
 
-    let tome_params_str: String = match tome_params {
+    let tome_params_str: String = match tome_parameters {
         Some(param_string) => param_string,
         None => "".to_string(),
     };
@@ -104,11 +100,11 @@ dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "s
     fn test_library_parameter_input() -> anyhow::Result<()>{
         // Create test script
         let test_content = format!(r#"
-print(params.get("cmd"))
+sys.shell(params.get("cmd2"))
 "#);
-        let param_string = r#"{"cmd":"id"}"#.to_string();
+        let param_string = r#"{"cmd":"id","cmd2":"echo hello_world","cmd3":"ls -lah /tmp/"}"#.to_string();
         let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
-        println!("{:?}", test_res);
+        assert_eq!(test_res.unwrap(), "hello_world\n".to_string());
         Ok(())
     }
 }
