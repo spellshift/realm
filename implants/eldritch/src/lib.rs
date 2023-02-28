@@ -24,7 +24,6 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const file: FileLibrary = FileLibrary();
         const process: ProcessLibrary = ProcessLibrary();
         const sys: SysLibrary = SysLibrary();
-        const input_vars: FrozenValue = input_vars;
     }
 
     let globals = GlobalsBuilder::extended().with(eldritch).build();
