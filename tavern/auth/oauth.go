@@ -180,7 +180,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			Expires:  time.Now().AddDate(0, 1, 0),
 		})
 		log.Printf("[INFO] [OAuth] registered new user %q", usr.Name)
-		http.Redirect(w, req, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, req, "/", http.StatusFound)
 	})
 }
 
