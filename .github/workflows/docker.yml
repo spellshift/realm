@@ -2,9 +2,7 @@
 
 name: Publish Docker Images (on release)
 
-on:
-  push:
-    branches: ['release']
+on: release
 
 env:
   REGISTRY: ghcr.io
