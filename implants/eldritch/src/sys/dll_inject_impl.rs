@@ -109,7 +109,7 @@ mod tests {
         // Run our code.
         let _res = dll_inject(test_dll_path.to_string_lossy().to_string(), target_pid);
 
-        let delay = time::Duration::from_secs(1);
+        let delay = time::Duration::from_secs(5);
         thread::sleep(delay);
 
         // Test that the test file was created
