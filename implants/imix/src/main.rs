@@ -322,7 +322,6 @@ sys.shell(input_vars["cmd"])
 
         println!("{:?}", result.clone());
         let mut bool_res = false;
-        // assert_eq!(result.1, "".to_string());
 
         if cfg!(target_os = "linux") ||
         cfg!(target_os = "ios") ||
