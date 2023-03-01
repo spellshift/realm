@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/kcarretto/realm/tavern/ent"
 	"golang.org/x/oauth2"
@@ -86,6 +88,10 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 		}
 		if domain == "" {
 			log.Fatalf("[FATAL] To configure OAuth, must provide value for environment var 'OAUTH_DOMAIN'")
+		}
+		if !strings.HasPrefix(domain, "http") {
+			log.Printf("[WARN] Domain (%q) not prefixed with scheme (http:// or https://), defaulting to https://", domain)
+			domain = fmt.Sprintf("https://%s", domain)
 		}
 
 		cfg.oauth = oauth2.Config{
