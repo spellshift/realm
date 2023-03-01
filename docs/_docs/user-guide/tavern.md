@@ -1,9 +1,71 @@
 ---
 title: Tavern
-tags: 
+tags:
  - User Guide
 description: Tavern User Guide
 permalink: user-guide/tavern
 ---
-# Overview
+
+## Overview
+
 ![/assets/img/coming-soon.gif](/assets/img/coming-soon.gif)
+
+## Deployment
+
+This section will walk you through deploying a production ready instance of Tavern to GCP. If you're just looking to play around with Tavern, feel free to just run the [docker image (kcarretto/tavern:latest)](https://hub.docker.com/repository/docker/kcarretto/tavern/general) locally.
+
+### 1. Create a GCP Project
+
+Navigate to the [GCP Console](https://console.cloud.google.com/) and [create a new GCP project](https://console.cloud.google.com/projectcreate).
+![assets/img/tavern/deploy/create-gcp-project.png](/assets/img/tavern/deploy/create-gcp-project.png)
+
+Make a note of the created Project ID as you'll need that in a later step
+![assets/img/tavern/deploy/gcp-project-info.png](/assets/img/tavern/deploy/gcp-project-info.png)
+
+### 2. Setup OAuth (Optional)
+
+_Note: These setup instructions assume you own a domain which you would like to host Tavern at._
+
+If you want to configure OAuth for your Tavern Deployment, navigate to the [GCP OAuth Consent Screen](https://console.cloud.google.com/apis/credentials/consent) and create a new External consent flow. **If you do not configure OAuth, Tavern will not perform any authentication or authorization for requests.**
+
+![assets/img/tavern/deploy/gcp-new-oauth-consent.png](/assets/img/tavern/deploy/gcp-new-oauth-consent.png)
+
+Provide details that users will see when logging into Tavern, for example:
+
+* App Name: "Tavern"
+* User Support Email: "YOUR_EMAIL@EXAMPLE.COM"
+* App Logo: Upload something cool if you'd like, but then you'll need to complete a verification process.
+* App Domain: "https://tavern.mydomain.com/"
+* Authorized Domains: "mydomain.com"
+* Developer Contact Information: "YOUR_EMAIL@EXAMPLE.COM"
+
+Add the ".../auth/userinfo.profile" scope, used by Tavern to obtain user names and photourls.
+![assets/img/tavern/deploy/gcp-oauth-scope.png](/assets/img/tavern/deploy/gcp-oauth-scope.png)
+
+Next, add yourself as a "Test User". **Until you publish your app, only test users may complete the OAuth consent flow.** If you didn't select any options that require verification, you may publish your app now (so you won't need to allowlist the users for your application).
+
+Navigate to the [Credentials Tool](https://console.cloud.google.com/apis/credentials) and select "Create Credentials" -> "OAuth client ID". Be sure to add an "Authorized redirect URI" so that the consent flow redirects to the appropriate Tavern endpoint. For example "mydomain.com/oauth/authorize". Save the resulting Client ID and Client secret for later.
+![assets/img/tavern/deploy/oauth-new-creds.png](/assets/img/tavern/deploy/oauth-new-creds.png)
+
+Next, configure a CNAME record for the domain you'd like to host Tavern at (e.g. "tavern.mydomain.com") to point to "ghs.googlehosted.com.".
+![assets/img/tavern/deploy/google-dns-cname.png](/assets/img/tavern/deploy/google-dns-cname.png)
+
+And that's it! In the below sections on deployment, please ensure you properly configure your OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, and OAUTH_DOMAIN to ensure Tavern is properly configured.
+
+### 3. Google Cloud CLI
+
+Follow [these instructions](https://cloud.google.com/sdk/docs/install) to install the gcloud CLI. This will enable you to quickly obtain credentials that terraform will use to authenticate. Alternatively, you may create a service account (with appropriate permissions) and obtain [Application Default Credentials](https://cloud.google.com/sdk/gcloud/reference/auth/application-default) for it. See [these Authentication Instructions](https://registry.terraform.io/providers/hashicorp/google/latest/docs/guides/provider_reference#authentication) for more information on how to configure GCP authentication for Terraform.
+
+### 4. Terraform
+
+1. Clone [the repo](https://github.com/kcarretto/realm) and navigate to the `terraform` directory.
+2. Run `terraform init` to install the Google provider for terraform.
+
+### Manual Deployment Tips
+
+Below are some deployment gotchas and notes that we try to address with Terraform, but can be a bit tricky if trying to deploy Tavern manually.
+
+* MySQL version 8.0 must be started with the flag `default_authentication_plugin=caching_sha2_password` for authentication to work properly. A new user must be created for authentication.
+* When running in CloudRun, it's best to connect to CloudSQL via a unix socket (so ensure the `MYSQL_NET` env var is set to "unix" ).
+  * After adding a CloudSQL connection to your CloudRun instance, this unix socket is available at `/cloudsql/<CONNECTION_STRING>` (e.g. `/cloudsql/realm-379301:us-east4:tavern-db`).
+* You must create a new database in your CloudSQL instance before launching Tavern and ensure the `MYSQL_DB` env var is set accordingly.
