@@ -1,6 +1,8 @@
 use anyhow::{Result};
-use sysinfo::{ProcessExt,System,SystemExt,PidExt,User,UserExt};
+use sysinfo::{ProcessExt,System,SystemExt,PidExt};
 use  std::fmt;
+#[cfg(not(target_os = "windows"))]
+use sysinfo::{User,UserExt};
 
 pub struct ProcessRes {
     pid:        u32,
@@ -42,6 +44,7 @@ pub fn list() -> Result<Vec<String>> {
     let mut sys = System::new();
     sys.refresh_processes();
     sys.refresh_users_list();
+    #[cfg(not(target_os = "windows"))]
     let user_list =  sys.users().clone();
 
     for (pid, process) in sys.processes() {
@@ -51,7 +54,7 @@ pub fn list() -> Result<Vec<String>> {
         }
 
         #[cfg(target_os = "windows")]
-        let mut tmp_username = String::from("???");
+        let tmp_username = String::from("???");
         #[cfg(not(target_os = "windows"))]
         let tmp_username = uid_to_username(process.uid, user_list);
 
@@ -71,6 +74,7 @@ pub fn list() -> Result<Vec<String>> {
     Ok(res)
 }
 
+#[cfg(not(target_os = "windows"))]
 fn uid_to_username(username: u32, user_list: &[User]) -> String {
     for user in user_list {
         if *user.uid() == username {
@@ -87,10 +91,15 @@ mod tests {
 
     #[test]
     fn test_process_list() -> anyhow::Result<()>{
-        let child = Command::new("sleep")
+        #[cfg(not(target_os = "windows"))]
+        let sleep_str = "sleep";
+        #[cfg(target_os = "windows")]
+        let sleep_str = "timeout";
+
+        let child = Command::new(sleep_str)
             .arg("5")
             .spawn()?;
-        
+    
         let res = list()?;
         let searchstring = String::from(format!("pid:{}", child.id()));
         for proc in res{
