@@ -148,7 +148,7 @@ var (
 		{Name: "name", Type: field.TypeString, Size: 25},
 		{Name: "oauth_id", Type: field.TypeString, Unique: true},
 		{Name: "photo_url", Type: field.TypeString},
-		{Name: "session_token", Type: field.TypeString, Unique: true, Size: 1000},
+		{Name: "session_token", Type: field.TypeString, Size: 200},
 		{Name: "is_activated", Type: field.TypeBool, Default: false},
 		{Name: "is_admin", Type: field.TypeBool, Default: false},
 	}
