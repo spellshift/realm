@@ -7,6 +7,7 @@ import (
 
 	"github.com/kcarretto/realm/tavern/ent"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -94,6 +95,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			Scopes: []string{
 				"https://www.googleapis.com/auth/userinfo.profile",
 			},
+			Endpoint: google.Endpoint,
 		}
 	}
 }
