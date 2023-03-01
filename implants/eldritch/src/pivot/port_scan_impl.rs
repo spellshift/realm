@@ -140,8 +140,11 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
                 "Connection refused (os error 61)" if cfg!(target_os = "macos") => {
                     return Ok((target_host, target_port, "tcp".to_string(), "closed".to_string()));
                 },
+                "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
+                    return Ok((target_host, target_port, "tcp".to_string(), "closed".to_string()));
+                },
                 _ => {
-                    return Err(anyhow::Error::from(err));
+                    return Err(anyhow::anyhow!("Any unexpeceted error occured during the scan:\n{}", err));
                 },
 
             }
@@ -176,8 +179,11 @@ async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<(Strin
                 "An existing connection was forcibly closed by the remote host. (os error 10054)" if cfg!(target_os = "windows") => {
                     return Ok((target_host, target_port, "udp".to_string(), "closed".to_string()));
                 },
+                "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
+                    return Ok((target_host, target_port, "tcp".to_string(), "closed".to_string()));
+                },
                 _ => {
-                    return Err(anyhow::Error::from(err));
+                    return Err(anyhow::anyhow!("Any unexpeceted error occured during the scan:\n{}", err));
                 },
             }
         },
@@ -309,10 +315,10 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
             Ok(res) => {
                 result.push(res);
             },
-            Err(err) => return Err(anyhow::Error::from(err)),
+            Err(err) => return Err(anyhow::anyhow!("Async task await failed:\n{}", err)),
         };
     }
-
+    println!("Result: {:?}", result);
     Ok(result)
 }
 
