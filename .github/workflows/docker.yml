@@ -6,7 +6,7 @@ on: [release, workflow_dispatch]
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: realm/tavern
+  IMAGE_NAME: ${{ github.repository }}/tavern
 
 jobs:
   tavern-docker:
