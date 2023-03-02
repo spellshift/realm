@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/kcarretto/realm/tavern/ent"
 )
@@ -33,12 +35,26 @@ func Middleware(handler http.Handler, graph *ent.Client) http.HandlerFunc {
 		 */
 		authCookie, err := r.Cookie(SessionCookieName)
 		if err != nil && err != http.ErrNoCookie {
-			panic(err)
+			log.Printf("failed to obtain session cookie: %v", err)
+			http.Error(w, "failed to obtain auth cookie", http.StatusBadRequest)
+			return
 		}
 		if authCookie != nil {
 			authCtx, err := ContextFromSessionToken(r.Context(), graph, authCookie.Value)
 			if err != nil {
-				panic(err)
+				log.Printf("failed to create session from cookie: %v", err)
+
+				// Reset session token cookie
+				http.SetCookie(w, &http.Cookie{
+					Name:     SessionCookieName,
+					Value:    "",
+					Path:     "/",
+					HttpOnly: true,
+					Expires:  time.Unix(0, 0),
+				})
+				http.Error(w, "invalid auth cookie", http.StatusUnauthorized)
+
+				return
 			}
 
 			r = r.WithContext(authCtx)
