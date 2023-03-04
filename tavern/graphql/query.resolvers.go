@@ -16,9 +16,10 @@ func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
 
 // Jobs is the resolver for the jobs field.
 func (r *queryResolver) Jobs(ctx context.Context, where *ent.JobWhereInput) ([]*ent.Job, error) {
-	return r.client.Job.Query().
-		Where(where.Predicates...).
-		All(ctx)
+	if where != nil {
+		return r.client.Job.Query().Where(where.Predicates...).All(ctx)
+	}
+	return r.client.Job.Query().All(ctx)
 }
 
 // Sessions is the resolver for the sessions field.
