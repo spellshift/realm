@@ -102,10 +102,10 @@ func Name(v string) predicate.Job {
 	})
 }
 
-// Params applies equality check predicate on the "params" field. It's identical to ParamsEQ.
-func Params(v string) predicate.Job {
+// Parameters applies equality check predicate on the "parameters" field. It's identical to ParametersEQ.
+func Parameters(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldParams), v))
+		s.Where(sql.EQ(s.C(FieldParameters), v))
 	})
 }
 
@@ -336,116 +336,116 @@ func NameContainsFold(v string) predicate.Job {
 	})
 }
 
-// ParamsEQ applies the EQ predicate on the "params" field.
-func ParamsEQ(v string) predicate.Job {
+// ParametersEQ applies the EQ predicate on the "parameters" field.
+func ParametersEQ(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldParams), v))
+		s.Where(sql.EQ(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsNEQ applies the NEQ predicate on the "params" field.
-func ParamsNEQ(v string) predicate.Job {
+// ParametersNEQ applies the NEQ predicate on the "parameters" field.
+func ParametersNEQ(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldParams), v))
+		s.Where(sql.NEQ(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsIn applies the In predicate on the "params" field.
-func ParamsIn(vs ...string) predicate.Job {
+// ParametersIn applies the In predicate on the "parameters" field.
+func ParametersIn(vs ...string) predicate.Job {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldParams), v...))
+		s.Where(sql.In(s.C(FieldParameters), v...))
 	})
 }
 
-// ParamsNotIn applies the NotIn predicate on the "params" field.
-func ParamsNotIn(vs ...string) predicate.Job {
+// ParametersNotIn applies the NotIn predicate on the "parameters" field.
+func ParametersNotIn(vs ...string) predicate.Job {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldParams), v...))
+		s.Where(sql.NotIn(s.C(FieldParameters), v...))
 	})
 }
 
-// ParamsGT applies the GT predicate on the "params" field.
-func ParamsGT(v string) predicate.Job {
+// ParametersGT applies the GT predicate on the "parameters" field.
+func ParametersGT(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldParams), v))
+		s.Where(sql.GT(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsGTE applies the GTE predicate on the "params" field.
-func ParamsGTE(v string) predicate.Job {
+// ParametersGTE applies the GTE predicate on the "parameters" field.
+func ParametersGTE(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldParams), v))
+		s.Where(sql.GTE(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsLT applies the LT predicate on the "params" field.
-func ParamsLT(v string) predicate.Job {
+// ParametersLT applies the LT predicate on the "parameters" field.
+func ParametersLT(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldParams), v))
+		s.Where(sql.LT(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsLTE applies the LTE predicate on the "params" field.
-func ParamsLTE(v string) predicate.Job {
+// ParametersLTE applies the LTE predicate on the "parameters" field.
+func ParametersLTE(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldParams), v))
+		s.Where(sql.LTE(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsContains applies the Contains predicate on the "params" field.
-func ParamsContains(v string) predicate.Job {
+// ParametersContains applies the Contains predicate on the "parameters" field.
+func ParametersContains(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldParams), v))
+		s.Where(sql.Contains(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsHasPrefix applies the HasPrefix predicate on the "params" field.
-func ParamsHasPrefix(v string) predicate.Job {
+// ParametersHasPrefix applies the HasPrefix predicate on the "parameters" field.
+func ParametersHasPrefix(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldParams), v))
+		s.Where(sql.HasPrefix(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsHasSuffix applies the HasSuffix predicate on the "params" field.
-func ParamsHasSuffix(v string) predicate.Job {
+// ParametersHasSuffix applies the HasSuffix predicate on the "parameters" field.
+func ParametersHasSuffix(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldParams), v))
+		s.Where(sql.HasSuffix(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsIsNil applies the IsNil predicate on the "params" field.
-func ParamsIsNil() predicate.Job {
+// ParametersIsNil applies the IsNil predicate on the "parameters" field.
+func ParametersIsNil() predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldParams)))
+		s.Where(sql.IsNull(s.C(FieldParameters)))
 	})
 }
 
-// ParamsNotNil applies the NotNil predicate on the "params" field.
-func ParamsNotNil() predicate.Job {
+// ParametersNotNil applies the NotNil predicate on the "parameters" field.
+func ParametersNotNil() predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldParams)))
+		s.Where(sql.NotNull(s.C(FieldParameters)))
 	})
 }
 
-// ParamsEqualFold applies the EqualFold predicate on the "params" field.
-func ParamsEqualFold(v string) predicate.Job {
+// ParametersEqualFold applies the EqualFold predicate on the "parameters" field.
+func ParametersEqualFold(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldParams), v))
+		s.Where(sql.EqualFold(s.C(FieldParameters), v))
 	})
 }
 
-// ParamsContainsFold applies the ContainsFold predicate on the "params" field.
-func ParamsContainsFold(v string) predicate.Job {
+// ParametersContainsFold applies the ContainsFold predicate on the "parameters" field.
+func ParametersContainsFold(v string) predicate.Job {
 	return predicate.Job(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldParams), v))
+		s.Where(sql.ContainsFold(s.C(FieldParameters), v))
 	})
 }
 

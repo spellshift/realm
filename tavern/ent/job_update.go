@@ -43,23 +43,23 @@ func (ju *JobUpdate) SetName(s string) *JobUpdate {
 	return ju
 }
 
-// SetParams sets the "params" field.
-func (ju *JobUpdate) SetParams(s string) *JobUpdate {
-	ju.mutation.SetParams(s)
+// SetParameters sets the "parameters" field.
+func (ju *JobUpdate) SetParameters(s string) *JobUpdate {
+	ju.mutation.SetParameters(s)
 	return ju
 }
 
-// SetNillableParams sets the "params" field if the given value is not nil.
-func (ju *JobUpdate) SetNillableParams(s *string) *JobUpdate {
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (ju *JobUpdate) SetNillableParameters(s *string) *JobUpdate {
 	if s != nil {
-		ju.SetParams(*s)
+		ju.SetParameters(*s)
 	}
 	return ju
 }
 
-// ClearParams clears the value of the "params" field.
-func (ju *JobUpdate) ClearParams() *JobUpdate {
-	ju.mutation.ClearParams()
+// ClearParameters clears the value of the "parameters" field.
+func (ju *JobUpdate) ClearParameters() *JobUpdate {
+	ju.mutation.ClearParameters()
 	return ju
 }
 
@@ -252,11 +252,11 @@ func (ju *JobUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := ju.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
 	}
-	if value, ok := ju.mutation.Params(); ok {
-		_spec.SetField(job.FieldParams, field.TypeString, value)
+	if value, ok := ju.mutation.Parameters(); ok {
+		_spec.SetField(job.FieldParameters, field.TypeString, value)
 	}
-	if ju.mutation.ParamsCleared() {
-		_spec.ClearField(job.FieldParams, field.TypeString)
+	if ju.mutation.ParametersCleared() {
+		_spec.ClearField(job.FieldParameters, field.TypeString)
 	}
 	if ju.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -413,23 +413,23 @@ func (juo *JobUpdateOne) SetName(s string) *JobUpdateOne {
 	return juo
 }
 
-// SetParams sets the "params" field.
-func (juo *JobUpdateOne) SetParams(s string) *JobUpdateOne {
-	juo.mutation.SetParams(s)
+// SetParameters sets the "parameters" field.
+func (juo *JobUpdateOne) SetParameters(s string) *JobUpdateOne {
+	juo.mutation.SetParameters(s)
 	return juo
 }
 
-// SetNillableParams sets the "params" field if the given value is not nil.
-func (juo *JobUpdateOne) SetNillableParams(s *string) *JobUpdateOne {
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (juo *JobUpdateOne) SetNillableParameters(s *string) *JobUpdateOne {
 	if s != nil {
-		juo.SetParams(*s)
+		juo.SetParameters(*s)
 	}
 	return juo
 }
 
-// ClearParams clears the value of the "params" field.
-func (juo *JobUpdateOne) ClearParams() *JobUpdateOne {
-	juo.mutation.ClearParams()
+// ClearParameters clears the value of the "parameters" field.
+func (juo *JobUpdateOne) ClearParameters() *JobUpdateOne {
+	juo.mutation.ClearParameters()
 	return juo
 }
 
@@ -652,11 +652,11 @@ func (juo *JobUpdateOne) sqlSave(ctx context.Context) (_node *Job, err error) {
 	if value, ok := juo.mutation.Name(); ok {
 		_spec.SetField(job.FieldName, field.TypeString, value)
 	}
-	if value, ok := juo.mutation.Params(); ok {
-		_spec.SetField(job.FieldParams, field.TypeString, value)
+	if value, ok := juo.mutation.Parameters(); ok {
+		_spec.SetField(job.FieldParameters, field.TypeString, value)
 	}
-	if juo.mutation.ParamsCleared() {
-		_spec.ClearField(job.FieldParams, field.TypeString)
+	if juo.mutation.ParametersCleared() {
+		_spec.ClearField(job.FieldParameters, field.TypeString)
 	}
 	if juo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{

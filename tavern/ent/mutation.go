@@ -665,7 +665,7 @@ type JobMutation struct {
 	createdAt      *time.Time
 	lastModifiedAt *time.Time
 	name           *string
-	params         *string
+	parameters     *string
 	clearedFields  map[string]struct{}
 	tome           *int
 	clearedtome    bool
@@ -885,53 +885,53 @@ func (m *JobMutation) ResetName() {
 	m.name = nil
 }
 
-// SetParams sets the "params" field.
-func (m *JobMutation) SetParams(s string) {
-	m.params = &s
+// SetParameters sets the "parameters" field.
+func (m *JobMutation) SetParameters(s string) {
+	m.parameters = &s
 }
 
-// Params returns the value of the "params" field in the mutation.
-func (m *JobMutation) Params() (r string, exists bool) {
-	v := m.params
+// Parameters returns the value of the "parameters" field in the mutation.
+func (m *JobMutation) Parameters() (r string, exists bool) {
+	v := m.parameters
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldParams returns the old "params" field's value of the Job entity.
+// OldParameters returns the old "parameters" field's value of the Job entity.
 // If the Job object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *JobMutation) OldParams(ctx context.Context) (v string, err error) {
+func (m *JobMutation) OldParameters(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldParams is only allowed on UpdateOne operations")
+		return v, errors.New("OldParameters is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldParams requires an ID field in the mutation")
+		return v, errors.New("OldParameters requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldParams: %w", err)
+		return v, fmt.Errorf("querying old value for OldParameters: %w", err)
 	}
-	return oldValue.Params, nil
+	return oldValue.Parameters, nil
 }
 
-// ClearParams clears the value of the "params" field.
-func (m *JobMutation) ClearParams() {
-	m.params = nil
-	m.clearedFields[job.FieldParams] = struct{}{}
+// ClearParameters clears the value of the "parameters" field.
+func (m *JobMutation) ClearParameters() {
+	m.parameters = nil
+	m.clearedFields[job.FieldParameters] = struct{}{}
 }
 
-// ParamsCleared returns if the "params" field was cleared in this mutation.
-func (m *JobMutation) ParamsCleared() bool {
-	_, ok := m.clearedFields[job.FieldParams]
+// ParametersCleared returns if the "parameters" field was cleared in this mutation.
+func (m *JobMutation) ParametersCleared() bool {
+	_, ok := m.clearedFields[job.FieldParameters]
 	return ok
 }
 
-// ResetParams resets all changes to the "params" field.
-func (m *JobMutation) ResetParams() {
-	m.params = nil
-	delete(m.clearedFields, job.FieldParams)
+// ResetParameters resets all changes to the "parameters" field.
+func (m *JobMutation) ResetParameters() {
+	m.parameters = nil
+	delete(m.clearedFields, job.FieldParameters)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by id.
@@ -1095,8 +1095,8 @@ func (m *JobMutation) Fields() []string {
 	if m.name != nil {
 		fields = append(fields, job.FieldName)
 	}
-	if m.params != nil {
-		fields = append(fields, job.FieldParams)
+	if m.parameters != nil {
+		fields = append(fields, job.FieldParameters)
 	}
 	return fields
 }
@@ -1112,8 +1112,8 @@ func (m *JobMutation) Field(name string) (ent.Value, bool) {
 		return m.LastModifiedAt()
 	case job.FieldName:
 		return m.Name()
-	case job.FieldParams:
-		return m.Params()
+	case job.FieldParameters:
+		return m.Parameters()
 	}
 	return nil, false
 }
@@ -1129,8 +1129,8 @@ func (m *JobMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldLastModifiedAt(ctx)
 	case job.FieldName:
 		return m.OldName(ctx)
-	case job.FieldParams:
-		return m.OldParams(ctx)
+	case job.FieldParameters:
+		return m.OldParameters(ctx)
 	}
 	return nil, fmt.Errorf("unknown Job field %s", name)
 }
@@ -1161,12 +1161,12 @@ func (m *JobMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
-	case job.FieldParams:
+	case job.FieldParameters:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetParams(v)
+		m.SetParameters(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Job field %s", name)
@@ -1198,8 +1198,8 @@ func (m *JobMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *JobMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(job.FieldParams) {
-		fields = append(fields, job.FieldParams)
+	if m.FieldCleared(job.FieldParameters) {
+		fields = append(fields, job.FieldParameters)
 	}
 	return fields
 }
@@ -1215,8 +1215,8 @@ func (m *JobMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *JobMutation) ClearField(name string) error {
 	switch name {
-	case job.FieldParams:
-		m.ClearParams()
+	case job.FieldParameters:
+		m.ClearParameters()
 		return nil
 	}
 	return fmt.Errorf("unknown Job nullable field %s", name)
@@ -1235,8 +1235,8 @@ func (m *JobMutation) ResetField(name string) error {
 	case job.FieldName:
 		m.ResetName()
 		return nil
-	case job.FieldParams:
-		m.ResetParams()
+	case job.FieldParameters:
+		m.ResetParameters()
 		return nil
 	}
 	return fmt.Errorf("unknown Job field %s", name)

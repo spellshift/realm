@@ -64,9 +64,9 @@ func TestCreateJob(t *testing.T) {
 		gqlClient,
 		[]int{testSessions[0].ID, testSessions[1].ID},
 		ent.CreateJobInput{
-			Name:   "TestJob",
-			Params: &expectedJobParams,
-			TomeID: testTome.ID,
+			Name:       "TestJob",
+			Parameters: &expectedJobParams,
+			TomeID:     testTome.ID,
 		},
 		func(t *testing.T, id int, err error) {
 			require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestCreateJob(t *testing.T) {
 			// Ensure job was created with proper fields
 			job := graph.Job.GetX(ctx, id)
 			assert.Equal(t, "TestJob", job.Name)
-			assert.Equal(t, `{"exampleParam":"Hello World"}`, job.Params)
+			assert.Equal(t, `{"exampleParam":"Hello World"}`, job.Parameters)
 
 			// Ensure tome edge was set
 			tomeID := job.QueryTome().OnlyIDX(ctx)
@@ -178,9 +178,9 @@ func newCreateJobTest(gqlClient *client.Client, sessionIDs []int, input ent.Crea
 		err := gqlClient.Post(mut, &resp,
 			client.Var("sessionIDs", sessionIDs),
 			client.Var("input", map[string]interface{}{
-				"name":   input.Name,
-				"params": input.Params,
-				"tomeID": input.TomeID,
+				"name":       input.Name,
+				"parameters": input.Parameters,
+				"tomeID":     input.TomeID,
 			}),
 		)
 

@@ -263,8 +263,8 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 				return ec.fieldContext_Job_lastmodifiedat(ctx, field)
 			case "name":
 				return ec.fieldContext_Job_name(ctx, field)
-			case "params":
-				return ec.fieldContext_Job_params(ctx, field)
+			case "parameters":
+				return ec.fieldContext_Job_parameters(ctx, field)
 			case "tome":
 				return ec.fieldContext_Job_tome(ctx, field)
 			case "bundle":
