@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/kcarretto/realm/tavern/ent"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -30,19 +32,30 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	}
 
 	var (
-		mysql  = "file:ent?mode=memory&cache=shared&_fk=1"
-		driver = "sqlite3"
+		mysqlDSN = "file:ent?mode=memory&cache=shared&_fk=1"
+		driver   = "sqlite3"
 	)
 	if cfg != nil && cfg.mysql != "" {
-		mysql = cfg.mysql
+		mysqlDSN = cfg.mysql
 		driver = "mysql"
 	}
 
-	return ent.Open(
-		driver,
-		mysql,
-		options...,
-	)
+	drv, err := sql.Open(driver, mysqlDSN)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	// Get the underlying sql.DB object of the driver.
+	db := drv.DB()
+	db.SetMaxIdleConns(10) // TODO: Move to environment variable
+	db.SetMaxOpenConns(100)
+	db.SetConnMaxLifetime(time.Hour)
+	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+
+	// return ent.Open(
+	// 	driver,
+	// 	mysql,
+	// 	options...,
+	// )
 }
 
 // IsTestDataEnabled returns true if a value for the "ENABLE_TEST_DATA" environment variable is set.
