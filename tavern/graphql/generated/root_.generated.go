@@ -55,7 +55,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
-		Params         func(childComplexity int) int
+		Parameters     func(childComplexity int) int
 		Tasks          func(childComplexity int) int
 		Tome           func(childComplexity int) int
 	}
@@ -234,12 +234,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Job.Name(childComplexity), true
 
-	case "Job.params":
-		if e.complexity.Job.Params == nil {
+	case "Job.parameters":
+		if e.complexity.Job.Parameters == nil {
 			break
 		}
 
-		return e.complexity.Job.Params(childComplexity), true
+		return e.complexity.Job.Parameters(childComplexity), true
 
 	case "Job.tasks":
 		if e.complexity.Job.Tasks == nil {
@@ -810,7 +810,7 @@ input CreateJobInput {
   """Name of the job"""
   name: String!
   """Value of parameters that were specified for the job (as a JSON string)."""
-  params: String
+  parameters: String
   tomeID: ID!
 }
 """
@@ -953,7 +953,7 @@ type Job implements Node {
   """Name of the job"""
   name: String!
   """Value of parameters that were specified for the job (as a JSON string)."""
-  params: String
+  parameters: String
   tome: Tome!
   bundle: File
   tasks: [Task!]
@@ -1020,22 +1020,22 @@ input JobWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """params field predicates"""
-  params: String
-  paramsNEQ: String
-  paramsIn: [String!]
-  paramsNotIn: [String!]
-  paramsGT: String
-  paramsGTE: String
-  paramsLT: String
-  paramsLTE: String
-  paramsContains: String
-  paramsHasPrefix: String
-  paramsHasSuffix: String
-  paramsIsNil: Boolean
-  paramsNotNil: Boolean
-  paramsEqualFold: String
-  paramsContainsFold: String
+  """parameters field predicates"""
+  parameters: String
+  parametersNEQ: String
+  parametersIn: [String!]
+  parametersNotIn: [String!]
+  parametersGT: String
+  parametersGTE: String
+  parametersLT: String
+  parametersLTE: String
+  parametersContains: String
+  parametersHasPrefix: String
+  parametersHasSuffix: String
+  parametersIsNil: Boolean
+  parametersNotNil: Boolean
+  parametersEqualFold: String
+  parametersContainsFold: String
   """tome edge predicates"""
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]

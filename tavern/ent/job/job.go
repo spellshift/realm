@@ -17,8 +17,8 @@ const (
 	FieldLastModifiedAt = "last_modified_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldParams holds the string denoting the params field in the database.
-	FieldParams = "params"
+	// FieldParameters holds the string denoting the parameters field in the database.
+	FieldParameters = "parameters"
 	// EdgeTome holds the string denoting the tome edge name in mutations.
 	EdgeTome = "tome"
 	// EdgeBundle holds the string denoting the bundle edge name in mutations.
@@ -56,7 +56,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldLastModifiedAt,
 	FieldName,
-	FieldParams,
+	FieldParameters,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "jobs"
