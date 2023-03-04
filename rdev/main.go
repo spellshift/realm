@@ -12,6 +12,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/kcarretto/realm/tavern/namegen"
 	"github.com/urfave/cli"
 )
 
@@ -27,6 +28,7 @@ var (
 type Client struct {
 	TavernAddr  string `json:"tavern-addr"`
 	AuthSession string `json:"auth-session"`
+	ExecTomeID  int    `json:"exec-tome-id"`
 }
 
 func newClient() (client Client) {
@@ -96,11 +98,12 @@ func (client *Client) ShowActive() {
 	for _, session := range sessions {
 		logger.Printf("%s\t%ds ago\t(%s)", session.Hostname, time.Since(session.LastSeenAt)/time.Second, session.LastSeenAt.String())
 	}
+	logger.Printf("Found %d active sessions", len(sessions))
 }
 
 func (client *Client) Exec() {
-	var targetSessions = sessionIDsArg
-	if sessionIDsArg == nil || len(sessionIDsArg) < 1 {
+	var targetSessions = sessionIDsArg.Value()
+	if targetSessions == nil || len(targetSessions) < 1 {
 		log.Printf("No --sessions provided, queuing for all active sessions, giving you 5 seconds to change your mind...")
 		time.Sleep(5 * time.Second)
 		log.Printf("Are you silly? I'm still gonna send it")
@@ -112,13 +115,16 @@ func (client *Client) Exec() {
 		Query: `
 			mutation CLIExecJob($sessionIDs: [ID!]!, $input: CreateJobInput!) {
 				createJob(sessionIDs: $sessionIDs, input: $input) {
-				id
+					id
+					name
 				}
 			}`,
 		Variables: map[string]any{
 			"sessionIDs": targetSessions,
 			"input": map[string]any{
-				"params": fmt.Sprintf(`{"cmd":"%s"}`, cmdArg),
+				"name":       namegen.GetRandomName(),
+				"tomeID":     client.ExecTomeID,
+				"parameters": fmt.Sprintf(`{"cmd":"%s"}`, cmdArg),
 			},
 		},
 	}
@@ -126,13 +132,23 @@ func (client *Client) Exec() {
 	var resp struct {
 		Data struct {
 			Job struct {
-				ID string `json:"id"`
-			} `json:"job"`
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"createJob"`
 		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		}
 	}
-	client.do(query, &resp)
 
-	log.Printf("Job queued on %d sessions: %s", len(targetSessions), resp.Data.Job.ID)
+	client.do(query, &resp)
+	if resp.Errors != nil {
+		for _, respErr := range resp.Errors {
+			log.Printf("Failed: %s", respErr.Message)
+		}
+		log.Fatalf("failed with %d errors", len(resp.Errors))
+	}
+	log.Printf("Job (%s) queued on %d sessions: %s", resp.Data.Job.ID, (targetSessions), resp.Data.Job.Name)
 }
 
 type graphQLQuery struct {
@@ -151,9 +167,18 @@ func (client *Client) do(query graphQLQuery, dst any) {
 		log.Fatalf("failed to create new http request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("auth-session", client.AuthSession)
+	req.AddCookie(&http.Cookie{
+		Name:     "auth-session",
+		Path:     "/",
+		Value:    client.AuthSession,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		HttpOnly: true,
+	})
+	if client.AuthSession == "" {
+		log.Fatalf("Please set a value for 'auth-session' in your .rdev.json configuration")
+	}
 
-	resp, err := http.Post(client.TavernAddr, "application/json", bytes.NewBuffer(data))
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Fatalf("HTTP request failed: %v", err)
 	}
@@ -170,7 +195,6 @@ func (client *Client) do(query graphQLQuery, dst any) {
 
 func main() {
 	client := newClient()
-	// client.ShowActive()
 
 	app := cli.NewApp()
 	app.Commands = []cli.Command{
