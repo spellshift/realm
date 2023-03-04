@@ -6,23 +6,17 @@ type StepCustomizeParametersParams = {
     step: number;
     currStep: number;
     setCurrStep: any;
+    formik: any;
 }
 export const StepCustomizeParameters = (props: StepCustomizeParametersParams) => {
-    const {step, currStep, setCurrStep} = props;
-
-    const [value, setValue] = useState('');
-
-    let handleInputChange = (e: any) => {
-      let inputValue = e.target.value
-      setValue(inputValue)
-    };
+    const {step, currStep, setCurrStep, formik} = props;
 
     const handleNext = () => {
-        setCurrStep(step +1);
+      setCurrStep(step +1);
     };
 
     const handleBack = () => {
-        setCurrStep(step -1);
+      setCurrStep(step -1);
     }
 
     return (
@@ -38,9 +32,11 @@ export const StepCustomizeParameters = (props: StepCustomizeParametersParams) =>
                   </Heading>
                   <Textarea
                       placeholder='cat /etc/passwd'
+                      id="params.command"
+                      name="params.command"
                       size='xs'
-                      value={value}
-                      onChange={handleInputChange}
+                      value={formik.values.params.command}
+                      onChange={formik.handleChange}
                     />
                 </StackItem>
                 <StackItem>
@@ -49,7 +45,7 @@ export const StepCustomizeParameters = (props: StepCustomizeParametersParams) =>
                     <Button onClick={handleBack}>Back</Button>
                   </StackItem>
                   <StackItem>
-                    <Button variant="solid" colorScheme={"purple"} onClick={handleNext}>Next</Button>
+                    <Button variant="solid" colorScheme={"purple"} isDisabled={formik.errors.params} onClick={()=> handleNext()}>Next</Button>
                   </StackItem>
                 </Stack>
                 </StackItem>

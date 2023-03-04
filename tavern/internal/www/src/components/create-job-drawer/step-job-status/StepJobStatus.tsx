@@ -19,7 +19,7 @@ export const StepJobStatus = (props: StepJobStatusParams) => {
     return (
         <ListItem>
             <StepIcon step={step} currStep={overrideStepIcon}/>
-            Job submitted
+            Job Finalized
             {currStep === step &&
                 <Box px={8} pt={4}>
                 <Stack gap={4}>

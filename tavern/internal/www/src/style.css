@@ -5,3 +5,6 @@
     overflow-y: scroll;
     background-color: #EDF2F7;
 }
+.max-width{
+    width: 100%;
+}

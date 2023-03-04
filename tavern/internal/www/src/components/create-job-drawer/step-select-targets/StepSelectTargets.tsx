@@ -1,22 +1,24 @@
-import { Badge, Box, Button, Divider, Heading, ListItem, Stack, StackItem, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Icon, Grid, GridItem, Flex, Container, Checkbox, Card, CardBody, Spacer } from "@chakra-ui/react";
+import {  Box, Button, ListItem, Stack, StackItem, Tab, TabList, TabPanels, Tabs } from "@chakra-ui/react";
 import React, { useState } from "react";
-import Select from "react-select";
 import { StepIcon } from "../step-icon";
-import {MdFilterList} from "react-icons/md";
-import { m } from "framer-motion";
 import { TabFilterTargets } from "./tab-filter-targets";
+import { TabSelectedTargets } from "./tab-selected-targets";
 
 type StepSelectTargetsParams = {
     step: number;
     currStep: number;
     setCurrStep: any;
+    targets: any;
+    setFieldValue: (arg1: any, arg2: any) => void;
+    handleSubmit: (arg1: any) => void;
 }
 export const StepSelectTargets = (props: StepSelectTargetsParams) => {
-    const {step, currStep, setCurrStep} = props;
+    const {step, currStep, setCurrStep, targets, setFieldValue, handleSubmit} = props;
 
-    const handleNext = () => {
-        setCurrStep(step +1);
-    };
+    // const handleNext = () => {
+    //     //setCurrStep(step +1);
+    //     console.log(targets);
+    // };
 
     const handleBack = () => {
         setCurrStep(step -1);
@@ -111,42 +113,35 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
                 }],
             tasks: [],
         }
-    ]
+    ];
 
-    const formatOptionLabel = ({ value , label, customAbbreviation }: {value: string, label: string, customAbbreviation: Array<string>}) => (
-        <Stack direction={"row"} align={"start"} >
-            <StackItem>
-                <Heading size="xs">{label}</Heading>
-            </StackItem>
-            <Divider/>
-            <StackItem>
-                <Stack gap={1} direction="row" shouldWrapChildren>
-                    {customAbbreviation.map((x) => {
-                        return <StackItem><Text fontSize={"xs"}>{x}</Text></StackItem>
-                    })}
-                </Stack>
-            </StackItem>
-        </Stack>
-      );
+    function getSelectedTargetCount(){
+        let targetCount = 0;
+        for (var key in targets) {
+            if (targets[key] === true) {
+                targetCount = targetCount +1;
+            } 
+        }
+        return targetCount;
+    }
+    const targetCount = getSelectedTargetCount();
 
     return (
         <ListItem>
             <StepIcon step={step} currStep={currStep}/>
-            Select targets of tome
+            Select sessions to run the tome on
             {currStep === step &&
                 <Box px={8} pt={4}>
                     <Stack gap={4}>
                     <StackItem>
                     <Tabs size='md' variant='enclosed' colorScheme="purple">
                         <TabList>
-                            <Tab>Targets to select</Tab>
-                            <Tab>Targets selected (0)</Tab>
+                            <Tab>Session options</Tab>
+                            <Tab>Sessions selected ({targetCount})</Tab>
                         </TabList>
                         <TabPanels>
-                            <TabFilterTargets sessions={sessions}/>
-                            <TabPanel>
-                            <p>two!</p>
-                            </TabPanel>
+                            <TabFilterTargets sessions={sessions} targets={targets} setFieldValue={setFieldValue}/>
+                            <TabSelectedTargets sessions={sessions} targets={targets} setFieldValue={setFieldValue} targetCount={targetCount} />
                         </TabPanels>
                     </Tabs>
 
@@ -157,7 +152,7 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
                         <Button onClick={handleBack}>Back</Button>
                     </StackItem>
                     <StackItem>
-                        <Button variant="solid" colorScheme={"purple"} onClick={handleNext}>Next</Button>
+                        <Button variant="solid" colorScheme={"purple"} isDisabled={targetCount < 1 ? true : false} onClick={handleSubmit}>Submit job</Button>
                     </StackItem>
                     </Stack>
                     </StackItem>

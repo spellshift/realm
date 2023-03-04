@@ -1,16 +1,18 @@
 import { Box, Button, Card, CardBody, Checkbox, Flex, Heading, ListItem, Spacer, Stack, StackItem, Text } from "@chakra-ui/react";
-import React from "react";
+import React, { useEffect } from "react";
 import { StepIcon } from "../step-icon";
 
 type StepSelectTomeParams = {
     step: number;
     currStep: number;
     setCurrStep: any;
+    formik: any;
 }
 export const StepSelectTome = (props: StepSelectTomeParams) => {
-    const {step, currStep, setCurrStep} = props;
+    const {step, currStep, setCurrStep, formik} = props;
 
     const handleNext = () => {
+        formik.setFieldValue('tomeId', "test");
         setCurrStep(step +1);
     };
 
@@ -34,7 +36,7 @@ export const StepSelectTome = (props: StepSelectTomeParams) => {
                             </Checkbox>
                         </CardBody>
                     </Card>
-                    <Button my={2} variant="solid" colorScheme={"purple"} onClick={handleNext}>Next</Button>
+                    <Button my={2} variant="solid" colorScheme={"purple"} onClick={()=> handleNext()}>Next</Button>
                 </Box>
             }
         </ListItem>
