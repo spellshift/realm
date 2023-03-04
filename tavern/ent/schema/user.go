@@ -56,7 +56,6 @@ func (User) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (User) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.QueryField(),
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),

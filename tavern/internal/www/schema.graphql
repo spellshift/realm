@@ -3,73 +3,6 @@ directive @requireRole(role: Role!) on FIELD_DEFINITION
 enum Role {
     ADMIN
     USER
-}input ClaimTasksInput {
-  """The identity the session is authenticated as (e.g. 'root')"""
-  principal: String!
-
-  """The hostname of the system the session is running on."""
-  hostname: String!
-
-  """Unique identifier of the session, each running instance will be different."""
-  sessionIdentifier: String!
-
-  """Unique identifier of the underlying host system the session is running on."""
-  hostIdentifier: String!
-
-  """Name of the agent program the session is running as (e.g. 'imix')"""
-  agentIdentifier: String!
-}
-
-input SubmitTaskResultInput {
-  """ID of the task to submit results for."""
-  taskID: ID!
-
-  """Timestamp of when the task execution began. Format as RFC3339Nano."""
-  execStartedAt: Time!
-
-  """Timestamp of when the task execution finished (set only if it has completed). Format as RFC3339Nano."""
-  execFinishedAt: Time 
-
-  """
-  Output captured as the result of task execution.
-  Submitting multiple outputs will result in appending new output to the previous output.
-  """
-  output: String!
-
-  """Error message captured as the result of task execution failure."""
-  error: String 
-}type Mutation {
-    ###
-    # Job
-    ###
-    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
-
-    ###
-    # Session
-    ###
-    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session! @requireRole(role: USER)
-
-    ###
-    # Tag
-    ###
-    createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
-    updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
-
-    ###
-    # Task
-    ###
-    claimTasks(input: ClaimTasksInput!,): [Task!]!
-    submitTaskResult(input: SubmitTaskResultInput!,): Task
-
-    ###
-    # Tome
-    ###
-    createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
-
-    ###
-    # User
-    ###
-    updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
 }directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 """
@@ -356,12 +289,6 @@ type Query {
     """The list of node IDs."""
     ids: [ID!]!
   ): [Node]!
-  files: [File!]!
-  jobs: [Job!]!
-  sessions: [Session!]!
-  tags: [Tag!]!
-  tomes: [Tome!]!
-  users: [User!]!
 }
 type Session implements Node {
   id: ID!
@@ -953,4 +880,78 @@ input UserWhereInput {
   isadmin: Boolean
   isadminNEQ: Boolean
 }
-scalar Time
+input ClaimTasksInput {
+  """The identity the session is authenticated as (e.g. 'root')"""
+  principal: String!
+
+  """The hostname of the system the session is running on."""
+  hostname: String!
+
+  """Unique identifier of the session, each running instance will be different."""
+  sessionIdentifier: String!
+
+  """Unique identifier of the underlying host system the session is running on."""
+  hostIdentifier: String!
+
+  """Name of the agent program the session is running as (e.g. 'imix')"""
+  agentIdentifier: String!
+}
+
+input SubmitTaskResultInput {
+  """ID of the task to submit results for."""
+  taskID: ID!
+
+  """Timestamp of when the task execution began. Format as RFC3339Nano."""
+  execStartedAt: Time!
+
+  """Timestamp of when the task execution finished (set only if it has completed). Format as RFC3339Nano."""
+  execFinishedAt: Time 
+
+  """
+  Output captured as the result of task execution.
+  Submitting multiple outputs will result in appending new output to the previous output.
+  """
+  output: String!
+
+  """Error message captured as the result of task execution failure."""
+  error: String 
+}type Mutation {
+    ###
+    # Job
+    ###
+    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
+
+    ###
+    # Session
+    ###
+    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session! @requireRole(role: USER)
+
+    ###
+    # Tag
+    ###
+    createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
+    updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
+
+    ###
+    # Task
+    ###
+    claimTasks(input: ClaimTasksInput!,): [Task!]!
+    submitTaskResult(input: SubmitTaskResultInput!,): Task
+
+    ###
+    # Tome
+    ###
+    createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
+
+    ###
+    # User
+    ###
+    updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
+}extend type Query {
+  files: [File!]!
+  jobs(where: JobWhereInput): [Job!]!
+  sessions: [Session!]!
+  tags: [Tag!]!
+  tomes: [Tome!]!
+  users: [User!]!
+}scalar Time

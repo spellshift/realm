@@ -96,7 +96,7 @@ func (client *Client) ShowActive() {
 	logger := log.New(w, "", log.Flags())
 	sessions := client.getActiveSessions()
 	for _, session := range sessions {
-		logger.Printf("%s\t%ds ago\t(%s)", session.Hostname, time.Since(session.LastSeenAt)/time.Second, session.LastSeenAt.String())
+		logger.Printf("%s\t(%s)\t%ds ago\t(%s)", session.Hostname, session.ID, time.Since(session.LastSeenAt)/time.Second, session.LastSeenAt.String())
 	}
 	logger.Printf("Found %d active sessions", len(sessions))
 }
