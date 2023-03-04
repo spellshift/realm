@@ -5,6 +5,7 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kcarretto/realm/tavern/ent"
 )
@@ -17,7 +18,11 @@ func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
 // Jobs is the resolver for the jobs field.
 func (r *queryResolver) Jobs(ctx context.Context, where *ent.JobWhereInput) ([]*ent.Job, error) {
 	if where != nil {
-		return r.client.Job.Query().Where(where.Predicates...).All(ctx)
+		query, err := where.Filter(r.client.Job.Query())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.All(ctx)
 	}
 	return r.client.Job.Query().All(ctx)
 }
