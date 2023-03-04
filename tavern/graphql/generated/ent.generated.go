@@ -24,7 +24,7 @@ type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
 	Files(ctx context.Context) ([]*ent.File, error)
-	Jobs(ctx context.Context) ([]*ent.Job, error)
+	Jobs(ctx context.Context, where *ent.JobWhereInput) ([]*ent.Job, error)
 	Sessions(ctx context.Context) ([]*ent.Session, error)
 	Tags(ctx context.Context) ([]*ent.Tag, error)
 	Tomes(ctx context.Context) ([]*ent.Tome, error)
@@ -47,6 +47,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_jobs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ent.JobWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg0, err = ec.unmarshalOJobWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐJobWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg0
 	return args, nil
 }
 
@@ -1098,7 +1113,7 @@ func (ec *executionContext) _Query_jobs(ctx context.Context, field graphql.Colle
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Jobs(rctx)
+		return ec.resolvers.Query().Jobs(rctx, fc.Args["where"].(*ent.JobWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1142,6 +1157,17 @@ func (ec *executionContext) fieldContext_Query_jobs(ctx context.Context, field g
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Job", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_jobs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }

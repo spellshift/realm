@@ -7,18 +7,7 @@ import (
 	"context"
 
 	"github.com/kcarretto/realm/tavern/ent"
-	"github.com/kcarretto/realm/tavern/graphql/generated"
 )
-
-// Node is the resolver for the node field.
-func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
-	return r.client.Noder(ctx, id)
-}
-
-// Nodes is the resolver for the nodes field.
-func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
-	return r.client.Noders(ctx, ids)
-}
 
 // Files is the resolver for the files field.
 func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
@@ -26,8 +15,10 @@ func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
 }
 
 // Jobs is the resolver for the jobs field.
-func (r *queryResolver) Jobs(ctx context.Context) ([]*ent.Job, error) {
-	return r.client.Job.Query().All(ctx)
+func (r *queryResolver) Jobs(ctx context.Context, where *ent.JobWhereInput) ([]*ent.Job, error) {
+	return r.client.Job.Query().
+		Where(where.Predicates...).
+		All(ctx)
 }
 
 // Sessions is the resolver for the sessions field.
@@ -49,8 +40,3 @@ func (r *queryResolver) Tomes(ctx context.Context) ([]*ent.Tome, error) {
 func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
 	return r.client.User.Query().All(ctx)
 }
-
-// Query returns generated.QueryResolver implementation.
-func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
-
-type queryResolver struct{ *Resolver }

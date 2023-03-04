@@ -53,7 +53,6 @@ func (Job) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Job) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.QueryField(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 		),
