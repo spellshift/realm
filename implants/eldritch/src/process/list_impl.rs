@@ -39,6 +39,8 @@ pub fn list() -> Result<Vec<String>> {
          Pleases see sysinfo docs for a full list of supported systems.
          https://docs.rs/sysinfo/0.23.5/sysinfo/index.html#supported-oses\n\n"));
     }
+    #[cfg(target_os = "windows")]
+    const UNKNOWN_USER: &str = "???";
 
     let mut res : Vec<String> = Vec::new();
     let mut sys = System::new();
@@ -54,7 +56,7 @@ pub fn list() -> Result<Vec<String>> {
         }
 
         #[cfg(target_os = "windows")]
-        let tmp_username = String::from("???");
+        let tmp_username = String::from(UNKNOWN);
         #[cfg(not(target_os = "windows"))]
         let tmp_username = uid_to_username(process.uid, user_list);
 
