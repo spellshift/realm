@@ -135,12 +135,12 @@ func (j *Job) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "name",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(j.Params); err != nil {
+	if buf, err = json.Marshal(j.Parameters); err != nil {
 		return nil, err
 	}
 	node.Fields[3] = &Field{
 		Type:  "string",
-		Name:  "params",
+		Name:  "parameters",
 		Value: string(buf),
 	}
 	node.Edges[0] = &Edge{

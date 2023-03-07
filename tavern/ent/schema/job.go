@@ -23,7 +23,7 @@ func (Job) Fields() []ent.Field {
 				entgql.OrderField("NAME"),
 			).
 			Comment("Name of the job"),
-		field.String("params").
+		field.String("parameters").
 			Optional().
 			Comment("Value of parameters that were specified for the job (as a JSON string)."),
 	}
@@ -53,7 +53,6 @@ func (Job) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Job) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.QueryField(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 		),

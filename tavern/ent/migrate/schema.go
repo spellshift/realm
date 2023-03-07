@@ -39,7 +39,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "params", Type: field.TypeString, Nullable: true},
+		{Name: "parameters", Type: field.TypeString, Nullable: true},
 		{Name: "job_tome", Type: field.TypeInt},
 		{Name: "job_bundle", Type: field.TypeInt, Nullable: true},
 	}
@@ -134,7 +134,7 @@ var (
 		{Name: "description", Type: field.TypeString},
 		{Name: "parameters", Type: field.TypeString, Nullable: true},
 		{Name: "hash", Type: field.TypeString, Size: 100},
-		{Name: "eldritch", Type: field.TypeString},
+		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 	}
 	// TomesTable holds the schema information for the "tomes" table.
 	TomesTable = &schema.Table{
@@ -148,7 +148,7 @@ var (
 		{Name: "name", Type: field.TypeString, Size: 25},
 		{Name: "oauth_id", Type: field.TypeString, Unique: true},
 		{Name: "photo_url", Type: field.TypeString},
-		{Name: "session_token", Type: field.TypeString, Unique: true, Size: 1000},
+		{Name: "session_token", Type: field.TypeString, Size: 200},
 		{Name: "is_activated", Type: field.TypeBool, Default: false},
 		{Name: "is_admin", Type: field.TypeBool, Default: false},
 	}

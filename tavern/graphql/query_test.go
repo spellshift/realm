@@ -7,6 +7,7 @@ import (
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/kcarretto/realm/tavern/auth/authtest"
+	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/graphql"
 	"github.com/stretchr/testify/assert"
@@ -66,4 +67,62 @@ func newUsersQueryTest(gqlClient *client.Client, checks ...func(t *testing.T, id
 			check(t, ids, err)
 		}
 	}
+}
+
+func TestJobsQuery(t *testing.T) {
+	// Setup
+	ctx := context.Background()
+	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	defer graph.Close()
+	srv := authtest.Middleware(handler.NewDefaultServer(graphql.NewSchema(graph)))
+	gqlClient := client.New(srv)
+
+	// Initialize sample data
+	tome := graph.Tome.Create().
+		SetName("testTome").
+		SetDescription("For testing!").
+		SetEldritch("Testing!").
+		SaveX(ctx)
+	testJobs := []*ent.Job{
+		graph.Job.Create().
+			SetName("Test 1").
+			SetTome(tome).
+			SaveX(ctx),
+		graph.Job.Create().
+			SetName("Test 2").
+			SetTome(tome).
+			SaveX(ctx),
+	}
+
+	t.Run("All", func(t *testing.T) {
+		query := `
+query AllJobs($where: JobWhereInput) {
+	jobs(where: $where) {
+		id
+	}
+}`
+		queryJobs := func(where map[string]any) ([]int, error) {
+			var resp struct {
+				Jobs []struct{ ID string } `json:"jobs"`
+			}
+			if where == nil {
+				where = make(map[string]any)
+			}
+			err := gqlClient.Post(query, &resp, client.Var("where", where))
+			if err != nil {
+				return nil, err
+			}
+
+			ids := make([]int, 0, len(resp.Jobs))
+			for _, j := range resp.Jobs {
+				ids = append(ids, convertID(j.ID))
+			}
+			return ids, nil
+		}
+
+		ids, err := queryJobs(nil)
+		require.NoError(t, err)
+		assert.Contains(t, ids, testJobs[0].ID)
+		assert.Contains(t, ids, testJobs[1].ID)
+	})
 }

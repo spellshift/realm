@@ -6,6 +6,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -40,6 +41,9 @@ func (Tome) Fields() []ent.Field {
 			).
 			Comment("A SHA3 digest of the eldritch field"),
 		field.String("eldritch").
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Comment("Eldritch script that will be executed when the tome is run"),
 	}
 }
@@ -55,7 +59,6 @@ func (Tome) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Tome) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.QueryField(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 		),

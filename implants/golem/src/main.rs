@@ -15,7 +15,7 @@ async fn run(tome_path: String) -> anyhow::Result<String> {
     // Read a tome script
     let tome_contents = fs::read_to_string(tome_path.clone())?;
     // Execute a tome script
-    eldritch_run(tome_path, tome_contents)
+    eldritch_run(tome_path, tome_contents, None)
 }
 
 #[tokio::main]
