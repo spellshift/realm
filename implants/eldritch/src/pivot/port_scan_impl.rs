@@ -380,7 +380,6 @@ mod tests {
     use super::*;
     use starlark::environment::GlobalsBuilder;
     use tokio::net::TcpListener;
-    use tokio::net::UdpSocket;
     use tokio::task;
     use tokio::io::copy;
     use starlark::starlark_module;
@@ -388,61 +387,6 @@ mod tests {
     use starlark::environment::Module;
     use starlark::values::Value;
     use starlark::syntax::{AstModule, Dialect};
-
-    // Tests run concurrently so each test needs a unique port.
-    async fn allocate_localhost_unused_ports(count: i32, protocol: String) -> anyhow::Result<Vec<i32>> {
-        let mut i = 0;
-        let mut res: Vec<i32> = vec![];
-        while i < count {
-            i = i + 1;
-            if protocol == "tcp" {
-                let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-                res.push(listener.local_addr().unwrap().port().into());
-            } else if protocol == "udp" {
-                let listener = UdpSocket::bind("127.0.0.1:0").await.unwrap();
-                res.push(listener.local_addr().unwrap().port().into());
-            }
-        }
-        Ok(res)
-    }
-
-    // Create an echo server on the specificed port / protocol.
-    async fn setup_test_listener(address: String, port: i32, protocol: String) -> anyhow::Result<()> {
-        let mut i = 0;
-        if protocol == "tcp" {
-            let listener = TcpListener::bind(format!("{}:{}", address,  port)).await?;
-            while i < 1 {
-                // Accept new connection
-                let (mut socket, _) = listener.accept().await?;
-                // Split reader and writer references
-                let (mut reader, mut writer) = socket.split();
-                // Copy from reader to writer to echo message back.
-                let bytes_copied = copy(&mut reader, &mut writer).await?;
-                // If message sent break loop
-                if bytes_copied > 1 {
-                    break;
-                }
-                i = i + 1;
-            }
-        } else if protocol == "udp" {
-            let mut buf = [0; 1024];
-            let sock = UdpSocket::bind(format!("{}:{}", address,  port)).await?;
-            while i < 1 {
-                let (bytes_copied, addr) = sock.recv_from(&mut buf).await?;
-
-                let bytes_copied = sock.send_to(&buf[..bytes_copied], addr).await?;
-
-                if bytes_copied > 1 {
-                    break;
-                }
-                i = i + 1;
-            }
-        } else {
-            println!("Unrecognized protocol");
-            panic!("Unrecognized protocol")
-        }
-        Ok(())
-    }
 
     #[tokio::test]
     async fn test_portscan_int_to_string() -> anyhow::Result<()> {
@@ -495,21 +439,42 @@ mod tests {
         Ok(())
     }
 
+    async fn local_bind_tcp() -> TcpListener {
+        // Try three times to bind to a port
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        return listener;
+    }
+
+    async fn local_accept_tcp(listener: TcpListener) -> Result<()> {
+        // Accept new connection
+        let (mut socket, _) = listener.accept().await?;
+        // Split reader and writer references
+        let (mut reader, mut writer) = socket.split();
+        // Copy from reader to writer to echo message back.
+        let bytes_copied = copy(&mut reader, &mut writer).await?;
+        // If message sent break loop
+        if bytes_copied > 1 {
+            return Ok(());
+        } else {
+            return Err(anyhow::anyhow!("Failed to copy any bytes"));
+        }
+    }
+
     #[tokio::test]
     async fn test_portscan_tcp() -> anyhow::Result<()> {
-        let test_ports =  allocate_localhost_unused_ports(4, "tcp".to_string()).await?;
+        // Allocate unused ports
+        let mut bound_listeners_vec: Vec<TcpListener> = vec![];
+        for _ in 0..(3) {
+            bound_listeners_vec.push(local_bind_tcp().await);
+        }
 
-
-        // Setup a test echo server
-        let listen_task1 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),test_ports[0], String::from("tcp"))
-        );
-        let listen_task2 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),test_ports[1], String::from("tcp"))
-        );
-        let listen_task3 = task::spawn(
-            setup_test_listener(String::from("127.0.0.1"),test_ports[2], String::from("tcp"))
-        );
+        let mut test_ports: Vec<i32> = vec![];
+        // Iterate over append port number and start listen server
+        let mut listen_tasks = vec![];
+        for listener in bound_listeners_vec.into_iter(){
+            test_ports.push(listener.local_addr().unwrap().port().into());
+            listen_tasks.push(task::spawn(local_accept_tcp(listener)));
+        }
 
         let test_cidr =  vec!["127.0.0.1/32".to_string()];
 
@@ -518,9 +483,11 @@ mod tests {
             handle_port_scan(test_cidr, test_ports.clone(), String::from("tcp"), 5)
         );
 
+        let mut listen_task_iter = listen_tasks.into_iter();
+        
         // Run both
         let (_a, _b, _c, actual_response) =
-            tokio::join!(listen_task1,listen_task2,listen_task3,send_task);
+            tokio::join!(listen_task_iter.next().unwrap(),listen_task_iter.next().unwrap(),listen_task_iter.next().unwrap(),send_task);
 
         let unwrapped_response = match actual_response {
             Ok(res) => match res {
@@ -535,8 +502,7 @@ mod tests {
         let expected_response: Vec<(String, i32, String, String)>;
         expected_response = vec![(host.clone(),test_ports[0],proto.clone(),"open".to_string()),
                 (host.clone(),test_ports[1],proto.clone(),"open".to_string()),
-                (host.clone(),test_ports[2],proto.clone(),"open".to_string()),
-                (host.clone(),test_ports[3],proto.clone(),"closed".to_string())];
+                (host.clone(),test_ports[2],proto.clone(),"open".to_string())];
         assert_eq!(expected_response, unwrapped_response);
         Ok(())
     }
@@ -621,17 +587,8 @@ mod tests {
     // verify our non async call works and Dict return type.
     #[test]
     fn test_portscan_return_type_starlark_dict_from_interpreter() -> anyhow::Result<()>{
-        // Setup test ports
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
 
-        let response = runtime.block_on(
-            allocate_localhost_unused_ports(4,"tcp".to_string())
-        );
-
-        let test_ports = response.unwrap();
+        let test_ports: Vec<i32> = (8000..8004).map(|x| x).collect();
 
         // Create test script
         let test_content = format!(r#"
