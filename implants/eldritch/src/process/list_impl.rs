@@ -56,7 +56,7 @@ pub fn list() -> Result<Vec<String>> {
         }
 
         #[cfg(target_os = "windows")]
-        let tmp_username = String::from(UNKNOWN);
+        let tmp_username = String::from(UNKNOWN_USER);
         #[cfg(not(target_os = "windows"))]
         let tmp_username = uid_to_username(process.uid, user_list);
 
