@@ -151,7 +151,7 @@ async fn tcp_connect_scan_socket(target_host: String, target_port: i32) -> Resul
                     return Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()));
                 },
                 _ => {
-                    return Err(anyhow::anyhow!("Any unexpeceted error occured during the scan:\n{}", err));
+                    return Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err));
                 },
 
             }
@@ -190,7 +190,7 @@ async fn udp_scan_socket(target_host: String, target_port: i32) -> Result<(Strin
                     return Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()));
                 },
                 _ => {
-                    return Err(anyhow::anyhow!("An unexpeceted error occured during the scan:\n{}", err));
+                    return Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err));
                 },
             }
         },
