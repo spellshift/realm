@@ -134,7 +134,7 @@ var (
 		{Name: "description", Type: field.TypeString},
 		{Name: "parameters", Type: field.TypeString, Nullable: true},
 		{Name: "hash", Type: field.TypeString, Size: 100},
-		{Name: "eldritch", Type: field.TypeString},
+		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 	}
 	// TomesTable holds the schema information for the "tomes" table.
 	TomesTable = &schema.Table{
