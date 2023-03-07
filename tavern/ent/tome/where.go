@@ -109,10 +109,10 @@ func Description(v string) predicate.Tome {
 	})
 }
 
-// Parameters applies equality check predicate on the "parameters" field. It's identical to ParametersEQ.
-func Parameters(v string) predicate.Tome {
+// Paramdefs applies equality check predicate on the "paramdefs" field. It's identical to ParamdefsEQ.
+func Paramdefs(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldParameters), v))
+		s.Where(sql.EQ(s.C(FieldParamdefs), v))
 	})
 }
 
@@ -456,116 +456,116 @@ func DescriptionContainsFold(v string) predicate.Tome {
 	})
 }
 
-// ParametersEQ applies the EQ predicate on the "parameters" field.
-func ParametersEQ(v string) predicate.Tome {
+// ParamdefsEQ applies the EQ predicate on the "paramdefs" field.
+func ParamdefsEQ(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldParameters), v))
+		s.Where(sql.EQ(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersNEQ applies the NEQ predicate on the "parameters" field.
-func ParametersNEQ(v string) predicate.Tome {
+// ParamdefsNEQ applies the NEQ predicate on the "paramdefs" field.
+func ParamdefsNEQ(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldParameters), v))
+		s.Where(sql.NEQ(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersIn applies the In predicate on the "parameters" field.
-func ParametersIn(vs ...string) predicate.Tome {
+// ParamdefsIn applies the In predicate on the "paramdefs" field.
+func ParamdefsIn(vs ...string) predicate.Tome {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldParameters), v...))
+		s.Where(sql.In(s.C(FieldParamdefs), v...))
 	})
 }
 
-// ParametersNotIn applies the NotIn predicate on the "parameters" field.
-func ParametersNotIn(vs ...string) predicate.Tome {
+// ParamdefsNotIn applies the NotIn predicate on the "paramdefs" field.
+func ParamdefsNotIn(vs ...string) predicate.Tome {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldParameters), v...))
+		s.Where(sql.NotIn(s.C(FieldParamdefs), v...))
 	})
 }
 
-// ParametersGT applies the GT predicate on the "parameters" field.
-func ParametersGT(v string) predicate.Tome {
+// ParamdefsGT applies the GT predicate on the "paramdefs" field.
+func ParamdefsGT(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldParameters), v))
+		s.Where(sql.GT(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersGTE applies the GTE predicate on the "parameters" field.
-func ParametersGTE(v string) predicate.Tome {
+// ParamdefsGTE applies the GTE predicate on the "paramdefs" field.
+func ParamdefsGTE(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldParameters), v))
+		s.Where(sql.GTE(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersLT applies the LT predicate on the "parameters" field.
-func ParametersLT(v string) predicate.Tome {
+// ParamdefsLT applies the LT predicate on the "paramdefs" field.
+func ParamdefsLT(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldParameters), v))
+		s.Where(sql.LT(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersLTE applies the LTE predicate on the "parameters" field.
-func ParametersLTE(v string) predicate.Tome {
+// ParamdefsLTE applies the LTE predicate on the "paramdefs" field.
+func ParamdefsLTE(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldParameters), v))
+		s.Where(sql.LTE(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersContains applies the Contains predicate on the "parameters" field.
-func ParametersContains(v string) predicate.Tome {
+// ParamdefsContains applies the Contains predicate on the "paramdefs" field.
+func ParamdefsContains(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldParameters), v))
+		s.Where(sql.Contains(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersHasPrefix applies the HasPrefix predicate on the "parameters" field.
-func ParametersHasPrefix(v string) predicate.Tome {
+// ParamdefsHasPrefix applies the HasPrefix predicate on the "paramdefs" field.
+func ParamdefsHasPrefix(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldParameters), v))
+		s.Where(sql.HasPrefix(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersHasSuffix applies the HasSuffix predicate on the "parameters" field.
-func ParametersHasSuffix(v string) predicate.Tome {
+// ParamdefsHasSuffix applies the HasSuffix predicate on the "paramdefs" field.
+func ParamdefsHasSuffix(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldParameters), v))
+		s.Where(sql.HasSuffix(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersIsNil applies the IsNil predicate on the "parameters" field.
-func ParametersIsNil() predicate.Tome {
+// ParamdefsIsNil applies the IsNil predicate on the "paramdefs" field.
+func ParamdefsIsNil() predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldParameters)))
+		s.Where(sql.IsNull(s.C(FieldParamdefs)))
 	})
 }
 
-// ParametersNotNil applies the NotNil predicate on the "parameters" field.
-func ParametersNotNil() predicate.Tome {
+// ParamdefsNotNil applies the NotNil predicate on the "paramdefs" field.
+func ParamdefsNotNil() predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldParameters)))
+		s.Where(sql.NotNull(s.C(FieldParamdefs)))
 	})
 }
 
-// ParametersEqualFold applies the EqualFold predicate on the "parameters" field.
-func ParametersEqualFold(v string) predicate.Tome {
+// ParamdefsEqualFold applies the EqualFold predicate on the "paramdefs" field.
+func ParamdefsEqualFold(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldParameters), v))
+		s.Where(sql.EqualFold(s.C(FieldParamdefs), v))
 	})
 }
 
-// ParametersContainsFold applies the ContainsFold predicate on the "parameters" field.
-func ParametersContainsFold(v string) predicate.Tome {
+// ParamdefsContainsFold applies the ContainsFold predicate on the "paramdefs" field.
+func ParamdefsContainsFold(v string) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldParameters), v))
+		s.Where(sql.ContainsFold(s.C(FieldParamdefs), v))
 	})
 }
 

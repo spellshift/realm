@@ -3598,7 +3598,7 @@ type TomeMutation struct {
 	lastModifiedAt *time.Time
 	name           *string
 	description    *string
-	parameters     *string
+	paramdefs      *string
 	hash           *string
 	eldritch       *string
 	clearedFields  map[string]struct{}
@@ -3852,53 +3852,53 @@ func (m *TomeMutation) ResetDescription() {
 	m.description = nil
 }
 
-// SetParameters sets the "parameters" field.
-func (m *TomeMutation) SetParameters(s string) {
-	m.parameters = &s
+// SetParamdefs sets the "paramdefs" field.
+func (m *TomeMutation) SetParamdefs(s string) {
+	m.paramdefs = &s
 }
 
-// Parameters returns the value of the "parameters" field in the mutation.
-func (m *TomeMutation) Parameters() (r string, exists bool) {
-	v := m.parameters
+// Paramdefs returns the value of the "paramdefs" field in the mutation.
+func (m *TomeMutation) Paramdefs() (r string, exists bool) {
+	v := m.paramdefs
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldParameters returns the old "parameters" field's value of the Tome entity.
+// OldParamdefs returns the old "paramdefs" field's value of the Tome entity.
 // If the Tome object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldParameters(ctx context.Context) (v string, err error) {
+func (m *TomeMutation) OldParamdefs(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldParameters is only allowed on UpdateOne operations")
+		return v, errors.New("OldParamdefs is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldParameters requires an ID field in the mutation")
+		return v, errors.New("OldParamdefs requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldParameters: %w", err)
+		return v, fmt.Errorf("querying old value for OldParamdefs: %w", err)
 	}
-	return oldValue.Parameters, nil
+	return oldValue.Paramdefs, nil
 }
 
-// ClearParameters clears the value of the "parameters" field.
-func (m *TomeMutation) ClearParameters() {
-	m.parameters = nil
-	m.clearedFields[tome.FieldParameters] = struct{}{}
+// ClearParamdefs clears the value of the "paramdefs" field.
+func (m *TomeMutation) ClearParamdefs() {
+	m.paramdefs = nil
+	m.clearedFields[tome.FieldParamdefs] = struct{}{}
 }
 
-// ParametersCleared returns if the "parameters" field was cleared in this mutation.
-func (m *TomeMutation) ParametersCleared() bool {
-	_, ok := m.clearedFields[tome.FieldParameters]
+// ParamdefsCleared returns if the "paramdefs" field was cleared in this mutation.
+func (m *TomeMutation) ParamdefsCleared() bool {
+	_, ok := m.clearedFields[tome.FieldParamdefs]
 	return ok
 }
 
-// ResetParameters resets all changes to the "parameters" field.
-func (m *TomeMutation) ResetParameters() {
-	m.parameters = nil
-	delete(m.clearedFields, tome.FieldParameters)
+// ResetParamdefs resets all changes to the "paramdefs" field.
+func (m *TomeMutation) ResetParamdefs() {
+	m.paramdefs = nil
+	delete(m.clearedFields, tome.FieldParamdefs)
 }
 
 // SetHash sets the "hash" field.
@@ -4059,8 +4059,8 @@ func (m *TomeMutation) Fields() []string {
 	if m.description != nil {
 		fields = append(fields, tome.FieldDescription)
 	}
-	if m.parameters != nil {
-		fields = append(fields, tome.FieldParameters)
+	if m.paramdefs != nil {
+		fields = append(fields, tome.FieldParamdefs)
 	}
 	if m.hash != nil {
 		fields = append(fields, tome.FieldHash)
@@ -4084,8 +4084,8 @@ func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case tome.FieldDescription:
 		return m.Description()
-	case tome.FieldParameters:
-		return m.Parameters()
+	case tome.FieldParamdefs:
+		return m.Paramdefs()
 	case tome.FieldHash:
 		return m.Hash()
 	case tome.FieldEldritch:
@@ -4107,8 +4107,8 @@ func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case tome.FieldDescription:
 		return m.OldDescription(ctx)
-	case tome.FieldParameters:
-		return m.OldParameters(ctx)
+	case tome.FieldParamdefs:
+		return m.OldParamdefs(ctx)
 	case tome.FieldHash:
 		return m.OldHash(ctx)
 	case tome.FieldEldritch:
@@ -4150,12 +4150,12 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDescription(v)
 		return nil
-	case tome.FieldParameters:
+	case tome.FieldParamdefs:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetParameters(v)
+		m.SetParamdefs(v)
 		return nil
 	case tome.FieldHash:
 		v, ok := value.(string)
@@ -4201,8 +4201,8 @@ func (m *TomeMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *TomeMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(tome.FieldParameters) {
-		fields = append(fields, tome.FieldParameters)
+	if m.FieldCleared(tome.FieldParamdefs) {
+		fields = append(fields, tome.FieldParamdefs)
 	}
 	return fields
 }
@@ -4218,8 +4218,8 @@ func (m *TomeMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *TomeMutation) ClearField(name string) error {
 	switch name {
-	case tome.FieldParameters:
-		m.ClearParameters()
+	case tome.FieldParamdefs:
+		m.ClearParamdefs()
 		return nil
 	}
 	return fmt.Errorf("unknown Tome nullable field %s", name)
@@ -4241,8 +4241,8 @@ func (m *TomeMutation) ResetField(name string) error {
 	case tome.FieldDescription:
 		m.ResetDescription()
 		return nil
-	case tome.FieldParameters:
-		m.ResetParameters()
+	case tome.FieldParamdefs:
+		m.ResetParamdefs()
 		return nil
 	case tome.FieldHash:
 		m.ResetHash()

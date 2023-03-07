@@ -2062,22 +2062,22 @@ type TomeWhereInput struct {
 	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
 	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
 
-	// "parameters" field predicates.
-	Parameters             *string  `json:"parameters,omitempty"`
-	ParametersNEQ          *string  `json:"parametersNEQ,omitempty"`
-	ParametersIn           []string `json:"parametersIn,omitempty"`
-	ParametersNotIn        []string `json:"parametersNotIn,omitempty"`
-	ParametersGT           *string  `json:"parametersGT,omitempty"`
-	ParametersGTE          *string  `json:"parametersGTE,omitempty"`
-	ParametersLT           *string  `json:"parametersLT,omitempty"`
-	ParametersLTE          *string  `json:"parametersLTE,omitempty"`
-	ParametersContains     *string  `json:"parametersContains,omitempty"`
-	ParametersHasPrefix    *string  `json:"parametersHasPrefix,omitempty"`
-	ParametersHasSuffix    *string  `json:"parametersHasSuffix,omitempty"`
-	ParametersIsNil        bool     `json:"parametersIsNil,omitempty"`
-	ParametersNotNil       bool     `json:"parametersNotNil,omitempty"`
-	ParametersEqualFold    *string  `json:"parametersEqualFold,omitempty"`
-	ParametersContainsFold *string  `json:"parametersContainsFold,omitempty"`
+	// "paramdefs" field predicates.
+	Paramdefs             *string  `json:"paramdefs,omitempty"`
+	ParamdefsNEQ          *string  `json:"paramdefsNEQ,omitempty"`
+	ParamdefsIn           []string `json:"paramdefsIn,omitempty"`
+	ParamdefsNotIn        []string `json:"paramdefsNotIn,omitempty"`
+	ParamdefsGT           *string  `json:"paramdefsGT,omitempty"`
+	ParamdefsGTE          *string  `json:"paramdefsGTE,omitempty"`
+	ParamdefsLT           *string  `json:"paramdefsLT,omitempty"`
+	ParamdefsLTE          *string  `json:"paramdefsLTE,omitempty"`
+	ParamdefsContains     *string  `json:"paramdefsContains,omitempty"`
+	ParamdefsHasPrefix    *string  `json:"paramdefsHasPrefix,omitempty"`
+	ParamdefsHasSuffix    *string  `json:"paramdefsHasSuffix,omitempty"`
+	ParamdefsIsNil        bool     `json:"paramdefsIsNil,omitempty"`
+	ParamdefsNotNil       bool     `json:"paramdefsNotNil,omitempty"`
+	ParamdefsEqualFold    *string  `json:"paramdefsEqualFold,omitempty"`
+	ParamdefsContainsFold *string  `json:"paramdefsContainsFold,omitempty"`
 
 	// "eldritch" field predicates.
 	Eldritch             *string  `json:"eldritch,omitempty"`
@@ -2320,50 +2320,50 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	if i.DescriptionContainsFold != nil {
 		predicates = append(predicates, tome.DescriptionContainsFold(*i.DescriptionContainsFold))
 	}
-	if i.Parameters != nil {
-		predicates = append(predicates, tome.ParametersEQ(*i.Parameters))
+	if i.Paramdefs != nil {
+		predicates = append(predicates, tome.ParamdefsEQ(*i.Paramdefs))
 	}
-	if i.ParametersNEQ != nil {
-		predicates = append(predicates, tome.ParametersNEQ(*i.ParametersNEQ))
+	if i.ParamdefsNEQ != nil {
+		predicates = append(predicates, tome.ParamdefsNEQ(*i.ParamdefsNEQ))
 	}
-	if len(i.ParametersIn) > 0 {
-		predicates = append(predicates, tome.ParametersIn(i.ParametersIn...))
+	if len(i.ParamdefsIn) > 0 {
+		predicates = append(predicates, tome.ParamdefsIn(i.ParamdefsIn...))
 	}
-	if len(i.ParametersNotIn) > 0 {
-		predicates = append(predicates, tome.ParametersNotIn(i.ParametersNotIn...))
+	if len(i.ParamdefsNotIn) > 0 {
+		predicates = append(predicates, tome.ParamdefsNotIn(i.ParamdefsNotIn...))
 	}
-	if i.ParametersGT != nil {
-		predicates = append(predicates, tome.ParametersGT(*i.ParametersGT))
+	if i.ParamdefsGT != nil {
+		predicates = append(predicates, tome.ParamdefsGT(*i.ParamdefsGT))
 	}
-	if i.ParametersGTE != nil {
-		predicates = append(predicates, tome.ParametersGTE(*i.ParametersGTE))
+	if i.ParamdefsGTE != nil {
+		predicates = append(predicates, tome.ParamdefsGTE(*i.ParamdefsGTE))
 	}
-	if i.ParametersLT != nil {
-		predicates = append(predicates, tome.ParametersLT(*i.ParametersLT))
+	if i.ParamdefsLT != nil {
+		predicates = append(predicates, tome.ParamdefsLT(*i.ParamdefsLT))
 	}
-	if i.ParametersLTE != nil {
-		predicates = append(predicates, tome.ParametersLTE(*i.ParametersLTE))
+	if i.ParamdefsLTE != nil {
+		predicates = append(predicates, tome.ParamdefsLTE(*i.ParamdefsLTE))
 	}
-	if i.ParametersContains != nil {
-		predicates = append(predicates, tome.ParametersContains(*i.ParametersContains))
+	if i.ParamdefsContains != nil {
+		predicates = append(predicates, tome.ParamdefsContains(*i.ParamdefsContains))
 	}
-	if i.ParametersHasPrefix != nil {
-		predicates = append(predicates, tome.ParametersHasPrefix(*i.ParametersHasPrefix))
+	if i.ParamdefsHasPrefix != nil {
+		predicates = append(predicates, tome.ParamdefsHasPrefix(*i.ParamdefsHasPrefix))
 	}
-	if i.ParametersHasSuffix != nil {
-		predicates = append(predicates, tome.ParametersHasSuffix(*i.ParametersHasSuffix))
+	if i.ParamdefsHasSuffix != nil {
+		predicates = append(predicates, tome.ParamdefsHasSuffix(*i.ParamdefsHasSuffix))
 	}
-	if i.ParametersIsNil {
-		predicates = append(predicates, tome.ParametersIsNil())
+	if i.ParamdefsIsNil {
+		predicates = append(predicates, tome.ParamdefsIsNil())
 	}
-	if i.ParametersNotNil {
-		predicates = append(predicates, tome.ParametersNotNil())
+	if i.ParamdefsNotNil {
+		predicates = append(predicates, tome.ParamdefsNotNil())
 	}
-	if i.ParametersEqualFold != nil {
-		predicates = append(predicates, tome.ParametersEqualFold(*i.ParametersEqualFold))
+	if i.ParamdefsEqualFold != nil {
+		predicates = append(predicates, tome.ParamdefsEqualFold(*i.ParamdefsEqualFold))
 	}
-	if i.ParametersContainsFold != nil {
-		predicates = append(predicates, tome.ParametersContainsFold(*i.ParametersContainsFold))
+	if i.ParamdefsContainsFold != nil {
+		predicates = append(predicates, tome.ParamdefsContainsFold(*i.ParamdefsContainsFold))
 	}
 	if i.Eldritch != nil {
 		predicates = append(predicates, tome.EldritchEQ(*i.Eldritch))

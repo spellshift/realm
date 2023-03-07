@@ -25,7 +25,7 @@ type Tome struct {
 	// Information about the tome
 	Description string `json:"description,omitempty"`
 	// JSON string describing what parameters are used with the tome
-	Parameters string `json:"parameters,omitempty"`
+	Paramdefs string `json:"paramdefs,omitempty"`
 	// A SHA3 digest of the eldritch field
 	Hash string `json:"hash,omitempty"`
 	// Eldritch script that will be executed when the tome is run
@@ -64,7 +64,7 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tome.FieldID:
 			values[i] = new(sql.NullInt64)
-		case tome.FieldName, tome.FieldDescription, tome.FieldParameters, tome.FieldHash, tome.FieldEldritch:
+		case tome.FieldName, tome.FieldDescription, tome.FieldParamdefs, tome.FieldHash, tome.FieldEldritch:
 			values[i] = new(sql.NullString)
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -113,11 +113,11 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Description = value.String
 			}
-		case tome.FieldParameters:
+		case tome.FieldParamdefs:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field parameters", values[i])
+				return fmt.Errorf("unexpected type %T for field paramdefs", values[i])
 			} else if value.Valid {
-				t.Parameters = value.String
+				t.Paramdefs = value.String
 			}
 		case tome.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -176,8 +176,8 @@ func (t *Tome) String() string {
 	builder.WriteString("description=")
 	builder.WriteString(t.Description)
 	builder.WriteString(", ")
-	builder.WriteString("parameters=")
-	builder.WriteString(t.Parameters)
+	builder.WriteString("paramdefs=")
+	builder.WriteString(t.Paramdefs)
 	builder.WriteString(", ")
 	builder.WriteString("hash=")
 	builder.WriteString(t.Hash)

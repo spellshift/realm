@@ -61,16 +61,16 @@ func (tc *TomeCreate) SetDescription(s string) *TomeCreate {
 	return tc
 }
 
-// SetParameters sets the "parameters" field.
-func (tc *TomeCreate) SetParameters(s string) *TomeCreate {
-	tc.mutation.SetParameters(s)
+// SetParamdefs sets the "paramdefs" field.
+func (tc *TomeCreate) SetParamdefs(s string) *TomeCreate {
+	tc.mutation.SetParamdefs(s)
 	return tc
 }
 
-// SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableParameters(s *string) *TomeCreate {
+// SetNillableParamdefs sets the "paramdefs" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableParamdefs(s *string) *TomeCreate {
 	if s != nil {
-		tc.SetParameters(*s)
+		tc.SetParamdefs(*s)
 	}
 	return tc
 }
@@ -271,9 +271,9 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
-	if value, ok := tc.mutation.Parameters(); ok {
-		_spec.SetField(tome.FieldParameters, field.TypeString, value)
-		_node.Parameters = value
+	if value, ok := tc.mutation.Paramdefs(); ok {
+		_spec.SetField(tome.FieldParamdefs, field.TypeString, value)
+		_node.Paramdefs = value
 	}
 	if value, ok := tc.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)

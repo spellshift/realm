@@ -47,23 +47,23 @@ func (tu *TomeUpdate) SetDescription(s string) *TomeUpdate {
 	return tu
 }
 
-// SetParameters sets the "parameters" field.
-func (tu *TomeUpdate) SetParameters(s string) *TomeUpdate {
-	tu.mutation.SetParameters(s)
+// SetParamdefs sets the "paramdefs" field.
+func (tu *TomeUpdate) SetParamdefs(s string) *TomeUpdate {
+	tu.mutation.SetParamdefs(s)
 	return tu
 }
 
-// SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableParameters(s *string) *TomeUpdate {
+// SetNillableParamdefs sets the "paramdefs" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableParamdefs(s *string) *TomeUpdate {
 	if s != nil {
-		tu.SetParameters(*s)
+		tu.SetParamdefs(*s)
 	}
 	return tu
 }
 
-// ClearParameters clears the value of the "parameters" field.
-func (tu *TomeUpdate) ClearParameters() *TomeUpdate {
-	tu.mutation.ClearParameters()
+// ClearParamdefs clears the value of the "paramdefs" field.
+func (tu *TomeUpdate) ClearParamdefs() *TomeUpdate {
+	tu.mutation.ClearParamdefs()
 	return tu
 }
 
@@ -237,11 +237,11 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Parameters(); ok {
-		_spec.SetField(tome.FieldParameters, field.TypeString, value)
+	if value, ok := tu.mutation.Paramdefs(); ok {
+		_spec.SetField(tome.FieldParamdefs, field.TypeString, value)
 	}
-	if tu.mutation.ParametersCleared() {
-		_spec.ClearField(tome.FieldParameters, field.TypeString)
+	if tu.mutation.ParamdefsCleared() {
+		_spec.ClearField(tome.FieldParamdefs, field.TypeString)
 	}
 	if value, ok := tu.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
@@ -340,23 +340,23 @@ func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
 	return tuo
 }
 
-// SetParameters sets the "parameters" field.
-func (tuo *TomeUpdateOne) SetParameters(s string) *TomeUpdateOne {
-	tuo.mutation.SetParameters(s)
+// SetParamdefs sets the "paramdefs" field.
+func (tuo *TomeUpdateOne) SetParamdefs(s string) *TomeUpdateOne {
+	tuo.mutation.SetParamdefs(s)
 	return tuo
 }
 
-// SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableParameters(s *string) *TomeUpdateOne {
+// SetNillableParamdefs sets the "paramdefs" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableParamdefs(s *string) *TomeUpdateOne {
 	if s != nil {
-		tuo.SetParameters(*s)
+		tuo.SetParamdefs(*s)
 	}
 	return tuo
 }
 
-// ClearParameters clears the value of the "parameters" field.
-func (tuo *TomeUpdateOne) ClearParameters() *TomeUpdateOne {
-	tuo.mutation.ClearParameters()
+// ClearParamdefs clears the value of the "paramdefs" field.
+func (tuo *TomeUpdateOne) ClearParamdefs() *TomeUpdateOne {
+	tuo.mutation.ClearParamdefs()
 	return tuo
 }
 
@@ -560,11 +560,11 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Parameters(); ok {
-		_spec.SetField(tome.FieldParameters, field.TypeString, value)
+	if value, ok := tuo.mutation.Paramdefs(); ok {
+		_spec.SetField(tome.FieldParamdefs, field.TypeString, value)
 	}
-	if tuo.mutation.ParametersCleared() {
-		_spec.ClearField(tome.FieldParameters, field.TypeString)
+	if tuo.mutation.ParamdefsCleared() {
+		_spec.ClearField(tome.FieldParamdefs, field.TypeString)
 	}
 	if value, ok := tuo.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)

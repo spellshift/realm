@@ -37,7 +37,7 @@ input CreateTomeInput {
   """Information about the tome"""
   description: String!
   """JSON string describing what parameters are used with the tome"""
-  parameters: String
+  paramdefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   fileIDs: [ID!]
@@ -663,7 +663,7 @@ type Tome implements Node {
   """Information about the tome"""
   description: String!
   """JSON string describing what parameters are used with the tome"""
-  parameters: String
+  paramdefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   files: [File!]
@@ -744,22 +744,22 @@ input TomeWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
-  """parameters field predicates"""
-  parameters: String
-  parametersNEQ: String
-  parametersIn: [String!]
-  parametersNotIn: [String!]
-  parametersGT: String
-  parametersGTE: String
-  parametersLT: String
-  parametersLTE: String
-  parametersContains: String
-  parametersHasPrefix: String
-  parametersHasSuffix: String
-  parametersIsNil: Boolean
-  parametersNotNil: Boolean
-  parametersEqualFold: String
-  parametersContainsFold: String
+  """paramdefs field predicates"""
+  paramdefs: String
+  paramdefsNEQ: String
+  paramdefsIn: [String!]
+  paramdefsNotIn: [String!]
+  paramdefsGT: String
+  paramdefsGTE: String
+  paramdefsLT: String
+  paramdefsLTE: String
+  paramdefsContains: String
+  paramdefsHasPrefix: String
+  paramdefsHasSuffix: String
+  paramdefsIsNil: Boolean
+  paramdefsNotNil: Boolean
+  paramdefsEqualFold: String
+  paramdefsContainsFold: String
   """eldritch field predicates"""
   eldritch: String
   eldritchNEQ: String

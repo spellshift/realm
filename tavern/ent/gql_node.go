@@ -427,12 +427,12 @@ func (t *Tome) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "description",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(t.Parameters); err != nil {
+	if buf, err = json.Marshal(t.Paramdefs); err != nil {
 		return nil, err
 	}
 	node.Fields[4] = &Field{
 		Type:  "string",
-		Name:  "parameters",
+		Name:  "paramdefs",
 		Value: string(buf),
 	}
 	if buf, err = json.Marshal(t.Eldritch); err != nil {

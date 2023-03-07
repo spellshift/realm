@@ -128,7 +128,7 @@ func (c *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
 type CreateTomeInput struct {
 	Name        string
 	Description string
-	Parameters  *string
+	Paramdefs   *string
 	Eldritch    string
 	FileIDs     []int
 }
@@ -137,8 +137,8 @@ type CreateTomeInput struct {
 func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 	m.SetName(i.Name)
 	m.SetDescription(i.Description)
-	if v := i.Parameters; v != nil {
-		m.SetParameters(*v)
+	if v := i.Paramdefs; v != nil {
+		m.SetParamdefs(*v)
 	}
 	m.SetEldritch(i.Eldritch)
 	if v := i.FileIDs; len(v) > 0 {

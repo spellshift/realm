@@ -633,8 +633,8 @@ func (ec *executionContext) fieldContext_Job_tome(ctx context.Context, field gra
 				return ec.fieldContext_Tome_name(ctx, field)
 			case "description":
 				return ec.fieldContext_Tome_description(ctx, field)
-			case "parameters":
-				return ec.fieldContext_Tome_parameters(ctx, field)
+			case "paramdefs":
+				return ec.fieldContext_Tome_paramdefs(ctx, field)
 			case "eldritch":
 				return ec.fieldContext_Tome_eldritch(ctx, field)
 			case "files":
@@ -1341,8 +1341,8 @@ func (ec *executionContext) fieldContext_Query_tomes(ctx context.Context, field 
 				return ec.fieldContext_Tome_name(ctx, field)
 			case "description":
 				return ec.fieldContext_Tome_description(ctx, field)
-			case "parameters":
-				return ec.fieldContext_Tome_parameters(ctx, field)
+			case "paramdefs":
+				return ec.fieldContext_Tome_paramdefs(ctx, field)
 			case "eldritch":
 				return ec.fieldContext_Tome_eldritch(ctx, field)
 			case "files":
@@ -2870,8 +2870,8 @@ func (ec *executionContext) fieldContext_Tome_description(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Tome_parameters(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_parameters(ctx, field)
+func (ec *executionContext) _Tome_paramdefs(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tome_paramdefs(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2884,7 +2884,7 @@ func (ec *executionContext) _Tome_parameters(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Parameters, nil
+		return obj.Paramdefs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2898,7 +2898,7 @@ func (ec *executionContext) _Tome_parameters(ctx context.Context, field graphql.
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Tome_parameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Tome_paramdefs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Tome",
 		Field:      field,
@@ -3329,7 +3329,7 @@ func (ec *executionContext) unmarshalInputCreateTomeInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "parameters", "eldritch", "fileIDs"}
+	fieldsInOrder := [...]string{"name", "description", "paramdefs", "eldritch", "fileIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3352,11 +3352,11 @@ func (ec *executionContext) unmarshalInputCreateTomeInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "parameters":
+		case "paramdefs":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parameters"))
-			it.Parameters, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefs"))
+			it.Paramdefs, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6561,7 +6561,7 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdat", "createdatNEQ", "createdatIn", "createdatNotIn", "createdatGT", "createdatGTE", "createdatLT", "createdatLTE", "lastmodifiedat", "lastmodifiedatNEQ", "lastmodifiedatIn", "lastmodifiedatNotIn", "lastmodifiedatGT", "lastmodifiedatGTE", "lastmodifiedatLT", "lastmodifiedatLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "eldritch", "eldritchNEQ", "eldritchIn", "eldritchNotIn", "eldritchGT", "eldritchGTE", "eldritchLT", "eldritchLTE", "eldritchContains", "eldritchHasPrefix", "eldritchHasSuffix", "eldritchEqualFold", "eldritchContainsFold", "hasFiles", "hasFilesWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdat", "createdatNEQ", "createdatIn", "createdatNotIn", "createdatGT", "createdatGTE", "createdatLT", "createdatLTE", "lastmodifiedat", "lastmodifiedatNEQ", "lastmodifiedatIn", "lastmodifiedatNotIn", "lastmodifiedatGT", "lastmodifiedatGTE", "lastmodifiedatLT", "lastmodifiedatLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "paramdefs", "paramdefsNEQ", "paramdefsIn", "paramdefsNotIn", "paramdefsGT", "paramdefsGTE", "paramdefsLT", "paramdefsLTE", "paramdefsContains", "paramdefsHasPrefix", "paramdefsHasSuffix", "paramdefsIsNil", "paramdefsNotNil", "paramdefsEqualFold", "paramdefsContainsFold", "eldritch", "eldritchNEQ", "eldritchIn", "eldritchNotIn", "eldritchGT", "eldritchGTE", "eldritchLT", "eldritchLTE", "eldritchContains", "eldritchHasPrefix", "eldritchHasSuffix", "eldritchEqualFold", "eldritchContainsFold", "hasFiles", "hasFilesWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6992,123 +6992,123 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "parameters":
+		case "paramdefs":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parameters"))
-			it.Parameters, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefs"))
+			it.Paramdefs, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersNEQ":
+		case "paramdefsNEQ":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersNEQ"))
-			it.ParametersNEQ, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsNEQ"))
+			it.ParamdefsNEQ, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersIn":
+		case "paramdefsIn":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersIn"))
-			it.ParametersIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsIn"))
+			it.ParamdefsIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersNotIn":
+		case "paramdefsNotIn":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersNotIn"))
-			it.ParametersNotIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsNotIn"))
+			it.ParamdefsNotIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersGT":
+		case "paramdefsGT":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersGT"))
-			it.ParametersGT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsGT"))
+			it.ParamdefsGT, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersGTE":
+		case "paramdefsGTE":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersGTE"))
-			it.ParametersGTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsGTE"))
+			it.ParamdefsGTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersLT":
+		case "paramdefsLT":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersLT"))
-			it.ParametersLT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsLT"))
+			it.ParamdefsLT, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersLTE":
+		case "paramdefsLTE":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersLTE"))
-			it.ParametersLTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsLTE"))
+			it.ParamdefsLTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersContains":
+		case "paramdefsContains":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersContains"))
-			it.ParametersContains, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsContains"))
+			it.ParamdefsContains, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersHasPrefix":
+		case "paramdefsHasPrefix":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersHasPrefix"))
-			it.ParametersHasPrefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsHasPrefix"))
+			it.ParamdefsHasPrefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersHasSuffix":
+		case "paramdefsHasSuffix":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersHasSuffix"))
-			it.ParametersHasSuffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsHasSuffix"))
+			it.ParamdefsHasSuffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersIsNil":
+		case "paramdefsIsNil":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersIsNil"))
-			it.ParametersIsNil, err = ec.unmarshalOBoolean2bool(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsIsNil"))
+			it.ParamdefsIsNil, err = ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersNotNil":
+		case "paramdefsNotNil":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersNotNil"))
-			it.ParametersNotNil, err = ec.unmarshalOBoolean2bool(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsNotNil"))
+			it.ParamdefsNotNil, err = ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersEqualFold":
+		case "paramdefsEqualFold":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersEqualFold"))
-			it.ParametersEqualFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsEqualFold"))
+			it.ParamdefsEqualFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "parametersContainsFold":
+		case "paramdefsContainsFold":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersContainsFold"))
-			it.ParametersContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramdefsContainsFold"))
+			it.ParamdefsContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8540,9 +8540,9 @@ func (ec *executionContext) _Tome(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "parameters":
+		case "paramdefs":
 
-			out.Values[i] = ec._Tome_parameters(ctx, field, obj)
+			out.Values[i] = ec._Tome_paramdefs(ctx, field, obj)
 
 		case "eldritch":
 

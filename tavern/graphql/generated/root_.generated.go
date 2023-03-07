@@ -130,7 +130,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
-		Parameters     func(childComplexity int) int
+		Paramdefs      func(childComplexity int) int
 	}
 
 	User struct {
@@ -667,12 +667,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.Name(childComplexity), true
 
-	case "Tome.parameters":
-		if e.complexity.Tome.Parameters == nil {
+	case "Tome.paramdefs":
+		if e.complexity.Tome.Paramdefs == nil {
 			break
 		}
 
-		return e.complexity.Tome.Parameters(childComplexity), true
+		return e.complexity.Tome.Paramdefs(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -838,7 +838,7 @@ input CreateTomeInput {
   """Information about the tome"""
   description: String!
   """JSON string describing what parameters are used with the tome"""
-  parameters: String
+  paramdefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   fileIDs: [ID!]
@@ -1464,7 +1464,7 @@ type Tome implements Node {
   """Information about the tome"""
   description: String!
   """JSON string describing what parameters are used with the tome"""
-  parameters: String
+  paramdefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   files: [File!]
@@ -1545,22 +1545,22 @@ input TomeWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
-  """parameters field predicates"""
-  parameters: String
-  parametersNEQ: String
-  parametersIn: [String!]
-  parametersNotIn: [String!]
-  parametersGT: String
-  parametersGTE: String
-  parametersLT: String
-  parametersLTE: String
-  parametersContains: String
-  parametersHasPrefix: String
-  parametersHasSuffix: String
-  parametersIsNil: Boolean
-  parametersNotNil: Boolean
-  parametersEqualFold: String
-  parametersContainsFold: String
+  """paramdefs field predicates"""
+  paramdefs: String
+  paramdefsNEQ: String
+  paramdefsIn: [String!]
+  paramdefsNotIn: [String!]
+  paramdefsGT: String
+  paramdefsGTE: String
+  paramdefsLT: String
+  paramdefsLTE: String
+  paramdefsContains: String
+  paramdefsHasPrefix: String
+  paramdefsHasSuffix: String
+  paramdefsIsNil: Boolean
+  paramdefsNotNil: Boolean
+  paramdefsEqualFold: String
+  paramdefsContainsFold: String
   """eldritch field predicates"""
   eldritch: String
   eldritchNEQ: String

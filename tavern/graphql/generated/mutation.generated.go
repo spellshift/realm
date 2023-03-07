@@ -792,8 +792,8 @@ func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context
 				return ec.fieldContext_Tome_name(ctx, field)
 			case "description":
 				return ec.fieldContext_Tome_description(ctx, field)
-			case "parameters":
-				return ec.fieldContext_Tome_parameters(ctx, field)
+			case "paramdefs":
+				return ec.fieldContext_Tome_paramdefs(ctx, field)
 			case "eldritch":
 				return ec.fieldContext_Tome_eldritch(ctx, field)
 			case "files":

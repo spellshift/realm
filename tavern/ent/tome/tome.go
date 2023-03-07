@@ -21,8 +21,8 @@ const (
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
-	// FieldParameters holds the string denoting the parameters field in the database.
-	FieldParameters = "parameters"
+	// FieldParamdefs holds the string denoting the paramdefs field in the database.
+	FieldParamdefs = "paramdefs"
 	// FieldHash holds the string denoting the hash field in the database.
 	FieldHash = "hash"
 	// FieldEldritch holds the string denoting the eldritch field in the database.
@@ -47,7 +47,7 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldName,
 	FieldDescription,
-	FieldParameters,
+	FieldParamdefs,
 	FieldHash,
 	FieldEldritch,
 }
