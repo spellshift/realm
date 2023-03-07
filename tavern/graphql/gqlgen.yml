@@ -1,5 +1,6 @@
 schema:
   - schema/directives.graphql
+  - schema/ent.graphql
   - schema/scalars.graphql
   - schema/query.graphql
   - schema/mutation.graphql

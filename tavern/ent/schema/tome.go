@@ -55,7 +55,6 @@ func (Tome) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Tome) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.QueryField(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 		),

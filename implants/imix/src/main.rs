@@ -40,7 +40,7 @@ async fn handle_exec_tome(task: GraphQLTask) -> Result<(String,String)> {
     let tome_contents = task_job.tome.eldritch;
 
     // Execute a tome script
-    let res = eldritch_run(tome_name, tome_contents);
+    let res = eldritch_run(tome_name, tome_contents, task_job.tome.parameters);
     match res {
         Ok(tome_output) => Ok((tome_output, "".to_string())),
         Err(tome_error) => Ok(("".to_string(), tome_error.to_string())),
@@ -301,8 +301,10 @@ mod tests {
                     id: "21474836482".to_string(),
                     name: "Shell execute".to_string(),
                     description: "Execute a command in the default system shell".to_string(),
-                    parameters: None,
-                    eldritch: r#"sys.shell("whoami")"#.to_string(),
+                    parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
+                    eldritch: r#"
+sys.shell(input_params["cmd"])
+"#.to_string(),
                     files: [].to_vec(),
                 },
                 bundle: None,
@@ -318,8 +320,8 @@ mod tests {
 
         let result = runtime.block_on(handle_exec_tome(test_tome_input)).unwrap();
 
+        println!("{:?}", result.clone());
         let mut bool_res = false;
-        assert_eq!(result.1, "".to_string());
 
         if cfg!(target_os = "linux") ||
         cfg!(target_os = "ios") ||

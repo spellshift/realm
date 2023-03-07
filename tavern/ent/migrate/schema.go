@@ -39,7 +39,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "params", Type: field.TypeString, Nullable: true},
+		{Name: "parameters", Type: field.TypeString, Nullable: true},
 		{Name: "job_tome", Type: field.TypeInt},
 		{Name: "job_bundle", Type: field.TypeInt, Nullable: true},
 	}

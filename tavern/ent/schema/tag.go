@@ -40,7 +40,6 @@ func (Tag) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Tag) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.QueryField(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 			entgql.MutationUpdate(),
