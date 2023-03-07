@@ -90,6 +90,7 @@ mod tests {
     
     #[test]
     fn test_dll_inject_simple() -> anyhow::Result<()>{
+        const DLL_EXEC_WAIT_TIME: u8 = 5;
         // Get unique and unused temp file path
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
@@ -109,7 +110,7 @@ mod tests {
         // Run our code.
         let _res = dll_inject(test_dll_path.to_string_lossy().to_string(), target_pid);
 
-        let delay = time::Duration::from_secs(5);
+        let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
         thread::sleep(delay);
 
         // Test that the test file was created
