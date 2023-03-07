@@ -44,9 +44,9 @@ func newClient() (client Client) {
 }
 
 type session struct {
-	ID         string    `json:"id"`
-	Hostname   string    `json:"hostname"`
-	LastSeenAt time.Time `json:"lastseenat"`
+	ID         string `json:"id"`
+	Hostname   string `json:"hostname"`
+	LastSeenAt string `json:"lastseenat"`
 }
 
 func (client *Client) getActiveSessions() (sessions []session) {
@@ -68,7 +68,11 @@ func (client *Client) getActiveSessions() (sessions []session) {
 	}
 	client.do(query, &resp)
 	for _, session := range resp.Data.Sessions {
-		if time.Since(session.LastSeenAt) > 5*time.Minute {
+		lastSeenAt, err := time.Parse(time.RFC3339, session.LastSeenAt)
+		if err != nil {
+			log.Fatalf("failed to parse last seen timestamp: %v", err)
+		}
+		if time.Since(lastSeenAt) > 5*time.Minute {
 			continue
 		}
 		sessions = append(sessions, session)
@@ -85,6 +89,7 @@ func (client *Client) getActiveSessionIDs() (ids []int) {
 		}
 		ids = append(ids, id)
 	}
+	log.Printf("Active sessions: %#v", ids)
 	return
 }
 
@@ -96,7 +101,11 @@ func (client *Client) ShowActive() {
 	logger := log.New(w, "", log.Flags())
 	sessions := client.getActiveSessions()
 	for _, session := range sessions {
-		logger.Printf("%s\t(%s)\t%ds ago\t(%s)", session.Hostname, session.ID, time.Since(session.LastSeenAt)/time.Second, session.LastSeenAt.String())
+		lastSeenAt, err := time.Parse(time.RFC3339, session.LastSeenAt)
+		if err != nil {
+			log.Fatalf("failed to parse last seen timestamp: %v", err)
+		}
+		logger.Printf("%s\t(%s)\t%ds ago\t(%s)", session.Hostname, session.ID, time.Since(lastSeenAt)/time.Second, lastSeenAt)
 	}
 	logger.Printf("Found %d active sessions", len(sessions))
 }
