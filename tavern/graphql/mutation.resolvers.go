@@ -131,6 +131,8 @@ func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTas
 		_, err = r.client.Session.Create().
 			SetPrincipal(input.Principal).
 			SetHostname(input.Hostname).
+			SetNillableHostPrimaryIP(input.HostPrimaryIP).
+			SetHostPlatform(input.HostPlatform).
 			SetIdentifier(input.SessionIdentifier).
 			SetAgentIdentifier(input.AgentIdentifier).
 			SetHostIdentifier(input.HostIdentifier).
@@ -148,6 +150,8 @@ func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTas
 	agentSession, err = agentSession.Update().
 		SetPrincipal(input.Principal).
 		SetHostname(input.Hostname).
+		SetNillableHostPrimaryIP(input.HostPrimaryIP).
+		SetHostPlatform(input.HostPlatform).
 		SetIdentifier(input.SessionIdentifier).
 		SetAgentIdentifier(input.AgentIdentifier).
 		SetHostIdentifier(input.HostIdentifier).

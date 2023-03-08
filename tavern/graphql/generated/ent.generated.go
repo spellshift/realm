@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -1280,6 +1281,10 @@ func (ec *executionContext) fieldContext_Query_sessions(ctx context.Context, fie
 				return ec.fieldContext_Session_agentidentifier(ctx, field)
 			case "hostidentifier":
 				return ec.fieldContext_Session_hostidentifier(ctx, field)
+			case "hostprimaryip":
+				return ec.fieldContext_Session_hostprimaryip(ctx, field)
+			case "hostplatform":
+				return ec.fieldContext_Session_hostplatform(ctx, field)
 			case "lastseenat":
 				return ec.fieldContext_Session_lastseenat(ctx, field)
 			case "tags":
@@ -1890,6 +1895,91 @@ func (ec *executionContext) fieldContext_Session_hostidentifier(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Session_hostprimaryip(ctx context.Context, field graphql.CollectedField, obj *ent.Session) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Session_hostprimaryip(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HostPrimaryIP, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Session_hostprimaryip(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Session",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Session_hostplatform(ctx context.Context, field graphql.CollectedField, obj *ent.Session) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Session_hostplatform(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HostPlatform, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(session.HostPlatform)
+	fc.Result = res
+	return ec.marshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Session_hostplatform(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Session",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SessionSessionHostPlatform does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Session_lastseenat(ctx context.Context, field graphql.CollectedField, obj *ent.Session) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Session_lastseenat(ctx, field)
 	if err != nil {
@@ -2227,6 +2317,10 @@ func (ec *executionContext) fieldContext_Tag_sessions(ctx context.Context, field
 				return ec.fieldContext_Session_agentidentifier(ctx, field)
 			case "hostidentifier":
 				return ec.fieldContext_Session_hostidentifier(ctx, field)
+			case "hostprimaryip":
+				return ec.fieldContext_Session_hostprimaryip(ctx, field)
+			case "hostplatform":
+				return ec.fieldContext_Session_hostplatform(ctx, field)
 			case "lastseenat":
 				return ec.fieldContext_Session_lastseenat(ctx, field)
 			case "tags":
@@ -2694,6 +2788,10 @@ func (ec *executionContext) fieldContext_Task_session(ctx context.Context, field
 				return ec.fieldContext_Session_agentidentifier(ctx, field)
 			case "hostidentifier":
 				return ec.fieldContext_Session_hostidentifier(ctx, field)
+			case "hostprimaryip":
+				return ec.fieldContext_Session_hostprimaryip(ctx, field)
+			case "hostplatform":
+				return ec.fieldContext_Session_hostplatform(ctx, field)
 			case "lastseenat":
 				return ec.fieldContext_Session_lastseenat(ctx, field)
 			case "tags":
@@ -4598,7 +4696,7 @@ func (ec *executionContext) unmarshalInputSessionWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "hostname", "hostnameNEQ", "hostnameIn", "hostnameNotIn", "hostnameGT", "hostnameGTE", "hostnameLT", "hostnameLTE", "hostnameContains", "hostnameHasPrefix", "hostnameHasSuffix", "hostnameIsNil", "hostnameNotNil", "hostnameEqualFold", "hostnameContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentidentifier", "agentidentifierNEQ", "agentidentifierIn", "agentidentifierNotIn", "agentidentifierGT", "agentidentifierGTE", "agentidentifierLT", "agentidentifierLTE", "agentidentifierContains", "agentidentifierHasPrefix", "agentidentifierHasSuffix", "agentidentifierIsNil", "agentidentifierNotNil", "agentidentifierEqualFold", "agentidentifierContainsFold", "hostidentifier", "hostidentifierNEQ", "hostidentifierIn", "hostidentifierNotIn", "hostidentifierGT", "hostidentifierGTE", "hostidentifierLT", "hostidentifierLTE", "hostidentifierContains", "hostidentifierHasPrefix", "hostidentifierHasSuffix", "hostidentifierIsNil", "hostidentifierNotNil", "hostidentifierEqualFold", "hostidentifierContainsFold", "lastseenat", "lastseenatNEQ", "lastseenatIn", "lastseenatNotIn", "lastseenatGT", "lastseenatGTE", "lastseenatLT", "lastseenatLTE", "lastseenatIsNil", "lastseenatNotNil", "hasTags", "hasTagsWith", "hasTasks", "hasTasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "hostname", "hostnameNEQ", "hostnameIn", "hostnameNotIn", "hostnameGT", "hostnameGTE", "hostnameLT", "hostnameLTE", "hostnameContains", "hostnameHasPrefix", "hostnameHasSuffix", "hostnameIsNil", "hostnameNotNil", "hostnameEqualFold", "hostnameContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentidentifier", "agentidentifierNEQ", "agentidentifierIn", "agentidentifierNotIn", "agentidentifierGT", "agentidentifierGTE", "agentidentifierLT", "agentidentifierLTE", "agentidentifierContains", "agentidentifierHasPrefix", "agentidentifierHasSuffix", "agentidentifierIsNil", "agentidentifierNotNil", "agentidentifierEqualFold", "agentidentifierContainsFold", "hostidentifier", "hostidentifierNEQ", "hostidentifierIn", "hostidentifierNotIn", "hostidentifierGT", "hostidentifierGTE", "hostidentifierLT", "hostidentifierLTE", "hostidentifierContains", "hostidentifierHasPrefix", "hostidentifierHasSuffix", "hostidentifierIsNil", "hostidentifierNotNil", "hostidentifierEqualFold", "hostidentifierContainsFold", "hostprimaryip", "hostprimaryipNEQ", "hostprimaryipIn", "hostprimaryipNotIn", "hostprimaryipGT", "hostprimaryipGTE", "hostprimaryipLT", "hostprimaryipLTE", "hostprimaryipContains", "hostprimaryipHasPrefix", "hostprimaryipHasSuffix", "hostprimaryipIsNil", "hostprimaryipNotNil", "hostprimaryipEqualFold", "hostprimaryipContainsFold", "hostplatform", "hostplatformNEQ", "hostplatformIn", "hostplatformNotIn", "lastseenat", "lastseenatNEQ", "lastseenatIn", "lastseenatNotIn", "lastseenatGT", "lastseenatGTE", "lastseenatLT", "lastseenatLTE", "lastseenatIsNil", "lastseenatNotNil", "hasTags", "hasTagsWith", "hasTasks", "hasTasksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5378,6 +5476,158 @@ func (ec *executionContext) unmarshalInputSessionWhereInput(ctx context.Context,
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostidentifierContainsFold"))
 			it.HostIdentifierContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryip":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryip"))
+			it.HostPrimaryIP, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipNEQ"))
+			it.HostPrimaryIPNEQ, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipIn"))
+			it.HostPrimaryIPIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipNotIn"))
+			it.HostPrimaryIPNotIn, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipGT"))
+			it.HostPrimaryIPGT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipGTE"))
+			it.HostPrimaryIPGTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipLT"))
+			it.HostPrimaryIPLT, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipLTE"))
+			it.HostPrimaryIPLTE, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipContains":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipContains"))
+			it.HostPrimaryIPContains, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipHasPrefix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipHasPrefix"))
+			it.HostPrimaryIPHasPrefix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipHasSuffix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipHasSuffix"))
+			it.HostPrimaryIPHasSuffix, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipIsNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipIsNil"))
+			it.HostPrimaryIPIsNil, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipNotNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipNotNil"))
+			it.HostPrimaryIPNotNil, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipEqualFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipEqualFold"))
+			it.HostPrimaryIPEqualFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostprimaryipContainsFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostprimaryipContainsFold"))
+			it.HostPrimaryIPContainsFold, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostplatform":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostplatform"))
+			it.HostPlatform, err = ec.unmarshalOSessionSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostplatformNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostplatformNEQ"))
+			it.HostPlatformNEQ, err = ec.unmarshalOSessionSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostplatformIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostplatformIn"))
+			it.HostPlatformIn, err = ec.unmarshalOSessionSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostplatformNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostplatformNotIn"))
+			it.HostPlatformNotIn, err = ec.unmarshalOSessionSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8391,6 +8641,17 @@ func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, 
 
 			out.Values[i] = ec._Session_hostidentifier(ctx, field, obj)
 
+		case "hostprimaryip":
+
+			out.Values[i] = ec._Session_hostprimaryip(ctx, field, obj)
+
+		case "hostplatform":
+
+			out.Values[i] = ec._Session_hostplatform(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "lastseenat":
 
 			out.Values[i] = ec._Session_lastseenat(ctx, field, obj)
@@ -9032,6 +9293,16 @@ func (ec *executionContext) marshalNSessionOrderField2ᚖgithubᚗcomᚋkcarrett
 	return v
 }
 
+func (ec *executionContext) unmarshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, v interface{}) (session.HostPlatform, error) {
+	var res session.HostPlatform
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v session.HostPlatform) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNSessionWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐSessionWhereInput(ctx context.Context, v interface{}) (*ent.SessionWhereInput, error) {
 	res, err := ec.unmarshalInputSessionWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -9539,6 +9810,89 @@ func (ec *executionContext) marshalOSession2ᚕᚖgithubᚗcomᚋkcarrettoᚋrea
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOSessionSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx context.Context, v interface{}) ([]session.HostPlatform, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]session.HostPlatform, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOSessionSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx context.Context, sel ast.SelectionSet, v []session.HostPlatform) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOSessionSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, v interface{}) (*session.HostPlatform, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(session.HostPlatform)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSessionSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v *session.HostPlatform) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOSessionWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐSessionWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.SessionWhereInput, error) {

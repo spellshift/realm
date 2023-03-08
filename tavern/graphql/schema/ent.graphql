@@ -303,6 +303,10 @@ type Session implements Node {
   agentidentifier: String @goField(name: "AgentIdentifier", forceResolver: false)
   """Unique identifier for the host the session is running on."""
   hostidentifier: String @goField(name: "HostIdentifier", forceResolver: false)
+  """Primary interface IP address reported by the agent."""
+  hostprimaryip: String @goField(name: "HostPrimaryIP", forceResolver: false)
+  """Platform the agent is operating on."""
+  hostplatform: SessionSessionHostPlatform! @goField(name: "HostPlatform", forceResolver: false)
   """Timestamp of when a task was last claimed or updated for a target"""
   lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
   tags: [Tag!]
@@ -318,6 +322,14 @@ input SessionOrder {
 """Properties by which Session connections can be ordered."""
 enum SessionOrderField {
   LAST_SEEN_AT
+}
+"""SessionSessionHostPlatform is enum for the field hostPlatform"""
+enum SessionSessionHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/ent/session.HostPlatform") {
+  Windows
+  Linux
+  MacOS
+  BSD
+  Unknown
 }
 """
 SessionWhereInput is used for filtering Session objects.
@@ -428,6 +440,27 @@ input SessionWhereInput {
   hostidentifierNotNil: Boolean
   hostidentifierEqualFold: String
   hostidentifierContainsFold: String
+  """hostPrimaryIP field predicates"""
+  hostprimaryip: String
+  hostprimaryipNEQ: String
+  hostprimaryipIn: [String!]
+  hostprimaryipNotIn: [String!]
+  hostprimaryipGT: String
+  hostprimaryipGTE: String
+  hostprimaryipLT: String
+  hostprimaryipLTE: String
+  hostprimaryipContains: String
+  hostprimaryipHasPrefix: String
+  hostprimaryipHasSuffix: String
+  hostprimaryipIsNil: Boolean
+  hostprimaryipNotNil: Boolean
+  hostprimaryipEqualFold: String
+  hostprimaryipContainsFold: String
+  """hostPlatform field predicates"""
+  hostplatform: SessionSessionHostPlatform
+  hostplatformNEQ: SessionSessionHostPlatform
+  hostplatformIn: [SessionSessionHostPlatform!]
+  hostplatformNotIn: [SessionSessionHostPlatform!]
   """lastSeenAt field predicates"""
   lastseenat: Time
   lastseenatNEQ: Time

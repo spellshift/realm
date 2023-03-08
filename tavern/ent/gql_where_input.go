@@ -862,6 +862,29 @@ type SessionWhereInput struct {
 	HostIdentifierEqualFold    *string  `json:"hostidentifierEqualFold,omitempty"`
 	HostIdentifierContainsFold *string  `json:"hostidentifierContainsFold,omitempty"`
 
+	// "hostPrimaryIP" field predicates.
+	HostPrimaryIP             *string  `json:"hostprimaryip,omitempty"`
+	HostPrimaryIPNEQ          *string  `json:"hostprimaryipNEQ,omitempty"`
+	HostPrimaryIPIn           []string `json:"hostprimaryipIn,omitempty"`
+	HostPrimaryIPNotIn        []string `json:"hostprimaryipNotIn,omitempty"`
+	HostPrimaryIPGT           *string  `json:"hostprimaryipGT,omitempty"`
+	HostPrimaryIPGTE          *string  `json:"hostprimaryipGTE,omitempty"`
+	HostPrimaryIPLT           *string  `json:"hostprimaryipLT,omitempty"`
+	HostPrimaryIPLTE          *string  `json:"hostprimaryipLTE,omitempty"`
+	HostPrimaryIPContains     *string  `json:"hostprimaryipContains,omitempty"`
+	HostPrimaryIPHasPrefix    *string  `json:"hostprimaryipHasPrefix,omitempty"`
+	HostPrimaryIPHasSuffix    *string  `json:"hostprimaryipHasSuffix,omitempty"`
+	HostPrimaryIPIsNil        bool     `json:"hostprimaryipIsNil,omitempty"`
+	HostPrimaryIPNotNil       bool     `json:"hostprimaryipNotNil,omitempty"`
+	HostPrimaryIPEqualFold    *string  `json:"hostprimaryipEqualFold,omitempty"`
+	HostPrimaryIPContainsFold *string  `json:"hostprimaryipContainsFold,omitempty"`
+
+	// "hostPlatform" field predicates.
+	HostPlatform      *session.HostPlatform  `json:"hostplatform,omitempty"`
+	HostPlatformNEQ   *session.HostPlatform  `json:"hostplatformNEQ,omitempty"`
+	HostPlatformIn    []session.HostPlatform `json:"hostplatformIn,omitempty"`
+	HostPlatformNotIn []session.HostPlatform `json:"hostplatformNotIn,omitempty"`
+
 	// "lastSeenAt" field predicates.
 	LastSeenAt       *time.Time  `json:"lastseenat,omitempty"`
 	LastSeenAtNEQ    *time.Time  `json:"lastseenatNEQ,omitempty"`
@@ -1235,6 +1258,63 @@ func (i *SessionWhereInput) P() (predicate.Session, error) {
 	}
 	if i.HostIdentifierContainsFold != nil {
 		predicates = append(predicates, session.HostIdentifierContainsFold(*i.HostIdentifierContainsFold))
+	}
+	if i.HostPrimaryIP != nil {
+		predicates = append(predicates, session.HostPrimaryIPEQ(*i.HostPrimaryIP))
+	}
+	if i.HostPrimaryIPNEQ != nil {
+		predicates = append(predicates, session.HostPrimaryIPNEQ(*i.HostPrimaryIPNEQ))
+	}
+	if len(i.HostPrimaryIPIn) > 0 {
+		predicates = append(predicates, session.HostPrimaryIPIn(i.HostPrimaryIPIn...))
+	}
+	if len(i.HostPrimaryIPNotIn) > 0 {
+		predicates = append(predicates, session.HostPrimaryIPNotIn(i.HostPrimaryIPNotIn...))
+	}
+	if i.HostPrimaryIPGT != nil {
+		predicates = append(predicates, session.HostPrimaryIPGT(*i.HostPrimaryIPGT))
+	}
+	if i.HostPrimaryIPGTE != nil {
+		predicates = append(predicates, session.HostPrimaryIPGTE(*i.HostPrimaryIPGTE))
+	}
+	if i.HostPrimaryIPLT != nil {
+		predicates = append(predicates, session.HostPrimaryIPLT(*i.HostPrimaryIPLT))
+	}
+	if i.HostPrimaryIPLTE != nil {
+		predicates = append(predicates, session.HostPrimaryIPLTE(*i.HostPrimaryIPLTE))
+	}
+	if i.HostPrimaryIPContains != nil {
+		predicates = append(predicates, session.HostPrimaryIPContains(*i.HostPrimaryIPContains))
+	}
+	if i.HostPrimaryIPHasPrefix != nil {
+		predicates = append(predicates, session.HostPrimaryIPHasPrefix(*i.HostPrimaryIPHasPrefix))
+	}
+	if i.HostPrimaryIPHasSuffix != nil {
+		predicates = append(predicates, session.HostPrimaryIPHasSuffix(*i.HostPrimaryIPHasSuffix))
+	}
+	if i.HostPrimaryIPIsNil {
+		predicates = append(predicates, session.HostPrimaryIPIsNil())
+	}
+	if i.HostPrimaryIPNotNil {
+		predicates = append(predicates, session.HostPrimaryIPNotNil())
+	}
+	if i.HostPrimaryIPEqualFold != nil {
+		predicates = append(predicates, session.HostPrimaryIPEqualFold(*i.HostPrimaryIPEqualFold))
+	}
+	if i.HostPrimaryIPContainsFold != nil {
+		predicates = append(predicates, session.HostPrimaryIPContainsFold(*i.HostPrimaryIPContainsFold))
+	}
+	if i.HostPlatform != nil {
+		predicates = append(predicates, session.HostPlatformEQ(*i.HostPlatform))
+	}
+	if i.HostPlatformNEQ != nil {
+		predicates = append(predicates, session.HostPlatformNEQ(*i.HostPlatformNEQ))
+	}
+	if len(i.HostPlatformIn) > 0 {
+		predicates = append(predicates, session.HostPlatformIn(i.HostPlatformIn...))
+	}
+	if len(i.HostPlatformNotIn) > 0 {
+		predicates = append(predicates, session.HostPlatformNotIn(i.HostPlatformNotIn...))
 	}
 	if i.LastSeenAt != nil {
 		predicates = append(predicates, session.LastSeenAtEQ(*i.LastSeenAt))

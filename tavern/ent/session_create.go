@@ -106,6 +106,34 @@ func (sc *SessionCreate) SetNillableHostIdentifier(s *string) *SessionCreate {
 	return sc
 }
 
+// SetHostPrimaryIP sets the "hostPrimaryIP" field.
+func (sc *SessionCreate) SetHostPrimaryIP(s string) *SessionCreate {
+	sc.mutation.SetHostPrimaryIP(s)
+	return sc
+}
+
+// SetNillableHostPrimaryIP sets the "hostPrimaryIP" field if the given value is not nil.
+func (sc *SessionCreate) SetNillableHostPrimaryIP(s *string) *SessionCreate {
+	if s != nil {
+		sc.SetHostPrimaryIP(*s)
+	}
+	return sc
+}
+
+// SetHostPlatform sets the "hostPlatform" field.
+func (sc *SessionCreate) SetHostPlatform(sp session.HostPlatform) *SessionCreate {
+	sc.mutation.SetHostPlatform(sp)
+	return sc
+}
+
+// SetNillableHostPlatform sets the "hostPlatform" field if the given value is not nil.
+func (sc *SessionCreate) SetNillableHostPlatform(sp *session.HostPlatform) *SessionCreate {
+	if sp != nil {
+		sc.SetHostPlatform(*sp)
+	}
+	return sc
+}
+
 // SetLastSeenAt sets the "lastSeenAt" field.
 func (sc *SessionCreate) SetLastSeenAt(t time.Time) *SessionCreate {
 	sc.mutation.SetLastSeenAt(t)
@@ -193,6 +221,10 @@ func (sc *SessionCreate) defaults() {
 		v := session.DefaultIdentifier()
 		sc.mutation.SetIdentifier(v)
 	}
+	if _, ok := sc.mutation.HostPlatform(); !ok {
+		v := session.DefaultHostPlatform
+		sc.mutation.SetHostPlatform(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -231,6 +263,14 @@ func (sc *SessionCreate) check() error {
 	if v, ok := sc.mutation.HostIdentifier(); ok {
 		if err := session.HostIdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
+		}
+	}
+	if _, ok := sc.mutation.HostPlatform(); !ok {
+		return &ValidationError{Name: "hostPlatform", err: errors.New(`ent: missing required field "Session.hostPlatform"`)}
+	}
+	if v, ok := sc.mutation.HostPlatform(); ok {
+		if err := session.HostPlatformValidator(v); err != nil {
+			return &ValidationError{Name: "hostPlatform", err: fmt.Errorf(`ent: validator failed for field "Session.hostPlatform": %w`, err)}
 		}
 	}
 	return nil
@@ -282,6 +322,14 @@ func (sc *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 	if value, ok := sc.mutation.HostIdentifier(); ok {
 		_spec.SetField(session.FieldHostIdentifier, field.TypeString, value)
 		_node.HostIdentifier = value
+	}
+	if value, ok := sc.mutation.HostPrimaryIP(); ok {
+		_spec.SetField(session.FieldHostPrimaryIP, field.TypeString, value)
+		_node.HostPrimaryIP = value
+	}
+	if value, ok := sc.mutation.HostPlatform(); ok {
+		_spec.SetField(session.FieldHostPlatform, field.TypeEnum, value)
+		_node.HostPlatform = value
 	}
 	if value, ok := sc.mutation.LastSeenAt(); ok {
 		_spec.SetField(session.FieldLastSeenAt, field.TypeTime, value)

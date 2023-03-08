@@ -1463,6 +1463,8 @@ type SessionMutation struct {
 	identifier      *string
 	agentIdentifier *string
 	hostIdentifier  *string
+	hostPrimaryIP   *string
+	hostPlatform    *session.HostPlatform
 	lastSeenAt      *time.Time
 	clearedFields   map[string]struct{}
 	tags            map[int]struct{}
@@ -1842,6 +1844,91 @@ func (m *SessionMutation) ResetHostIdentifier() {
 	delete(m.clearedFields, session.FieldHostIdentifier)
 }
 
+// SetHostPrimaryIP sets the "hostPrimaryIP" field.
+func (m *SessionMutation) SetHostPrimaryIP(s string) {
+	m.hostPrimaryIP = &s
+}
+
+// HostPrimaryIP returns the value of the "hostPrimaryIP" field in the mutation.
+func (m *SessionMutation) HostPrimaryIP() (r string, exists bool) {
+	v := m.hostPrimaryIP
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHostPrimaryIP returns the old "hostPrimaryIP" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldHostPrimaryIP(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHostPrimaryIP is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHostPrimaryIP requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHostPrimaryIP: %w", err)
+	}
+	return oldValue.HostPrimaryIP, nil
+}
+
+// ClearHostPrimaryIP clears the value of the "hostPrimaryIP" field.
+func (m *SessionMutation) ClearHostPrimaryIP() {
+	m.hostPrimaryIP = nil
+	m.clearedFields[session.FieldHostPrimaryIP] = struct{}{}
+}
+
+// HostPrimaryIPCleared returns if the "hostPrimaryIP" field was cleared in this mutation.
+func (m *SessionMutation) HostPrimaryIPCleared() bool {
+	_, ok := m.clearedFields[session.FieldHostPrimaryIP]
+	return ok
+}
+
+// ResetHostPrimaryIP resets all changes to the "hostPrimaryIP" field.
+func (m *SessionMutation) ResetHostPrimaryIP() {
+	m.hostPrimaryIP = nil
+	delete(m.clearedFields, session.FieldHostPrimaryIP)
+}
+
+// SetHostPlatform sets the "hostPlatform" field.
+func (m *SessionMutation) SetHostPlatform(sp session.HostPlatform) {
+	m.hostPlatform = &sp
+}
+
+// HostPlatform returns the value of the "hostPlatform" field in the mutation.
+func (m *SessionMutation) HostPlatform() (r session.HostPlatform, exists bool) {
+	v := m.hostPlatform
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHostPlatform returns the old "hostPlatform" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldHostPlatform(ctx context.Context) (v session.HostPlatform, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHostPlatform is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHostPlatform requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHostPlatform: %w", err)
+	}
+	return oldValue.HostPlatform, nil
+}
+
+// ResetHostPlatform resets all changes to the "hostPlatform" field.
+func (m *SessionMutation) ResetHostPlatform() {
+	m.hostPlatform = nil
+}
+
 // SetLastSeenAt sets the "lastSeenAt" field.
 func (m *SessionMutation) SetLastSeenAt(t time.Time) {
 	m.lastSeenAt = &t
@@ -2033,7 +2120,7 @@ func (m *SessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SessionMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.name != nil {
 		fields = append(fields, session.FieldName)
 	}
@@ -2051,6 +2138,12 @@ func (m *SessionMutation) Fields() []string {
 	}
 	if m.hostIdentifier != nil {
 		fields = append(fields, session.FieldHostIdentifier)
+	}
+	if m.hostPrimaryIP != nil {
+		fields = append(fields, session.FieldHostPrimaryIP)
+	}
+	if m.hostPlatform != nil {
+		fields = append(fields, session.FieldHostPlatform)
 	}
 	if m.lastSeenAt != nil {
 		fields = append(fields, session.FieldLastSeenAt)
@@ -2075,6 +2168,10 @@ func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 		return m.AgentIdentifier()
 	case session.FieldHostIdentifier:
 		return m.HostIdentifier()
+	case session.FieldHostPrimaryIP:
+		return m.HostPrimaryIP()
+	case session.FieldHostPlatform:
+		return m.HostPlatform()
 	case session.FieldLastSeenAt:
 		return m.LastSeenAt()
 	}
@@ -2098,6 +2195,10 @@ func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldAgentIdentifier(ctx)
 	case session.FieldHostIdentifier:
 		return m.OldHostIdentifier(ctx)
+	case session.FieldHostPrimaryIP:
+		return m.OldHostPrimaryIP(ctx)
+	case session.FieldHostPlatform:
+		return m.OldHostPlatform(ctx)
 	case session.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
 	}
@@ -2151,6 +2252,20 @@ func (m *SessionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetHostIdentifier(v)
 		return nil
+	case session.FieldHostPrimaryIP:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHostPrimaryIP(v)
+		return nil
+	case session.FieldHostPlatform:
+		v, ok := value.(session.HostPlatform)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHostPlatform(v)
+		return nil
 	case session.FieldLastSeenAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -2200,6 +2315,9 @@ func (m *SessionMutation) ClearedFields() []string {
 	if m.FieldCleared(session.FieldHostIdentifier) {
 		fields = append(fields, session.FieldHostIdentifier)
 	}
+	if m.FieldCleared(session.FieldHostPrimaryIP) {
+		fields = append(fields, session.FieldHostPrimaryIP)
+	}
 	if m.FieldCleared(session.FieldLastSeenAt) {
 		fields = append(fields, session.FieldLastSeenAt)
 	}
@@ -2229,6 +2347,9 @@ func (m *SessionMutation) ClearField(name string) error {
 	case session.FieldHostIdentifier:
 		m.ClearHostIdentifier()
 		return nil
+	case session.FieldHostPrimaryIP:
+		m.ClearHostPrimaryIP()
+		return nil
 	case session.FieldLastSeenAt:
 		m.ClearLastSeenAt()
 		return nil
@@ -2257,6 +2378,12 @@ func (m *SessionMutation) ResetField(name string) error {
 		return nil
 	case session.FieldHostIdentifier:
 		m.ResetHostIdentifier()
+		return nil
+	case session.FieldHostPrimaryIP:
+		m.ResetHostPrimaryIP()
+		return nil
+	case session.FieldHostPlatform:
+		m.ResetHostPlatform()
 		return nil
 	case session.FieldLastSeenAt:
 		m.ResetLastSeenAt()

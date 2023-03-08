@@ -28,6 +28,10 @@ type Session struct {
 	AgentIdentifier string `json:"agentIdentifier,omitempty"`
 	// Unique identifier for the host the session is running on.
 	HostIdentifier string `json:"hostIdentifier,omitempty"`
+	// Primary interface IP address reported by the agent.
+	HostPrimaryIP string `json:"hostPrimaryIP,omitempty"`
+	// Platform the agent is operating on.
+	HostPlatform session.HostPlatform `json:"hostPlatform,omitempty"`
 	// Timestamp of when a task was last claimed or updated for a target
 	LastSeenAt time.Time `json:"lastSeenAt,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -76,7 +80,7 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case session.FieldID:
 			values[i] = new(sql.NullInt64)
-		case session.FieldName, session.FieldPrincipal, session.FieldHostname, session.FieldIdentifier, session.FieldAgentIdentifier, session.FieldHostIdentifier:
+		case session.FieldName, session.FieldPrincipal, session.FieldHostname, session.FieldIdentifier, session.FieldAgentIdentifier, session.FieldHostIdentifier, session.FieldHostPrimaryIP, session.FieldHostPlatform:
 			values[i] = new(sql.NullString)
 		case session.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
@@ -136,6 +140,18 @@ func (s *Session) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field hostIdentifier", values[i])
 			} else if value.Valid {
 				s.HostIdentifier = value.String
+			}
+		case session.FieldHostPrimaryIP:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field hostPrimaryIP", values[i])
+			} else if value.Valid {
+				s.HostPrimaryIP = value.String
+			}
+		case session.FieldHostPlatform:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field hostPlatform", values[i])
+			} else if value.Valid {
+				s.HostPlatform = session.HostPlatform(value.String)
 			}
 		case session.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -198,6 +214,12 @@ func (s *Session) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("hostIdentifier=")
 	builder.WriteString(s.HostIdentifier)
+	builder.WriteString(", ")
+	builder.WriteString("hostPrimaryIP=")
+	builder.WriteString(s.HostPrimaryIP)
+	builder.WriteString(", ")
+	builder.WriteString("hostPlatform=")
+	builder.WriteString(fmt.Sprintf("%v", s.HostPlatform))
 	builder.WriteString(", ")
 	builder.WriteString("lastSeenAt=")
 	builder.WriteString(s.LastSeenAt.Format(time.ANSIC))

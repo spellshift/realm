@@ -85,6 +85,11 @@ func HostIdentifier(v string) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldHostIdentifier, v))
 }
 
+// HostPrimaryIP applies equality check predicate on the "hostPrimaryIP" field. It's identical to HostPrimaryIPEQ.
+func HostPrimaryIP(v string) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldHostPrimaryIP, v))
+}
+
 // LastSeenAt applies equality check predicate on the "lastSeenAt" field. It's identical to LastSeenAtEQ.
 func LastSeenAt(v time.Time) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldLastSeenAt, v))
@@ -518,6 +523,101 @@ func HostIdentifierEqualFold(v string) predicate.Session {
 // HostIdentifierContainsFold applies the ContainsFold predicate on the "hostIdentifier" field.
 func HostIdentifierContainsFold(v string) predicate.Session {
 	return predicate.Session(sql.FieldContainsFold(FieldHostIdentifier, v))
+}
+
+// HostPrimaryIPEQ applies the EQ predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPEQ(v string) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPNEQ applies the NEQ predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPNEQ(v string) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPIn applies the In predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPIn(vs ...string) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldHostPrimaryIP, vs...))
+}
+
+// HostPrimaryIPNotIn applies the NotIn predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPNotIn(vs ...string) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldHostPrimaryIP, vs...))
+}
+
+// HostPrimaryIPGT applies the GT predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPGT(v string) predicate.Session {
+	return predicate.Session(sql.FieldGT(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPGTE applies the GTE predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPGTE(v string) predicate.Session {
+	return predicate.Session(sql.FieldGTE(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPLT applies the LT predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPLT(v string) predicate.Session {
+	return predicate.Session(sql.FieldLT(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPLTE applies the LTE predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPLTE(v string) predicate.Session {
+	return predicate.Session(sql.FieldLTE(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPContains applies the Contains predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPContains(v string) predicate.Session {
+	return predicate.Session(sql.FieldContains(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPHasPrefix applies the HasPrefix predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPHasPrefix(v string) predicate.Session {
+	return predicate.Session(sql.FieldHasPrefix(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPHasSuffix applies the HasSuffix predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPHasSuffix(v string) predicate.Session {
+	return predicate.Session(sql.FieldHasSuffix(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPIsNil applies the IsNil predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldHostPrimaryIP))
+}
+
+// HostPrimaryIPNotNil applies the NotNil predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldHostPrimaryIP))
+}
+
+// HostPrimaryIPEqualFold applies the EqualFold predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPEqualFold(v string) predicate.Session {
+	return predicate.Session(sql.FieldEqualFold(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPContainsFold applies the ContainsFold predicate on the "hostPrimaryIP" field.
+func HostPrimaryIPContainsFold(v string) predicate.Session {
+	return predicate.Session(sql.FieldContainsFold(FieldHostPrimaryIP, v))
+}
+
+// HostPlatformEQ applies the EQ predicate on the "hostPlatform" field.
+func HostPlatformEQ(v HostPlatform) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldHostPlatform, v))
+}
+
+// HostPlatformNEQ applies the NEQ predicate on the "hostPlatform" field.
+func HostPlatformNEQ(v HostPlatform) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldHostPlatform, v))
+}
+
+// HostPlatformIn applies the In predicate on the "hostPlatform" field.
+func HostPlatformIn(vs ...HostPlatform) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldHostPlatform, vs...))
+}
+
+// HostPlatformNotIn applies the NotIn predicate on the "hostPlatform" field.
+func HostPlatformNotIn(vs ...HostPlatform) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldHostPlatform, vs...))
 }
 
 // LastSeenAtEQ applies the EQ predicate on the "lastSeenAt" field.

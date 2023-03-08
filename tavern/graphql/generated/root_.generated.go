@@ -93,6 +93,8 @@ type ComplexityRoot struct {
 	Session struct {
 		AgentIdentifier func(childComplexity int) int
 		HostIdentifier  func(childComplexity int) int
+		HostPlatform    func(childComplexity int) int
+		HostPrimaryIP   func(childComplexity int) int
 		Hostname        func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Identifier      func(childComplexity int) int
@@ -471,6 +473,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Session.HostIdentifier(childComplexity), true
+
+	case "Session.hostplatform":
+		if e.complexity.Session.HostPlatform == nil {
+			break
+		}
+
+		return e.complexity.Session.HostPlatform(childComplexity), true
+
+	case "Session.hostprimaryip":
+		if e.complexity.Session.HostPrimaryIP == nil {
+			break
+		}
+
+		return e.complexity.Session.HostPrimaryIP(childComplexity), true
 
 	case "Session.hostname":
 		if e.complexity.Session.Hostname == nil {
@@ -1117,6 +1133,10 @@ type Session implements Node {
   agentidentifier: String @goField(name: "AgentIdentifier", forceResolver: false)
   """Unique identifier for the host the session is running on."""
   hostidentifier: String @goField(name: "HostIdentifier", forceResolver: false)
+  """Primary interface IP address reported by the agent."""
+  hostprimaryip: String @goField(name: "HostPrimaryIP", forceResolver: false)
+  """Platform the agent is operating on."""
+  hostplatform: SessionSessionHostPlatform! @goField(name: "HostPlatform", forceResolver: false)
   """Timestamp of when a task was last claimed or updated for a target"""
   lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
   tags: [Tag!]
@@ -1132,6 +1152,14 @@ input SessionOrder {
 """Properties by which Session connections can be ordered."""
 enum SessionOrderField {
   LAST_SEEN_AT
+}
+"""SessionSessionHostPlatform is enum for the field hostPlatform"""
+enum SessionSessionHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/ent/session.HostPlatform") {
+  Windows
+  Linux
+  MacOS
+  BSD
+  Unknown
 }
 """
 SessionWhereInput is used for filtering Session objects.
@@ -1242,6 +1270,27 @@ input SessionWhereInput {
   hostidentifierNotNil: Boolean
   hostidentifierEqualFold: String
   hostidentifierContainsFold: String
+  """hostPrimaryIP field predicates"""
+  hostprimaryip: String
+  hostprimaryipNEQ: String
+  hostprimaryipIn: [String!]
+  hostprimaryipNotIn: [String!]
+  hostprimaryipGT: String
+  hostprimaryipGTE: String
+  hostprimaryipLT: String
+  hostprimaryipLTE: String
+  hostprimaryipContains: String
+  hostprimaryipHasPrefix: String
+  hostprimaryipHasSuffix: String
+  hostprimaryipIsNil: Boolean
+  hostprimaryipNotNil: Boolean
+  hostprimaryipEqualFold: String
+  hostprimaryipContainsFold: String
+  """hostPlatform field predicates"""
+  hostplatform: SessionSessionHostPlatform
+  hostplatformNEQ: SessionSessionHostPlatform
+  hostplatformIn: [SessionSessionHostPlatform!]
+  hostplatformNotIn: [SessionSessionHostPlatform!]
   """lastSeenAt field predicates"""
   lastseenat: Time
   lastseenatNEQ: Time
@@ -1745,6 +1794,12 @@ input UserWhereInput {
   """The hostname of the system the session is running on."""
   hostname: String!
 
+  """The platform the agent is operating on."""
+  hostPlatform: SessionSessionHostPlatform!
+
+  """The IP address of the hosts primary interface (if available)."""
+  hostPrimaryIP: String
+
   """Unique identifier of the session, each running instance will be different."""
   sessionIdentifier: String!
 
@@ -1763,7 +1818,7 @@ input SubmitTaskResultInput {
   execStartedAt: Time!
 
   """Timestamp of when the task execution finished (set only if it has completed). Format as RFC3339Nano."""
-  execFinishedAt: Time 
+  execFinishedAt: Time
 
   """
   Output captured as the result of task execution.
@@ -1772,7 +1827,7 @@ input SubmitTaskResultInput {
   output: String!
 
   """Error message captured as the result of task execution failure."""
-  error: String 
+  error: String
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)

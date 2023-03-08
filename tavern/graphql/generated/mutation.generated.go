@@ -368,6 +368,10 @@ func (ec *executionContext) fieldContext_Mutation_updateSession(ctx context.Cont
 				return ec.fieldContext_Session_agentidentifier(ctx, field)
 			case "hostidentifier":
 				return ec.fieldContext_Session_hostidentifier(ctx, field)
+			case "hostprimaryip":
+				return ec.fieldContext_Session_hostprimaryip(ctx, field)
+			case "hostplatform":
+				return ec.fieldContext_Session_hostplatform(ctx, field)
 			case "lastseenat":
 				return ec.fieldContext_Session_lastseenat(ctx, field)
 			case "tags":

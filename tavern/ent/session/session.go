@@ -2,6 +2,12 @@
 
 package session
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
 const (
 	// Label holds the string label denoting the session type in the database.
 	Label = "session"
@@ -19,6 +25,10 @@ const (
 	FieldAgentIdentifier = "agent_identifier"
 	// FieldHostIdentifier holds the string denoting the hostidentifier field in the database.
 	FieldHostIdentifier = "host_identifier"
+	// FieldHostPrimaryIP holds the string denoting the hostprimaryip field in the database.
+	FieldHostPrimaryIP = "host_primary_ip"
+	// FieldHostPlatform holds the string denoting the hostplatform field in the database.
+	FieldHostPlatform = "host_platform"
 	// FieldLastSeenAt holds the string denoting the lastseenat field in the database.
 	FieldLastSeenAt = "last_seen_at"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
@@ -50,6 +60,8 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldAgentIdentifier,
 	FieldHostIdentifier,
+	FieldHostPrimaryIP,
+	FieldHostPlatform,
 	FieldLastSeenAt,
 }
 
@@ -87,3 +99,50 @@ var (
 	// HostIdentifierValidator is a validator for the "hostIdentifier" field. It is called by the builders before save.
 	HostIdentifierValidator func(string) error
 )
+
+// HostPlatform defines the type for the "hostPlatform" enum field.
+type HostPlatform string
+
+// HostPlatformUnknown is the default value of the HostPlatform enum.
+const DefaultHostPlatform = HostPlatformUnknown
+
+// HostPlatform values.
+const (
+	HostPlatformWindows HostPlatform = "Windows"
+	HostPlatformLinux   HostPlatform = "Linux"
+	HostPlatformMacOS   HostPlatform = "MacOS"
+	HostPlatformBSD     HostPlatform = "BSD"
+	HostPlatformUnknown HostPlatform = "Unknown"
+)
+
+func (hp HostPlatform) String() string {
+	return string(hp)
+}
+
+// HostPlatformValidator is a validator for the "hostPlatform" field enum values. It is called by the builders before save.
+func HostPlatformValidator(hp HostPlatform) error {
+	switch hp {
+	case HostPlatformWindows, HostPlatformLinux, HostPlatformMacOS, HostPlatformBSD, HostPlatformUnknown:
+		return nil
+	default:
+		return fmt.Errorf("session: invalid enum value for hostPlatform field: %q", hp)
+	}
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e HostPlatform) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *HostPlatform) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = HostPlatform(str)
+	if err := HostPlatformValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid HostPlatform", str)
+	}
+	return nil
+}

@@ -79,6 +79,8 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
 		{Name: "host_identifier", Type: field.TypeString, Nullable: true},
+		{Name: "host_primary_ip", Type: field.TypeString, Nullable: true},
+		{Name: "host_platform", Type: field.TypeEnum, Enums: []string{"Windows", "Linux", "MacOS", "BSD", "Unknown"}, Default: "Unknown"},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// SessionsTable holds the schema information for the "sessions" table.

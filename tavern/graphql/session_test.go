@@ -114,6 +114,7 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			expected := map[string]any{
 				"principal":         "newuser",
 				"hostname":          "NEW_HOSTNAME",
+				"hostPlatform":      session.HostPlatformWindows,
 				"sessionIdentifier": expectedIdentifier,
 				"hostIdentifier":    "NEW_HOST_ID",
 				"agentIdentifier":   "NEW_AGENT_ID",
@@ -143,6 +144,8 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			expected := map[string]any{
 				"principal":         "admin",
 				"hostname":          "SOME_HOSTNAME",
+				"hostPlatform":      session.HostPlatformMacOS,
+				"hostPrimaryIP":     "10.0.0.1",
 				"sessionIdentifier": "SOME_ID",
 				"hostIdentifier":    "SOME_HOST_ID",
 				"agentIdentifier":   "SOME_AGENT_ID",
@@ -163,6 +166,8 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			assert.Equal(t, expected["sessionIdentifier"], testSession.Identifier)
 			assert.Equal(t, expected["hostIdentifier"], testSession.HostIdentifier)
 			assert.Equal(t, expected["agentIdentifier"], testSession.AgentIdentifier)
+			assert.Equal(t, expected["hostPlatform"], testSession.HostPlatform)
+			assert.Equal(t, expected["hostPrimaryIP"], testSession.HostPrimaryIP)
 		})
 	})
 

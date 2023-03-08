@@ -138,6 +138,40 @@ func (su *SessionUpdate) ClearHostIdentifier() *SessionUpdate {
 	return su
 }
 
+// SetHostPrimaryIP sets the "hostPrimaryIP" field.
+func (su *SessionUpdate) SetHostPrimaryIP(s string) *SessionUpdate {
+	su.mutation.SetHostPrimaryIP(s)
+	return su
+}
+
+// SetNillableHostPrimaryIP sets the "hostPrimaryIP" field if the given value is not nil.
+func (su *SessionUpdate) SetNillableHostPrimaryIP(s *string) *SessionUpdate {
+	if s != nil {
+		su.SetHostPrimaryIP(*s)
+	}
+	return su
+}
+
+// ClearHostPrimaryIP clears the value of the "hostPrimaryIP" field.
+func (su *SessionUpdate) ClearHostPrimaryIP() *SessionUpdate {
+	su.mutation.ClearHostPrimaryIP()
+	return su
+}
+
+// SetHostPlatform sets the "hostPlatform" field.
+func (su *SessionUpdate) SetHostPlatform(sp session.HostPlatform) *SessionUpdate {
+	su.mutation.SetHostPlatform(sp)
+	return su
+}
+
+// SetNillableHostPlatform sets the "hostPlatform" field if the given value is not nil.
+func (su *SessionUpdate) SetNillableHostPlatform(sp *session.HostPlatform) *SessionUpdate {
+	if sp != nil {
+		su.SetHostPlatform(*sp)
+	}
+	return su
+}
+
 // SetLastSeenAt sets the "lastSeenAt" field.
 func (su *SessionUpdate) SetLastSeenAt(t time.Time) *SessionUpdate {
 	su.mutation.SetLastSeenAt(t)
@@ -294,6 +328,11 @@ func (su *SessionUpdate) check() error {
 			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
 		}
 	}
+	if v, ok := su.mutation.HostPlatform(); ok {
+		if err := session.HostPlatformValidator(v); err != nil {
+			return &ValidationError{Name: "hostPlatform", err: fmt.Errorf(`ent: validator failed for field "Session.hostPlatform": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -338,6 +377,15 @@ func (su *SessionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if su.mutation.HostIdentifierCleared() {
 		_spec.ClearField(session.FieldHostIdentifier, field.TypeString)
+	}
+	if value, ok := su.mutation.HostPrimaryIP(); ok {
+		_spec.SetField(session.FieldHostPrimaryIP, field.TypeString, value)
+	}
+	if su.mutation.HostPrimaryIPCleared() {
+		_spec.ClearField(session.FieldHostPrimaryIP, field.TypeString)
+	}
+	if value, ok := su.mutation.HostPlatform(); ok {
+		_spec.SetField(session.FieldHostPlatform, field.TypeEnum, value)
 	}
 	if value, ok := su.mutation.LastSeenAt(); ok {
 		_spec.SetField(session.FieldLastSeenAt, field.TypeTime, value)
@@ -581,6 +629,40 @@ func (suo *SessionUpdateOne) ClearHostIdentifier() *SessionUpdateOne {
 	return suo
 }
 
+// SetHostPrimaryIP sets the "hostPrimaryIP" field.
+func (suo *SessionUpdateOne) SetHostPrimaryIP(s string) *SessionUpdateOne {
+	suo.mutation.SetHostPrimaryIP(s)
+	return suo
+}
+
+// SetNillableHostPrimaryIP sets the "hostPrimaryIP" field if the given value is not nil.
+func (suo *SessionUpdateOne) SetNillableHostPrimaryIP(s *string) *SessionUpdateOne {
+	if s != nil {
+		suo.SetHostPrimaryIP(*s)
+	}
+	return suo
+}
+
+// ClearHostPrimaryIP clears the value of the "hostPrimaryIP" field.
+func (suo *SessionUpdateOne) ClearHostPrimaryIP() *SessionUpdateOne {
+	suo.mutation.ClearHostPrimaryIP()
+	return suo
+}
+
+// SetHostPlatform sets the "hostPlatform" field.
+func (suo *SessionUpdateOne) SetHostPlatform(sp session.HostPlatform) *SessionUpdateOne {
+	suo.mutation.SetHostPlatform(sp)
+	return suo
+}
+
+// SetNillableHostPlatform sets the "hostPlatform" field if the given value is not nil.
+func (suo *SessionUpdateOne) SetNillableHostPlatform(sp *session.HostPlatform) *SessionUpdateOne {
+	if sp != nil {
+		suo.SetHostPlatform(*sp)
+	}
+	return suo
+}
+
 // SetLastSeenAt sets the "lastSeenAt" field.
 func (suo *SessionUpdateOne) SetLastSeenAt(t time.Time) *SessionUpdateOne {
 	suo.mutation.SetLastSeenAt(t)
@@ -750,6 +832,11 @@ func (suo *SessionUpdateOne) check() error {
 			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
 		}
 	}
+	if v, ok := suo.mutation.HostPlatform(); ok {
+		if err := session.HostPlatformValidator(v); err != nil {
+			return &ValidationError{Name: "hostPlatform", err: fmt.Errorf(`ent: validator failed for field "Session.hostPlatform": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -811,6 +898,15 @@ func (suo *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err e
 	}
 	if suo.mutation.HostIdentifierCleared() {
 		_spec.ClearField(session.FieldHostIdentifier, field.TypeString)
+	}
+	if value, ok := suo.mutation.HostPrimaryIP(); ok {
+		_spec.SetField(session.FieldHostPrimaryIP, field.TypeString, value)
+	}
+	if suo.mutation.HostPrimaryIPCleared() {
+		_spec.ClearField(session.FieldHostPrimaryIP, field.TypeString)
+	}
+	if value, ok := suo.mutation.HostPlatform(); ok {
+		_spec.SetField(session.FieldHostPlatform, field.TypeEnum, value)
 	}
 	if value, ok := suo.mutation.LastSeenAt(); ok {
 		_spec.SetField(session.FieldLastSeenAt, field.TypeTime, value)

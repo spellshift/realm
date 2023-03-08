@@ -61,6 +61,19 @@ func (Session) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Unique identifier for the host the session is running on."),
+		field.String("hostPrimaryIP").
+			Optional().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Primary interface IP address reported by the agent."),
+		field.Enum("hostPlatform").
+			Values("Windows", "Linux", "MacOS", "BSD", "Unknown").
+			Default("Unknown").
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Platform the agent is operating on."),
 		field.Time("lastSeenAt").
 			Optional().
 			Annotations(
