@@ -19,27 +19,19 @@ jobs:
           - macOS-latest
           - windows-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Go
+    - uses: actions/checkout@v3
+    - name: ⚡ Setup Golang
       uses: actions/setup-go@v3
       with:
-        go-version: 1.18.0-rc.1
-    - name: ⚡ Cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/go/pkg/mod
-          ~/.cache/go-build
-          ~/Library/Caches/go-build
-          ~\AppData\Local\go-build
-        key: ${{ runner.os }}-tavern-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-tavern-go-${{ matrix.go-version }}- 
+        go-version-file: go.mod
+        cache: true
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
-      run: go test -v ./tavern/...
-  
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./tavern/...
+    - name: 📶 Upload Coverage Results
+      uses: codecov/codecov-action@v3
+
   imix:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -49,9 +41,9 @@ jobs:
           - macOS-latest
           - windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: ⚡ Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
@@ -64,7 +56,7 @@ jobs:
       run: cd implants/imix && cargo build --verbose
     - name: 🔎 Run tests
       run: cd implants/imix && cargo test --verbose -- --test-threads=256
-  
+
   eldritch:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -75,9 +67,9 @@ jobs:
           - macOS-latest
           - windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: ⚡ Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
