@@ -28,7 +28,7 @@ jobs:
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
-      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./tavern/...
+      run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
 
