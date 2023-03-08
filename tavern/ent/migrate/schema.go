@@ -42,6 +42,7 @@ var (
 		{Name: "parameters", Type: field.TypeString, Nullable: true},
 		{Name: "job_tome", Type: field.TypeInt},
 		{Name: "job_bundle", Type: field.TypeInt, Nullable: true},
+		{Name: "job_creator", Type: field.TypeInt, Nullable: true},
 	}
 	// JobsTable holds the schema information for the "jobs" table.
 	JobsTable = &schema.Table{
@@ -59,6 +60,12 @@ var (
 				Symbol:     "jobs_files_bundle",
 				Columns:    []*schema.Column{JobsColumns[6]},
 				RefColumns: []*schema.Column{FilesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "jobs_users_creator",
+				Columns:    []*schema.Column{JobsColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -200,6 +207,7 @@ func init() {
 	FilesTable.ForeignKeys[0].RefTable = TomesTable
 	JobsTable.ForeignKeys[0].RefTable = TomesTable
 	JobsTable.ForeignKeys[1].RefTable = FilesTable
+	JobsTable.ForeignKeys[2].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = JobsTable
 	TasksTable.ForeignKeys[1].RefTable = SessionsTable
 	SessionTagsTable.ForeignKeys[0].RefTable = SessionsTable

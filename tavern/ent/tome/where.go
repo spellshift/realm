@@ -12,759 +12,497 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Tome(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Tome(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Tome(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Tome(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Tome(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Tome(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id int) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Tome(sql.FieldLTE(FieldID, id))
 }
 
 // CreatedAt applies equality check predicate on the "createdAt" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // LastModifiedAt applies equality check predicate on the "lastModifiedAt" field. It's identical to LastModifiedAtEQ.
 func LastModifiedAt(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastModifiedAt), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldName, v))
 }
 
 // Description applies equality check predicate on the "description" field. It's identical to DescriptionEQ.
 func Description(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldDescription, v))
 }
 
 // Paramdefs applies equality check predicate on the "paramdefs" field. It's identical to ParamdefsEQ.
 func Paramdefs(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldParamdefs, v))
 }
 
 // Hash applies equality check predicate on the "hash" field. It's identical to HashEQ.
 func Hash(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldHash, v))
 }
 
 // Eldritch applies equality check predicate on the "eldritch" field. It's identical to EldritchEQ.
 func Eldritch(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldEldritch, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "createdAt" field.
 func CreatedAtEQ(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtNEQ applies the NEQ predicate on the "createdAt" field.
 func CreatedAtNEQ(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Tome(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtIn applies the In predicate on the "createdAt" field.
 func CreatedAtIn(vs ...time.Time) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.Tome(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtNotIn applies the NotIn predicate on the "createdAt" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.Tome(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtGT applies the GT predicate on the "createdAt" field.
 func CreatedAtGT(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Tome(sql.FieldGT(FieldCreatedAt, v))
 }
 
 // CreatedAtGTE applies the GTE predicate on the "createdAt" field.
 func CreatedAtGTE(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Tome(sql.FieldGTE(FieldCreatedAt, v))
 }
 
 // CreatedAtLT applies the LT predicate on the "createdAt" field.
 func CreatedAtLT(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Tome(sql.FieldLT(FieldCreatedAt, v))
 }
 
 // CreatedAtLTE applies the LTE predicate on the "createdAt" field.
 func CreatedAtLTE(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Tome(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // LastModifiedAtEQ applies the EQ predicate on the "lastModifiedAt" field.
 func LastModifiedAtEQ(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastModifiedAt), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
 // LastModifiedAtNEQ applies the NEQ predicate on the "lastModifiedAt" field.
 func LastModifiedAtNEQ(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldLastModifiedAt), v))
-	})
+	return predicate.Tome(sql.FieldNEQ(FieldLastModifiedAt, v))
 }
 
 // LastModifiedAtIn applies the In predicate on the "lastModifiedAt" field.
 func LastModifiedAtIn(vs ...time.Time) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldLastModifiedAt), v...))
-	})
+	return predicate.Tome(sql.FieldIn(FieldLastModifiedAt, vs...))
 }
 
 // LastModifiedAtNotIn applies the NotIn predicate on the "lastModifiedAt" field.
 func LastModifiedAtNotIn(vs ...time.Time) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldLastModifiedAt), v...))
-	})
+	return predicate.Tome(sql.FieldNotIn(FieldLastModifiedAt, vs...))
 }
 
 // LastModifiedAtGT applies the GT predicate on the "lastModifiedAt" field.
 func LastModifiedAtGT(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldLastModifiedAt), v))
-	})
+	return predicate.Tome(sql.FieldGT(FieldLastModifiedAt, v))
 }
 
 // LastModifiedAtGTE applies the GTE predicate on the "lastModifiedAt" field.
 func LastModifiedAtGTE(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldLastModifiedAt), v))
-	})
+	return predicate.Tome(sql.FieldGTE(FieldLastModifiedAt, v))
 }
 
 // LastModifiedAtLT applies the LT predicate on the "lastModifiedAt" field.
 func LastModifiedAtLT(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldLastModifiedAt), v))
-	})
+	return predicate.Tome(sql.FieldLT(FieldLastModifiedAt, v))
 }
 
 // LastModifiedAtLTE applies the LTE predicate on the "lastModifiedAt" field.
 func LastModifiedAtLTE(v time.Time) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldLastModifiedAt), v))
-	})
+	return predicate.Tome(sql.FieldLTE(FieldLastModifiedAt, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldName, v))
 }
 
 // NameNEQ applies the NEQ predicate on the "name" field.
 func NameNEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldNEQ(FieldName, v))
 }
 
 // NameIn applies the In predicate on the "name" field.
 func NameIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldName), v...))
-	})
+	return predicate.Tome(sql.FieldIn(FieldName, vs...))
 }
 
 // NameNotIn applies the NotIn predicate on the "name" field.
 func NameNotIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldName), v...))
-	})
+	return predicate.Tome(sql.FieldNotIn(FieldName, vs...))
 }
 
 // NameGT applies the GT predicate on the "name" field.
 func NameGT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldGT(FieldName, v))
 }
 
 // NameGTE applies the GTE predicate on the "name" field.
 func NameGTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldGTE(FieldName, v))
 }
 
 // NameLT applies the LT predicate on the "name" field.
 func NameLT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldLT(FieldName, v))
 }
 
 // NameLTE applies the LTE predicate on the "name" field.
 func NameLTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldLTE(FieldName, v))
 }
 
 // NameContains applies the Contains predicate on the "name" field.
 func NameContains(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldContains(FieldName, v))
 }
 
 // NameHasPrefix applies the HasPrefix predicate on the "name" field.
 func NameHasPrefix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldHasPrefix(FieldName, v))
 }
 
 // NameHasSuffix applies the HasSuffix predicate on the "name" field.
 func NameHasSuffix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldHasSuffix(FieldName, v))
 }
 
 // NameEqualFold applies the EqualFold predicate on the "name" field.
 func NameEqualFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldEqualFold(FieldName, v))
 }
 
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldName), v))
-	})
+	return predicate.Tome(sql.FieldContainsFold(FieldName, v))
 }
 
 // DescriptionEQ applies the EQ predicate on the "description" field.
 func DescriptionEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldDescription, v))
 }
 
 // DescriptionNEQ applies the NEQ predicate on the "description" field.
 func DescriptionNEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldNEQ(FieldDescription, v))
 }
 
 // DescriptionIn applies the In predicate on the "description" field.
 func DescriptionIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldDescription), v...))
-	})
+	return predicate.Tome(sql.FieldIn(FieldDescription, vs...))
 }
 
 // DescriptionNotIn applies the NotIn predicate on the "description" field.
 func DescriptionNotIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldDescription), v...))
-	})
+	return predicate.Tome(sql.FieldNotIn(FieldDescription, vs...))
 }
 
 // DescriptionGT applies the GT predicate on the "description" field.
 func DescriptionGT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldGT(FieldDescription, v))
 }
 
 // DescriptionGTE applies the GTE predicate on the "description" field.
 func DescriptionGTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldGTE(FieldDescription, v))
 }
 
 // DescriptionLT applies the LT predicate on the "description" field.
 func DescriptionLT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldLT(FieldDescription, v))
 }
 
 // DescriptionLTE applies the LTE predicate on the "description" field.
 func DescriptionLTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldLTE(FieldDescription, v))
 }
 
 // DescriptionContains applies the Contains predicate on the "description" field.
 func DescriptionContains(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldContains(FieldDescription, v))
 }
 
 // DescriptionHasPrefix applies the HasPrefix predicate on the "description" field.
 func DescriptionHasPrefix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldHasPrefix(FieldDescription, v))
 }
 
 // DescriptionHasSuffix applies the HasSuffix predicate on the "description" field.
 func DescriptionHasSuffix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldHasSuffix(FieldDescription, v))
 }
 
 // DescriptionEqualFold applies the EqualFold predicate on the "description" field.
 func DescriptionEqualFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldEqualFold(FieldDescription, v))
 }
 
 // DescriptionContainsFold applies the ContainsFold predicate on the "description" field.
 func DescriptionContainsFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldDescription), v))
-	})
+	return predicate.Tome(sql.FieldContainsFold(FieldDescription, v))
 }
 
 // ParamdefsEQ applies the EQ predicate on the "paramdefs" field.
 func ParamdefsEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldParamdefs, v))
 }
 
 // ParamdefsNEQ applies the NEQ predicate on the "paramdefs" field.
 func ParamdefsNEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldNEQ(FieldParamdefs, v))
 }
 
 // ParamdefsIn applies the In predicate on the "paramdefs" field.
 func ParamdefsIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldParamdefs), v...))
-	})
+	return predicate.Tome(sql.FieldIn(FieldParamdefs, vs...))
 }
 
 // ParamdefsNotIn applies the NotIn predicate on the "paramdefs" field.
 func ParamdefsNotIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldParamdefs), v...))
-	})
+	return predicate.Tome(sql.FieldNotIn(FieldParamdefs, vs...))
 }
 
 // ParamdefsGT applies the GT predicate on the "paramdefs" field.
 func ParamdefsGT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldGT(FieldParamdefs, v))
 }
 
 // ParamdefsGTE applies the GTE predicate on the "paramdefs" field.
 func ParamdefsGTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldGTE(FieldParamdefs, v))
 }
 
 // ParamdefsLT applies the LT predicate on the "paramdefs" field.
 func ParamdefsLT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldLT(FieldParamdefs, v))
 }
 
 // ParamdefsLTE applies the LTE predicate on the "paramdefs" field.
 func ParamdefsLTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldLTE(FieldParamdefs, v))
 }
 
 // ParamdefsContains applies the Contains predicate on the "paramdefs" field.
 func ParamdefsContains(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldContains(FieldParamdefs, v))
 }
 
 // ParamdefsHasPrefix applies the HasPrefix predicate on the "paramdefs" field.
 func ParamdefsHasPrefix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldHasPrefix(FieldParamdefs, v))
 }
 
 // ParamdefsHasSuffix applies the HasSuffix predicate on the "paramdefs" field.
 func ParamdefsHasSuffix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldHasSuffix(FieldParamdefs, v))
 }
 
 // ParamdefsIsNil applies the IsNil predicate on the "paramdefs" field.
 func ParamdefsIsNil() predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldParamdefs)))
-	})
+	return predicate.Tome(sql.FieldIsNull(FieldParamdefs))
 }
 
 // ParamdefsNotNil applies the NotNil predicate on the "paramdefs" field.
 func ParamdefsNotNil() predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldParamdefs)))
-	})
+	return predicate.Tome(sql.FieldNotNull(FieldParamdefs))
 }
 
 // ParamdefsEqualFold applies the EqualFold predicate on the "paramdefs" field.
 func ParamdefsEqualFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldEqualFold(FieldParamdefs, v))
 }
 
 // ParamdefsContainsFold applies the ContainsFold predicate on the "paramdefs" field.
 func ParamdefsContainsFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldParamdefs), v))
-	})
+	return predicate.Tome(sql.FieldContainsFold(FieldParamdefs, v))
 }
 
 // HashEQ applies the EQ predicate on the "hash" field.
 func HashEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldHash, v))
 }
 
 // HashNEQ applies the NEQ predicate on the "hash" field.
 func HashNEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldNEQ(FieldHash, v))
 }
 
 // HashIn applies the In predicate on the "hash" field.
 func HashIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldHash), v...))
-	})
+	return predicate.Tome(sql.FieldIn(FieldHash, vs...))
 }
 
 // HashNotIn applies the NotIn predicate on the "hash" field.
 func HashNotIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldHash), v...))
-	})
+	return predicate.Tome(sql.FieldNotIn(FieldHash, vs...))
 }
 
 // HashGT applies the GT predicate on the "hash" field.
 func HashGT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldGT(FieldHash, v))
 }
 
 // HashGTE applies the GTE predicate on the "hash" field.
 func HashGTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldGTE(FieldHash, v))
 }
 
 // HashLT applies the LT predicate on the "hash" field.
 func HashLT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldLT(FieldHash, v))
 }
 
 // HashLTE applies the LTE predicate on the "hash" field.
 func HashLTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldLTE(FieldHash, v))
 }
 
 // HashContains applies the Contains predicate on the "hash" field.
 func HashContains(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldContains(FieldHash, v))
 }
 
 // HashHasPrefix applies the HasPrefix predicate on the "hash" field.
 func HashHasPrefix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldHasPrefix(FieldHash, v))
 }
 
 // HashHasSuffix applies the HasSuffix predicate on the "hash" field.
 func HashHasSuffix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldHasSuffix(FieldHash, v))
 }
 
 // HashEqualFold applies the EqualFold predicate on the "hash" field.
 func HashEqualFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldEqualFold(FieldHash, v))
 }
 
 // HashContainsFold applies the ContainsFold predicate on the "hash" field.
 func HashContainsFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldHash), v))
-	})
+	return predicate.Tome(sql.FieldContainsFold(FieldHash, v))
 }
 
 // EldritchEQ applies the EQ predicate on the "eldritch" field.
 func EldritchEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldEQ(FieldEldritch, v))
 }
 
 // EldritchNEQ applies the NEQ predicate on the "eldritch" field.
 func EldritchNEQ(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldNEQ(FieldEldritch, v))
 }
 
 // EldritchIn applies the In predicate on the "eldritch" field.
 func EldritchIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldEldritch), v...))
-	})
+	return predicate.Tome(sql.FieldIn(FieldEldritch, vs...))
 }
 
 // EldritchNotIn applies the NotIn predicate on the "eldritch" field.
 func EldritchNotIn(vs ...string) predicate.Tome {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldEldritch), v...))
-	})
+	return predicate.Tome(sql.FieldNotIn(FieldEldritch, vs...))
 }
 
 // EldritchGT applies the GT predicate on the "eldritch" field.
 func EldritchGT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldGT(FieldEldritch, v))
 }
 
 // EldritchGTE applies the GTE predicate on the "eldritch" field.
 func EldritchGTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldGTE(FieldEldritch, v))
 }
 
 // EldritchLT applies the LT predicate on the "eldritch" field.
 func EldritchLT(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldLT(FieldEldritch, v))
 }
 
 // EldritchLTE applies the LTE predicate on the "eldritch" field.
 func EldritchLTE(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldLTE(FieldEldritch, v))
 }
 
 // EldritchContains applies the Contains predicate on the "eldritch" field.
 func EldritchContains(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldContains(FieldEldritch, v))
 }
 
 // EldritchHasPrefix applies the HasPrefix predicate on the "eldritch" field.
 func EldritchHasPrefix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldHasPrefix(FieldEldritch, v))
 }
 
 // EldritchHasSuffix applies the HasSuffix predicate on the "eldritch" field.
 func EldritchHasSuffix(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldHasSuffix(FieldEldritch, v))
 }
 
 // EldritchEqualFold applies the EqualFold predicate on the "eldritch" field.
 func EldritchEqualFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldEqualFold(FieldEldritch, v))
 }
 
 // EldritchContainsFold applies the ContainsFold predicate on the "eldritch" field.
 func EldritchContainsFold(v string) predicate.Tome {
-	return predicate.Tome(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldEldritch), v))
-	})
+	return predicate.Tome(sql.FieldContainsFold(FieldEldritch, v))
 }
 
 // HasFiles applies the HasEdge predicate on the "files" edge.
@@ -772,7 +510,6 @@ func HasFiles() predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(FilesTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)

@@ -177,19 +177,19 @@ func (t *Task) assignValues(columns []string, values []any) error {
 
 // QueryJob queries the "job" edge of the Task entity.
 func (t *Task) QueryJob() *JobQuery {
-	return (&TaskClient{config: t.config}).QueryJob(t)
+	return NewTaskClient(t.config).QueryJob(t)
 }
 
 // QuerySession queries the "session" edge of the Task entity.
 func (t *Task) QuerySession() *SessionQuery {
-	return (&TaskClient{config: t.config}).QuerySession(t)
+	return NewTaskClient(t.config).QuerySession(t)
 }
 
 // Update returns a builder for updating this Task.
 // Note that you need to call Task.Unwrap() before calling this method if this Task
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (t *Task) Update() *TaskUpdateOne {
-	return (&TaskClient{config: t.config}).UpdateOne(t)
+	return NewTaskClient(t.config).UpdateOne(t)
 }
 
 // Unwrap unwraps the Task entity that was returned from a transaction after it was closed,
@@ -234,9 +234,3 @@ func (t *Task) String() string {
 
 // Tasks is a parsable slice of Task.
 type Tasks []*Task
-
-func (t Tasks) config(cfg config) {
-	for _i := range t {
-		t[_i].config = cfg
-	}
-}

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
+	"github.com/kcarretto/realm/tavern/ent/migrate"
+	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
@@ -20,12 +22,20 @@ func TestConfigureMySQLFromEnv(t *testing.T) {
 		require.NoError(t, os.Unsetenv(EnvMySQLUser.Key))
 		require.NoError(t, os.Unsetenv(EnvMySQLPasswd.Key))
 		require.NoError(t, os.Unsetenv(EnvMySQLDB.Key))
-		require.NoError(t, os.Unsetenv(EnvMySQLMaxIdleConns.Key))
-		require.NoError(t, os.Unsetenv(EnvMySQLMaxOpenConns.Key))
-		require.NoError(t, os.Unsetenv(EnvMySQLMaxConnLifetime.Key))
+		require.NoError(t, os.Unsetenv(EnvDBMaxIdleConns.Key))
+		require.NoError(t, os.Unsetenv(EnvDBMaxOpenConns.Key))
+		require.NoError(t, os.Unsetenv(EnvDBMaxConnLifetime.Key))
 	}
 
-	t.Run("NoEnvVarsSet", func(t *testing.T) {
+	t.Run("SQLLite", func(t *testing.T) {
+		defer cleanup()
+
+		cfg := &Config{}
+		ConfigureMySQLFromEnv()(cfg)
+
+	})
+
+	t.Run("Defaults", func(t *testing.T) {
 		defer cleanup()
 
 		cfg := &Config{}
@@ -70,19 +80,27 @@ func TestConfigureMySQLFromEnv(t *testing.T) {
 		assert.Equal(t, "root@tcp(127.0.0.1)/tavern?parseTime=true", cfg.mysqlDSN)
 	})
 
-	t.Run("DBConnLimits", func(t *testing.T) {
+	t.Run("SQLLite", func(t *testing.T) {
 		defer cleanup()
-		require.NoError(t, os.Setenv(EnvMySQLAddr.Key, "127.0.0.1"))
-		require.NoError(t, os.Setenv(EnvMySQLMaxIdleConns.Key, "1337"))
-		require.NoError(t, os.Setenv(EnvMySQLMaxOpenConns.Key, "420"))
-		require.NoError(t, os.Setenv(EnvMySQLMaxConnLifetime.Key, "5"))
+		require.NoError(t, os.Setenv(EnvDBMaxIdleConns.Key, "1337"))
+		require.NoError(t, os.Setenv(EnvDBMaxOpenConns.Key, "420"))
+		require.NoError(t, os.Setenv(EnvDBMaxConnLifetime.Key, "20"))
 
 		cfg := &Config{}
 		ConfigureMySQLFromEnv()(cfg)
 
-		assert.Equal(t, 1337, cfg.mysqlMaxIdleConns)
-		assert.Equal(t, 420, cfg.mysqlMaxOpenConns)
-		assert.Equal(t, 5*time.Second, cfg.mysqlMaxConnLifetime)
+		client, err := cfg.Connect()
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		require.NoError(t, client.Schema.Create(
+			context.Background(),
+			migrate.WithGlobalUniqueID(true),
+		))
+
+		// Create an ent to assert we're not impacted by a "no such table:" bug, which can happen if DBLimits are not properly applied
+		_, err = client.Tag.Create().SetName("Test").SetKind(tag.KindGroup).Save(context.Background())
+		require.NoError(t, err)
 	})
 }
 

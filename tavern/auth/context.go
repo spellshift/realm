@@ -93,6 +93,16 @@ func IdentityFromContext(ctx context.Context) Identity {
 	return id
 }
 
+// UserFromContext returns the user identity associated with the provided context, or nil if no user identity or a different identity type is associated.
+func UserFromContext(ctx context.Context) *ent.User {
+	val := ctx.Value(ctxKey{})
+	u, ok := val.(*userIdentity)
+	if !ok || u == nil {
+		return nil
+	}
+	return u.User
+}
+
 // IsAuthenticatedContext returns true if the context is associated with an authenticated identity, false otherwise.
 func IsAuthenticatedContext(ctx context.Context) bool {
 	v, ok := ctx.Value(ctxKey{}).(Identity)

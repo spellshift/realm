@@ -97,7 +97,7 @@ func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContex
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &TomeQuery{config: j.config}
+				query = (&TomeClient{config: j.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
@@ -107,7 +107,7 @@ func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContex
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &FileQuery{config: j.config}
+				query = (&FileClient{config: j.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
@@ -117,7 +117,7 @@ func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContex
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &TaskQuery{config: j.config}
+				query = (&TaskClient{config: j.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
@@ -125,6 +125,16 @@ func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContex
 			j.WithNamedTasks(alias, func(wq *TaskQuery) {
 				*wq = *query
 			})
+		case "creator":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: j.config}).Query()
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			j.withCreator = query
 		}
 	}
 	return nil
@@ -201,7 +211,7 @@ func (s *SessionQuery) collectField(ctx context.Context, op *graphql.OperationCo
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &TagQuery{config: s.config}
+				query = (&TagClient{config: s.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
@@ -213,7 +223,7 @@ func (s *SessionQuery) collectField(ctx context.Context, op *graphql.OperationCo
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &TaskQuery{config: s.config}
+				query = (&TaskClient{config: s.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
@@ -297,7 +307,7 @@ func (t *TagQuery) collectField(ctx context.Context, op *graphql.OperationContex
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &SessionQuery{config: t.config}
+				query = (&SessionClient{config: t.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
@@ -381,7 +391,7 @@ func (t *TaskQuery) collectField(ctx context.Context, op *graphql.OperationConte
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &JobQuery{config: t.config}
+				query = (&JobClient{config: t.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
@@ -391,7 +401,7 @@ func (t *TaskQuery) collectField(ctx context.Context, op *graphql.OperationConte
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &SessionQuery{config: t.config}
+				query = (&SessionClient{config: t.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
@@ -473,7 +483,7 @@ func (t *TomeQuery) collectField(ctx context.Context, op *graphql.OperationConte
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = &FileQuery{config: t.config}
+				query = (&FileClient{config: t.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err

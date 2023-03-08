@@ -47,6 +47,12 @@ func (Job) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Tasks tracking the status and output of individual tome execution on targets"),
+		edge.To("creator", User.Type).
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("User that created the job if available."),
 	}
 }
 

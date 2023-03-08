@@ -431,6 +431,10 @@ type JobWhereInput struct {
 	// "tasks" edge predicates.
 	HasTasks     *bool             `json:"hasTasks,omitempty"`
 	HasTasksWith []*TaskWhereInput `json:"hasTasksWith,omitempty"`
+
+	// "creator" edge predicates.
+	HasCreator     *bool             `json:"hasCreator,omitempty"`
+	HasCreatorWith []*UserWhereInput `json:"hasCreatorWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -714,6 +718,24 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, job.HasTasksWith(with...))
+	}
+	if i.HasCreator != nil {
+		p := job.HasCreator()
+		if !*i.HasCreator {
+			p = job.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCreatorWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasCreatorWith))
+		for _, w := range i.HasCreatorWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCreatorWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, job.HasCreatorWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

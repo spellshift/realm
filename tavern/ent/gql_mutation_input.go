@@ -2,7 +2,9 @@
 
 package ent
 
-import "github.com/kcarretto/realm/tavern/ent/tag"
+import (
+	"github.com/kcarretto/realm/tavern/ent/tag"
+)
 
 // CreateJobInput represents a mutation input for creating jobs.
 type CreateJobInput struct {
@@ -31,6 +33,7 @@ type UpdateSessionInput struct {
 	Name          *string
 	ClearHostname bool
 	Hostname      *string
+	ClearTags     bool
 	AddTagIDs     []int
 	RemoveTagIDs  []int
 }
@@ -45,6 +48,9 @@ func (i *UpdateSessionInput) Mutate(m *SessionMutation) {
 	}
 	if v := i.Hostname; v != nil {
 		m.SetHostname(*v)
+	}
+	if i.ClearTags {
+		m.ClearTags()
 	}
 	if v := i.AddTagIDs; len(v) > 0 {
 		m.AddTagIDs(v...)
@@ -92,6 +98,7 @@ func (c *TagCreate) SetInput(i CreateTagInput) *TagCreate {
 type UpdateTagInput struct {
 	Name             *string
 	Kind             *tag.Kind
+	ClearSessions    bool
 	AddSessionIDs    []int
 	RemoveSessionIDs []int
 }
@@ -103,6 +110,9 @@ func (i *UpdateTagInput) Mutate(m *TagMutation) {
 	}
 	if v := i.Kind; v != nil {
 		m.SetKind(*v)
+	}
+	if i.ClearSessions {
+		m.ClearSessions()
 	}
 	if v := i.AddSessionIDs; len(v) > 0 {
 		m.AddSessionIDs(v...)
