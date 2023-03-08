@@ -138,14 +138,14 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 
 // QueryFiles queries the "files" edge of the Tome entity.
 func (t *Tome) QueryFiles() *FileQuery {
-	return (&TomeClient{config: t.config}).QueryFiles(t)
+	return NewTomeClient(t.config).QueryFiles(t)
 }
 
 // Update returns a builder for updating this Tome.
 // Note that you need to call Tome.Unwrap() before calling this method if this Tome
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (t *Tome) Update() *TomeUpdateOne {
-	return (&TomeClient{config: t.config}).UpdateOne(t)
+	return NewTomeClient(t.config).UpdateOne(t)
 }
 
 // Unwrap unwraps the Tome entity that was returned from a transaction after it was closed,
@@ -214,9 +214,3 @@ func (t *Tome) appendNamedFiles(name string, edges ...*File) {
 
 // Tomes is a parsable slice of Tome.
 type Tomes []*Tome
-
-func (t Tomes) config(cfg config) {
-	for _i := range t {
-		t[_i].config = cfg
-	}
-}

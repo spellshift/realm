@@ -16,6 +16,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/predicate"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // JobUpdate is the builder for updating Job entities.
@@ -108,6 +109,25 @@ func (ju *JobUpdate) AddTasks(t ...*Task) *JobUpdate {
 	return ju.AddTaskIDs(ids...)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (ju *JobUpdate) SetCreatorID(id int) *JobUpdate {
+	ju.mutation.SetCreatorID(id)
+	return ju
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (ju *JobUpdate) SetNillableCreatorID(id *int) *JobUpdate {
+	if id != nil {
+		ju = ju.SetCreatorID(*id)
+	}
+	return ju
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (ju *JobUpdate) SetCreator(u *User) *JobUpdate {
+	return ju.SetCreatorID(u.ID)
+}
+
 // Mutation returns the JobMutation object of the builder.
 func (ju *JobUpdate) Mutation() *JobMutation {
 	return ju.mutation
@@ -146,43 +166,16 @@ func (ju *JobUpdate) RemoveTasks(t ...*Task) *JobUpdate {
 	return ju.RemoveTaskIDs(ids...)
 }
 
+// ClearCreator clears the "creator" edge to the User entity.
+func (ju *JobUpdate) ClearCreator() *JobUpdate {
+	ju.mutation.ClearCreator()
+	return ju
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (ju *JobUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	ju.defaults()
-	if len(ju.hooks) == 0 {
-		if err = ju.check(); err != nil {
-			return 0, err
-		}
-		affected, err = ju.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*JobMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ju.check(); err != nil {
-				return 0, err
-			}
-			ju.mutation = mutation
-			affected, err = ju.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(ju.hooks) - 1; i >= 0; i-- {
-			if ju.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ju.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, ju.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks[int, JobMutation](ctx, ju.sqlSave, ju.mutation, ju.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -229,16 +222,10 @@ func (ju *JobUpdate) check() error {
 }
 
 func (ju *JobUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   job.Table,
-			Columns: job.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: job.FieldID,
-			},
-		},
+	if err := ju.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(job.Table, job.Columns, sqlgraph.NewFieldSpec(job.FieldID, field.TypeInt))
 	if ps := ju.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -382,6 +369,41 @@ func (ju *JobUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ju.mutation.CreatorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.CreatorTable,
+			Columns: []string{job.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ju.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.CreatorTable,
+			Columns: []string{job.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ju.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{job.Label}
@@ -390,6 +412,7 @@ func (ju *JobUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	ju.mutation.done = true
 	return n, nil
 }
 
@@ -478,6 +501,25 @@ func (juo *JobUpdateOne) AddTasks(t ...*Task) *JobUpdateOne {
 	return juo.AddTaskIDs(ids...)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (juo *JobUpdateOne) SetCreatorID(id int) *JobUpdateOne {
+	juo.mutation.SetCreatorID(id)
+	return juo
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (juo *JobUpdateOne) SetNillableCreatorID(id *int) *JobUpdateOne {
+	if id != nil {
+		juo = juo.SetCreatorID(*id)
+	}
+	return juo
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (juo *JobUpdateOne) SetCreator(u *User) *JobUpdateOne {
+	return juo.SetCreatorID(u.ID)
+}
+
 // Mutation returns the JobMutation object of the builder.
 func (juo *JobUpdateOne) Mutation() *JobMutation {
 	return juo.mutation
@@ -516,6 +558,18 @@ func (juo *JobUpdateOne) RemoveTasks(t ...*Task) *JobUpdateOne {
 	return juo.RemoveTaskIDs(ids...)
 }
 
+// ClearCreator clears the "creator" edge to the User entity.
+func (juo *JobUpdateOne) ClearCreator() *JobUpdateOne {
+	juo.mutation.ClearCreator()
+	return juo
+}
+
+// Where appends a list predicates to the JobUpdate builder.
+func (juo *JobUpdateOne) Where(ps ...predicate.Job) *JobUpdateOne {
+	juo.mutation.Where(ps...)
+	return juo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (juo *JobUpdateOne) Select(field string, fields ...string) *JobUpdateOne {
@@ -525,47 +579,8 @@ func (juo *JobUpdateOne) Select(field string, fields ...string) *JobUpdateOne {
 
 // Save executes the query and returns the updated Job entity.
 func (juo *JobUpdateOne) Save(ctx context.Context) (*Job, error) {
-	var (
-		err  error
-		node *Job
-	)
 	juo.defaults()
-	if len(juo.hooks) == 0 {
-		if err = juo.check(); err != nil {
-			return nil, err
-		}
-		node, err = juo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*JobMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = juo.check(); err != nil {
-				return nil, err
-			}
-			juo.mutation = mutation
-			node, err = juo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(juo.hooks) - 1; i >= 0; i-- {
-			if juo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = juo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, juo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Job)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from JobMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*Job, JobMutation](ctx, juo.sqlSave, juo.mutation, juo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -612,16 +627,10 @@ func (juo *JobUpdateOne) check() error {
 }
 
 func (juo *JobUpdateOne) sqlSave(ctx context.Context) (_node *Job, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   job.Table,
-			Columns: job.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: job.FieldID,
-			},
-		},
+	if err := juo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(job.Table, job.Columns, sqlgraph.NewFieldSpec(job.FieldID, field.TypeInt))
 	id, ok := juo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Job.id" for update`)}
@@ -782,6 +791,41 @@ func (juo *JobUpdateOne) sqlSave(ctx context.Context) (_node *Job, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if juo.mutation.CreatorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.CreatorTable,
+			Columns: []string{job.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := juo.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.CreatorTable,
+			Columns: []string{job.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_node = &Job{config: juo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
@@ -793,5 +837,6 @@ func (juo *JobUpdateOne) sqlSave(ctx context.Context) (_node *Job, err error) {
 		}
 		return nil, err
 	}
+	juo.mutation.done = true
 	return _node, nil
 }

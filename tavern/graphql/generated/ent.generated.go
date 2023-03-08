@@ -764,6 +764,59 @@ func (ec *executionContext) fieldContext_Job_tasks(ctx context.Context, field gr
 	return fc, nil
 }
 
+func (ec *executionContext) _Job_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Job) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Job_creator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Creator(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Job_creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Job",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "photourl":
+				return ec.fieldContext_User_photourl(ctx, field)
+			case "isactivated":
+				return ec.fieldContext_User_isactivated(ctx, field)
+			case "isadmin":
+				return ec.fieldContext_User_isadmin(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *ent.PageInfo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
 	if err != nil {
@@ -1154,6 +1207,8 @@ func (ec *executionContext) fieldContext_Query_jobs(ctx context.Context, field g
 				return ec.fieldContext_Job_bundle(ctx, field)
 			case "tasks":
 				return ec.fieldContext_Job_tasks(ctx, field)
+			case "creator":
+				return ec.fieldContext_Job_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Job", field.Name)
 		},
@@ -2577,6 +2632,8 @@ func (ec *executionContext) fieldContext_Task_job(ctx context.Context, field gra
 				return ec.fieldContext_Job_bundle(ctx, field)
 			case "tasks":
 				return ec.fieldContext_Job_tasks(ctx, field)
+			case "creator":
+				return ec.fieldContext_Job_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Job", field.Name)
 		},
@@ -3977,7 +4034,7 @@ func (ec *executionContext) unmarshalInputJobWhereInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdat", "createdatNEQ", "createdatIn", "createdatNotIn", "createdatGT", "createdatGTE", "createdatLT", "createdatLTE", "lastmodifiedat", "lastmodifiedatNEQ", "lastmodifiedatIn", "lastmodifiedatNotIn", "lastmodifiedatGT", "lastmodifiedatGTE", "lastmodifiedatLT", "lastmodifiedatLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdat", "createdatNEQ", "createdatIn", "createdatNotIn", "createdatGT", "createdatGTE", "createdatLT", "createdatLTE", "lastmodifiedat", "lastmodifiedatNEQ", "lastmodifiedatIn", "lastmodifiedatNotIn", "lastmodifiedatGT", "lastmodifiedatGTE", "lastmodifiedatLT", "lastmodifiedatLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4469,6 +4526,22 @@ func (ec *executionContext) unmarshalInputJobWhereInput(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTasksWith"))
 			it.HasTasksWith, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasCreator":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreator"))
+			it.HasCreator, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hasCreatorWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatorWith"))
+			it.HasCreatorWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7245,7 +7318,7 @@ func (ec *executionContext) unmarshalInputUpdateSessionInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "clearHostname", "hostname", "addTagIDs", "removeTagIDs"}
+	fieldsInOrder := [...]string{"name", "hostname", "clearHostname", "addTagIDs", "removeTagIDs", "clearTags"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7260,19 +7333,19 @@ func (ec *executionContext) unmarshalInputUpdateSessionInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "clearHostname":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearHostname"))
-			it.ClearHostname, err = ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "hostname":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostname"))
 			it.Hostname, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "clearHostname":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearHostname"))
+			it.ClearHostname, err = ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7292,6 +7365,14 @@ func (ec *executionContext) unmarshalInputUpdateSessionInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
+		case "clearTags":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearTags"))
+			it.ClearTags, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -7305,7 +7386,7 @@ func (ec *executionContext) unmarshalInputUpdateTagInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "kind", "addSessionIDs", "removeSessionIDs"}
+	fieldsInOrder := [...]string{"name", "kind", "addSessionIDs", "removeSessionIDs", "clearSessions"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7341,6 +7422,14 @@ func (ec *executionContext) unmarshalInputUpdateTagInput(ctx context.Context, ob
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeSessionIDs"))
 			it.RemoveSessionIDs, err = ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "clearSessions":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearSessions"))
+			it.ClearSessions, err = ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7954,6 +8043,23 @@ func (ec *executionContext) _Job(ctx context.Context, sel ast.SelectionSet, obj 
 					}
 				}()
 				res = ec._Job_tasks(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "creator":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Job_creator(ctx, field, obj)
 				return res
 			}
 

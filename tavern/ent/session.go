@@ -150,19 +150,19 @@ func (s *Session) assignValues(columns []string, values []any) error {
 
 // QueryTags queries the "tags" edge of the Session entity.
 func (s *Session) QueryTags() *TagQuery {
-	return (&SessionClient{config: s.config}).QueryTags(s)
+	return NewSessionClient(s.config).QueryTags(s)
 }
 
 // QueryTasks queries the "tasks" edge of the Session entity.
 func (s *Session) QueryTasks() *TaskQuery {
-	return (&SessionClient{config: s.config}).QueryTasks(s)
+	return NewSessionClient(s.config).QueryTasks(s)
 }
 
 // Update returns a builder for updating this Session.
 // Note that you need to call Session.Unwrap() before calling this method if this Session
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Session) Update() *SessionUpdateOne {
-	return (&SessionClient{config: s.config}).UpdateOne(s)
+	return NewSessionClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Session entity that was returned from a transaction after it was closed,
@@ -255,9 +255,3 @@ func (s *Session) appendNamedTasks(name string, edges ...*Task) {
 
 // Sessions is a parsable slice of Session.
 type Sessions []*Session
-
-func (s Sessions) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
-	}
-}

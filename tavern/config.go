@@ -31,27 +31,25 @@ var (
 	// EnvMySQLUser defines the MySQL user to authenticate as.
 	// EnvMySQLPasswd defines the password for the MySQL user to authenticate with.
 	// EnvMySQLDB defines the name of the MySQL database to use.
-	// EnvMySQLMaxIdleConns defines the maximum number of idle MySQL connections to allow.
-	// EnvMySQLMaxOpenConns defines the maximum number of open MySQL connections to allow.
-	// EnvMySQLMaxConnLifetime defines the maximum lifetime of a MySQL connection.
-	EnvMySQLAddr            = EnvString{"MYSQL_ADDR", ""}
-	EnvMySQLNet             = EnvString{"MYSQL_NET", "tcp"}
-	EnvMySQLUser            = EnvString{"MYSQL_USER", "root"}
-	EnvMySQLPasswd          = EnvString{"MYSQL_PASSWD", ""}
-	EnvMySQLDB              = EnvString{"MYSQL_DB", "tavern"}
-	EnvMySQLMaxIdleConns    = EnvInteger{"MYSQL_MAX_IDLE_CONNS", 10}
-	EnvMySQLMaxOpenConns    = EnvInteger{"MYSQL_MAX_OPEN_CONNS", 100}
-	EnvMySQLMaxConnLifetime = EnvInteger{"MYSQL_MAX_CONN_LIFETIME", 3600}
+	EnvMySQLAddr   = EnvString{"MYSQL_ADDR", ""}
+	EnvMySQLNet    = EnvString{"MYSQL_NET", "tcp"}
+	EnvMySQLUser   = EnvString{"MYSQL_USER", "root"}
+	EnvMySQLPasswd = EnvString{"MYSQL_PASSWD", ""}
+	EnvMySQLDB     = EnvString{"MYSQL_DB", "tavern"}
+
+	// EnvDBMaxIdleConns defines the maximum number of idle db connections to allow.
+	// EnvDBMaxOpenConns defines the maximum number of open db connections to allow.
+	// EnvDBMaxConnLifetime defines the maximum lifetime of a db connection.
+	EnvDBMaxIdleConns    = EnvInteger{"DB_MAX_IDLE_CONNS", 10}
+	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
+	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
 )
 
 // Config holds information that controls the behaviour of Tavern
 type Config struct {
 	srv *http.Server
 
-	mysqlDSN             string
-	mysqlMaxIdleConns    int
-	mysqlMaxOpenConns    int
-	mysqlMaxConnLifetime time.Duration
+	mysqlDSN string
 
 	client *ent.Client
 	oauth  oauth2.Config
@@ -76,11 +74,28 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+
+	// Setup DB Pool Config
+	var (
+		maxIdleConns    = EnvDBMaxIdleConns.Int()
+		maxOpenConns    = EnvDBMaxOpenConns.Int()
+		maxConnLifetime = time.Duration(EnvDBMaxConnLifetime.Int()) * time.Second
+	)
+	if maxIdleConns < 0 {
+		log.Fatalf("[FATAL] %q must be greater than or equal to 0 if set, got: %d", EnvDBMaxIdleConns.Key, maxIdleConns)
+	}
+	if maxOpenConns <= 0 {
+		log.Fatalf("[FATAL] %q must be greater than 0 if set, got: %d", EnvDBMaxOpenConns.Key, maxOpenConns)
+	}
+	if maxConnLifetime <= 10*time.Second {
+		log.Fatalf("[FATAL] %q must be greater than 10 seconds if set, got: %d", EnvDBMaxConnLifetime.Key, maxConnLifetime)
+	}
+
 	// Get the underlying sql.DB object of the driver.
 	db := drv.DB()
-	db.SetMaxIdleConns(cfg.mysqlMaxIdleConns)
-	db.SetMaxOpenConns(cfg.mysqlMaxOpenConns)
-	db.SetConnMaxLifetime(cfg.mysqlMaxConnLifetime)
+	db.SetMaxIdleConns(maxIdleConns)
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetConnMaxLifetime(maxConnLifetime)
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
 }
 
@@ -163,9 +178,6 @@ func ConfigureMySQLFromEnv() func(*Config) {
 		mysqlConfig.DBName = EnvMySQLDB.String()
 
 		cfg.mysqlDSN = mysqlConfig.FormatDSN()
-		cfg.mysqlMaxIdleConns = EnvMySQLMaxIdleConns.Int()
-		cfg.mysqlMaxOpenConns = EnvMySQLMaxOpenConns.Int()
-		cfg.mysqlMaxConnLifetime = time.Duration(EnvMySQLMaxConnLifetime.Int()) * time.Second
 	}
 }
 

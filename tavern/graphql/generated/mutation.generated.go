@@ -271,6 +271,8 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 				return ec.fieldContext_Job_bundle(ctx, field)
 			case "tasks":
 				return ec.fieldContext_Job_tasks(ctx, field)
+			case "creator":
+				return ec.fieldContext_Job_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Job", field.Name)
 		},

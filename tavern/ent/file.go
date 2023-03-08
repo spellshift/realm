@@ -119,7 +119,7 @@ func (f *File) assignValues(columns []string, values []any) error {
 // Note that you need to call File.Unwrap() before calling this method if this File
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (f *File) Update() *FileUpdateOne {
-	return (&FileClient{config: f.config}).UpdateOne(f)
+	return NewFileClient(f.config).UpdateOne(f)
 }
 
 // Unwrap unwraps the File entity that was returned from a transaction after it was closed,
@@ -161,9 +161,3 @@ func (f *File) String() string {
 
 // Files is a parsable slice of File.
 type Files []*File
-
-func (f Files) config(cfg config) {
-	for _i := range f {
-		f[_i].config = cfg
-	}
-}

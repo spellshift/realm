@@ -5,7 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -94,7 +94,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 
 	// Setup Mock IDP
 	idp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		expected := fmt.Sprintf("client_id=%s&client_secret=%s&code=%s&grant_type=authorization_code&redirect_uri=%s", expectedClientID, expectedClientSecret, expectedCode, expectedRedirect)
 		assert.Equal(t, expected, string(body))

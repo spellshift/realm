@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kcarretto/realm/tavern/auth/authtest"
+	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/graphql"
@@ -22,13 +22,13 @@ func TestUserMutations(t *testing.T) {
 	ctx := context.Background()
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
-	srv := authtest.Middleware(handler.NewDefaultServer(graphql.NewSchema(graph)))
+	srv := auth.AuthDisabledMiddleware(handler.NewDefaultServer(graphql.NewSchema(graph)), graph)
 	gqlClient := client.New(srv)
 
 	// Initialize sample data
 	testUser := graph.User.Create().
 		SetName("bobdylan").
-		SetIsActivated(false).
+		SetIsActivated(true).
 		SetIsAdmin(true).
 		SetOAuthID("likearollingstone").
 		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/0/02/Bob_Dylan_-_Azkena_Rock_Festival_2010_2.jpg").

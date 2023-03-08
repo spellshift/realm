@@ -25,6 +25,8 @@ const (
 	EdgeBundle = "bundle"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
 	EdgeTasks = "tasks"
+	// EdgeCreator holds the string denoting the creator edge name in mutations.
+	EdgeCreator = "creator"
 	// Table holds the table name of the job in the database.
 	Table = "jobs"
 	// TomeTable is the table that holds the tome relation/edge.
@@ -48,6 +50,13 @@ const (
 	TasksInverseTable = "tasks"
 	// TasksColumn is the table column denoting the tasks relation/edge.
 	TasksColumn = "job_tasks"
+	// CreatorTable is the table that holds the creator relation/edge.
+	CreatorTable = "jobs"
+	// CreatorInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	CreatorInverseTable = "users"
+	// CreatorColumn is the table column denoting the creator relation/edge.
+	CreatorColumn = "job_creator"
 )
 
 // Columns holds all SQL columns for job fields.
@@ -64,6 +73,7 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"job_tome",
 	"job_bundle",
+	"job_creator",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

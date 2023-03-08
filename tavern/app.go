@@ -163,7 +163,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	if cfg.oauth.ClientID != "" {
 		endpoint = auth.Middleware(handlerWithLogging, client)
 	} else {
-		endpoint = auth.AuthDisabledMiddleware(handlerWithLogging)
+		endpoint = auth.AuthDisabledMiddleware(handlerWithLogging, client)
 	}
 
 	// Initialize HTTP Server

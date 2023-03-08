@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"entgo.io/ent"
+	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
@@ -17,8 +19,6 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
-
-	"entgo.io/ent"
 )
 
 const (
@@ -397,9 +397,24 @@ func (m *FileMutation) Where(ps ...predicate.File) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the FileMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FileMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.File, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *FileMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FileMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (File).
@@ -674,6 +689,8 @@ type JobMutation struct {
 	tasks          map[int]struct{}
 	removedtasks   map[int]struct{}
 	clearedtasks   bool
+	creator        *int
+	clearedcreator bool
 	done           bool
 	oldValue       func(context.Context) (*Job, error)
 	predicates     []predicate.Job
@@ -1066,14 +1083,68 @@ func (m *JobMutation) ResetTasks() {
 	m.removedtasks = nil
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by id.
+func (m *JobMutation) SetCreatorID(id int) {
+	m.creator = &id
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (m *JobMutation) ClearCreator() {
+	m.clearedcreator = true
+}
+
+// CreatorCleared reports if the "creator" edge to the User entity was cleared.
+func (m *JobMutation) CreatorCleared() bool {
+	return m.clearedcreator
+}
+
+// CreatorID returns the "creator" edge ID in the mutation.
+func (m *JobMutation) CreatorID() (id int, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
+	}
+	return
+}
+
+// CreatorIDs returns the "creator" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *JobMutation) CreatorIDs() (ids []int) {
+	if id := m.creator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreator resets all changes to the "creator" edge.
+func (m *JobMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
+}
+
 // Where appends a list predicates to the JobMutation builder.
 func (m *JobMutation) Where(ps ...predicate.Job) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the JobMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *JobMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Job, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *JobMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *JobMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Job).
@@ -1244,7 +1315,7 @@ func (m *JobMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *JobMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.tome != nil {
 		edges = append(edges, job.EdgeTome)
 	}
@@ -1253,6 +1324,9 @@ func (m *JobMutation) AddedEdges() []string {
 	}
 	if m.tasks != nil {
 		edges = append(edges, job.EdgeTasks)
+	}
+	if m.creator != nil {
+		edges = append(edges, job.EdgeCreator)
 	}
 	return edges
 }
@@ -1275,13 +1349,17 @@ func (m *JobMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case job.EdgeCreator:
+		if id := m.creator; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *JobMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtasks != nil {
 		edges = append(edges, job.EdgeTasks)
 	}
@@ -1304,7 +1382,7 @@ func (m *JobMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *JobMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedtome {
 		edges = append(edges, job.EdgeTome)
 	}
@@ -1313,6 +1391,9 @@ func (m *JobMutation) ClearedEdges() []string {
 	}
 	if m.clearedtasks {
 		edges = append(edges, job.EdgeTasks)
+	}
+	if m.clearedcreator {
+		edges = append(edges, job.EdgeCreator)
 	}
 	return edges
 }
@@ -1327,6 +1408,8 @@ func (m *JobMutation) EdgeCleared(name string) bool {
 		return m.clearedbundle
 	case job.EdgeTasks:
 		return m.clearedtasks
+	case job.EdgeCreator:
+		return m.clearedcreator
 	}
 	return false
 }
@@ -1340,6 +1423,9 @@ func (m *JobMutation) ClearEdge(name string) error {
 		return nil
 	case job.EdgeBundle:
 		m.ClearBundle()
+		return nil
+	case job.EdgeCreator:
+		m.ClearCreator()
 		return nil
 	}
 	return fmt.Errorf("unknown Job unique edge %s", name)
@@ -1357,6 +1443,9 @@ func (m *JobMutation) ResetEdge(name string) error {
 		return nil
 	case job.EdgeTasks:
 		m.ResetTasks()
+		return nil
+	case job.EdgeCreator:
+		m.ResetCreator()
 		return nil
 	}
 	return fmt.Errorf("unknown Job edge %s", name)
@@ -1915,9 +2004,24 @@ func (m *SessionMutation) Where(ps ...predicate.Session) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the SessionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SessionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Session, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *SessionMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SessionMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Session).
@@ -2517,9 +2621,24 @@ func (m *TagMutation) Where(ps ...predicate.Tag) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the TagMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TagMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Tag, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *TagMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TagMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Tag).
@@ -3250,9 +3369,24 @@ func (m *TaskMutation) Where(ps ...predicate.Task) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the TaskMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TaskMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Task, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *TaskMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TaskMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Task).
@@ -4032,9 +4166,24 @@ func (m *TomeMutation) Where(ps ...predicate.Tome) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the TomeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TomeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Tome, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *TomeMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TomeMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Tome).
@@ -4675,9 +4824,24 @@ func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the UserMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.User, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *UserMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (User).
