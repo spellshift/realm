@@ -33,9 +33,8 @@ func (User) Fields() []ent.Field {
 			Comment("URL to the user's profile photo."),
 		field.String("SessionToken").
 			DefaultFunc(newSessionToken).
-			Unique().
 			Sensitive().
-			MaxLen(1000).
+			MaxLen(200).
 			Annotations(
 				entgql.Skip(),
 			).
@@ -57,7 +56,6 @@ func (User) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (User) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.QueryField(),
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),

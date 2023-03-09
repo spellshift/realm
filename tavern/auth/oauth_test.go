@@ -135,7 +135,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 
 	// Result Assertions
 	result := resp.Result()
-	require.Equal(t, http.StatusOK, result.StatusCode)
+	require.Equal(t, http.StatusFound, result.StatusCode)
 	usr := graph.User.Query().
 		Where(user.OAuthID("goofygoober")).
 		OnlyX(context.Background())
@@ -165,7 +165,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 	req = getOAuthAuthorizationRequest(t, privKey, expectedCode)
 	handler.ServeHTTP(resp, req)
 	result = resp.Result()
-	require.Equal(t, http.StatusOK, result.StatusCode)
+	require.Equal(t, http.StatusFound, result.StatusCode)
 
 	// Assert new user was created
 	assert.Equal(t, 2, graph.User.Query().CountX(context.Background()))

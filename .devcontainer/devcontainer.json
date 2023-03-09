@@ -4,7 +4,7 @@
 		"dockerfile": "Dockerfile",
 		"args": {
 			// Use the -bullseye variants if you are on a M1 mac.
-			"GO_VARIANT": "1.19.3-buster",
+			"GO_VARIANT": "1.20.2-buster",
 			"RUST_VARIANT": "buster",
 			// Options
 			"NODE_VERSION": "lts/*"
@@ -18,7 +18,10 @@
 		"go.toolsManagement.checkForUpdates": "local",
 		"go.useLanguageServer": true,
 		"go.gopath": "/go",
-		"go.goroot": "/usr/local/go"
+		"go.goroot": "/usr/local/go",
+
+		// Misc
+		"trailing-spaces.trimOnSave": true
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.
@@ -40,7 +43,7 @@
 	// SPEEEEEEED on MacOS & Windows. Note that your local clone of realm will not be updated.
 	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
 	"workspaceFolder": "/workspaces/realm",
-	"postCreateCommand": "cd /workspaces && git clone https://github.com/KCarretto/realm.git", 
+	"postCreateCommand": "cd /workspaces && git clone https://github.com/KCarretto/realm.git",
 
 	"mounts": [
 		"source=realm-bashhistory,target=/commandhistory,type=volume"

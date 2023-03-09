@@ -53,9 +53,7 @@ func (File) Edges() []ent.Edge {
 
 // Annotations describes additional information for the ent.
 func (File) Annotations() []schema.Annotation {
-	return []schema.Annotation{
-		entgql.QueryField(),
-	}
+	return []schema.Annotation{}
 }
 
 // Mixin defines common shared properties for the ent.

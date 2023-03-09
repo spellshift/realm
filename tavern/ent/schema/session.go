@@ -88,7 +88,6 @@ func (Session) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Session) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.QueryField(),
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),
