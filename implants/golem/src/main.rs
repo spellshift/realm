@@ -11,17 +11,8 @@ use eldritch::{eldritch_run};
 
 mod inter;
 
-
-// fn run(tome_path: String) -> anyhow::Result<String> {
-//     // Read a tome script
-//     let tome_contents = fs::read_to_string(tome_path.clone())?;
-//     // Execute a tome script
-//     eldritch_run(tome_path, tome_contents, None)
-// }
-
-
 #[tokio::main]
- async fn main() -> anyhow::Result<()> {
+async fn main() -> anyhow::Result<()> {
     let matches = Command::new("golem")
         .arg(Arg::with_name("INPUT")
             .help("Set the tomes to run")
@@ -50,7 +41,6 @@ mod inter;
         let mut result: Vec<String> = Vec::new();
         for tome_task in all_tome_futures {
             let tome_name: String = tome_task.0;
-            println!("{}", tome_name);
             // Join our 
             let tome_result_thread_join = match tome_task.1.join() {
                 Ok(local_thread_join_res) => local_thread_join_res,
