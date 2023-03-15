@@ -111,10 +111,13 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
 #[cfg(test)]
 mod tests {
+    use std::thread;
+
     use super::*;
     use starlark::environment::{GlobalsBuilder};
     use starlark::{starlark_module};
     use starlark::assert::Assert;
+    use tempfile::NamedTempFile;
 
     use super::file::FileLibrary;
     use super::process::ProcessLibrary;
@@ -189,6 +192,24 @@ input_params
         let param_string = r#"{"list_key":["item1","item2","item3"]}"#.to_string();
         let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string));
         assert_eq!(test_res.unwrap(), r#"{"list_key": ["item1", "item2", "item3"]}"#);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_library_async() -> anyhow::Result<()> {
+        // just using a temp file for its path
+        let tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+                
+        let test_content = format!(r#"
+file.download("https://www.google.com/", "{path}")
+"#);
+
+        let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None) });
+        test_res.join();
+        
+        assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
+        tmp_file.close();
         Ok(())
     }
 
