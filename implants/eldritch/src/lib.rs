@@ -29,6 +29,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
 }
 
 pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameters: Option<String>) -> anyhow::Result<String> {
+    // Boilder plate
     let ast: AstModule;
     match AstModule::parse(
             &tome_filename,
@@ -41,7 +42,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
     let tome_params_str: String = match tome_parameters {
         Some(param_string) => param_string,
-        None => "".to_string(),
+        None => "{}".to_string(),
     };
 
     let globals = get_eldritch()?;
@@ -50,7 +51,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut input_params: Dict = Dict::new(res);
-
+    
     let parsed: serde_json::Value = serde_json::from_str(&tome_params_str)?;
     let param_map: serde_json::Map<String, serde_json::Value> = match parsed.as_object() {
         Some(tmp_param_map) => tmp_param_map.clone(),
