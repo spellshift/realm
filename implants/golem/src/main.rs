@@ -2,7 +2,6 @@ extern crate golem;
 extern crate eldritch;
 
 use clap::{Command, Arg};
-use tokio::task;
 use std::fs;
 use std::process;
 use std::thread;

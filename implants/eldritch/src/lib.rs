@@ -206,10 +206,10 @@ file.download("https://www.google.com/", "{path}")
 "#);
 
         let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None) });
-        test_res.join();
-        
+        let _ = test_res.join();
+
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
-        tmp_file.close();
+        let _ = tmp_file.close();
         Ok(())
     }
 
