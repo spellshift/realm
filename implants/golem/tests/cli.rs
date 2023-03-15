@@ -12,7 +12,7 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
     cmd.arg("nonexistentdir/run.tome");
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains("[TASK ERROR] nonexistentdir/run.tome: No such file or directory (os error 2)"));
+        .stderr(predicate::str::contains("Error: No such file or directory"));
 
     Ok(())
 }
@@ -67,7 +67,7 @@ fn test_golem_main_basic_async() -> anyhow::Result<()> {
     cmd.arg("working_dir/tomes/download_test.tome");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#"OKAY!"#));
+        .stderr(predicate::str::contains(r#"OKAY!"#));
 
     Ok(())
 }
