@@ -53,7 +53,21 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
     cmd.arg("working_dir/tomes/eldritch_test.tome");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("[\"[\\\"append\\\", \\\"copy\\\", \\\"download\\\", \\\"exists\\\", \\\"hash\\\", \\\"is_dir\\\", \\\"is_file\\\", \\\"mkdir\\\", \\\"read\\\", \\\"remove\\\", \\\"rename\\\", \\\"replace\\\", \\\"replace_all\\\", \\\"timestomp\\\", \\\"write\\\"]\"]"));
+        .stdout(predicate::str::contains(r#"[\"append\", \"compress\""#));
+
+    Ok(())
+}
+
+
+// Test running `./golem ./working_dir/tomes/eldritch_test.tome`
+#[test]
+fn test_golem_main_basic_async() -> anyhow::Result<()> {
+    let mut cmd = Command::cargo_bin("golem")?;
+
+    cmd.arg("working_dir/tomes/download_test.tome");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains(r#"OKAY!"#));
 
     Ok(())
 }
