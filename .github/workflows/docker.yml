@@ -40,7 +40,6 @@ jobs:
           images: |
             kcarretto/tavern
             ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
-          
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
@@ -51,3 +50,5 @@ jobs:
           target: production
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ inputs.image }}:buildcache
+          cache-to: type=registry,ref=${{ inputs.image }}:buildcache,mode=max
