@@ -43,20 +43,17 @@ jobs:
           - windows-latest
     steps:
     - uses: actions/checkout@v3
-    - name: ⚡ Cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-imix-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-imix-cargo-
     - if: matrix.os == 'windows-latest'
       run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
       name: 👾 Disable defender
       shell: powershell
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        default: true
+        profile: minimal
+    - uses: Swatinem/rust-cache@v2
     - name: 🔨 Build
       run: cd implants/imix && cargo build --verbose
     - name: 🔎 Run tests
@@ -73,20 +70,17 @@ jobs:
           - windows-latest
     steps:
     - uses: actions/checkout@v3
-    - name: ⚡ Cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-eldritch-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-eldritch-cargo-
     - if: matrix.os == 'windows-latest'
       run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
       name: 👾 Disable defender
       shell: powershell
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        default: true
+        profile: minimal
+    - uses: Swatinem/rust-cache@v2
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
