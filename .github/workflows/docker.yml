@@ -50,5 +50,5 @@ jobs:
           target: production
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ inputs.image }}:buildcache
-          cache-to: type=registry,ref=${{ inputs.image }}:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha, mode=max
