@@ -13,6 +13,7 @@ use imix::graphql::{GraphQLTask, self};
 use eldritch::eldritch_run;
 use uuid::Uuid;
 
+
 async fn install(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
     let config: imix::Config = serde_json::from_reader(config_file)?;
@@ -122,6 +123,17 @@ fn get_host_id(host_id_file_path: String) -> Result<String> {
     Ok(host_id)
 }
 
+fn get_primary_ip() -> Result<String> {
+    let res = match default_net::get_default_interface() {
+        Ok(default_interface) => {
+            default_interface.ipv4[0].addr.to_string()
+        },
+        Err(e) => {
+            "DANGER-UNKNOWN".to_string()
+        },
+    };
+    Ok(res)
+}
 
 // Async handler for port scanning.
 async fn main_loop(config_path: String) -> Result<()> {
@@ -294,6 +306,19 @@ pub fn main() -> Result<(), imix::Error> {
 mod tests {
     use imix::{graphql::{GraphQLJob, GraphQLTome}};
     use super::*;
+
+    #[test]
+    fn imix_test_default_ip(){
+        let primary_ip_address = match get_primary_ip() {
+            Ok(local_primary_ip) => local_primary_ip,
+            Err(local_error) => {
+                println!("An error occured during testing default_ip:{local_error}");
+                assert_eq!(false,true);
+                "DANGER-UNKNOWN".to_string()
+            },
+        };
+        assert!((primary_ip_address != "DANGER-UNKNOWN".to_string()))
+    }
 
     #[test]
     fn imix_handle_exec_tome() {
