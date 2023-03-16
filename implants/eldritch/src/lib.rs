@@ -211,5 +211,4 @@ file.download("https://www.google.com/", "{path}")
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
         Ok(())
     }
-
 }
