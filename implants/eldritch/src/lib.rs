@@ -197,26 +197,16 @@ input_params
 
     #[tokio::test]
     async fn test_library_async() -> anyhow::Result<()> {
-        println!("[DOWNLOAD] ASYNC START");
         // just using a temp file for its path
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone().replace("\\", "\\\\");
-        println!("[DOWNLOAD] PATH ALLOCATED");
         let test_content = format!(r#"
 file.download("https://www.google.com/", "{path}")
 "#);
-        println!("[DOWNLOAD] CONTENT CREATED");
         let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None) });
-        println!("[DOWNLOAD] THREAD CREATED");
         let test_val = test_res.join();
-        println!("{:?}", test_val.unwrap());
-        println!("[DOWNLOAD] THREAD JOINED");
 
-        println!("{:?}", tmp_file.as_file().metadata());
-        println!("{:?}", tmp_file.as_file().metadata().unwrap());
-        println!("{:?}", tmp_file.as_file().metadata().unwrap().len());
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
-        println!("[DOWNLOAD] ASSERTED");
 
         Ok(())
     }
