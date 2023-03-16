@@ -209,7 +209,6 @@ file.download("https://www.google.com/", "{path}")
         let _ = test_res.join();
 
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
-        let _ = tmp_file.close();
         Ok(())
     }
 
