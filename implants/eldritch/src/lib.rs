@@ -200,7 +200,7 @@ input_params
         println!("[DOWNLOAD] ASYNC START");
         // just using a temp file for its path
         let tmp_file = NamedTempFile::new()?;
-        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone().replace("\\", "\\\\");
         println!("[DOWNLOAD] PATH ALLOCATED");
         let test_content = format!(r#"
 file.download("https://www.google.com/", "{path}")
