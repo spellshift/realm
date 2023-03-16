@@ -78,58 +78,58 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
     }
 }
 
-// #[cfg(target_os = "windows")]
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use core::time;
-//     use std::{process::Command, thread, path::Path, fs};
-//     use sysinfo::{Pid, Signal};
-//     use tempfile::NamedTempFile;
-//     use sysinfo::{ProcessExt,System,SystemExt,PidExt};
+#[cfg(target_os = "windows")]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::time;
+    use std::{process::Command, thread, path::Path, fs};
+    use sysinfo::{Pid, Signal};
+    use tempfile::NamedTempFile;
+    use sysinfo::{ProcessExt,System,SystemExt,PidExt};
     
-//     #[test]
-//     fn test_dll_inject_simple() -> anyhow::Result<()>{
-//         // Get unique and unused temp file path
-//         let tmp_file = NamedTempFile::new()?;
-//         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
-//         tmp_file.close()?;
+    #[test]
+    fn test_dll_inject_simple() -> anyhow::Result<()>{
+        // Get unique and unused temp file path
+        let tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        tmp_file.close()?;
 
-//         // Get the path to our test dll file.
-//         let cargo_root = env!("CARGO_MANIFEST_DIR");
-//         let relative_path_to_test_dll = "..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll";
-//         let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll);
-//         assert!(test_dll_path.is_file());
+        // Get the path to our test dll file.
+        let cargo_root = env!("CARGO_MANIFEST_DIR");
+        let relative_path_to_test_dll = "..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll";
+        let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll);
+        assert!(test_dll_path.is_file());
 
-//         // Out target process is notepad for stability and control.
-//         // The temp file is passed through an environment variable.
-//         let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();
-//         let target_pid = expected_process.unwrap().id();
+        // Out target process is notepad for stability and control.
+        // The temp file is passed through an environment variable.
+        let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();
+        let target_pid = expected_process.unwrap().id();
 
-//         // Run our code.
-//         let _res = dll_inject(test_dll_path.to_string_lossy().to_string(), target_pid);
+        // Run our code.
+        let _res = dll_inject(test_dll_path.to_string_lossy().to_string(), target_pid);
 
-//         let delay = time::Duration::from_secs(1);
-//         thread::sleep(delay);
+        let delay = time::Duration::from_secs(1);
+        thread::sleep(delay);
 
-//         // Test that the test file was created
-//         let test_path = Path::new(path.as_str());
-//         assert!(test_path.is_file());
+        // Test that the test file was created
+        let test_path = Path::new(path.as_str());
+        assert!(test_path.is_file());
 
-//         // Delete test file
-//         let _ = fs::remove_file(test_path);
+        // Delete test file
+        let _ = fs::remove_file(test_path);
         
-//         // kill the target process notepad
-//         let mut sys = System::new();
-//         sys.refresh_processes();
-//         match sys.process(Pid::from_u32(target_pid)) {
-//             Some(res) => {
-//                 res.kill_with(Signal::Kill);
-//             },
-//             None => {
-//             },
-//         }
+        // kill the target process notepad
+        let mut sys = System::new();
+        sys.refresh_processes();
+        match sys.process(Pid::from_u32(target_pid)) {
+            Some(res) => {
+                res.kill_with(Signal::Kill);
+            },
+            None => {
+            },
+        }
 
-//         Ok(())
-//     }
-// }
+        Ok(())
+    }
+}
