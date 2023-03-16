@@ -62,6 +62,7 @@ jobs:
     - name: 🔎 Run tests
       run: cd implants/imix && cargo test --verbose -- --test-threads=256
 
+
   eldritch:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
