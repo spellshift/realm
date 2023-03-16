@@ -2,21 +2,13 @@ extern crate golem;
 extern crate eldritch;
 
 use clap::{Command, Arg};
-use tokio::task;
 use std::fs;
 use std::process;
+use std::thread;
 
 use eldritch::{eldritch_run};
 
 mod inter;
-
-
-async fn run(tome_path: String) -> anyhow::Result<String> {
-    // Read a tome script
-    let tome_contents = fs::read_to_string(tome_path.clone())?;
-    // Execute a tome script
-    eldritch_run(tome_path, tome_contents, None)
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -37,31 +29,32 @@ async fn main() -> anyhow::Result<()> {
         // Queue async tasks
         let mut all_tome_futures: Vec<(String, _)> = vec![];
         for tome in tome_files {
-            let tome_execution_task = run(tome.to_string());
-            let tmp_row = (tome.to_string(), task::spawn(tome_execution_task));
+            let tome_path = tome.to_string().clone();
+            let tome_contents = fs::read_to_string(tome_path.clone())?;
+            let tmp_row = (tome.to_string(), thread::spawn(|| { eldritch_run(tome_path, tome_contents, None) }));
             all_tome_futures.push(tmp_row)
         }
 
+
         let mut error_code = 0;
-        // Collect results and do error handling
         let mut result: Vec<String> = Vec::new();
         for tome_task in all_tome_futures {
-            // Get the name of the file from our tuple.
             let tome_name: String = tome_task.0;
-            match tome_task.1.await {
-                // Match on task results.
-                Ok(res) => match res {
-                        Ok(task_res) => result.push(task_res),
-                        Err(task_err) => {
-                            eprintln!("[TASK ERROR] {tome_name}: {task_err}");
-                            error_code = 1;        
-                        }
-                    },
-
-                Err(err) => {
-                    eprintln!("[ERROR] {tome_name}: {err}");
+            // Join our 
+            let tome_result_thread_join = match tome_task.1.join() {
+                Ok(local_thread_join_res) => local_thread_join_res,
+                Err(_) => {
                     error_code = 1;
+                    Err(anyhow::anyhow!("An error occured waiting for the tome thread to complete while executing {tome_name}."))
                 },
+            };
+
+            match tome_result_thread_join {
+                Ok(local_tome_result) => result.push(local_tome_result),
+                Err(task_error) => {
+                    error_code = 1;
+                    eprintln!("[TASK ERROR] {tome_name}: {task_error}");
+                }
             }
         }
         if result.len() > 0 {
@@ -73,5 +66,3 @@ async fn main() -> anyhow::Result<()> {
     }
     Ok(())
 }
-
-
