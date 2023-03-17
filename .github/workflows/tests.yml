@@ -53,6 +53,10 @@ jobs:
         key: ${{ runner.os }}-imix-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-imix-cargo-
+    - if: matrix.os == 'windows-latest'
+      run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+      name: 👾 Disable defender
+      shell: powershell
     - name: 🔨 Build
       run: cd implants/imix && cargo build --verbose
     - name: 🔎 Run tests
@@ -79,6 +83,10 @@ jobs:
         key: ${{ runner.os }}-eldritch-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-eldritch-cargo-
+    - if: matrix.os == 'windows-latest'
+      run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+      name: 👾 Disable defender
+      shell: powershell
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
