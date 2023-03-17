@@ -16,6 +16,7 @@ gazebo.version = "0.8.1"
 itertools = "0.10"
 thiserror = "1.0.30"
 lsp-types = "0.93.0"
+rust-embed = { version = "6.6.0" }
 
 [dev-dependencies]
 assert_cmd = "2.0.6"

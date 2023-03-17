@@ -2,6 +2,7 @@ extern crate golem;
 extern crate eldritch;
 
 use clap::{Command, Arg};
+use rust_embed::RustEmbed;
 use std::fs;
 use std::process;
 use std::thread;
@@ -9,6 +10,10 @@ use std::thread;
 use eldritch::{eldritch_run};
 
 mod inter;
+
+#[derive(RustEmbed)]
+#[folder = "assets"]
+struct Asset;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -62,7 +67,10 @@ async fn main() -> anyhow::Result<()> {
         }
         process::exit(error_code);
     } else {
-        inter::interactive_main()?;
+        for file in Asset::iter() {
+            println!("{}", file.as_ref());
+        }      
+        // inter::interactive_main()?;
     }
     Ok(())
 }

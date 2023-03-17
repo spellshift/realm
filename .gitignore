@@ -36,3 +36,8 @@ build/**
 # Credentials
 .creds/**
 implants/imix/imix-test-config.json
+implants/golem/assets/*
+
+
+!implants/golem/assets/.gitkeep
+
