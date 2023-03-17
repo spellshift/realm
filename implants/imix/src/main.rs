@@ -123,6 +123,11 @@ fn get_host_id(host_id_file_path: String) -> Result<String> {
 }
 
 
+fn get_os_pretty_name() -> Result<String> {
+    
+
+}
+
 // Async handler for port scanning.
 async fn main_loop(config_path: String) -> Result<()> {
     let debug = true;
