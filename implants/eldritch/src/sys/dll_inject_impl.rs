@@ -90,7 +90,7 @@ mod tests {
     
     #[test]
     fn test_dll_inject_simple() -> anyhow::Result<()>{
-        const DLL_EXEC_WAIT_TIME: u8 = 5;
+        const DLL_EXEC_WAIT_TIME: u64 = 5;
         // Get unique and unused temp file path
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
