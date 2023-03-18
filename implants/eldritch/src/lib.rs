@@ -17,6 +17,7 @@ use file::FileLibrary;
 use process::ProcessLibrary;
 use sys::SysLibrary;
 use assets::AssetsLibrary;
+use pivot::PivotLibrary;
 
 pub fn get_eldritch() -> anyhow::Result<Globals> {
     #[starlark_module]
@@ -24,6 +25,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const file: FileLibrary = FileLibrary();
         const process: ProcessLibrary = ProcessLibrary();
         const sys: SysLibrary = SysLibrary();
+        const pivot: PivotLibrary = PivotLibrary();
         const assets: AssetsLibrary = AssetsLibrary();
     }
 
@@ -118,30 +120,15 @@ mod tests {
 
     use super::*;
     use starlark::environment::{GlobalsBuilder};
-    use starlark::{starlark_module};
     use starlark::assert::Assert;
     use tempfile::NamedTempFile;
-
-    use super::file::FileLibrary;
-    use super::process::ProcessLibrary;
-    use super::sys::SysLibrary;
-    use super::pivot::PivotLibrary;
-    use super::assets::AssetsLibrary;
 
     // just checks dir...
     #[test]
     fn test_library_bindings() {
-        #[starlark_module]
-        fn globals(builder: &mut GlobalsBuilder) {
-            const file: FileLibrary = FileLibrary();
-            const process: ProcessLibrary = ProcessLibrary();
-            const sys: SysLibrary = SysLibrary();
-            const pivot: PivotLibrary = PivotLibrary();
-            const assets: AssetsLibrary = AssetsLibrary();
-        }
-
+        let globals = get_eldritch().unwrap();
         let mut a = Assert::new();
-        a.globals_add(globals);
+        a.globals(globals);
         a.all_true(
             r#"
 dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
