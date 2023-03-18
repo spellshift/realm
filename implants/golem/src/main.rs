@@ -12,8 +12,8 @@ use eldritch::{eldritch_run};
 mod inter;
 
 #[derive(RustEmbed)]
-#[folder = "assets"]
-struct Asset;
+#[folder = "../../tests/embedded_files_test"]
+pub struct Asset;
 
 
 async fn execute_tomes_in_parallel(tome_name_and_content: Vec<(String, String)>) -> anyhow::Result<(i32, Vec<String>)> {
@@ -93,7 +93,7 @@ async fn main() -> anyhow::Result<()> {
                 Some(local_filename) => local_filename,
                 None => "",
             };
-
+            println!("{}", embedded_file_path);
             if filename == "main.eld" {
                 let tome_path = embedded_file_path.to_string().clone();
                 let tome_contents_extraction_result = match Asset::get(embedded_file_path.as_ref()) {
@@ -114,7 +114,6 @@ async fn main() -> anyhow::Result<()> {
                 tome_files_and_content.push( (tome_path, tome_contents) )
             }
     
-            println!("{}", filename);
         }      
         let (error_code, result) = execute_tomes_in_parallel(tome_files_and_content).await?;
         if result.len() > 0 {

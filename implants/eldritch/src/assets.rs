@@ -1,4 +1,5 @@
 mod copy_impl;
+mod list_impl;
 
 use derive_more::Display;
 
@@ -8,6 +9,12 @@ use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesSta
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
+use rust_embed::RustEmbed;
+
+
+#[derive(RustEmbed)]
+#[folder = "../../tests/embedded_files_test"]
+pub struct Asset;
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
 #[display(fmt = "AssetsLibrary")]
@@ -49,5 +56,9 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         copy_impl::copy(src, dest)?;
         Ok(NoneType{})
+    }
+    fn list(this: AssetsLibrary) -> anyhow::Result<Vec<String>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        list_impl::list()
     }
 }

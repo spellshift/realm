@@ -1,2 +1,2 @@
-assets.copy("hello_world.sh","/tmp/abcd")
-sys.exec("/bin/sh",["-c","/tmp/abcd"],False)
+assets.copy("exec_script/hello_word.sh","/tmp/abcd")
+print(sys.shell("chmod +x /tmp/abcd && /tmp/abcd"))
