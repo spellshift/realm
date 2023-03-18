@@ -81,6 +81,7 @@ fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
     let golem_exec_path = golem_exec.get_program();
 
     let mut child = Command::new(golem_exec_path)
+        .arg("-i")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -97,3 +98,19 @@ fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+// Test running `./golem` to execute embedded scripts.
+#[test]
+fn test_golem_main_embedded_files() -> anyhow::Result<()> {
+    let mut cmd = Command::cargo_bin("golem")?;
+
+    cmd.assert()
+        .success()
+        .stderr(predicate::str::contains(r#"This script just prints"#));
+    cmd.assert()
+        .success()
+        .stderr(predicate::str::contains(r#"hello from an embedded shell script"#));
+
+    Ok(())
+}
+
