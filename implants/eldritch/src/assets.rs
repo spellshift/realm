@@ -11,10 +11,16 @@ use starlark::{starlark_type, starlark_simple_value, starlark_module};
 use serde::{Serialize,Serializer};
 use rust_embed::RustEmbed;
 
-
+#[cfg(debug_assertions)]
 #[derive(RustEmbed)]
 #[folder = "../../tests/embedded_files_test"]
 pub struct Asset;
+
+#[cfg(not(debug_assertions))]
+#[derive(RustEmbed)]
+#[folder = "../../implants/golem/embed_files_golem_prod"]
+pub struct Asset;
+
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
 #[display(fmt = "AssetsLibrary")]

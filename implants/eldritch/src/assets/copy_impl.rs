@@ -1,7 +1,7 @@
 use std::fs;
 use anyhow::Result;
 
-pub fn copy(src: String, dst: String, ) -> Result<()> {
+pub fn copy(src: String, dst: String) -> Result<()> {
     let src_file = match super::Asset::get(src.as_str()) {
         Some(local_src_file) => local_src_file.data,
         None => return Err(anyhow::anyhow!("Embedded file {src} not found.")),

@@ -1,0 +1,1 @@
+print("EMO_KIDS_RULE")

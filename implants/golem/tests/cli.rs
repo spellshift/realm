@@ -17,26 +17,26 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
     Ok(())
 }
 
-// Test running `./golem ./working_dir/tomes/syntax_fail.tome`
+// Test running `./golem ../../tests/golem_cli_test/syntax_fail.tome`
 #[test]
 fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
-    cmd.arg("working_dir/tomes/syntax_fail.tome");
+    cmd.arg("../../tests/golem_cli_test/syntax_fail.tome");
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains("[TASK ERROR] working_dir/tomes/syntax_fail.tome: error: Parse error: unexpected string literal 'win' here"));
+        .stderr(predicate::str::contains("[TASK ERROR] ../../tests/golem_cli_test/syntax_fail.tome: error: Parse error: unexpected string literal 'win' here"));
 
     Ok(())
 }
 
 
-// Test running `./golem ./working_dir/tomes/hello_world.tome`
+// Test running `./golem ../../tests/golem_cli_test/hello_world.tome`
 #[test]
 fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
-    cmd.arg("working_dir/tomes/hello_world.tome");
+    cmd.arg("../../tests/golem_cli_test/hello_world.tome");
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("[\"HELLO\"]"));
@@ -45,12 +45,12 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
 }
 
 
-// Test running `./golem ./working_dir/tomes/eldritch_test.tome`
+// Test running `./golem ../../tests/golem_cli_test/eldritch_test.tome`
 #[test]
 fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
-    cmd.arg("working_dir/tomes/eldritch_test.tome");
+    cmd.arg("../../tests/golem_cli_test/eldritch_test.tome");
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"[\"append\", \"compress\""#));
@@ -59,12 +59,12 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
 }
 
 
-// Test running `./golem ./working_dir/tomes/eldritch_test.tome`
+// Test running `./golem ../../tests/golem_cli_test/eldritch_test.tome`
 #[test]
 fn test_golem_main_basic_async() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
-    cmd.arg("working_dir/tomes/download_test.tome");
+    cmd.arg("../../tests/golem_cli_test/download_test.tome");
     cmd.assert()
         .success()
         .stderr(predicate::str::contains(r#"OKAY!"#));
