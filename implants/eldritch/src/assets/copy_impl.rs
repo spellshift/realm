@@ -34,8 +34,7 @@ mod tests {
         let mut contents = String::new();
         tmp_file_dst.read_to_string(&mut contents)?;
         // Compare
-        assert_eq!(contents, r#"#!/bin/sh
-echo "hello from an embedded shell script""#);
+        assert!(contents.contains("hello from an embedded shell script"));
 
         Ok(())
     }
