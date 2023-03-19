@@ -41,3 +41,4 @@ implants/golem/assets/*
 
 !implants/golem/assets/.gitkeep
 
+implants/golem/embed_files_golem_prod/*
