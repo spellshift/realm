@@ -204,7 +204,7 @@ input_params
 file.download("https://www.google.com/", "{path}")
 "#);
         let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None) });
-        let test_val = test_res.join();
+        let _test_val = test_res.join();
 
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
 
