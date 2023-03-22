@@ -27,7 +27,7 @@ extern "system" fn DllMain(
 pub fn demo_init() {
     unsafe { consoleapi::AllocConsole() };
     for (key, value) in env::vars_os() {
-        println!("{key:?}: {value:?}");
+        // println!("{key:?}: {value:?}");
         if key == "LIBTESTFILE" {
             let mut file = File::create(value).unwrap();
             let _ = file.write_all(b"Hello, world!");

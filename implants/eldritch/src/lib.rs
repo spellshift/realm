@@ -29,6 +29,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
 }
 
 pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameters: Option<String>) -> anyhow::Result<String> {
+    // Boilder plate
     let ast: AstModule;
     match AstModule::parse(
             &tome_filename,
@@ -41,7 +42,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
     let tome_params_str: String = match tome_parameters {
         Some(param_string) => param_string,
-        None => "".to_string(),
+        None => "{}".to_string(),
     };
 
     let globals = get_eldritch()?;
@@ -50,7 +51,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut input_params: Dict = Dict::new(res);
-
+    
     let parsed: serde_json::Value = serde_json::from_str(&tome_params_str)?;
     let param_map: serde_json::Map<String, serde_json::Value> = match parsed.as_object() {
         Some(tmp_param_map) => tmp_param_map.clone(),
@@ -110,10 +111,13 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
 #[cfg(test)]
 mod tests {
+    use std::thread;
+
     use super::*;
     use starlark::environment::{GlobalsBuilder};
     use starlark::{starlark_module};
     use starlark::assert::Assert;
+    use tempfile::NamedTempFile;
 
     use super::file::FileLibrary;
     use super::process::ProcessLibrary;
@@ -191,4 +195,19 @@ input_params
         Ok(())
     }
 
+    #[tokio::test]
+    async fn test_library_async() -> anyhow::Result<()> {
+        // just using a temp file for its path
+        let tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone().replace("\\", "\\\\");
+        let test_content = format!(r#"
+file.download("https://www.google.com/", "{path}")
+"#);
+        let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None) });
+        let _test_val = test_res.join();
+
+        assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
+
+        Ok(())
+    }
 }
