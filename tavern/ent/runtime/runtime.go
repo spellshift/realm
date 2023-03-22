@@ -26,15 +26,15 @@ func init() {
 	_ = fileMixinFields0
 	fileFields := schema.File{}.Fields()
 	_ = fileFields
-	// fileDescCreatedAt is the schema descriptor for createdAt field.
+	// fileDescCreatedAt is the schema descriptor for created_at field.
 	fileDescCreatedAt := fileMixinFields0[0].Descriptor()
-	// file.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	// file.DefaultCreatedAt holds the default value on creation for the created_at field.
 	file.DefaultCreatedAt = fileDescCreatedAt.Default.(func() time.Time)
-	// fileDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	// fileDescLastModifiedAt is the schema descriptor for last_modified_at field.
 	fileDescLastModifiedAt := fileMixinFields0[1].Descriptor()
-	// file.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	// file.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
 	file.DefaultLastModifiedAt = fileDescLastModifiedAt.Default.(func() time.Time)
-	// file.UpdateDefaultLastModifiedAt holds the default value on update for the lastModifiedAt field.
+	// file.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	file.UpdateDefaultLastModifiedAt = fileDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// fileDescName is the schema descriptor for name field.
 	fileDescName := fileFields[0].Descriptor()
@@ -55,15 +55,15 @@ func init() {
 	_ = jobMixinFields0
 	jobFields := schema.Job{}.Fields()
 	_ = jobFields
-	// jobDescCreatedAt is the schema descriptor for createdAt field.
+	// jobDescCreatedAt is the schema descriptor for created_at field.
 	jobDescCreatedAt := jobMixinFields0[0].Descriptor()
-	// job.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	// job.DefaultCreatedAt holds the default value on creation for the created_at field.
 	job.DefaultCreatedAt = jobDescCreatedAt.Default.(func() time.Time)
-	// jobDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	// jobDescLastModifiedAt is the schema descriptor for last_modified_at field.
 	jobDescLastModifiedAt := jobMixinFields0[1].Descriptor()
-	// job.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	// job.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
 	job.DefaultLastModifiedAt = jobDescLastModifiedAt.Default.(func() time.Time)
-	// job.UpdateDefaultLastModifiedAt holds the default value on update for the lastModifiedAt field.
+	// job.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	job.UpdateDefaultLastModifiedAt = jobDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// jobDescName is the schema descriptor for name field.
 	jobDescName := jobFields[0].Descriptor()
@@ -91,13 +91,13 @@ func init() {
 	session.DefaultIdentifier = sessionDescIdentifier.Default.(func() string)
 	// session.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	session.IdentifierValidator = sessionDescIdentifier.Validators[0].(func(string) error)
-	// sessionDescAgentIdentifier is the schema descriptor for agentIdentifier field.
+	// sessionDescAgentIdentifier is the schema descriptor for agent_identifier field.
 	sessionDescAgentIdentifier := sessionFields[4].Descriptor()
-	// session.AgentIdentifierValidator is a validator for the "agentIdentifier" field. It is called by the builders before save.
+	// session.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	session.AgentIdentifierValidator = sessionDescAgentIdentifier.Validators[0].(func(string) error)
-	// sessionDescHostIdentifier is the schema descriptor for hostIdentifier field.
+	// sessionDescHostIdentifier is the schema descriptor for host_identifier field.
 	sessionDescHostIdentifier := sessionFields[5].Descriptor()
-	// session.HostIdentifierValidator is a validator for the "hostIdentifier" field. It is called by the builders before save.
+	// session.HostIdentifierValidator is a validator for the "host_identifier" field. It is called by the builders before save.
 	session.HostIdentifierValidator = sessionDescHostIdentifier.Validators[0].(func(string) error)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
@@ -110,15 +110,15 @@ func init() {
 	_ = taskMixinFields0
 	taskFields := schema.Task{}.Fields()
 	_ = taskFields
-	// taskDescCreatedAt is the schema descriptor for createdAt field.
+	// taskDescCreatedAt is the schema descriptor for created_at field.
 	taskDescCreatedAt := taskMixinFields0[0].Descriptor()
-	// task.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	// task.DefaultCreatedAt holds the default value on creation for the created_at field.
 	task.DefaultCreatedAt = taskDescCreatedAt.Default.(func() time.Time)
-	// taskDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	// taskDescLastModifiedAt is the schema descriptor for last_modified_at field.
 	taskDescLastModifiedAt := taskMixinFields0[1].Descriptor()
-	// task.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	// task.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
 	task.DefaultLastModifiedAt = taskDescLastModifiedAt.Default.(func() time.Time)
-	// task.UpdateDefaultLastModifiedAt holds the default value on update for the lastModifiedAt field.
+	// task.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	task.UpdateDefaultLastModifiedAt = taskDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	tomeMixin := schema.Tome{}.Mixin()
 	tomeHooks := schema.Tome{}.Hooks()
@@ -127,15 +127,15 @@ func init() {
 	_ = tomeMixinFields0
 	tomeFields := schema.Tome{}.Fields()
 	_ = tomeFields
-	// tomeDescCreatedAt is the schema descriptor for createdAt field.
+	// tomeDescCreatedAt is the schema descriptor for created_at field.
 	tomeDescCreatedAt := tomeMixinFields0[0].Descriptor()
-	// tome.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	// tome.DefaultCreatedAt holds the default value on creation for the created_at field.
 	tome.DefaultCreatedAt = tomeDescCreatedAt.Default.(func() time.Time)
-	// tomeDescLastModifiedAt is the schema descriptor for lastModifiedAt field.
+	// tomeDescLastModifiedAt is the schema descriptor for last_modified_at field.
 	tomeDescLastModifiedAt := tomeMixinFields0[1].Descriptor()
-	// tome.DefaultLastModifiedAt holds the default value on creation for the lastModifiedAt field.
+	// tome.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
 	tome.DefaultLastModifiedAt = tomeDescLastModifiedAt.Default.(func() time.Time)
-	// tome.UpdateDefaultLastModifiedAt holds the default value on update for the lastModifiedAt field.
+	// tome.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	tome.UpdateDefaultLastModifiedAt = tomeDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// tomeDescName is the schema descriptor for name field.
 	tomeDescName := tomeFields[0].Descriptor()
@@ -147,41 +147,41 @@ func init() {
 	tome.HashValidator = tomeDescHash.Validators[0].(func(string) error)
 	userFields := schema.User{}.Fields()
 	_ = userFields
-	// userDescName is the schema descriptor for Name field.
+	// userDescName is the schema descriptor for name field.
 	userDescName := userFields[0].Descriptor()
-	// user.NameValidator is a validator for the "Name" field. It is called by the builders before save.
+	// user.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	user.NameValidator = func() func(string) error {
 		validators := userDescName.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
 		}
-		return func(_Name string) error {
+		return func(name string) error {
 			for _, fn := range fns {
-				if err := fn(_Name); err != nil {
+				if err := fn(name); err != nil {
 					return err
 				}
 			}
 			return nil
 		}
 	}()
-	// userDescSessionToken is the schema descriptor for SessionToken field.
+	// userDescSessionToken is the schema descriptor for session_token field.
 	userDescSessionToken := userFields[3].Descriptor()
-	// user.DefaultSessionToken holds the default value on creation for the SessionToken field.
+	// user.DefaultSessionToken holds the default value on creation for the session_token field.
 	user.DefaultSessionToken = userDescSessionToken.Default.(func() string)
-	// user.SessionTokenValidator is a validator for the "SessionToken" field. It is called by the builders before save.
+	// user.SessionTokenValidator is a validator for the "session_token" field. It is called by the builders before save.
 	user.SessionTokenValidator = userDescSessionToken.Validators[0].(func(string) error)
-	// userDescIsActivated is the schema descriptor for IsActivated field.
+	// userDescIsActivated is the schema descriptor for is_activated field.
 	userDescIsActivated := userFields[4].Descriptor()
-	// user.DefaultIsActivated holds the default value on creation for the IsActivated field.
+	// user.DefaultIsActivated holds the default value on creation for the is_activated field.
 	user.DefaultIsActivated = userDescIsActivated.Default.(bool)
-	// userDescIsAdmin is the schema descriptor for IsAdmin field.
+	// userDescIsAdmin is the schema descriptor for is_admin field.
 	userDescIsAdmin := userFields[5].Descriptor()
-	// user.DefaultIsAdmin holds the default value on creation for the IsAdmin field.
+	// user.DefaultIsAdmin holds the default value on creation for the is_admin field.
 	user.DefaultIsAdmin = userDescIsAdmin.Default.(bool)
 }
 
 const (
-	Version = "v0.11.5-0.20221031135557-521f9b57bc3d"           // Version of ent codegen.
-	Sum     = "h1:slfuvOSWSiV0ldHU+V+O2cfOEgWRpbRloUeE9k7wXnw=" // Sum of ent codegen.
+	Version = "v0.11.9"                                         // Version of ent codegen.
+	Sum     = "h1:dbbCkAiPVTRBIJwoZctiSYjB7zxQIBOzVSU5H9VYIQI=" // Sum of ent codegen.
 )

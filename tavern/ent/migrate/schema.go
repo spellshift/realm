@@ -42,6 +42,7 @@ var (
 		{Name: "parameters", Type: field.TypeString, Nullable: true},
 		{Name: "job_tome", Type: field.TypeInt},
 		{Name: "job_bundle", Type: field.TypeInt, Nullable: true},
+		{Name: "job_creator", Type: field.TypeInt, Nullable: true},
 	}
 	// JobsTable holds the schema information for the "jobs" table.
 	JobsTable = &schema.Table{
@@ -61,6 +62,12 @@ var (
 				RefColumns: []*schema.Column{FilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
+			{
+				Symbol:     "jobs_users_creator",
+				Columns:    []*schema.Column{JobsColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 		},
 	}
 	// SessionsColumns holds the columns for the "sessions" table.
@@ -72,6 +79,8 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
 		{Name: "host_identifier", Type: field.TypeString, Nullable: true},
+		{Name: "host_primary_ip", Type: field.TypeString, Nullable: true},
+		{Name: "host_platform", Type: field.TypeEnum, Enums: []string{"Windows", "Linux", "MacOS", "BSD", "Unknown"}, Default: "Unknown"},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// SessionsTable holds the schema information for the "sessions" table.
@@ -132,7 +141,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString},
-		{Name: "parameters", Type: field.TypeString, Nullable: true},
+		{Name: "param_defs", Type: field.TypeString, Nullable: true},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 	}
@@ -200,6 +209,7 @@ func init() {
 	FilesTable.ForeignKeys[0].RefTable = TomesTable
 	JobsTable.ForeignKeys[0].RefTable = TomesTable
 	JobsTable.ForeignKeys[1].RefTable = FilesTable
+	JobsTable.ForeignKeys[2].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = JobsTable
 	TasksTable.ForeignKeys[1].RefTable = SessionsTable
 	SessionTagsTable.ForeignKeys[0].RefTable = SessionsTable

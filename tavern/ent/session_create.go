@@ -78,13 +78,13 @@ func (sc *SessionCreate) SetNillableIdentifier(s *string) *SessionCreate {
 	return sc
 }
 
-// SetAgentIdentifier sets the "agentIdentifier" field.
+// SetAgentIdentifier sets the "agent_identifier" field.
 func (sc *SessionCreate) SetAgentIdentifier(s string) *SessionCreate {
 	sc.mutation.SetAgentIdentifier(s)
 	return sc
 }
 
-// SetNillableAgentIdentifier sets the "agentIdentifier" field if the given value is not nil.
+// SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
 func (sc *SessionCreate) SetNillableAgentIdentifier(s *string) *SessionCreate {
 	if s != nil {
 		sc.SetAgentIdentifier(*s)
@@ -92,13 +92,13 @@ func (sc *SessionCreate) SetNillableAgentIdentifier(s *string) *SessionCreate {
 	return sc
 }
 
-// SetHostIdentifier sets the "hostIdentifier" field.
+// SetHostIdentifier sets the "host_identifier" field.
 func (sc *SessionCreate) SetHostIdentifier(s string) *SessionCreate {
 	sc.mutation.SetHostIdentifier(s)
 	return sc
 }
 
-// SetNillableHostIdentifier sets the "hostIdentifier" field if the given value is not nil.
+// SetNillableHostIdentifier sets the "host_identifier" field if the given value is not nil.
 func (sc *SessionCreate) SetNillableHostIdentifier(s *string) *SessionCreate {
 	if s != nil {
 		sc.SetHostIdentifier(*s)
@@ -106,13 +106,41 @@ func (sc *SessionCreate) SetNillableHostIdentifier(s *string) *SessionCreate {
 	return sc
 }
 
-// SetLastSeenAt sets the "lastSeenAt" field.
+// SetHostPrimaryIP sets the "host_primary_ip" field.
+func (sc *SessionCreate) SetHostPrimaryIP(s string) *SessionCreate {
+	sc.mutation.SetHostPrimaryIP(s)
+	return sc
+}
+
+// SetNillableHostPrimaryIP sets the "host_primary_ip" field if the given value is not nil.
+func (sc *SessionCreate) SetNillableHostPrimaryIP(s *string) *SessionCreate {
+	if s != nil {
+		sc.SetHostPrimaryIP(*s)
+	}
+	return sc
+}
+
+// SetHostPlatform sets the "host_platform" field.
+func (sc *SessionCreate) SetHostPlatform(sp session.HostPlatform) *SessionCreate {
+	sc.mutation.SetHostPlatform(sp)
+	return sc
+}
+
+// SetNillableHostPlatform sets the "host_platform" field if the given value is not nil.
+func (sc *SessionCreate) SetNillableHostPlatform(sp *session.HostPlatform) *SessionCreate {
+	if sp != nil {
+		sc.SetHostPlatform(*sp)
+	}
+	return sc
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
 func (sc *SessionCreate) SetLastSeenAt(t time.Time) *SessionCreate {
 	sc.mutation.SetLastSeenAt(t)
 	return sc
 }
 
-// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
 func (sc *SessionCreate) SetNillableLastSeenAt(t *time.Time) *SessionCreate {
 	if t != nil {
 		sc.SetLastSeenAt(*t)
@@ -157,50 +185,8 @@ func (sc *SessionCreate) Mutation() *SessionMutation {
 
 // Save creates the Session in the database.
 func (sc *SessionCreate) Save(ctx context.Context) (*Session, error) {
-	var (
-		err  error
-		node *Session
-	)
 	sc.defaults()
-	if len(sc.hooks) == 0 {
-		if err = sc.check(); err != nil {
-			return nil, err
-		}
-		node, err = sc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SessionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sc.check(); err != nil {
-				return nil, err
-			}
-			sc.mutation = mutation
-			if node, err = sc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sc.hooks) - 1; i >= 0; i-- {
-			if sc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Session)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SessionMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*Session, SessionMutation](ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -235,6 +221,10 @@ func (sc *SessionCreate) defaults() {
 		v := session.DefaultIdentifier()
 		sc.mutation.SetIdentifier(v)
 	}
+	if _, ok := sc.mutation.HostPlatform(); !ok {
+		v := session.DefaultHostPlatform
+		sc.mutation.SetHostPlatform(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -267,18 +257,29 @@ func (sc *SessionCreate) check() error {
 	}
 	if v, ok := sc.mutation.AgentIdentifier(); ok {
 		if err := session.AgentIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "agentIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.agentIdentifier": %w`, err)}
+			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.agent_identifier": %w`, err)}
 		}
 	}
 	if v, ok := sc.mutation.HostIdentifier(); ok {
 		if err := session.HostIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
+			return &ValidationError{Name: "host_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.host_identifier": %w`, err)}
+		}
+	}
+	if _, ok := sc.mutation.HostPlatform(); !ok {
+		return &ValidationError{Name: "host_platform", err: errors.New(`ent: missing required field "Session.host_platform"`)}
+	}
+	if v, ok := sc.mutation.HostPlatform(); ok {
+		if err := session.HostPlatformValidator(v); err != nil {
+			return &ValidationError{Name: "host_platform", err: fmt.Errorf(`ent: validator failed for field "Session.host_platform": %w`, err)}
 		}
 	}
 	return nil
 }
 
 func (sc *SessionCreate) sqlSave(ctx context.Context) (*Session, error) {
+	if err := sc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := sc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -288,19 +289,15 @@ func (sc *SessionCreate) sqlSave(ctx context.Context) (*Session, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	sc.mutation.id = &_node.ID
+	sc.mutation.done = true
 	return _node, nil
 }
 
 func (sc *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Session{config: sc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: session.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: session.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(session.Table, sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt))
 	)
 	if value, ok := sc.mutation.Name(); ok {
 		_spec.SetField(session.FieldName, field.TypeString, value)
@@ -325,6 +322,14 @@ func (sc *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 	if value, ok := sc.mutation.HostIdentifier(); ok {
 		_spec.SetField(session.FieldHostIdentifier, field.TypeString, value)
 		_node.HostIdentifier = value
+	}
+	if value, ok := sc.mutation.HostPrimaryIP(); ok {
+		_spec.SetField(session.FieldHostPrimaryIP, field.TypeString, value)
+		_node.HostPrimaryIP = value
+	}
+	if value, ok := sc.mutation.HostPlatform(); ok {
+		_spec.SetField(session.FieldHostPlatform, field.TypeEnum, value)
+		_node.HostPlatform = value
 	}
 	if value, ok := sc.mutation.LastSeenAt(); ok {
 		_spec.SetField(session.FieldLastSeenAt, field.TypeTime, value)

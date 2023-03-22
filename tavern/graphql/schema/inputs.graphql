@@ -5,6 +5,12 @@ input ClaimTasksInput {
   """The hostname of the system the session is running on."""
   hostname: String!
 
+  """The platform the agent is operating on."""
+  hostPlatform: SessionSessionHostPlatform!
+
+  """The IP address of the hosts primary interface (if available)."""
+  hostPrimaryIP: String
+
   """Unique identifier of the session, each running instance will be different."""
   sessionIdentifier: String!
 
@@ -23,7 +29,7 @@ input SubmitTaskResultInput {
   execStartedAt: Time!
 
   """Timestamp of when the task execution finished (set only if it has completed). Format as RFC3339Nano."""
-  execFinishedAt: Time 
+  execFinishedAt: Time
 
   """
   Output captured as the result of task execution.
@@ -32,5 +38,5 @@ input SubmitTaskResultInput {
   output: String!
 
   """Error message captured as the result of task execution failure."""
-  error: String 
+  error: String
 }

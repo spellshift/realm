@@ -12,850 +12,662 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Session(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Session(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Session(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Session(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Session(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Session(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Session(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Session(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id int) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Session(sql.FieldLTE(FieldID, id))
 }
 
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldName, v))
 }
 
 // Principal applies equality check predicate on the "principal" field. It's identical to PrincipalEQ.
 func Principal(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldPrincipal, v))
 }
 
 // Hostname applies equality check predicate on the "hostname" field. It's identical to HostnameEQ.
 func Hostname(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldHostname, v))
 }
 
 // Identifier applies equality check predicate on the "identifier" field. It's identical to IdentifierEQ.
 func Identifier(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldIdentifier, v))
 }
 
-// AgentIdentifier applies equality check predicate on the "agentIdentifier" field. It's identical to AgentIdentifierEQ.
+// AgentIdentifier applies equality check predicate on the "agent_identifier" field. It's identical to AgentIdentifierEQ.
 func AgentIdentifier(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldAgentIdentifier, v))
 }
 
-// HostIdentifier applies equality check predicate on the "hostIdentifier" field. It's identical to HostIdentifierEQ.
+// HostIdentifier applies equality check predicate on the "host_identifier" field. It's identical to HostIdentifierEQ.
 func HostIdentifier(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldHostIdentifier, v))
 }
 
-// LastSeenAt applies equality check predicate on the "lastSeenAt" field. It's identical to LastSeenAtEQ.
+// HostPrimaryIP applies equality check predicate on the "host_primary_ip" field. It's identical to HostPrimaryIPEQ.
+func HostPrimaryIP(v string) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldHostPrimaryIP, v))
+}
+
+// LastSeenAt applies equality check predicate on the "last_seen_at" field. It's identical to LastSeenAtEQ.
 func LastSeenAt(v time.Time) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastSeenAt), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldLastSeenAt, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldName, v))
 }
 
 // NameNEQ applies the NEQ predicate on the "name" field.
 func NameNEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldNEQ(FieldName, v))
 }
 
 // NameIn applies the In predicate on the "name" field.
 func NameIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldName), v...))
-	})
+	return predicate.Session(sql.FieldIn(FieldName, vs...))
 }
 
 // NameNotIn applies the NotIn predicate on the "name" field.
 func NameNotIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldName), v...))
-	})
+	return predicate.Session(sql.FieldNotIn(FieldName, vs...))
 }
 
 // NameGT applies the GT predicate on the "name" field.
 func NameGT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldGT(FieldName, v))
 }
 
 // NameGTE applies the GTE predicate on the "name" field.
 func NameGTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldGTE(FieldName, v))
 }
 
 // NameLT applies the LT predicate on the "name" field.
 func NameLT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldLT(FieldName, v))
 }
 
 // NameLTE applies the LTE predicate on the "name" field.
 func NameLTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldLTE(FieldName, v))
 }
 
 // NameContains applies the Contains predicate on the "name" field.
 func NameContains(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldContains(FieldName, v))
 }
 
 // NameHasPrefix applies the HasPrefix predicate on the "name" field.
 func NameHasPrefix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldHasPrefix(FieldName, v))
 }
 
 // NameHasSuffix applies the HasSuffix predicate on the "name" field.
 func NameHasSuffix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldHasSuffix(FieldName, v))
 }
 
 // NameEqualFold applies the EqualFold predicate on the "name" field.
 func NameEqualFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldEqualFold(FieldName, v))
 }
 
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldName), v))
-	})
+	return predicate.Session(sql.FieldContainsFold(FieldName, v))
 }
 
 // PrincipalEQ applies the EQ predicate on the "principal" field.
 func PrincipalEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldPrincipal, v))
 }
 
 // PrincipalNEQ applies the NEQ predicate on the "principal" field.
 func PrincipalNEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldNEQ(FieldPrincipal, v))
 }
 
 // PrincipalIn applies the In predicate on the "principal" field.
 func PrincipalIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldPrincipal), v...))
-	})
+	return predicate.Session(sql.FieldIn(FieldPrincipal, vs...))
 }
 
 // PrincipalNotIn applies the NotIn predicate on the "principal" field.
 func PrincipalNotIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldPrincipal), v...))
-	})
+	return predicate.Session(sql.FieldNotIn(FieldPrincipal, vs...))
 }
 
 // PrincipalGT applies the GT predicate on the "principal" field.
 func PrincipalGT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldGT(FieldPrincipal, v))
 }
 
 // PrincipalGTE applies the GTE predicate on the "principal" field.
 func PrincipalGTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldGTE(FieldPrincipal, v))
 }
 
 // PrincipalLT applies the LT predicate on the "principal" field.
 func PrincipalLT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldLT(FieldPrincipal, v))
 }
 
 // PrincipalLTE applies the LTE predicate on the "principal" field.
 func PrincipalLTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldLTE(FieldPrincipal, v))
 }
 
 // PrincipalContains applies the Contains predicate on the "principal" field.
 func PrincipalContains(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldContains(FieldPrincipal, v))
 }
 
 // PrincipalHasPrefix applies the HasPrefix predicate on the "principal" field.
 func PrincipalHasPrefix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldHasPrefix(FieldPrincipal, v))
 }
 
 // PrincipalHasSuffix applies the HasSuffix predicate on the "principal" field.
 func PrincipalHasSuffix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldHasSuffix(FieldPrincipal, v))
 }
 
 // PrincipalIsNil applies the IsNil predicate on the "principal" field.
 func PrincipalIsNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldPrincipal)))
-	})
+	return predicate.Session(sql.FieldIsNull(FieldPrincipal))
 }
 
 // PrincipalNotNil applies the NotNil predicate on the "principal" field.
 func PrincipalNotNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldPrincipal)))
-	})
+	return predicate.Session(sql.FieldNotNull(FieldPrincipal))
 }
 
 // PrincipalEqualFold applies the EqualFold predicate on the "principal" field.
 func PrincipalEqualFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldEqualFold(FieldPrincipal, v))
 }
 
 // PrincipalContainsFold applies the ContainsFold predicate on the "principal" field.
 func PrincipalContainsFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldPrincipal), v))
-	})
+	return predicate.Session(sql.FieldContainsFold(FieldPrincipal, v))
 }
 
 // HostnameEQ applies the EQ predicate on the "hostname" field.
 func HostnameEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldHostname, v))
 }
 
 // HostnameNEQ applies the NEQ predicate on the "hostname" field.
 func HostnameNEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldNEQ(FieldHostname, v))
 }
 
 // HostnameIn applies the In predicate on the "hostname" field.
 func HostnameIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldHostname), v...))
-	})
+	return predicate.Session(sql.FieldIn(FieldHostname, vs...))
 }
 
 // HostnameNotIn applies the NotIn predicate on the "hostname" field.
 func HostnameNotIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldHostname), v...))
-	})
+	return predicate.Session(sql.FieldNotIn(FieldHostname, vs...))
 }
 
 // HostnameGT applies the GT predicate on the "hostname" field.
 func HostnameGT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldGT(FieldHostname, v))
 }
 
 // HostnameGTE applies the GTE predicate on the "hostname" field.
 func HostnameGTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldGTE(FieldHostname, v))
 }
 
 // HostnameLT applies the LT predicate on the "hostname" field.
 func HostnameLT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldLT(FieldHostname, v))
 }
 
 // HostnameLTE applies the LTE predicate on the "hostname" field.
 func HostnameLTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldLTE(FieldHostname, v))
 }
 
 // HostnameContains applies the Contains predicate on the "hostname" field.
 func HostnameContains(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldContains(FieldHostname, v))
 }
 
 // HostnameHasPrefix applies the HasPrefix predicate on the "hostname" field.
 func HostnameHasPrefix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldHasPrefix(FieldHostname, v))
 }
 
 // HostnameHasSuffix applies the HasSuffix predicate on the "hostname" field.
 func HostnameHasSuffix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldHasSuffix(FieldHostname, v))
 }
 
 // HostnameIsNil applies the IsNil predicate on the "hostname" field.
 func HostnameIsNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldHostname)))
-	})
+	return predicate.Session(sql.FieldIsNull(FieldHostname))
 }
 
 // HostnameNotNil applies the NotNil predicate on the "hostname" field.
 func HostnameNotNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldHostname)))
-	})
+	return predicate.Session(sql.FieldNotNull(FieldHostname))
 }
 
 // HostnameEqualFold applies the EqualFold predicate on the "hostname" field.
 func HostnameEqualFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldEqualFold(FieldHostname, v))
 }
 
 // HostnameContainsFold applies the ContainsFold predicate on the "hostname" field.
 func HostnameContainsFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldHostname), v))
-	})
+	return predicate.Session(sql.FieldContainsFold(FieldHostname, v))
 }
 
 // IdentifierEQ applies the EQ predicate on the "identifier" field.
 func IdentifierEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldIdentifier, v))
 }
 
 // IdentifierNEQ applies the NEQ predicate on the "identifier" field.
 func IdentifierNEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldNEQ(FieldIdentifier, v))
 }
 
 // IdentifierIn applies the In predicate on the "identifier" field.
 func IdentifierIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldIdentifier), v...))
-	})
+	return predicate.Session(sql.FieldIn(FieldIdentifier, vs...))
 }
 
 // IdentifierNotIn applies the NotIn predicate on the "identifier" field.
 func IdentifierNotIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldIdentifier), v...))
-	})
+	return predicate.Session(sql.FieldNotIn(FieldIdentifier, vs...))
 }
 
 // IdentifierGT applies the GT predicate on the "identifier" field.
 func IdentifierGT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldGT(FieldIdentifier, v))
 }
 
 // IdentifierGTE applies the GTE predicate on the "identifier" field.
 func IdentifierGTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldGTE(FieldIdentifier, v))
 }
 
 // IdentifierLT applies the LT predicate on the "identifier" field.
 func IdentifierLT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldLT(FieldIdentifier, v))
 }
 
 // IdentifierLTE applies the LTE predicate on the "identifier" field.
 func IdentifierLTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldLTE(FieldIdentifier, v))
 }
 
 // IdentifierContains applies the Contains predicate on the "identifier" field.
 func IdentifierContains(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldContains(FieldIdentifier, v))
 }
 
 // IdentifierHasPrefix applies the HasPrefix predicate on the "identifier" field.
 func IdentifierHasPrefix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldHasPrefix(FieldIdentifier, v))
 }
 
 // IdentifierHasSuffix applies the HasSuffix predicate on the "identifier" field.
 func IdentifierHasSuffix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldHasSuffix(FieldIdentifier, v))
 }
 
 // IdentifierEqualFold applies the EqualFold predicate on the "identifier" field.
 func IdentifierEqualFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEqualFold(FieldIdentifier, v))
 }
 
 // IdentifierContainsFold applies the ContainsFold predicate on the "identifier" field.
 func IdentifierContainsFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldIdentifier), v))
-	})
+	return predicate.Session(sql.FieldContainsFold(FieldIdentifier, v))
 }
 
-// AgentIdentifierEQ applies the EQ predicate on the "agentIdentifier" field.
+// AgentIdentifierEQ applies the EQ predicate on the "agent_identifier" field.
 func AgentIdentifierEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierNEQ applies the NEQ predicate on the "agentIdentifier" field.
+// AgentIdentifierNEQ applies the NEQ predicate on the "agent_identifier" field.
 func AgentIdentifierNEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldNEQ(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierIn applies the In predicate on the "agentIdentifier" field.
+// AgentIdentifierIn applies the In predicate on the "agent_identifier" field.
 func AgentIdentifierIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldAgentIdentifier), v...))
-	})
+	return predicate.Session(sql.FieldIn(FieldAgentIdentifier, vs...))
 }
 
-// AgentIdentifierNotIn applies the NotIn predicate on the "agentIdentifier" field.
+// AgentIdentifierNotIn applies the NotIn predicate on the "agent_identifier" field.
 func AgentIdentifierNotIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldAgentIdentifier), v...))
-	})
+	return predicate.Session(sql.FieldNotIn(FieldAgentIdentifier, vs...))
 }
 
-// AgentIdentifierGT applies the GT predicate on the "agentIdentifier" field.
+// AgentIdentifierGT applies the GT predicate on the "agent_identifier" field.
 func AgentIdentifierGT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldGT(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierGTE applies the GTE predicate on the "agentIdentifier" field.
+// AgentIdentifierGTE applies the GTE predicate on the "agent_identifier" field.
 func AgentIdentifierGTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldGTE(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierLT applies the LT predicate on the "agentIdentifier" field.
+// AgentIdentifierLT applies the LT predicate on the "agent_identifier" field.
 func AgentIdentifierLT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldLT(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierLTE applies the LTE predicate on the "agentIdentifier" field.
+// AgentIdentifierLTE applies the LTE predicate on the "agent_identifier" field.
 func AgentIdentifierLTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldLTE(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierContains applies the Contains predicate on the "agentIdentifier" field.
+// AgentIdentifierContains applies the Contains predicate on the "agent_identifier" field.
 func AgentIdentifierContains(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldContains(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierHasPrefix applies the HasPrefix predicate on the "agentIdentifier" field.
+// AgentIdentifierHasPrefix applies the HasPrefix predicate on the "agent_identifier" field.
 func AgentIdentifierHasPrefix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldHasPrefix(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierHasSuffix applies the HasSuffix predicate on the "agentIdentifier" field.
+// AgentIdentifierHasSuffix applies the HasSuffix predicate on the "agent_identifier" field.
 func AgentIdentifierHasSuffix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldHasSuffix(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierIsNil applies the IsNil predicate on the "agentIdentifier" field.
+// AgentIdentifierIsNil applies the IsNil predicate on the "agent_identifier" field.
 func AgentIdentifierIsNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldAgentIdentifier)))
-	})
+	return predicate.Session(sql.FieldIsNull(FieldAgentIdentifier))
 }
 
-// AgentIdentifierNotNil applies the NotNil predicate on the "agentIdentifier" field.
+// AgentIdentifierNotNil applies the NotNil predicate on the "agent_identifier" field.
 func AgentIdentifierNotNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldAgentIdentifier)))
-	})
+	return predicate.Session(sql.FieldNotNull(FieldAgentIdentifier))
 }
 
-// AgentIdentifierEqualFold applies the EqualFold predicate on the "agentIdentifier" field.
+// AgentIdentifierEqualFold applies the EqualFold predicate on the "agent_identifier" field.
 func AgentIdentifierEqualFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEqualFold(FieldAgentIdentifier, v))
 }
 
-// AgentIdentifierContainsFold applies the ContainsFold predicate on the "agentIdentifier" field.
+// AgentIdentifierContainsFold applies the ContainsFold predicate on the "agent_identifier" field.
 func AgentIdentifierContainsFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldAgentIdentifier), v))
-	})
+	return predicate.Session(sql.FieldContainsFold(FieldAgentIdentifier, v))
 }
 
-// HostIdentifierEQ applies the EQ predicate on the "hostIdentifier" field.
+// HostIdentifierEQ applies the EQ predicate on the "host_identifier" field.
 func HostIdentifierEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldHostIdentifier, v))
 }
 
-// HostIdentifierNEQ applies the NEQ predicate on the "hostIdentifier" field.
+// HostIdentifierNEQ applies the NEQ predicate on the "host_identifier" field.
 func HostIdentifierNEQ(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldNEQ(FieldHostIdentifier, v))
 }
 
-// HostIdentifierIn applies the In predicate on the "hostIdentifier" field.
+// HostIdentifierIn applies the In predicate on the "host_identifier" field.
 func HostIdentifierIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldHostIdentifier), v...))
-	})
+	return predicate.Session(sql.FieldIn(FieldHostIdentifier, vs...))
 }
 
-// HostIdentifierNotIn applies the NotIn predicate on the "hostIdentifier" field.
+// HostIdentifierNotIn applies the NotIn predicate on the "host_identifier" field.
 func HostIdentifierNotIn(vs ...string) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldHostIdentifier), v...))
-	})
+	return predicate.Session(sql.FieldNotIn(FieldHostIdentifier, vs...))
 }
 
-// HostIdentifierGT applies the GT predicate on the "hostIdentifier" field.
+// HostIdentifierGT applies the GT predicate on the "host_identifier" field.
 func HostIdentifierGT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldGT(FieldHostIdentifier, v))
 }
 
-// HostIdentifierGTE applies the GTE predicate on the "hostIdentifier" field.
+// HostIdentifierGTE applies the GTE predicate on the "host_identifier" field.
 func HostIdentifierGTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldGTE(FieldHostIdentifier, v))
 }
 
-// HostIdentifierLT applies the LT predicate on the "hostIdentifier" field.
+// HostIdentifierLT applies the LT predicate on the "host_identifier" field.
 func HostIdentifierLT(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldLT(FieldHostIdentifier, v))
 }
 
-// HostIdentifierLTE applies the LTE predicate on the "hostIdentifier" field.
+// HostIdentifierLTE applies the LTE predicate on the "host_identifier" field.
 func HostIdentifierLTE(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldLTE(FieldHostIdentifier, v))
 }
 
-// HostIdentifierContains applies the Contains predicate on the "hostIdentifier" field.
+// HostIdentifierContains applies the Contains predicate on the "host_identifier" field.
 func HostIdentifierContains(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldContains(FieldHostIdentifier, v))
 }
 
-// HostIdentifierHasPrefix applies the HasPrefix predicate on the "hostIdentifier" field.
+// HostIdentifierHasPrefix applies the HasPrefix predicate on the "host_identifier" field.
 func HostIdentifierHasPrefix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldHasPrefix(FieldHostIdentifier, v))
 }
 
-// HostIdentifierHasSuffix applies the HasSuffix predicate on the "hostIdentifier" field.
+// HostIdentifierHasSuffix applies the HasSuffix predicate on the "host_identifier" field.
 func HostIdentifierHasSuffix(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldHasSuffix(FieldHostIdentifier, v))
 }
 
-// HostIdentifierIsNil applies the IsNil predicate on the "hostIdentifier" field.
+// HostIdentifierIsNil applies the IsNil predicate on the "host_identifier" field.
 func HostIdentifierIsNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldHostIdentifier)))
-	})
+	return predicate.Session(sql.FieldIsNull(FieldHostIdentifier))
 }
 
-// HostIdentifierNotNil applies the NotNil predicate on the "hostIdentifier" field.
+// HostIdentifierNotNil applies the NotNil predicate on the "host_identifier" field.
 func HostIdentifierNotNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldHostIdentifier)))
-	})
+	return predicate.Session(sql.FieldNotNull(FieldHostIdentifier))
 }
 
-// HostIdentifierEqualFold applies the EqualFold predicate on the "hostIdentifier" field.
+// HostIdentifierEqualFold applies the EqualFold predicate on the "host_identifier" field.
 func HostIdentifierEqualFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldEqualFold(FieldHostIdentifier, v))
 }
 
-// HostIdentifierContainsFold applies the ContainsFold predicate on the "hostIdentifier" field.
+// HostIdentifierContainsFold applies the ContainsFold predicate on the "host_identifier" field.
 func HostIdentifierContainsFold(v string) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldHostIdentifier), v))
-	})
+	return predicate.Session(sql.FieldContainsFold(FieldHostIdentifier, v))
 }
 
-// LastSeenAtEQ applies the EQ predicate on the "lastSeenAt" field.
+// HostPrimaryIPEQ applies the EQ predicate on the "host_primary_ip" field.
+func HostPrimaryIPEQ(v string) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPNEQ applies the NEQ predicate on the "host_primary_ip" field.
+func HostPrimaryIPNEQ(v string) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPIn applies the In predicate on the "host_primary_ip" field.
+func HostPrimaryIPIn(vs ...string) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldHostPrimaryIP, vs...))
+}
+
+// HostPrimaryIPNotIn applies the NotIn predicate on the "host_primary_ip" field.
+func HostPrimaryIPNotIn(vs ...string) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldHostPrimaryIP, vs...))
+}
+
+// HostPrimaryIPGT applies the GT predicate on the "host_primary_ip" field.
+func HostPrimaryIPGT(v string) predicate.Session {
+	return predicate.Session(sql.FieldGT(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPGTE applies the GTE predicate on the "host_primary_ip" field.
+func HostPrimaryIPGTE(v string) predicate.Session {
+	return predicate.Session(sql.FieldGTE(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPLT applies the LT predicate on the "host_primary_ip" field.
+func HostPrimaryIPLT(v string) predicate.Session {
+	return predicate.Session(sql.FieldLT(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPLTE applies the LTE predicate on the "host_primary_ip" field.
+func HostPrimaryIPLTE(v string) predicate.Session {
+	return predicate.Session(sql.FieldLTE(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPContains applies the Contains predicate on the "host_primary_ip" field.
+func HostPrimaryIPContains(v string) predicate.Session {
+	return predicate.Session(sql.FieldContains(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPHasPrefix applies the HasPrefix predicate on the "host_primary_ip" field.
+func HostPrimaryIPHasPrefix(v string) predicate.Session {
+	return predicate.Session(sql.FieldHasPrefix(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPHasSuffix applies the HasSuffix predicate on the "host_primary_ip" field.
+func HostPrimaryIPHasSuffix(v string) predicate.Session {
+	return predicate.Session(sql.FieldHasSuffix(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPIsNil applies the IsNil predicate on the "host_primary_ip" field.
+func HostPrimaryIPIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldHostPrimaryIP))
+}
+
+// HostPrimaryIPNotNil applies the NotNil predicate on the "host_primary_ip" field.
+func HostPrimaryIPNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldHostPrimaryIP))
+}
+
+// HostPrimaryIPEqualFold applies the EqualFold predicate on the "host_primary_ip" field.
+func HostPrimaryIPEqualFold(v string) predicate.Session {
+	return predicate.Session(sql.FieldEqualFold(FieldHostPrimaryIP, v))
+}
+
+// HostPrimaryIPContainsFold applies the ContainsFold predicate on the "host_primary_ip" field.
+func HostPrimaryIPContainsFold(v string) predicate.Session {
+	return predicate.Session(sql.FieldContainsFold(FieldHostPrimaryIP, v))
+}
+
+// HostPlatformEQ applies the EQ predicate on the "host_platform" field.
+func HostPlatformEQ(v HostPlatform) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldHostPlatform, v))
+}
+
+// HostPlatformNEQ applies the NEQ predicate on the "host_platform" field.
+func HostPlatformNEQ(v HostPlatform) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldHostPlatform, v))
+}
+
+// HostPlatformIn applies the In predicate on the "host_platform" field.
+func HostPlatformIn(vs ...HostPlatform) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldHostPlatform, vs...))
+}
+
+// HostPlatformNotIn applies the NotIn predicate on the "host_platform" field.
+func HostPlatformNotIn(vs ...HostPlatform) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldHostPlatform, vs...))
+}
+
+// LastSeenAtEQ applies the EQ predicate on the "last_seen_at" field.
 func LastSeenAtEQ(v time.Time) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastSeenAt), v))
-	})
+	return predicate.Session(sql.FieldEQ(FieldLastSeenAt, v))
 }
 
-// LastSeenAtNEQ applies the NEQ predicate on the "lastSeenAt" field.
+// LastSeenAtNEQ applies the NEQ predicate on the "last_seen_at" field.
 func LastSeenAtNEQ(v time.Time) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldLastSeenAt), v))
-	})
+	return predicate.Session(sql.FieldNEQ(FieldLastSeenAt, v))
 }
 
-// LastSeenAtIn applies the In predicate on the "lastSeenAt" field.
+// LastSeenAtIn applies the In predicate on the "last_seen_at" field.
 func LastSeenAtIn(vs ...time.Time) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldLastSeenAt), v...))
-	})
+	return predicate.Session(sql.FieldIn(FieldLastSeenAt, vs...))
 }
 
-// LastSeenAtNotIn applies the NotIn predicate on the "lastSeenAt" field.
+// LastSeenAtNotIn applies the NotIn predicate on the "last_seen_at" field.
 func LastSeenAtNotIn(vs ...time.Time) predicate.Session {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldLastSeenAt), v...))
-	})
+	return predicate.Session(sql.FieldNotIn(FieldLastSeenAt, vs...))
 }
 
-// LastSeenAtGT applies the GT predicate on the "lastSeenAt" field.
+// LastSeenAtGT applies the GT predicate on the "last_seen_at" field.
 func LastSeenAtGT(v time.Time) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldLastSeenAt), v))
-	})
+	return predicate.Session(sql.FieldGT(FieldLastSeenAt, v))
 }
 
-// LastSeenAtGTE applies the GTE predicate on the "lastSeenAt" field.
+// LastSeenAtGTE applies the GTE predicate on the "last_seen_at" field.
 func LastSeenAtGTE(v time.Time) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldLastSeenAt), v))
-	})
+	return predicate.Session(sql.FieldGTE(FieldLastSeenAt, v))
 }
 
-// LastSeenAtLT applies the LT predicate on the "lastSeenAt" field.
+// LastSeenAtLT applies the LT predicate on the "last_seen_at" field.
 func LastSeenAtLT(v time.Time) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldLastSeenAt), v))
-	})
+	return predicate.Session(sql.FieldLT(FieldLastSeenAt, v))
 }
 
-// LastSeenAtLTE applies the LTE predicate on the "lastSeenAt" field.
+// LastSeenAtLTE applies the LTE predicate on the "last_seen_at" field.
 func LastSeenAtLTE(v time.Time) predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldLastSeenAt), v))
-	})
+	return predicate.Session(sql.FieldLTE(FieldLastSeenAt, v))
 }
 
-// LastSeenAtIsNil applies the IsNil predicate on the "lastSeenAt" field.
+// LastSeenAtIsNil applies the IsNil predicate on the "last_seen_at" field.
 func LastSeenAtIsNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldLastSeenAt)))
-	})
+	return predicate.Session(sql.FieldIsNull(FieldLastSeenAt))
 }
 
-// LastSeenAtNotNil applies the NotNil predicate on the "lastSeenAt" field.
+// LastSeenAtNotNil applies the NotNil predicate on the "last_seen_at" field.
 func LastSeenAtNotNil() predicate.Session {
-	return predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldLastSeenAt)))
-	})
+	return predicate.Session(sql.FieldNotNull(FieldLastSeenAt))
 }
 
 // HasTags applies the HasEdge predicate on the "tags" edge.
@@ -863,7 +675,6 @@ func HasTags() predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TagsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, TagsTable, TagsPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -891,7 +702,6 @@ func HasTasks() predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TasksTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, TasksTable, TasksColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)

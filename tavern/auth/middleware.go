@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -8,20 +9,31 @@ import (
 	"github.com/kcarretto/realm/tavern/ent"
 )
 
-// authDisabledIdentity is used whenever authentication has been disabled.
-type authDisabledIdentity struct{}
-
-func (id authDisabledIdentity) String() string        { return "auth_disabled" }
-func (id authDisabledIdentity) IsAuthenticated() bool { return true }
-func (id authDisabledIdentity) IsActivated() bool     { return true }
-func (id authDisabledIdentity) IsAdmin() bool         { return true }
-
 // AuthDisabledMiddleware should only be used when authentication has been disabled.
-func AuthDisabledMiddleware(handler http.Handler) http.HandlerFunc {
+func AuthDisabledMiddleware(handler http.Handler, graph *ent.Client) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r = r.WithContext(
-			ContextFromIdentity(r.Context(), authDisabledIdentity{}),
-		)
+		// Authenticate as the first available user, create one if none exist
+		authUser, err := graph.User.Query().First(r.Context())
+		if err != nil || authUser == nil {
+			if !ent.IsNotFound(err) {
+				panic(fmt.Errorf("failed to lookup users: %w", err))
+			}
+
+			authUser = graph.User.Create().
+				SetName("auth-disabled").
+				SetOauthID("auth-disabled").
+				SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+				SetIsActivated(true).
+				SetIsAdmin(true).
+				SaveX(r.Context())
+		}
+
+		ctx, err := ContextFromSessionToken(r.Context(), graph, authUser.SessionToken)
+		if err != nil {
+			panic(fmt.Errorf("failed to create authenticated session for user: %w", err))
+		}
+
+		r = r.WithContext(ctx)
 		handler.ServeHTTP(w, r)
 	})
 }

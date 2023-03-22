@@ -20,13 +20,13 @@ type FileCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (fc *FileCreate) SetCreatedAt(t time.Time) *FileCreate {
 	fc.mutation.SetCreatedAt(t)
 	return fc
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
 func (fc *FileCreate) SetNillableCreatedAt(t *time.Time) *FileCreate {
 	if t != nil {
 		fc.SetCreatedAt(*t)
@@ -34,13 +34,13 @@ func (fc *FileCreate) SetNillableCreatedAt(t *time.Time) *FileCreate {
 	return fc
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (fc *FileCreate) SetLastModifiedAt(t time.Time) *FileCreate {
 	fc.mutation.SetLastModifiedAt(t)
 	return fc
 }
 
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
 func (fc *FileCreate) SetNillableLastModifiedAt(t *time.Time) *FileCreate {
 	if t != nil {
 		fc.SetLastModifiedAt(*t)
@@ -87,52 +87,10 @@ func (fc *FileCreate) Mutation() *FileMutation {
 
 // Save creates the File in the database.
 func (fc *FileCreate) Save(ctx context.Context) (*File, error) {
-	var (
-		err  error
-		node *File
-	)
 	if err := fc.defaults(); err != nil {
 		return nil, err
 	}
-	if len(fc.hooks) == 0 {
-		if err = fc.check(); err != nil {
-			return nil, err
-		}
-		node, err = fc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*FileMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = fc.check(); err != nil {
-				return nil, err
-			}
-			fc.mutation = mutation
-			if node, err = fc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(fc.hooks) - 1; i >= 0; i-- {
-			if fc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = fc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, fc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*File)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from FileMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*File, FileMutation](ctx, fc.sqlSave, fc.mutation, fc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -183,10 +141,10 @@ func (fc *FileCreate) defaults() error {
 // check runs all checks and user-defined validators on the builder.
 func (fc *FileCreate) check() error {
 	if _, ok := fc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "File.createdAt"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "File.created_at"`)}
 	}
 	if _, ok := fc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "File.lastModifiedAt"`)}
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "File.last_modified_at"`)}
 	}
 	if _, ok := fc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "File.name"`)}
@@ -219,6 +177,9 @@ func (fc *FileCreate) check() error {
 }
 
 func (fc *FileCreate) sqlSave(ctx context.Context) (*File, error) {
+	if err := fc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := fc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, fc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -228,19 +189,15 @@ func (fc *FileCreate) sqlSave(ctx context.Context) (*File, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	fc.mutation.id = &_node.ID
+	fc.mutation.done = true
 	return _node, nil
 }
 
 func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 	var (
 		_node = &File{config: fc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: file.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: file.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(file.Table, sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt))
 	)
 	if value, ok := fc.mutation.CreatedAt(); ok {
 		_spec.SetField(file.FieldCreatedAt, field.TypeTime, value)
