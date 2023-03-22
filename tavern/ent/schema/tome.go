@@ -31,7 +31,7 @@ func (Tome) Fields() []ent.Field {
 			Comment("Name of the tome"),
 		field.String("description").
 			Comment("Information about the tome"),
-		field.String("parameters").
+		field.String("param_defs").
 			Optional().
 			Comment("JSON string describing what parameters are used with the tome"),
 		field.String("hash").

@@ -17,9 +17,9 @@ type File struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Timestamp of when this ent was created
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
-	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// The name of the file, used to reference it for downloads
 	Name string `json:"name,omitempty"`
 	// The size of the file in bytes
@@ -69,13 +69,13 @@ func (f *File) assignValues(columns []string, values []any) error {
 			f.ID = int(value.Int64)
 		case file.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				f.CreatedAt = value.Time
 			}
 		case file.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				f.LastModifiedAt = value.Time
 			}
@@ -119,7 +119,7 @@ func (f *File) assignValues(columns []string, values []any) error {
 // Note that you need to call File.Unwrap() before calling this method if this File
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (f *File) Update() *FileUpdateOne {
-	return (&FileClient{config: f.config}).UpdateOne(f)
+	return NewFileClient(f.config).UpdateOne(f)
 }
 
 // Unwrap unwraps the File entity that was returned from a transaction after it was closed,
@@ -138,10 +138,10 @@ func (f *File) String() string {
 	var builder strings.Builder
 	builder.WriteString("File(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", f.ID))
-	builder.WriteString("createdAt=")
+	builder.WriteString("created_at=")
 	builder.WriteString(f.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("lastModifiedAt=")
+	builder.WriteString("last_modified_at=")
 	builder.WriteString(f.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
@@ -161,9 +161,3 @@ func (f *File) String() string {
 
 // Files is a parsable slice of File.
 type Files []*File
-
-func (f Files) config(cfg config) {
-	for _i := range f {
-		f[_i].config = cfg
-	}
-}

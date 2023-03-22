@@ -9,15 +9,15 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldOAuthID holds the string denoting the oauthid field in the database.
-	FieldOAuthID = "oauth_id"
-	// FieldPhotoURL holds the string denoting the photourl field in the database.
+	// FieldOauthID holds the string denoting the oauth_id field in the database.
+	FieldOauthID = "oauth_id"
+	// FieldPhotoURL holds the string denoting the photo_url field in the database.
 	FieldPhotoURL = "photo_url"
-	// FieldSessionToken holds the string denoting the sessiontoken field in the database.
+	// FieldSessionToken holds the string denoting the session_token field in the database.
 	FieldSessionToken = "session_token"
-	// FieldIsActivated holds the string denoting the isactivated field in the database.
+	// FieldIsActivated holds the string denoting the is_activated field in the database.
 	FieldIsActivated = "is_activated"
-	// FieldIsAdmin holds the string denoting the isadmin field in the database.
+	// FieldIsAdmin holds the string denoting the is_admin field in the database.
 	FieldIsAdmin = "is_admin"
 	// Table holds the table name of the user in the database.
 	Table = "users"
@@ -27,7 +27,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldName,
-	FieldOAuthID,
+	FieldOauthID,
 	FieldPhotoURL,
 	FieldSessionToken,
 	FieldIsActivated,
@@ -45,14 +45,14 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// NameValidator is a validator for the "Name" field. It is called by the builders before save.
+	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultSessionToken holds the default value on creation for the "SessionToken" field.
+	// DefaultSessionToken holds the default value on creation for the "session_token" field.
 	DefaultSessionToken func() string
-	// SessionTokenValidator is a validator for the "SessionToken" field. It is called by the builders before save.
+	// SessionTokenValidator is a validator for the "session_token" field. It is called by the builders before save.
 	SessionTokenValidator func(string) error
-	// DefaultIsActivated holds the default value on creation for the "IsActivated" field.
+	// DefaultIsActivated holds the default value on creation for the "is_activated" field.
 	DefaultIsActivated bool
-	// DefaultIsAdmin holds the default value on creation for the "IsAdmin" field.
+	// DefaultIsAdmin holds the default value on creation for the "is_admin" field.
 	DefaultIsAdmin bool
 )

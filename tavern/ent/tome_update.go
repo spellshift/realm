@@ -29,7 +29,7 @@ func (tu *TomeUpdate) Where(ps ...predicate.Tome) *TomeUpdate {
 	return tu
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tu *TomeUpdate) SetLastModifiedAt(t time.Time) *TomeUpdate {
 	tu.mutation.SetLastModifiedAt(t)
 	return tu
@@ -47,23 +47,23 @@ func (tu *TomeUpdate) SetDescription(s string) *TomeUpdate {
 	return tu
 }
 
-// SetParameters sets the "parameters" field.
-func (tu *TomeUpdate) SetParameters(s string) *TomeUpdate {
-	tu.mutation.SetParameters(s)
+// SetParamDefs sets the "param_defs" field.
+func (tu *TomeUpdate) SetParamDefs(s string) *TomeUpdate {
+	tu.mutation.SetParamDefs(s)
 	return tu
 }
 
-// SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableParameters(s *string) *TomeUpdate {
+// SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableParamDefs(s *string) *TomeUpdate {
 	if s != nil {
-		tu.SetParameters(*s)
+		tu.SetParamDefs(*s)
 	}
 	return tu
 }
 
-// ClearParameters clears the value of the "parameters" field.
-func (tu *TomeUpdate) ClearParameters() *TomeUpdate {
-	tu.mutation.ClearParameters()
+// ClearParamDefs clears the value of the "param_defs" field.
+func (tu *TomeUpdate) ClearParamDefs() *TomeUpdate {
+	tu.mutation.ClearParamDefs()
 	return tu
 }
 
@@ -122,43 +122,10 @@ func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TomeUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	if err := tu.defaults(); err != nil {
 		return 0, err
 	}
-	if len(tu.hooks) == 0 {
-		if err = tu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = tu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TomeMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tu.check(); err != nil {
-				return 0, err
-			}
-			tu.mutation = mutation
-			affected, err = tu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(tu.hooks) - 1; i >= 0; i-- {
-			if tu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, tu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks[int, TomeMutation](ctx, tu.sqlSave, tu.mutation, tu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -211,16 +178,10 @@ func (tu *TomeUpdate) check() error {
 }
 
 func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   tome.Table,
-			Columns: tome.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: tome.FieldID,
-			},
-		},
+	if err := tu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(tome.Table, tome.Columns, sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt))
 	if ps := tu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -237,11 +198,11 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Parameters(); ok {
-		_spec.SetField(tome.FieldParameters, field.TypeString, value)
+	if value, ok := tu.mutation.ParamDefs(); ok {
+		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
-	if tu.mutation.ParametersCleared() {
-		_spec.ClearField(tome.FieldParameters, field.TypeString)
+	if tu.mutation.ParamDefsCleared() {
+		_spec.ClearField(tome.FieldParamDefs, field.TypeString)
 	}
 	if value, ok := tu.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
@@ -311,6 +272,7 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	tu.mutation.done = true
 	return n, nil
 }
 
@@ -322,7 +284,7 @@ type TomeUpdateOne struct {
 	mutation *TomeMutation
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tuo *TomeUpdateOne) SetLastModifiedAt(t time.Time) *TomeUpdateOne {
 	tuo.mutation.SetLastModifiedAt(t)
 	return tuo
@@ -340,23 +302,23 @@ func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
 	return tuo
 }
 
-// SetParameters sets the "parameters" field.
-func (tuo *TomeUpdateOne) SetParameters(s string) *TomeUpdateOne {
-	tuo.mutation.SetParameters(s)
+// SetParamDefs sets the "param_defs" field.
+func (tuo *TomeUpdateOne) SetParamDefs(s string) *TomeUpdateOne {
+	tuo.mutation.SetParamDefs(s)
 	return tuo
 }
 
-// SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableParameters(s *string) *TomeUpdateOne {
+// SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableParamDefs(s *string) *TomeUpdateOne {
 	if s != nil {
-		tuo.SetParameters(*s)
+		tuo.SetParamDefs(*s)
 	}
 	return tuo
 }
 
-// ClearParameters clears the value of the "parameters" field.
-func (tuo *TomeUpdateOne) ClearParameters() *TomeUpdateOne {
-	tuo.mutation.ClearParameters()
+// ClearParamDefs clears the value of the "param_defs" field.
+func (tuo *TomeUpdateOne) ClearParamDefs() *TomeUpdateOne {
+	tuo.mutation.ClearParamDefs()
 	return tuo
 }
 
@@ -413,6 +375,12 @@ func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
 	return tuo.RemoveFileIDs(ids...)
 }
 
+// Where appends a list predicates to the TomeUpdate builder.
+func (tuo *TomeUpdateOne) Where(ps ...predicate.Tome) *TomeUpdateOne {
+	tuo.mutation.Where(ps...)
+	return tuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (tuo *TomeUpdateOne) Select(field string, fields ...string) *TomeUpdateOne {
@@ -422,49 +390,10 @@ func (tuo *TomeUpdateOne) Select(field string, fields ...string) *TomeUpdateOne 
 
 // Save executes the query and returns the updated Tome entity.
 func (tuo *TomeUpdateOne) Save(ctx context.Context) (*Tome, error) {
-	var (
-		err  error
-		node *Tome
-	)
 	if err := tuo.defaults(); err != nil {
 		return nil, err
 	}
-	if len(tuo.hooks) == 0 {
-		if err = tuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = tuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TomeMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tuo.check(); err != nil {
-				return nil, err
-			}
-			tuo.mutation = mutation
-			node, err = tuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(tuo.hooks) - 1; i >= 0; i-- {
-			if tuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, tuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Tome)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from TomeMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*Tome, TomeMutation](ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -517,16 +446,10 @@ func (tuo *TomeUpdateOne) check() error {
 }
 
 func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   tome.Table,
-			Columns: tome.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: tome.FieldID,
-			},
-		},
+	if err := tuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(tome.Table, tome.Columns, sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt))
 	id, ok := tuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Tome.id" for update`)}
@@ -560,11 +483,11 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Parameters(); ok {
-		_spec.SetField(tome.FieldParameters, field.TypeString, value)
+	if value, ok := tuo.mutation.ParamDefs(); ok {
+		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
-	if tuo.mutation.ParametersCleared() {
-		_spec.ClearField(tome.FieldParameters, field.TypeString)
+	if tuo.mutation.ParamDefsCleared() {
+		_spec.ClearField(tome.FieldParamDefs, field.TypeString)
 	}
 	if value, ok := tuo.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
@@ -637,5 +560,6 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		return nil, err
 	}
+	tuo.mutation.done = true
 	return _node, nil
 }

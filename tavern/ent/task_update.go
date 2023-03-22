@@ -30,19 +30,19 @@ func (tu *TaskUpdate) Where(ps ...predicate.Task) *TaskUpdate {
 	return tu
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tu *TaskUpdate) SetLastModifiedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetLastModifiedAt(t)
 	return tu
 }
 
-// SetClaimedAt sets the "claimedAt" field.
+// SetClaimedAt sets the "claimed_at" field.
 func (tu *TaskUpdate) SetClaimedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetClaimedAt(t)
 	return tu
 }
 
-// SetNillableClaimedAt sets the "claimedAt" field if the given value is not nil.
+// SetNillableClaimedAt sets the "claimed_at" field if the given value is not nil.
 func (tu *TaskUpdate) SetNillableClaimedAt(t *time.Time) *TaskUpdate {
 	if t != nil {
 		tu.SetClaimedAt(*t)
@@ -50,19 +50,19 @@ func (tu *TaskUpdate) SetNillableClaimedAt(t *time.Time) *TaskUpdate {
 	return tu
 }
 
-// ClearClaimedAt clears the value of the "claimedAt" field.
+// ClearClaimedAt clears the value of the "claimed_at" field.
 func (tu *TaskUpdate) ClearClaimedAt() *TaskUpdate {
 	tu.mutation.ClearClaimedAt()
 	return tu
 }
 
-// SetExecStartedAt sets the "execStartedAt" field.
+// SetExecStartedAt sets the "exec_started_at" field.
 func (tu *TaskUpdate) SetExecStartedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetExecStartedAt(t)
 	return tu
 }
 
-// SetNillableExecStartedAt sets the "execStartedAt" field if the given value is not nil.
+// SetNillableExecStartedAt sets the "exec_started_at" field if the given value is not nil.
 func (tu *TaskUpdate) SetNillableExecStartedAt(t *time.Time) *TaskUpdate {
 	if t != nil {
 		tu.SetExecStartedAt(*t)
@@ -70,19 +70,19 @@ func (tu *TaskUpdate) SetNillableExecStartedAt(t *time.Time) *TaskUpdate {
 	return tu
 }
 
-// ClearExecStartedAt clears the value of the "execStartedAt" field.
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
 func (tu *TaskUpdate) ClearExecStartedAt() *TaskUpdate {
 	tu.mutation.ClearExecStartedAt()
 	return tu
 }
 
-// SetExecFinishedAt sets the "execFinishedAt" field.
+// SetExecFinishedAt sets the "exec_finished_at" field.
 func (tu *TaskUpdate) SetExecFinishedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetExecFinishedAt(t)
 	return tu
 }
 
-// SetNillableExecFinishedAt sets the "execFinishedAt" field if the given value is not nil.
+// SetNillableExecFinishedAt sets the "exec_finished_at" field if the given value is not nil.
 func (tu *TaskUpdate) SetNillableExecFinishedAt(t *time.Time) *TaskUpdate {
 	if t != nil {
 		tu.SetExecFinishedAt(*t)
@@ -90,7 +90,7 @@ func (tu *TaskUpdate) SetNillableExecFinishedAt(t *time.Time) *TaskUpdate {
 	return tu
 }
 
-// ClearExecFinishedAt clears the value of the "execFinishedAt" field.
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
 func (tu *TaskUpdate) ClearExecFinishedAt() *TaskUpdate {
 	tu.mutation.ClearExecFinishedAt()
 	return tu
@@ -177,41 +177,8 @@ func (tu *TaskUpdate) ClearSession() *TaskUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TaskUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	tu.defaults()
-	if len(tu.hooks) == 0 {
-		if err = tu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = tu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TaskMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tu.check(); err != nil {
-				return 0, err
-			}
-			tu.mutation = mutation
-			affected, err = tu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(tu.hooks) - 1; i >= 0; i-- {
-			if tu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, tu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks[int, TaskMutation](ctx, tu.sqlSave, tu.mutation, tu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -256,16 +223,10 @@ func (tu *TaskUpdate) check() error {
 }
 
 func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   task.Table,
-			Columns: task.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: task.FieldID,
-			},
-		},
+	if err := tu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(task.Table, task.Columns, sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt))
 	if ps := tu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -384,6 +345,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	tu.mutation.done = true
 	return n, nil
 }
 
@@ -395,19 +357,19 @@ type TaskUpdateOne struct {
 	mutation *TaskMutation
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tuo *TaskUpdateOne) SetLastModifiedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetLastModifiedAt(t)
 	return tuo
 }
 
-// SetClaimedAt sets the "claimedAt" field.
+// SetClaimedAt sets the "claimed_at" field.
 func (tuo *TaskUpdateOne) SetClaimedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetClaimedAt(t)
 	return tuo
 }
 
-// SetNillableClaimedAt sets the "claimedAt" field if the given value is not nil.
+// SetNillableClaimedAt sets the "claimed_at" field if the given value is not nil.
 func (tuo *TaskUpdateOne) SetNillableClaimedAt(t *time.Time) *TaskUpdateOne {
 	if t != nil {
 		tuo.SetClaimedAt(*t)
@@ -415,19 +377,19 @@ func (tuo *TaskUpdateOne) SetNillableClaimedAt(t *time.Time) *TaskUpdateOne {
 	return tuo
 }
 
-// ClearClaimedAt clears the value of the "claimedAt" field.
+// ClearClaimedAt clears the value of the "claimed_at" field.
 func (tuo *TaskUpdateOne) ClearClaimedAt() *TaskUpdateOne {
 	tuo.mutation.ClearClaimedAt()
 	return tuo
 }
 
-// SetExecStartedAt sets the "execStartedAt" field.
+// SetExecStartedAt sets the "exec_started_at" field.
 func (tuo *TaskUpdateOne) SetExecStartedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetExecStartedAt(t)
 	return tuo
 }
 
-// SetNillableExecStartedAt sets the "execStartedAt" field if the given value is not nil.
+// SetNillableExecStartedAt sets the "exec_started_at" field if the given value is not nil.
 func (tuo *TaskUpdateOne) SetNillableExecStartedAt(t *time.Time) *TaskUpdateOne {
 	if t != nil {
 		tuo.SetExecStartedAt(*t)
@@ -435,19 +397,19 @@ func (tuo *TaskUpdateOne) SetNillableExecStartedAt(t *time.Time) *TaskUpdateOne 
 	return tuo
 }
 
-// ClearExecStartedAt clears the value of the "execStartedAt" field.
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
 func (tuo *TaskUpdateOne) ClearExecStartedAt() *TaskUpdateOne {
 	tuo.mutation.ClearExecStartedAt()
 	return tuo
 }
 
-// SetExecFinishedAt sets the "execFinishedAt" field.
+// SetExecFinishedAt sets the "exec_finished_at" field.
 func (tuo *TaskUpdateOne) SetExecFinishedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetExecFinishedAt(t)
 	return tuo
 }
 
-// SetNillableExecFinishedAt sets the "execFinishedAt" field if the given value is not nil.
+// SetNillableExecFinishedAt sets the "exec_finished_at" field if the given value is not nil.
 func (tuo *TaskUpdateOne) SetNillableExecFinishedAt(t *time.Time) *TaskUpdateOne {
 	if t != nil {
 		tuo.SetExecFinishedAt(*t)
@@ -455,7 +417,7 @@ func (tuo *TaskUpdateOne) SetNillableExecFinishedAt(t *time.Time) *TaskUpdateOne
 	return tuo
 }
 
-// ClearExecFinishedAt clears the value of the "execFinishedAt" field.
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
 func (tuo *TaskUpdateOne) ClearExecFinishedAt() *TaskUpdateOne {
 	tuo.mutation.ClearExecFinishedAt()
 	return tuo
@@ -540,6 +502,12 @@ func (tuo *TaskUpdateOne) ClearSession() *TaskUpdateOne {
 	return tuo
 }
 
+// Where appends a list predicates to the TaskUpdate builder.
+func (tuo *TaskUpdateOne) Where(ps ...predicate.Task) *TaskUpdateOne {
+	tuo.mutation.Where(ps...)
+	return tuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (tuo *TaskUpdateOne) Select(field string, fields ...string) *TaskUpdateOne {
@@ -549,47 +517,8 @@ func (tuo *TaskUpdateOne) Select(field string, fields ...string) *TaskUpdateOne 
 
 // Save executes the query and returns the updated Task entity.
 func (tuo *TaskUpdateOne) Save(ctx context.Context) (*Task, error) {
-	var (
-		err  error
-		node *Task
-	)
 	tuo.defaults()
-	if len(tuo.hooks) == 0 {
-		if err = tuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = tuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TaskMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tuo.check(); err != nil {
-				return nil, err
-			}
-			tuo.mutation = mutation
-			node, err = tuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(tuo.hooks) - 1; i >= 0; i-- {
-			if tuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, tuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Task)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from TaskMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*Task, TaskMutation](ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -634,16 +563,10 @@ func (tuo *TaskUpdateOne) check() error {
 }
 
 func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   task.Table,
-			Columns: task.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: task.FieldID,
-			},
-		},
+	if err := tuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(task.Table, task.Columns, sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt))
 	id, ok := tuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Task.id" for update`)}
@@ -782,5 +705,6 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 		}
 		return nil, err
 	}
+	tuo.mutation.done = true
 	return _node, nil
 }

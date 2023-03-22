@@ -13,9 +13,9 @@ const (
 	Label = "file"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldCreatedAt holds the string denoting the createdat field in the database.
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-	// FieldLastModifiedAt holds the string denoting the lastmodifiedat field in the database.
+	// FieldLastModifiedAt holds the string denoting the last_modified_at field in the database.
 	FieldLastModifiedAt = "last_modified_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
@@ -68,11 +68,11 @@ func ValidColumn(column string) bool {
 //	import _ "github.com/kcarretto/realm/tavern/ent/runtime"
 var (
 	Hooks [1]ent.Hook
-	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
-	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.
+	// DefaultLastModifiedAt holds the default value on creation for the "last_modified_at" field.
 	DefaultLastModifiedAt func() time.Time
-	// UpdateDefaultLastModifiedAt holds the default value on update for the "lastModifiedAt" field.
+	// UpdateDefaultLastModifiedAt holds the default value on update for the "last_modified_at" field.
 	UpdateDefaultLastModifiedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error

@@ -11,6 +11,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/tome"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // Job is the model entity for the Job schema.
@@ -19,18 +20,19 @@ type Job struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Timestamp of when this ent was created
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
-	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// Name of the job
 	Name string `json:"name,omitempty"`
 	// Value of parameters that were specified for the job (as a JSON string).
 	Parameters string `json:"parameters,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the JobQuery when eager-loading is set.
-	Edges      JobEdges `json:"edges"`
-	job_tome   *int
-	job_bundle *int
+	Edges       JobEdges `json:"edges"`
+	job_tome    *int
+	job_bundle  *int
+	job_creator *int
 }
 
 // JobEdges holds the relations/edges for other nodes in the graph.
@@ -41,11 +43,13 @@ type JobEdges struct {
 	Bundle *File `json:"bundle,omitempty"`
 	// Tasks tracking the status and output of individual tome execution on targets
 	Tasks []*Task `json:"tasks,omitempty"`
+	// User that created the job if available.
+	Creator *User `json:"creator,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedTasks map[string][]*Task
 }
@@ -85,6 +89,19 @@ func (e JobEdges) TasksOrErr() ([]*Task, error) {
 	return nil, &NotLoadedError{edge: "tasks"}
 }
 
+// CreatorOrErr returns the Creator value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e JobEdges) CreatorOrErr() (*User, error) {
+	if e.loadedTypes[3] {
+		if e.Creator == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: user.Label}
+		}
+		return e.Creator, nil
+	}
+	return nil, &NotLoadedError{edge: "creator"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Job) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -99,6 +116,8 @@ func (*Job) scanValues(columns []string) ([]any, error) {
 		case job.ForeignKeys[0]: // job_tome
 			values[i] = new(sql.NullInt64)
 		case job.ForeignKeys[1]: // job_bundle
+			values[i] = new(sql.NullInt64)
+		case job.ForeignKeys[2]: // job_creator
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Job", columns[i])
@@ -123,13 +142,13 @@ func (j *Job) assignValues(columns []string, values []any) error {
 			j.ID = int(value.Int64)
 		case job.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				j.CreatedAt = value.Time
 			}
 		case job.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				j.LastModifiedAt = value.Time
 			}
@@ -159,6 +178,13 @@ func (j *Job) assignValues(columns []string, values []any) error {
 				j.job_bundle = new(int)
 				*j.job_bundle = int(value.Int64)
 			}
+		case job.ForeignKeys[2]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field job_creator", value)
+			} else if value.Valid {
+				j.job_creator = new(int)
+				*j.job_creator = int(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -166,24 +192,29 @@ func (j *Job) assignValues(columns []string, values []any) error {
 
 // QueryTome queries the "tome" edge of the Job entity.
 func (j *Job) QueryTome() *TomeQuery {
-	return (&JobClient{config: j.config}).QueryTome(j)
+	return NewJobClient(j.config).QueryTome(j)
 }
 
 // QueryBundle queries the "bundle" edge of the Job entity.
 func (j *Job) QueryBundle() *FileQuery {
-	return (&JobClient{config: j.config}).QueryBundle(j)
+	return NewJobClient(j.config).QueryBundle(j)
 }
 
 // QueryTasks queries the "tasks" edge of the Job entity.
 func (j *Job) QueryTasks() *TaskQuery {
-	return (&JobClient{config: j.config}).QueryTasks(j)
+	return NewJobClient(j.config).QueryTasks(j)
+}
+
+// QueryCreator queries the "creator" edge of the Job entity.
+func (j *Job) QueryCreator() *UserQuery {
+	return NewJobClient(j.config).QueryCreator(j)
 }
 
 // Update returns a builder for updating this Job.
 // Note that you need to call Job.Unwrap() before calling this method if this Job
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (j *Job) Update() *JobUpdateOne {
-	return (&JobClient{config: j.config}).UpdateOne(j)
+	return NewJobClient(j.config).UpdateOne(j)
 }
 
 // Unwrap unwraps the Job entity that was returned from a transaction after it was closed,
@@ -202,10 +233,10 @@ func (j *Job) String() string {
 	var builder strings.Builder
 	builder.WriteString("Job(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", j.ID))
-	builder.WriteString("createdAt=")
+	builder.WriteString("created_at=")
 	builder.WriteString(j.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("lastModifiedAt=")
+	builder.WriteString("last_modified_at=")
 	builder.WriteString(j.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
@@ -243,9 +274,3 @@ func (j *Job) appendNamedTasks(name string, edges ...*Task) {
 
 // Jobs is a parsable slice of Job.
 type Jobs []*Job
-
-func (j Jobs) config(cfg config) {
-	for _i := range j {
-		j[_i].config = cfg
-	}
-}
