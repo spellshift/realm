@@ -14,6 +14,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
+	"github.com/kcarretto/realm/tavern/ent/user"
 )
 
 // JobCreate is the builder for creating a Job entity.
@@ -23,13 +24,13 @@ type JobCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (jc *JobCreate) SetCreatedAt(t time.Time) *JobCreate {
 	jc.mutation.SetCreatedAt(t)
 	return jc
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
 func (jc *JobCreate) SetNillableCreatedAt(t *time.Time) *JobCreate {
 	if t != nil {
 		jc.SetCreatedAt(*t)
@@ -37,13 +38,13 @@ func (jc *JobCreate) SetNillableCreatedAt(t *time.Time) *JobCreate {
 	return jc
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (jc *JobCreate) SetLastModifiedAt(t time.Time) *JobCreate {
 	jc.mutation.SetLastModifiedAt(t)
 	return jc
 }
 
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
 func (jc *JobCreate) SetNillableLastModifiedAt(t *time.Time) *JobCreate {
 	if t != nil {
 		jc.SetLastModifiedAt(*t)
@@ -116,6 +117,25 @@ func (jc *JobCreate) AddTasks(t ...*Task) *JobCreate {
 	return jc.AddTaskIDs(ids...)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (jc *JobCreate) SetCreatorID(id int) *JobCreate {
+	jc.mutation.SetCreatorID(id)
+	return jc
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (jc *JobCreate) SetNillableCreatorID(id *int) *JobCreate {
+	if id != nil {
+		jc = jc.SetCreatorID(*id)
+	}
+	return jc
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (jc *JobCreate) SetCreator(u *User) *JobCreate {
+	return jc.SetCreatorID(u.ID)
+}
+
 // Mutation returns the JobMutation object of the builder.
 func (jc *JobCreate) Mutation() *JobMutation {
 	return jc.mutation
@@ -123,50 +143,8 @@ func (jc *JobCreate) Mutation() *JobMutation {
 
 // Save creates the Job in the database.
 func (jc *JobCreate) Save(ctx context.Context) (*Job, error) {
-	var (
-		err  error
-		node *Job
-	)
 	jc.defaults()
-	if len(jc.hooks) == 0 {
-		if err = jc.check(); err != nil {
-			return nil, err
-		}
-		node, err = jc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*JobMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = jc.check(); err != nil {
-				return nil, err
-			}
-			jc.mutation = mutation
-			if node, err = jc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(jc.hooks) - 1; i >= 0; i-- {
-			if jc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = jc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, jc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Job)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from JobMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*Job, JobMutation](ctx, jc.sqlSave, jc.mutation, jc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -206,10 +184,10 @@ func (jc *JobCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (jc *JobCreate) check() error {
 	if _, ok := jc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Job.createdAt"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Job.created_at"`)}
 	}
 	if _, ok := jc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Job.lastModifiedAt"`)}
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Job.last_modified_at"`)}
 	}
 	if _, ok := jc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Job.name"`)}
@@ -226,6 +204,9 @@ func (jc *JobCreate) check() error {
 }
 
 func (jc *JobCreate) sqlSave(ctx context.Context) (*Job, error) {
+	if err := jc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := jc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, jc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -235,19 +216,15 @@ func (jc *JobCreate) sqlSave(ctx context.Context) (*Job, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	jc.mutation.id = &_node.ID
+	jc.mutation.done = true
 	return _node, nil
 }
 
 func (jc *JobCreate) createSpec() (*Job, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Job{config: jc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: job.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: job.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(job.Table, sqlgraph.NewFieldSpec(job.FieldID, field.TypeInt))
 	)
 	if value, ok := jc.mutation.CreatedAt(); ok {
 		_spec.SetField(job.FieldCreatedAt, field.TypeTime, value)
@@ -322,6 +299,26 @@ func (jc *JobCreate) createSpec() (*Job, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := jc.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   job.CreatorTable,
+			Columns: []string{job.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.job_creator = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

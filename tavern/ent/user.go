@@ -16,17 +16,17 @@ type User struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// The name displayed for the user
-	Name string `json:"Name,omitempty"`
+	Name string `json:"name,omitempty"`
 	// OAuth Subject ID of the user
-	OAuthID string `json:"-"`
+	OauthID string `json:"-"`
 	// URL to the user's profile photo.
-	PhotoURL string `json:"PhotoURL,omitempty"`
+	PhotoURL string `json:"photo_url,omitempty"`
 	// The session token currently authenticating the user
 	SessionToken string `json:"-"`
 	// True if the user is active and able to authenticate
-	IsActivated bool `json:"IsActivated,omitempty"`
+	IsActivated bool `json:"is_activated,omitempty"`
 	// True if the user is an Admin
-	IsAdmin bool `json:"IsAdmin,omitempty"`
+	IsAdmin bool `json:"is_admin,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -38,7 +38,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case user.FieldID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldName, user.FieldOAuthID, user.FieldPhotoURL, user.FieldSessionToken:
+		case user.FieldName, user.FieldOauthID, user.FieldPhotoURL, user.FieldSessionToken:
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type User", columns[i])
@@ -63,37 +63,37 @@ func (u *User) assignValues(columns []string, values []any) error {
 			u.ID = int(value.Int64)
 		case user.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field Name", values[i])
+				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				u.Name = value.String
 			}
-		case user.FieldOAuthID:
+		case user.FieldOauthID:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field OAuthID", values[i])
+				return fmt.Errorf("unexpected type %T for field oauth_id", values[i])
 			} else if value.Valid {
-				u.OAuthID = value.String
+				u.OauthID = value.String
 			}
 		case user.FieldPhotoURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field PhotoURL", values[i])
+				return fmt.Errorf("unexpected type %T for field photo_url", values[i])
 			} else if value.Valid {
 				u.PhotoURL = value.String
 			}
 		case user.FieldSessionToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field SessionToken", values[i])
+				return fmt.Errorf("unexpected type %T for field session_token", values[i])
 			} else if value.Valid {
 				u.SessionToken = value.String
 			}
 		case user.FieldIsActivated:
 			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field IsActivated", values[i])
+				return fmt.Errorf("unexpected type %T for field is_activated", values[i])
 			} else if value.Valid {
 				u.IsActivated = value.Bool
 			}
 		case user.FieldIsAdmin:
 			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field IsAdmin", values[i])
+				return fmt.Errorf("unexpected type %T for field is_admin", values[i])
 			} else if value.Valid {
 				u.IsAdmin = value.Bool
 			}
@@ -106,7 +106,7 @@ func (u *User) assignValues(columns []string, values []any) error {
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (u *User) Update() *UserUpdateOne {
-	return (&UserClient{config: u.config}).UpdateOne(u)
+	return NewUserClient(u.config).UpdateOne(u)
 }
 
 // Unwrap unwraps the User entity that was returned from a transaction after it was closed,
@@ -125,20 +125,20 @@ func (u *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", u.ID))
-	builder.WriteString("Name=")
+	builder.WriteString("name=")
 	builder.WriteString(u.Name)
 	builder.WriteString(", ")
-	builder.WriteString("OAuthID=<sensitive>")
+	builder.WriteString("oauth_id=<sensitive>")
 	builder.WriteString(", ")
-	builder.WriteString("PhotoURL=")
+	builder.WriteString("photo_url=")
 	builder.WriteString(u.PhotoURL)
 	builder.WriteString(", ")
-	builder.WriteString("SessionToken=<sensitive>")
+	builder.WriteString("session_token=<sensitive>")
 	builder.WriteString(", ")
-	builder.WriteString("IsActivated=")
+	builder.WriteString("is_activated=")
 	builder.WriteString(fmt.Sprintf("%v", u.IsActivated))
 	builder.WriteString(", ")
-	builder.WriteString("IsAdmin=")
+	builder.WriteString("is_admin=")
 	builder.WriteString(fmt.Sprintf("%v", u.IsAdmin))
 	builder.WriteByte(')')
 	return builder.String()
@@ -146,9 +146,3 @@ func (u *User) String() string {
 
 // Users is a parsable slice of User.
 type Users []*User
-
-func (u Users) config(cfg config) {
-	for _i := range u {
-		u[_i].config = cfg
-	}
-}

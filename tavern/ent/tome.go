@@ -17,15 +17,15 @@ type Tome struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Timestamp of when this ent was created
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
-	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// Name of the tome
 	Name string `json:"name,omitempty"`
 	// Information about the tome
 	Description string `json:"description,omitempty"`
 	// JSON string describing what parameters are used with the tome
-	Parameters string `json:"parameters,omitempty"`
+	ParamDefs string `json:"param_defs,omitempty"`
 	// A SHA3 digest of the eldritch field
 	Hash string `json:"hash,omitempty"`
 	// Eldritch script that will be executed when the tome is run
@@ -64,7 +64,7 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tome.FieldID:
 			values[i] = new(sql.NullInt64)
-		case tome.FieldName, tome.FieldDescription, tome.FieldParameters, tome.FieldHash, tome.FieldEldritch:
+		case tome.FieldName, tome.FieldDescription, tome.FieldParamDefs, tome.FieldHash, tome.FieldEldritch:
 			values[i] = new(sql.NullString)
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -91,13 +91,13 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			t.ID = int(value.Int64)
 		case tome.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				t.CreatedAt = value.Time
 			}
 		case tome.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				t.LastModifiedAt = value.Time
 			}
@@ -113,11 +113,11 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Description = value.String
 			}
-		case tome.FieldParameters:
+		case tome.FieldParamDefs:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field parameters", values[i])
+				return fmt.Errorf("unexpected type %T for field param_defs", values[i])
 			} else if value.Valid {
-				t.Parameters = value.String
+				t.ParamDefs = value.String
 			}
 		case tome.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -138,14 +138,14 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 
 // QueryFiles queries the "files" edge of the Tome entity.
 func (t *Tome) QueryFiles() *FileQuery {
-	return (&TomeClient{config: t.config}).QueryFiles(t)
+	return NewTomeClient(t.config).QueryFiles(t)
 }
 
 // Update returns a builder for updating this Tome.
 // Note that you need to call Tome.Unwrap() before calling this method if this Tome
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (t *Tome) Update() *TomeUpdateOne {
-	return (&TomeClient{config: t.config}).UpdateOne(t)
+	return NewTomeClient(t.config).UpdateOne(t)
 }
 
 // Unwrap unwraps the Tome entity that was returned from a transaction after it was closed,
@@ -164,10 +164,10 @@ func (t *Tome) String() string {
 	var builder strings.Builder
 	builder.WriteString("Tome(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
-	builder.WriteString("createdAt=")
+	builder.WriteString("created_at=")
 	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("lastModifiedAt=")
+	builder.WriteString("last_modified_at=")
 	builder.WriteString(t.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
@@ -176,8 +176,8 @@ func (t *Tome) String() string {
 	builder.WriteString("description=")
 	builder.WriteString(t.Description)
 	builder.WriteString(", ")
-	builder.WriteString("parameters=")
-	builder.WriteString(t.Parameters)
+	builder.WriteString("param_defs=")
+	builder.WriteString(t.ParamDefs)
 	builder.WriteString(", ")
 	builder.WriteString("hash=")
 	builder.WriteString(t.Hash)
@@ -214,9 +214,3 @@ func (t *Tome) appendNamedFiles(name string, edges ...*File) {
 
 // Tomes is a parsable slice of Tome.
 type Tomes []*Tome
-
-func (t Tomes) config(cfg config) {
-	for _i := range t {
-		t[_i].config = cfg
-	}
-}

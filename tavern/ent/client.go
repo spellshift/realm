@@ -10,6 +10,10 @@ import (
 
 	"github.com/kcarretto/realm/tavern/ent/migrate"
 
+	"entgo.io/ent"
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/session"
@@ -17,10 +21,6 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
-
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -48,7 +48,7 @@ type Client struct {
 
 // NewClient creates a new client configured with the given options.
 func NewClient(opts ...Option) *Client {
-	cfg := config{log: log.Println, hooks: &hooks{}}
+	cfg := config{log: log.Println, hooks: &hooks{}, inters: &inters{}}
 	cfg.options(opts...)
 	client := &Client{config: cfg}
 	client.init()
@@ -64,6 +64,55 @@ func (c *Client) init() {
 	c.Task = NewTaskClient(c.config)
 	c.Tome = NewTomeClient(c.config)
 	c.User = NewUserClient(c.config)
+}
+
+type (
+	// config is the configuration for the client and its builder.
+	config struct {
+		// driver used for executing database requests.
+		driver dialect.Driver
+		// debug enable a debug logging.
+		debug bool
+		// log used for logging on debug mode.
+		log func(...any)
+		// hooks to execute on mutations.
+		hooks *hooks
+		// interceptors to execute on queries.
+		inters *inters
+	}
+	// Option function to configure the client.
+	Option func(*config)
+)
+
+// options applies the options on the config object.
+func (c *config) options(opts ...Option) {
+	for _, opt := range opts {
+		opt(c)
+	}
+	if c.debug {
+		c.driver = dialect.Debug(c.driver, c.log)
+	}
+}
+
+// Debug enables debug logging on the ent.Driver.
+func Debug() Option {
+	return func(c *config) {
+		c.debug = true
+	}
+}
+
+// Log sets the logging function for debug mode.
+func Log(fn func(...any)) Option {
+	return func(c *config) {
+		c.log = fn
+	}
+}
+
+// Driver configures the client driver.
+func Driver(driver dialect.Driver) Option {
+	return func(c *config) {
+		c.driver = driver
+	}
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -158,13 +207,43 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.File.Use(hooks...)
-	c.Job.Use(hooks...)
-	c.Session.Use(hooks...)
-	c.Tag.Use(hooks...)
-	c.Task.Use(hooks...)
-	c.Tome.Use(hooks...)
-	c.User.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.File, c.Job, c.Session, c.Tag, c.Task, c.Tome, c.User,
+	} {
+		n.Use(hooks...)
+	}
+}
+
+// Intercept adds the query interceptors to all the entity clients.
+// In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
+func (c *Client) Intercept(interceptors ...Interceptor) {
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.File, c.Job, c.Session, c.Tag, c.Task, c.Tome, c.User,
+	} {
+		n.Intercept(interceptors...)
+	}
+}
+
+// Mutate implements the ent.Mutator interface.
+func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
+	switch m := m.(type) {
+	case *FileMutation:
+		return c.File.mutate(ctx, m)
+	case *JobMutation:
+		return c.Job.mutate(ctx, m)
+	case *SessionMutation:
+		return c.Session.mutate(ctx, m)
+	case *TagMutation:
+		return c.Tag.mutate(ctx, m)
+	case *TaskMutation:
+		return c.Task.mutate(ctx, m)
+	case *TomeMutation:
+		return c.Tome.mutate(ctx, m)
+	case *UserMutation:
+		return c.User.mutate(ctx, m)
+	default:
+		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
 }
 
 // FileClient is a client for the File schema.
@@ -181,6 +260,12 @@ func NewFileClient(c config) *FileClient {
 // A call to `Use(f, g, h)` equals to `file.Hooks(f(g(h())))`.
 func (c *FileClient) Use(hooks ...Hook) {
 	c.hooks.File = append(c.hooks.File, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `file.Intercept(f(g(h())))`.
+func (c *FileClient) Intercept(interceptors ...Interceptor) {
+	c.inters.File = append(c.inters.File, interceptors...)
 }
 
 // Create returns a builder for creating a File entity.
@@ -235,6 +320,8 @@ func (c *FileClient) DeleteOneID(id int) *FileDeleteOne {
 func (c *FileClient) Query() *FileQuery {
 	return &FileQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeFile},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -258,6 +345,26 @@ func (c *FileClient) Hooks() []Hook {
 	return append(hooks[:len(hooks):len(hooks)], file.Hooks[:]...)
 }
 
+// Interceptors returns the client interceptors.
+func (c *FileClient) Interceptors() []Interceptor {
+	return c.inters.File
+}
+
+func (c *FileClient) mutate(ctx context.Context, m *FileMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FileCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FileUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown File mutation op: %q", m.Op())
+	}
+}
+
 // JobClient is a client for the Job schema.
 type JobClient struct {
 	config
@@ -272,6 +379,12 @@ func NewJobClient(c config) *JobClient {
 // A call to `Use(f, g, h)` equals to `job.Hooks(f(g(h())))`.
 func (c *JobClient) Use(hooks ...Hook) {
 	c.hooks.Job = append(c.hooks.Job, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `job.Intercept(f(g(h())))`.
+func (c *JobClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Job = append(c.inters.Job, interceptors...)
 }
 
 // Create returns a builder for creating a Job entity.
@@ -326,6 +439,8 @@ func (c *JobClient) DeleteOneID(id int) *JobDeleteOne {
 func (c *JobClient) Query() *JobQuery {
 	return &JobQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeJob},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -345,7 +460,7 @@ func (c *JobClient) GetX(ctx context.Context, id int) *Job {
 
 // QueryTome queries the tome edge of a Job.
 func (c *JobClient) QueryTome(j *Job) *TomeQuery {
-	query := &TomeQuery{config: c.config}
+	query := (&TomeClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := j.ID
 		step := sqlgraph.NewStep(
@@ -361,7 +476,7 @@ func (c *JobClient) QueryTome(j *Job) *TomeQuery {
 
 // QueryBundle queries the bundle edge of a Job.
 func (c *JobClient) QueryBundle(j *Job) *FileQuery {
-	query := &FileQuery{config: c.config}
+	query := (&FileClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := j.ID
 		step := sqlgraph.NewStep(
@@ -377,7 +492,7 @@ func (c *JobClient) QueryBundle(j *Job) *FileQuery {
 
 // QueryTasks queries the tasks edge of a Job.
 func (c *JobClient) QueryTasks(j *Job) *TaskQuery {
-	query := &TaskQuery{config: c.config}
+	query := (&TaskClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := j.ID
 		step := sqlgraph.NewStep(
@@ -391,9 +506,45 @@ func (c *JobClient) QueryTasks(j *Job) *TaskQuery {
 	return query
 }
 
+// QueryCreator queries the creator edge of a Job.
+func (c *JobClient) QueryCreator(j *Job) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := j.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(job.Table, job.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, job.CreatorTable, job.CreatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(j.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *JobClient) Hooks() []Hook {
 	return c.hooks.Job
+}
+
+// Interceptors returns the client interceptors.
+func (c *JobClient) Interceptors() []Interceptor {
+	return c.inters.Job
+}
+
+func (c *JobClient) mutate(ctx context.Context, m *JobMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&JobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&JobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&JobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Job mutation op: %q", m.Op())
+	}
 }
 
 // SessionClient is a client for the Session schema.
@@ -410,6 +561,12 @@ func NewSessionClient(c config) *SessionClient {
 // A call to `Use(f, g, h)` equals to `session.Hooks(f(g(h())))`.
 func (c *SessionClient) Use(hooks ...Hook) {
 	c.hooks.Session = append(c.hooks.Session, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `session.Intercept(f(g(h())))`.
+func (c *SessionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Session = append(c.inters.Session, interceptors...)
 }
 
 // Create returns a builder for creating a Session entity.
@@ -464,6 +621,8 @@ func (c *SessionClient) DeleteOneID(id int) *SessionDeleteOne {
 func (c *SessionClient) Query() *SessionQuery {
 	return &SessionQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeSession},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -483,7 +642,7 @@ func (c *SessionClient) GetX(ctx context.Context, id int) *Session {
 
 // QueryTags queries the tags edge of a Session.
 func (c *SessionClient) QueryTags(s *Session) *TagQuery {
-	query := &TagQuery{config: c.config}
+	query := (&TagClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
@@ -499,7 +658,7 @@ func (c *SessionClient) QueryTags(s *Session) *TagQuery {
 
 // QueryTasks queries the tasks edge of a Session.
 func (c *SessionClient) QueryTasks(s *Session) *TaskQuery {
-	query := &TaskQuery{config: c.config}
+	query := (&TaskClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
@@ -518,6 +677,26 @@ func (c *SessionClient) Hooks() []Hook {
 	return c.hooks.Session
 }
 
+// Interceptors returns the client interceptors.
+func (c *SessionClient) Interceptors() []Interceptor {
+	return c.inters.Session
+}
+
+func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SessionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SessionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SessionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Session mutation op: %q", m.Op())
+	}
+}
+
 // TagClient is a client for the Tag schema.
 type TagClient struct {
 	config
@@ -532,6 +711,12 @@ func NewTagClient(c config) *TagClient {
 // A call to `Use(f, g, h)` equals to `tag.Hooks(f(g(h())))`.
 func (c *TagClient) Use(hooks ...Hook) {
 	c.hooks.Tag = append(c.hooks.Tag, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tag.Intercept(f(g(h())))`.
+func (c *TagClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Tag = append(c.inters.Tag, interceptors...)
 }
 
 // Create returns a builder for creating a Tag entity.
@@ -586,6 +771,8 @@ func (c *TagClient) DeleteOneID(id int) *TagDeleteOne {
 func (c *TagClient) Query() *TagQuery {
 	return &TagQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeTag},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -605,7 +792,7 @@ func (c *TagClient) GetX(ctx context.Context, id int) *Tag {
 
 // QuerySessions queries the sessions edge of a Tag.
 func (c *TagClient) QuerySessions(t *Tag) *SessionQuery {
-	query := &SessionQuery{config: c.config}
+	query := (&SessionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
@@ -624,6 +811,26 @@ func (c *TagClient) Hooks() []Hook {
 	return c.hooks.Tag
 }
 
+// Interceptors returns the client interceptors.
+func (c *TagClient) Interceptors() []Interceptor {
+	return c.inters.Tag
+}
+
+func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TagCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TagUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TagDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Tag mutation op: %q", m.Op())
+	}
+}
+
 // TaskClient is a client for the Task schema.
 type TaskClient struct {
 	config
@@ -638,6 +845,12 @@ func NewTaskClient(c config) *TaskClient {
 // A call to `Use(f, g, h)` equals to `task.Hooks(f(g(h())))`.
 func (c *TaskClient) Use(hooks ...Hook) {
 	c.hooks.Task = append(c.hooks.Task, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `task.Intercept(f(g(h())))`.
+func (c *TaskClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Task = append(c.inters.Task, interceptors...)
 }
 
 // Create returns a builder for creating a Task entity.
@@ -692,6 +905,8 @@ func (c *TaskClient) DeleteOneID(id int) *TaskDeleteOne {
 func (c *TaskClient) Query() *TaskQuery {
 	return &TaskQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeTask},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -711,7 +926,7 @@ func (c *TaskClient) GetX(ctx context.Context, id int) *Task {
 
 // QueryJob queries the job edge of a Task.
 func (c *TaskClient) QueryJob(t *Task) *JobQuery {
-	query := &JobQuery{config: c.config}
+	query := (&JobClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
@@ -727,7 +942,7 @@ func (c *TaskClient) QueryJob(t *Task) *JobQuery {
 
 // QuerySession queries the session edge of a Task.
 func (c *TaskClient) QuerySession(t *Task) *SessionQuery {
-	query := &SessionQuery{config: c.config}
+	query := (&SessionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
@@ -746,6 +961,26 @@ func (c *TaskClient) Hooks() []Hook {
 	return c.hooks.Task
 }
 
+// Interceptors returns the client interceptors.
+func (c *TaskClient) Interceptors() []Interceptor {
+	return c.inters.Task
+}
+
+func (c *TaskClient) mutate(ctx context.Context, m *TaskMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TaskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TaskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Task mutation op: %q", m.Op())
+	}
+}
+
 // TomeClient is a client for the Tome schema.
 type TomeClient struct {
 	config
@@ -760,6 +995,12 @@ func NewTomeClient(c config) *TomeClient {
 // A call to `Use(f, g, h)` equals to `tome.Hooks(f(g(h())))`.
 func (c *TomeClient) Use(hooks ...Hook) {
 	c.hooks.Tome = append(c.hooks.Tome, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tome.Intercept(f(g(h())))`.
+func (c *TomeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Tome = append(c.inters.Tome, interceptors...)
 }
 
 // Create returns a builder for creating a Tome entity.
@@ -814,6 +1055,8 @@ func (c *TomeClient) DeleteOneID(id int) *TomeDeleteOne {
 func (c *TomeClient) Query() *TomeQuery {
 	return &TomeQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeTome},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -833,7 +1076,7 @@ func (c *TomeClient) GetX(ctx context.Context, id int) *Tome {
 
 // QueryFiles queries the files edge of a Tome.
 func (c *TomeClient) QueryFiles(t *Tome) *FileQuery {
-	query := &FileQuery{config: c.config}
+	query := (&FileClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
@@ -853,6 +1096,26 @@ func (c *TomeClient) Hooks() []Hook {
 	return append(hooks[:len(hooks):len(hooks)], tome.Hooks[:]...)
 }
 
+// Interceptors returns the client interceptors.
+func (c *TomeClient) Interceptors() []Interceptor {
+	return c.inters.Tome
+}
+
+func (c *TomeClient) mutate(ctx context.Context, m *TomeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TomeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TomeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TomeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TomeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Tome mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -867,6 +1130,12 @@ func NewUserClient(c config) *UserClient {
 // A call to `Use(f, g, h)` equals to `user.Hooks(f(g(h())))`.
 func (c *UserClient) Use(hooks ...Hook) {
 	c.hooks.User = append(c.hooks.User, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `user.Intercept(f(g(h())))`.
+func (c *UserClient) Intercept(interceptors ...Interceptor) {
+	c.inters.User = append(c.inters.User, interceptors...)
 }
 
 // Create returns a builder for creating a User entity.
@@ -921,6 +1190,8 @@ func (c *UserClient) DeleteOneID(id int) *UserDeleteOne {
 func (c *UserClient) Query() *UserQuery {
 	return &UserQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeUser},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -942,3 +1213,33 @@ func (c *UserClient) GetX(ctx context.Context, id int) *User {
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
 }
+
+// Interceptors returns the client interceptors.
+func (c *UserClient) Interceptors() []Interceptor {
+	return c.inters.User
+}
+
+func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown User mutation op: %q", m.Op())
+	}
+}
+
+// hooks and interceptors per client, for fast access.
+type (
+	hooks struct {
+		File, Job, Session, Tag, Task, Tome, User []ent.Hook
+	}
+	inters struct {
+		File, Job, Session, Tag, Task, Tome, User []ent.Interceptor
+	}
+)

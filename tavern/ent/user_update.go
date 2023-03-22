@@ -27,25 +27,25 @@ func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	return uu
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (uu *UserUpdate) SetName(s string) *UserUpdate {
 	uu.mutation.SetName(s)
 	return uu
 }
 
-// SetPhotoURL sets the "PhotoURL" field.
+// SetPhotoURL sets the "photo_url" field.
 func (uu *UserUpdate) SetPhotoURL(s string) *UserUpdate {
 	uu.mutation.SetPhotoURL(s)
 	return uu
 }
 
-// SetSessionToken sets the "SessionToken" field.
+// SetSessionToken sets the "session_token" field.
 func (uu *UserUpdate) SetSessionToken(s string) *UserUpdate {
 	uu.mutation.SetSessionToken(s)
 	return uu
 }
 
-// SetNillableSessionToken sets the "SessionToken" field if the given value is not nil.
+// SetNillableSessionToken sets the "session_token" field if the given value is not nil.
 func (uu *UserUpdate) SetNillableSessionToken(s *string) *UserUpdate {
 	if s != nil {
 		uu.SetSessionToken(*s)
@@ -53,13 +53,13 @@ func (uu *UserUpdate) SetNillableSessionToken(s *string) *UserUpdate {
 	return uu
 }
 
-// SetIsActivated sets the "IsActivated" field.
+// SetIsActivated sets the "is_activated" field.
 func (uu *UserUpdate) SetIsActivated(b bool) *UserUpdate {
 	uu.mutation.SetIsActivated(b)
 	return uu
 }
 
-// SetNillableIsActivated sets the "IsActivated" field if the given value is not nil.
+// SetNillableIsActivated sets the "is_activated" field if the given value is not nil.
 func (uu *UserUpdate) SetNillableIsActivated(b *bool) *UserUpdate {
 	if b != nil {
 		uu.SetIsActivated(*b)
@@ -67,13 +67,13 @@ func (uu *UserUpdate) SetNillableIsActivated(b *bool) *UserUpdate {
 	return uu
 }
 
-// SetIsAdmin sets the "IsAdmin" field.
+// SetIsAdmin sets the "is_admin" field.
 func (uu *UserUpdate) SetIsAdmin(b bool) *UserUpdate {
 	uu.mutation.SetIsAdmin(b)
 	return uu
 }
 
-// SetNillableIsAdmin sets the "IsAdmin" field if the given value is not nil.
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
 func (uu *UserUpdate) SetNillableIsAdmin(b *bool) *UserUpdate {
 	if b != nil {
 		uu.SetIsAdmin(*b)
@@ -88,40 +88,7 @@ func (uu *UserUpdate) Mutation() *UserMutation {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(uu.hooks) == 0 {
-		if err = uu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = uu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*UserMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = uu.check(); err != nil {
-				return 0, err
-			}
-			uu.mutation = mutation
-			affected, err = uu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(uu.hooks) - 1; i >= 0; i-- {
-			if uu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = uu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, uu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks[int, UserMutation](ctx, uu.sqlSave, uu.mutation, uu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -150,28 +117,22 @@ func (uu *UserUpdate) ExecX(ctx context.Context) {
 func (uu *UserUpdate) check() error {
 	if v, ok := uu.mutation.Name(); ok {
 		if err := user.NameValidator(v); err != nil {
-			return &ValidationError{Name: "Name", err: fmt.Errorf(`ent: validator failed for field "User.Name": %w`, err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
 	if v, ok := uu.mutation.SessionToken(); ok {
 		if err := user.SessionTokenValidator(v); err != nil {
-			return &ValidationError{Name: "SessionToken", err: fmt.Errorf(`ent: validator failed for field "User.SessionToken": %w`, err)}
+			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
 	return nil
 }
 
 func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   user.Table,
-			Columns: user.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: user.FieldID,
-			},
-		},
+	if err := uu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
 	if ps := uu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -202,6 +163,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	uu.mutation.done = true
 	return n, nil
 }
 
@@ -213,25 +175,25 @@ type UserUpdateOne struct {
 	mutation *UserMutation
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
 	uuo.mutation.SetName(s)
 	return uuo
 }
 
-// SetPhotoURL sets the "PhotoURL" field.
+// SetPhotoURL sets the "photo_url" field.
 func (uuo *UserUpdateOne) SetPhotoURL(s string) *UserUpdateOne {
 	uuo.mutation.SetPhotoURL(s)
 	return uuo
 }
 
-// SetSessionToken sets the "SessionToken" field.
+// SetSessionToken sets the "session_token" field.
 func (uuo *UserUpdateOne) SetSessionToken(s string) *UserUpdateOne {
 	uuo.mutation.SetSessionToken(s)
 	return uuo
 }
 
-// SetNillableSessionToken sets the "SessionToken" field if the given value is not nil.
+// SetNillableSessionToken sets the "session_token" field if the given value is not nil.
 func (uuo *UserUpdateOne) SetNillableSessionToken(s *string) *UserUpdateOne {
 	if s != nil {
 		uuo.SetSessionToken(*s)
@@ -239,13 +201,13 @@ func (uuo *UserUpdateOne) SetNillableSessionToken(s *string) *UserUpdateOne {
 	return uuo
 }
 
-// SetIsActivated sets the "IsActivated" field.
+// SetIsActivated sets the "is_activated" field.
 func (uuo *UserUpdateOne) SetIsActivated(b bool) *UserUpdateOne {
 	uuo.mutation.SetIsActivated(b)
 	return uuo
 }
 
-// SetNillableIsActivated sets the "IsActivated" field if the given value is not nil.
+// SetNillableIsActivated sets the "is_activated" field if the given value is not nil.
 func (uuo *UserUpdateOne) SetNillableIsActivated(b *bool) *UserUpdateOne {
 	if b != nil {
 		uuo.SetIsActivated(*b)
@@ -253,13 +215,13 @@ func (uuo *UserUpdateOne) SetNillableIsActivated(b *bool) *UserUpdateOne {
 	return uuo
 }
 
-// SetIsAdmin sets the "IsAdmin" field.
+// SetIsAdmin sets the "is_admin" field.
 func (uuo *UserUpdateOne) SetIsAdmin(b bool) *UserUpdateOne {
 	uuo.mutation.SetIsAdmin(b)
 	return uuo
 }
 
-// SetNillableIsAdmin sets the "IsAdmin" field if the given value is not nil.
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
 func (uuo *UserUpdateOne) SetNillableIsAdmin(b *bool) *UserUpdateOne {
 	if b != nil {
 		uuo.SetIsAdmin(*b)
@@ -272,6 +234,12 @@ func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
 }
 
+// Where appends a list predicates to the UserUpdate builder.
+func (uuo *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
+	uuo.mutation.Where(ps...)
+	return uuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (uuo *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne {
@@ -281,46 +249,7 @@ func (uuo *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne 
 
 // Save executes the query and returns the updated User entity.
 func (uuo *UserUpdateOne) Save(ctx context.Context) (*User, error) {
-	var (
-		err  error
-		node *User
-	)
-	if len(uuo.hooks) == 0 {
-		if err = uuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = uuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*UserMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = uuo.check(); err != nil {
-				return nil, err
-			}
-			uuo.mutation = mutation
-			node, err = uuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(uuo.hooks) - 1; i >= 0; i-- {
-			if uuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = uuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, uuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*User)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from UserMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*User, UserMutation](ctx, uuo.sqlSave, uuo.mutation, uuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -349,28 +278,22 @@ func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 func (uuo *UserUpdateOne) check() error {
 	if v, ok := uuo.mutation.Name(); ok {
 		if err := user.NameValidator(v); err != nil {
-			return &ValidationError{Name: "Name", err: fmt.Errorf(`ent: validator failed for field "User.Name": %w`, err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
 	if v, ok := uuo.mutation.SessionToken(); ok {
 		if err := user.SessionTokenValidator(v); err != nil {
-			return &ValidationError{Name: "SessionToken", err: fmt.Errorf(`ent: validator failed for field "User.SessionToken": %w`, err)}
+			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
 	return nil
 }
 
 func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   user.Table,
-			Columns: user.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: user.FieldID,
-			},
-		},
+	if err := uuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
 	id, ok := uuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "User.id" for update`)}
@@ -421,5 +344,6 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		return nil, err
 	}
+	uuo.mutation.done = true
 	return _node, nil
 }

@@ -98,13 +98,13 @@ func (su *SessionUpdate) SetNillableIdentifier(s *string) *SessionUpdate {
 	return su
 }
 
-// SetAgentIdentifier sets the "agentIdentifier" field.
+// SetAgentIdentifier sets the "agent_identifier" field.
 func (su *SessionUpdate) SetAgentIdentifier(s string) *SessionUpdate {
 	su.mutation.SetAgentIdentifier(s)
 	return su
 }
 
-// SetNillableAgentIdentifier sets the "agentIdentifier" field if the given value is not nil.
+// SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
 func (su *SessionUpdate) SetNillableAgentIdentifier(s *string) *SessionUpdate {
 	if s != nil {
 		su.SetAgentIdentifier(*s)
@@ -112,19 +112,19 @@ func (su *SessionUpdate) SetNillableAgentIdentifier(s *string) *SessionUpdate {
 	return su
 }
 
-// ClearAgentIdentifier clears the value of the "agentIdentifier" field.
+// ClearAgentIdentifier clears the value of the "agent_identifier" field.
 func (su *SessionUpdate) ClearAgentIdentifier() *SessionUpdate {
 	su.mutation.ClearAgentIdentifier()
 	return su
 }
 
-// SetHostIdentifier sets the "hostIdentifier" field.
+// SetHostIdentifier sets the "host_identifier" field.
 func (su *SessionUpdate) SetHostIdentifier(s string) *SessionUpdate {
 	su.mutation.SetHostIdentifier(s)
 	return su
 }
 
-// SetNillableHostIdentifier sets the "hostIdentifier" field if the given value is not nil.
+// SetNillableHostIdentifier sets the "host_identifier" field if the given value is not nil.
 func (su *SessionUpdate) SetNillableHostIdentifier(s *string) *SessionUpdate {
 	if s != nil {
 		su.SetHostIdentifier(*s)
@@ -132,19 +132,53 @@ func (su *SessionUpdate) SetNillableHostIdentifier(s *string) *SessionUpdate {
 	return su
 }
 
-// ClearHostIdentifier clears the value of the "hostIdentifier" field.
+// ClearHostIdentifier clears the value of the "host_identifier" field.
 func (su *SessionUpdate) ClearHostIdentifier() *SessionUpdate {
 	su.mutation.ClearHostIdentifier()
 	return su
 }
 
-// SetLastSeenAt sets the "lastSeenAt" field.
+// SetHostPrimaryIP sets the "host_primary_ip" field.
+func (su *SessionUpdate) SetHostPrimaryIP(s string) *SessionUpdate {
+	su.mutation.SetHostPrimaryIP(s)
+	return su
+}
+
+// SetNillableHostPrimaryIP sets the "host_primary_ip" field if the given value is not nil.
+func (su *SessionUpdate) SetNillableHostPrimaryIP(s *string) *SessionUpdate {
+	if s != nil {
+		su.SetHostPrimaryIP(*s)
+	}
+	return su
+}
+
+// ClearHostPrimaryIP clears the value of the "host_primary_ip" field.
+func (su *SessionUpdate) ClearHostPrimaryIP() *SessionUpdate {
+	su.mutation.ClearHostPrimaryIP()
+	return su
+}
+
+// SetHostPlatform sets the "host_platform" field.
+func (su *SessionUpdate) SetHostPlatform(sp session.HostPlatform) *SessionUpdate {
+	su.mutation.SetHostPlatform(sp)
+	return su
+}
+
+// SetNillableHostPlatform sets the "host_platform" field if the given value is not nil.
+func (su *SessionUpdate) SetNillableHostPlatform(sp *session.HostPlatform) *SessionUpdate {
+	if sp != nil {
+		su.SetHostPlatform(*sp)
+	}
+	return su
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
 func (su *SessionUpdate) SetLastSeenAt(t time.Time) *SessionUpdate {
 	su.mutation.SetLastSeenAt(t)
 	return su
 }
 
-// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
 func (su *SessionUpdate) SetNillableLastSeenAt(t *time.Time) *SessionUpdate {
 	if t != nil {
 		su.SetLastSeenAt(*t)
@@ -152,7 +186,7 @@ func (su *SessionUpdate) SetNillableLastSeenAt(t *time.Time) *SessionUpdate {
 	return su
 }
 
-// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (su *SessionUpdate) ClearLastSeenAt() *SessionUpdate {
 	su.mutation.ClearLastSeenAt()
 	return su
@@ -237,40 +271,7 @@ func (su *SessionUpdate) RemoveTasks(t ...*Task) *SessionUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (su *SessionUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(su.hooks) == 0 {
-		if err = su.check(); err != nil {
-			return 0, err
-		}
-		affected, err = su.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SessionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = su.check(); err != nil {
-				return 0, err
-			}
-			su.mutation = mutation
-			affected, err = su.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(su.hooks) - 1; i >= 0; i-- {
-			if su.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = su.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, su.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks[int, SessionMutation](ctx, su.sqlSave, su.mutation, su.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -319,28 +320,27 @@ func (su *SessionUpdate) check() error {
 	}
 	if v, ok := su.mutation.AgentIdentifier(); ok {
 		if err := session.AgentIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "agentIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.agentIdentifier": %w`, err)}
+			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.agent_identifier": %w`, err)}
 		}
 	}
 	if v, ok := su.mutation.HostIdentifier(); ok {
 		if err := session.HostIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
+			return &ValidationError{Name: "host_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.host_identifier": %w`, err)}
+		}
+	}
+	if v, ok := su.mutation.HostPlatform(); ok {
+		if err := session.HostPlatformValidator(v); err != nil {
+			return &ValidationError{Name: "host_platform", err: fmt.Errorf(`ent: validator failed for field "Session.host_platform": %w`, err)}
 		}
 	}
 	return nil
 }
 
 func (su *SessionUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   session.Table,
-			Columns: session.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: session.FieldID,
-			},
-		},
+	if err := su.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(session.Table, session.Columns, sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt))
 	if ps := su.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -377,6 +377,15 @@ func (su *SessionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if su.mutation.HostIdentifierCleared() {
 		_spec.ClearField(session.FieldHostIdentifier, field.TypeString)
+	}
+	if value, ok := su.mutation.HostPrimaryIP(); ok {
+		_spec.SetField(session.FieldHostPrimaryIP, field.TypeString, value)
+	}
+	if su.mutation.HostPrimaryIPCleared() {
+		_spec.ClearField(session.FieldHostPrimaryIP, field.TypeString)
+	}
+	if value, ok := su.mutation.HostPlatform(); ok {
+		_spec.SetField(session.FieldHostPlatform, field.TypeEnum, value)
 	}
 	if value, ok := su.mutation.LastSeenAt(); ok {
 		_spec.SetField(session.FieldLastSeenAt, field.TypeTime, value)
@@ -500,6 +509,7 @@ func (su *SessionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	su.mutation.done = true
 	return n, nil
 }
 
@@ -579,13 +589,13 @@ func (suo *SessionUpdateOne) SetNillableIdentifier(s *string) *SessionUpdateOne 
 	return suo
 }
 
-// SetAgentIdentifier sets the "agentIdentifier" field.
+// SetAgentIdentifier sets the "agent_identifier" field.
 func (suo *SessionUpdateOne) SetAgentIdentifier(s string) *SessionUpdateOne {
 	suo.mutation.SetAgentIdentifier(s)
 	return suo
 }
 
-// SetNillableAgentIdentifier sets the "agentIdentifier" field if the given value is not nil.
+// SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
 func (suo *SessionUpdateOne) SetNillableAgentIdentifier(s *string) *SessionUpdateOne {
 	if s != nil {
 		suo.SetAgentIdentifier(*s)
@@ -593,19 +603,19 @@ func (suo *SessionUpdateOne) SetNillableAgentIdentifier(s *string) *SessionUpdat
 	return suo
 }
 
-// ClearAgentIdentifier clears the value of the "agentIdentifier" field.
+// ClearAgentIdentifier clears the value of the "agent_identifier" field.
 func (suo *SessionUpdateOne) ClearAgentIdentifier() *SessionUpdateOne {
 	suo.mutation.ClearAgentIdentifier()
 	return suo
 }
 
-// SetHostIdentifier sets the "hostIdentifier" field.
+// SetHostIdentifier sets the "host_identifier" field.
 func (suo *SessionUpdateOne) SetHostIdentifier(s string) *SessionUpdateOne {
 	suo.mutation.SetHostIdentifier(s)
 	return suo
 }
 
-// SetNillableHostIdentifier sets the "hostIdentifier" field if the given value is not nil.
+// SetNillableHostIdentifier sets the "host_identifier" field if the given value is not nil.
 func (suo *SessionUpdateOne) SetNillableHostIdentifier(s *string) *SessionUpdateOne {
 	if s != nil {
 		suo.SetHostIdentifier(*s)
@@ -613,19 +623,53 @@ func (suo *SessionUpdateOne) SetNillableHostIdentifier(s *string) *SessionUpdate
 	return suo
 }
 
-// ClearHostIdentifier clears the value of the "hostIdentifier" field.
+// ClearHostIdentifier clears the value of the "host_identifier" field.
 func (suo *SessionUpdateOne) ClearHostIdentifier() *SessionUpdateOne {
 	suo.mutation.ClearHostIdentifier()
 	return suo
 }
 
-// SetLastSeenAt sets the "lastSeenAt" field.
+// SetHostPrimaryIP sets the "host_primary_ip" field.
+func (suo *SessionUpdateOne) SetHostPrimaryIP(s string) *SessionUpdateOne {
+	suo.mutation.SetHostPrimaryIP(s)
+	return suo
+}
+
+// SetNillableHostPrimaryIP sets the "host_primary_ip" field if the given value is not nil.
+func (suo *SessionUpdateOne) SetNillableHostPrimaryIP(s *string) *SessionUpdateOne {
+	if s != nil {
+		suo.SetHostPrimaryIP(*s)
+	}
+	return suo
+}
+
+// ClearHostPrimaryIP clears the value of the "host_primary_ip" field.
+func (suo *SessionUpdateOne) ClearHostPrimaryIP() *SessionUpdateOne {
+	suo.mutation.ClearHostPrimaryIP()
+	return suo
+}
+
+// SetHostPlatform sets the "host_platform" field.
+func (suo *SessionUpdateOne) SetHostPlatform(sp session.HostPlatform) *SessionUpdateOne {
+	suo.mutation.SetHostPlatform(sp)
+	return suo
+}
+
+// SetNillableHostPlatform sets the "host_platform" field if the given value is not nil.
+func (suo *SessionUpdateOne) SetNillableHostPlatform(sp *session.HostPlatform) *SessionUpdateOne {
+	if sp != nil {
+		suo.SetHostPlatform(*sp)
+	}
+	return suo
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
 func (suo *SessionUpdateOne) SetLastSeenAt(t time.Time) *SessionUpdateOne {
 	suo.mutation.SetLastSeenAt(t)
 	return suo
 }
 
-// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
 func (suo *SessionUpdateOne) SetNillableLastSeenAt(t *time.Time) *SessionUpdateOne {
 	if t != nil {
 		suo.SetLastSeenAt(*t)
@@ -633,7 +677,7 @@ func (suo *SessionUpdateOne) SetNillableLastSeenAt(t *time.Time) *SessionUpdateO
 	return suo
 }
 
-// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (suo *SessionUpdateOne) ClearLastSeenAt() *SessionUpdateOne {
 	suo.mutation.ClearLastSeenAt()
 	return suo
@@ -716,6 +760,12 @@ func (suo *SessionUpdateOne) RemoveTasks(t ...*Task) *SessionUpdateOne {
 	return suo.RemoveTaskIDs(ids...)
 }
 
+// Where appends a list predicates to the SessionUpdate builder.
+func (suo *SessionUpdateOne) Where(ps ...predicate.Session) *SessionUpdateOne {
+	suo.mutation.Where(ps...)
+	return suo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (suo *SessionUpdateOne) Select(field string, fields ...string) *SessionUpdateOne {
@@ -725,46 +775,7 @@ func (suo *SessionUpdateOne) Select(field string, fields ...string) *SessionUpda
 
 // Save executes the query and returns the updated Session entity.
 func (suo *SessionUpdateOne) Save(ctx context.Context) (*Session, error) {
-	var (
-		err  error
-		node *Session
-	)
-	if len(suo.hooks) == 0 {
-		if err = suo.check(); err != nil {
-			return nil, err
-		}
-		node, err = suo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SessionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = suo.check(); err != nil {
-				return nil, err
-			}
-			suo.mutation = mutation
-			node, err = suo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(suo.hooks) - 1; i >= 0; i-- {
-			if suo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = suo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, suo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Session)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SessionMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*Session, SessionMutation](ctx, suo.sqlSave, suo.mutation, suo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -813,28 +824,27 @@ func (suo *SessionUpdateOne) check() error {
 	}
 	if v, ok := suo.mutation.AgentIdentifier(); ok {
 		if err := session.AgentIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "agentIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.agentIdentifier": %w`, err)}
+			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.agent_identifier": %w`, err)}
 		}
 	}
 	if v, ok := suo.mutation.HostIdentifier(); ok {
 		if err := session.HostIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
+			return &ValidationError{Name: "host_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.host_identifier": %w`, err)}
+		}
+	}
+	if v, ok := suo.mutation.HostPlatform(); ok {
+		if err := session.HostPlatformValidator(v); err != nil {
+			return &ValidationError{Name: "host_platform", err: fmt.Errorf(`ent: validator failed for field "Session.host_platform": %w`, err)}
 		}
 	}
 	return nil
 }
 
 func (suo *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   session.Table,
-			Columns: session.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: session.FieldID,
-			},
-		},
+	if err := suo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(session.Table, session.Columns, sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt))
 	id, ok := suo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Session.id" for update`)}
@@ -888,6 +898,15 @@ func (suo *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err e
 	}
 	if suo.mutation.HostIdentifierCleared() {
 		_spec.ClearField(session.FieldHostIdentifier, field.TypeString)
+	}
+	if value, ok := suo.mutation.HostPrimaryIP(); ok {
+		_spec.SetField(session.FieldHostPrimaryIP, field.TypeString, value)
+	}
+	if suo.mutation.HostPrimaryIPCleared() {
+		_spec.ClearField(session.FieldHostPrimaryIP, field.TypeString)
+	}
+	if value, ok := suo.mutation.HostPlatform(); ok {
+		_spec.SetField(session.FieldHostPlatform, field.TypeEnum, value)
 	}
 	if value, ok := suo.mutation.LastSeenAt(); ok {
 		_spec.SetField(session.FieldLastSeenAt, field.TypeTime, value)
@@ -1014,5 +1033,6 @@ func (suo *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err e
 		}
 		return nil, err
 	}
+	suo.mutation.done = true
 	return _node, nil
 }

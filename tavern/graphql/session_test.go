@@ -8,7 +8,7 @@ import (
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/kcarretto/realm/tavern/auth/authtest"
+	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/ent/session"
@@ -23,7 +23,7 @@ func TestSessionMutations(t *testing.T) {
 	ctx := context.Background()
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
-	srv := authtest.Middleware(handler.NewDefaultServer(graphql.NewSchema(graph)))
+	srv := auth.AuthDisabledMiddleware(handler.NewDefaultServer(graphql.NewSchema(graph)), graph)
 	gqlClient := client.New(srv)
 
 	// Initialize sample data
@@ -114,6 +114,7 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			expected := map[string]any{
 				"principal":         "newuser",
 				"hostname":          "NEW_HOSTNAME",
+				"hostPlatform":      session.HostPlatformWindows,
 				"sessionIdentifier": expectedIdentifier,
 				"hostIdentifier":    "NEW_HOST_ID",
 				"agentIdentifier":   "NEW_AGENT_ID",
@@ -143,6 +144,8 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			expected := map[string]any{
 				"principal":         "admin",
 				"hostname":          "SOME_HOSTNAME",
+				"hostPlatform":      session.HostPlatformMacOS,
+				"hostPrimaryIP":     "10.0.0.1",
 				"sessionIdentifier": "SOME_ID",
 				"hostIdentifier":    "SOME_HOST_ID",
 				"agentIdentifier":   "SOME_AGENT_ID",
@@ -163,6 +166,8 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			assert.Equal(t, expected["sessionIdentifier"], testSession.Identifier)
 			assert.Equal(t, expected["hostIdentifier"], testSession.HostIdentifier)
 			assert.Equal(t, expected["agentIdentifier"], testSession.AgentIdentifier)
+			assert.Equal(t, expected["hostPlatform"], testSession.HostPlatform)
+			assert.Equal(t, expected["hostPrimaryIP"], testSession.HostPrimaryIP)
 		})
 	})
 

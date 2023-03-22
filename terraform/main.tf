@@ -49,7 +49,7 @@ variable "mysql_dbname" {
 variable "mysql_tier" {
   type = string
   description = "Instance tier to run the SQL database on, see `gcloud sql tiers list` for options"
-  default = "db-n1-standard-4"
+  default = "db-custom-2-7680"
 }
 variable "oauth_client_id" {
   type = string

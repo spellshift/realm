@@ -28,7 +28,7 @@ func (fu *FileUpdate) Where(ps ...predicate.File) *FileUpdate {
 	return fu
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (fu *FileUpdate) SetLastModifiedAt(t time.Time) *FileUpdate {
 	fu.mutation.SetLastModifiedAt(t)
 	return fu
@@ -80,43 +80,10 @@ func (fu *FileUpdate) Mutation() *FileMutation {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (fu *FileUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	if err := fu.defaults(); err != nil {
 		return 0, err
 	}
-	if len(fu.hooks) == 0 {
-		if err = fu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = fu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*FileMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = fu.check(); err != nil {
-				return 0, err
-			}
-			fu.mutation = mutation
-			affected, err = fu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(fu.hooks) - 1; i >= 0; i-- {
-			if fu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = fu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, fu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks[int, FileMutation](ctx, fu.sqlSave, fu.mutation, fu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -174,16 +141,10 @@ func (fu *FileUpdate) check() error {
 }
 
 func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   file.Table,
-			Columns: file.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: file.FieldID,
-			},
-		},
+	if err := fu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(file.Table, file.Columns, sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt))
 	if ps := fu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -217,6 +178,7 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	fu.mutation.done = true
 	return n, nil
 }
 
@@ -228,7 +190,7 @@ type FileUpdateOne struct {
 	mutation *FileMutation
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (fuo *FileUpdateOne) SetLastModifiedAt(t time.Time) *FileUpdateOne {
 	fuo.mutation.SetLastModifiedAt(t)
 	return fuo
@@ -278,6 +240,12 @@ func (fuo *FileUpdateOne) Mutation() *FileMutation {
 	return fuo.mutation
 }
 
+// Where appends a list predicates to the FileUpdate builder.
+func (fuo *FileUpdateOne) Where(ps ...predicate.File) *FileUpdateOne {
+	fuo.mutation.Where(ps...)
+	return fuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (fuo *FileUpdateOne) Select(field string, fields ...string) *FileUpdateOne {
@@ -287,49 +255,10 @@ func (fuo *FileUpdateOne) Select(field string, fields ...string) *FileUpdateOne 
 
 // Save executes the query and returns the updated File entity.
 func (fuo *FileUpdateOne) Save(ctx context.Context) (*File, error) {
-	var (
-		err  error
-		node *File
-	)
 	if err := fuo.defaults(); err != nil {
 		return nil, err
 	}
-	if len(fuo.hooks) == 0 {
-		if err = fuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = fuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*FileMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = fuo.check(); err != nil {
-				return nil, err
-			}
-			fuo.mutation = mutation
-			node, err = fuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(fuo.hooks) - 1; i >= 0; i-- {
-			if fuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = fuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, fuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*File)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from FileMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*File, FileMutation](ctx, fuo.sqlSave, fuo.mutation, fuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -387,16 +316,10 @@ func (fuo *FileUpdateOne) check() error {
 }
 
 func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   file.Table,
-			Columns: file.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: file.FieldID,
-			},
-		},
+	if err := fuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(file.Table, file.Columns, sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt))
 	id, ok := fuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "File.id" for update`)}
@@ -450,5 +373,6 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 		}
 		return nil, err
 	}
+	fuo.mutation.done = true
 	return _node, nil
 }

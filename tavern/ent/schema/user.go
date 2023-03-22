@@ -20,18 +20,18 @@ type User struct {
 // Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("Name").
+		field.String("name").
 			MinLen(3).
 			MaxLen(25).
 			Comment("The name displayed for the user"),
-		field.String("OAuthID").
+		field.String("oauth_id").
 			Sensitive().
 			Unique().
 			Immutable().
 			Comment("OAuth Subject ID of the user"),
-		field.String("PhotoURL").
+		field.String("photo_url").
 			Comment("URL to the user's profile photo."),
-		field.String("SessionToken").
+		field.String("session_token").
 			DefaultFunc(newSessionToken).
 			Sensitive().
 			MaxLen(200).
@@ -39,10 +39,10 @@ func (User) Fields() []ent.Field {
 				entgql.Skip(),
 			).
 			Comment("The session token currently authenticating the user"),
-		field.Bool("IsActivated").
+		field.Bool("is_activated").
 			Default(false).
 			Comment("True if the user is active and able to authenticate"),
-		field.Bool("IsAdmin").
+		field.Bool("is_admin").
 			Default(false).
 			Comment("True if the user is an Admin"),
 	}
