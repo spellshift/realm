@@ -7,6 +7,8 @@ import (
 	"io"
 	"strconv"
 	"time"
+
+	"github.com/kcarretto/realm/tavern/ent/session"
 )
 
 type ClaimTasksInput struct {
@@ -14,6 +16,10 @@ type ClaimTasksInput struct {
 	Principal string `json:"principal"`
 	// The hostname of the system the session is running on.
 	Hostname string `json:"hostname"`
+	// The platform the agent is operating on.
+	HostPlatform session.HostPlatform `json:"hostPlatform"`
+	// The IP address of the hosts primary interface (if available).
+	HostPrimaryIP *string `json:"hostPrimaryIP"`
 	// Unique identifier of the session, each running instance will be different.
 	SessionIdentifier string `json:"sessionIdentifier"`
 	// Unique identifier of the underlying host system the session is running on.

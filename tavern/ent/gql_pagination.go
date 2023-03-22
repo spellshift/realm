@@ -445,7 +445,7 @@ func (f *FileQuery) Paginate(
 }
 
 var (
-	// FileOrderFieldCreatedAt orders File by createdAt.
+	// FileOrderFieldCreatedAt orders File by created_at.
 	FileOrderFieldCreatedAt = &FileOrderField{
 		field: file.FieldCreatedAt,
 		toCursor: func(f *File) Cursor {
@@ -455,7 +455,7 @@ var (
 			}
 		},
 	}
-	// FileOrderFieldLastModifiedAt orders File by lastModifiedAt.
+	// FileOrderFieldLastModifiedAt orders File by last_modified_at.
 	FileOrderFieldLastModifiedAt = &FileOrderField{
 		field: file.FieldLastModifiedAt,
 		toCursor: func(f *File) Cursor {
@@ -761,7 +761,7 @@ func (j *JobQuery) Paginate(
 }
 
 var (
-	// JobOrderFieldCreatedAt orders Job by createdAt.
+	// JobOrderFieldCreatedAt orders Job by created_at.
 	JobOrderFieldCreatedAt = &JobOrderField{
 		field: job.FieldCreatedAt,
 		toCursor: func(j *Job) Cursor {
@@ -771,7 +771,7 @@ var (
 			}
 		},
 	}
-	// JobOrderFieldLastModifiedAt orders Job by lastModifiedAt.
+	// JobOrderFieldLastModifiedAt orders Job by last_modified_at.
 	JobOrderFieldLastModifiedAt = &JobOrderField{
 		field: job.FieldLastModifiedAt,
 		toCursor: func(j *Job) Cursor {
@@ -1063,7 +1063,7 @@ func (s *SessionQuery) Paginate(
 }
 
 var (
-	// SessionOrderFieldLastSeenAt orders Session by lastSeenAt.
+	// SessionOrderFieldLastSeenAt orders Session by last_seen_at.
 	SessionOrderFieldLastSeenAt = &SessionOrderField{
 		field: session.FieldLastSeenAt,
 		toCursor: func(s *Session) Cursor {
@@ -1611,7 +1611,7 @@ func (t *TaskQuery) Paginate(
 }
 
 var (
-	// TaskOrderFieldCreatedAt orders Task by createdAt.
+	// TaskOrderFieldCreatedAt orders Task by created_at.
 	TaskOrderFieldCreatedAt = &TaskOrderField{
 		field: task.FieldCreatedAt,
 		toCursor: func(t *Task) Cursor {
@@ -1621,7 +1621,7 @@ var (
 			}
 		},
 	}
-	// TaskOrderFieldLastModifiedAt orders Task by lastModifiedAt.
+	// TaskOrderFieldLastModifiedAt orders Task by last_modified_at.
 	TaskOrderFieldLastModifiedAt = &TaskOrderField{
 		field: task.FieldLastModifiedAt,
 		toCursor: func(t *Task) Cursor {
@@ -1631,7 +1631,7 @@ var (
 			}
 		},
 	}
-	// TaskOrderFieldClaimedAt orders Task by claimedAt.
+	// TaskOrderFieldClaimedAt orders Task by claimed_at.
 	TaskOrderFieldClaimedAt = &TaskOrderField{
 		field: task.FieldClaimedAt,
 		toCursor: func(t *Task) Cursor {
@@ -1641,7 +1641,7 @@ var (
 			}
 		},
 	}
-	// TaskOrderFieldExecStartedAt orders Task by execStartedAt.
+	// TaskOrderFieldExecStartedAt orders Task by exec_started_at.
 	TaskOrderFieldExecStartedAt = &TaskOrderField{
 		field: task.FieldExecStartedAt,
 		toCursor: func(t *Task) Cursor {
@@ -1651,7 +1651,7 @@ var (
 			}
 		},
 	}
-	// TaskOrderFieldExecFinishedAt orders Task by execFinishedAt.
+	// TaskOrderFieldExecFinishedAt orders Task by exec_finished_at.
 	TaskOrderFieldExecFinishedAt = &TaskOrderField{
 		field: task.FieldExecFinishedAt,
 		toCursor: func(t *Task) Cursor {
@@ -1941,7 +1941,7 @@ func (t *TomeQuery) Paginate(
 }
 
 var (
-	// TomeOrderFieldCreatedAt orders Tome by createdAt.
+	// TomeOrderFieldCreatedAt orders Tome by created_at.
 	TomeOrderFieldCreatedAt = &TomeOrderField{
 		field: tome.FieldCreatedAt,
 		toCursor: func(t *Tome) Cursor {
@@ -1951,7 +1951,7 @@ var (
 			}
 		},
 	}
-	// TomeOrderFieldLastModifiedAt orders Tome by lastModifiedAt.
+	// TomeOrderFieldLastModifiedAt orders Tome by last_modified_at.
 	TomeOrderFieldLastModifiedAt = &TomeOrderField{
 		field: tome.FieldLastModifiedAt,
 		toCursor: func(t *Tome) Cursor {

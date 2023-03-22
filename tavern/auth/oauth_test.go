@@ -5,7 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -94,7 +94,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 
 	// Setup Mock IDP
 	idp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		expected := fmt.Sprintf("client_id=%s&client_secret=%s&code=%s&grant_type=authorization_code&redirect_uri=%s", expectedClientID, expectedClientSecret, expectedCode, expectedRedirect)
 		assert.Equal(t, expected, string(body))
@@ -137,7 +137,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 	result := resp.Result()
 	require.Equal(t, http.StatusFound, result.StatusCode)
 	usr := graph.User.Query().
-		Where(user.OAuthID("goofygoober")).
+		Where(user.OauthID("goofygoober")).
 		OnlyX(context.Background())
 	assert.NotEmpty(t, usr.SessionToken)
 	assert.True(t, usr.IsActivated)
@@ -172,7 +172,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 
 	// Second User assertions
 	secondUsr := graph.User.Query().
-		Where(user.OAuthID("n00b")).
+		Where(user.OauthID("n00b")).
 		OnlyX(context.Background())
 	assert.NotEqual(t, usr.ID, secondUsr.ID)
 	assert.NotEqual(t, usr.SessionToken, secondUsr.SessionToken)

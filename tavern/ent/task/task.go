@@ -11,15 +11,15 @@ const (
 	Label = "task"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldCreatedAt holds the string denoting the createdat field in the database.
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-	// FieldLastModifiedAt holds the string denoting the lastmodifiedat field in the database.
+	// FieldLastModifiedAt holds the string denoting the last_modified_at field in the database.
 	FieldLastModifiedAt = "last_modified_at"
-	// FieldClaimedAt holds the string denoting the claimedat field in the database.
+	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
-	// FieldExecStartedAt holds the string denoting the execstartedat field in the database.
+	// FieldExecStartedAt holds the string denoting the exec_started_at field in the database.
 	FieldExecStartedAt = "exec_started_at"
-	// FieldExecFinishedAt holds the string denoting the execfinishedat field in the database.
+	// FieldExecFinishedAt holds the string denoting the exec_finished_at field in the database.
 	FieldExecFinishedAt = "exec_finished_at"
 	// FieldOutput holds the string denoting the output field in the database.
 	FieldOutput = "output"
@@ -82,10 +82,10 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
-	// DefaultLastModifiedAt holds the default value on creation for the "lastModifiedAt" field.
+	// DefaultLastModifiedAt holds the default value on creation for the "last_modified_at" field.
 	DefaultLastModifiedAt func() time.Time
-	// UpdateDefaultLastModifiedAt holds the default value on update for the "lastModifiedAt" field.
+	// UpdateDefaultLastModifiedAt holds the default value on update for the "last_modified_at" field.
 	UpdateDefaultLastModifiedAt func() time.Time
 )

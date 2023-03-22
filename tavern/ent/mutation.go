@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"entgo.io/ent"
+	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
@@ -17,8 +19,6 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
-
-	"entgo.io/ent"
 )
 
 const (
@@ -42,20 +42,20 @@ const (
 // FileMutation represents an operation that mutates the File nodes in the graph.
 type FileMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	createdAt      *time.Time
-	lastModifiedAt *time.Time
-	name           *string
-	size           *int
-	addsize        *int
-	hash           *string
-	content        *[]byte
-	clearedFields  map[string]struct{}
-	done           bool
-	oldValue       func(context.Context) (*File, error)
-	predicates     []predicate.File
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	name             *string
+	size             *int
+	addsize          *int
+	hash             *string
+	content          *[]byte
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*File, error)
+	predicates       []predicate.File
 }
 
 var _ ent.Mutation = (*FileMutation)(nil)
@@ -156,21 +156,21 @@ func (m *FileMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (m *FileMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the value of the "createdAt" field in the mutation.
+// CreatedAt returns the value of the "created_at" field in the mutation.
 func (m *FileMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old "createdAt" field's value of the File entity.
+// OldCreatedAt returns the old "created_at" field's value of the File entity.
 // If the File object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *FileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
@@ -187,26 +187,26 @@ func (m *FileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt resets all changes to the "createdAt" field.
+// ResetCreatedAt resets all changes to the "created_at" field.
 func (m *FileMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (m *FileMutation) SetLastModifiedAt(t time.Time) {
-	m.lastModifiedAt = &t
+	m.last_modified_at = &t
 }
 
-// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
 func (m *FileMutation) LastModifiedAt() (r time.Time, exists bool) {
-	v := m.lastModifiedAt
+	v := m.last_modified_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the File entity.
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the File entity.
 // If the File object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *FileMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
@@ -223,9 +223,9 @@ func (m *FileMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err 
 	return oldValue.LastModifiedAt, nil
 }
 
-// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
 func (m *FileMutation) ResetLastModifiedAt() {
-	m.lastModifiedAt = nil
+	m.last_modified_at = nil
 }
 
 // SetName sets the "name" field.
@@ -397,9 +397,24 @@ func (m *FileMutation) Where(ps ...predicate.File) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the FileMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FileMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.File, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *FileMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FileMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (File).
@@ -412,10 +427,10 @@ func (m *FileMutation) Type() string {
 // AddedFields().
 func (m *FileMutation) Fields() []string {
 	fields := make([]string, 0, 6)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, file.FieldCreatedAt)
 	}
-	if m.lastModifiedAt != nil {
+	if m.last_modified_at != nil {
 		fields = append(fields, file.FieldLastModifiedAt)
 	}
 	if m.name != nil {
@@ -659,24 +674,26 @@ func (m *FileMutation) ResetEdge(name string) error {
 // JobMutation represents an operation that mutates the Job nodes in the graph.
 type JobMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	createdAt      *time.Time
-	lastModifiedAt *time.Time
-	name           *string
-	parameters     *string
-	clearedFields  map[string]struct{}
-	tome           *int
-	clearedtome    bool
-	bundle         *int
-	clearedbundle  bool
-	tasks          map[int]struct{}
-	removedtasks   map[int]struct{}
-	clearedtasks   bool
-	done           bool
-	oldValue       func(context.Context) (*Job, error)
-	predicates     []predicate.Job
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	name             *string
+	parameters       *string
+	clearedFields    map[string]struct{}
+	tome             *int
+	clearedtome      bool
+	bundle           *int
+	clearedbundle    bool
+	tasks            map[int]struct{}
+	removedtasks     map[int]struct{}
+	clearedtasks     bool
+	creator          *int
+	clearedcreator   bool
+	done             bool
+	oldValue         func(context.Context) (*Job, error)
+	predicates       []predicate.Job
 }
 
 var _ ent.Mutation = (*JobMutation)(nil)
@@ -777,21 +794,21 @@ func (m *JobMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (m *JobMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the value of the "createdAt" field in the mutation.
+// CreatedAt returns the value of the "created_at" field in the mutation.
 func (m *JobMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old "createdAt" field's value of the Job entity.
+// OldCreatedAt returns the old "created_at" field's value of the Job entity.
 // If the Job object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *JobMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
@@ -808,26 +825,26 @@ func (m *JobMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error)
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt resets all changes to the "createdAt" field.
+// ResetCreatedAt resets all changes to the "created_at" field.
 func (m *JobMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (m *JobMutation) SetLastModifiedAt(t time.Time) {
-	m.lastModifiedAt = &t
+	m.last_modified_at = &t
 }
 
-// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
 func (m *JobMutation) LastModifiedAt() (r time.Time, exists bool) {
-	v := m.lastModifiedAt
+	v := m.last_modified_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the Job entity.
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Job entity.
 // If the Job object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *JobMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
@@ -844,9 +861,9 @@ func (m *JobMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err e
 	return oldValue.LastModifiedAt, nil
 }
 
-// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
 func (m *JobMutation) ResetLastModifiedAt() {
-	m.lastModifiedAt = nil
+	m.last_modified_at = nil
 }
 
 // SetName sets the "name" field.
@@ -1066,14 +1083,68 @@ func (m *JobMutation) ResetTasks() {
 	m.removedtasks = nil
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by id.
+func (m *JobMutation) SetCreatorID(id int) {
+	m.creator = &id
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (m *JobMutation) ClearCreator() {
+	m.clearedcreator = true
+}
+
+// CreatorCleared reports if the "creator" edge to the User entity was cleared.
+func (m *JobMutation) CreatorCleared() bool {
+	return m.clearedcreator
+}
+
+// CreatorID returns the "creator" edge ID in the mutation.
+func (m *JobMutation) CreatorID() (id int, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
+	}
+	return
+}
+
+// CreatorIDs returns the "creator" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *JobMutation) CreatorIDs() (ids []int) {
+	if id := m.creator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreator resets all changes to the "creator" edge.
+func (m *JobMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
+}
+
 // Where appends a list predicates to the JobMutation builder.
 func (m *JobMutation) Where(ps ...predicate.Job) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the JobMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *JobMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Job, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *JobMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *JobMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Job).
@@ -1086,10 +1157,10 @@ func (m *JobMutation) Type() string {
 // AddedFields().
 func (m *JobMutation) Fields() []string {
 	fields := make([]string, 0, 4)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, job.FieldCreatedAt)
 	}
-	if m.lastModifiedAt != nil {
+	if m.last_modified_at != nil {
 		fields = append(fields, job.FieldLastModifiedAt)
 	}
 	if m.name != nil {
@@ -1244,7 +1315,7 @@ func (m *JobMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *JobMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.tome != nil {
 		edges = append(edges, job.EdgeTome)
 	}
@@ -1253,6 +1324,9 @@ func (m *JobMutation) AddedEdges() []string {
 	}
 	if m.tasks != nil {
 		edges = append(edges, job.EdgeTasks)
+	}
+	if m.creator != nil {
+		edges = append(edges, job.EdgeCreator)
 	}
 	return edges
 }
@@ -1275,13 +1349,17 @@ func (m *JobMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case job.EdgeCreator:
+		if id := m.creator; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *JobMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtasks != nil {
 		edges = append(edges, job.EdgeTasks)
 	}
@@ -1304,7 +1382,7 @@ func (m *JobMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *JobMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedtome {
 		edges = append(edges, job.EdgeTome)
 	}
@@ -1313,6 +1391,9 @@ func (m *JobMutation) ClearedEdges() []string {
 	}
 	if m.clearedtasks {
 		edges = append(edges, job.EdgeTasks)
+	}
+	if m.clearedcreator {
+		edges = append(edges, job.EdgeCreator)
 	}
 	return edges
 }
@@ -1327,6 +1408,8 @@ func (m *JobMutation) EdgeCleared(name string) bool {
 		return m.clearedbundle
 	case job.EdgeTasks:
 		return m.clearedtasks
+	case job.EdgeCreator:
+		return m.clearedcreator
 	}
 	return false
 }
@@ -1340,6 +1423,9 @@ func (m *JobMutation) ClearEdge(name string) error {
 		return nil
 	case job.EdgeBundle:
 		m.ClearBundle()
+		return nil
+	case job.EdgeCreator:
+		m.ClearCreator()
 		return nil
 	}
 	return fmt.Errorf("unknown Job unique edge %s", name)
@@ -1358,6 +1444,9 @@ func (m *JobMutation) ResetEdge(name string) error {
 	case job.EdgeTasks:
 		m.ResetTasks()
 		return nil
+	case job.EdgeCreator:
+		m.ResetCreator()
+		return nil
 	}
 	return fmt.Errorf("unknown Job edge %s", name)
 }
@@ -1365,26 +1454,28 @@ func (m *JobMutation) ResetEdge(name string) error {
 // SessionMutation represents an operation that mutates the Session nodes in the graph.
 type SessionMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int
-	name            *string
-	principal       *string
-	hostname        *string
-	identifier      *string
-	agentIdentifier *string
-	hostIdentifier  *string
-	lastSeenAt      *time.Time
-	clearedFields   map[string]struct{}
-	tags            map[int]struct{}
-	removedtags     map[int]struct{}
-	clearedtags     bool
-	tasks           map[int]struct{}
-	removedtasks    map[int]struct{}
-	clearedtasks    bool
-	done            bool
-	oldValue        func(context.Context) (*Session, error)
-	predicates      []predicate.Session
+	op               Op
+	typ              string
+	id               *int
+	name             *string
+	principal        *string
+	hostname         *string
+	identifier       *string
+	agent_identifier *string
+	host_identifier  *string
+	host_primary_ip  *string
+	host_platform    *session.HostPlatform
+	last_seen_at     *time.Time
+	clearedFields    map[string]struct{}
+	tags             map[int]struct{}
+	removedtags      map[int]struct{}
+	clearedtags      bool
+	tasks            map[int]struct{}
+	removedtasks     map[int]struct{}
+	clearedtasks     bool
+	done             bool
+	oldValue         func(context.Context) (*Session, error)
+	predicates       []predicate.Session
 }
 
 var _ ent.Mutation = (*SessionMutation)(nil)
@@ -1655,21 +1746,21 @@ func (m *SessionMutation) ResetIdentifier() {
 	m.identifier = nil
 }
 
-// SetAgentIdentifier sets the "agentIdentifier" field.
+// SetAgentIdentifier sets the "agent_identifier" field.
 func (m *SessionMutation) SetAgentIdentifier(s string) {
-	m.agentIdentifier = &s
+	m.agent_identifier = &s
 }
 
-// AgentIdentifier returns the value of the "agentIdentifier" field in the mutation.
+// AgentIdentifier returns the value of the "agent_identifier" field in the mutation.
 func (m *SessionMutation) AgentIdentifier() (r string, exists bool) {
-	v := m.agentIdentifier
+	v := m.agent_identifier
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldAgentIdentifier returns the old "agentIdentifier" field's value of the Session entity.
+// OldAgentIdentifier returns the old "agent_identifier" field's value of the Session entity.
 // If the Session object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *SessionMutation) OldAgentIdentifier(ctx context.Context) (v string, err error) {
@@ -1686,39 +1777,39 @@ func (m *SessionMutation) OldAgentIdentifier(ctx context.Context) (v string, err
 	return oldValue.AgentIdentifier, nil
 }
 
-// ClearAgentIdentifier clears the value of the "agentIdentifier" field.
+// ClearAgentIdentifier clears the value of the "agent_identifier" field.
 func (m *SessionMutation) ClearAgentIdentifier() {
-	m.agentIdentifier = nil
+	m.agent_identifier = nil
 	m.clearedFields[session.FieldAgentIdentifier] = struct{}{}
 }
 
-// AgentIdentifierCleared returns if the "agentIdentifier" field was cleared in this mutation.
+// AgentIdentifierCleared returns if the "agent_identifier" field was cleared in this mutation.
 func (m *SessionMutation) AgentIdentifierCleared() bool {
 	_, ok := m.clearedFields[session.FieldAgentIdentifier]
 	return ok
 }
 
-// ResetAgentIdentifier resets all changes to the "agentIdentifier" field.
+// ResetAgentIdentifier resets all changes to the "agent_identifier" field.
 func (m *SessionMutation) ResetAgentIdentifier() {
-	m.agentIdentifier = nil
+	m.agent_identifier = nil
 	delete(m.clearedFields, session.FieldAgentIdentifier)
 }
 
-// SetHostIdentifier sets the "hostIdentifier" field.
+// SetHostIdentifier sets the "host_identifier" field.
 func (m *SessionMutation) SetHostIdentifier(s string) {
-	m.hostIdentifier = &s
+	m.host_identifier = &s
 }
 
-// HostIdentifier returns the value of the "hostIdentifier" field in the mutation.
+// HostIdentifier returns the value of the "host_identifier" field in the mutation.
 func (m *SessionMutation) HostIdentifier() (r string, exists bool) {
-	v := m.hostIdentifier
+	v := m.host_identifier
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldHostIdentifier returns the old "hostIdentifier" field's value of the Session entity.
+// OldHostIdentifier returns the old "host_identifier" field's value of the Session entity.
 // If the Session object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *SessionMutation) OldHostIdentifier(ctx context.Context) (v string, err error) {
@@ -1735,39 +1826,124 @@ func (m *SessionMutation) OldHostIdentifier(ctx context.Context) (v string, err 
 	return oldValue.HostIdentifier, nil
 }
 
-// ClearHostIdentifier clears the value of the "hostIdentifier" field.
+// ClearHostIdentifier clears the value of the "host_identifier" field.
 func (m *SessionMutation) ClearHostIdentifier() {
-	m.hostIdentifier = nil
+	m.host_identifier = nil
 	m.clearedFields[session.FieldHostIdentifier] = struct{}{}
 }
 
-// HostIdentifierCleared returns if the "hostIdentifier" field was cleared in this mutation.
+// HostIdentifierCleared returns if the "host_identifier" field was cleared in this mutation.
 func (m *SessionMutation) HostIdentifierCleared() bool {
 	_, ok := m.clearedFields[session.FieldHostIdentifier]
 	return ok
 }
 
-// ResetHostIdentifier resets all changes to the "hostIdentifier" field.
+// ResetHostIdentifier resets all changes to the "host_identifier" field.
 func (m *SessionMutation) ResetHostIdentifier() {
-	m.hostIdentifier = nil
+	m.host_identifier = nil
 	delete(m.clearedFields, session.FieldHostIdentifier)
 }
 
-// SetLastSeenAt sets the "lastSeenAt" field.
-func (m *SessionMutation) SetLastSeenAt(t time.Time) {
-	m.lastSeenAt = &t
+// SetHostPrimaryIP sets the "host_primary_ip" field.
+func (m *SessionMutation) SetHostPrimaryIP(s string) {
+	m.host_primary_ip = &s
 }
 
-// LastSeenAt returns the value of the "lastSeenAt" field in the mutation.
-func (m *SessionMutation) LastSeenAt() (r time.Time, exists bool) {
-	v := m.lastSeenAt
+// HostPrimaryIP returns the value of the "host_primary_ip" field in the mutation.
+func (m *SessionMutation) HostPrimaryIP() (r string, exists bool) {
+	v := m.host_primary_ip
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldLastSeenAt returns the old "lastSeenAt" field's value of the Session entity.
+// OldHostPrimaryIP returns the old "host_primary_ip" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldHostPrimaryIP(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHostPrimaryIP is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHostPrimaryIP requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHostPrimaryIP: %w", err)
+	}
+	return oldValue.HostPrimaryIP, nil
+}
+
+// ClearHostPrimaryIP clears the value of the "host_primary_ip" field.
+func (m *SessionMutation) ClearHostPrimaryIP() {
+	m.host_primary_ip = nil
+	m.clearedFields[session.FieldHostPrimaryIP] = struct{}{}
+}
+
+// HostPrimaryIPCleared returns if the "host_primary_ip" field was cleared in this mutation.
+func (m *SessionMutation) HostPrimaryIPCleared() bool {
+	_, ok := m.clearedFields[session.FieldHostPrimaryIP]
+	return ok
+}
+
+// ResetHostPrimaryIP resets all changes to the "host_primary_ip" field.
+func (m *SessionMutation) ResetHostPrimaryIP() {
+	m.host_primary_ip = nil
+	delete(m.clearedFields, session.FieldHostPrimaryIP)
+}
+
+// SetHostPlatform sets the "host_platform" field.
+func (m *SessionMutation) SetHostPlatform(sp session.HostPlatform) {
+	m.host_platform = &sp
+}
+
+// HostPlatform returns the value of the "host_platform" field in the mutation.
+func (m *SessionMutation) HostPlatform() (r session.HostPlatform, exists bool) {
+	v := m.host_platform
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHostPlatform returns the old "host_platform" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldHostPlatform(ctx context.Context) (v session.HostPlatform, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHostPlatform is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHostPlatform requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHostPlatform: %w", err)
+	}
+	return oldValue.HostPlatform, nil
+}
+
+// ResetHostPlatform resets all changes to the "host_platform" field.
+func (m *SessionMutation) ResetHostPlatform() {
+	m.host_platform = nil
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (m *SessionMutation) SetLastSeenAt(t time.Time) {
+	m.last_seen_at = &t
+}
+
+// LastSeenAt returns the value of the "last_seen_at" field in the mutation.
+func (m *SessionMutation) LastSeenAt() (r time.Time, exists bool) {
+	v := m.last_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSeenAt returns the old "last_seen_at" field's value of the Session entity.
 // If the Session object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *SessionMutation) OldLastSeenAt(ctx context.Context) (v time.Time, err error) {
@@ -1784,21 +1960,21 @@ func (m *SessionMutation) OldLastSeenAt(ctx context.Context) (v time.Time, err e
 	return oldValue.LastSeenAt, nil
 }
 
-// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (m *SessionMutation) ClearLastSeenAt() {
-	m.lastSeenAt = nil
+	m.last_seen_at = nil
 	m.clearedFields[session.FieldLastSeenAt] = struct{}{}
 }
 
-// LastSeenAtCleared returns if the "lastSeenAt" field was cleared in this mutation.
+// LastSeenAtCleared returns if the "last_seen_at" field was cleared in this mutation.
 func (m *SessionMutation) LastSeenAtCleared() bool {
 	_, ok := m.clearedFields[session.FieldLastSeenAt]
 	return ok
 }
 
-// ResetLastSeenAt resets all changes to the "lastSeenAt" field.
+// ResetLastSeenAt resets all changes to the "last_seen_at" field.
 func (m *SessionMutation) ResetLastSeenAt() {
-	m.lastSeenAt = nil
+	m.last_seen_at = nil
 	delete(m.clearedFields, session.FieldLastSeenAt)
 }
 
@@ -1915,9 +2091,24 @@ func (m *SessionMutation) Where(ps ...predicate.Session) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the SessionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SessionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Session, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *SessionMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SessionMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Session).
@@ -1929,7 +2120,7 @@ func (m *SessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SessionMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.name != nil {
 		fields = append(fields, session.FieldName)
 	}
@@ -1942,13 +2133,19 @@ func (m *SessionMutation) Fields() []string {
 	if m.identifier != nil {
 		fields = append(fields, session.FieldIdentifier)
 	}
-	if m.agentIdentifier != nil {
+	if m.agent_identifier != nil {
 		fields = append(fields, session.FieldAgentIdentifier)
 	}
-	if m.hostIdentifier != nil {
+	if m.host_identifier != nil {
 		fields = append(fields, session.FieldHostIdentifier)
 	}
-	if m.lastSeenAt != nil {
+	if m.host_primary_ip != nil {
+		fields = append(fields, session.FieldHostPrimaryIP)
+	}
+	if m.host_platform != nil {
+		fields = append(fields, session.FieldHostPlatform)
+	}
+	if m.last_seen_at != nil {
 		fields = append(fields, session.FieldLastSeenAt)
 	}
 	return fields
@@ -1971,6 +2168,10 @@ func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 		return m.AgentIdentifier()
 	case session.FieldHostIdentifier:
 		return m.HostIdentifier()
+	case session.FieldHostPrimaryIP:
+		return m.HostPrimaryIP()
+	case session.FieldHostPlatform:
+		return m.HostPlatform()
 	case session.FieldLastSeenAt:
 		return m.LastSeenAt()
 	}
@@ -1994,6 +2195,10 @@ func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldAgentIdentifier(ctx)
 	case session.FieldHostIdentifier:
 		return m.OldHostIdentifier(ctx)
+	case session.FieldHostPrimaryIP:
+		return m.OldHostPrimaryIP(ctx)
+	case session.FieldHostPlatform:
+		return m.OldHostPlatform(ctx)
 	case session.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
 	}
@@ -2047,6 +2252,20 @@ func (m *SessionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetHostIdentifier(v)
 		return nil
+	case session.FieldHostPrimaryIP:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHostPrimaryIP(v)
+		return nil
+	case session.FieldHostPlatform:
+		v, ok := value.(session.HostPlatform)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHostPlatform(v)
+		return nil
 	case session.FieldLastSeenAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -2096,6 +2315,9 @@ func (m *SessionMutation) ClearedFields() []string {
 	if m.FieldCleared(session.FieldHostIdentifier) {
 		fields = append(fields, session.FieldHostIdentifier)
 	}
+	if m.FieldCleared(session.FieldHostPrimaryIP) {
+		fields = append(fields, session.FieldHostPrimaryIP)
+	}
 	if m.FieldCleared(session.FieldLastSeenAt) {
 		fields = append(fields, session.FieldLastSeenAt)
 	}
@@ -2125,6 +2347,9 @@ func (m *SessionMutation) ClearField(name string) error {
 	case session.FieldHostIdentifier:
 		m.ClearHostIdentifier()
 		return nil
+	case session.FieldHostPrimaryIP:
+		m.ClearHostPrimaryIP()
+		return nil
 	case session.FieldLastSeenAt:
 		m.ClearLastSeenAt()
 		return nil
@@ -2153,6 +2378,12 @@ func (m *SessionMutation) ResetField(name string) error {
 		return nil
 	case session.FieldHostIdentifier:
 		m.ResetHostIdentifier()
+		return nil
+	case session.FieldHostPrimaryIP:
+		m.ResetHostPrimaryIP()
+		return nil
+	case session.FieldHostPlatform:
+		m.ResetHostPlatform()
 		return nil
 	case session.FieldLastSeenAt:
 		m.ResetLastSeenAt()
@@ -2517,9 +2748,24 @@ func (m *TagMutation) Where(ps ...predicate.Tag) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the TagMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TagMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Tag, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *TagMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TagMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Tag).
@@ -2732,24 +2978,24 @@ func (m *TagMutation) ResetEdge(name string) error {
 // TaskMutation represents an operation that mutates the Task nodes in the graph.
 type TaskMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	createdAt      *time.Time
-	lastModifiedAt *time.Time
-	claimedAt      *time.Time
-	execStartedAt  *time.Time
-	execFinishedAt *time.Time
-	output         *string
-	error          *string
-	clearedFields  map[string]struct{}
-	job            *int
-	clearedjob     bool
-	session        *int
-	clearedsession bool
-	done           bool
-	oldValue       func(context.Context) (*Task, error)
-	predicates     []predicate.Task
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	claimed_at       *time.Time
+	exec_started_at  *time.Time
+	exec_finished_at *time.Time
+	output           *string
+	error            *string
+	clearedFields    map[string]struct{}
+	job              *int
+	clearedjob       bool
+	session          *int
+	clearedsession   bool
+	done             bool
+	oldValue         func(context.Context) (*Task, error)
+	predicates       []predicate.Task
 }
 
 var _ ent.Mutation = (*TaskMutation)(nil)
@@ -2850,21 +3096,21 @@ func (m *TaskMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (m *TaskMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the value of the "createdAt" field in the mutation.
+// CreatedAt returns the value of the "created_at" field in the mutation.
 func (m *TaskMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old "createdAt" field's value of the Task entity.
+// OldCreatedAt returns the old "created_at" field's value of the Task entity.
 // If the Task object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *TaskMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
@@ -2881,26 +3127,26 @@ func (m *TaskMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt resets all changes to the "createdAt" field.
+// ResetCreatedAt resets all changes to the "created_at" field.
 func (m *TaskMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (m *TaskMutation) SetLastModifiedAt(t time.Time) {
-	m.lastModifiedAt = &t
+	m.last_modified_at = &t
 }
 
-// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
 func (m *TaskMutation) LastModifiedAt() (r time.Time, exists bool) {
-	v := m.lastModifiedAt
+	v := m.last_modified_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the Task entity.
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Task entity.
 // If the Task object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *TaskMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
@@ -2917,26 +3163,26 @@ func (m *TaskMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err 
 	return oldValue.LastModifiedAt, nil
 }
 
-// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
 func (m *TaskMutation) ResetLastModifiedAt() {
-	m.lastModifiedAt = nil
+	m.last_modified_at = nil
 }
 
-// SetClaimedAt sets the "claimedAt" field.
+// SetClaimedAt sets the "claimed_at" field.
 func (m *TaskMutation) SetClaimedAt(t time.Time) {
-	m.claimedAt = &t
+	m.claimed_at = &t
 }
 
-// ClaimedAt returns the value of the "claimedAt" field in the mutation.
+// ClaimedAt returns the value of the "claimed_at" field in the mutation.
 func (m *TaskMutation) ClaimedAt() (r time.Time, exists bool) {
-	v := m.claimedAt
+	v := m.claimed_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldClaimedAt returns the old "claimedAt" field's value of the Task entity.
+// OldClaimedAt returns the old "claimed_at" field's value of the Task entity.
 // If the Task object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *TaskMutation) OldClaimedAt(ctx context.Context) (v time.Time, err error) {
@@ -2953,39 +3199,39 @@ func (m *TaskMutation) OldClaimedAt(ctx context.Context) (v time.Time, err error
 	return oldValue.ClaimedAt, nil
 }
 
-// ClearClaimedAt clears the value of the "claimedAt" field.
+// ClearClaimedAt clears the value of the "claimed_at" field.
 func (m *TaskMutation) ClearClaimedAt() {
-	m.claimedAt = nil
+	m.claimed_at = nil
 	m.clearedFields[task.FieldClaimedAt] = struct{}{}
 }
 
-// ClaimedAtCleared returns if the "claimedAt" field was cleared in this mutation.
+// ClaimedAtCleared returns if the "claimed_at" field was cleared in this mutation.
 func (m *TaskMutation) ClaimedAtCleared() bool {
 	_, ok := m.clearedFields[task.FieldClaimedAt]
 	return ok
 }
 
-// ResetClaimedAt resets all changes to the "claimedAt" field.
+// ResetClaimedAt resets all changes to the "claimed_at" field.
 func (m *TaskMutation) ResetClaimedAt() {
-	m.claimedAt = nil
+	m.claimed_at = nil
 	delete(m.clearedFields, task.FieldClaimedAt)
 }
 
-// SetExecStartedAt sets the "execStartedAt" field.
+// SetExecStartedAt sets the "exec_started_at" field.
 func (m *TaskMutation) SetExecStartedAt(t time.Time) {
-	m.execStartedAt = &t
+	m.exec_started_at = &t
 }
 
-// ExecStartedAt returns the value of the "execStartedAt" field in the mutation.
+// ExecStartedAt returns the value of the "exec_started_at" field in the mutation.
 func (m *TaskMutation) ExecStartedAt() (r time.Time, exists bool) {
-	v := m.execStartedAt
+	v := m.exec_started_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldExecStartedAt returns the old "execStartedAt" field's value of the Task entity.
+// OldExecStartedAt returns the old "exec_started_at" field's value of the Task entity.
 // If the Task object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *TaskMutation) OldExecStartedAt(ctx context.Context) (v time.Time, err error) {
@@ -3002,39 +3248,39 @@ func (m *TaskMutation) OldExecStartedAt(ctx context.Context) (v time.Time, err e
 	return oldValue.ExecStartedAt, nil
 }
 
-// ClearExecStartedAt clears the value of the "execStartedAt" field.
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
 func (m *TaskMutation) ClearExecStartedAt() {
-	m.execStartedAt = nil
+	m.exec_started_at = nil
 	m.clearedFields[task.FieldExecStartedAt] = struct{}{}
 }
 
-// ExecStartedAtCleared returns if the "execStartedAt" field was cleared in this mutation.
+// ExecStartedAtCleared returns if the "exec_started_at" field was cleared in this mutation.
 func (m *TaskMutation) ExecStartedAtCleared() bool {
 	_, ok := m.clearedFields[task.FieldExecStartedAt]
 	return ok
 }
 
-// ResetExecStartedAt resets all changes to the "execStartedAt" field.
+// ResetExecStartedAt resets all changes to the "exec_started_at" field.
 func (m *TaskMutation) ResetExecStartedAt() {
-	m.execStartedAt = nil
+	m.exec_started_at = nil
 	delete(m.clearedFields, task.FieldExecStartedAt)
 }
 
-// SetExecFinishedAt sets the "execFinishedAt" field.
+// SetExecFinishedAt sets the "exec_finished_at" field.
 func (m *TaskMutation) SetExecFinishedAt(t time.Time) {
-	m.execFinishedAt = &t
+	m.exec_finished_at = &t
 }
 
-// ExecFinishedAt returns the value of the "execFinishedAt" field in the mutation.
+// ExecFinishedAt returns the value of the "exec_finished_at" field in the mutation.
 func (m *TaskMutation) ExecFinishedAt() (r time.Time, exists bool) {
-	v := m.execFinishedAt
+	v := m.exec_finished_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldExecFinishedAt returns the old "execFinishedAt" field's value of the Task entity.
+// OldExecFinishedAt returns the old "exec_finished_at" field's value of the Task entity.
 // If the Task object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *TaskMutation) OldExecFinishedAt(ctx context.Context) (v time.Time, err error) {
@@ -3051,21 +3297,21 @@ func (m *TaskMutation) OldExecFinishedAt(ctx context.Context) (v time.Time, err 
 	return oldValue.ExecFinishedAt, nil
 }
 
-// ClearExecFinishedAt clears the value of the "execFinishedAt" field.
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
 func (m *TaskMutation) ClearExecFinishedAt() {
-	m.execFinishedAt = nil
+	m.exec_finished_at = nil
 	m.clearedFields[task.FieldExecFinishedAt] = struct{}{}
 }
 
-// ExecFinishedAtCleared returns if the "execFinishedAt" field was cleared in this mutation.
+// ExecFinishedAtCleared returns if the "exec_finished_at" field was cleared in this mutation.
 func (m *TaskMutation) ExecFinishedAtCleared() bool {
 	_, ok := m.clearedFields[task.FieldExecFinishedAt]
 	return ok
 }
 
-// ResetExecFinishedAt resets all changes to the "execFinishedAt" field.
+// ResetExecFinishedAt resets all changes to the "exec_finished_at" field.
 func (m *TaskMutation) ResetExecFinishedAt() {
-	m.execFinishedAt = nil
+	m.exec_finished_at = nil
 	delete(m.clearedFields, task.FieldExecFinishedAt)
 }
 
@@ -3250,9 +3496,24 @@ func (m *TaskMutation) Where(ps ...predicate.Task) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the TaskMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TaskMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Task, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *TaskMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TaskMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Task).
@@ -3265,19 +3526,19 @@ func (m *TaskMutation) Type() string {
 // AddedFields().
 func (m *TaskMutation) Fields() []string {
 	fields := make([]string, 0, 7)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, task.FieldCreatedAt)
 	}
-	if m.lastModifiedAt != nil {
+	if m.last_modified_at != nil {
 		fields = append(fields, task.FieldLastModifiedAt)
 	}
-	if m.claimedAt != nil {
+	if m.claimed_at != nil {
 		fields = append(fields, task.FieldClaimedAt)
 	}
-	if m.execStartedAt != nil {
+	if m.exec_started_at != nil {
 		fields = append(fields, task.FieldExecStartedAt)
 	}
-	if m.execFinishedAt != nil {
+	if m.exec_finished_at != nil {
 		fields = append(fields, task.FieldExecFinishedAt)
 	}
 	if m.output != nil {
@@ -3591,23 +3852,23 @@ func (m *TaskMutation) ResetEdge(name string) error {
 // TomeMutation represents an operation that mutates the Tome nodes in the graph.
 type TomeMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	createdAt      *time.Time
-	lastModifiedAt *time.Time
-	name           *string
-	description    *string
-	parameters     *string
-	hash           *string
-	eldritch       *string
-	clearedFields  map[string]struct{}
-	files          map[int]struct{}
-	removedfiles   map[int]struct{}
-	clearedfiles   bool
-	done           bool
-	oldValue       func(context.Context) (*Tome, error)
-	predicates     []predicate.Tome
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	name             *string
+	description      *string
+	param_defs       *string
+	hash             *string
+	eldritch         *string
+	clearedFields    map[string]struct{}
+	files            map[int]struct{}
+	removedfiles     map[int]struct{}
+	clearedfiles     bool
+	done             bool
+	oldValue         func(context.Context) (*Tome, error)
+	predicates       []predicate.Tome
 }
 
 var _ ent.Mutation = (*TomeMutation)(nil)
@@ -3708,21 +3969,21 @@ func (m *TomeMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (m *TomeMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the value of the "createdAt" field in the mutation.
+// CreatedAt returns the value of the "created_at" field in the mutation.
 func (m *TomeMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old "createdAt" field's value of the Tome entity.
+// OldCreatedAt returns the old "created_at" field's value of the Tome entity.
 // If the Tome object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *TomeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
@@ -3739,26 +4000,26 @@ func (m *TomeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt resets all changes to the "createdAt" field.
+// ResetCreatedAt resets all changes to the "created_at" field.
 func (m *TomeMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (m *TomeMutation) SetLastModifiedAt(t time.Time) {
-	m.lastModifiedAt = &t
+	m.last_modified_at = &t
 }
 
-// LastModifiedAt returns the value of the "lastModifiedAt" field in the mutation.
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
 func (m *TomeMutation) LastModifiedAt() (r time.Time, exists bool) {
-	v := m.lastModifiedAt
+	v := m.last_modified_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldLastModifiedAt returns the old "lastModifiedAt" field's value of the Tome entity.
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Tome entity.
 // If the Tome object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *TomeMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
@@ -3775,9 +4036,9 @@ func (m *TomeMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err 
 	return oldValue.LastModifiedAt, nil
 }
 
-// ResetLastModifiedAt resets all changes to the "lastModifiedAt" field.
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
 func (m *TomeMutation) ResetLastModifiedAt() {
-	m.lastModifiedAt = nil
+	m.last_modified_at = nil
 }
 
 // SetName sets the "name" field.
@@ -3852,53 +4113,53 @@ func (m *TomeMutation) ResetDescription() {
 	m.description = nil
 }
 
-// SetParameters sets the "parameters" field.
-func (m *TomeMutation) SetParameters(s string) {
-	m.parameters = &s
+// SetParamDefs sets the "param_defs" field.
+func (m *TomeMutation) SetParamDefs(s string) {
+	m.param_defs = &s
 }
 
-// Parameters returns the value of the "parameters" field in the mutation.
-func (m *TomeMutation) Parameters() (r string, exists bool) {
-	v := m.parameters
+// ParamDefs returns the value of the "param_defs" field in the mutation.
+func (m *TomeMutation) ParamDefs() (r string, exists bool) {
+	v := m.param_defs
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldParameters returns the old "parameters" field's value of the Tome entity.
+// OldParamDefs returns the old "param_defs" field's value of the Tome entity.
 // If the Tome object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldParameters(ctx context.Context) (v string, err error) {
+func (m *TomeMutation) OldParamDefs(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldParameters is only allowed on UpdateOne operations")
+		return v, errors.New("OldParamDefs is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldParameters requires an ID field in the mutation")
+		return v, errors.New("OldParamDefs requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldParameters: %w", err)
+		return v, fmt.Errorf("querying old value for OldParamDefs: %w", err)
 	}
-	return oldValue.Parameters, nil
+	return oldValue.ParamDefs, nil
 }
 
-// ClearParameters clears the value of the "parameters" field.
-func (m *TomeMutation) ClearParameters() {
-	m.parameters = nil
-	m.clearedFields[tome.FieldParameters] = struct{}{}
+// ClearParamDefs clears the value of the "param_defs" field.
+func (m *TomeMutation) ClearParamDefs() {
+	m.param_defs = nil
+	m.clearedFields[tome.FieldParamDefs] = struct{}{}
 }
 
-// ParametersCleared returns if the "parameters" field was cleared in this mutation.
-func (m *TomeMutation) ParametersCleared() bool {
-	_, ok := m.clearedFields[tome.FieldParameters]
+// ParamDefsCleared returns if the "param_defs" field was cleared in this mutation.
+func (m *TomeMutation) ParamDefsCleared() bool {
+	_, ok := m.clearedFields[tome.FieldParamDefs]
 	return ok
 }
 
-// ResetParameters resets all changes to the "parameters" field.
-func (m *TomeMutation) ResetParameters() {
-	m.parameters = nil
-	delete(m.clearedFields, tome.FieldParameters)
+// ResetParamDefs resets all changes to the "param_defs" field.
+func (m *TomeMutation) ResetParamDefs() {
+	m.param_defs = nil
+	delete(m.clearedFields, tome.FieldParamDefs)
 }
 
 // SetHash sets the "hash" field.
@@ -4032,9 +4293,24 @@ func (m *TomeMutation) Where(ps ...predicate.Tome) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the TomeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TomeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Tome, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *TomeMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TomeMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Tome).
@@ -4047,10 +4323,10 @@ func (m *TomeMutation) Type() string {
 // AddedFields().
 func (m *TomeMutation) Fields() []string {
 	fields := make([]string, 0, 7)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, tome.FieldCreatedAt)
 	}
-	if m.lastModifiedAt != nil {
+	if m.last_modified_at != nil {
 		fields = append(fields, tome.FieldLastModifiedAt)
 	}
 	if m.name != nil {
@@ -4059,8 +4335,8 @@ func (m *TomeMutation) Fields() []string {
 	if m.description != nil {
 		fields = append(fields, tome.FieldDescription)
 	}
-	if m.parameters != nil {
-		fields = append(fields, tome.FieldParameters)
+	if m.param_defs != nil {
+		fields = append(fields, tome.FieldParamDefs)
 	}
 	if m.hash != nil {
 		fields = append(fields, tome.FieldHash)
@@ -4084,8 +4360,8 @@ func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case tome.FieldDescription:
 		return m.Description()
-	case tome.FieldParameters:
-		return m.Parameters()
+	case tome.FieldParamDefs:
+		return m.ParamDefs()
 	case tome.FieldHash:
 		return m.Hash()
 	case tome.FieldEldritch:
@@ -4107,8 +4383,8 @@ func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case tome.FieldDescription:
 		return m.OldDescription(ctx)
-	case tome.FieldParameters:
-		return m.OldParameters(ctx)
+	case tome.FieldParamDefs:
+		return m.OldParamDefs(ctx)
 	case tome.FieldHash:
 		return m.OldHash(ctx)
 	case tome.FieldEldritch:
@@ -4150,12 +4426,12 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDescription(v)
 		return nil
-	case tome.FieldParameters:
+	case tome.FieldParamDefs:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetParameters(v)
+		m.SetParamDefs(v)
 		return nil
 	case tome.FieldHash:
 		v, ok := value.(string)
@@ -4201,8 +4477,8 @@ func (m *TomeMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *TomeMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(tome.FieldParameters) {
-		fields = append(fields, tome.FieldParameters)
+	if m.FieldCleared(tome.FieldParamDefs) {
+		fields = append(fields, tome.FieldParamDefs)
 	}
 	return fields
 }
@@ -4218,8 +4494,8 @@ func (m *TomeMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *TomeMutation) ClearField(name string) error {
 	switch name {
-	case tome.FieldParameters:
-		m.ClearParameters()
+	case tome.FieldParamDefs:
+		m.ClearParamDefs()
 		return nil
 	}
 	return fmt.Errorf("unknown Tome nullable field %s", name)
@@ -4241,8 +4517,8 @@ func (m *TomeMutation) ResetField(name string) error {
 	case tome.FieldDescription:
 		m.ResetDescription()
 		return nil
-	case tome.FieldParameters:
-		m.ResetParameters()
+	case tome.FieldParamDefs:
+		m.ResetParamDefs()
 		return nil
 	case tome.FieldHash:
 		m.ResetHash()
@@ -4344,12 +4620,12 @@ type UserMutation struct {
 	op            Op
 	typ           string
 	id            *int
-	_Name         *string
-	_OAuthID      *string
-	_PhotoURL     *string
-	_SessionToken *string
-	_IsActivated  *bool
-	_IsAdmin      *bool
+	name          *string
+	oauth_id      *string
+	photo_url     *string
+	session_token *string
+	is_activated  *bool
+	is_admin      *bool
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*User, error)
@@ -4454,21 +4730,21 @@ func (m *UserMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (m *UserMutation) SetName(s string) {
-	m._Name = &s
+	m.name = &s
 }
 
-// Name returns the value of the "Name" field in the mutation.
+// Name returns the value of the "name" field in the mutation.
 func (m *UserMutation) Name() (r string, exists bool) {
-	v := m._Name
+	v := m.name
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldName returns the old "Name" field's value of the User entity.
+// OldName returns the old "name" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *UserMutation) OldName(ctx context.Context) (v string, err error) {
@@ -4485,62 +4761,62 @@ func (m *UserMutation) OldName(ctx context.Context) (v string, err error) {
 	return oldValue.Name, nil
 }
 
-// ResetName resets all changes to the "Name" field.
+// ResetName resets all changes to the "name" field.
 func (m *UserMutation) ResetName() {
-	m._Name = nil
+	m.name = nil
 }
 
-// SetOAuthID sets the "OAuthID" field.
-func (m *UserMutation) SetOAuthID(s string) {
-	m._OAuthID = &s
+// SetOauthID sets the "oauth_id" field.
+func (m *UserMutation) SetOauthID(s string) {
+	m.oauth_id = &s
 }
 
-// OAuthID returns the value of the "OAuthID" field in the mutation.
-func (m *UserMutation) OAuthID() (r string, exists bool) {
-	v := m._OAuthID
+// OauthID returns the value of the "oauth_id" field in the mutation.
+func (m *UserMutation) OauthID() (r string, exists bool) {
+	v := m.oauth_id
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldOAuthID returns the old "OAuthID" field's value of the User entity.
+// OldOauthID returns the old "oauth_id" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldOAuthID(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldOauthID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOAuthID is only allowed on UpdateOne operations")
+		return v, errors.New("OldOauthID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOAuthID requires an ID field in the mutation")
+		return v, errors.New("OldOauthID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOAuthID: %w", err)
+		return v, fmt.Errorf("querying old value for OldOauthID: %w", err)
 	}
-	return oldValue.OAuthID, nil
+	return oldValue.OauthID, nil
 }
 
-// ResetOAuthID resets all changes to the "OAuthID" field.
-func (m *UserMutation) ResetOAuthID() {
-	m._OAuthID = nil
+// ResetOauthID resets all changes to the "oauth_id" field.
+func (m *UserMutation) ResetOauthID() {
+	m.oauth_id = nil
 }
 
-// SetPhotoURL sets the "PhotoURL" field.
+// SetPhotoURL sets the "photo_url" field.
 func (m *UserMutation) SetPhotoURL(s string) {
-	m._PhotoURL = &s
+	m.photo_url = &s
 }
 
-// PhotoURL returns the value of the "PhotoURL" field in the mutation.
+// PhotoURL returns the value of the "photo_url" field in the mutation.
 func (m *UserMutation) PhotoURL() (r string, exists bool) {
-	v := m._PhotoURL
+	v := m.photo_url
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldPhotoURL returns the old "PhotoURL" field's value of the User entity.
+// OldPhotoURL returns the old "photo_url" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *UserMutation) OldPhotoURL(ctx context.Context) (v string, err error) {
@@ -4557,26 +4833,26 @@ func (m *UserMutation) OldPhotoURL(ctx context.Context) (v string, err error) {
 	return oldValue.PhotoURL, nil
 }
 
-// ResetPhotoURL resets all changes to the "PhotoURL" field.
+// ResetPhotoURL resets all changes to the "photo_url" field.
 func (m *UserMutation) ResetPhotoURL() {
-	m._PhotoURL = nil
+	m.photo_url = nil
 }
 
-// SetSessionToken sets the "SessionToken" field.
+// SetSessionToken sets the "session_token" field.
 func (m *UserMutation) SetSessionToken(s string) {
-	m._SessionToken = &s
+	m.session_token = &s
 }
 
-// SessionToken returns the value of the "SessionToken" field in the mutation.
+// SessionToken returns the value of the "session_token" field in the mutation.
 func (m *UserMutation) SessionToken() (r string, exists bool) {
-	v := m._SessionToken
+	v := m.session_token
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldSessionToken returns the old "SessionToken" field's value of the User entity.
+// OldSessionToken returns the old "session_token" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *UserMutation) OldSessionToken(ctx context.Context) (v string, err error) {
@@ -4593,26 +4869,26 @@ func (m *UserMutation) OldSessionToken(ctx context.Context) (v string, err error
 	return oldValue.SessionToken, nil
 }
 
-// ResetSessionToken resets all changes to the "SessionToken" field.
+// ResetSessionToken resets all changes to the "session_token" field.
 func (m *UserMutation) ResetSessionToken() {
-	m._SessionToken = nil
+	m.session_token = nil
 }
 
-// SetIsActivated sets the "IsActivated" field.
+// SetIsActivated sets the "is_activated" field.
 func (m *UserMutation) SetIsActivated(b bool) {
-	m._IsActivated = &b
+	m.is_activated = &b
 }
 
-// IsActivated returns the value of the "IsActivated" field in the mutation.
+// IsActivated returns the value of the "is_activated" field in the mutation.
 func (m *UserMutation) IsActivated() (r bool, exists bool) {
-	v := m._IsActivated
+	v := m.is_activated
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldIsActivated returns the old "IsActivated" field's value of the User entity.
+// OldIsActivated returns the old "is_activated" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *UserMutation) OldIsActivated(ctx context.Context) (v bool, err error) {
@@ -4629,26 +4905,26 @@ func (m *UserMutation) OldIsActivated(ctx context.Context) (v bool, err error) {
 	return oldValue.IsActivated, nil
 }
 
-// ResetIsActivated resets all changes to the "IsActivated" field.
+// ResetIsActivated resets all changes to the "is_activated" field.
 func (m *UserMutation) ResetIsActivated() {
-	m._IsActivated = nil
+	m.is_activated = nil
 }
 
-// SetIsAdmin sets the "IsAdmin" field.
+// SetIsAdmin sets the "is_admin" field.
 func (m *UserMutation) SetIsAdmin(b bool) {
-	m._IsAdmin = &b
+	m.is_admin = &b
 }
 
-// IsAdmin returns the value of the "IsAdmin" field in the mutation.
+// IsAdmin returns the value of the "is_admin" field in the mutation.
 func (m *UserMutation) IsAdmin() (r bool, exists bool) {
-	v := m._IsAdmin
+	v := m.is_admin
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldIsAdmin returns the old "IsAdmin" field's value of the User entity.
+// OldIsAdmin returns the old "is_admin" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *UserMutation) OldIsAdmin(ctx context.Context) (v bool, err error) {
@@ -4665,9 +4941,9 @@ func (m *UserMutation) OldIsAdmin(ctx context.Context) (v bool, err error) {
 	return oldValue.IsAdmin, nil
 }
 
-// ResetIsAdmin resets all changes to the "IsAdmin" field.
+// ResetIsAdmin resets all changes to the "is_admin" field.
 func (m *UserMutation) ResetIsAdmin() {
-	m._IsAdmin = nil
+	m.is_admin = nil
 }
 
 // Where appends a list predicates to the UserMutation builder.
@@ -4675,9 +4951,24 @@ func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the UserMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.User, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *UserMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (User).
@@ -4690,22 +4981,22 @@ func (m *UserMutation) Type() string {
 // AddedFields().
 func (m *UserMutation) Fields() []string {
 	fields := make([]string, 0, 6)
-	if m._Name != nil {
+	if m.name != nil {
 		fields = append(fields, user.FieldName)
 	}
-	if m._OAuthID != nil {
-		fields = append(fields, user.FieldOAuthID)
+	if m.oauth_id != nil {
+		fields = append(fields, user.FieldOauthID)
 	}
-	if m._PhotoURL != nil {
+	if m.photo_url != nil {
 		fields = append(fields, user.FieldPhotoURL)
 	}
-	if m._SessionToken != nil {
+	if m.session_token != nil {
 		fields = append(fields, user.FieldSessionToken)
 	}
-	if m._IsActivated != nil {
+	if m.is_activated != nil {
 		fields = append(fields, user.FieldIsActivated)
 	}
-	if m._IsAdmin != nil {
+	if m.is_admin != nil {
 		fields = append(fields, user.FieldIsAdmin)
 	}
 	return fields
@@ -4718,8 +5009,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldName:
 		return m.Name()
-	case user.FieldOAuthID:
-		return m.OAuthID()
+	case user.FieldOauthID:
+		return m.OauthID()
 	case user.FieldPhotoURL:
 		return m.PhotoURL()
 	case user.FieldSessionToken:
@@ -4739,8 +5030,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 	switch name {
 	case user.FieldName:
 		return m.OldName(ctx)
-	case user.FieldOAuthID:
-		return m.OldOAuthID(ctx)
+	case user.FieldOauthID:
+		return m.OldOauthID(ctx)
 	case user.FieldPhotoURL:
 		return m.OldPhotoURL(ctx)
 	case user.FieldSessionToken:
@@ -4765,12 +5056,12 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
-	case user.FieldOAuthID:
+	case user.FieldOauthID:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetOAuthID(v)
+		m.SetOauthID(v)
 		return nil
 	case user.FieldPhotoURL:
 		v, ok := value.(string)
@@ -4852,8 +5143,8 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldName:
 		m.ResetName()
 		return nil
-	case user.FieldOAuthID:
-		m.ResetOAuthID()
+	case user.FieldOauthID:
+		m.ResetOauthID()
 		return nil
 	case user.FieldPhotoURL:
 		m.ResetPhotoURL()

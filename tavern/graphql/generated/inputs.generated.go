@@ -34,7 +34,7 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"principal", "hostname", "sessionIdentifier", "hostIdentifier", "agentIdentifier"}
+	fieldsInOrder := [...]string{"principal", "hostname", "hostPlatform", "hostPrimaryIP", "sessionIdentifier", "hostIdentifier", "agentIdentifier"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -54,6 +54,22 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostname"))
 			it.Hostname, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostPlatform":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatform"))
+			it.HostPlatform, err = ec.unmarshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hostPrimaryIP":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPrimaryIP"))
+			it.HostPrimaryIP, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
