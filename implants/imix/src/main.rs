@@ -126,9 +126,14 @@ fn get_host_id(host_id_file_path: String) -> Result<String> {
 fn get_primary_ip() -> Result<String> {
     let res = match default_net::get_default_interface() {
         Ok(default_interface) => {
-            default_interface.ipv4[0].addr.to_string()
+            if default_interface.ipv4.len() > 0 {
+                default_interface.ipv4[0].addr.to_string()
+            }else{
+                "DANGER-UNKNOWN".to_string()
+            }
         },
         Err(e) => {
+            println!("Error getting primary ip address:\n{e}");
             "DANGER-UNKNOWN".to_string()
         },
     };
