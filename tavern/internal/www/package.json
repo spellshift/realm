@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@apollo/client": "^3.7.10",
     "@chakra-ui/icons": "^2.0.17",
     "@chakra-ui/react": "^2.4.9",
     "@emotion/react": "^11.10.5",
@@ -14,23 +15,19 @@
     "@types/node": "^12.20.55",
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",
-    "babel-plugin-relay": "^14.1.0",
     "formik": "^2.2.9",
     "framer-motion": "^6.5.1",
     "graphql": "^16.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^3.11.0",
-    "react-relay": "^14.1.0",
     "react-scripts": "5.0.1",
     "react-select": "^5.7.0",
-    "relay-compiler": "^14.1.0",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4",
     "yup": "^1.0.2"
   },
   "scripts": {
-    "relay": "relay-compiler",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -49,16 +46,6 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
-    ]
-  },
-  "relay": {
-    "src": "./src",
-    "language": "javascript",
-    "schema": "./data/schema.graphql",
-    "exclude": [
-      "**/node_modules/**",
-      "**/__mocks__/**",
-      "**/__generated__/**"
     ]
   },
   "devDependencies": {

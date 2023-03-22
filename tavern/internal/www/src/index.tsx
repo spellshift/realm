@@ -4,16 +4,39 @@ import * as ReactDOM from "react-dom/client"
 import { App } from "./App"
 import reportWebVitals from "./reportWebVitals"
 import * as serviceWorker from "./serviceWorker"
+import { ApolloClient, InMemoryCache, ApolloProvider, gql } from '@apollo/client';
 
 
 const container = document.getElementById("root")
 if (!container) throw new Error('Failed to find the root element');
-const root = ReactDOM.createRoot(container)
+const root = ReactDOM.createRoot(container);
+
+const client = new ApolloClient({
+  uri: 'https://flyby-router-demo.herokuapp.com/',
+  cache: new InMemoryCache(),
+});
+
+client
+  .query({
+    query: gql`
+      query GetLocations {
+        locations {
+          id
+          name
+          description
+          photo
+        }
+      }
+    `,
+  })
+  .then((result) => console.log(result));
 
 root.render(
   <React.StrictMode>
-    <ColorModeScript />
-    <App />
+    <ApolloProvider client={client}>
+      <ColorModeScript />
+      <App />
+    </ApolloProvider>
   </React.StrictMode>,
 )
 
