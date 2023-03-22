@@ -21,13 +21,13 @@ type TomeCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (tc *TomeCreate) SetCreatedAt(t time.Time) *TomeCreate {
 	tc.mutation.SetCreatedAt(t)
 	return tc
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
 func (tc *TomeCreate) SetNillableCreatedAt(t *time.Time) *TomeCreate {
 	if t != nil {
 		tc.SetCreatedAt(*t)
@@ -35,13 +35,13 @@ func (tc *TomeCreate) SetNillableCreatedAt(t *time.Time) *TomeCreate {
 	return tc
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tc *TomeCreate) SetLastModifiedAt(t time.Time) *TomeCreate {
 	tc.mutation.SetLastModifiedAt(t)
 	return tc
 }
 
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
 func (tc *TomeCreate) SetNillableLastModifiedAt(t *time.Time) *TomeCreate {
 	if t != nil {
 		tc.SetLastModifiedAt(*t)
@@ -61,16 +61,16 @@ func (tc *TomeCreate) SetDescription(s string) *TomeCreate {
 	return tc
 }
 
-// SetParameters sets the "parameters" field.
-func (tc *TomeCreate) SetParameters(s string) *TomeCreate {
-	tc.mutation.SetParameters(s)
+// SetParamDefs sets the "param_defs" field.
+func (tc *TomeCreate) SetParamDefs(s string) *TomeCreate {
+	tc.mutation.SetParamDefs(s)
 	return tc
 }
 
-// SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableParameters(s *string) *TomeCreate {
+// SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableParamDefs(s *string) *TomeCreate {
 	if s != nil {
-		tc.SetParameters(*s)
+		tc.SetParamDefs(*s)
 	}
 	return tc
 }
@@ -109,52 +109,10 @@ func (tc *TomeCreate) Mutation() *TomeMutation {
 
 // Save creates the Tome in the database.
 func (tc *TomeCreate) Save(ctx context.Context) (*Tome, error) {
-	var (
-		err  error
-		node *Tome
-	)
 	if err := tc.defaults(); err != nil {
 		return nil, err
 	}
-	if len(tc.hooks) == 0 {
-		if err = tc.check(); err != nil {
-			return nil, err
-		}
-		node, err = tc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TomeMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tc.check(); err != nil {
-				return nil, err
-			}
-			tc.mutation = mutation
-			if node, err = tc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(tc.hooks) - 1; i >= 0; i-- {
-			if tc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, tc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Tome)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from TomeMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks[*Tome, TomeMutation](ctx, tc.sqlSave, tc.mutation, tc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -201,10 +159,10 @@ func (tc *TomeCreate) defaults() error {
 // check runs all checks and user-defined validators on the builder.
 func (tc *TomeCreate) check() error {
 	if _, ok := tc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Tome.createdAt"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Tome.created_at"`)}
 	}
 	if _, ok := tc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Tome.lastModifiedAt"`)}
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Tome.last_modified_at"`)}
 	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Tome.name"`)}
@@ -232,6 +190,9 @@ func (tc *TomeCreate) check() error {
 }
 
 func (tc *TomeCreate) sqlSave(ctx context.Context) (*Tome, error) {
+	if err := tc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := tc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, tc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -241,19 +202,15 @@ func (tc *TomeCreate) sqlSave(ctx context.Context) (*Tome, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	tc.mutation.id = &_node.ID
+	tc.mutation.done = true
 	return _node, nil
 }
 
 func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Tome{config: tc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: tome.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: tome.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(tome.Table, sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt))
 	)
 	if value, ok := tc.mutation.CreatedAt(); ok {
 		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
@@ -271,9 +228,9 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
-	if value, ok := tc.mutation.Parameters(); ok {
-		_spec.SetField(tome.FieldParameters, field.TypeString, value)
-		_node.Parameters = value
+	if value, ok := tc.mutation.ParamDefs(); ok {
+		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
+		_node.ParamDefs = value
 	}
 	if value, ok := tc.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)

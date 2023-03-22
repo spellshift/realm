@@ -63,6 +63,7 @@ func TestEndToEnd(t *testing.T) {
 				"input": map[string]any{
 					"principal":         "root",
 					"hostname":          "some_hostname",
+					"hostPlatform":      session.HostPlatformUnknown,
 					"sessionIdentifier": identifier,
 					"hostIdentifier":    "uniquely_identifies_host.For_example_a_serial_number",
 					"agentIdentifier":   "uniquely_identifies_this_agent",

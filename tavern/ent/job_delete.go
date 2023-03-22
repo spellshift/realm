@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (jd *JobDelete) Where(ps ...predicate.Job) *JobDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (jd *JobDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(jd.hooks) == 0 {
-		affected, err = jd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*JobMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			jd.mutation = mutation
-			affected, err = jd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(jd.hooks) - 1; i >= 0; i-- {
-			if jd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = jd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, jd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks[int, JobMutation](ctx, jd.sqlExec, jd.mutation, jd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (jd *JobDelete) ExecX(ctx context.Context) int {
 }
 
 func (jd *JobDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: job.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: job.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(job.Table, sqlgraph.NewFieldSpec(job.FieldID, field.TypeInt))
 	if ps := jd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (jd *JobDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	jd.mutation.done = true
 	return affected, err
 }
 
 // JobDeleteOne is the builder for deleting a single Job entity.
 type JobDeleteOne struct {
 	jd *JobDelete
+}
+
+// Where appends a list predicates to the JobDelete builder.
+func (jdo *JobDeleteOne) Where(ps ...predicate.Job) *JobDeleteOne {
+	jdo.jd.mutation.Where(ps...)
+	return jdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (jdo *JobDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (jdo *JobDeleteOne) ExecX(ctx context.Context) {
-	jdo.jd.ExecX(ctx)
+	if err := jdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

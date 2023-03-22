@@ -36,6 +36,14 @@ func (j *Job) Tasks(ctx context.Context) (result []*Task, err error) {
 	return result, err
 }
 
+func (j *Job) Creator(ctx context.Context) (*User, error) {
+	result, err := j.Edges.CreatorOrErr()
+	if IsNotLoaded(err) {
+		result, err = j.QueryCreator().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (s *Session) Tags(ctx context.Context) (result []*Tag, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = s.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)

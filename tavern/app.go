@@ -15,7 +15,6 @@ import (
 	"entgo.io/contrib/entgql"
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/debug"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent"
@@ -109,7 +108,6 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Create GraphQL Handler
 	srv := handler.NewDefaultServer(graphql.NewSchema(client))
 	srv.Use(entgql.Transactioner{TxOpener: client})
-	srv.Use(&debug.Tracer{})
 
 	// GraphQL Logging
 	gqlLogger := log.New(os.Stderr, "[GraphQL] ", log.Flags())
@@ -165,7 +163,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	if cfg.oauth.ClientID != "" {
 		endpoint = auth.Middleware(handlerWithLogging, client)
 	} else {
-		endpoint = auth.AuthDisabledMiddleware(handlerWithLogging)
+		endpoint = auth.AuthDisabledMiddleware(handlerWithLogging, client)
 	}
 
 	// Initialize HTTP Server

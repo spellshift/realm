@@ -17,7 +17,7 @@ type MixinHistory struct {
 
 func (MixinHistory) Fields() []ent.Field {
 	return []ent.Field{
-		field.Time("createdAt").
+		field.Time("created_at").
 			Comment("Timestamp of when this ent was created").
 			Immutable().
 			Default(time.Now).
@@ -25,7 +25,7 @@ func (MixinHistory) Fields() []ent.Field {
 				entgql.OrderField("CREATED_AT"),
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			),
-		field.Time("lastModifiedAt").
+		field.Time("last_modified_at").
 			Comment("Timestamp of when this ent was last updated").
 			Default(time.Now).
 			UpdateDefault(time.Now).

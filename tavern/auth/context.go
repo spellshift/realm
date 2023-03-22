@@ -66,8 +66,8 @@ func (u *userIdentity) IsAdmin() bool {
 	return u.User.IsAdmin
 }
 
-// ContextFromIdentity returns a copy of parent context with the given Identity associated with it.
-func ContextFromIdentity(ctx context.Context, id Identity) context.Context {
+// contextFromIdentity returns a copy of parent context with the given Identity associated with it.
+func contextFromIdentity(ctx context.Context, id Identity) context.Context {
 	return context.WithValue(ctx, ctxKey{}, id)
 }
 
@@ -80,7 +80,7 @@ func ContextFromSessionToken(ctx context.Context, graph *ent.Client, token strin
 		return nil, err
 	}
 
-	return ContextFromIdentity(ctx, &userIdentity{true, u}), nil
+	return contextFromIdentity(ctx, &userIdentity{true, u}), nil
 }
 
 // IdentityFromContext returns the identity associated with the provided context, or nil if no identity is associated.
@@ -91,6 +91,16 @@ func IdentityFromContext(ctx context.Context) Identity {
 		return nil
 	}
 	return id
+}
+
+// UserFromContext returns the user identity associated with the provided context, or nil if no user identity or a different identity type is associated.
+func UserFromContext(ctx context.Context) *ent.User {
+	val := ctx.Value(ctxKey{})
+	u, ok := val.(*userIdentity)
+	if !ok || u == nil {
+		return nil
+	}
+	return u.User
 }
 
 // IsAuthenticatedContext returns true if the context is associated with an authenticated identity, false otherwise.
