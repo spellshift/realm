@@ -139,7 +139,7 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 5. **Optionally** update the `models:` section of `tavern/graphql/gqlgen.yml` to bind any GraphQL enum types to their respective `entgo` generated types (e.g. `github.com/kcarretto/realm/tavern/ent/<NAME>.<ENUM_FIELD>`)
 6. Run `go generate ./tavern/...` from the project root
 7. If you added an annotation for a root query field (see above), you will notice auto-generated the `query.resolvers.go` file has been updated with new methods to query your model (e.g. `func (r *queryResolver) <NAME>s ...`)
-    * This must be implemented (e.g. `return r.client.NAME.Query().All(ctx)` where NAME is the name of your model)
+    * This must be implemented (e.g. `return r.client.<NAME>.Query().All(ctx)` where NAME is the name of your model)
 
 ### Adding Mutations
 
