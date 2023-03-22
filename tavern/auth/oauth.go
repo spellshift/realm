@@ -140,7 +140,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 
 		// Lookup the user
 		usr, err := graph.User.Query().
-			Where(user.OAuthID(profile.OAuthID)).
+			Where(user.OauthID(profile.OAuthID)).
 			Only(req.Context())
 		if err == nil {
 			http.SetCookie(w, &http.Cookie{
@@ -166,7 +166,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		isTOFU := graph.User.Query().CountX(req.Context()) == 0
 		usr = graph.User.Create().
 			SetName(profile.Name).
-			SetOAuthID(profile.OAuthID).
+			SetOauthID(profile.OAuthID).
 			SetPhotoURL(profile.PhotoURL).
 			SetIsAdmin(isTOFU).
 			SetIsActivated(isTOFU).

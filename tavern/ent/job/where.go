@@ -55,12 +55,12 @@ func IDLTE(id int) predicate.Job {
 	return predicate.Job(sql.FieldLTE(FieldID, id))
 }
 
-// CreatedAt applies equality check predicate on the "createdAt" field. It's identical to CreatedAtEQ.
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldEQ(FieldCreatedAt, v))
 }
 
-// LastModifiedAt applies equality check predicate on the "lastModifiedAt" field. It's identical to LastModifiedAtEQ.
+// LastModifiedAt applies equality check predicate on the "last_modified_at" field. It's identical to LastModifiedAtEQ.
 func LastModifiedAt(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldEQ(FieldLastModifiedAt, v))
 }
@@ -75,82 +75,82 @@ func Parameters(v string) predicate.Job {
 	return predicate.Job(sql.FieldEQ(FieldParameters, v))
 }
 
-// CreatedAtEQ applies the EQ predicate on the "createdAt" field.
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldEQ(FieldCreatedAt, v))
 }
 
-// CreatedAtNEQ applies the NEQ predicate on the "createdAt" field.
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
-// CreatedAtIn applies the In predicate on the "createdAt" field.
+// CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.Job {
 	return predicate.Job(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
-// CreatedAtNotIn applies the NotIn predicate on the "createdAt" field.
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.Job {
 	return predicate.Job(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
-// CreatedAtGT applies the GT predicate on the "createdAt" field.
+// CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldGT(FieldCreatedAt, v))
 }
 
-// CreatedAtGTE applies the GTE predicate on the "createdAt" field.
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldGTE(FieldCreatedAt, v))
 }
 
-// CreatedAtLT applies the LT predicate on the "createdAt" field.
+// CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldLT(FieldCreatedAt, v))
 }
 
-// CreatedAtLTE applies the LTE predicate on the "createdAt" field.
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldLTE(FieldCreatedAt, v))
 }
 
-// LastModifiedAtEQ applies the EQ predicate on the "lastModifiedAt" field.
+// LastModifiedAtEQ applies the EQ predicate on the "last_modified_at" field.
 func LastModifiedAtEQ(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtNEQ applies the NEQ predicate on the "lastModifiedAt" field.
+// LastModifiedAtNEQ applies the NEQ predicate on the "last_modified_at" field.
 func LastModifiedAtNEQ(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldNEQ(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtIn applies the In predicate on the "lastModifiedAt" field.
+// LastModifiedAtIn applies the In predicate on the "last_modified_at" field.
 func LastModifiedAtIn(vs ...time.Time) predicate.Job {
 	return predicate.Job(sql.FieldIn(FieldLastModifiedAt, vs...))
 }
 
-// LastModifiedAtNotIn applies the NotIn predicate on the "lastModifiedAt" field.
+// LastModifiedAtNotIn applies the NotIn predicate on the "last_modified_at" field.
 func LastModifiedAtNotIn(vs ...time.Time) predicate.Job {
 	return predicate.Job(sql.FieldNotIn(FieldLastModifiedAt, vs...))
 }
 
-// LastModifiedAtGT applies the GT predicate on the "lastModifiedAt" field.
+// LastModifiedAtGT applies the GT predicate on the "last_modified_at" field.
 func LastModifiedAtGT(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldGT(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtGTE applies the GTE predicate on the "lastModifiedAt" field.
+// LastModifiedAtGTE applies the GTE predicate on the "last_modified_at" field.
 func LastModifiedAtGTE(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldGTE(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtLT applies the LT predicate on the "lastModifiedAt" field.
+// LastModifiedAtLT applies the LT predicate on the "last_modified_at" field.
 func LastModifiedAtLT(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldLT(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtLTE applies the LTE predicate on the "lastModifiedAt" field.
+// LastModifiedAtLTE applies the LTE predicate on the "last_modified_at" field.
 func LastModifiedAtLTE(v time.Time) predicate.Job {
 	return predicate.Job(sql.FieldLTE(FieldLastModifiedAt, v))
 }

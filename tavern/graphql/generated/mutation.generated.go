@@ -257,10 +257,10 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Job_id(ctx, field)
-			case "createdat":
-				return ec.fieldContext_Job_createdat(ctx, field)
-			case "lastmodifiedat":
-				return ec.fieldContext_Job_lastmodifiedat(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Job_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Job_lastModifiedAt(ctx, field)
 			case "name":
 				return ec.fieldContext_Job_name(ctx, field)
 			case "parameters":
@@ -364,16 +364,16 @@ func (ec *executionContext) fieldContext_Mutation_updateSession(ctx context.Cont
 				return ec.fieldContext_Session_hostname(ctx, field)
 			case "identifier":
 				return ec.fieldContext_Session_identifier(ctx, field)
-			case "agentidentifier":
-				return ec.fieldContext_Session_agentidentifier(ctx, field)
-			case "hostidentifier":
-				return ec.fieldContext_Session_hostidentifier(ctx, field)
-			case "hostprimaryip":
-				return ec.fieldContext_Session_hostprimaryip(ctx, field)
-			case "hostplatform":
-				return ec.fieldContext_Session_hostplatform(ctx, field)
-			case "lastseenat":
-				return ec.fieldContext_Session_lastseenat(ctx, field)
+			case "agentIdentifier":
+				return ec.fieldContext_Session_agentIdentifier(ctx, field)
+			case "hostIdentifier":
+				return ec.fieldContext_Session_hostIdentifier(ctx, field)
+			case "hostPrimaryIP":
+				return ec.fieldContext_Session_hostPrimaryIP(ctx, field)
+			case "hostPlatform":
+				return ec.fieldContext_Session_hostPlatform(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Session_lastSeenAt(ctx, field)
 			case "tags":
 				return ec.fieldContext_Session_tags(ctx, field)
 			case "tasks":
@@ -615,16 +615,16 @@ func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Task_id(ctx, field)
-			case "createdat":
-				return ec.fieldContext_Task_createdat(ctx, field)
-			case "lastmodifiedat":
-				return ec.fieldContext_Task_lastmodifiedat(ctx, field)
-			case "claimedat":
-				return ec.fieldContext_Task_claimedat(ctx, field)
-			case "execstartedat":
-				return ec.fieldContext_Task_execstartedat(ctx, field)
-			case "execfinishedat":
-				return ec.fieldContext_Task_execfinishedat(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Task_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Task_lastModifiedAt(ctx, field)
+			case "claimedAt":
+				return ec.fieldContext_Task_claimedAt(ctx, field)
+			case "execStartedAt":
+				return ec.fieldContext_Task_execStartedAt(ctx, field)
+			case "execFinishedAt":
+				return ec.fieldContext_Task_execFinishedAt(ctx, field)
 			case "output":
 				return ec.fieldContext_Task_output(ctx, field)
 			case "error":
@@ -689,16 +689,16 @@ func (ec *executionContext) fieldContext_Mutation_submitTaskResult(ctx context.C
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Task_id(ctx, field)
-			case "createdat":
-				return ec.fieldContext_Task_createdat(ctx, field)
-			case "lastmodifiedat":
-				return ec.fieldContext_Task_lastmodifiedat(ctx, field)
-			case "claimedat":
-				return ec.fieldContext_Task_claimedat(ctx, field)
-			case "execstartedat":
-				return ec.fieldContext_Task_execstartedat(ctx, field)
-			case "execfinishedat":
-				return ec.fieldContext_Task_execfinishedat(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Task_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Task_lastModifiedAt(ctx, field)
+			case "claimedAt":
+				return ec.fieldContext_Task_claimedAt(ctx, field)
+			case "execStartedAt":
+				return ec.fieldContext_Task_execStartedAt(ctx, field)
+			case "execFinishedAt":
+				return ec.fieldContext_Task_execFinishedAt(ctx, field)
 			case "output":
 				return ec.fieldContext_Task_output(ctx, field)
 			case "error":
@@ -790,16 +790,16 @@ func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Tome_id(ctx, field)
-			case "createdat":
-				return ec.fieldContext_Tome_createdat(ctx, field)
-			case "lastmodifiedat":
-				return ec.fieldContext_Tome_lastmodifiedat(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Tome_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Tome_lastModifiedAt(ctx, field)
 			case "name":
 				return ec.fieldContext_Tome_name(ctx, field)
 			case "description":
 				return ec.fieldContext_Tome_description(ctx, field)
-			case "paramdefs":
-				return ec.fieldContext_Tome_paramdefs(ctx, field)
+			case "paramDefs":
+				return ec.fieldContext_Tome_paramDefs(ctx, field)
 			case "eldritch":
 				return ec.fieldContext_Tome_eldritch(ctx, field)
 			case "files":
@@ -886,12 +886,12 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
-			case "photourl":
-				return ec.fieldContext_User_photourl(ctx, field)
-			case "isactivated":
-				return ec.fieldContext_User_isactivated(ctx, field)
-			case "isadmin":
-				return ec.fieldContext_User_isadmin(ctx, field)
+			case "photoURL":
+				return ec.fieldContext_User_photoURL(ctx, field)
+			case "isActivated":
+				return ec.fieldContext_User_isActivated(ctx, field)
+			case "isAdmin":
+				return ec.fieldContext_User_isAdmin(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},

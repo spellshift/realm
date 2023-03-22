@@ -20,13 +20,13 @@ type FileCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (fc *FileCreate) SetCreatedAt(t time.Time) *FileCreate {
 	fc.mutation.SetCreatedAt(t)
 	return fc
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
 func (fc *FileCreate) SetNillableCreatedAt(t *time.Time) *FileCreate {
 	if t != nil {
 		fc.SetCreatedAt(*t)
@@ -34,13 +34,13 @@ func (fc *FileCreate) SetNillableCreatedAt(t *time.Time) *FileCreate {
 	return fc
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (fc *FileCreate) SetLastModifiedAt(t time.Time) *FileCreate {
 	fc.mutation.SetLastModifiedAt(t)
 	return fc
 }
 
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
 func (fc *FileCreate) SetNillableLastModifiedAt(t *time.Time) *FileCreate {
 	if t != nil {
 		fc.SetLastModifiedAt(*t)
@@ -141,10 +141,10 @@ func (fc *FileCreate) defaults() error {
 // check runs all checks and user-defined validators on the builder.
 func (fc *FileCreate) check() error {
 	if _, ok := fc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "File.createdAt"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "File.created_at"`)}
 	}
 	if _, ok := fc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "File.lastModifiedAt"`)}
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "File.last_modified_at"`)}
 	}
 	if _, ok := fc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "File.name"`)}

@@ -19,15 +19,15 @@ type Task struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Timestamp of when this ent was created
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
-	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// Timestamp of when the task was claimed, null if not yet claimed
-	ClaimedAt time.Time `json:"claimedAt,omitempty"`
+	ClaimedAt time.Time `json:"claimed_at,omitempty"`
 	// Timestamp of when execution of the task started, null if not yet started
-	ExecStartedAt time.Time `json:"execStartedAt,omitempty"`
+	ExecStartedAt time.Time `json:"exec_started_at,omitempty"`
 	// Timestamp of when execution of the task finished, null if not yet finished
-	ExecFinishedAt time.Time `json:"execFinishedAt,omitempty"`
+	ExecFinishedAt time.Time `json:"exec_finished_at,omitempty"`
 	// Output from executing the task
 	Output string `json:"output,omitempty"`
 	// Error, if any, produced while executing the Task
@@ -116,31 +116,31 @@ func (t *Task) assignValues(columns []string, values []any) error {
 			t.ID = int(value.Int64)
 		case task.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				t.CreatedAt = value.Time
 			}
 		case task.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				t.LastModifiedAt = value.Time
 			}
 		case task.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field claimedAt", values[i])
+				return fmt.Errorf("unexpected type %T for field claimed_at", values[i])
 			} else if value.Valid {
 				t.ClaimedAt = value.Time
 			}
 		case task.FieldExecStartedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field execStartedAt", values[i])
+				return fmt.Errorf("unexpected type %T for field exec_started_at", values[i])
 			} else if value.Valid {
 				t.ExecStartedAt = value.Time
 			}
 		case task.FieldExecFinishedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field execFinishedAt", values[i])
+				return fmt.Errorf("unexpected type %T for field exec_finished_at", values[i])
 			} else if value.Valid {
 				t.ExecFinishedAt = value.Time
 			}
@@ -208,19 +208,19 @@ func (t *Task) String() string {
 	var builder strings.Builder
 	builder.WriteString("Task(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
-	builder.WriteString("createdAt=")
+	builder.WriteString("created_at=")
 	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("lastModifiedAt=")
+	builder.WriteString("last_modified_at=")
 	builder.WriteString(t.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("claimedAt=")
+	builder.WriteString("claimed_at=")
 	builder.WriteString(t.ClaimedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("execStartedAt=")
+	builder.WriteString("exec_started_at=")
 	builder.WriteString(t.ExecStartedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("execFinishedAt=")
+	builder.WriteString("exec_finished_at=")
 	builder.WriteString(t.ExecFinishedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("output=")

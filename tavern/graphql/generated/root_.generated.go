@@ -133,7 +133,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
-		Paramdefs      func(childComplexity int) int
+		ParamDefs      func(childComplexity int) int
 	}
 
 	User struct {
@@ -160,7 +160,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "File.createdat":
+	case "File.createdAt":
 		if e.complexity.File.CreatedAt == nil {
 			break
 		}
@@ -181,7 +181,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.File.ID(childComplexity), true
 
-	case "File.lastmodifiedat":
+	case "File.lastModifiedAt":
 		if e.complexity.File.LastModifiedAt == nil {
 			break
 		}
@@ -209,7 +209,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Job.Bundle(childComplexity), true
 
-	case "Job.createdat":
+	case "Job.createdAt":
 		if e.complexity.Job.CreatedAt == nil {
 			break
 		}
@@ -230,7 +230,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Job.ID(childComplexity), true
 
-	case "Job.lastmodifiedat":
+	case "Job.lastModifiedAt":
 		if e.complexity.Job.LastModifiedAt == nil {
 			break
 		}
@@ -460,28 +460,28 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Users(childComplexity), true
 
-	case "Session.agentidentifier":
+	case "Session.agentIdentifier":
 		if e.complexity.Session.AgentIdentifier == nil {
 			break
 		}
 
 		return e.complexity.Session.AgentIdentifier(childComplexity), true
 
-	case "Session.hostidentifier":
+	case "Session.hostIdentifier":
 		if e.complexity.Session.HostIdentifier == nil {
 			break
 		}
 
 		return e.complexity.Session.HostIdentifier(childComplexity), true
 
-	case "Session.hostplatform":
+	case "Session.hostPlatform":
 		if e.complexity.Session.HostPlatform == nil {
 			break
 		}
 
 		return e.complexity.Session.HostPlatform(childComplexity), true
 
-	case "Session.hostprimaryip":
+	case "Session.hostPrimaryIP":
 		if e.complexity.Session.HostPrimaryIP == nil {
 			break
 		}
@@ -509,7 +509,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Session.Identifier(childComplexity), true
 
-	case "Session.lastseenat":
+	case "Session.lastSeenAt":
 		if e.complexity.Session.LastSeenAt == nil {
 			break
 		}
@@ -572,14 +572,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tag.Sessions(childComplexity), true
 
-	case "Task.claimedat":
+	case "Task.claimedAt":
 		if e.complexity.Task.ClaimedAt == nil {
 			break
 		}
 
 		return e.complexity.Task.ClaimedAt(childComplexity), true
 
-	case "Task.createdat":
+	case "Task.createdAt":
 		if e.complexity.Task.CreatedAt == nil {
 			break
 		}
@@ -593,14 +593,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Error(childComplexity), true
 
-	case "Task.execfinishedat":
+	case "Task.execFinishedAt":
 		if e.complexity.Task.ExecFinishedAt == nil {
 			break
 		}
 
 		return e.complexity.Task.ExecFinishedAt(childComplexity), true
 
-	case "Task.execstartedat":
+	case "Task.execStartedAt":
 		if e.complexity.Task.ExecStartedAt == nil {
 			break
 		}
@@ -621,7 +621,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Job(childComplexity), true
 
-	case "Task.lastmodifiedat":
+	case "Task.lastModifiedAt":
 		if e.complexity.Task.LastModifiedAt == nil {
 			break
 		}
@@ -642,7 +642,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Session(childComplexity), true
 
-	case "Tome.createdat":
+	case "Tome.createdAt":
 		if e.complexity.Tome.CreatedAt == nil {
 			break
 		}
@@ -677,7 +677,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.ID(childComplexity), true
 
-	case "Tome.lastmodifiedat":
+	case "Tome.lastModifiedAt":
 		if e.complexity.Tome.LastModifiedAt == nil {
 			break
 		}
@@ -691,12 +691,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.Name(childComplexity), true
 
-	case "Tome.paramdefs":
-		if e.complexity.Tome.Paramdefs == nil {
+	case "Tome.paramDefs":
+		if e.complexity.Tome.ParamDefs == nil {
 			break
 		}
 
-		return e.complexity.Tome.Paramdefs(childComplexity), true
+		return e.complexity.Tome.ParamDefs(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -705,14 +705,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.ID(childComplexity), true
 
-	case "User.isactivated":
+	case "User.isActivated":
 		if e.complexity.User.IsActivated == nil {
 			break
 		}
 
 		return e.complexity.User.IsActivated(childComplexity), true
 
-	case "User.isadmin":
+	case "User.isAdmin":
 		if e.complexity.User.IsAdmin == nil {
 			break
 		}
@@ -726,7 +726,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Name(childComplexity), true
 
-	case "User.photourl":
+	case "User.photoURL":
 		if e.complexity.User.PhotoURL == nil {
 			break
 		}
@@ -862,7 +862,7 @@ input CreateTomeInput {
   """Information about the tome"""
   description: String!
   """JSON string describing what parameters are used with the tome"""
-  paramdefs: String
+  paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   fileIDs: [ID!]
@@ -875,9 +875,9 @@ scalar Cursor
 type File implements Node {
   id: ID!
   """Timestamp of when this ent was created"""
-  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  createdAt: Time!
   """Timestamp of when this ent was last updated"""
-  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
+  lastModifiedAt: Time!
   """The name of the file, used to reference it for downloads"""
   name: String!
   """The size of the file in bytes"""
@@ -916,24 +916,24 @@ input FileWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """createdAt field predicates"""
-  createdat: Time
-  createdatNEQ: Time
-  createdatIn: [Time!]
-  createdatNotIn: [Time!]
-  createdatGT: Time
-  createdatGTE: Time
-  createdatLT: Time
-  createdatLTE: Time
-  """lastModifiedAt field predicates"""
-  lastmodifiedat: Time
-  lastmodifiedatNEQ: Time
-  lastmodifiedatIn: [Time!]
-  lastmodifiedatNotIn: [Time!]
-  lastmodifiedatGT: Time
-  lastmodifiedatGTE: Time
-  lastmodifiedatLT: Time
-  lastmodifiedatLTE: Time
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -975,9 +975,9 @@ input FileWhereInput {
 type Job implements Node {
   id: ID!
   """Timestamp of when this ent was created"""
-  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  createdAt: Time!
   """Timestamp of when this ent was last updated"""
-  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
+  lastModifiedAt: Time!
   """Name of the job"""
   name: String!
   """Value of parameters that were specified for the job (as a JSON string)."""
@@ -1017,24 +1017,24 @@ input JobWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """createdAt field predicates"""
-  createdat: Time
-  createdatNEQ: Time
-  createdatIn: [Time!]
-  createdatNotIn: [Time!]
-  createdatGT: Time
-  createdatGTE: Time
-  createdatLT: Time
-  createdatLTE: Time
-  """lastModifiedAt field predicates"""
-  lastmodifiedat: Time
-  lastmodifiedatNEQ: Time
-  lastmodifiedatIn: [Time!]
-  lastmodifiedatNotIn: [Time!]
-  lastmodifiedatGT: Time
-  lastmodifiedatGTE: Time
-  lastmodifiedatLT: Time
-  lastmodifiedatLTE: Time
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -1130,15 +1130,15 @@ type Session implements Node {
   """Unique identifier for the session. Unique to each instance of the session."""
   identifier: String!
   """Identifies the agent that the session is running as (e.g. 'imix')."""
-  agentidentifier: String @goField(name: "AgentIdentifier", forceResolver: false)
+  agentIdentifier: String
   """Unique identifier for the host the session is running on."""
-  hostidentifier: String @goField(name: "HostIdentifier", forceResolver: false)
+  hostIdentifier: String
   """Primary interface IP address reported by the agent."""
-  hostprimaryip: String @goField(name: "HostPrimaryIP", forceResolver: false)
+  hostPrimaryIP: String
   """Platform the agent is operating on."""
-  hostplatform: SessionSessionHostPlatform! @goField(name: "HostPlatform", forceResolver: false)
+  hostPlatform: SessionSessionHostPlatform!
   """Timestamp of when a task was last claimed or updated for a target"""
-  lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
+  lastSeenAt: Time
   tags: [Tag!]
   tasks: [Task!]
 }
@@ -1153,7 +1153,7 @@ input SessionOrder {
 enum SessionOrderField {
   LAST_SEEN_AT
 }
-"""SessionSessionHostPlatform is enum for the field hostPlatform"""
+"""SessionSessionHostPlatform is enum for the field host_platform"""
 enum SessionSessionHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/ent/session.HostPlatform") {
   Windows
   Linux
@@ -1238,70 +1238,70 @@ input SessionWhereInput {
   identifierHasSuffix: String
   identifierEqualFold: String
   identifierContainsFold: String
-  """agentIdentifier field predicates"""
-  agentidentifier: String
-  agentidentifierNEQ: String
-  agentidentifierIn: [String!]
-  agentidentifierNotIn: [String!]
-  agentidentifierGT: String
-  agentidentifierGTE: String
-  agentidentifierLT: String
-  agentidentifierLTE: String
-  agentidentifierContains: String
-  agentidentifierHasPrefix: String
-  agentidentifierHasSuffix: String
-  agentidentifierIsNil: Boolean
-  agentidentifierNotNil: Boolean
-  agentidentifierEqualFold: String
-  agentidentifierContainsFold: String
-  """hostIdentifier field predicates"""
-  hostidentifier: String
-  hostidentifierNEQ: String
-  hostidentifierIn: [String!]
-  hostidentifierNotIn: [String!]
-  hostidentifierGT: String
-  hostidentifierGTE: String
-  hostidentifierLT: String
-  hostidentifierLTE: String
-  hostidentifierContains: String
-  hostidentifierHasPrefix: String
-  hostidentifierHasSuffix: String
-  hostidentifierIsNil: Boolean
-  hostidentifierNotNil: Boolean
-  hostidentifierEqualFold: String
-  hostidentifierContainsFold: String
-  """hostPrimaryIP field predicates"""
-  hostprimaryip: String
-  hostprimaryipNEQ: String
-  hostprimaryipIn: [String!]
-  hostprimaryipNotIn: [String!]
-  hostprimaryipGT: String
-  hostprimaryipGTE: String
-  hostprimaryipLT: String
-  hostprimaryipLTE: String
-  hostprimaryipContains: String
-  hostprimaryipHasPrefix: String
-  hostprimaryipHasSuffix: String
-  hostprimaryipIsNil: Boolean
-  hostprimaryipNotNil: Boolean
-  hostprimaryipEqualFold: String
-  hostprimaryipContainsFold: String
-  """hostPlatform field predicates"""
-  hostplatform: SessionSessionHostPlatform
-  hostplatformNEQ: SessionSessionHostPlatform
-  hostplatformIn: [SessionSessionHostPlatform!]
-  hostplatformNotIn: [SessionSessionHostPlatform!]
-  """lastSeenAt field predicates"""
-  lastseenat: Time
-  lastseenatNEQ: Time
-  lastseenatIn: [Time!]
-  lastseenatNotIn: [Time!]
-  lastseenatGT: Time
-  lastseenatGTE: Time
-  lastseenatLT: Time
-  lastseenatLTE: Time
-  lastseenatIsNil: Boolean
-  lastseenatNotNil: Boolean
+  """agent_identifier field predicates"""
+  agentIdentifier: String
+  agentIdentifierNEQ: String
+  agentIdentifierIn: [String!]
+  agentIdentifierNotIn: [String!]
+  agentIdentifierGT: String
+  agentIdentifierGTE: String
+  agentIdentifierLT: String
+  agentIdentifierLTE: String
+  agentIdentifierContains: String
+  agentIdentifierHasPrefix: String
+  agentIdentifierHasSuffix: String
+  agentIdentifierIsNil: Boolean
+  agentIdentifierNotNil: Boolean
+  agentIdentifierEqualFold: String
+  agentIdentifierContainsFold: String
+  """host_identifier field predicates"""
+  hostIdentifier: String
+  hostIdentifierNEQ: String
+  hostIdentifierIn: [String!]
+  hostIdentifierNotIn: [String!]
+  hostIdentifierGT: String
+  hostIdentifierGTE: String
+  hostIdentifierLT: String
+  hostIdentifierLTE: String
+  hostIdentifierContains: String
+  hostIdentifierHasPrefix: String
+  hostIdentifierHasSuffix: String
+  hostIdentifierIsNil: Boolean
+  hostIdentifierNotNil: Boolean
+  hostIdentifierEqualFold: String
+  hostIdentifierContainsFold: String
+  """host_primary_ip field predicates"""
+  hostPrimaryIP: String
+  hostPrimaryIPNEQ: String
+  hostPrimaryIPIn: [String!]
+  hostPrimaryIPNotIn: [String!]
+  hostPrimaryIPGT: String
+  hostPrimaryIPGTE: String
+  hostPrimaryIPLT: String
+  hostPrimaryIPLTE: String
+  hostPrimaryIPContains: String
+  hostPrimaryIPHasPrefix: String
+  hostPrimaryIPHasSuffix: String
+  hostPrimaryIPIsNil: Boolean
+  hostPrimaryIPNotNil: Boolean
+  hostPrimaryIPEqualFold: String
+  hostPrimaryIPContainsFold: String
+  """host_platform field predicates"""
+  hostPlatform: SessionSessionHostPlatform
+  hostPlatformNEQ: SessionSessionHostPlatform
+  hostPlatformIn: [SessionSessionHostPlatform!]
+  hostPlatformNotIn: [SessionSessionHostPlatform!]
+  """last_seen_at field predicates"""
+  lastSeenAt: Time
+  lastSeenAtNEQ: Time
+  lastSeenAtIn: [Time!]
+  lastSeenAtNotIn: [Time!]
+  lastSeenAtGT: Time
+  lastSeenAtGTE: Time
+  lastSeenAtLT: Time
+  lastSeenAtLTE: Time
+  lastSeenAtIsNil: Boolean
+  lastSeenAtNotNil: Boolean
   """tags edge predicates"""
   hasTags: Boolean
   hasTagsWith: [TagWhereInput!]
@@ -1376,15 +1376,15 @@ input TagWhereInput {
 type Task implements Node {
   id: ID!
   """Timestamp of when this ent was created"""
-  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  createdAt: Time!
   """Timestamp of when this ent was last updated"""
-  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
+  lastModifiedAt: Time!
   """Timestamp of when the task was claimed, null if not yet claimed"""
-  claimedat: Time @goField(name: "ClaimedAt", forceResolver: false)
+  claimedAt: Time
   """Timestamp of when execution of the task started, null if not yet started"""
-  execstartedat: Time @goField(name: "ExecStartedAt", forceResolver: false)
+  execStartedAt: Time
   """Timestamp of when execution of the task finished, null if not yet finished"""
-  execfinishedat: Time @goField(name: "ExecFinishedAt", forceResolver: false)
+  execFinishedAt: Time
   """Output from executing the task"""
   output: String
   """Error, if any, produced while executing the Task"""
@@ -1424,57 +1424,57 @@ input TaskWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """createdAt field predicates"""
-  createdat: Time
-  createdatNEQ: Time
-  createdatIn: [Time!]
-  createdatNotIn: [Time!]
-  createdatGT: Time
-  createdatGTE: Time
-  createdatLT: Time
-  createdatLTE: Time
-  """lastModifiedAt field predicates"""
-  lastmodifiedat: Time
-  lastmodifiedatNEQ: Time
-  lastmodifiedatIn: [Time!]
-  lastmodifiedatNotIn: [Time!]
-  lastmodifiedatGT: Time
-  lastmodifiedatGTE: Time
-  lastmodifiedatLT: Time
-  lastmodifiedatLTE: Time
-  """claimedAt field predicates"""
-  claimedat: Time
-  claimedatNEQ: Time
-  claimedatIn: [Time!]
-  claimedatNotIn: [Time!]
-  claimedatGT: Time
-  claimedatGTE: Time
-  claimedatLT: Time
-  claimedatLTE: Time
-  claimedatIsNil: Boolean
-  claimedatNotNil: Boolean
-  """execStartedAt field predicates"""
-  execstartedat: Time
-  execstartedatNEQ: Time
-  execstartedatIn: [Time!]
-  execstartedatNotIn: [Time!]
-  execstartedatGT: Time
-  execstartedatGTE: Time
-  execstartedatLT: Time
-  execstartedatLTE: Time
-  execstartedatIsNil: Boolean
-  execstartedatNotNil: Boolean
-  """execFinishedAt field predicates"""
-  execfinishedat: Time
-  execfinishedatNEQ: Time
-  execfinishedatIn: [Time!]
-  execfinishedatNotIn: [Time!]
-  execfinishedatGT: Time
-  execfinishedatGTE: Time
-  execfinishedatLT: Time
-  execfinishedatLTE: Time
-  execfinishedatIsNil: Boolean
-  execfinishedatNotNil: Boolean
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """claimed_at field predicates"""
+  claimedAt: Time
+  claimedAtNEQ: Time
+  claimedAtIn: [Time!]
+  claimedAtNotIn: [Time!]
+  claimedAtGT: Time
+  claimedAtGTE: Time
+  claimedAtLT: Time
+  claimedAtLTE: Time
+  claimedAtIsNil: Boolean
+  claimedAtNotNil: Boolean
+  """exec_started_at field predicates"""
+  execStartedAt: Time
+  execStartedAtNEQ: Time
+  execStartedAtIn: [Time!]
+  execStartedAtNotIn: [Time!]
+  execStartedAtGT: Time
+  execStartedAtGTE: Time
+  execStartedAtLT: Time
+  execStartedAtLTE: Time
+  execStartedAtIsNil: Boolean
+  execStartedAtNotNil: Boolean
+  """exec_finished_at field predicates"""
+  execFinishedAt: Time
+  execFinishedAtNEQ: Time
+  execFinishedAtIn: [Time!]
+  execFinishedAtNotIn: [Time!]
+  execFinishedAtGT: Time
+  execFinishedAtGTE: Time
+  execFinishedAtLT: Time
+  execFinishedAtLTE: Time
+  execFinishedAtIsNil: Boolean
+  execFinishedAtNotNil: Boolean
   """output field predicates"""
   output: String
   outputNEQ: String
@@ -1517,15 +1517,15 @@ input TaskWhereInput {
 type Tome implements Node {
   id: ID!
   """Timestamp of when this ent was created"""
-  createdat: Time! @goField(name: "CreatedAt", forceResolver: false)
+  createdAt: Time!
   """Timestamp of when this ent was last updated"""
-  lastmodifiedat: Time! @goField(name: "LastModifiedAt", forceResolver: false)
+  lastModifiedAt: Time!
   """Name of the tome"""
   name: String!
   """Information about the tome"""
   description: String!
   """JSON string describing what parameters are used with the tome"""
-  paramdefs: String
+  paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   files: [File!]
@@ -1560,24 +1560,24 @@ input TomeWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """createdAt field predicates"""
-  createdat: Time
-  createdatNEQ: Time
-  createdatIn: [Time!]
-  createdatNotIn: [Time!]
-  createdatGT: Time
-  createdatGTE: Time
-  createdatLT: Time
-  createdatLTE: Time
-  """lastModifiedAt field predicates"""
-  lastmodifiedat: Time
-  lastmodifiedatNEQ: Time
-  lastmodifiedatIn: [Time!]
-  lastmodifiedatNotIn: [Time!]
-  lastmodifiedatGT: Time
-  lastmodifiedatGTE: Time
-  lastmodifiedatLT: Time
-  lastmodifiedatLTE: Time
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -1606,22 +1606,22 @@ input TomeWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
-  """paramdefs field predicates"""
-  paramdefs: String
-  paramdefsNEQ: String
-  paramdefsIn: [String!]
-  paramdefsNotIn: [String!]
-  paramdefsGT: String
-  paramdefsGTE: String
-  paramdefsLT: String
-  paramdefsLTE: String
-  paramdefsContains: String
-  paramdefsHasPrefix: String
-  paramdefsHasSuffix: String
-  paramdefsIsNil: Boolean
-  paramdefsNotNil: Boolean
-  paramdefsEqualFold: String
-  paramdefsContainsFold: String
+  """param_defs field predicates"""
+  paramDefs: String
+  paramDefsNEQ: String
+  paramDefsIn: [String!]
+  paramDefsNotIn: [String!]
+  paramDefsGT: String
+  paramDefsGTE: String
+  paramDefsLT: String
+  paramDefsLTE: String
+  paramDefsContains: String
+  paramDefsHasPrefix: String
+  paramDefsHasSuffix: String
+  paramDefsIsNil: Boolean
+  paramDefsNotNil: Boolean
+  paramDefsEqualFold: String
+  paramDefsContainsFold: String
   """eldritch field predicates"""
   eldritch: String
   eldritchNEQ: String
@@ -1675,22 +1675,22 @@ input UpdateUserInput {
   """The name displayed for the user"""
   name: String
   """URL to the user's profile photo."""
-  photourl: String
+  photoURL: String
   """True if the user is active and able to authenticate"""
-  isactivated: Boolean
+  isActivated: Boolean
   """True if the user is an Admin"""
-  isadmin: Boolean
+  isAdmin: Boolean
 }
 type User implements Node {
   id: ID!
   """The name displayed for the user"""
   name: String!
   """URL to the user's profile photo."""
-  photourl: String! @goField(name: "PhotoURL", forceResolver: false)
+  photoURL: String!
   """True if the user is active and able to authenticate"""
-  isactivated: Boolean! @goField(name: "IsActivated", forceResolver: false)
+  isActivated: Boolean!
   """True if the user is an Admin"""
-  isadmin: Boolean! @goField(name: "IsAdmin", forceResolver: false)
+  isAdmin: Boolean!
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -1709,7 +1709,7 @@ input UserWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """Name field predicates"""
+  """name field predicates"""
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -1723,26 +1723,26 @@ input UserWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """PhotoURL field predicates"""
-  photourl: String
-  photourlNEQ: String
-  photourlIn: [String!]
-  photourlNotIn: [String!]
-  photourlGT: String
-  photourlGTE: String
-  photourlLT: String
-  photourlLTE: String
-  photourlContains: String
-  photourlHasPrefix: String
-  photourlHasSuffix: String
-  photourlEqualFold: String
-  photourlContainsFold: String
-  """IsActivated field predicates"""
-  isactivated: Boolean
-  isactivatedNEQ: Boolean
-  """IsAdmin field predicates"""
-  isadmin: Boolean
-  isadminNEQ: Boolean
+  """photo_url field predicates"""
+  photoURL: String
+  photoURLNEQ: String
+  photoURLIn: [String!]
+  photoURLNotIn: [String!]
+  photoURLGT: String
+  photoURLGTE: String
+  photoURLLT: String
+  photoURLLTE: String
+  photoURLContains: String
+  photoURLHasPrefix: String
+  photoURLHasSuffix: String
+  photoURLEqualFold: String
+  photoURLContainsFold: String
+  """is_activated field predicates"""
+  isActivated: Boolean
+  isActivatedNEQ: Boolean
+  """is_admin field predicates"""
+  isAdmin: Boolean
+  isAdminNEQ: Boolean
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time`, BuiltIn: false},

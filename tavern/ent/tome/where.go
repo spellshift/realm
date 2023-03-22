@@ -55,12 +55,12 @@ func IDLTE(id int) predicate.Tome {
 	return predicate.Tome(sql.FieldLTE(FieldID, id))
 }
 
-// CreatedAt applies equality check predicate on the "createdAt" field. It's identical to CreatedAtEQ.
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldCreatedAt, v))
 }
 
-// LastModifiedAt applies equality check predicate on the "lastModifiedAt" field. It's identical to LastModifiedAtEQ.
+// LastModifiedAt applies equality check predicate on the "last_modified_at" field. It's identical to LastModifiedAtEQ.
 func LastModifiedAt(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldLastModifiedAt, v))
 }
@@ -75,9 +75,9 @@ func Description(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldDescription, v))
 }
 
-// Paramdefs applies equality check predicate on the "paramdefs" field. It's identical to ParamdefsEQ.
-func Paramdefs(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldEQ(FieldParamdefs, v))
+// ParamDefs applies equality check predicate on the "param_defs" field. It's identical to ParamDefsEQ.
+func ParamDefs(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldParamDefs, v))
 }
 
 // Hash applies equality check predicate on the "hash" field. It's identical to HashEQ.
@@ -90,82 +90,82 @@ func Eldritch(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldEldritch, v))
 }
 
-// CreatedAtEQ applies the EQ predicate on the "createdAt" field.
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldCreatedAt, v))
 }
 
-// CreatedAtNEQ applies the NEQ predicate on the "createdAt" field.
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
-// CreatedAtIn applies the In predicate on the "createdAt" field.
+// CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
-// CreatedAtNotIn applies the NotIn predicate on the "createdAt" field.
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
-// CreatedAtGT applies the GT predicate on the "createdAt" field.
+// CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldGT(FieldCreatedAt, v))
 }
 
-// CreatedAtGTE applies the GTE predicate on the "createdAt" field.
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldGTE(FieldCreatedAt, v))
 }
 
-// CreatedAtLT applies the LT predicate on the "createdAt" field.
+// CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldLT(FieldCreatedAt, v))
 }
 
-// CreatedAtLTE applies the LTE predicate on the "createdAt" field.
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldLTE(FieldCreatedAt, v))
 }
 
-// LastModifiedAtEQ applies the EQ predicate on the "lastModifiedAt" field.
+// LastModifiedAtEQ applies the EQ predicate on the "last_modified_at" field.
 func LastModifiedAtEQ(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtNEQ applies the NEQ predicate on the "lastModifiedAt" field.
+// LastModifiedAtNEQ applies the NEQ predicate on the "last_modified_at" field.
 func LastModifiedAtNEQ(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldNEQ(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtIn applies the In predicate on the "lastModifiedAt" field.
+// LastModifiedAtIn applies the In predicate on the "last_modified_at" field.
 func LastModifiedAtIn(vs ...time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldIn(FieldLastModifiedAt, vs...))
 }
 
-// LastModifiedAtNotIn applies the NotIn predicate on the "lastModifiedAt" field.
+// LastModifiedAtNotIn applies the NotIn predicate on the "last_modified_at" field.
 func LastModifiedAtNotIn(vs ...time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldNotIn(FieldLastModifiedAt, vs...))
 }
 
-// LastModifiedAtGT applies the GT predicate on the "lastModifiedAt" field.
+// LastModifiedAtGT applies the GT predicate on the "last_modified_at" field.
 func LastModifiedAtGT(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldGT(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtGTE applies the GTE predicate on the "lastModifiedAt" field.
+// LastModifiedAtGTE applies the GTE predicate on the "last_modified_at" field.
 func LastModifiedAtGTE(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldGTE(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtLT applies the LT predicate on the "lastModifiedAt" field.
+// LastModifiedAtLT applies the LT predicate on the "last_modified_at" field.
 func LastModifiedAtLT(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldLT(FieldLastModifiedAt, v))
 }
 
-// LastModifiedAtLTE applies the LTE predicate on the "lastModifiedAt" field.
+// LastModifiedAtLTE applies the LTE predicate on the "last_modified_at" field.
 func LastModifiedAtLTE(v time.Time) predicate.Tome {
 	return predicate.Tome(sql.FieldLTE(FieldLastModifiedAt, v))
 }
@@ -300,79 +300,79 @@ func DescriptionContainsFold(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldContainsFold(FieldDescription, v))
 }
 
-// ParamdefsEQ applies the EQ predicate on the "paramdefs" field.
-func ParamdefsEQ(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldEQ(FieldParamdefs, v))
+// ParamDefsEQ applies the EQ predicate on the "param_defs" field.
+func ParamDefsEQ(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldParamDefs, v))
 }
 
-// ParamdefsNEQ applies the NEQ predicate on the "paramdefs" field.
-func ParamdefsNEQ(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldNEQ(FieldParamdefs, v))
+// ParamDefsNEQ applies the NEQ predicate on the "param_defs" field.
+func ParamDefsNEQ(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldParamDefs, v))
 }
 
-// ParamdefsIn applies the In predicate on the "paramdefs" field.
-func ParamdefsIn(vs ...string) predicate.Tome {
-	return predicate.Tome(sql.FieldIn(FieldParamdefs, vs...))
+// ParamDefsIn applies the In predicate on the "param_defs" field.
+func ParamDefsIn(vs ...string) predicate.Tome {
+	return predicate.Tome(sql.FieldIn(FieldParamDefs, vs...))
 }
 
-// ParamdefsNotIn applies the NotIn predicate on the "paramdefs" field.
-func ParamdefsNotIn(vs ...string) predicate.Tome {
-	return predicate.Tome(sql.FieldNotIn(FieldParamdefs, vs...))
+// ParamDefsNotIn applies the NotIn predicate on the "param_defs" field.
+func ParamDefsNotIn(vs ...string) predicate.Tome {
+	return predicate.Tome(sql.FieldNotIn(FieldParamDefs, vs...))
 }
 
-// ParamdefsGT applies the GT predicate on the "paramdefs" field.
-func ParamdefsGT(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldGT(FieldParamdefs, v))
+// ParamDefsGT applies the GT predicate on the "param_defs" field.
+func ParamDefsGT(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldGT(FieldParamDefs, v))
 }
 
-// ParamdefsGTE applies the GTE predicate on the "paramdefs" field.
-func ParamdefsGTE(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldGTE(FieldParamdefs, v))
+// ParamDefsGTE applies the GTE predicate on the "param_defs" field.
+func ParamDefsGTE(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldGTE(FieldParamDefs, v))
 }
 
-// ParamdefsLT applies the LT predicate on the "paramdefs" field.
-func ParamdefsLT(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldLT(FieldParamdefs, v))
+// ParamDefsLT applies the LT predicate on the "param_defs" field.
+func ParamDefsLT(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldLT(FieldParamDefs, v))
 }
 
-// ParamdefsLTE applies the LTE predicate on the "paramdefs" field.
-func ParamdefsLTE(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldLTE(FieldParamdefs, v))
+// ParamDefsLTE applies the LTE predicate on the "param_defs" field.
+func ParamDefsLTE(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldLTE(FieldParamDefs, v))
 }
 
-// ParamdefsContains applies the Contains predicate on the "paramdefs" field.
-func ParamdefsContains(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldContains(FieldParamdefs, v))
+// ParamDefsContains applies the Contains predicate on the "param_defs" field.
+func ParamDefsContains(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldContains(FieldParamDefs, v))
 }
 
-// ParamdefsHasPrefix applies the HasPrefix predicate on the "paramdefs" field.
-func ParamdefsHasPrefix(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldHasPrefix(FieldParamdefs, v))
+// ParamDefsHasPrefix applies the HasPrefix predicate on the "param_defs" field.
+func ParamDefsHasPrefix(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldHasPrefix(FieldParamDefs, v))
 }
 
-// ParamdefsHasSuffix applies the HasSuffix predicate on the "paramdefs" field.
-func ParamdefsHasSuffix(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldHasSuffix(FieldParamdefs, v))
+// ParamDefsHasSuffix applies the HasSuffix predicate on the "param_defs" field.
+func ParamDefsHasSuffix(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldHasSuffix(FieldParamDefs, v))
 }
 
-// ParamdefsIsNil applies the IsNil predicate on the "paramdefs" field.
-func ParamdefsIsNil() predicate.Tome {
-	return predicate.Tome(sql.FieldIsNull(FieldParamdefs))
+// ParamDefsIsNil applies the IsNil predicate on the "param_defs" field.
+func ParamDefsIsNil() predicate.Tome {
+	return predicate.Tome(sql.FieldIsNull(FieldParamDefs))
 }
 
-// ParamdefsNotNil applies the NotNil predicate on the "paramdefs" field.
-func ParamdefsNotNil() predicate.Tome {
-	return predicate.Tome(sql.FieldNotNull(FieldParamdefs))
+// ParamDefsNotNil applies the NotNil predicate on the "param_defs" field.
+func ParamDefsNotNil() predicate.Tome {
+	return predicate.Tome(sql.FieldNotNull(FieldParamDefs))
 }
 
-// ParamdefsEqualFold applies the EqualFold predicate on the "paramdefs" field.
-func ParamdefsEqualFold(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldEqualFold(FieldParamdefs, v))
+// ParamDefsEqualFold applies the EqualFold predicate on the "param_defs" field.
+func ParamDefsEqualFold(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEqualFold(FieldParamDefs, v))
 }
 
-// ParamdefsContainsFold applies the ContainsFold predicate on the "paramdefs" field.
-func ParamdefsContainsFold(v string) predicate.Tome {
-	return predicate.Tome(sql.FieldContainsFold(FieldParamdefs, v))
+// ParamDefsContainsFold applies the ContainsFold predicate on the "param_defs" field.
+func ParamDefsContainsFold(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldContainsFold(FieldParamDefs, v))
 }
 
 // HashEQ applies the EQ predicate on the "hash" field.

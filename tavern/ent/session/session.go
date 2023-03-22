@@ -21,15 +21,15 @@ const (
 	FieldHostname = "hostname"
 	// FieldIdentifier holds the string denoting the identifier field in the database.
 	FieldIdentifier = "identifier"
-	// FieldAgentIdentifier holds the string denoting the agentidentifier field in the database.
+	// FieldAgentIdentifier holds the string denoting the agent_identifier field in the database.
 	FieldAgentIdentifier = "agent_identifier"
-	// FieldHostIdentifier holds the string denoting the hostidentifier field in the database.
+	// FieldHostIdentifier holds the string denoting the host_identifier field in the database.
 	FieldHostIdentifier = "host_identifier"
-	// FieldHostPrimaryIP holds the string denoting the hostprimaryip field in the database.
+	// FieldHostPrimaryIP holds the string denoting the host_primary_ip field in the database.
 	FieldHostPrimaryIP = "host_primary_ip"
-	// FieldHostPlatform holds the string denoting the hostplatform field in the database.
+	// FieldHostPlatform holds the string denoting the host_platform field in the database.
 	FieldHostPlatform = "host_platform"
-	// FieldLastSeenAt holds the string denoting the lastseenat field in the database.
+	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
@@ -94,13 +94,13 @@ var (
 	DefaultIdentifier func() string
 	// IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	IdentifierValidator func(string) error
-	// AgentIdentifierValidator is a validator for the "agentIdentifier" field. It is called by the builders before save.
+	// AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	AgentIdentifierValidator func(string) error
-	// HostIdentifierValidator is a validator for the "hostIdentifier" field. It is called by the builders before save.
+	// HostIdentifierValidator is a validator for the "host_identifier" field. It is called by the builders before save.
 	HostIdentifierValidator func(string) error
 )
 
-// HostPlatform defines the type for the "hostPlatform" enum field.
+// HostPlatform defines the type for the "host_platform" enum field.
 type HostPlatform string
 
 // HostPlatformUnknown is the default value of the HostPlatform enum.
@@ -119,13 +119,13 @@ func (hp HostPlatform) String() string {
 	return string(hp)
 }
 
-// HostPlatformValidator is a validator for the "hostPlatform" field enum values. It is called by the builders before save.
+// HostPlatformValidator is a validator for the "host_platform" field enum values. It is called by the builders before save.
 func HostPlatformValidator(hp HostPlatform) error {
 	switch hp {
 	case HostPlatformWindows, HostPlatformLinux, HostPlatformMacOS, HostPlatformBSD, HostPlatformUnknown:
 		return nil
 	default:
-		return fmt.Errorf("session: invalid enum value for hostPlatform field: %q", hp)
+		return fmt.Errorf("session: invalid enum value for host_platform field: %q", hp)
 	}
 }
 

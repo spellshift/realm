@@ -21,13 +21,13 @@ type TomeCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (tc *TomeCreate) SetCreatedAt(t time.Time) *TomeCreate {
 	tc.mutation.SetCreatedAt(t)
 	return tc
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
 func (tc *TomeCreate) SetNillableCreatedAt(t *time.Time) *TomeCreate {
 	if t != nil {
 		tc.SetCreatedAt(*t)
@@ -35,13 +35,13 @@ func (tc *TomeCreate) SetNillableCreatedAt(t *time.Time) *TomeCreate {
 	return tc
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tc *TomeCreate) SetLastModifiedAt(t time.Time) *TomeCreate {
 	tc.mutation.SetLastModifiedAt(t)
 	return tc
 }
 
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
 func (tc *TomeCreate) SetNillableLastModifiedAt(t *time.Time) *TomeCreate {
 	if t != nil {
 		tc.SetLastModifiedAt(*t)
@@ -61,16 +61,16 @@ func (tc *TomeCreate) SetDescription(s string) *TomeCreate {
 	return tc
 }
 
-// SetParamdefs sets the "paramdefs" field.
-func (tc *TomeCreate) SetParamdefs(s string) *TomeCreate {
-	tc.mutation.SetParamdefs(s)
+// SetParamDefs sets the "param_defs" field.
+func (tc *TomeCreate) SetParamDefs(s string) *TomeCreate {
+	tc.mutation.SetParamDefs(s)
 	return tc
 }
 
-// SetNillableParamdefs sets the "paramdefs" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableParamdefs(s *string) *TomeCreate {
+// SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableParamDefs(s *string) *TomeCreate {
 	if s != nil {
-		tc.SetParamdefs(*s)
+		tc.SetParamDefs(*s)
 	}
 	return tc
 }
@@ -159,10 +159,10 @@ func (tc *TomeCreate) defaults() error {
 // check runs all checks and user-defined validators on the builder.
 func (tc *TomeCreate) check() error {
 	if _, ok := tc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Tome.createdAt"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Tome.created_at"`)}
 	}
 	if _, ok := tc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Tome.lastModifiedAt"`)}
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Tome.last_modified_at"`)}
 	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Tome.name"`)}
@@ -228,9 +228,9 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
-	if value, ok := tc.mutation.Paramdefs(); ok {
-		_spec.SetField(tome.FieldParamdefs, field.TypeString, value)
-		_node.Paramdefs = value
+	if value, ok := tc.mutation.ParamDefs(); ok {
+		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
+		_node.ParamDefs = value
 	}
 	if value, ok := tc.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)

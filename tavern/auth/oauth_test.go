@@ -137,7 +137,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 	result := resp.Result()
 	require.Equal(t, http.StatusFound, result.StatusCode)
 	usr := graph.User.Query().
-		Where(user.OAuthID("goofygoober")).
+		Where(user.OauthID("goofygoober")).
 		OnlyX(context.Background())
 	assert.NotEmpty(t, usr.SessionToken)
 	assert.True(t, usr.IsActivated)
@@ -172,7 +172,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 
 	// Second User assertions
 	secondUsr := graph.User.Query().
-		Where(user.OAuthID("n00b")).
+		Where(user.OauthID("n00b")).
 		OnlyX(context.Background())
 	assert.NotEqual(t, usr.ID, secondUsr.ID)
 	assert.NotEqual(t, usr.SessionToken, secondUsr.SessionToken)

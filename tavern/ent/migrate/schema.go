@@ -141,7 +141,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString},
-		{Name: "paramdefs", Type: field.TypeString, Nullable: true},
+		{Name: "param_defs", Type: field.TypeString, Nullable: true},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 	}

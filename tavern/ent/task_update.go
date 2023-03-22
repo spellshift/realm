@@ -30,19 +30,19 @@ func (tu *TaskUpdate) Where(ps ...predicate.Task) *TaskUpdate {
 	return tu
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tu *TaskUpdate) SetLastModifiedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetLastModifiedAt(t)
 	return tu
 }
 
-// SetClaimedAt sets the "claimedAt" field.
+// SetClaimedAt sets the "claimed_at" field.
 func (tu *TaskUpdate) SetClaimedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetClaimedAt(t)
 	return tu
 }
 
-// SetNillableClaimedAt sets the "claimedAt" field if the given value is not nil.
+// SetNillableClaimedAt sets the "claimed_at" field if the given value is not nil.
 func (tu *TaskUpdate) SetNillableClaimedAt(t *time.Time) *TaskUpdate {
 	if t != nil {
 		tu.SetClaimedAt(*t)
@@ -50,19 +50,19 @@ func (tu *TaskUpdate) SetNillableClaimedAt(t *time.Time) *TaskUpdate {
 	return tu
 }
 
-// ClearClaimedAt clears the value of the "claimedAt" field.
+// ClearClaimedAt clears the value of the "claimed_at" field.
 func (tu *TaskUpdate) ClearClaimedAt() *TaskUpdate {
 	tu.mutation.ClearClaimedAt()
 	return tu
 }
 
-// SetExecStartedAt sets the "execStartedAt" field.
+// SetExecStartedAt sets the "exec_started_at" field.
 func (tu *TaskUpdate) SetExecStartedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetExecStartedAt(t)
 	return tu
 }
 
-// SetNillableExecStartedAt sets the "execStartedAt" field if the given value is not nil.
+// SetNillableExecStartedAt sets the "exec_started_at" field if the given value is not nil.
 func (tu *TaskUpdate) SetNillableExecStartedAt(t *time.Time) *TaskUpdate {
 	if t != nil {
 		tu.SetExecStartedAt(*t)
@@ -70,19 +70,19 @@ func (tu *TaskUpdate) SetNillableExecStartedAt(t *time.Time) *TaskUpdate {
 	return tu
 }
 
-// ClearExecStartedAt clears the value of the "execStartedAt" field.
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
 func (tu *TaskUpdate) ClearExecStartedAt() *TaskUpdate {
 	tu.mutation.ClearExecStartedAt()
 	return tu
 }
 
-// SetExecFinishedAt sets the "execFinishedAt" field.
+// SetExecFinishedAt sets the "exec_finished_at" field.
 func (tu *TaskUpdate) SetExecFinishedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetExecFinishedAt(t)
 	return tu
 }
 
-// SetNillableExecFinishedAt sets the "execFinishedAt" field if the given value is not nil.
+// SetNillableExecFinishedAt sets the "exec_finished_at" field if the given value is not nil.
 func (tu *TaskUpdate) SetNillableExecFinishedAt(t *time.Time) *TaskUpdate {
 	if t != nil {
 		tu.SetExecFinishedAt(*t)
@@ -90,7 +90,7 @@ func (tu *TaskUpdate) SetNillableExecFinishedAt(t *time.Time) *TaskUpdate {
 	return tu
 }
 
-// ClearExecFinishedAt clears the value of the "execFinishedAt" field.
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
 func (tu *TaskUpdate) ClearExecFinishedAt() *TaskUpdate {
 	tu.mutation.ClearExecFinishedAt()
 	return tu
@@ -357,19 +357,19 @@ type TaskUpdateOne struct {
 	mutation *TaskMutation
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tuo *TaskUpdateOne) SetLastModifiedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetLastModifiedAt(t)
 	return tuo
 }
 
-// SetClaimedAt sets the "claimedAt" field.
+// SetClaimedAt sets the "claimed_at" field.
 func (tuo *TaskUpdateOne) SetClaimedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetClaimedAt(t)
 	return tuo
 }
 
-// SetNillableClaimedAt sets the "claimedAt" field if the given value is not nil.
+// SetNillableClaimedAt sets the "claimed_at" field if the given value is not nil.
 func (tuo *TaskUpdateOne) SetNillableClaimedAt(t *time.Time) *TaskUpdateOne {
 	if t != nil {
 		tuo.SetClaimedAt(*t)
@@ -377,19 +377,19 @@ func (tuo *TaskUpdateOne) SetNillableClaimedAt(t *time.Time) *TaskUpdateOne {
 	return tuo
 }
 
-// ClearClaimedAt clears the value of the "claimedAt" field.
+// ClearClaimedAt clears the value of the "claimed_at" field.
 func (tuo *TaskUpdateOne) ClearClaimedAt() *TaskUpdateOne {
 	tuo.mutation.ClearClaimedAt()
 	return tuo
 }
 
-// SetExecStartedAt sets the "execStartedAt" field.
+// SetExecStartedAt sets the "exec_started_at" field.
 func (tuo *TaskUpdateOne) SetExecStartedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetExecStartedAt(t)
 	return tuo
 }
 
-// SetNillableExecStartedAt sets the "execStartedAt" field if the given value is not nil.
+// SetNillableExecStartedAt sets the "exec_started_at" field if the given value is not nil.
 func (tuo *TaskUpdateOne) SetNillableExecStartedAt(t *time.Time) *TaskUpdateOne {
 	if t != nil {
 		tuo.SetExecStartedAt(*t)
@@ -397,19 +397,19 @@ func (tuo *TaskUpdateOne) SetNillableExecStartedAt(t *time.Time) *TaskUpdateOne 
 	return tuo
 }
 
-// ClearExecStartedAt clears the value of the "execStartedAt" field.
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
 func (tuo *TaskUpdateOne) ClearExecStartedAt() *TaskUpdateOne {
 	tuo.mutation.ClearExecStartedAt()
 	return tuo
 }
 
-// SetExecFinishedAt sets the "execFinishedAt" field.
+// SetExecFinishedAt sets the "exec_finished_at" field.
 func (tuo *TaskUpdateOne) SetExecFinishedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetExecFinishedAt(t)
 	return tuo
 }
 
-// SetNillableExecFinishedAt sets the "execFinishedAt" field if the given value is not nil.
+// SetNillableExecFinishedAt sets the "exec_finished_at" field if the given value is not nil.
 func (tuo *TaskUpdateOne) SetNillableExecFinishedAt(t *time.Time) *TaskUpdateOne {
 	if t != nil {
 		tuo.SetExecFinishedAt(*t)
@@ -417,7 +417,7 @@ func (tuo *TaskUpdateOne) SetNillableExecFinishedAt(t *time.Time) *TaskUpdateOne
 	return tuo
 }
 
-// ClearExecFinishedAt clears the value of the "execFinishedAt" field.
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
 func (tuo *TaskUpdateOne) ClearExecFinishedAt() *TaskUpdateOne {
 	tuo.mutation.ClearExecFinishedAt()
 	return tuo

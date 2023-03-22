@@ -78,13 +78,13 @@ func (sc *SessionCreate) SetNillableIdentifier(s *string) *SessionCreate {
 	return sc
 }
 
-// SetAgentIdentifier sets the "agentIdentifier" field.
+// SetAgentIdentifier sets the "agent_identifier" field.
 func (sc *SessionCreate) SetAgentIdentifier(s string) *SessionCreate {
 	sc.mutation.SetAgentIdentifier(s)
 	return sc
 }
 
-// SetNillableAgentIdentifier sets the "agentIdentifier" field if the given value is not nil.
+// SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
 func (sc *SessionCreate) SetNillableAgentIdentifier(s *string) *SessionCreate {
 	if s != nil {
 		sc.SetAgentIdentifier(*s)
@@ -92,13 +92,13 @@ func (sc *SessionCreate) SetNillableAgentIdentifier(s *string) *SessionCreate {
 	return sc
 }
 
-// SetHostIdentifier sets the "hostIdentifier" field.
+// SetHostIdentifier sets the "host_identifier" field.
 func (sc *SessionCreate) SetHostIdentifier(s string) *SessionCreate {
 	sc.mutation.SetHostIdentifier(s)
 	return sc
 }
 
-// SetNillableHostIdentifier sets the "hostIdentifier" field if the given value is not nil.
+// SetNillableHostIdentifier sets the "host_identifier" field if the given value is not nil.
 func (sc *SessionCreate) SetNillableHostIdentifier(s *string) *SessionCreate {
 	if s != nil {
 		sc.SetHostIdentifier(*s)
@@ -106,13 +106,13 @@ func (sc *SessionCreate) SetNillableHostIdentifier(s *string) *SessionCreate {
 	return sc
 }
 
-// SetHostPrimaryIP sets the "hostPrimaryIP" field.
+// SetHostPrimaryIP sets the "host_primary_ip" field.
 func (sc *SessionCreate) SetHostPrimaryIP(s string) *SessionCreate {
 	sc.mutation.SetHostPrimaryIP(s)
 	return sc
 }
 
-// SetNillableHostPrimaryIP sets the "hostPrimaryIP" field if the given value is not nil.
+// SetNillableHostPrimaryIP sets the "host_primary_ip" field if the given value is not nil.
 func (sc *SessionCreate) SetNillableHostPrimaryIP(s *string) *SessionCreate {
 	if s != nil {
 		sc.SetHostPrimaryIP(*s)
@@ -120,13 +120,13 @@ func (sc *SessionCreate) SetNillableHostPrimaryIP(s *string) *SessionCreate {
 	return sc
 }
 
-// SetHostPlatform sets the "hostPlatform" field.
+// SetHostPlatform sets the "host_platform" field.
 func (sc *SessionCreate) SetHostPlatform(sp session.HostPlatform) *SessionCreate {
 	sc.mutation.SetHostPlatform(sp)
 	return sc
 }
 
-// SetNillableHostPlatform sets the "hostPlatform" field if the given value is not nil.
+// SetNillableHostPlatform sets the "host_platform" field if the given value is not nil.
 func (sc *SessionCreate) SetNillableHostPlatform(sp *session.HostPlatform) *SessionCreate {
 	if sp != nil {
 		sc.SetHostPlatform(*sp)
@@ -134,13 +134,13 @@ func (sc *SessionCreate) SetNillableHostPlatform(sp *session.HostPlatform) *Sess
 	return sc
 }
 
-// SetLastSeenAt sets the "lastSeenAt" field.
+// SetLastSeenAt sets the "last_seen_at" field.
 func (sc *SessionCreate) SetLastSeenAt(t time.Time) *SessionCreate {
 	sc.mutation.SetLastSeenAt(t)
 	return sc
 }
 
-// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
 func (sc *SessionCreate) SetNillableLastSeenAt(t *time.Time) *SessionCreate {
 	if t != nil {
 		sc.SetLastSeenAt(*t)
@@ -257,20 +257,20 @@ func (sc *SessionCreate) check() error {
 	}
 	if v, ok := sc.mutation.AgentIdentifier(); ok {
 		if err := session.AgentIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "agentIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.agentIdentifier": %w`, err)}
+			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.agent_identifier": %w`, err)}
 		}
 	}
 	if v, ok := sc.mutation.HostIdentifier(); ok {
 		if err := session.HostIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
+			return &ValidationError{Name: "host_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.host_identifier": %w`, err)}
 		}
 	}
 	if _, ok := sc.mutation.HostPlatform(); !ok {
-		return &ValidationError{Name: "hostPlatform", err: errors.New(`ent: missing required field "Session.hostPlatform"`)}
+		return &ValidationError{Name: "host_platform", err: errors.New(`ent: missing required field "Session.host_platform"`)}
 	}
 	if v, ok := sc.mutation.HostPlatform(); ok {
 		if err := session.HostPlatformValidator(v); err != nil {
-			return &ValidationError{Name: "hostPlatform", err: fmt.Errorf(`ent: validator failed for field "Session.hostPlatform": %w`, err)}
+			return &ValidationError{Name: "host_platform", err: fmt.Errorf(`ent: validator failed for field "Session.host_platform": %w`, err)}
 		}
 	}
 	return nil

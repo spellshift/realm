@@ -21,7 +21,7 @@ func AuthDisabledMiddleware(handler http.Handler, graph *ent.Client) http.Handle
 
 			authUser = graph.User.Create().
 				SetName("auth-disabled").
-				SetOAuthID("auth-disabled").
+				SetOauthID("auth-disabled").
 				SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
 				SetIsActivated(true).
 				SetIsAdmin(true).

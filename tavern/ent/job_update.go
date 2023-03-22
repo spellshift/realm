@@ -32,7 +32,7 @@ func (ju *JobUpdate) Where(ps ...predicate.Job) *JobUpdate {
 	return ju
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (ju *JobUpdate) SetLastModifiedAt(t time.Time) *JobUpdate {
 	ju.mutation.SetLastModifiedAt(t)
 	return ju
@@ -424,7 +424,7 @@ type JobUpdateOne struct {
 	mutation *JobMutation
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (juo *JobUpdateOne) SetLastModifiedAt(t time.Time) *JobUpdateOne {
 	juo.mutation.SetLastModifiedAt(t)
 	return juo

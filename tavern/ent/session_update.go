@@ -98,13 +98,13 @@ func (su *SessionUpdate) SetNillableIdentifier(s *string) *SessionUpdate {
 	return su
 }
 
-// SetAgentIdentifier sets the "agentIdentifier" field.
+// SetAgentIdentifier sets the "agent_identifier" field.
 func (su *SessionUpdate) SetAgentIdentifier(s string) *SessionUpdate {
 	su.mutation.SetAgentIdentifier(s)
 	return su
 }
 
-// SetNillableAgentIdentifier sets the "agentIdentifier" field if the given value is not nil.
+// SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
 func (su *SessionUpdate) SetNillableAgentIdentifier(s *string) *SessionUpdate {
 	if s != nil {
 		su.SetAgentIdentifier(*s)
@@ -112,19 +112,19 @@ func (su *SessionUpdate) SetNillableAgentIdentifier(s *string) *SessionUpdate {
 	return su
 }
 
-// ClearAgentIdentifier clears the value of the "agentIdentifier" field.
+// ClearAgentIdentifier clears the value of the "agent_identifier" field.
 func (su *SessionUpdate) ClearAgentIdentifier() *SessionUpdate {
 	su.mutation.ClearAgentIdentifier()
 	return su
 }
 
-// SetHostIdentifier sets the "hostIdentifier" field.
+// SetHostIdentifier sets the "host_identifier" field.
 func (su *SessionUpdate) SetHostIdentifier(s string) *SessionUpdate {
 	su.mutation.SetHostIdentifier(s)
 	return su
 }
 
-// SetNillableHostIdentifier sets the "hostIdentifier" field if the given value is not nil.
+// SetNillableHostIdentifier sets the "host_identifier" field if the given value is not nil.
 func (su *SessionUpdate) SetNillableHostIdentifier(s *string) *SessionUpdate {
 	if s != nil {
 		su.SetHostIdentifier(*s)
@@ -132,19 +132,19 @@ func (su *SessionUpdate) SetNillableHostIdentifier(s *string) *SessionUpdate {
 	return su
 }
 
-// ClearHostIdentifier clears the value of the "hostIdentifier" field.
+// ClearHostIdentifier clears the value of the "host_identifier" field.
 func (su *SessionUpdate) ClearHostIdentifier() *SessionUpdate {
 	su.mutation.ClearHostIdentifier()
 	return su
 }
 
-// SetHostPrimaryIP sets the "hostPrimaryIP" field.
+// SetHostPrimaryIP sets the "host_primary_ip" field.
 func (su *SessionUpdate) SetHostPrimaryIP(s string) *SessionUpdate {
 	su.mutation.SetHostPrimaryIP(s)
 	return su
 }
 
-// SetNillableHostPrimaryIP sets the "hostPrimaryIP" field if the given value is not nil.
+// SetNillableHostPrimaryIP sets the "host_primary_ip" field if the given value is not nil.
 func (su *SessionUpdate) SetNillableHostPrimaryIP(s *string) *SessionUpdate {
 	if s != nil {
 		su.SetHostPrimaryIP(*s)
@@ -152,19 +152,19 @@ func (su *SessionUpdate) SetNillableHostPrimaryIP(s *string) *SessionUpdate {
 	return su
 }
 
-// ClearHostPrimaryIP clears the value of the "hostPrimaryIP" field.
+// ClearHostPrimaryIP clears the value of the "host_primary_ip" field.
 func (su *SessionUpdate) ClearHostPrimaryIP() *SessionUpdate {
 	su.mutation.ClearHostPrimaryIP()
 	return su
 }
 
-// SetHostPlatform sets the "hostPlatform" field.
+// SetHostPlatform sets the "host_platform" field.
 func (su *SessionUpdate) SetHostPlatform(sp session.HostPlatform) *SessionUpdate {
 	su.mutation.SetHostPlatform(sp)
 	return su
 }
 
-// SetNillableHostPlatform sets the "hostPlatform" field if the given value is not nil.
+// SetNillableHostPlatform sets the "host_platform" field if the given value is not nil.
 func (su *SessionUpdate) SetNillableHostPlatform(sp *session.HostPlatform) *SessionUpdate {
 	if sp != nil {
 		su.SetHostPlatform(*sp)
@@ -172,13 +172,13 @@ func (su *SessionUpdate) SetNillableHostPlatform(sp *session.HostPlatform) *Sess
 	return su
 }
 
-// SetLastSeenAt sets the "lastSeenAt" field.
+// SetLastSeenAt sets the "last_seen_at" field.
 func (su *SessionUpdate) SetLastSeenAt(t time.Time) *SessionUpdate {
 	su.mutation.SetLastSeenAt(t)
 	return su
 }
 
-// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
 func (su *SessionUpdate) SetNillableLastSeenAt(t *time.Time) *SessionUpdate {
 	if t != nil {
 		su.SetLastSeenAt(*t)
@@ -186,7 +186,7 @@ func (su *SessionUpdate) SetNillableLastSeenAt(t *time.Time) *SessionUpdate {
 	return su
 }
 
-// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (su *SessionUpdate) ClearLastSeenAt() *SessionUpdate {
 	su.mutation.ClearLastSeenAt()
 	return su
@@ -320,17 +320,17 @@ func (su *SessionUpdate) check() error {
 	}
 	if v, ok := su.mutation.AgentIdentifier(); ok {
 		if err := session.AgentIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "agentIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.agentIdentifier": %w`, err)}
+			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.agent_identifier": %w`, err)}
 		}
 	}
 	if v, ok := su.mutation.HostIdentifier(); ok {
 		if err := session.HostIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
+			return &ValidationError{Name: "host_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.host_identifier": %w`, err)}
 		}
 	}
 	if v, ok := su.mutation.HostPlatform(); ok {
 		if err := session.HostPlatformValidator(v); err != nil {
-			return &ValidationError{Name: "hostPlatform", err: fmt.Errorf(`ent: validator failed for field "Session.hostPlatform": %w`, err)}
+			return &ValidationError{Name: "host_platform", err: fmt.Errorf(`ent: validator failed for field "Session.host_platform": %w`, err)}
 		}
 	}
 	return nil
@@ -589,13 +589,13 @@ func (suo *SessionUpdateOne) SetNillableIdentifier(s *string) *SessionUpdateOne 
 	return suo
 }
 
-// SetAgentIdentifier sets the "agentIdentifier" field.
+// SetAgentIdentifier sets the "agent_identifier" field.
 func (suo *SessionUpdateOne) SetAgentIdentifier(s string) *SessionUpdateOne {
 	suo.mutation.SetAgentIdentifier(s)
 	return suo
 }
 
-// SetNillableAgentIdentifier sets the "agentIdentifier" field if the given value is not nil.
+// SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
 func (suo *SessionUpdateOne) SetNillableAgentIdentifier(s *string) *SessionUpdateOne {
 	if s != nil {
 		suo.SetAgentIdentifier(*s)
@@ -603,19 +603,19 @@ func (suo *SessionUpdateOne) SetNillableAgentIdentifier(s *string) *SessionUpdat
 	return suo
 }
 
-// ClearAgentIdentifier clears the value of the "agentIdentifier" field.
+// ClearAgentIdentifier clears the value of the "agent_identifier" field.
 func (suo *SessionUpdateOne) ClearAgentIdentifier() *SessionUpdateOne {
 	suo.mutation.ClearAgentIdentifier()
 	return suo
 }
 
-// SetHostIdentifier sets the "hostIdentifier" field.
+// SetHostIdentifier sets the "host_identifier" field.
 func (suo *SessionUpdateOne) SetHostIdentifier(s string) *SessionUpdateOne {
 	suo.mutation.SetHostIdentifier(s)
 	return suo
 }
 
-// SetNillableHostIdentifier sets the "hostIdentifier" field if the given value is not nil.
+// SetNillableHostIdentifier sets the "host_identifier" field if the given value is not nil.
 func (suo *SessionUpdateOne) SetNillableHostIdentifier(s *string) *SessionUpdateOne {
 	if s != nil {
 		suo.SetHostIdentifier(*s)
@@ -623,19 +623,19 @@ func (suo *SessionUpdateOne) SetNillableHostIdentifier(s *string) *SessionUpdate
 	return suo
 }
 
-// ClearHostIdentifier clears the value of the "hostIdentifier" field.
+// ClearHostIdentifier clears the value of the "host_identifier" field.
 func (suo *SessionUpdateOne) ClearHostIdentifier() *SessionUpdateOne {
 	suo.mutation.ClearHostIdentifier()
 	return suo
 }
 
-// SetHostPrimaryIP sets the "hostPrimaryIP" field.
+// SetHostPrimaryIP sets the "host_primary_ip" field.
 func (suo *SessionUpdateOne) SetHostPrimaryIP(s string) *SessionUpdateOne {
 	suo.mutation.SetHostPrimaryIP(s)
 	return suo
 }
 
-// SetNillableHostPrimaryIP sets the "hostPrimaryIP" field if the given value is not nil.
+// SetNillableHostPrimaryIP sets the "host_primary_ip" field if the given value is not nil.
 func (suo *SessionUpdateOne) SetNillableHostPrimaryIP(s *string) *SessionUpdateOne {
 	if s != nil {
 		suo.SetHostPrimaryIP(*s)
@@ -643,19 +643,19 @@ func (suo *SessionUpdateOne) SetNillableHostPrimaryIP(s *string) *SessionUpdateO
 	return suo
 }
 
-// ClearHostPrimaryIP clears the value of the "hostPrimaryIP" field.
+// ClearHostPrimaryIP clears the value of the "host_primary_ip" field.
 func (suo *SessionUpdateOne) ClearHostPrimaryIP() *SessionUpdateOne {
 	suo.mutation.ClearHostPrimaryIP()
 	return suo
 }
 
-// SetHostPlatform sets the "hostPlatform" field.
+// SetHostPlatform sets the "host_platform" field.
 func (suo *SessionUpdateOne) SetHostPlatform(sp session.HostPlatform) *SessionUpdateOne {
 	suo.mutation.SetHostPlatform(sp)
 	return suo
 }
 
-// SetNillableHostPlatform sets the "hostPlatform" field if the given value is not nil.
+// SetNillableHostPlatform sets the "host_platform" field if the given value is not nil.
 func (suo *SessionUpdateOne) SetNillableHostPlatform(sp *session.HostPlatform) *SessionUpdateOne {
 	if sp != nil {
 		suo.SetHostPlatform(*sp)
@@ -663,13 +663,13 @@ func (suo *SessionUpdateOne) SetNillableHostPlatform(sp *session.HostPlatform) *
 	return suo
 }
 
-// SetLastSeenAt sets the "lastSeenAt" field.
+// SetLastSeenAt sets the "last_seen_at" field.
 func (suo *SessionUpdateOne) SetLastSeenAt(t time.Time) *SessionUpdateOne {
 	suo.mutation.SetLastSeenAt(t)
 	return suo
 }
 
-// SetNillableLastSeenAt sets the "lastSeenAt" field if the given value is not nil.
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
 func (suo *SessionUpdateOne) SetNillableLastSeenAt(t *time.Time) *SessionUpdateOne {
 	if t != nil {
 		suo.SetLastSeenAt(*t)
@@ -677,7 +677,7 @@ func (suo *SessionUpdateOne) SetNillableLastSeenAt(t *time.Time) *SessionUpdateO
 	return suo
 }
 
-// ClearLastSeenAt clears the value of the "lastSeenAt" field.
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (suo *SessionUpdateOne) ClearLastSeenAt() *SessionUpdateOne {
 	suo.mutation.ClearLastSeenAt()
 	return suo
@@ -824,17 +824,17 @@ func (suo *SessionUpdateOne) check() error {
 	}
 	if v, ok := suo.mutation.AgentIdentifier(); ok {
 		if err := session.AgentIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "agentIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.agentIdentifier": %w`, err)}
+			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.agent_identifier": %w`, err)}
 		}
 	}
 	if v, ok := suo.mutation.HostIdentifier(); ok {
 		if err := session.HostIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "hostIdentifier", err: fmt.Errorf(`ent: validator failed for field "Session.hostIdentifier": %w`, err)}
+			return &ValidationError{Name: "host_identifier", err: fmt.Errorf(`ent: validator failed for field "Session.host_identifier": %w`, err)}
 		}
 	}
 	if v, ok := suo.mutation.HostPlatform(); ok {
 		if err := session.HostPlatformValidator(v); err != nil {
-			return &ValidationError{Name: "hostPlatform", err: fmt.Errorf(`ent: validator failed for field "Session.hostPlatform": %w`, err)}
+			return &ValidationError{Name: "host_platform", err: fmt.Errorf(`ent: validator failed for field "Session.host_platform": %w`, err)}
 		}
 	}
 	return nil

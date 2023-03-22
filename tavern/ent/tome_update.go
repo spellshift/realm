@@ -29,7 +29,7 @@ func (tu *TomeUpdate) Where(ps ...predicate.Tome) *TomeUpdate {
 	return tu
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tu *TomeUpdate) SetLastModifiedAt(t time.Time) *TomeUpdate {
 	tu.mutation.SetLastModifiedAt(t)
 	return tu
@@ -47,23 +47,23 @@ func (tu *TomeUpdate) SetDescription(s string) *TomeUpdate {
 	return tu
 }
 
-// SetParamdefs sets the "paramdefs" field.
-func (tu *TomeUpdate) SetParamdefs(s string) *TomeUpdate {
-	tu.mutation.SetParamdefs(s)
+// SetParamDefs sets the "param_defs" field.
+func (tu *TomeUpdate) SetParamDefs(s string) *TomeUpdate {
+	tu.mutation.SetParamDefs(s)
 	return tu
 }
 
-// SetNillableParamdefs sets the "paramdefs" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableParamdefs(s *string) *TomeUpdate {
+// SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableParamDefs(s *string) *TomeUpdate {
 	if s != nil {
-		tu.SetParamdefs(*s)
+		tu.SetParamDefs(*s)
 	}
 	return tu
 }
 
-// ClearParamdefs clears the value of the "paramdefs" field.
-func (tu *TomeUpdate) ClearParamdefs() *TomeUpdate {
-	tu.mutation.ClearParamdefs()
+// ClearParamDefs clears the value of the "param_defs" field.
+func (tu *TomeUpdate) ClearParamDefs() *TomeUpdate {
+	tu.mutation.ClearParamDefs()
 	return tu
 }
 
@@ -198,11 +198,11 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Paramdefs(); ok {
-		_spec.SetField(tome.FieldParamdefs, field.TypeString, value)
+	if value, ok := tu.mutation.ParamDefs(); ok {
+		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
-	if tu.mutation.ParamdefsCleared() {
-		_spec.ClearField(tome.FieldParamdefs, field.TypeString)
+	if tu.mutation.ParamDefsCleared() {
+		_spec.ClearField(tome.FieldParamDefs, field.TypeString)
 	}
 	if value, ok := tu.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
@@ -284,7 +284,7 @@ type TomeUpdateOne struct {
 	mutation *TomeMutation
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tuo *TomeUpdateOne) SetLastModifiedAt(t time.Time) *TomeUpdateOne {
 	tuo.mutation.SetLastModifiedAt(t)
 	return tuo
@@ -302,23 +302,23 @@ func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
 	return tuo
 }
 
-// SetParamdefs sets the "paramdefs" field.
-func (tuo *TomeUpdateOne) SetParamdefs(s string) *TomeUpdateOne {
-	tuo.mutation.SetParamdefs(s)
+// SetParamDefs sets the "param_defs" field.
+func (tuo *TomeUpdateOne) SetParamDefs(s string) *TomeUpdateOne {
+	tuo.mutation.SetParamDefs(s)
 	return tuo
 }
 
-// SetNillableParamdefs sets the "paramdefs" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableParamdefs(s *string) *TomeUpdateOne {
+// SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableParamDefs(s *string) *TomeUpdateOne {
 	if s != nil {
-		tuo.SetParamdefs(*s)
+		tuo.SetParamDefs(*s)
 	}
 	return tuo
 }
 
-// ClearParamdefs clears the value of the "paramdefs" field.
-func (tuo *TomeUpdateOne) ClearParamdefs() *TomeUpdateOne {
-	tuo.mutation.ClearParamdefs()
+// ClearParamDefs clears the value of the "param_defs" field.
+func (tuo *TomeUpdateOne) ClearParamDefs() *TomeUpdateOne {
+	tuo.mutation.ClearParamDefs()
 	return tuo
 }
 
@@ -483,11 +483,11 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Paramdefs(); ok {
-		_spec.SetField(tome.FieldParamdefs, field.TypeString, value)
+	if value, ok := tuo.mutation.ParamDefs(); ok {
+		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
-	if tuo.mutation.ParamdefsCleared() {
-		_spec.ClearField(tome.FieldParamdefs, field.TypeString)
+	if tuo.mutation.ParamDefsCleared() {
+		_spec.ClearField(tome.FieldParamDefs, field.TypeString)
 	}
 	if value, ok := tuo.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)

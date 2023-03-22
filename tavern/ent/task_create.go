@@ -22,13 +22,13 @@ type TaskCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (tc *TaskCreate) SetCreatedAt(t time.Time) *TaskCreate {
 	tc.mutation.SetCreatedAt(t)
 	return tc
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
 func (tc *TaskCreate) SetNillableCreatedAt(t *time.Time) *TaskCreate {
 	if t != nil {
 		tc.SetCreatedAt(*t)
@@ -36,13 +36,13 @@ func (tc *TaskCreate) SetNillableCreatedAt(t *time.Time) *TaskCreate {
 	return tc
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (tc *TaskCreate) SetLastModifiedAt(t time.Time) *TaskCreate {
 	tc.mutation.SetLastModifiedAt(t)
 	return tc
 }
 
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
 func (tc *TaskCreate) SetNillableLastModifiedAt(t *time.Time) *TaskCreate {
 	if t != nil {
 		tc.SetLastModifiedAt(*t)
@@ -50,13 +50,13 @@ func (tc *TaskCreate) SetNillableLastModifiedAt(t *time.Time) *TaskCreate {
 	return tc
 }
 
-// SetClaimedAt sets the "claimedAt" field.
+// SetClaimedAt sets the "claimed_at" field.
 func (tc *TaskCreate) SetClaimedAt(t time.Time) *TaskCreate {
 	tc.mutation.SetClaimedAt(t)
 	return tc
 }
 
-// SetNillableClaimedAt sets the "claimedAt" field if the given value is not nil.
+// SetNillableClaimedAt sets the "claimed_at" field if the given value is not nil.
 func (tc *TaskCreate) SetNillableClaimedAt(t *time.Time) *TaskCreate {
 	if t != nil {
 		tc.SetClaimedAt(*t)
@@ -64,13 +64,13 @@ func (tc *TaskCreate) SetNillableClaimedAt(t *time.Time) *TaskCreate {
 	return tc
 }
 
-// SetExecStartedAt sets the "execStartedAt" field.
+// SetExecStartedAt sets the "exec_started_at" field.
 func (tc *TaskCreate) SetExecStartedAt(t time.Time) *TaskCreate {
 	tc.mutation.SetExecStartedAt(t)
 	return tc
 }
 
-// SetNillableExecStartedAt sets the "execStartedAt" field if the given value is not nil.
+// SetNillableExecStartedAt sets the "exec_started_at" field if the given value is not nil.
 func (tc *TaskCreate) SetNillableExecStartedAt(t *time.Time) *TaskCreate {
 	if t != nil {
 		tc.SetExecStartedAt(*t)
@@ -78,13 +78,13 @@ func (tc *TaskCreate) SetNillableExecStartedAt(t *time.Time) *TaskCreate {
 	return tc
 }
 
-// SetExecFinishedAt sets the "execFinishedAt" field.
+// SetExecFinishedAt sets the "exec_finished_at" field.
 func (tc *TaskCreate) SetExecFinishedAt(t time.Time) *TaskCreate {
 	tc.mutation.SetExecFinishedAt(t)
 	return tc
 }
 
-// SetNillableExecFinishedAt sets the "execFinishedAt" field if the given value is not nil.
+// SetNillableExecFinishedAt sets the "exec_finished_at" field if the given value is not nil.
 func (tc *TaskCreate) SetNillableExecFinishedAt(t *time.Time) *TaskCreate {
 	if t != nil {
 		tc.SetExecFinishedAt(*t)
@@ -190,10 +190,10 @@ func (tc *TaskCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (tc *TaskCreate) check() error {
 	if _, ok := tc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Task.createdAt"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Task.created_at"`)}
 	}
 	if _, ok := tc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Task.lastModifiedAt"`)}
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Task.last_modified_at"`)}
 	}
 	if _, ok := tc.mutation.JobID(); !ok {
 		return &ValidationError{Name: "job", err: errors.New(`ent: missing required edge "Task.job"`)}

@@ -28,7 +28,7 @@ func TestUsersQuery(t *testing.T) {
 		SetName("bobdylan").
 		SetIsActivated(false).
 		SetIsAdmin(true).
-		SetOAuthID("likearollingstone").
+		SetOauthID("likearollingstone").
 		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/0/02/Bob_Dylan_-_Azkena_Rock_Festival_2010_2.jpg").
 		SaveX(ctx)
 

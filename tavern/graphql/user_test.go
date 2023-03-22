@@ -30,7 +30,7 @@ func TestUserMutations(t *testing.T) {
 		SetName("bobdylan").
 		SetIsActivated(true).
 		SetIsAdmin(true).
-		SetOAuthID("likearollingstone").
+		SetOauthID("likearollingstone").
 		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/0/02/Bob_Dylan_-_Azkena_Rock_Festival_2010_2.jpg").
 		SaveX(ctx)
 
@@ -65,9 +65,9 @@ func newUpdateUserTest(gqlClient *client.Client, id int, input ent.UpdateUserInp
 			client.Var("userID", id),
 			client.Var("input", map[string]interface{}{
 				"name":        input.Name,
-				"isactivated": input.IsActivated,
-				"isadmin":     input.IsAdmin,
-				"photourl":    input.PhotoURL,
+				"isActivated": input.IsActivated,
+				"isAdmin":     input.IsAdmin,
+				"photoURL":    input.PhotoURL,
 			}),
 		)
 

@@ -28,7 +28,7 @@ func (fu *FileUpdate) Where(ps ...predicate.File) *FileUpdate {
 	return fu
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (fu *FileUpdate) SetLastModifiedAt(t time.Time) *FileUpdate {
 	fu.mutation.SetLastModifiedAt(t)
 	return fu
@@ -190,7 +190,7 @@ type FileUpdateOne struct {
 	mutation *FileMutation
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (fuo *FileUpdateOne) SetLastModifiedAt(t time.Time) *FileUpdateOne {
 	fuo.mutation.SetLastModifiedAt(t)
 	return fuo

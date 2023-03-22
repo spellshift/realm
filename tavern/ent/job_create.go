@@ -24,13 +24,13 @@ type JobCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the "createdAt" field.
+// SetCreatedAt sets the "created_at" field.
 func (jc *JobCreate) SetCreatedAt(t time.Time) *JobCreate {
 	jc.mutation.SetCreatedAt(t)
 	return jc
 }
 
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
 func (jc *JobCreate) SetNillableCreatedAt(t *time.Time) *JobCreate {
 	if t != nil {
 		jc.SetCreatedAt(*t)
@@ -38,13 +38,13 @@ func (jc *JobCreate) SetNillableCreatedAt(t *time.Time) *JobCreate {
 	return jc
 }
 
-// SetLastModifiedAt sets the "lastModifiedAt" field.
+// SetLastModifiedAt sets the "last_modified_at" field.
 func (jc *JobCreate) SetLastModifiedAt(t time.Time) *JobCreate {
 	jc.mutation.SetLastModifiedAt(t)
 	return jc
 }
 
-// SetNillableLastModifiedAt sets the "lastModifiedAt" field if the given value is not nil.
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
 func (jc *JobCreate) SetNillableLastModifiedAt(t *time.Time) *JobCreate {
 	if t != nil {
 		jc.SetLastModifiedAt(*t)
@@ -184,10 +184,10 @@ func (jc *JobCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (jc *JobCreate) check() error {
 	if _, ok := jc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Job.createdAt"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Job.created_at"`)}
 	}
 	if _, ok := jc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "lastModifiedAt", err: errors.New(`ent: missing required field "Job.lastModifiedAt"`)}
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Job.last_modified_at"`)}
 	}
 	if _, ok := jc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Job.name"`)}

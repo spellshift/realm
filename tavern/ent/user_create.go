@@ -19,31 +19,31 @@ type UserCreate struct {
 	hooks    []Hook
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (uc *UserCreate) SetName(s string) *UserCreate {
 	uc.mutation.SetName(s)
 	return uc
 }
 
-// SetOAuthID sets the "OAuthID" field.
-func (uc *UserCreate) SetOAuthID(s string) *UserCreate {
-	uc.mutation.SetOAuthID(s)
+// SetOauthID sets the "oauth_id" field.
+func (uc *UserCreate) SetOauthID(s string) *UserCreate {
+	uc.mutation.SetOauthID(s)
 	return uc
 }
 
-// SetPhotoURL sets the "PhotoURL" field.
+// SetPhotoURL sets the "photo_url" field.
 func (uc *UserCreate) SetPhotoURL(s string) *UserCreate {
 	uc.mutation.SetPhotoURL(s)
 	return uc
 }
 
-// SetSessionToken sets the "SessionToken" field.
+// SetSessionToken sets the "session_token" field.
 func (uc *UserCreate) SetSessionToken(s string) *UserCreate {
 	uc.mutation.SetSessionToken(s)
 	return uc
 }
 
-// SetNillableSessionToken sets the "SessionToken" field if the given value is not nil.
+// SetNillableSessionToken sets the "session_token" field if the given value is not nil.
 func (uc *UserCreate) SetNillableSessionToken(s *string) *UserCreate {
 	if s != nil {
 		uc.SetSessionToken(*s)
@@ -51,13 +51,13 @@ func (uc *UserCreate) SetNillableSessionToken(s *string) *UserCreate {
 	return uc
 }
 
-// SetIsActivated sets the "IsActivated" field.
+// SetIsActivated sets the "is_activated" field.
 func (uc *UserCreate) SetIsActivated(b bool) *UserCreate {
 	uc.mutation.SetIsActivated(b)
 	return uc
 }
 
-// SetNillableIsActivated sets the "IsActivated" field if the given value is not nil.
+// SetNillableIsActivated sets the "is_activated" field if the given value is not nil.
 func (uc *UserCreate) SetNillableIsActivated(b *bool) *UserCreate {
 	if b != nil {
 		uc.SetIsActivated(*b)
@@ -65,13 +65,13 @@ func (uc *UserCreate) SetNillableIsActivated(b *bool) *UserCreate {
 	return uc
 }
 
-// SetIsAdmin sets the "IsAdmin" field.
+// SetIsAdmin sets the "is_admin" field.
 func (uc *UserCreate) SetIsAdmin(b bool) *UserCreate {
 	uc.mutation.SetIsAdmin(b)
 	return uc
 }
 
-// SetNillableIsAdmin sets the "IsAdmin" field if the given value is not nil.
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
 func (uc *UserCreate) SetNillableIsAdmin(b *bool) *UserCreate {
 	if b != nil {
 		uc.SetIsAdmin(*b)
@@ -131,32 +131,32 @@ func (uc *UserCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.Name(); !ok {
-		return &ValidationError{Name: "Name", err: errors.New(`ent: missing required field "User.Name"`)}
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "User.name"`)}
 	}
 	if v, ok := uc.mutation.Name(); ok {
 		if err := user.NameValidator(v); err != nil {
-			return &ValidationError{Name: "Name", err: fmt.Errorf(`ent: validator failed for field "User.Name": %w`, err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
-	if _, ok := uc.mutation.OAuthID(); !ok {
-		return &ValidationError{Name: "OAuthID", err: errors.New(`ent: missing required field "User.OAuthID"`)}
+	if _, ok := uc.mutation.OauthID(); !ok {
+		return &ValidationError{Name: "oauth_id", err: errors.New(`ent: missing required field "User.oauth_id"`)}
 	}
 	if _, ok := uc.mutation.PhotoURL(); !ok {
-		return &ValidationError{Name: "PhotoURL", err: errors.New(`ent: missing required field "User.PhotoURL"`)}
+		return &ValidationError{Name: "photo_url", err: errors.New(`ent: missing required field "User.photo_url"`)}
 	}
 	if _, ok := uc.mutation.SessionToken(); !ok {
-		return &ValidationError{Name: "SessionToken", err: errors.New(`ent: missing required field "User.SessionToken"`)}
+		return &ValidationError{Name: "session_token", err: errors.New(`ent: missing required field "User.session_token"`)}
 	}
 	if v, ok := uc.mutation.SessionToken(); ok {
 		if err := user.SessionTokenValidator(v); err != nil {
-			return &ValidationError{Name: "SessionToken", err: fmt.Errorf(`ent: validator failed for field "User.SessionToken": %w`, err)}
+			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
 	if _, ok := uc.mutation.IsActivated(); !ok {
-		return &ValidationError{Name: "IsActivated", err: errors.New(`ent: missing required field "User.IsActivated"`)}
+		return &ValidationError{Name: "is_activated", err: errors.New(`ent: missing required field "User.is_activated"`)}
 	}
 	if _, ok := uc.mutation.IsAdmin(); !ok {
-		return &ValidationError{Name: "IsAdmin", err: errors.New(`ent: missing required field "User.IsAdmin"`)}
+		return &ValidationError{Name: "is_admin", err: errors.New(`ent: missing required field "User.is_admin"`)}
 	}
 	return nil
 }
@@ -188,9 +188,9 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := uc.mutation.OAuthID(); ok {
-		_spec.SetField(user.FieldOAuthID, field.TypeString, value)
-		_node.OAuthID = value
+	if value, ok := uc.mutation.OauthID(); ok {
+		_spec.SetField(user.FieldOauthID, field.TypeString, value)
+		_node.OauthID = value
 	}
 	if value, ok := uc.mutation.PhotoURL(); ok {
 		_spec.SetField(user.FieldPhotoURL, field.TypeString, value)

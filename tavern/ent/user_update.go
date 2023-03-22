@@ -27,25 +27,25 @@ func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	return uu
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (uu *UserUpdate) SetName(s string) *UserUpdate {
 	uu.mutation.SetName(s)
 	return uu
 }
 
-// SetPhotoURL sets the "PhotoURL" field.
+// SetPhotoURL sets the "photo_url" field.
 func (uu *UserUpdate) SetPhotoURL(s string) *UserUpdate {
 	uu.mutation.SetPhotoURL(s)
 	return uu
 }
 
-// SetSessionToken sets the "SessionToken" field.
+// SetSessionToken sets the "session_token" field.
 func (uu *UserUpdate) SetSessionToken(s string) *UserUpdate {
 	uu.mutation.SetSessionToken(s)
 	return uu
 }
 
-// SetNillableSessionToken sets the "SessionToken" field if the given value is not nil.
+// SetNillableSessionToken sets the "session_token" field if the given value is not nil.
 func (uu *UserUpdate) SetNillableSessionToken(s *string) *UserUpdate {
 	if s != nil {
 		uu.SetSessionToken(*s)
@@ -53,13 +53,13 @@ func (uu *UserUpdate) SetNillableSessionToken(s *string) *UserUpdate {
 	return uu
 }
 
-// SetIsActivated sets the "IsActivated" field.
+// SetIsActivated sets the "is_activated" field.
 func (uu *UserUpdate) SetIsActivated(b bool) *UserUpdate {
 	uu.mutation.SetIsActivated(b)
 	return uu
 }
 
-// SetNillableIsActivated sets the "IsActivated" field if the given value is not nil.
+// SetNillableIsActivated sets the "is_activated" field if the given value is not nil.
 func (uu *UserUpdate) SetNillableIsActivated(b *bool) *UserUpdate {
 	if b != nil {
 		uu.SetIsActivated(*b)
@@ -67,13 +67,13 @@ func (uu *UserUpdate) SetNillableIsActivated(b *bool) *UserUpdate {
 	return uu
 }
 
-// SetIsAdmin sets the "IsAdmin" field.
+// SetIsAdmin sets the "is_admin" field.
 func (uu *UserUpdate) SetIsAdmin(b bool) *UserUpdate {
 	uu.mutation.SetIsAdmin(b)
 	return uu
 }
 
-// SetNillableIsAdmin sets the "IsAdmin" field if the given value is not nil.
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
 func (uu *UserUpdate) SetNillableIsAdmin(b *bool) *UserUpdate {
 	if b != nil {
 		uu.SetIsAdmin(*b)
@@ -117,12 +117,12 @@ func (uu *UserUpdate) ExecX(ctx context.Context) {
 func (uu *UserUpdate) check() error {
 	if v, ok := uu.mutation.Name(); ok {
 		if err := user.NameValidator(v); err != nil {
-			return &ValidationError{Name: "Name", err: fmt.Errorf(`ent: validator failed for field "User.Name": %w`, err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
 	if v, ok := uu.mutation.SessionToken(); ok {
 		if err := user.SessionTokenValidator(v); err != nil {
-			return &ValidationError{Name: "SessionToken", err: fmt.Errorf(`ent: validator failed for field "User.SessionToken": %w`, err)}
+			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
 	return nil
@@ -175,25 +175,25 @@ type UserUpdateOne struct {
 	mutation *UserMutation
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
 	uuo.mutation.SetName(s)
 	return uuo
 }
 
-// SetPhotoURL sets the "PhotoURL" field.
+// SetPhotoURL sets the "photo_url" field.
 func (uuo *UserUpdateOne) SetPhotoURL(s string) *UserUpdateOne {
 	uuo.mutation.SetPhotoURL(s)
 	return uuo
 }
 
-// SetSessionToken sets the "SessionToken" field.
+// SetSessionToken sets the "session_token" field.
 func (uuo *UserUpdateOne) SetSessionToken(s string) *UserUpdateOne {
 	uuo.mutation.SetSessionToken(s)
 	return uuo
 }
 
-// SetNillableSessionToken sets the "SessionToken" field if the given value is not nil.
+// SetNillableSessionToken sets the "session_token" field if the given value is not nil.
 func (uuo *UserUpdateOne) SetNillableSessionToken(s *string) *UserUpdateOne {
 	if s != nil {
 		uuo.SetSessionToken(*s)
@@ -201,13 +201,13 @@ func (uuo *UserUpdateOne) SetNillableSessionToken(s *string) *UserUpdateOne {
 	return uuo
 }
 
-// SetIsActivated sets the "IsActivated" field.
+// SetIsActivated sets the "is_activated" field.
 func (uuo *UserUpdateOne) SetIsActivated(b bool) *UserUpdateOne {
 	uuo.mutation.SetIsActivated(b)
 	return uuo
 }
 
-// SetNillableIsActivated sets the "IsActivated" field if the given value is not nil.
+// SetNillableIsActivated sets the "is_activated" field if the given value is not nil.
 func (uuo *UserUpdateOne) SetNillableIsActivated(b *bool) *UserUpdateOne {
 	if b != nil {
 		uuo.SetIsActivated(*b)
@@ -215,13 +215,13 @@ func (uuo *UserUpdateOne) SetNillableIsActivated(b *bool) *UserUpdateOne {
 	return uuo
 }
 
-// SetIsAdmin sets the "IsAdmin" field.
+// SetIsAdmin sets the "is_admin" field.
 func (uuo *UserUpdateOne) SetIsAdmin(b bool) *UserUpdateOne {
 	uuo.mutation.SetIsAdmin(b)
 	return uuo
 }
 
-// SetNillableIsAdmin sets the "IsAdmin" field if the given value is not nil.
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
 func (uuo *UserUpdateOne) SetNillableIsAdmin(b *bool) *UserUpdateOne {
 	if b != nil {
 		uuo.SetIsAdmin(*b)
@@ -278,12 +278,12 @@ func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 func (uuo *UserUpdateOne) check() error {
 	if v, ok := uuo.mutation.Name(); ok {
 		if err := user.NameValidator(v); err != nil {
-			return &ValidationError{Name: "Name", err: fmt.Errorf(`ent: validator failed for field "User.Name": %w`, err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
 	if v, ok := uuo.mutation.SessionToken(); ok {
 		if err := user.SessionTokenValidator(v); err != nil {
-			return &ValidationError{Name: "SessionToken", err: fmt.Errorf(`ent: validator failed for field "User.SessionToken": %w`, err)}
+			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
 	return nil

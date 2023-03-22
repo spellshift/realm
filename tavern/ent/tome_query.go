@@ -301,7 +301,7 @@ func (tq *TomeQuery) WithFiles(opts ...func(*FileQuery)) *TomeQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -324,7 +324,7 @@ func (tq *TomeQuery) GroupBy(field string, fields ...string) *TomeGroupBy {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Tome.Query().

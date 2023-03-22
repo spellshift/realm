@@ -25,15 +25,15 @@ type Session struct {
 	// Unique identifier for the session. Unique to each instance of the session.
 	Identifier string `json:"identifier,omitempty"`
 	// Identifies the agent that the session is running as (e.g. 'imix').
-	AgentIdentifier string `json:"agentIdentifier,omitempty"`
+	AgentIdentifier string `json:"agent_identifier,omitempty"`
 	// Unique identifier for the host the session is running on.
-	HostIdentifier string `json:"hostIdentifier,omitempty"`
+	HostIdentifier string `json:"host_identifier,omitempty"`
 	// Primary interface IP address reported by the agent.
-	HostPrimaryIP string `json:"hostPrimaryIP,omitempty"`
+	HostPrimaryIP string `json:"host_primary_ip,omitempty"`
 	// Platform the agent is operating on.
-	HostPlatform session.HostPlatform `json:"hostPlatform,omitempty"`
+	HostPlatform session.HostPlatform `json:"host_platform,omitempty"`
 	// Timestamp of when a task was last claimed or updated for a target
-	LastSeenAt time.Time `json:"lastSeenAt,omitempty"`
+	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SessionQuery when eager-loading is set.
 	Edges SessionEdges `json:"edges"`
@@ -131,31 +131,31 @@ func (s *Session) assignValues(columns []string, values []any) error {
 			}
 		case session.FieldAgentIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field agentIdentifier", values[i])
+				return fmt.Errorf("unexpected type %T for field agent_identifier", values[i])
 			} else if value.Valid {
 				s.AgentIdentifier = value.String
 			}
 		case session.FieldHostIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field hostIdentifier", values[i])
+				return fmt.Errorf("unexpected type %T for field host_identifier", values[i])
 			} else if value.Valid {
 				s.HostIdentifier = value.String
 			}
 		case session.FieldHostPrimaryIP:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field hostPrimaryIP", values[i])
+				return fmt.Errorf("unexpected type %T for field host_primary_ip", values[i])
 			} else if value.Valid {
 				s.HostPrimaryIP = value.String
 			}
 		case session.FieldHostPlatform:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field hostPlatform", values[i])
+				return fmt.Errorf("unexpected type %T for field host_platform", values[i])
 			} else if value.Valid {
 				s.HostPlatform = session.HostPlatform(value.String)
 			}
 		case session.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field lastSeenAt", values[i])
+				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
 			} else if value.Valid {
 				s.LastSeenAt = value.Time
 			}
@@ -209,19 +209,19 @@ func (s *Session) String() string {
 	builder.WriteString("identifier=")
 	builder.WriteString(s.Identifier)
 	builder.WriteString(", ")
-	builder.WriteString("agentIdentifier=")
+	builder.WriteString("agent_identifier=")
 	builder.WriteString(s.AgentIdentifier)
 	builder.WriteString(", ")
-	builder.WriteString("hostIdentifier=")
+	builder.WriteString("host_identifier=")
 	builder.WriteString(s.HostIdentifier)
 	builder.WriteString(", ")
-	builder.WriteString("hostPrimaryIP=")
+	builder.WriteString("host_primary_ip=")
 	builder.WriteString(s.HostPrimaryIP)
 	builder.WriteString(", ")
-	builder.WriteString("hostPlatform=")
+	builder.WriteString("host_platform=")
 	builder.WriteString(fmt.Sprintf("%v", s.HostPlatform))
 	builder.WriteString(", ")
-	builder.WriteString("lastSeenAt=")
+	builder.WriteString("last_seen_at=")
 	builder.WriteString(s.LastSeenAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()

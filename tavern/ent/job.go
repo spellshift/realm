@@ -20,9 +20,9 @@ type Job struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Timestamp of when this ent was created
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
-	LastModifiedAt time.Time `json:"lastModifiedAt,omitempty"`
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// Name of the job
 	Name string `json:"name,omitempty"`
 	// Value of parameters that were specified for the job (as a JSON string).
@@ -142,13 +142,13 @@ func (j *Job) assignValues(columns []string, values []any) error {
 			j.ID = int(value.Int64)
 		case job.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				j.CreatedAt = value.Time
 			}
 		case job.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field lastModifiedAt", values[i])
+				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				j.LastModifiedAt = value.Time
 			}
@@ -233,10 +233,10 @@ func (j *Job) String() string {
 	var builder strings.Builder
 	builder.WriteString("Job(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", j.ID))
-	builder.WriteString("createdAt=")
+	builder.WriteString("created_at=")
 	builder.WriteString(j.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("lastModifiedAt=")
+	builder.WriteString("last_modified_at=")
 	builder.WriteString(j.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
