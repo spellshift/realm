@@ -12,6 +12,7 @@ use tokio::time::Duration;
 use imix::graphql::{GraphQLTask, self};
 use eldritch::eldritch_run;
 use uuid::Uuid;
+use sys_info::{os_release,linux_os_release};
 
 
 async fn install(config_path: String) -> Result<(), imix::Error> {
@@ -138,6 +139,21 @@ fn get_primary_ip() -> Result<String> {
         },
     };
     Ok(res)
+}
+
+fn get_os_pretty_name() -> Result<String> {
+    if cfg!(target_os = "linux") {
+        let linux_rel = linux_os_release()?;
+        let pretty_name = match linux_rel.pretty_name {
+            Some(local_pretty_name) => local_pretty_name,
+            None => "UNKNOWN-Linux".to_string(),
+        };
+        return Ok(format!("{}",pretty_name));
+    } else if cfg!(target_os = "windows") || cfg!(target_os = "macos") {
+        return Ok(os_release()?);
+    } else {
+        return Ok("UNKNOWN".to_string());
+    }
 }
 
 // Async handler for port scanning.
@@ -323,6 +339,13 @@ mod tests {
             },
         };
         assert!((primary_ip_address != "DANGER-UNKNOWN".to_string()))
+    }
+    
+    #[test]
+    fn imix_test_get_os_pretty_name() { 
+        let res = get_os_pretty_name().unwrap();
+        println!("{res}");
+        assert!(!res.contains("UNKNOWN"));
     }
 
     #[test]
