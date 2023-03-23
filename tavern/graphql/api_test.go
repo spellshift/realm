@@ -55,12 +55,13 @@ func runTestCase(t *testing.T, path string) {
 	require.NoError(t, err)
 
 	// Ent Client
-	graph := enttest.Open(t, driverName, dataSourceName)
+	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
 	defer graph.Close()
 
 	// Initial DB State
 	db, err := sql.Open(driverName, dataSourceName)
 	require.NoError(t, err, "failed to open test db")
+	defer db.Close()
 	_, dbErr := db.Exec(tc.State)
 	require.NoError(t, dbErr, "failed to setup test db state")
 

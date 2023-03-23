@@ -1,0 +1,19 @@
+# Ensures the `updateUser` mutation requires admin permissions.
+
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,false);
+requestor:
+  session_token: secretToken
+query: |
+  mutation UpdateUserName($userID: ID!, $input: UpdateUserInput!) {
+    updateUser(userID: $userID, input:$input) {
+      id
+      name
+    }
+  }
+variables:
+  userID: 5
+  input:
+    name: "new_name"
+expected_error: "permission denied"
