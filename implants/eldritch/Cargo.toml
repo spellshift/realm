@@ -24,6 +24,7 @@ tera = "1.17.1"
 gazebo = "0.8.1"
 nix = "0.26.1"
 eval = "0.4.3"
+rust-embed="6.6.0"
 
 [dependencies.windows-sys]
 version = "0.45.0"
