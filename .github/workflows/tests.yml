@@ -32,8 +32,36 @@ jobs:
       run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
+  imix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - if: matrix.os == 'windows-latest'
+      run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+      name: 👾 Disable defender
+      shell: powershell
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly-2022-11-03
+        default: true
+        profile: minimal
+    - name: rust-cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./implants/imix -> ../target"
+    - name: 🔨 Build
+      run: cd implants/imix && cargo build --verbose
+    - name: 🔎 Run tests
+      run: cd implants/imix && cargo test --verbose -- --test-threads=256
 
-  implants:
+  eldritch:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -58,10 +86,10 @@ jobs:
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: "./implants/ -> ../target"
+        workspaces: "./implants/eldritch -> ../target"
     - name: 🔨 Build
-      run: cd implants/ && cargo build --verbose
+      run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
-      run: cd implants/ && cargo tarpaulin --verbose --out xml
+      run: cd implants/eldritch && cargo tarpaulin --verbose --out xml
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
