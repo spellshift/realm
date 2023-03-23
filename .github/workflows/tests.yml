@@ -82,7 +82,6 @@ jobs:
         toolchain: nightly-2022-11-03
         default: true
         profile: minimal
-      run: cargo install cargo-tarpaulin
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
@@ -90,6 +89,6 @@ jobs:
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
-      run: cd implants/eldritch && cargo tarpaulin --verbose --out xml
+      run: cargo install cargo-tarpaulin && cd implants/eldritch && cargo tarpaulin --verbose --out xml
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
