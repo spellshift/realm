@@ -89,6 +89,6 @@ jobs:
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
-      run: cargo install cargo-tarpaulin && cd implants/eldritch && cargo tarpaulin --verbose --out xml
+      run: cargo install cargo-tarpaulin && cd implants/eldritch && cargo tarpaulin --verbose --out xml --no-fail-fast --jobs 4
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
