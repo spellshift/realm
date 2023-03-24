@@ -91,10 +91,10 @@ jobs:
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
-      working-directory: implants/eldritch
       uses: actions-rs/tarpaulin@v0.1
       with:
         version: '0.15.0'
         args: '--verbose --out Xml --no-fail-fast'
+      working-directory: implants/eldritch
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
