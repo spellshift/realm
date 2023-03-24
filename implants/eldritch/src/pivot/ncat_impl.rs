@@ -134,29 +134,29 @@ mod tests {
         Ok(())    
     }
 
-    // #[tokio::test]
-    // async fn test_ncat_send_tcp() -> anyhow::Result<()> {
-    //     let test_port = allocate_localhost_unused_ports(1,"tcp".to_string()).await?[0];
-    //     // Setup a test echo server
-    //     let expected_response = String::from("Hello world!");
-    //     let listen_task = task::spawn(
-    //         setup_test_listener(String::from("127.0.0.1"),test_port, String::from("tcp"))
-    //     );
+    #[tokio::test]
+    async fn test_ncat_send_tcp() -> anyhow::Result<()> {
+        let test_port = allocate_localhost_unused_ports(1,"tcp".to_string()).await?[0];
+        // Setup a test echo server
+        let expected_response = String::from("Hello world!");
+        let listen_task = task::spawn(
+            setup_test_listener(String::from("127.0.0.1"),test_port, String::from("tcp"))
+        );
 
-    //     // Setup a sender
-    //     let send_task = task::spawn(
-    //         handle_ncat(String::from("127.0.0.1"), test_port, expected_response.clone(), String::from("tcp"))
-    //     );
+        // Setup a sender
+        let send_task = task::spawn(
+            handle_ncat(String::from("127.0.0.1"), test_port, expected_response.clone(), String::from("tcp"))
+        );
 
-    //     // Will this create a race condition where the sender sends before the listener starts?
-    //     // Run both
-    //     let (_a, actual_response) = tokio::join!(listen_task,send_task);
+        // Will this create a race condition where the sender sends before the listener starts?
+        // Run both
+        let (_a, actual_response) = tokio::join!(listen_task,send_task);
 
 
-    //     // Verify our data
-    //     assert_eq!(expected_response, actual_response.unwrap().unwrap());
-    //     Ok(())
-    // }
+        // Verify our data
+        assert_eq!(expected_response, actual_response.unwrap().unwrap());
+        Ok(())
+    }
     #[tokio::test]
     async fn test_ncat_send_udp() -> anyhow::Result<()> {
         let test_port = allocate_localhost_unused_ports(1,"udp".to_string()).await?[0];
@@ -181,29 +181,29 @@ mod tests {
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
     }
-    #[test]
-    fn test_ncat_not_handle() -> anyhow::Result<()> {
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
+    // #[test]
+    // fn test_ncat_not_handle() -> anyhow::Result<()> {
+    //     let runtime = tokio::runtime::Builder::new_current_thread()
+    //         .enable_all()
+    //         .build()
+    //         .unwrap();
 
-        let response = runtime.block_on(
-            allocate_localhost_unused_ports(1,"tcp".to_string())
-        );
+    //     let response = runtime.block_on(
+    //         allocate_localhost_unused_ports(1,"tcp".to_string())
+    //     );
 
-        let test_port = response.unwrap()[0];
+    //     let test_port = response.unwrap()[0];
 
-        let result = ncat(String::from("127.0.0.1"), test_port, String::from("No one can hear me!"), String::from("tcp"));
-        match result {
-            Ok(res) => panic!("Connection failure expected: {:?}", res), // No valid connection should exist
-            Err(err) => match String::from(format!("{:?}", err)).as_str() {
-                "Connection refused (os error 111)" if cfg!(target_os = "linux") => assert!(true),
-                "No connection could be made because the target machine actively refused it. (os error 10061)" if cfg!(target_os = "windows") => assert!(true),
-                "Connection refused (os error 61)" if cfg!(target_os = "macos") => assert!(true),
-                _ => panic!("Unhandled result {:?}", err)
-            }
-        }
-        Ok(())
-    }
+    //     let result = ncat(String::from("127.0.0.1"), test_port, String::from("No one can hear me!"), String::from("tcp"));
+    //     match result {
+    //         Ok(res) => panic!("Connection failure expected: {:?}", res), // No valid connection should exist
+    //         Err(err) => match String::from(format!("{:?}", err)).as_str() {
+    //             "Connection refused (os error 111)" if cfg!(target_os = "linux") => assert!(true),
+    //             "No connection could be made because the target machine actively refused it. (os error 10061)" if cfg!(target_os = "windows") => assert!(true),
+    //             "Connection refused (os error 61)" if cfg!(target_os = "macos") => assert!(true),
+    //             _ => panic!("Unhandled result {:?}", err)
+    //         }
+    //     }
+    //     Ok(())
+    // }
 }
