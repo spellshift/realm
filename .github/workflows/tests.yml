@@ -76,6 +76,8 @@ jobs:
       run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
       name: 👾 Disable defender
       shell: powershell
+    - name: Install cargo-tarpaulin
+      run: cargo install cargo-tarpaulin
     - name: Setup Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -89,6 +91,6 @@ jobs:
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
-      run: cargo install cargo-tarpaulin && cd implants/eldritch && cargo tarpaulin --verbose --out xml --no-fail-fast --jobs 4
+      run: cd implants/eldritch && cargo tarpaulin --verbose --out xml --no-fail-fast --jobs 4
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
