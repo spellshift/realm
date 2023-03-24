@@ -85,12 +85,12 @@ jobs:
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: "./implants/eldritch -> ../target"
+        workspaces: "./implants/ -> ../target"
     - name: Install cargo-tarpaulin
       run: cargo install cargo-tarpaulin
-    - name: 🔨 Build
-      run: cd implants/eldritch && cargo build --verbose
+    # - name: 🔨 Build
+    #   run: cd implants/ && cargo build --verbose
     - name: 🔎 Run tests
-      run: cd implants/eldritch && cargo tarpaulin --skip-clean --verbose --out xml --no-fail-fast --jobs 4
+      run: cd implants/ && cargo tarpaulin --skip-clean --verbose --out xml --no-fail-fast --jobs 4
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
