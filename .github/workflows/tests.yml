@@ -87,7 +87,7 @@ jobs:
       with:
         workspaces: "./implants/ -> ../target"
     - name: Install cargo-tarpaulin
-      run: cargo install cargo-tarpaulin
+      run: cargo install --root ~/.cargo/ cargo-tarpaulin
     # - name: 🔨 Build
     #   run: cd implants/ && cargo build --verbose
     - name: 🔎 Run tests
