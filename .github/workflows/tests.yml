@@ -76,8 +76,6 @@ jobs:
       run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
       name: 👾 Disable defender
       shell: powershell
-    - name: Install cargo-tarpaulin
-      run: cargo install cargo-tarpaulin
     - name: Setup Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -88,6 +86,8 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/eldritch -> ../target"
+    - name: Install cargo-tarpaulin
+      run: cargo install cargo-tarpaulin
     - name: 🔨 Build
       run: cd implants/eldritch && cargo build --verbose
     - name: 🔎 Run tests
