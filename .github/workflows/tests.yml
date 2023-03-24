@@ -94,6 +94,6 @@ jobs:
       uses: actions-rs/tarpaulin@v0.1
       with:
         version: '0.15.0'
-        args: ' --verbose --out xml --no-fail-fast --jobs 4'
+        args: '--verbose --out xml --no-fail-fast'
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
