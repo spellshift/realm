@@ -86,10 +86,12 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/ -> ../target"
-    components: llvm-tools-preview
-    - uses: taiki-e/install-action@cargo-llvm-cov
-    - uses: taiki-e/install-action@nextest
+      components: llvm-tools-preview
+    - name: Install latest nextest release
+      uses: taiki-e/install-action@nextest
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
     - name: Collect coverage data
-      run: cargo llvm-cov nextest
+      run: cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
