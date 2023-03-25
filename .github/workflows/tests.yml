@@ -92,8 +92,6 @@ jobs:
     - if: matrix.os != 'windows-latest'
       name: Install cargo-tarpaulin for Linux & MacOS
       run: cargo install --root ~/.cargo/ cargo-tarpaulin
-    - name: 📝 Lint
-      run: cd implants/eldritch && cargo check
     - name: 🔎 Run tests
       run: cd implants/eldritch && cargo tarpaulin --target-dir ../target/tarpaulin --skip-clean --verbose --out xml --no-fail-fast
     - name: 📶 Upload Coverage Results
