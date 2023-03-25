@@ -85,7 +85,7 @@ jobs:
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: "./implants/ -> ../target"
+        workspaces: "./implants/eldritch -> ../target"
     - if: matrix.os == 'windows-latest'
       name: Install cargo-tarpaulin for Windows
       run: cargo install --root $home/.cargo/ cargo-tarpaulin
@@ -95,6 +95,6 @@ jobs:
     # - name: 🔨 Build
     #   run: cd implants/ && cargo build --verbose
     - name: 🔎 Run tests
-      run: cd implants/ && cargo tarpaulin --target-dir target/tarpaulin --skip-clean --verbose --out xml --no-fail-fast
+      run: cd implants/eldritch && cargo tarpaulin --target-dir ../target/tarpaulin --skip-clean --verbose --out xml --no-fail-fast
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
