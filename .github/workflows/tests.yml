@@ -86,7 +86,7 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/ -> ../target"
-      components: llvm-tools-preview
+        components: llvm-tools-preview
     - name: Install latest nextest release
       uses: taiki-e/install-action@nextest
     - name: Install cargo-llvm-cov
