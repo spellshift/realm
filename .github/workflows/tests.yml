@@ -61,7 +61,7 @@ jobs:
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
     - name: 🔎 Run tests
-      run: cd ./implants/eldritch && cargo llvm-cov nextest --lcov --output-path lcov.info
+      run: cd ./implants/imix && cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
 
