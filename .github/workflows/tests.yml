@@ -56,10 +56,14 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/imix -> ../target"
-    - name: 🔨 Build
-      run: cd implants/imix && cargo build --verbose
+    - name: Install latest nextest release
+      uses: taiki-e/install-action@nextest
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
     - name: 🔎 Run tests
-      run: cd implants/imix && cargo test --verbose -- --test-threads=256
+      run: cd ./implants/eldritch && cargo llvm-cov nextest --lcov --output-path lcov.info
+    - name: 📶 Upload Coverage Results
+      uses: codecov/codecov-action@v3
 
   eldritch:
     runs-on: ${{ matrix.os }}
@@ -91,7 +95,7 @@ jobs:
       uses: taiki-e/install-action@nextest
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
-    - name: Collect coverage data
+    - name: 🔎 Run tests
       run: cd ./implants/eldritch && cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
