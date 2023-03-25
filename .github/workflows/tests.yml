@@ -92,8 +92,8 @@ jobs:
     - if: matrix.os != 'windows-latest'
       name: Install cargo-tarpaulin for Linux & MacOS
       run: cargo install --root ~/.cargo/ cargo-tarpaulin
-    # - name: 🔨 Build
-    #   run: cd implants/ && cargo build --verbose
+    - name: 🔨 Build
+      run: cd implants/eldritch && export RUSTFLAGS="-Cdebuginfo=2 --cfg=tarpaulin -Clink-dead-code"; cargo build -Z unstable-options --out-dir ../target/tarpaulin/
     - name: 🔎 Run tests
       run: cd implants/eldritch && cargo tarpaulin --target-dir ../target/tarpaulin --skip-clean --verbose --out xml --no-fail-fast
     - name: 📶 Upload Coverage Results
