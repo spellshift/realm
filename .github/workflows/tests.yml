@@ -86,7 +86,11 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/ -> ../target"
-    - name: Install cargo-tarpaulin
+    - if: matrix.os == 'windows-latest'
+      name: Install cargo-tarpaulin for Windows
+      run: cargo install --root $home/.cargo/ cargo-tarpaulin
+    - if: matrix.os != 'windows-latest'
+      name: Install cargo-tarpaulin for Linux & MacOS
       run: cargo install --root ~/.cargo/ cargo-tarpaulin
     # - name: 🔨 Build
     #   run: cd implants/ && cargo build --verbose
