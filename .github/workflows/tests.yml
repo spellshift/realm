@@ -86,13 +86,10 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/ -> ../target"
-    - if: matrix.os == 'windows-latest'
-      name: Install cargo-tarpaulin for Windows
-      run: cargo install --root $home/.cargo/ cargo-tarpaulin
-    - if: matrix.os != 'windows-latest'
-      name: Install cargo-tarpaulin for Linux & MacOS
-      run: cargo install --root ~/.cargo/ cargo-tarpaulin
-    - name: 🔎 Run tests
-      run: cd implants/eldritch && cargo tarpaulin --target-dir ../target/tarpaulin --skip-clean --verbose --out xml --no-fail-fast
+    components: llvm-tools-preview
+    - uses: taiki-e/install-action@cargo-llvm-cov
+    - uses: taiki-e/install-action@nextest
+    - name: Collect coverage data
+      run: cargo llvm-cov nextest
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
