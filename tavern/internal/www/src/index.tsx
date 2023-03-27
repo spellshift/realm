@@ -12,19 +12,34 @@ if (!container) throw new Error('Failed to find the root element');
 const root = ReactDOM.createRoot(container);
 
 const client = new ApolloClient({
-  uri: 'https://flyby-router-demo.herokuapp.com/',
+  uri: "http://localhost:80/graphql",
   cache: new InMemoryCache(),
 });
 
 client
   .query({
     query: gql`
-      query GetLocations {
-        locations {
+      query get_data{
+        tomes {
           id
           name
+          parameters
           description
-          photo
+          eldritch
+        }
+        sessions {
+          id
+          name
+          hostname
+          principal
+          tags {
+            id
+          }
+        }
+        tags {
+          name
+          id
+          kind
         }
       }
     `,

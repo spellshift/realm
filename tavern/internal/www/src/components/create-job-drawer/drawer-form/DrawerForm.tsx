@@ -6,7 +6,7 @@ import { StepCustomizeParameters } from "../step-customize-parameters/StepCustom
 import { StepJobStatus } from "../step-job-status";
 import { StepSelectTargets } from "../step-select-targets/StepSelectTargets";
 import { StepSelectTome } from "../step-select-tome/StepSelectTome";
-import { createJobSchema } from "./validation";
+import { createJobSchema } from "../../../pages/create-job/validation";
 
 type Props = {
     onClose: () => void;

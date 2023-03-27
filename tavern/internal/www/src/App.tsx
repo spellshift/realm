@@ -1,72 +1,49 @@
 import * as React from "react"
 import {
   ChakraProvider,
-  Box,
-  Text,
-  Link,
-  VStack,
-  Code,
-  Grid,
   theme,
-  GridItem,
-  Card,
-  CardHeader,
-  Heading,
-  CardBody,
-  CardFooter,
-  Drawer,
 } from "@chakra-ui/react";
-import { ColorModeSwitcher } from "./ColorModeSwitcher";
-import { Logo } from "./Logo";
 import './style.css';
 import { useQuery, gql } from '@apollo/client';
 
-import { CreateJobDrawer } from "./components/create-job-drawer/CreateJobDrawer";
+import { JobList } from "./pages/job-list";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Home } from "./pages/home";
+import { CreateJob } from "./pages/create-job";
 
-const GET_LOCATIONS = gql`
-  query GetLocations {
-    locations {
-      id
-      name
-      description
-      photo
+const GET_TOMES = gql`
+    query get_tomes{
+      tomes {
+        id
+        name
+        parameters
+        description
+        eldritch
+      }
     }
-  }
 `;
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <JobList />,
+  },
+  {
+    path: "/jobs",
+    element: <JobList />,
+  },
+  {
+    path: "/createJob",
+    element: <CreateJob />,
+  },
+]);
+
 export const App = () => {
-  const { loading, error, data } = useQuery(GET_LOCATIONS);
+  const { loading, error, data } = useQuery(GET_TOMES);
   console.log(data);
 
   return (
     <ChakraProvider theme={theme}>
-      <CreateJobDrawer />
-      {/* <Box p={8}>
-      <Grid templateColumns='repeat(4, 1fr)' gap={8}>
-        <GridItem colSpan={3}>
-          <Grid templateColumns='repeat(4, 1fr)' gap={8}>
-            <GridItem>
-              <Card>
-                <CardHeader>
-                  <Heading size="md">Shell execution</Heading>
-                  <Text size="sm">Remote execution tome</Text>
-                </CardHeader>
-                <CardBody>
-                <Text size="sm">
-                  Execute a shell script using the default interpreter. /bin/bash for macos & linux, and cmd.exe for windows.
-                </Text> 
-                </CardBody>
-                <CardFooter>
-
-                </CardFooter>
-              </Card>
-            </GridItem>
-          </Grid>
-        </GridItem>
-        <GridItem colSpan={1}>
-          Cart
-        </GridItem>
-      </Grid>
-      </Box> */}
+      <RouterProvider router={router} />
     </ChakraProvider>
 )}

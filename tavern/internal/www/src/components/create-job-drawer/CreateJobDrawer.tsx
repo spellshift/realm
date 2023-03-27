@@ -9,13 +9,13 @@ export const CreateJobDrawer = () => {
 
     return (
       <>
-        <Button onClick={onOpen}>Open</Button>
-        <Drawer isOpen={isOpen} onClose={onClose} size="lg">
+        <Button onClick={onOpen}>Start a job</Button>
+        <Drawer isOpen={isOpen} onClose={onClose} size="lg" colorScheme="purple" variant={""}>
           <DrawerOverlay />
           <DrawerContent>
             <DrawerCloseButton />
             <DrawerHeader>
-                Start a new job
+                Start a job
             </DrawerHeader>
             <DrawerBody>
               <DrawerForm onClose={onClose} />
