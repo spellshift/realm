@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "7c6986a189c45591da9346159f5ddd50685bbf96" }
+starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "8dd16589eb43e988a62fe2b13e535ad5ae1b1ce9" }
 tempfile = "3.3.0"
 anyhow = "1.0.55"
 derive_more = "0.99.17"
