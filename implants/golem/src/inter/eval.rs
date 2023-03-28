@@ -36,10 +36,10 @@ use starlark::lsp::server::LspUrl;
 use starlark::lsp::server::StringLiteralResult;
 use starlark::syntax::AstModule;
 use starlark::syntax::Dialect;
-use starlark::values::docs::get_registered_docs;
-use starlark::values::docs::render_docs_as_code;
-use starlark::values::docs::Doc;
-use starlark::values::docs::DocItem;
+use starlark::docs::get_registered_starlark_docs;
+use starlark::docs::render_docs_as_code;
+use starlark::docs::Doc;
+use starlark::docs::DocItem;
 
 use anyhow::anyhow;
 
@@ -103,14 +103,14 @@ impl Context {
         };
         let mut builtins: HashMap<LspUrl, Vec<Doc>> = HashMap::new();
         let mut builtin_symbols: HashMap<String, LspUrl> = HashMap::new();
-        for doc in get_registered_docs() {
+        for doc in get_registered_starlark_docs() {
             let uri = Self::url_for_doc(&doc);
             builtin_symbols.insert(doc.id.name.clone(), uri.clone());
             builtins.entry(uri).or_default().push(doc);
         }
         let builtin_docs = builtins
             .into_iter()
-            .map(|(u, ds)| (u, render_docs_as_code(&ds).join("\n\n")))
+            .map(|(u, ds)| (u, render_docs_as_code(&ds)))
             .collect();
 
         Ok(Self {
