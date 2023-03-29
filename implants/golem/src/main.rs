@@ -2,7 +2,6 @@ extern crate golem;
 extern crate eldritch;
 
 use clap::{Command, Arg};
-use rust_embed::RustEmbed;
 use std::fs;
 use std::process;
 use std::thread;
@@ -10,17 +9,6 @@ use std::thread;
 use eldritch::{eldritch_run};
 
 mod inter;
-
-#[cfg(debug_assertions)]
-#[derive(RustEmbed)]
-#[folder = "../../tests/embedded_files_test"]
-pub struct Asset;
-
-#[cfg(not(debug_assertions))]
-#[derive(RustEmbed)]
-#[folder = "../../implants/golem/embed_files_golem_prod"]
-pub struct Asset;
-
 
 async fn execute_tomes_in_parallel(tome_name_and_content: Vec<(String, String)>) -> anyhow::Result<(i32, Vec<String>)> {
     // Queue async tasks
@@ -108,7 +96,7 @@ fn main() -> anyhow::Result<()> {
         inter::interactive_main()?;
     } else {
         let mut tome_files_and_content: Vec< (String, String) > = Vec::new();
-        for embedded_file_path in Asset::iter() {
+        for embedded_file_path in eldritch::assets::Asset::iter() {
             let filename = match embedded_file_path.split(r#"/"#).last() {
                 Some(local_filename) => local_filename,
                 None => "",
@@ -116,7 +104,7 @@ fn main() -> anyhow::Result<()> {
             println!("{}", embedded_file_path);
             if filename == "main.eld" {
                 let tome_path = embedded_file_path.to_string().clone();
-                let tome_contents_extraction_result = match Asset::get(embedded_file_path.as_ref()) {
+                let tome_contents_extraction_result = match eldritch::assets::Asset::get(embedded_file_path.as_ref()) {
                     Some(local_tome_content) => String::from_utf8(local_tome_content.data.to_vec()),
                     None => {
                         eprint!("Failed to extract eldritch script as string");
@@ -157,4 +145,20 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn test_golem_execute_tomes_in_parallel() -> anyhow::Result<()> {
+        let tome_files_and_content = [
+            ("test_hello.eld".to_string(),"'hello world'".to_string())
+        ];
+        let (error_code, result) = execute_tomes_in_parallel(tome_files_and_content.to_vec()).await?;
+        assert_eq!(error_code, 0);
+        assert!(result.contains(&"hello world".to_string()));
+        Ok(())
+    }
 }
