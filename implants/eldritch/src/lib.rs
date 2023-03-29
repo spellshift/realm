@@ -87,7 +87,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
                     tmp_list.push(module.heap().alloc_str(tmp_sub_value).to_value());
                 }
             }
-            new_value = module.heap().alloc_list(tmp_list.as_slice());
+            new_value = module.heap().alloc(tmp_list.as_slice());
         }else if value.is_u64() || value.is_i64() || value.is_f64() || value.is_number() {
             // Down cast the number to i32. On failure return max i32.
             let tmp_value: i32 = match value.as_i64() {
