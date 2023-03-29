@@ -1,2 +1,2 @@
-file.download("https://github.com/KCarretto/realm/releases/download/v0.0.1/imix-linux-x64","/tmp/abc")
+file.download("https://github.com/KCarretto/realm/releases/download/v0.0.1/imix-linux-x64","abc")
 print("OKAY!")

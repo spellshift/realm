@@ -57,8 +57,7 @@ async fn execute_tomes_in_parallel(tome_name_and_content: Vec<(String, String)>)
     Ok((error_code, result))
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     let matches = Command::new("golem")
         .arg(Arg::with_name("INPUT")
             .help("Set the tomes to run")
@@ -85,7 +84,22 @@ async fn main() -> anyhow::Result<()> {
             tome_files_and_content.push( (tome_path, tome_contents) )
         }
 
-        let (error_code, result) = execute_tomes_in_parallel(tome_files_and_content).await?;
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+
+        let (error_code, result) = match runtime.block_on(
+            execute_tomes_in_parallel(tome_files_and_content)
+        ) {
+            Ok(response) => response,
+            Err(error) => {
+                println!("Error executing tomes {:?}", error);
+                (-1, Vec::new())
+            },
+        };
+
         if result.len() > 0 {
             println!("{:?}", result);
         }
@@ -120,8 +134,22 @@ async fn main() -> anyhow::Result<()> {
                 tome_files_and_content.push( (tome_path, tome_contents) )
             }
     
-        }      
-        let (error_code, result) = execute_tomes_in_parallel(tome_files_and_content).await?;
+        }
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let (error_code, result) = match runtime.block_on(
+            execute_tomes_in_parallel(tome_files_and_content)
+        ) {
+            Ok(response) => response,
+            Err(error) => {
+                println!("Error executing tomes {:?}", error);
+                (-1, Vec::new())
+            },
+        };
+
         if result.len() > 0 {
             println!("{:?}", result);
         }
