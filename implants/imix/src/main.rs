@@ -12,6 +12,8 @@ use tokio::time::Duration;
 use imix::graphql::{GraphQLTask, self};
 use eldritch::eldritch_run;
 use uuid::Uuid;
+use sys_info::{os_release,linux_os_release};
+
 
 async fn install(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
@@ -122,6 +124,37 @@ fn get_host_id(host_id_file_path: String) -> Result<String> {
     Ok(host_id)
 }
 
+fn get_primary_ip() -> Result<String> {
+    let res = match default_net::get_default_interface() {
+        Ok(default_interface) => {
+            if default_interface.ipv4.len() > 0 {
+                default_interface.ipv4[0].addr.to_string()
+            }else{
+                "DANGER-UNKNOWN".to_string()
+            }
+        },
+        Err(e) => {
+            println!("Error getting primary ip address:\n{e}");
+            "DANGER-UNKNOWN".to_string()
+        },
+    };
+    Ok(res)
+}
+
+fn get_os_pretty_name() -> Result<String> {
+    if cfg!(target_os = "linux") {
+        let linux_rel = linux_os_release()?;
+        let pretty_name = match linux_rel.pretty_name {
+            Some(local_pretty_name) => local_pretty_name,
+            None => "UNKNOWN-Linux".to_string(),
+        };
+        return Ok(format!("{}",pretty_name));
+    } else if cfg!(target_os = "windows") || cfg!(target_os = "macos") {
+        return Ok(os_release()?);
+    } else {
+        return Ok("UNKNOWN".to_string());
+    }
+}
 
 // Async handler for port scanning.
 async fn main_loop(config_path: String) -> Result<()> {
@@ -294,6 +327,26 @@ pub fn main() -> Result<(), imix::Error> {
 mod tests {
     use imix::{graphql::{GraphQLJob, GraphQLTome}};
     use super::*;
+
+    #[test]
+    fn imix_test_default_ip(){
+        let primary_ip_address = match get_primary_ip() {
+            Ok(local_primary_ip) => local_primary_ip,
+            Err(local_error) => {
+                println!("An error occured during testing default_ip:{local_error}");
+                assert_eq!(false,true);
+                "DANGER-UNKNOWN".to_string()
+            },
+        };
+        assert!((primary_ip_address != "DANGER-UNKNOWN".to_string()))
+    }
+    
+    #[test]
+    fn imix_test_get_os_pretty_name() { 
+        let res = get_os_pretty_name().unwrap();
+        println!("{res}");
+        assert!(!res.contains("UNKNOWN"));
+    }
 
     #[test]
     fn imix_handle_exec_tome() {
