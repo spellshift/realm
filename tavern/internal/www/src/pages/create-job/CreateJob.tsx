@@ -2,6 +2,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useFormik } from "formik";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { CreateJobDrawer } from "../../components/create-job-drawer/CreateJobDrawer";
 import { FormSteps } from "../../components/form-steps";
 import { PageWrapper } from "../../components/page-wrapper";
 import { CustomizeTome } from "./customize-tome";
@@ -26,9 +27,7 @@ export const CreateJob = () => {
     const formik = useFormik({
         initialValues: {
         tome: null,
-        params: {
-          command: "",
-        },
+        params: [],
         sessions: {},
         },
         validationSchema: createJobSchema(),

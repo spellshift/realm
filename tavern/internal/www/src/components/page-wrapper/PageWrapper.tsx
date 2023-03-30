@@ -9,6 +9,8 @@ import {
   PresentationChartLineIcon
 } from '@heroicons/react/24/outline'
 
+import logo from '../../assets/eldrich.png'; 
+
 const navigation = [
   { name: 'Jobs', href: '#', icon: ClipboardDocumentCheckIcon, current: true },
   { name: 'Agent sessions', href: '#', icon: BugAntIcon, current: false },
@@ -78,11 +80,11 @@ export const PageWrapper = (props: Props) => {
                   {/* Sidebar component, swap this element with another sidebar if you like */}
                   <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-2 ring-1 ring-white/10">
                     <div className="flex h-16 shrink-0 items-center">
-                      <img
+                      {/* <img
                         className="h-8 w-auto"
                         src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
                         alt="Your Company"
-                      />
+                      /> */}
                     </div>
                     <nav className="flex flex-1 flex-col">
                       <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -119,13 +121,14 @@ export const PageWrapper = (props: Props) => {
         <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6">
-            <div className="flex h-16 shrink-0 items-center">
+            <div className="flex h-32 shrink-0 items-center gap-4">
               <img
-                className="h-8 w-auto"
-                src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
+                className="h-12 w-auto"
+                src={logo}
                 alt="Your Company"
-              />
-            </div>
+                                  />
+                <div className="text-white text-2xl leading-6 font-semibold tracking-wide">Tavern</div>
+            </div> 
             <nav className="flex flex-1 flex-col">
               <ul role="list" className="flex flex-1 flex-col gap-y-7">
                 <li>
@@ -158,7 +161,7 @@ export const PageWrapper = (props: Props) => {
             <span className="sr-only">Open sidebar</span>
             <Bars3Icon className="h-6 w-6" aria-hidden="true" />
           </button>
-          <div className="flex-1 text-sm font-semibold leading-6 text-white">Realm</div>
+          <div className="flex-1 text-sm font-semibold leading-6 text-white">Tavern</div>
           <div className='text-sm font-semibold leading-6 text-white'>Logout</div>
         </div>
 

@@ -9,5 +9,12 @@ export type Tome = {
     eldritch: string;
     id: string;
     name: string;
-    parameters: string;
+    paramDefs: string;
+}
+export type TomeParams = {
+    name: string;
+    label: string;
+    type: string;
+    placeholder: string;
+    value?: any;
 }

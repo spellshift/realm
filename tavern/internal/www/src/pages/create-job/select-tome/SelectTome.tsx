@@ -3,6 +3,7 @@ import React, { useState } from "react"
 
 import { FormRadioGroup } from "../../../components/form-radio-group"
 import { Tome } from "../../../utils/consts";
+import { safelyJsonParse } from "../../../utils/utils";
 
 type Props = {
     setCurrStep: (arg1: number) => void;
@@ -13,7 +14,7 @@ const GET_TOMES = gql`
         tomes {
             id
             name
-            parameters
+            paramDefs
             description
             eldritch
         }
@@ -32,7 +33,9 @@ export const SelectTome = (props: Props) => {
     console.log(selected);
 
     const handleClickContinue = (tome: Tome) => {
+        const {params} = safelyJsonParse(tome?.paramDefs);
         formik.setFieldValue('tome', tome);
+        formik.setFieldValue('params', params);
         setCurrStep(step +1);
     }
 
@@ -41,7 +44,7 @@ export const SelectTome = (props: Props) => {
              <FormRadioGroup data={data?.tomes || []} selected={selected} setSelected={setSelected} />
              <div className="flex flex-row gap-2">
                 <button
-                    className="inline-flex items-center rounded-md bg-purple-700 px-4 py-3 text-sm font-semibold text-white shadow-sm enabled:hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn-primary"
                     onClick={() => handleClickContinue(selected)}
                     disabled={selected ? false : true}
                 >

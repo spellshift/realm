@@ -23,7 +23,7 @@ client
         tomes {
           id
           name
-          parameters
+          paramDefs
           description
           eldritch
         }
