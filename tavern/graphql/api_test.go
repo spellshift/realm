@@ -3,7 +3,6 @@ package graphql_test
 import (
 	"database/sql"
 	"encoding/json"
-	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -94,7 +93,7 @@ func runTestCase(t *testing.T, path string) {
 		assert.ErrorContains(t, queryErr, tc.ExpectedError)
 		return
 	}
-	require.Nil(t, queryErr, "query failed with error")
+	require.NoError(t, queryErr, "query failed with error")
 
 	// Marshal response to JSON
 	respJSON, err := json.Marshal(resp)
@@ -106,16 +105,34 @@ func runTestCase(t *testing.T, path string) {
 
 // TestAPI finds and runs all test cases defined in the testdata directory.
 func TestAPI(t *testing.T) {
-	filepath.Walk("testdata", func(path string, info fs.FileInfo, err error) error {
-		if info.IsDir() || err != nil || filepath.Ext(path) != ".yml" {
-			return err
+	runTestsInDir(t, "testdata")
+}
+
+func runTestsInDir(t *testing.T, root string) {
+	files, err := os.ReadDir(root)
+	require.NoError(t, err)
+
+	for _, f := range files {
+		// Derive relative path
+		path := filepath.Join(root, f.Name())
+
+		// Recurse in subdirectories by grouping them into sub-tests
+		if f.IsDir() {
+			t.Run(filepath.Base(f.Name()), func(t *testing.T) {
+				runTestsInDir(t, path)
+			})
+			continue
 		}
 
-		testName := strings.TrimSuffix(filepath.Base(path), ".yml")
+		// Skip files that are not test case files
+		if filepath.Ext(path) != ".yml" {
+			continue
+		}
 
+		// Run test case
+		testName := filepath.Base(strings.TrimSuffix(path, ".yml"))
 		t.Run(testName, func(t *testing.T) {
 			runTestCase(t, path)
 		})
-		return nil
-	})
+	}
 }

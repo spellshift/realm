@@ -1,0 +1,24 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
+requestor:
+  session_token: secretToken
+query: |
+  mutation CreateTomeWithNoFiles($input: CreateTomeInput!) {
+    createTome(input: $input) {
+        name
+        description
+        eldritch
+    }
+  }
+variables:
+  input:
+    name: "WonderfulTome"
+    description: It's for a test
+    eldritch: print("Hello World")
+
+expected:
+  createTome:
+    name: "WonderfulTome"
+    description: It's for a test
+    eldritch: print("Hello World")

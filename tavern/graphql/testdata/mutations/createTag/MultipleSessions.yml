@@ -1,0 +1,33 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
+  INSERT INTO `sessions` (id, name, identifier)
+    VALUES (1337,"delightful-lich","ABCDEFG-123456");
+  INSERT INTO `sessions` (id, name, identifier)
+    VALUES (420,"lovely-emu","ZYXWVUT-987654");
+requestor:
+  session_token: secretToken
+query: |
+  mutation CreateGroupTag($input: CreateTagInput!) {
+    createTag(input: $input) {
+      name
+      kind
+      sessions {
+        id
+      }
+    }
+  }
+variables:
+  input:
+    name: "TestTag"
+    kind: "service"
+    sessionIDs:
+      - 1337
+      - 420
+expected:
+  createTag:
+    name: "TestTag"
+    kind: "service"
+    sessions:
+      - id: "1337"
+      - id: "420"
