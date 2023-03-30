@@ -1,8 +1,11 @@
+#![feature(trivial_bounds)]
+
 pub mod file;
 pub mod process;
 pub mod sys;
 pub mod pivot;
 pub mod assets;
+pub mod time;
 
 use serde_json::Map;
 use starlark::collections::SmallMap;

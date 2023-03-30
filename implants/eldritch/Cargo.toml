@@ -4,9 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "8dd16589eb43e988a62fe2b13e535ad5ae1b1ce9" }
-allocative_derive = "0.2.0"
-allocative = { version = "0.2.0" }
+starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "1cb80da840e90a0255fdc049202bbc7e51196db7" }
 tempfile = "3.3.0"
 anyhow = "1.0.55"
 derive_more = "0.99.17"

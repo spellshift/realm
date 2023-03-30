@@ -2,17 +2,15 @@ mod kill_impl;
 mod list_impl;
 mod name_impl;
 
+use allocative::{Allocative, Visitor};
 use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, NoSerialize};
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
 
-use serde::{Serialize,Serializer};
-
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
-#[display(fmt = "ProcessLibrary")]
+#[derive(Debug, PartialEq, Eq, ProvidesStaticType, NoSerialize, Allocative)]
 pub struct ProcessLibrary();
 starlark_simple_value!(ProcessLibrary);
 
@@ -25,14 +23,26 @@ impl<'v> StarlarkValue<'v> for ProcessLibrary {
     }
 }
 
-impl Serialize for ProcessLibrary {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_none()
+impl Display for Complex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} + {}i", self.real, self.imaginary)
     }
 }
+
+impl Allocative for ProcessLibrary {
+    fn visit<'a, 'b: 'a>(&self, visitor: &'a mut Visitor<'b>) {
+        visitor.enter_self_sized::<Self>().exit();
+    }
+}
+
+// impl Serialize for ProcessLibrary {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: Serializer,
+//     {
+//         serializer.serialize_none()
+//     }
+// }
 
 impl<'v> UnpackValue<'v> for ProcessLibrary {
     fn expected() -> String {
