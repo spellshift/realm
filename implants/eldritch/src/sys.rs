@@ -5,6 +5,7 @@ mod is_macos_impl;
 mod shell_impl;
 mod dll_inject_impl;
 
+use allocative::Allocative;
 use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
@@ -14,7 +15,7 @@ use starlark::{starlark_type, starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
+#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "SysLibrary")]
 pub struct SysLibrary();
 starlark_simple_value!(SysLibrary);
