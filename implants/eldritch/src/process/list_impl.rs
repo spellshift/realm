@@ -1,8 +1,7 @@
 use anyhow::{Result};
 use sysinfo::{ProcessExt,System,SystemExt,PidExt};
 use  std::fmt;
-#[cfg(not(target_os = "windows"))]
-use sysinfo::{User,UserExt};
+use sysinfo::{UserExt};
 
 pub struct ProcessRes {
     pid:        u32,
@@ -39,15 +38,12 @@ pub fn list() -> Result<Vec<String>> {
          Pleases see sysinfo docs for a full list of supported systems.
          https://docs.rs/sysinfo/0.23.5/sysinfo/index.html#supported-oses\n\n"));
     }
-    #[cfg(target_os = "windows")]
     const UNKNOWN_USER: &str = "???";
 
     let mut res : Vec<String> = Vec::new();
     let mut sys = System::new();
     sys.refresh_processes();
     sys.refresh_users_list();
-    #[cfg(not(target_os = "windows"))]
-    let user_list =  sys.users().clone();
 
     for (pid, process) in sys.processes() {
         let mut tmp_ppid = 0;
@@ -55,10 +51,15 @@ pub fn list() -> Result<Vec<String>> {
             tmp_ppid = process.parent().unwrap().as_u32();
         }
 
-        #[cfg(target_os = "windows")]
-        let tmp_username = String::from(UNKNOWN_USER);
-        #[cfg(not(target_os = "windows"))]
-        let tmp_username = uid_to_username(process.uid, user_list);
+        let user_id = match process.user_id() {
+            Some(local_user_id) => local_user_id,
+            None => return Err(anyhow::anyhow!("User_id not found")),
+        };
+        let tmp_username = match sys.get_user_by_id(user_id){
+            Some(local_username) => local_username.name().to_string(),
+            None => String::from(UNKNOWN_USER),
+        };
+    
 
         let tmprow = ProcessRes{
             pid:        pid.as_u32(),
@@ -76,15 +77,6 @@ pub fn list() -> Result<Vec<String>> {
     Ok(res)
 }
 
-#[cfg(not(target_os = "windows"))]
-fn uid_to_username(username: u32, user_list: &[User]) -> String {
-    for user in user_list {
-        if *user.uid() == username {
-            return String::from(user.name());
-        }
-    }
-    return String::from("?");
-}
 
 #[cfg(test)]
 mod tests {
