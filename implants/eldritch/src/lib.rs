@@ -1,5 +1,3 @@
-#![feature(trivial_bounds)]
-
 pub mod file;
 pub mod process;
 pub mod sys;
