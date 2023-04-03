@@ -50,13 +50,11 @@ pub fn list() -> Result<Vec<String>> {
         if  process.parent() != None {
             tmp_ppid = process.parent().unwrap().as_u32();
         }
-
-        let user_id = match process.user_id() {
-            Some(local_user_id) => local_user_id,
-            None => return Err(anyhow::anyhow!("User_id not found")),
-        };
-        let tmp_username = match sys.get_user_by_id(user_id){
-            Some(local_username) => local_username.name().to_string(),
+        let tmp_username = match process.user_id() {
+            Some(local_user_id) => match sys.get_user_by_id(local_user_id){
+                    Some(local_username) => local_username.name().to_string(),
+                    None => String::from(UNKNOWN_USER),
+            },
             None => String::from(UNKNOWN_USER),
         };
     
