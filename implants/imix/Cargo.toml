@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }
 eldritch = { path = "../eldritch" }
 clap = { version = "3.0" }
 rand = "0.8.5"
