@@ -4,14 +4,8 @@ pub mod sys;
 pub mod pivot;
 pub mod assets;
 
-use std::cell::RefCell;
-use std::sync::mpsc::Sender;
-use std::sync::mpsc;
-use std::rc::Rc;
-
-use gazebo::prelude::Dupe;
+use std::sync::mpsc::{Sender};
 use serde_json::Map;
-use starlark::assert::Assert;
 use starlark::collections::SmallMap;
 use starlark::{starlark_module, PrintHandler};
 use starlark::environment::{GlobalsBuilder, Module, Globals};
@@ -41,13 +35,16 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
 }
 
 pub struct EldritchPrintHandler{
-    sender: Sender<String>,
+    pub sender: Sender<String>,
 }
 
 impl PrintHandler for EldritchPrintHandler {
     fn println(&self, text: &str) -> anyhow::Result<()> {
-        println!("[ELD]: {}", text.to_owned());
-        Ok(())
+        let res = match self.sender.send(text.to_string()) {
+            Ok(local_res) => local_res,
+            Err(local_err) => return Err(anyhow::anyhow!(local_err.to_string())),
+        };
+        Ok(res)
     }
 }
 
@@ -56,13 +53,13 @@ pub struct StdPrintHandler {
 
 impl PrintHandler for StdPrintHandler {
     fn println(&self, text: &str) -> anyhow::Result<()> {
-        println!("[STD]: {}", text.to_owned());
+        println!("{}", text.to_owned());
         Ok(())
     }
 }
 
 
-pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameters: Option<String>, sender: Option<Sender<String>>) -> anyhow::Result<String> {
+pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameters: Option<String>, print_handler: &(dyn PrintHandler)) -> anyhow::Result<String> {
     // Boilder plate
     let ast: AstModule;
     match AstModule::parse(
@@ -135,9 +132,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
     module.set("input_params", input_params.alloc_value(module.heap()));
 
     let mut eval: Evaluator = Evaluator::new(&module);
-    let binding = EldritchPrintHandler{ sender: sender.unwrap().clone() };
-    eval.set_print_handler(&binding);
-    // eval.set_print_handler(&StdPrintHandler{});
+    eval.set_print_handler(print_handler);
 
     let res: Value = match eval.eval_module(ast, &globals) {
         Ok(eval_val) => eval_val,
@@ -149,7 +144,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
 #[cfg(test)]
 mod tests {
-    use std::{thread, sync::mpsc::channel};
+    use std::{thread, sync::mpsc::{channel}, time::Duration};
 
     use super::*;
     use starlark::assert::Assert;
@@ -179,10 +174,11 @@ dir(assets) == ["copy","list"]
 sys.shell(input_params['cmd2'])
 "#);
         let param_string = r#"{"cmd":"id","cmd2":"echo hello_world","cmd3":"ls -lah /tmp/"}"#.to_string();
-        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string), None);
+        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string), &StdPrintHandler{});
         assert_eq!(test_res.unwrap().trim(), "hello_world".to_string());
         Ok(())
     }
+
     #[test]
     fn test_library_parameter_input_number() -> anyhow::Result<()>{
         // Create test script
@@ -190,7 +186,7 @@ sys.shell(input_params['cmd2'])
 input_params["number"]
 "#);
         let param_string = r#"{"number":1}"#.to_string();
-        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string), None);
+        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string), &StdPrintHandler{});
         assert_eq!(test_res.unwrap(), "1".to_string());
         Ok(())
     }
@@ -203,7 +199,7 @@ x = input_params["number"] - 1
 x
 "#);
         let param_string = format!("{{\"number\":{}}}", u64::MAX);
-        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string), None);
+        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string), &StdPrintHandler{});
         assert_eq!(test_res.unwrap(), "2147483646".to_string()); // i32::MAX-1
         Ok(())
     }
@@ -215,7 +211,7 @@ x
 input_params
 "#);
         let param_string = r#"{"list_key":["item1","item2","item3"]}"#.to_string();
-        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string), None);
+        let test_res = eldritch_run("test.tome".to_string(), test_content, Some(param_string), &StdPrintHandler{});
         assert_eq!(test_res.unwrap(), r#"{"list_key": ["item1", "item2", "item3"]}"#);
         Ok(())
     }
@@ -228,30 +224,41 @@ input_params
         let test_content = format!(r#"
 file.download("https://www.google.com/", "{path}")
 "#);
-        let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None, None) });
+        let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None, &StdPrintHandler{}) });
         let _test_val = test_res.join();
 
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
 
         Ok(())
     }
-
     #[tokio::test]
     async fn test_library_custom_print_handler() -> anyhow::Result<()> {
         // just using a temp file for its path
-        let tmp_file = NamedTempFile::new()?;
-        let path = String::from(tmp_file.path().to_str().unwrap()).clone().replace("\\", "\\\\");
         let test_content = format!(r#"
 print("Hello")
 print("World")
 print("123")
 "#);
         let (sender, receiver) = channel::<String>();
-
-        let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None, Some(sender)) });
+        
+        let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None, &EldritchPrintHandler{ sender }) });
         let _test_val = test_res.join();
-
-        assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
+        let expected_output = vec!["Hello", "World", "123"];
+        let mut index = 0;
+        loop {
+            let res = match receiver.recv_timeout(Duration::from_millis(500)) {
+                Ok(local_res_string) => local_res_string,
+                Err(local_err) => {
+                    match local_err.to_string().as_str() {
+                        "channel is empty and sending half is closed" => { break; },
+                        _ => eprint!("Error: {}", local_err),
+                    }
+                    break;
+                },
+            };
+            assert_eq!(res, expected_output[index].to_string());
+            index = index + 1;
+        }
 
         Ok(())
     }
