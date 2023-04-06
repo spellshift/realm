@@ -11,10 +11,9 @@ use anyhow::{Result, Error};
 use tokio::task;
 use tokio::time::Duration;
 use imix::graphql::{GraphQLTask, self};
-use eldritch::{eldritch_run,EldritchPrintHandler, StdPrintHandler};
+use eldritch::{eldritch_run,EldritchPrintHandler};
 use uuid::Uuid;
 use sys_info::{os_release,linux_os_release};
-use starlark::{PrintHandler};
 
 
 async fn install(config_path: String) -> Result<(), imix::Error> {
@@ -167,6 +166,7 @@ async fn main_loop(config_path: String) -> Result<()> {
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
+    // This hashmap tracks all jobs by their ID (key) and a tuple value: (future, channel_reciever)
     let mut all_exec_futures: HashMap<String, (_, _)> = HashMap::new();
 
     let principal = match get_principal() {
@@ -259,7 +259,7 @@ async fn main_loop(config_path: String) -> Result<()> {
 
 
         // :clap: :clap: make new map!
-        let mut running_exec_futures: HashMap<String, _> = HashMap::new();
+        let mut running_exec_futures: HashMap<String, (_, _)> = HashMap::new();
 
         // Check status
         for exec_future in all_exec_futures.into_iter() {
@@ -267,9 +267,19 @@ async fn main_loop(config_path: String) -> Result<()> {
                 println!("{}: {:?}", exec_future.0, exec_future.1.0.is_finished());
             }
             loop {
-                if exec_future.1.1.recv()
+                let res = match exec_future.1.1.recv_timeout(Duration::from_millis(100)) {
+                    Ok(local_res_string) => local_res_string,
+                    Err(local_err) => {
+                        match local_err.to_string().as_str() {
+                            "channel is empty and sending half is closed" => { break; },
+                            _ => eprint!("Error: {}", local_err),
+                        }
+                        break;
+                    },
+                };
+                println!("[IMIX]: {}", res);
             }
-            // Only re-insert the runnine exec futures
+                // Only re-insert the runnine exec futures
             if !exec_future.1.0.is_finished() {
                 running_exec_futures.insert(exec_future.0, exec_future.1);
             }
