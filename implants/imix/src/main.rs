@@ -57,14 +57,12 @@ async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String
     }
 }
 
-async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graphql::GraphQLTask, print_channel_sender: Sender<String>) -> Result<(String, String), Error> {
-    let start_time = Utc::now();
-
+async fn handle_exec_timeout_and_response(task: graphql::GraphQLTask, print_channel_sender: Sender<String>) -> Result<(), Error> {
     // Tasks will be forcebly stopped after 1 week.
     let timeout_duration = Duration::from_secs(60*60*24*7); // 1 Week.
 
     // Define a future for our execution task
-    let exec_future = handle_exec_tome(task.clone(), print_channel_sender);
+    let exec_future = handle_exec_tome(task.clone(), print_channel_sender.clone());
 
     // Execute that future with a timeout defined by the timeout argument.
     let tome_result = match tokio::time::timeout(timeout_duration, exec_future).await {
@@ -77,20 +75,8 @@ async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graph
         Err(timer_elapsed) => ("".to_string(), format!("Time elapsed task {} has been running for {} seconds", task.id, timer_elapsed.to_string())),
     };
 
-    // // Send task response
-    // let task_response = graphql::GraphQLSubmitTaskResultInput {
-    //     task_id: task.id.clone(),
-    //     exec_started_at: start_time,
-    //     exec_finished_at: Some(Utc::now()),
-    //     output: tome_output.0.clone(),
-    //     error: tome_output.1.clone(),
-    // };
-
-    // let submit_task_result = graphql::gql_post_task_result(imix_callback_uri, task_response).await;
-    // match submit_task_result {
-    //     Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
-    //     Err(error) => Err(error),
-    // }
+    print_channel_sender.clone().send(format!("---[RESULT]----\n{}\n---------",tome_result.0))?;
+    print_channel_sender.clone().send(format!("---[ERROR]----\n{}\n--------",tome_result.1))?;
     Ok(())
 }
 
@@ -180,7 +166,7 @@ async fn main_loop(config_path: String) -> Result<()> {
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
     // This hashmap tracks all jobs by their ID (key) and a tuple value: (future, channel_reciever)
-    let mut all_exec_futures: HashMap<String, (_, _)> = HashMap::new();
+    let mut all_exec_futures: HashMap<String, (_, _, _, _)> = HashMap::new();
 
     let principal = match get_principal() {
         Ok(username) => username,
@@ -267,8 +253,8 @@ async fn main_loop(config_path: String) -> Result<()> {
             if debug { println!("Launching:\n{:?}", task.clone().job.unwrap().tome.eldritch); }
 
             let (sender, receiver) = channel::<String>();
-            let exec_with_timeout = handle_exec_timeout_and_response(cur_callback_uri.clone(), task.clone(), sender.clone());
-            match all_exec_futures.insert(task.clone().id, (task::spawn(exec_with_timeout), receiver)) {
+            let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
+            match all_exec_futures.insert(task.clone().id, (task::spawn(exec_with_timeout), Utc::now(), task.clone(), receiver) ) {
                 Some(_old_task) => {
                     if debug {
                         println!("main_loop: error adding new task. Non-unique taskID\n");
@@ -286,16 +272,16 @@ async fn main_loop(config_path: String) -> Result<()> {
 
 
         // :clap: :clap: make new map!
-        let mut running_exec_futures: HashMap<String, (_, _)> = HashMap::new();
+        let mut running_exec_futures: HashMap<String, (_, _, _, _)> = HashMap::new();
 
         if debug { println!("Checking status"); }
-        // Check status
+        // Check status & send response
         for exec_future in all_exec_futures.into_iter() {
             if debug {
                 println!("{}: {:?}", exec_future.0, exec_future.1.0.is_finished());
             }
             loop {
-                let res = match exec_future.1.1.recv_timeout(Duration::from_millis(100)) {
+                let res = match exec_future.1.3.recv_timeout(Duration::from_millis(100)) {
                     Ok(local_res_string) => local_res_string,
                     Err(local_err) => {
                         match local_err.to_string().as_str() {
@@ -305,7 +291,38 @@ async fn main_loop(config_path: String) -> Result<()> {
                         break;
                     },
                 };
-                println!("[IMIX]: {}", res);
+                if debug {
+                    println!("{}", res.clone());
+                }
+                    // cur_callback_uri.clone()
+                // Send task response
+                let task_response = match exec_future.1.0.is_finished() {
+                    true => {
+                        graphql::GraphQLSubmitTaskResultInput {
+                            task_id: exec_future.1.2.id.clone(),
+                            exec_started_at: exec_future.1.1,
+                            exec_finished_at: Some(Utc::now()),
+                            output: res,
+                            error: "".to_string(),
+                        }
+                    },
+                    false => {
+                        graphql::GraphQLSubmitTaskResultInput {
+                            task_id: exec_future.1.2.id.clone(),
+                            exec_started_at: exec_future.1.1,
+                            exec_finished_at: None,
+                            output: res,
+                            error: "".to_string(),
+                        }
+                    },
+                };
+
+                let submit_task_result = graphql::gql_post_task_result(cur_callback_uri.clone(), task_response).await;
+                let _ = match submit_task_result {
+                    Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
+                    Err(error) => Err(error),
+                };
+
             }
                 // Only re-insert the runnine exec futures
             if !exec_future.1.0.is_finished() {
