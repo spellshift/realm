@@ -15,7 +15,7 @@ use eldritch::{eldritch_run,EldritchPrintHandler};
 use uuid::Uuid;
 use sys_info::{os_release,linux_os_release};
 
-pub struct exec_task {
+pub struct ExecTask {
     future_join_handle: JoinHandle<Result<(), Error>>,
     start_time: DateTime<Utc>,
     graphql_task: GraphQLTask,
@@ -171,7 +171,7 @@ async fn main_loop(config_path: String) -> Result<()> {
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
     // This hashmap tracks all jobs by their ID (key) and a tuple value: (future, channel_reciever)
-    let mut all_exec_futures: HashMap<String,  exec_task> = HashMap::new();
+    let mut all_exec_futures: HashMap<String,  ExecTask> = HashMap::new();
 
     let principal = match get_principal() {
         Ok(username) => username,
@@ -259,7 +259,7 @@ async fn main_loop(config_path: String) -> Result<()> {
 
             let (sender, receiver) = channel::<String>();
             let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
-            match all_exec_futures.insert(task.clone().id, exec_task{
+            match all_exec_futures.insert(task.clone().id, ExecTask{
                 future_join_handle: task::spawn(exec_with_timeout), 
                 start_time: Utc::now(), 
                 graphql_task: task.clone(), 
@@ -282,7 +282,7 @@ async fn main_loop(config_path: String) -> Result<()> {
 
 
         // :clap: :clap: make new map!
-        let mut running_exec_futures: HashMap<String, exec_task> = HashMap::new();
+        let mut running_exec_futures: HashMap<String, ExecTask> = HashMap::new();
 
         if debug { println!("Checking status"); }
         // Check status & send response
@@ -320,7 +320,7 @@ async fn main_loop(config_path: String) -> Result<()> {
                         graphql::GraphQLSubmitTaskResultInput {
                             task_id: exec_future.1.graphql_task.id.clone(),
                             exec_started_at: exec_future.1.start_time,
-                            exec_finished_at: Some(Utc::now()),
+                            exec_finished_at: None,
                             output: res,
                             error: "".to_string(),
                         }
