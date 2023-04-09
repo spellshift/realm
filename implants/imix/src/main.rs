@@ -50,6 +50,7 @@ async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String
 
     let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
 
+    println!("{:?}",task_job.parameters);
     // Execute a tome script
     let res =  match thread::spawn(move || { eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler) }).join() {
         Ok(local_thread_res) => local_thread_res,
@@ -290,9 +291,10 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
             if debug {
                 println!("{}: {:?}", exec_future.0, exec_future.1.future_join_handle.is_finished());
             }
+            let mut res: Vec<String> = vec![];
             loop {
                 if debug { println!("Reciveing output"); }
-                let res = match exec_future.1.print_reciever.recv_timeout(Duration::from_millis(100)) {
+                let new_res_line =  match exec_future.1.print_reciever.recv_timeout(Duration::from_millis(100)) {
                     Ok(local_res_string) => local_res_string,
                     Err(local_err) => {
                         match local_err.to_string().as_str() {
@@ -302,38 +304,39 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                         break;
                     },
                 };
-                if debug {
-                    println!("{}", res.clone());
-                }
+                // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
+                res.push(new_res_line);
                 // Send task response
-                let task_response = match exec_future.1.future_join_handle.is_finished() {
-                    true => {
-                        graphql::GraphQLSubmitTaskResultInput {
-                            task_id: exec_future.1.graphql_task.id.clone(),
-                            exec_started_at: exec_future.1.start_time,
-                            exec_finished_at: Some(Utc::now()),
-                            output: res,
-                            error: "".to_string(),
-                        }
-                    },
-                    false => {
-                        graphql::GraphQLSubmitTaskResultInput {
-                            task_id: exec_future.1.graphql_task.id.clone(),
-                            exec_started_at: exec_future.1.start_time,
-                            exec_finished_at: None,
-                            output: res,
-                            error: "".to_string(),
-                        }
-                    },
-                };
-
-                let submit_task_result = graphql::gql_post_task_result(cur_callback_uri.clone(), task_response).await;
-                let _ = match submit_task_result {
-                    Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
-                    Err(error) => Err(error),
-                };
-
             }
+            let task_response = match exec_future.1.future_join_handle.is_finished() {
+                true => {
+                    graphql::GraphQLSubmitTaskResultInput {
+                        task_id: exec_future.1.graphql_task.id.clone(),
+                        exec_started_at: exec_future.1.start_time,
+                        exec_finished_at: Some(Utc::now()),
+                        output: res.join("\n"),
+                        error: "".to_string(),
+                    }
+                },
+                false => {
+                    graphql::GraphQLSubmitTaskResultInput {
+                        task_id: exec_future.1.graphql_task.id.clone(),
+                        exec_started_at: exec_future.1.start_time,
+                        exec_finished_at: None,
+                        output: res.join("\n"),
+                        error: "".to_string(),
+                    }
+                },
+            };
+            if debug {
+                println!("{}", task_response.output);
+            }
+            let submit_task_result = graphql::gql_post_task_result(cur_callback_uri.clone(), task_response).await;
+            let _ = match submit_task_result {
+                Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
+                Err(error) => Err(error),
+            };
+
                 // Only re-insert the runnine exec futures
             if !exec_future.1.future_join_handle.is_finished() {
                 running_exec_futures.insert(exec_future.0, exec_future.1);
@@ -400,6 +403,8 @@ pub fn main() -> Result<(), imix::Error> {
 
 #[cfg(test)]
 mod tests {
+    use httptest::{Server, Expectation, matchers::{request, contains, url_decoded}, responders::status_code, ExpectationBuilder, all_of};
+    use httptest::matchers::matches;
     use imix::{graphql::{GraphQLJob, GraphQLTome}};
     use tempfile::NamedTempFile;
     use super::*;
@@ -484,46 +489,47 @@ sys.shell(input_params["cmd"])
 
     #[test]
     fn imix_test_main_loop_run_once() -> Result<()> {
+
+        // Response expectations are poped in reverse order.
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
+        );
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*claimTasks.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Exec stuff","parameters":"{\"cmd\":\"echo main_loop_test_success\"}","tome":{"id":"21474836482","name":"sys exec","description":"Execute system things.","paramDefs":"{\"paramDefs\":[{\"name\":\"cmd\",\"type\":\"string\"}]}","eldritch":"print(sys.shell(input_params[\"cmd\"]))","files":[]},"bundle":null}}]}}"#)),
+        );
+
         let tmp_file_new = NamedTempFile::new()?;
         let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
-        let _ = std::fs::write(path_new.clone(),r#"{
+        let url = server.url("/graphql").to_string();
+        let _ = std::fs::write(path_new.clone(),format!(r#"{{
     "service_configs": [],
     "target_forward_connect_ip": "127.0.0.1",
     "target_name": "test1234",
-    "callback_config": {
+    "callback_config": {{
         "interval": 8,
         "jitter": 1,
         "timeout": 4,
         "c2_configs": [
-        {
+        {{
             "priority": 1,
-            "uri": "http://localhost:80/graphql"
-        }
+            "uri": "{url}"
+        }}
         ]
-    }
-}"#);
-
-        let test_tome_input = GraphQLTask{
-            id: "17179869185".to_string(),
-            job: Some(GraphQLJob {
-                id: "4294967297".to_string(),
-                name: "Test Exec".to_string(),
-                tome: GraphQLTome {
-                    id: "21474836482".to_string(),
-                    name: "Shell execute".to_string(),
-                    description: "Execute a command in the default system shell".to_string(),
-                    eldritch: r#"
-print("custom_print_handler_test")
-sys.shell(input_params["cmd"])
-"#.to_string(),
-                    files: [].to_vec(),
-                    param_defs: Some(r#"{"params":[{"name":"cmd","type":"string"}]}"#.to_string()),
-                },
-                parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
-                bundle: None,
-            }),
-        };
-
+    }}
+}}"#));
 
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
