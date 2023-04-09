@@ -1,39 +1,10 @@
 use anyhow::{Result};
+use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use sysinfo::{ProcessExt,System,SystemExt,PidExt};
-use  std::fmt;
 #[cfg(not(target_os = "windows"))]
 use sysinfo::{User,UserExt};
 
-pub struct ProcessRes {
-    pid:        u32,
-    ppid:       u32,
-    status:     String,
-    username:   String,
-    path:       String,
-    command:    String,
-    cwd:        String,
-    environ:    String,
-    name:       String,
-}
-
-impl fmt::Display for ProcessRes {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{pid:{},ppid:{},status:\"{}\",username:\"{}\",path:\"{}\",\
-        command:\"{}\",cwd:\"{}\",environ:\"{}\",name:\"{}\"}}",
-        &self.pid,
-        &self.ppid,
-        &self.status,
-        &self.username,
-        &self.path,
-        &self.command,
-        &self.cwd,
-        &self.environ,
-        &self.name,
-        )
-    }
-}
-
-pub fn list() -> Result<Vec<String>> {
+pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     if !System::IS_SUPPORTED {
         return Err(anyhow::anyhow!("This OS isn't supported for process functions.
          Pleases see sysinfo docs for a full list of supported systems.
@@ -42,7 +13,7 @@ pub fn list() -> Result<Vec<String>> {
     #[cfg(target_os = "windows")]
     const UNKNOWN_USER: &str = "???";
 
-    let mut res : Vec<String> = Vec::new();
+    let mut final_res: Vec<Dict> = Vec::new();
     let mut sys = System::new();
     sys.refresh_processes();
     sys.refresh_users_list();
@@ -60,20 +31,29 @@ pub fn list() -> Result<Vec<String>> {
         #[cfg(not(target_os = "windows"))]
         let tmp_username = uid_to_username(process.uid, user_list);
 
-        let tmprow = ProcessRes{
-            pid:        pid.as_u32(),
-            ppid:       tmp_ppid,
-            status:     process.status().to_string(),
-            username:   tmp_username,
-            path:       String::from(process.exe().to_str().unwrap()),
-            command:    String::from(process.cmd().join(" ")),
-            cwd:        String::from(process.cwd().to_str().unwrap()),
-            environ:    String::from(process.environ().join(" ")),
-            name:       String::from(process.name())
-        };
-        res.push(tmprow.to_string());
+        let res: SmallMap<Value, Value> = SmallMap::new();
+        // Create Dict type.
+        let mut tmp_res = Dict::new(res);
+
+        tmp_res.insert_hashed(const_frozen_string!("pid").to_value().get_hashed().unwrap(), Value::new_int(match pid.as_u32().try_into() {
+            Ok(local_int) => local_int,
+            Err(_) => -1,
+        }));
+        tmp_res.insert_hashed(const_frozen_string!("ppid").to_value().get_hashed().unwrap(), Value::new_int(match tmp_ppid.try_into() {
+            Ok(local_int) => local_int,
+            Err(_) => -1,
+        }));
+        tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&process.status().to_string()).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("username").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&tmp_username).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("path").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.exe().to_str().unwrap())).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("command").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.cmd().join(" "))).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("cwd").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.cwd().to_str().unwrap())).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("environ").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.environ().join(" "))).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.name())).to_value());
+
+        final_res.push(tmp_res);
     }
-    Ok(res)
+    Ok(final_res)
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -98,14 +78,20 @@ mod tests {
         #[cfg(target_os = "windows")]
         let sleep_str = "timeout";
 
-        let child = Command::new(sleep_str)
+        let mut child = Command::new(sleep_str)
             .arg("5")
             .spawn()?;
     
-        let res = list()?;
-        let searchstring = String::from(format!("pid:{}", child.id()));
+
+        let binding = Heap::new();
+        let res = list(&binding)?;
         for proc in res{
-            if proc.as_str().contains(&searchstring) {
+            let cur_pid = match proc.get(const_frozen_string!("pid").to_value())? {
+                Some(local_cur_pid) => local_cur_pid.to_int()?,
+                None => return Err(anyhow::anyhow!("pid couldn't be unwrapped")),
+            };
+            if cur_pid as u32 == child.id() {
+                child.kill()?;
                 assert_eq!(true, true);
                 return Ok(())
             }
