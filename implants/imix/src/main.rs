@@ -403,7 +403,7 @@ pub fn main() -> Result<(), imix::Error> {
 
 #[cfg(test)]
 mod tests {
-    use httptest::{Server, Expectation, matchers::{request, contains, url_decoded}, responders::status_code, ExpectationBuilder, all_of};
+    use httptest::{Server, Expectation, matchers::{request}, responders::status_code, all_of};
     use httptest::matchers::matches;
     use imix::{graphql::{GraphQLJob, GraphQLTome}};
     use tempfile::NamedTempFile;
