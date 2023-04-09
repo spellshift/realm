@@ -93,7 +93,6 @@ mod tests {
             };
             if cur_pid as u32 == child.id() {
                 println!("Killing child PID {}", child.id());
-                // child.kill()?;
                 assert_eq!(true, true);
                 return Ok(())
             }
