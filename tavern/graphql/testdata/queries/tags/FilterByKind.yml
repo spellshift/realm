@@ -1,0 +1,21 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
+  INSERT INTO `tags` (id, name, kind)
+    VALUES (4000,"boring-tag","service");
+  INSERT INTO `tags` (id, name, kind)
+    VALUES (4001,"filtered-tag","group");
+requestor:
+  session_token: secretToken
+query: |
+  query Tags($where: TagWhereInput!) {
+    tags(where: $where) {
+      id
+    }
+  }
+variables:
+  where:
+    kind: "service"
+expected:
+  tags:
+    - id: "4000"
