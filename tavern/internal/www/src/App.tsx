@@ -16,7 +16,7 @@ const GET_TOMES = gql`
       tomes {
         id
         name
-        parameters
+        paramDefs
         description
         eldritch
       }

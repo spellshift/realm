@@ -18,3 +18,8 @@ export type TomeParams = {
     placeholder: string;
     value?: any;
 }
+export type TomeTag = {
+    id: string;
+    name: string;
+    kind: string;
+}

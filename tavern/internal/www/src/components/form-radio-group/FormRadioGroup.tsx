@@ -12,7 +12,7 @@ function classNames(...classes: string[]) {
 
 type Props = {
     data: Array<Tome>;
-    selected: Tome,
+    selected: Tome | null,
     setSelected: (arg: Tome) => void;
  }
 export const FormRadioGroup = (props: Props) => {

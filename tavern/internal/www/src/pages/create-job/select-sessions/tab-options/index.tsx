@@ -1,0 +1,1 @@
+export {TabOptions} from "./TabOptions";

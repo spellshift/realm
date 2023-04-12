@@ -1,1 +1,0 @@
-export {CustomizeTome} from "./CustomizeTome";
