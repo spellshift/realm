@@ -80,14 +80,14 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Files    func(childComplexity int) int
+		Files    func(childComplexity int, where *ent.FileWhereInput) int
 		Jobs     func(childComplexity int, where *ent.JobWhereInput) int
 		Node     func(childComplexity int, id int) int
 		Nodes    func(childComplexity int, ids []int) int
-		Sessions func(childComplexity int) int
-		Tags     func(childComplexity int) int
-		Tomes    func(childComplexity int) int
-		Users    func(childComplexity int) int
+		Sessions func(childComplexity int, where *ent.SessionWhereInput) int
+		Tags     func(childComplexity int, where *ent.TagWhereInput) int
+		Tomes    func(childComplexity int, where *ent.TomeWhereInput) int
+		Users    func(childComplexity int, where *ent.UserWhereInput) int
 	}
 
 	Session struct {
@@ -394,7 +394,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.Files(childComplexity), true
+		args, err := ec.field_Query_files_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Files(childComplexity, args["where"].(*ent.FileWhereInput)), true
 
 	case "Query.jobs":
 		if e.complexity.Query.Jobs == nil {
@@ -437,28 +442,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.Sessions(childComplexity), true
+		args, err := ec.field_Query_sessions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Sessions(childComplexity, args["where"].(*ent.SessionWhereInput)), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
 			break
 		}
 
-		return e.complexity.Query.Tags(childComplexity), true
+		args, err := ec.field_Query_tags_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tags(childComplexity, args["where"].(*ent.TagWhereInput)), true
 
 	case "Query.tomes":
 		if e.complexity.Query.Tomes == nil {
 			break
 		}
 
-		return e.complexity.Query.Tomes(childComplexity), true
+		args, err := ec.field_Query_tomes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tomes(childComplexity, args["where"].(*ent.TomeWhereInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
 			break
 		}
 
-		return e.complexity.Query.Users(childComplexity), true
+		args, err := ec.field_Query_users_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Users(childComplexity, args["where"].(*ent.UserWhereInput)), true
 
 	case "Session.agentIdentifier":
 		if e.complexity.Session.AgentIdentifier == nil {
@@ -1747,12 +1772,12 @@ input UserWhereInput {
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time`, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
-  files: [File!]!
+  files(where: FileWhereInput): [File!]!
   jobs(where: JobWhereInput): [Job!]!
-  sessions: [Session!]!
-  tags: [Tag!]!
-  tomes: [Tome!]!
-  users: [User!]!
+  sessions(where: SessionWhereInput): [Session!]!
+  tags(where: TagWhereInput): [Tag!]!
+  tomes(where: TomeWhereInput): [Tome!]!
+  users(where: UserWhereInput): [User!]!
 }`, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
     ###

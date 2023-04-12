@@ -12,7 +12,14 @@ import (
 )
 
 // Files is the resolver for the files field.
-func (r *queryResolver) Files(ctx context.Context) ([]*ent.File, error) {
+func (r *queryResolver) Files(ctx context.Context, where *ent.FileWhereInput) ([]*ent.File, error) {
+	if where != nil {
+		query, err := where.Filter(r.client.File.Query())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.All(ctx)
+	}
 	return r.client.File.Query().All(ctx)
 }
 
@@ -29,21 +36,49 @@ func (r *queryResolver) Jobs(ctx context.Context, where *ent.JobWhereInput) ([]*
 }
 
 // Sessions is the resolver for the sessions field.
-func (r *queryResolver) Sessions(ctx context.Context) ([]*ent.Session, error) {
+func (r *queryResolver) Sessions(ctx context.Context, where *ent.SessionWhereInput) ([]*ent.Session, error) {
+	if where != nil {
+		query, err := where.Filter(r.client.Session.Query())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.All(ctx)
+	}
 	return r.client.Session.Query().All(ctx)
 }
 
 // Tags is the resolver for the tags field.
-func (r *queryResolver) Tags(ctx context.Context) ([]*ent.Tag, error) {
+func (r *queryResolver) Tags(ctx context.Context, where *ent.TagWhereInput) ([]*ent.Tag, error) {
+	if where != nil {
+		query, err := where.Filter(r.client.Tag.Query())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.All(ctx)
+	}
 	return r.client.Tag.Query().All(ctx)
 }
 
 // Tomes is the resolver for the tomes field.
-func (r *queryResolver) Tomes(ctx context.Context) ([]*ent.Tome, error) {
+func (r *queryResolver) Tomes(ctx context.Context, where *ent.TomeWhereInput) ([]*ent.Tome, error) {
+	if where != nil {
+		query, err := where.Filter(r.client.Tome.Query())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.All(ctx)
+	}
 	return r.client.Tome.Query().All(ctx)
 }
 
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
+func (r *queryResolver) Users(ctx context.Context, where *ent.UserWhereInput) ([]*ent.User, error) {
+	if where != nil {
+		query, err := where.Filter(r.client.User.Query())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.All(ctx)
+	}
 	return r.client.User.Query().All(ctx)
 }
