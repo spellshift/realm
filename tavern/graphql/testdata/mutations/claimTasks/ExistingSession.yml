@@ -1,0 +1,20 @@
+state: |
+  INSERT INTO `sessions` (id, name, identifier)
+    VALUES (1337,"delightful-lich","EXISTING-SESSION");
+query: |
+  mutation ExistingSession($input: ClaimTasksInput!) {
+    claimTasks(input: $input) {
+      id
+    }
+  }
+variables:
+  input:
+    principal: root
+    hostname: some-machine
+    hostPlatform: Linux
+    sessionIdentifier: EXISTING-SESSION
+    hostIdentifier: MY-HOST
+    agentIdentifier: COOL-TEST
+
+expected:
+  claimTasks: []

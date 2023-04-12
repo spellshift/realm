@@ -1,0 +1,23 @@
+# Example Test Case
+
+# Create a user in the DB before the test case runs
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
+
+# Authenticate as that user (via session_token)
+requestor:
+  session_token: secretToken
+
+# Query all existing users
+query: |
+  query Users {
+    users {
+      id
+    }
+  }
+
+# Ensure the GraphQL query returns exactly one user, the initial one we created
+expected:
+  users:
+    - id: "5"
