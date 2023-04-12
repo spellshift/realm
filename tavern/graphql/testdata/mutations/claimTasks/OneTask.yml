@@ -1,0 +1,27 @@
+state: |
+  INSERT INTO `sessions` (id, name, identifier)
+    VALUES (1337,"delightful-lich","EXISTING-SESSION");
+  INSERT INTO `tomes` (id, name, description, eldritch, hash, created_at, last_modified_at)
+    VALUES (2000,"Test Tome","Used in a unit test :D","print('Hello World!')","abcdefg","2023-03-04 14:51:13","2023-03-04 14:51:13");
+  INSERT INTO `jobs` (id, job_tome, name, created_at, last_modified_at)
+    VALUES (7000,2000,"Test Job","2023-03-04 14:51:13","2023-03-04 14:51:13");
+  INSERT INTO `tasks` (id, task_session, job_tasks, created_at, last_modified_at)
+    VALUES (8000,1337,7000,"2023-03-04 14:51:13","2023-03-04 14:51:13");
+query: |
+  mutation OneTask($input: ClaimTasksInput!) {
+    claimTasks(input: $input) {
+      id
+    }
+  }
+variables:
+  input:
+    principal: root
+    hostname: some-machine
+    hostPlatform: Linux
+    sessionIdentifier: EXISTING-SESSION
+    hostIdentifier: MY-HOST
+    agentIdentifier: COOL-TEST
+
+expected:
+  claimTasks:
+    - id: "8000"
