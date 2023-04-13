@@ -1,8 +1,8 @@
 extend type Query {
-  files: [File!]!
+  files(where: FileWhereInput): [File!]!
   jobs(where: JobWhereInput): [Job!]!
-  sessions: [Session!]!
-  tags: [Tag!]!
-  tomes: [Tome!]!
-  users: [User!]!
+  sessions(where: SessionWhereInput): [Session!]!
+  tags(where: TagWhereInput): [Tag!]!
+  tomes(where: TomeWhereInput): [Tome!]!
+  users(where: UserWhereInput): [User!]!
 }
