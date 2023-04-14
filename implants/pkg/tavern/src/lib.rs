@@ -1,9 +1,11 @@
 mod mutations;
 mod scalars;
 
+// Only export http if it has been enabled.
 #[cfg(feature = "http")]
 pub mod http;
 
+// Re-export relevant GraphQL types with more accessible names.
 pub use mutations::claim_tasks::{
     ClaimTasksInput,
     ClaimTasksClaimTasks as Task,
@@ -13,38 +15,56 @@ pub use mutations::claim_tasks::{
     ClaimTasksClaimTasksJobBundle as Bundle,
     SessionHostPlatform as HostPlatform,
 };
+pub use mutations::submit_task_result::{
+    SubmitTaskResultInput
+};
 
 use async_trait::async_trait;
 use graphql_client::{GraphQLQuery, QueryBody, Response};
 use anyhow::{anyhow, Error, Result};
 use serde::{Serialize, de::DeserializeOwned};
 
-
+/*
+ * An Executor is responsible for serializing a GraphQL query, sending the query to a server, and deserializing a result.
+ */
 #[async_trait]
 pub trait Executor {
     async fn exec<Variables: Serialize+Send, ResponseData: DeserializeOwned>(&self, query: QueryBody<Variables>) -> Result<ResponseData>;
 }
 
+/*
+ * Client provides a convinient interface for calling relevant Tavern GraphQL mutations using the underlying transport (e.g. HTTP).
+ */
 pub struct Client<E: Executor> {
     transport: E
 }
 
 impl<E: Executor> Client<E> {
+    /*
+     * Fetches new tasks for the agent to execute, if any are available.
+     */
     pub async fn claim_tasks(&self, input: ClaimTasksInput) -> Result<Vec<Task>> {
-        let vars = mutations::claim_tasks::Variables{
-            input: input,
-        };
-        let query: QueryBody<mutations::claim_tasks::Variables> = mutations::ClaimTasks::build_query(vars);
-        let resp: mutations::claim_tasks::ResponseData = self.exec::<mutations::claim_tasks::Variables, mutations::claim_tasks::ResponseData>(query).await?;
+        let vars = mutations::claim_tasks::Variables{input};
+        let query = mutations::ClaimTasks::build_query(vars);
+        let resp = self.exec::<mutations::claim_tasks::Variables, mutations::claim_tasks::ResponseData>(query).await?;
         Ok(resp.claim_tasks)
     }
 
+    pub async fn submit_task_result(&self, input: SubmitTaskResultInput) -> Result<()> {
+        let vars = mutations::submit_task_result::Variables{input};
+        let query: QueryBody<mutations::submit_task_result::Variables> = mutations::SubmitTaskResult::build_query(vars);
+        self.exec::<mutations::submit_task_result::Variables, mutations::submit_task_result::ResponseData>(query).await?;
+        Ok(())
+    }
 
+    // Wraps transport calls with error handling.
     async fn exec<Variables: Serialize+Send, ResponseData: DeserializeOwned>(&self, query: QueryBody<Variables>) -> Result<ResponseData> {
         let resp: Response<ResponseData> = self.transport.exec(query).await?;
 
         if let Some(errors) = resp.errors {
-            return Err(join_errors(errors));
+            if errors.len() > 0 {
+                return Err(join_errors(errors));
+            }
         }
         match resp.data {
             Some(data) => return Ok(data),
@@ -53,6 +73,7 @@ impl<E: Executor> Client<E> {
     }
 }
 
+// Combine multiple GraphQL errors into a single Error to be returned.
 fn join_errors(errors: Vec<graphql_client::Error>) -> Error {
     Error::msg(
         errors.iter().
@@ -64,10 +85,13 @@ fn join_errors(errors: Vec<graphql_client::Error>) -> Error {
 
 #[cfg(test)]
 mod tests {
-    use serde::{Serialize};
-
     use super::*;
 
+    use chrono::Utc;
+    use serde::{Serialize};
+    use crate::mutations::submit_task_result::SubmitTaskResultSubmitTaskResult;
+
+    // Defines a MockTransport which simply returns the expected response.
     struct MockTransport {
         expected_response: String,
     }
@@ -93,7 +117,6 @@ mod tests {
             }
         }
     }
-
 
     #[tokio::test]
     async fn claim_tasks() {
@@ -134,5 +157,28 @@ mod tests {
         let tasks: Vec<Task> = client.claim_tasks(input).await.expect("failed to claim tasks");
         assert!(tasks.len() == 1);
         assert!(tasks[0].id == "5");
+    }
+
+    #[tokio::test]
+    async fn submit_task_result() {
+        let expected_resp = Response{
+            data: Some(mutations::submit_task_result::ResponseData{
+                submit_task_result: Some(SubmitTaskResultSubmitTaskResult{
+                    id: String::from("5"),
+                }),
+            }),
+            errors: None,
+            extensions: None,
+        };
+        let client = MockTransport::get_client(expected_resp);
+        let input = SubmitTaskResultInput{
+            task_id: String::from("5"),
+            exec_started_at: Utc::now(),
+            exec_finished_at: Some(Utc::now()),
+            output: String::from("It works!"),
+            error: None,
+        };
+        let resp = client.submit_task_result(input).await;
+        assert!(resp.is_ok());
     }
 }
