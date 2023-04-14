@@ -2094,7 +2094,7 @@ func (ec *executionContext) _Session_hostPlatform(ctx context.Context, field gra
 	}
 	res := resTmp.(session.HostPlatform)
 	fc.Result = res
-	return ec.marshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, field.Selections, res)
+	return ec.marshalNSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Session_hostPlatform(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2104,7 +2104,7 @@ func (ec *executionContext) fieldContext_Session_hostPlatform(ctx context.Contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type SessionSessionHostPlatform does not have child fields")
+			return nil, errors.New("field of type SessionHostPlatform does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2381,7 +2381,7 @@ func (ec *executionContext) _Tag_kind(ctx context.Context, field graphql.Collect
 	}
 	res := resTmp.(tag.Kind)
 	fc.Result = res
-	return ec.marshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, field.Selections, res)
+	return ec.marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tag_kind(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2391,7 +2391,7 @@ func (ec *executionContext) fieldContext_Tag_kind(ctx context.Context, field gra
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type TagTagKind does not have child fields")
+			return nil, errors.New("field of type TagKind does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3589,7 +3589,7 @@ func (ec *executionContext) unmarshalInputCreateTagInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-			it.Kind, err = ec.unmarshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			it.Kind, err = ec.unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5733,7 +5733,7 @@ func (ec *executionContext) unmarshalInputSessionWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatform"))
-			it.HostPlatform, err = ec.unmarshalOSessionSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, v)
+			it.HostPlatform, err = ec.unmarshalOSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5741,7 +5741,7 @@ func (ec *executionContext) unmarshalInputSessionWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatformNEQ"))
-			it.HostPlatformNEQ, err = ec.unmarshalOSessionSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, v)
+			it.HostPlatformNEQ, err = ec.unmarshalOSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5749,7 +5749,7 @@ func (ec *executionContext) unmarshalInputSessionWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatformIn"))
-			it.HostPlatformIn, err = ec.unmarshalOSessionSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx, v)
+			it.HostPlatformIn, err = ec.unmarshalOSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5757,7 +5757,7 @@ func (ec *executionContext) unmarshalInputSessionWhereInput(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatformNotIn"))
-			it.HostPlatformNotIn, err = ec.unmarshalOSessionSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx, v)
+			it.HostPlatformNotIn, err = ec.unmarshalOSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6129,7 +6129,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-			it.Kind, err = ec.unmarshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			it.Kind, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6137,7 +6137,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindNEQ"))
-			it.KindNEQ, err = ec.unmarshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			it.KindNEQ, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6145,7 +6145,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindIn"))
-			it.KindIn, err = ec.unmarshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx, v)
+			it.KindIn, err = ec.unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6153,7 +6153,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindNotIn"))
-			it.KindNotIn, err = ec.unmarshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx, v)
+			it.KindNotIn, err = ec.unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7785,7 +7785,7 @@ func (ec *executionContext) unmarshalInputUpdateTagInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-			it.Kind, err = ec.unmarshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			it.Kind, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9407,6 +9407,16 @@ func (ec *executionContext) marshalNSession2ᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ec._Session(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, v interface{}) (session.HostPlatform, error) {
+	var res session.HostPlatform
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v session.HostPlatform) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNSessionOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐSessionOrderField(ctx context.Context, v interface{}) (*ent.SessionOrderField, error) {
 	var res = new(ent.SessionOrderField)
 	err := res.UnmarshalGQL(v)
@@ -9420,16 +9430,6 @@ func (ec *executionContext) marshalNSessionOrderField2ᚖgithubᚗcomᚋkcarrett
 		}
 		return graphql.Null
 	}
-	return v
-}
-
-func (ec *executionContext) unmarshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, v interface{}) (session.HostPlatform, error) {
-	var res session.HostPlatform
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v session.HostPlatform) graphql.Marshaler {
 	return v
 }
 
@@ -9496,6 +9496,16 @@ func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋta
 	return ec._Tag(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (tag.Kind, error) {
+	var res tag.Kind
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v tag.Kind) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagOrderField(ctx context.Context, v interface{}) (*ent.TagOrderField, error) {
 	var res = new(ent.TagOrderField)
 	err := res.UnmarshalGQL(v)
@@ -9509,16 +9519,6 @@ func (ec *executionContext) marshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋ
 		}
 		return graphql.Null
 	}
-	return v
-}
-
-func (ec *executionContext) unmarshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (tag.Kind, error) {
-	var res tag.Kind
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v tag.Kind) graphql.Marshaler {
 	return v
 }
 
@@ -9942,7 +9942,7 @@ func (ec *executionContext) marshalOSession2ᚕᚖgithubᚗcomᚋkcarrettoᚋrea
 	return ret
 }
 
-func (ec *executionContext) unmarshalOSessionSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx context.Context, v interface{}) ([]session.HostPlatform, error) {
+func (ec *executionContext) unmarshalOSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx context.Context, v interface{}) ([]session.HostPlatform, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -9954,7 +9954,7 @@ func (ec *executionContext) unmarshalOSessionSessionHostPlatform2ᚕgithubᚗcom
 	res := make([]session.HostPlatform, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -9962,7 +9962,7 @@ func (ec *executionContext) unmarshalOSessionSessionHostPlatform2ᚕgithubᚗcom
 	return res, nil
 }
 
-func (ec *executionContext) marshalOSessionSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx context.Context, sel ast.SelectionSet, v []session.HostPlatform) graphql.Marshaler {
+func (ec *executionContext) marshalOSessionHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatformᚄ(ctx context.Context, sel ast.SelectionSet, v []session.HostPlatform) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -9989,7 +9989,7 @@ func (ec *executionContext) marshalOSessionSessionHostPlatform2ᚕgithubᚗcom�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNSessionSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, sel, v[i])
+			ret[i] = ec.marshalNSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10009,7 +10009,7 @@ func (ec *executionContext) marshalOSessionSessionHostPlatform2ᚕgithubᚗcom�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOSessionSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, v interface{}) (*session.HostPlatform, error) {
+func (ec *executionContext) unmarshalOSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, v interface{}) (*session.HostPlatform, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10018,7 +10018,7 @@ func (ec *executionContext) unmarshalOSessionSessionHostPlatform2ᚖgithubᚗcom
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOSessionSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v *session.HostPlatform) graphql.Marshaler {
+func (ec *executionContext) marshalOSessionHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v *session.HostPlatform) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -10100,7 +10100,7 @@ func (ec *executionContext) marshalOTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx context.Context, v interface{}) ([]tag.Kind, error) {
+func (ec *executionContext) unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx context.Context, v interface{}) ([]tag.Kind, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10112,7 +10112,7 @@ func (ec *executionContext) unmarshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋr
 	res := make([]tag.Kind, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10120,7 +10120,7 @@ func (ec *executionContext) unmarshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋr
 	return res, nil
 }
 
-func (ec *executionContext) marshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx context.Context, sel ast.SelectionSet, v []tag.Kind) graphql.Marshaler {
+func (ec *executionContext) marshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx context.Context, sel ast.SelectionSet, v []tag.Kind) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -10147,7 +10147,7 @@ func (ec *executionContext) marshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrea
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTagTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, sel, v[i])
+			ret[i] = ec.marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10167,7 +10167,7 @@ func (ec *executionContext) marshalOTagTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrea
 	return ret
 }
 
-func (ec *executionContext) unmarshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (*tag.Kind, error) {
+func (ec *executionContext) unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (*tag.Kind, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10176,7 +10176,7 @@ func (ec *executionContext) unmarshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋr
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOTagTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v *tag.Kind) graphql.Marshaler {
+func (ec *executionContext) marshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v *tag.Kind) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
