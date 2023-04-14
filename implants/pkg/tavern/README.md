@@ -17,7 +17,8 @@ use tavern::http::{new_client};
 use tavern::{ClaimTasksInput, SubmitTaskResultInput, HostPlatform, Task};
 use chrono::Utc;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let client = new_client("https://mydomain.com/graphql", "supersecret");
 
     // Fetch new tasks
