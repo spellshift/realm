@@ -23,3 +23,10 @@ export type TomeTag = {
     name: string;
     kind: string;
 }
+export type SessionType = {
+    hostname: string;
+    id: string;
+    name: string;
+    principal: string;
+    tags: Array<TomeTag>;
+}

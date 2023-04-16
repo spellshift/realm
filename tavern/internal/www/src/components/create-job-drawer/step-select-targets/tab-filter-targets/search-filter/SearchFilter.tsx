@@ -73,7 +73,6 @@ export const SearchFilter = (props: SearchFilterParams) => {
             });
 
             const filtered = sessions.filter( (session) => {
-                console.log(session);
                 let group = (session?.tags).find( (obj : any) => {
                     return obj?.kind === "group"
                 }) || null;
@@ -124,6 +123,6 @@ export const SearchFilter = (props: SearchFilterParams) => {
             isMulti
             options={options}
             onChange={handleChange}
-    />  
+        />  
     );
 };

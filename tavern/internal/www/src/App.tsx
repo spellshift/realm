@@ -10,6 +10,7 @@ import { JobList } from "./pages/job-list";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Home } from "./pages/home";
 import { CreateJob } from "./pages/create-job";
+import 'react-virtualized/styles.css';
 
 const GET_TOMES = gql`
     query get_tomes{
@@ -40,7 +41,6 @@ const router = createBrowserRouter([
 
 export const App = () => {
   const { loading, error, data } = useQuery(GET_TOMES);
-  console.log(data);
 
   return (
     <ChakraProvider theme={theme}>

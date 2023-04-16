@@ -13,8 +13,8 @@ export const CreateJob = () => {
 
     const steps = [
         { name: 'Customize tome', description: 'Step 1', href: '#', step: 0 },
-        { name: 'Select agent sessions', description: 'Step 2', href: '#', step: 2 },
-        { name: 'Job finalized', description: 'Done', href: '#', step: 3 },
+        { name: 'Select agent sessions', description: 'Step 2', href: '#', step: 1 },
+        { name: 'Job finalized', description: 'Done', href: '#', step: 2 },
     ];
 
     const formik = useFormik({
@@ -34,7 +34,7 @@ export const CreateJob = () => {
             case 0:
                 return <SelectTome setCurrStep={setCurrStep} formik={formik} />
             case 1:
-                return <SelectSessions />
+                return <SelectSessions setCurrStep={setCurrStep} formik={formik} />
             default:
                 return <div>{step}</div>;
         }
