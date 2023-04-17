@@ -33,24 +33,7 @@ struct PeFileHeaders64 {
     section_headers: Vec<IMAGE_SECTION_HEADER>,
 }
 
-// copy over DLL image sections to the newly allocated space for the DLL
-// #[cfg(target_arch = "x86_64")]
-// fn copy_dll_image_sections_to_memory_64(new_dll_base: *mut c_void, dll_bytes: Vec<u8>) -> Result<()>{
-// //nt_headers: *mut IMAGE_NT_HEADERS64
-//     let nt_headers = get_nt_headers_64(dll_bytes.as_ptr() as usize)?;
-
-//     let number_of_sections = (unsafe{*nt_headers}).FileHeader.NumberOfSections;
-//     let mut section_index: u16 = 0;
-//     while section_index < number_of_sections {
-//         let section_ref :*mut IMAGE_SECTION_HEADER = (nt_headers as usize + 264 as usize + (section_index as usize * std::mem::size_of::<IMAGE_SECTION_HEADER>() as usize) as usize) as *mut IMAGE_SECTION_HEADER;
-//         println!("Section Name: {}", std::str::from_utf8(&(unsafe{*section_ref}).Name).unwrap() );
-//         println!("Section VirtualAddr: {:?}", (unsafe{*section_ref}).VirtualAddress );
-//         section_index = section_index + 1;
-//     }
-    
-//     Ok(())
-// }
-
+#[cfg(target_arch = "x86_64")]
 impl PeFileHeaders64 {
     fn new(dll_bytes: Vec<u8>) -> Result<Self> {
         let dos_header_base_ref = dll_bytes.as_ptr() as usize;
@@ -76,7 +59,11 @@ impl PeFileHeaders64 {
                     (section_index as usize * std::mem::size_of::<IMAGE_SECTION_HEADER>() as usize)
                 ) as *mut IMAGE_SECTION_HEADER)
             };
-        }    
+        }
+
+        if section_headers.len() != nt_headers.FileHeader.NumberOfSections as usize {
+            return Err(anyhow::anyhow!(format!("PE section count {} doesn't match nt_header.FileHeader.NumberOfSections {}", section_headers.len(), nt_headers.FileHeader.NumberOfSections)));
+        }
 
         Ok(Self {
             dos_header: dos_headers,
@@ -86,7 +73,47 @@ impl PeFileHeaders64 {
     }
 }
 
-fn get_module_handle_a(module_name: Option<String>) -> Result<isize> {
+#[cfg(target_arch = "x86")]
+impl PeFileHeaders64 {
+    fn new(dll_bytes: Vec<u8>) -> Result<Self> {
+        let dos_header_base_ref = dll_bytes.as_ptr() as usize;
+        let dos_headers = unsafe { *((dos_header_base_ref) as *mut IMAGE_DOS_HEADER) };
+        if dos_headers.e_magic != 23117 {
+            return Err(anyhow::anyhow!("PE Magic header mismatch. File does not appear to be a PE executable."));
+        }
+    
+        let nt_header_base_ref = dos_header_base_ref + dos_headers.e_lfanew as usize;
+        let nt_headers = unsafe { *((nt_header_base_ref) as *mut IMAGE_NT_HEADERS64) };
+        
+        let mut section_headers_ref = unsafe{*((nt_header_base_ref + 264 as usize ) as *mut IMAGE_SECTION_HEADER)};
+        let mut section_headers: Vec<IMAGE_SECTION_HEADER> = Vec::new();
+        for mut section_index in 0..nt_headers.FileHeader.NumberOfSections {
+            let section: IMAGE_SECTION_HEADER = section_headers_ref.clone();
+            
+            section_headers.push(section);
+            section_index = section_index + 1;
+            section_headers_ref = unsafe{
+                *((
+                    nt_header_base_ref + 
+                    264 as usize + 
+                    (section_index as usize * std::mem::size_of::<IMAGE_SECTION_HEADER>() as usize)
+                ) as *mut IMAGE_SECTION_HEADER)
+            };
+        }
+
+        if section_headers.len() != nt_headers.FileHeader.NumberOfSections as usize {
+            return Err(anyhow::anyhow!(format!("PE section count {} doesn't match nt_header.FileHeader.NumberOfSections {}", section_headers.len(), nt_headers.FileHeader.NumberOfSections)));
+        }
+
+        Ok(Self {
+            dos_header: dos_headers,
+            nt_headers: nt_headers,
+            section_headers: section_headers,
+        })
+    }
+}
+
+fn get_module_handle_a(module_name: Option<String>) -> Result<usize> {
     unsafe {
         let module_handle = match module_name {
             Some(local_module_name) => {
@@ -96,7 +123,7 @@ fn get_module_handle_a(module_name: Option<String>) -> Result<isize> {
                     GetModuleHandleA(ptr::null())
             },
         };
-        Ok(module_handle)    
+        Ok(module_handle as usize)
     }
 }
 
@@ -123,83 +150,30 @@ fn write_vec_to_memory(dst_mem_address: *mut c_void, src_vec_bytes: Vec<u8>, max
 }
 
 pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: u32) -> Result<NoneType> {
+    #[cfg(not(target_os = "windows"))]
+    return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
+
+    #[cfg(target_arch = "x86_64")]
+    let pe_header = PeFileHeaders64::new(dll_bytes.clone())?;
+    #[cfg(target_arch = "x86")]
+    let pe_header = PeFileHeaders32::new(dll_bytes.clone())?;
+
+    // Allocate memory for our DLL to be loaded into
+    let new_dll_base = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
+    
+    // Write our DLL headers into the newly allocated memory.
+    write_vec_to_memory(new_dll_base, dll_bytes.clone(), pe_header.nt_headers.OptionalHeader.SizeOfHeaders)?;
+
+    // Get distance between new dll memory and on disk image base.
+    if pe_header.nt_headers.OptionalHeader.ImageBase as usize > new_dll_base as usize {
+        return Err(anyhow::anyhow!("image_base ptr was greater than dll_mem ptr."));
+    }
+    let image_base_delta = new_dll_base as usize - pe_header.nt_headers.OptionalHeader.ImageBase as usize;
+
+    // get this module's image base address
+    let current_process_module_base = get_module_handle_a(None)?;
     Ok(NoneType)
 }
-
-// Translated from https://www.ired.team/offensive-security/code-injection-process-injection/reflective-dll-injection
-// pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: u32) -> Result<NoneType> {
-//     println!();
-//     if false { println!("Ignore unused vars dll_path: {:?}, pid: {}", dll_bytes, pid); }
-//     #[cfg(not(target_os = "windows"))]
-//     return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
-
-//     // The current base address of our module.
-//     // let current_process_module_base = get_module_handle_a(None)?;
-
-//     // // Get the kernel32.dll base address
-//     // let h_kernel32 = get_module_handle_a(Some("kernel32.dll".to_string()))?;
-
-//     // let dos_headers = get_dos_headers(dll_bytes.clone().as_ptr() as usize)?;
-//     #[cfg(target_arch = "x86_64")]
-//     let pe_file = parse_pe_file_x64(dll_bytes);
-
-//     Ok(NoneType)
-
-//     #[cfg(target_arch = "x86_64")]
-//     let nt_headers = get_nt_headers_64(dll_bytes.clone().as_ptr() as usize)?;
-//     #[cfg(target_arch = "x86")]
-//     let nt_headers = get_nt_headers_32((dll_bytes.as_ptr() as usize))?;
-
-//     let dll_image_size = (unsafe{*nt_headers}).OptionalHeader.SizeOfImage;
-
-//     // Allocate memory for our DLL to be loaded into
-//     let new_dll_base = unsafe { VirtualAlloc(ptr::null(), dll_image_size as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
-
-//     // Calculate the number of bytes between our images base and the newly allocated memory.
-//     let image_base_delta = (new_dll_base as usize) - (unsafe{*nt_headers}).OptionalHeader.ImageBase as usize;
-
-//     // copy over DLL image headers to the newly allocated space for the DLL
-//     write_vec_to_memory(new_dll_base, dll_bytes.clone(), (unsafe{*nt_headers}).OptionalHeader.SizeOfHeaders)?;
-
-
-//     // copy over DLL image sections to the newly allocated space for the DLL
-//     println!("nt_headers {:?}", nt_headers as *const IMAGE_NT_HEADERS64);
-//     #[cfg(target_arch = "x86_64")]
-//     copy_dll_image_sections_to_memory_64(new_dll_base, dll_bytes)?;
-//     #[cfg(target_arch = "x86")]
-//     copy_dll_image_sections_to_memory_32(new_dll_base, dll_bytes)?;
-
-
-//     // 	IMAGE_DATA_DIRECTORY relocations = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
-//     // let relocations = (unsafe{*nt_headers}).OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize] ;
-//     // println!("relocations.Size: {:?}", relocations.Size);
-
-//     // let relocation_table = (relocations.VirtualAddress + new_dll_base as u32) as *mut c_void;
-//     // let mut relocations_processed_byte_offset: u32 = 0;
-
-//     // while relocations_processed_byte_offset < relocations.Size {
-//     //     let relocation_block = (relocation_table as u32 + relocations_processed_byte_offset) as *mut BaseRelocationBlock;
-//     //     relocations_processed_byte_offset = relocations_processed_byte_offset + std::mem::size_of::<BaseRelocationBlock>() as u32;
-//     //     println!("relocation_block.size: {:?}", (unsafe{*relocation_block}).block_size);
-//     //     		DWORD relocationsCount = (relocationBlock->BlockSize - sizeof(BASE_RELOCATION_BLOCK)) / sizeof(BASE_RELOCATION_ENTRY);
-//     //     let relocations_count: u32 = ((unsafe{*relocation_block}).block_size - std::mem::size_of::<BaseRelocationBlock>() as u32) /  std::mem::size_of::<BaseRelocationEntry>() as u32;
-//     //     let relocation_entries = (relocation_table as u32 + relocations_processed_byte_offset) as *mut BaseRelocationEntry; //(relocationTable + relocationsProcessed);
-//     //     println!("{:?}", relocations_count);
-
-//     //     let mut index = 0;
-//     //     while index < relocations_count {
-//     //         let relocation_entry = (relocation_entries as u32 + index) as *mut BaseRelocationEntry;
-//     //         println!("reloc_entry datatype: {:?}", (unsafe {*relocation_entry}).data_type);
-// 	// 		if (unsafe {*relocation_entry}).data_type == 0 {
-//     //             continue;
-//     //         }
-//     //         index = index + 1;
-//     //     }
-
-//     // }
-
-//     Ok(NoneType)
-// }
 
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> Result<Vec<u8>> {
     let res_u8_vec: Vec<u8> = u32_vec.iter().map(|x| if *x < u8::MAX as u32 { *x as u8 }else{ u8::MAX }).collect();
