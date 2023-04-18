@@ -1,7 +1,7 @@
 use anyhow::Result;
 use starlark::values::none::NoneType;
 
-use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::IMAGE_DIRECTORY_ENTRY_BASERELOC};
+use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_RELOCATION, IMAGE_RELOCATION_0}};
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     System::{
@@ -30,21 +30,31 @@ struct BaseRelocationEntry {
 struct PeFileHeaders64 {
     dos_header: IMAGE_DOS_HEADER,
     nt_headers: IMAGE_NT_HEADERS64,
-    section_headers: Vec<IMAGE_SECTION_HEADER>,
+    section_headers: Vec<IMAGE_SECTION_HEADER>
 }
 
+struct RelocTable {
+    page_rva: u32,
+    block_size: u32,
+    relocation_entries: Vec<u16>,
+}
+
+// Pares the PE file from a series of bytes
 #[cfg(target_arch = "x86_64")]
 impl PeFileHeaders64 {
     fn new(dll_bytes: Vec<u8>) -> Result<Self> {
+        // DOS Headers
         let dos_header_base_ref = dll_bytes.as_ptr() as usize;
         let dos_headers = unsafe { *((dos_header_base_ref) as *mut IMAGE_DOS_HEADER) };
         if dos_headers.e_magic != 23117 {
             return Err(anyhow::anyhow!("PE Magic header mismatch. File does not appear to be a PE executable."));
         }
     
+        // NT Headers
         let nt_header_base_ref = dos_header_base_ref + dos_headers.e_lfanew as usize;
         let nt_headers = unsafe { *((nt_header_base_ref) as *mut IMAGE_NT_HEADERS64) };
         
+        // Section Headers
         let mut section_headers_ref = unsafe{*((nt_header_base_ref + 264 as usize ) as *mut IMAGE_SECTION_HEADER)};
         let mut section_headers: Vec<IMAGE_SECTION_HEADER> = Vec::new();
         for mut section_index in 0..nt_headers.FileHeader.NumberOfSections {
@@ -64,6 +74,26 @@ impl PeFileHeaders64 {
         if section_headers.len() != nt_headers.FileHeader.NumberOfSections as usize {
             return Err(anyhow::anyhow!(format!("PE section count {} doesn't match nt_header.FileHeader.NumberOfSections {}", section_headers.len(), nt_headers.FileHeader.NumberOfSections)));
         }
+
+        // Section Reloc entries
+        let mut reloc_table: Vec<RelocTable> = Vec::new();
+        let mut reloc_section_ptr: *mut c_void = 0 as *mut c_void;
+        for section_header in section_headers {
+            if String::from_utf8(section_header.Name.to_vec())?.contains(".reloc") {
+                reloc_section_ptr = (dos_header_base_ref as usize + section_header.PointerToRelocations as usize) as *mut c_void;
+            }
+        }
+        if !reloc_section_ptr.is_null() {
+            loop {
+                let mut tmp_base_reloc = unsafe{*(reloc_section_ptr as *mut IMAGE_BASE_RELOCATION)};
+                if tmp_base_reloc.SizeOfBlock == 0 {
+                    break;
+                }
+                let reloc_table = 
+    
+            }
+        }
+
 
         Ok(Self {
             dos_header: dos_headers,
@@ -149,7 +179,7 @@ fn write_vec_to_memory(dst_mem_address: *mut c_void, src_vec_bytes: Vec<u8>, max
     Ok(())
 }
 
-fn write_n_bytes_to_memory(dst_mem_address: *mut c_void, src_mem_address: *const c_void, max_bytes_to_write: u32) -> Result<()> {
+pub fn write_n_bytes_to_memory(dst_mem_address: *mut c_void, src_mem_address: *const c_void, max_bytes_to_write: u32) -> Result<()> {
     let mut index: u32 = 0;
     while index <  max_bytes_to_write {
         let tmp_byte_val = unsafe { *((src_mem_address as usize + index as usize) as *const u8) };
@@ -162,7 +192,6 @@ fn write_n_bytes_to_memory(dst_mem_address: *mut c_void, src_mem_address: *const
 fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: PeFileHeaders64) -> Result<()> {
 
     for (_section_index, section) in pe_file_headers.section_headers.iter().enumerate() {
-
         // LPVOID sectionDestination = (LPVOID)((DWORD_PTR)dllBase + (DWORD_PTR)section->VirtualAddress);
         let section_destination = new_dll_base as usize + section.VirtualAddress as usize;
         // LPVOID sectionBytes = (LPVOID)((DWORD_PTR)dllBytes + (DWORD_PTR)section->PointerToRawData);
@@ -176,6 +205,39 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
     Ok(())
 }
 
+fn process_dll_image_relocation(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: PeFileHeaders64, image_base_delta: usize) -> Result<()>{
+    // let relocation_directory = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize];	
+    // if relocation_directory.Size == 0 {
+    //     // No relocations to process
+    //     return Ok(());
+    // }
+
+    // let mut ptr_to_reloc_table: *mut c_void;// = old_dll_bytes as usize + pe_file_headers.nt_headers.OptionalHeader.DataDirectory
+    // for section in pe_file_headers.section_headers {
+    //     if String::from_utf8(section.Name.to_vec())?.contains(".reloc") {
+    //         ptr_to_reloc_table = (old_dll_bytes as usize + section.PointerToRawData as usize) as *mut IMAGE_RELOCATION_0
+    //         println!(".reloc section.PointerToRawData: {:?}", section.PointerToRawData);
+    //     }
+    // }
+
+    // let mut base_image_relocation_table = (new_dll_base as usize + relocation_directory.VirtualAddress as usize) as *mut IMAGE_BASE_RELOCATION;
+    // loop {
+    //     let relocation_block = (unsafe{*base_image_relocation_table as IMAGE_BASE_RELOCATION});
+    //     let relocation_block_size = relocation_block.SizeOfBlock;
+    //     if relocation_block_size == 0 {
+    //         break;
+    //     }
+
+    //     let destination_virtual_address = old_dll_bytes as usize + relocation_block.VirtualAddress as usize;
+    //     let relocation_block_entries_count = relocation_block.SizeOfBlock - std::mem::size_of::<IMAGE_BASE_RELOCATION>() as u32 / std::mem::size_of::<IMAGE_RELOCATION>() as u32;
+    //     println!("relocation_block_entries_count: {:?}", relocation_block_entries_count);
+    //     // Getting the right number of entries 6 but the entries count is way off but not changing.
+
+    //     base_image_relocation_table = (base_image_relocation_table as usize + relocation_block_size as usize) as *mut IMAGE_BASE_RELOCATION;
+    // }
+    // uiValueB = (ULONG_PTR)&((PIMAGE_NT_HEADERS)uiHeaderValue)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_BASERELOC ];
+    Ok(())
+}
 pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneType> {
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
@@ -194,15 +256,14 @@ pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneTy
     // copy over DLL image sections to the newly allocated space for the DLL
     relocate_dll_image_sections(new_dll_base, dll_bytes.clone().as_ptr() as *const c_void, pe_header.clone())?;
 
-    // perform image base relocations
-    //	IMAGE_DATA_DIRECTORY relocations = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
-
-
     // Get distance between new dll memory and on disk image base.
     if pe_header.nt_headers.OptionalHeader.ImageBase as usize > new_dll_base as usize {
         return Err(anyhow::anyhow!("image_base ptr was greater than dll_mem ptr."));
     }
     let image_base_delta = new_dll_base as usize - pe_header.nt_headers.OptionalHeader.ImageBase as usize;
+
+    // perform image base relocations
+    process_dll_image_relocation(new_dll_base, dll_bytes.clone().as_ptr() as *const c_void, pe_header.clone(), image_base_delta)?;
 
     // get this module's image base address
     let current_process_module_base = get_module_handle_a(None)?;
