@@ -75,25 +75,14 @@ impl PeFileHeaders64 {
             return Err(anyhow::anyhow!(format!("PE section count {} doesn't match nt_header.FileHeader.NumberOfSections {}", section_headers.len(), nt_headers.FileHeader.NumberOfSections)));
         }
 
-        // Section Reloc entries
-        let mut reloc_table: Vec<RelocTable> = Vec::new();
-        let mut reloc_section_ptr: *mut c_void = 0 as *mut c_void;
-        for section_header in section_headers {
-            if String::from_utf8(section_header.Name.to_vec())?.contains(".reloc") {
-                reloc_section_ptr = (dos_header_base_ref as usize + section_header.PointerToRelocations as usize) as *mut c_void;
-            }
-        }
-        if !reloc_section_ptr.is_null() {
-            loop {
-                let mut tmp_base_reloc = unsafe{*(reloc_section_ptr as *mut IMAGE_BASE_RELOCATION)};
-                if tmp_base_reloc.SizeOfBlock == 0 {
-                    break;
-                }
-                let reloc_table = 
-    
-            }
-        }
-
+        // // Section Reloc entries
+        // let mut reloc_table: Vec<RelocTable> = Vec::new();
+        // let mut reloc_section_ptr: *mut c_void = 0 as *mut c_void;
+        // for section_header in section_headers {
+        //     if String::from_utf8(section_header.Name.to_vec())?.contains(".reloc") {
+        //         reloc_section_ptr = (dos_header_base_ref as usize + section_header.PointerToRelocations as usize) as *mut c_void;
+        //     }
+        // }
 
         Ok(Self {
             dos_header: dos_headers,
