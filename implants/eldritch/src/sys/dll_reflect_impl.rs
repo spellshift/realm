@@ -22,8 +22,26 @@ struct BaseRelocationBlock {
 }
 #[derive(Debug, Copy, Clone)]
 struct BaseRelocationEntry {
-    offset: u16, // offset bits
-    data_type: u16,
+    offset: u16,
+    reloc_type: u16,
+}
+
+impl BaseRelocationEntry {
+    fn new(c_bytes: u16) -> Self {
+        let offset_byte_mask: u16 = 0b1111_1111_1111_0000;
+        let offset = (c_bytes & offset_byte_mask) >> 4;
+        // let reloc_type = c_bytes & 0xfff;
+        let reloc_type_byte_mask: u16 = 0b0000_0000_0000_1111;
+        let reloc_type = c_bytes & reloc_type_byte_mask;
+        // let offset = c_bytes >> 12;
+        Self {
+            offset: offset,
+            reloc_type: reloc_type,
+        }
+    }
+    fn c_size() -> usize {
+        return std::mem::size_of::<u16>();
+    }
 }
 
 #[derive(Clone)]
@@ -74,15 +92,6 @@ impl PeFileHeaders64 {
         if section_headers.len() != nt_headers.FileHeader.NumberOfSections as usize {
             return Err(anyhow::anyhow!(format!("PE section count {} doesn't match nt_header.FileHeader.NumberOfSections {}", section_headers.len(), nt_headers.FileHeader.NumberOfSections)));
         }
-
-        // // Section Reloc entries
-        // let mut reloc_table: Vec<RelocTable> = Vec::new();
-        // let mut reloc_section_ptr: *mut c_void = 0 as *mut c_void;
-        // for section_header in section_headers {
-        //     if String::from_utf8(section_header.Name.to_vec())?.contains(".reloc") {
-        //         reloc_section_ptr = (dos_header_base_ref as usize + section_header.PointerToRelocations as usize) as *mut c_void;
-        //     }
-        // }
 
         Ok(Self {
             dos_header: dos_headers,
@@ -178,6 +187,7 @@ pub fn write_n_bytes_to_memory(dst_mem_address: *mut c_void, src_mem_address: *c
     Ok(())
 }
 
+// Load the DLL sections (Eg: .reloc, .text, .rdata) into memory
 fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: PeFileHeaders64) -> Result<()> {
 
     for (_section_index, section) in pe_file_headers.section_headers.iter().enumerate() {
@@ -194,36 +204,55 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
     Ok(())
 }
 
+// We've copied all the sections from our DLL into memory and now we need to update some of the pointers to make senes.
+// On disk the memory pointers are set to the offset so inorder to update the pointer of our now in memory DLL we add the dleta between the image bases.
 fn process_dll_image_relocation(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: PeFileHeaders64, image_base_delta: usize) -> Result<()>{
-    // let relocation_directory = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize];	
-    // if relocation_directory.Size == 0 {
-    //     // No relocations to process
-    //     return Ok(());
-    // }
+    let relocation_directory = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize];	
+    if relocation_directory.Size == 0 {
+        // No relocations to process
+        return Ok(());
+    }
 
-    // let mut ptr_to_reloc_table: *mut c_void;// = old_dll_bytes as usize + pe_file_headers.nt_headers.OptionalHeader.DataDirectory
-    // for section in pe_file_headers.section_headers {
-    //     if String::from_utf8(section.Name.to_vec())?.contains(".reloc") {
-    //         ptr_to_reloc_table = (old_dll_bytes as usize + section.PointerToRawData as usize) as *mut IMAGE_RELOCATION_0
-    //         println!(".reloc section.PointerToRawData: {:?}", section.PointerToRawData);
-    //     }
-    // }
+    let mut base_image_relocation_table: *mut IMAGE_BASE_RELOCATION = (new_dll_base as usize + relocation_directory.VirtualAddress as usize) as *mut IMAGE_BASE_RELOCATION;
+    loop {
+        let relocation_block = (unsafe{*base_image_relocation_table as IMAGE_BASE_RELOCATION});
+        let relocation_block_size = relocation_block.SizeOfBlock;
+        if relocation_block_size == 0 {
+            break;
+        }
+        println!("relocation_block.VirtualAddress {:#04x}", relocation_block.VirtualAddress);
+        println!("relocation_block.SizeOfBlock {:#04x}", relocation_block.SizeOfBlock);
+        // This needs to be calculated since the relocation_block doesn't track it.
+        // Luckily the relocation_entry is a static size: u16.
+        // Unfortunately the struct uses offset bits which is annoying in Rust.
+        // c++ struct:
+        // typedef struct BASE_RELOCATION_ENTRY {
+        //      USHORT Offset : 12;
+        //      USHORT Type : 4;
+        // } BASE_RELOCATION_ENTRY, *PBASE_RELOCATION_ENTRY;
+        let relocation_block_entries_count = (relocation_block.SizeOfBlock as usize - std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) / BaseRelocationEntry::c_size();
+        println!("relocation_block_entries_count {:#04x}", relocation_block_entries_count);
 
-    // let mut base_image_relocation_table = (new_dll_base as usize + relocation_directory.VirtualAddress as usize) as *mut IMAGE_BASE_RELOCATION;
-    // loop {
-    //     let relocation_block = (unsafe{*base_image_relocation_table as IMAGE_BASE_RELOCATION});
-    //     let relocation_block_size = relocation_block.SizeOfBlock;
-    //     if relocation_block_size == 0 {
-    //         break;
-    //     }
+        let mut relocation_entry_ptr: *mut u16 = (base_image_relocation_table as usize + std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) as *mut u16;
+        for index in 1..relocation_block_entries_count {
+            let relocation_entry = BaseRelocationEntry::new(unsafe{*relocation_entry_ptr});
+            let relocation_rva = relocation_block.VirtualAddress + relocation_entry.offset as u32;
 
-    //     let destination_virtual_address = old_dll_bytes as usize + relocation_block.VirtualAddress as usize;
-    //     let relocation_block_entries_count = relocation_block.SizeOfBlock - std::mem::size_of::<IMAGE_BASE_RELOCATION>() as u32 / std::mem::size_of::<IMAGE_RELOCATION>() as u32;
-    //     println!("relocation_block_entries_count: {:?}", relocation_block_entries_count);
-    //     // Getting the right number of entries 6 but the entries count is way off but not changing.
-
-    //     base_image_relocation_table = (base_image_relocation_table as usize + relocation_block_size as usize) as *mut IMAGE_BASE_RELOCATION;
-    // }
+            // If the reloction type isn't 0 try relocating it.
+            if relocation_entry.reloc_type != 0 {
+                // Calculate the adress of the relocation record in the new_dll memory.
+                let ptr_to_relocation_to_update = (new_dll_base as usize + relocation_block.VirtualAddress as usize + relocation_entry.offset as usize) as *mut u32;
+                // Calculate the relocation value relocation record + the image delta.
+                let new_reloc_value = unsafe { *ptr_to_relocation_to_update } as u32 + image_base_delta as u32;
+                // Update the value we point at.
+                unsafe { *ptr_to_relocation_to_update = new_reloc_value };
+                // Update the relocation entry pointer by incrementing by the size of an entry.
+                relocation_entry_ptr = (relocation_entry_ptr as usize + BaseRelocationEntry::c_size()) as *mut u16;    
+            }
+        }
+        
+        base_image_relocation_table = (base_image_relocation_table as usize + relocation_block_size as usize) as *mut IMAGE_BASE_RELOCATION;
+    }
     // uiValueB = (ULONG_PTR)&((PIMAGE_NT_HEADERS)uiHeaderValue)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_BASERELOC ];
     Ok(())
 }
@@ -280,6 +309,17 @@ mod tests {
     use sysinfo::{Pid, Signal};
     use tempfile::NamedTempFile;
     use sysinfo::{ProcessExt,System,SystemExt,PidExt};
+
+
+    #[test]
+    fn test_dll_reflect_new_BaseRelocationEntry() -> anyhow::Result<()>{
+        // Get the path to our test dll file.
+        let test_entry: u16 = 0xA008;
+        let base_reloc_entry = BaseRelocationEntry::new(test_entry);
+        assert_eq!(base_reloc_entry.offset, 2560);
+        assert_eq!(base_reloc_entry.reloc_type, 8);
+        Ok(())
+    }
 
     #[test]
     fn test_dll_reflect_write_vec_to_mem() -> anyhow::Result<()>{
