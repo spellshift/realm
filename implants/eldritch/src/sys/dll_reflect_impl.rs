@@ -234,9 +234,8 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, old_dll_bytes: *const
         println!("relocation_block_entries_count {:#04x}", relocation_block_entries_count);
 
         let mut relocation_entry_ptr: *mut u16 = (base_image_relocation_table as usize + std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) as *mut u16;
-        for index in 1..relocation_block_entries_count {
+        for _index in 1..relocation_block_entries_count {
             let relocation_entry = BaseRelocationEntry::new(unsafe{*relocation_entry_ptr});
-            let relocation_rva = relocation_block.VirtualAddress + relocation_entry.offset as u32;
 
             // If the reloction type isn't 0 try relocating it.
             if relocation_entry.reloc_type != 0 {
@@ -250,7 +249,7 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, old_dll_bytes: *const
                 relocation_entry_ptr = (relocation_entry_ptr as usize + BaseRelocationEntry::c_size()) as *mut u16;    
             }
         }
-        
+
         base_image_relocation_table = (base_image_relocation_table as usize + relocation_block_size as usize) as *mut IMAGE_BASE_RELOCATION;
     }
     // uiValueB = (ULONG_PTR)&((PIMAGE_NT_HEADERS)uiHeaderValue)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_BASERELOC ];
