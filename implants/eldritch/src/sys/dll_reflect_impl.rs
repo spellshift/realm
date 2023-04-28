@@ -1,7 +1,8 @@
 use anyhow::Result;
+use gazebo::prelude::SliceExt;
 use starlark::values::none::NoneType;
 
-use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_RELOCATION, IMAGE_RELOCATION_0}};
+use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_RELOCATION, IMAGE_RELOCATION_0, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG, IMAGE_ORDINAL_FLAG32, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME}, LibraryLoader::LoadLibraryA, WindowsProgramming::{IMAGE_THUNK_DATA64, IMAGE_THUNK_DATA32}};
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     System::{
@@ -11,6 +12,7 @@ use windows_sys::Win32::{
         Memory::{VirtualAllocEx,MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
     },
 };
+use std::ffi::CStr;
 use std::mem;
 use std::ptr;
 use std::ffi::c_void;
@@ -206,7 +208,7 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
 
 // We've copied all the sections from our DLL into memory and now we need to update some of the pointers to make senes.
 // On disk the memory pointers are set to the offset so inorder to update the pointer of our now in memory DLL we add the dleta between the image bases.
-fn process_dll_image_relocation(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: PeFileHeaders64, image_base_delta: usize) -> Result<()>{
+fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFileHeaders64, image_base_delta: usize) -> Result<()>{
     let relocation_directory = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize];	
     if relocation_directory.Size == 0 {
         // No relocations to process
@@ -255,6 +257,118 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, old_dll_bytes: *const
     // uiValueB = (ULONG_PTR)&((PIMAGE_NT_HEADERS)uiHeaderValue)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_BASERELOC ];
     Ok(())
 }
+
+//def IMAGE_SNAP_BY_ORDINAL(Ordinal): return ((Ordinal & IMAGE_ORDINAL_FLAG) != 0)
+fn image_snap_by_ordinal(ordinal: u64) -> bool{
+    #[cfg(target_arch = "x86_64")]
+    return (ordinal & IMAGE_ORDINAL_FLAG64) != 0;
+    #[cfg(target_arch = "x86")]   
+    return (ordinal & IMAGE_ORDINAL_FLAG32) != 0;
+}
+
+// def IMAGE_ORDINAL(Ordinal): return (Ordinal & 65535)
+fn image_ordinal(ordinal: u64) -> u64 {
+    return ordinal & 65535;
+}
+
+fn update_library_first_thunk_ref(mut library_first_thunk_ref: *mut IMAGE_THUNK_DATA64 ) -> *mut IMAGE_THUNK_DATA64 {
+    library_first_thunk_ref = (library_first_thunk_ref as usize + 1 as usize) as *mut IMAGE_THUNK_DATA64;
+    return library_first_thunk_ref;
+}
+
+fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: PeFileHeaders64, image_base_delta: usize) -> Result<()>{
+    let import_directory = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
+    let import_directory_block_size = import_directory.Size;
+	
+    if import_directory.Size == 0 {
+        // No relocations to process
+        return Ok(());
+    }
+
+    let mut base_image_import_table: *mut IMAGE_IMPORT_DESCRIPTOR = (new_dll_base as usize + import_directory.VirtualAddress as usize) as *mut IMAGE_IMPORT_DESCRIPTOR;
+    loop {
+        let import_table_entry = unsafe{*base_image_import_table};
+        if import_table_entry.Name == 0 {
+            break;
+        }
+        println!("NameRVA: {:#06x}", import_table_entry.Name);
+
+        let slice = (new_dll_base as usize + import_table_entry.Name as usize) as *const i8;
+        let library_name = (unsafe { CStr::from_ptr(slice) }).to_str()?;
+        println!("library_name: {}", library_name); // gotta cut the null terminated strings out.
+        let library_handle = unsafe { LoadLibraryA( format!("{}\0",library_name).as_str().as_ptr()) };
+        if library_handle != 0 {
+            #[cfg(target_arch = "x86_64")]
+            let mut library_first_thunk_ref = (new_dll_base as usize + import_table_entry.FirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
+            #[cfg(target_arch = "x86")]
+            let mut library_first_thunk_ref = (new_dll_base as usize + import_table_entry.FirstThunk as usize) as *mut IMAGE_THUNK_DATA32;
+
+            loop {
+                let mut library_first_thunk = unsafe{(*library_first_thunk_ref)};
+
+                println!("{:?}", library_first_thunk_ref);
+                // Access of a union field is unsafe
+                if unsafe{library_first_thunk.u1.AddressOfData} == 0 {
+                    break;
+                }
+                if image_snap_by_ordinal(unsafe{library_first_thunk.u1.Ordinal}) {
+                    println!("HERE1");
+                    // LPCSTR functionOrdinal = (LPCSTR)IMAGE_ORDINAL(thunk->u1.Ordinal);
+                    let function_ordinal = image_ordinal(unsafe{library_first_thunk.u1.Ordinal}) as u8;
+                    // thunk->u1.Function = (DWORD_PTR)GetProcAddress(library, functionOrdinal);
+                    println!("HERE2");
+                    library_first_thunk.u1.Function = match unsafe { GetProcAddress(library_handle, &function_ordinal) } {
+                        Some(local_thunk_function) => {
+                            if cfg!(target_pointer_width = "64") {
+                                local_thunk_function as u64
+                            } else if cfg!(target_pointer_width = "32") {
+                                (local_thunk_function as u32).into()
+                            } else {
+                                return Err(anyhow::anyhow!("Target pointer width isnt 64 or 32."));
+                            }
+                        },
+                        None => unsafe{library_first_thunk.u1.Function},
+                    };
+                    println!("HERE3");
+                    println!("library_first_thunk.u1.Function: {:?}", unsafe{library_first_thunk.u1.Function})
+                } else {
+                    println!("HERE4");
+                    // PIMAGE_IMPORT_BY_NAME functionName = (PIMAGE_IMPORT_BY_NAME)((DWORD_PTR)dllBase + thunk->u1.AddressOfData);
+                    let function_name_ref: *mut IMAGE_IMPORT_BY_NAME = (new_dll_base as usize + unsafe{library_first_thunk.u1.AddressOfData} as usize) as *mut IMAGE_IMPORT_BY_NAME;
+                    println!("function_name: {:?}", (unsafe { CStr::from_ptr( (*function_name_ref).Name.as_ptr() as *const i8) }).to_str()?);
+                    let function_name = unsafe{*function_name_ref}.Name[0];
+                    // DWORD_PTR functionAddress = (DWORD_PTR)GetProcAddress(library, functionName->Name);
+                    // thunk->u1.Function = functionAddress;
+                    println!("HERE5");
+
+                    library_first_thunk.u1.Function = match unsafe { GetProcAddress(library_handle, &function_name) } {
+                        Some(local_thunk_function) => {
+                            if cfg!(target_pointer_width = "64") {
+                                local_thunk_function as u64
+                            } else if cfg!(target_pointer_width = "32") {
+                                (local_thunk_function as u32).into()
+                            } else {
+                                return Err(anyhow::anyhow!("Target pointer width isnt 64 or 32."));
+                            }
+                        },
+                        None => unsafe{library_first_thunk.u1.Function},
+                    };
+                    println!("HERE6");
+                    println!("library_first_thunk.u1.Function: {:?}", unsafe{library_first_thunk.u1.Function})
+                }
+                println!("HERE7");
+                // Original thunk ref and new thunk ref need to be updated.
+                library_first_thunk_ref = update_library_first_thunk_ref(library_first_thunk_ref);
+                
+            }
+        }
+        println!("HERE7");
+        base_image_import_table = (base_image_import_table as usize + std::mem::size_of::<IMAGE_IMPORT_DESCRIPTOR>() as usize) as *mut IMAGE_IMPORT_DESCRIPTOR;
+    }
+
+    Ok(())
+}
+
 pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneType> {
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
@@ -280,7 +394,10 @@ pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneTy
     let image_base_delta = new_dll_base as usize - pe_header.nt_headers.OptionalHeader.ImageBase as usize;
 
     // perform image base relocations
-    process_dll_image_relocation(new_dll_base, dll_bytes.clone().as_ptr() as *const c_void, pe_header.clone(), image_base_delta)?;
+    process_dll_image_relocation(new_dll_base, pe_header.clone(), image_base_delta)?;
+
+	// resolve import address table
+    process_import_address_tables(new_dll_base, pe_header.clone(), image_base_delta)?;
 
     // get this module's image base address
     let current_process_module_base = get_module_handle_a(None)?;
@@ -339,6 +456,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_dll_reflect_write_n_bytes_to_memory() -> anyhow::Result<()>{
         // Get the path to our test dll file.
         let buf_size: usize = 16;
