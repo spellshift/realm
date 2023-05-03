@@ -16,6 +16,7 @@ mod template_impl;
 mod timestomp_impl;
 mod write_impl;
 
+use allocative::Allocative;
 use derive_more::Display;
 
 use starlark::collections::SmallMap;
@@ -25,7 +26,7 @@ use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesSta
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
 use serde::{Serialize,Serializer};
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
+#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "FileLibrary")]
 pub struct FileLibrary();
 starlark_simple_value!(FileLibrary);
