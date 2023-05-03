@@ -7,6 +7,7 @@ mod port_forward_impl;
 mod ncat_impl;
 mod bind_proxy_impl;
 
+use allocative::Allocative;
 use derive_more::Display;
 
 use starlark::values::dict::Dict;
@@ -17,7 +18,7 @@ use starlark::{starlark_type, starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
+#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "PivotLibrary")]
 pub struct PivotLibrary();
 starlark_simple_value!(PivotLibrary);
