@@ -45,17 +45,10 @@ models:
       - github.com/kcarretto/realm/tavern/ent.Noder
       # - entgo.io/contrib/entgql/internal/todo/ent.Noder
 
-  # Custom mapping from GraphQL `TagKind`
-  # to the generated `tag.Kind` enum type.
-  TagKind:
+  # Enums
+  Kind:
     model:
       - github.com/kcarretto/realm/tavern/ent/tag.Kind
-  SessionHostPlatform:
+  HostPlatform:
     model:
       - github.com/kcarretto/realm/tavern/ent/session.HostPlatform
-
-  # Custom mapping from GraphQL `CredentialKind`
-  # to the generated `credential.Kind` enum type.
-  # CredentialKind:
-  #   model:
-  #     - github.com/kcarretto/realm/tavern/ent/credential.Kind
