@@ -21,3 +21,4 @@ chrono = { version = "0.4.24", features = ["serde"] }
 
 [dev-dependencies]
 tokio-test = "*"
+httptest = "0.15.4"

@@ -19,7 +19,8 @@ use chrono::Utc;
 
 #[tokio::main]
 async fn main() {
-    let client = new_client("https://mydomain.com/graphql", "supersecret");
+    let client = new_client("https://mydomain.com/graphql", "supersecret")
+      .expect("TODO: Handle errors :D");
 
     // Fetch new tasks
     let tasks: Vec<Task> = client.claim_tasks(ClaimTasksInput{
@@ -30,7 +31,9 @@ async fn main() {
         hostname: String::from("web"),
         host_platform: HostPlatform::Linux,
         host_primary_ip: Some(String::from("10.0.0.1")),
-    }).await.expect("TODO: Handle errors :D");
+    })
+      .await
+      .expect("TODO: Handle errors :D");
 
     // ... execute tasks ...
 
@@ -41,6 +44,8 @@ async fn main() {
         exec_finished_at: Some(Utc::now()),
         output: String::from("It works!"),
         error: None,
-    }).await.expect("TODO: Handle errors :D");
+    })
+      .await
+      .expect("TODO: Handle errors :D");
 }
 ```

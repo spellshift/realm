@@ -29,7 +29,7 @@ use serde::{Serialize, de::DeserializeOwned};
  */
 #[async_trait]
 pub trait Executor {
-    async fn exec<Variables: Serialize+Send, ResponseData: DeserializeOwned>(&self, query: QueryBody<Variables>) -> Result<ResponseData>;
+    async fn exec<Variables: Serialize+Send, GraphQLResponse: DeserializeOwned>(&self, query: QueryBody<Variables>) -> Result<GraphQLResponse>;
 }
 
 /*
