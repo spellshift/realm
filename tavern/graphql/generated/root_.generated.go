@@ -874,7 +874,7 @@ input CreateTagInput {
   """Name of the tag"""
   name: String!
   """Describes the type of tag this is"""
-  kind: TagTagKind!
+  kind: TagKind!
   sessionIDs: [ID!]
 }
 """
@@ -1161,11 +1161,19 @@ type Session implements Node {
   """Primary interface IP address reported by the agent."""
   hostPrimaryIP: String
   """Platform the agent is operating on."""
-  hostPlatform: SessionSessionHostPlatform!
+  hostPlatform: SessionHostPlatform!
   """Timestamp of when a task was last claimed or updated for a target"""
   lastSeenAt: Time
   tags: [Tag!]
   tasks: [Task!]
+}
+"""SessionHostPlatform is enum for the field host_platform"""
+enum SessionHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/ent/session.HostPlatform") {
+  Windows
+  Linux
+  MacOS
+  BSD
+  Unknown
 }
 """Ordering options for Session connections"""
 input SessionOrder {
@@ -1177,14 +1185,6 @@ input SessionOrder {
 """Properties by which Session connections can be ordered."""
 enum SessionOrderField {
   LAST_SEEN_AT
-}
-"""SessionSessionHostPlatform is enum for the field host_platform"""
-enum SessionSessionHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/ent/session.HostPlatform") {
-  Windows
-  Linux
-  MacOS
-  BSD
-  Unknown
 }
 """
 SessionWhereInput is used for filtering Session objects.
@@ -1312,10 +1312,10 @@ input SessionWhereInput {
   hostPrimaryIPEqualFold: String
   hostPrimaryIPContainsFold: String
   """host_platform field predicates"""
-  hostPlatform: SessionSessionHostPlatform
-  hostPlatformNEQ: SessionSessionHostPlatform
-  hostPlatformIn: [SessionSessionHostPlatform!]
-  hostPlatformNotIn: [SessionSessionHostPlatform!]
+  hostPlatform: SessionHostPlatform
+  hostPlatformNEQ: SessionHostPlatform
+  hostPlatformIn: [SessionHostPlatform!]
+  hostPlatformNotIn: [SessionHostPlatform!]
   """last_seen_at field predicates"""
   lastSeenAt: Time
   lastSeenAtNEQ: Time
@@ -1339,8 +1339,13 @@ type Tag implements Node {
   """Name of the tag"""
   name: String!
   """Describes the type of tag this is"""
-  kind: TagTagKind!
+  kind: TagKind!
   sessions: [Session!]
+}
+"""TagKind is enum for the field kind"""
+enum TagKind @goModel(model: "github.com/kcarretto/realm/tavern/ent/tag.Kind") {
+  group
+  service
 }
 """Ordering options for Tag connections"""
 input TagOrder {
@@ -1352,11 +1357,6 @@ input TagOrder {
 """Properties by which Tag connections can be ordered."""
 enum TagOrderField {
   NAME
-}
-"""TagTagKind is enum for the field kind"""
-enum TagTagKind @goModel(model: "github.com/kcarretto/realm/tavern/ent/tag.Kind") {
-  group
-  service
 }
 """
 TagWhereInput is used for filtering Tag objects.
@@ -1390,10 +1390,10 @@ input TagWhereInput {
   nameEqualFold: String
   nameContainsFold: String
   """kind field predicates"""
-  kind: TagTagKind
-  kindNEQ: TagTagKind
-  kindIn: [TagTagKind!]
-  kindNotIn: [TagTagKind!]
+  kind: TagKind
+  kindNEQ: TagKind
+  kindIn: [TagKind!]
+  kindNotIn: [TagKind!]
   """sessions edge predicates"""
   hasSessions: Boolean
   hasSessionsWith: [SessionWhereInput!]
@@ -1687,7 +1687,7 @@ input UpdateTagInput {
   """Name of the tag"""
   name: String
   """Describes the type of tag this is"""
-  kind: TagTagKind
+  kind: TagKind
   addSessionIDs: [ID!]
   removeSessionIDs: [ID!]
   clearSessions: Boolean
@@ -1820,7 +1820,7 @@ input UserWhereInput {
   hostname: String!
 
   """The platform the agent is operating on."""
-  hostPlatform: SessionSessionHostPlatform!
+  hostPlatform: SessionHostPlatform!
 
   """The IP address of the hosts primary interface (if available)."""
   hostPrimaryIP: String

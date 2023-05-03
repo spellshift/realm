@@ -6,7 +6,7 @@ input ClaimTasksInput {
   hostname: String!
 
   """The platform the agent is operating on."""
-  hostPlatform: SessionSessionHostPlatform!
+  hostPlatform: SessionHostPlatform!
 
   """The IP address of the hosts primary interface (if available)."""
   hostPrimaryIP: String
