@@ -3,6 +3,7 @@ members = [
     "imix",
     "eldritch",
     "golem",
+    "pkg/tavern",
 ]
 
 [profile.release]

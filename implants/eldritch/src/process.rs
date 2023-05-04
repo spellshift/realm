@@ -2,6 +2,7 @@ mod kill_impl;
 mod list_impl;
 mod name_impl;
 
+use allocative::Allocative;
 use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
@@ -12,7 +13,7 @@ use starlark::{starlark_type, starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
+#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "ProcessLibrary")]
 pub struct ProcessLibrary();
 starlark_simple_value!(ProcessLibrary);
