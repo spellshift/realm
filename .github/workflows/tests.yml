@@ -65,6 +65,39 @@ jobs:
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
 
+  tavern-graphql-rust:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: 👾 Disable defender
+      if: matrix.os == 'windows-latest'
+      run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+      shell: powershell
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly-2022-11-03
+        default: true
+        profile: minimal
+    - name: rust-cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./implants/pkg/tavern -> ../target"
+    - name: Install latest nextest release
+      uses: taiki-e/install-action@nextest
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+    - name: 🔎 Run tests
+      run: cd ./implants/pkg/tavern && cargo llvm-cov nextest --lcov --output-path lcov.info
+    - name: 📶 Upload Coverage Results
+      uses: codecov/codecov-action@v3
+
   eldritch:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
