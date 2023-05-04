@@ -78,7 +78,7 @@ mod tests {
         #[cfg(target_os = "windows")]
         let sleep_str = "timeout";
 
-        let mut child = Command::new(sleep_str)
+        let child = Command::new(sleep_str)
             .arg("5")
             .spawn()?;
     
