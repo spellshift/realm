@@ -1,6 +1,7 @@
 mod copy_impl;
 mod list_impl;
 
+use allocative::Allocative;
 use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
@@ -22,7 +23,7 @@ pub struct Asset;
 pub struct Asset;
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType)]
+#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "AssetsLibrary")]
 pub struct AssetsLibrary();
 starlark_simple_value!(AssetsLibrary);

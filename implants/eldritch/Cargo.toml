@@ -4,12 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "7c6986a189c45591da9346159f5ddd50685bbf96" }
+starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }
+allocative = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }
+allocative_derive = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }
 tempfile = "3.3.0"
-anyhow = "1.0.55"
+anyhow = "1.0.65"
 derive_more = "0.99.17"
 sha256 = "1.0.3"
-sysinfo = "0.23.6"
+sysinfo = "0.28.4"
 regex = "1.5.5"
 reqwest = { version = "0.11.0" , features = ["blocking", "stream"] }
 httptest = "0.15.4"

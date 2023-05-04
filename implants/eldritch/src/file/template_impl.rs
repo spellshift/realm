@@ -93,9 +93,10 @@ r#"All the animals on the farm:{% for animal in animals %}
 
         // Setup our args
         let mut dict_data: SmallMap<String, Value> = SmallMap::new();
-        let animals_list = [const_frozen_string!("pig").to_frozen_value(), const_frozen_string!("cow").to_frozen_value()];
+        let animals_list = vec!["pig".to_string(), "cow".to_string()];
         let frozen_heap = FrozenHeap::new();
-        let animal_heap = frozen_heap.alloc_list(&animals_list[0..2]);
+        let animal_heap = frozen_heap.alloc(animals_list);
+
         dict_data.insert("animals".to_string(), animal_heap.to_value());
 
         // Run our code
