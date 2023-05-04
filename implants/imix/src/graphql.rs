@@ -13,6 +13,8 @@ pub struct GraphQLClaimTasksInput {
     pub session_identifier: String,
     #[serde(rename="hostIdentifier")]
     pub host_identifier: String,
+    #[serde(rename="hostPlatform")]
+    pub host_platform: String,
     #[serde(rename="agentIdentifier")]
     pub agent_identifier: String,
 }
@@ -33,13 +35,14 @@ struct GraphQLClaimRequestEnvelope {
 // ------------- GraphQL claimTasks response -------------
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct GraphQLTome {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub parameters: Option<String>,
+pub struct GraphQLTome{
+    pub id: String, 
+    pub name: String, 
+    pub description: String, 
+    #[serde(rename="paramDefs")]
+    pub param_defs: Option<String>, 
     pub eldritch: String,
-    pub files: Vec<GraphQLFile>
+    pub files: Vec<GraphQLFile>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -55,6 +58,7 @@ pub struct GraphQLJob {
     pub id: String,
     pub name: String,
     pub tome: GraphQLTome,
+    pub parameters: Option<String>,
     pub bundle: Option<GraphQLFile>,
 }
 
@@ -90,7 +94,7 @@ mutation ImixCallback($input: ClaimTasksInput!) {
                 id,
                 name,
                 description,
-                parameters,
+                paramDefs,
                 eldritch,
                 files {
                     id,
@@ -138,7 +142,7 @@ mutation ImixCallback($input: ClaimTasksInput!) {
 
     let graphql_response: GraphQLClaimTaskResponseEnvelope = match serde_json::from_str(&response_text) {
         Ok(new_tasks_object) => new_tasks_object,
-        Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}", error)),
+        Err(error) => return Err(anyhow::anyhow!("Error deserializing GraphQL response.\n{}\n{}", error, response_text)),
     };
     let new_tasks = graphql_response.data.claim_tasks;
     Ok(new_tasks)
@@ -251,6 +255,7 @@ mod tests {
             principal: "root".to_string(),
             hostname: "localhost".to_string(),
             session_identifier: "bdf0b788-b32b-4faf-8719-93cd3955b043".to_string(),
+            host_platform: "Linux".to_string(),
             host_identifier: "bdf0b788-b32b-4faf-8719-93cd3955b043".to_string(),
             agent_identifier: "imix".to_string(),
         };
