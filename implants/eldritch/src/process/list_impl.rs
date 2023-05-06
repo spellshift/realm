@@ -1,7 +1,6 @@
 use anyhow::{Result};
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use sysinfo::{ProcessExt,System,SystemExt,PidExt};
-use std::fmt;
 use sysinfo::{UserExt};
 
 pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
