@@ -112,9 +112,22 @@ The <b>file.write</b> method is very cool, and will be even cooler when Nick doc
 The <b>process.kill</b> will kill a process using the KILL signal given its process id.
 
 ### process.list
-`process.list() -> List<str>`
+`process.list() -> List<Dict>`
 
-The <b>process.list</b> method will return a list of JSON strings representing the current process list. Eg. `"{pid:9,ppid:0,status:\"Sleeping\",username:\"root\",path:\"/bin/dash\",command:\"/bin/sh\",cwd:\"/\",environ:\"TERM_PROGRAM_VERSION=1.65.2 USER=root\",name:\"sh\"}"`
+The <b>process.list</b> method will return a list of dictionarys that describe each process. The dictionaries follow the schema:
+```json
+{
+    "pid": "9812",
+    "ppid": "1",
+    "status": "Sleeping",
+    "name": "golem",
+    "path": "/usr/bin/golem",
+    "username": "root",
+    "command": "/usr/bin/golem -i",
+    "cwd": "/root/",
+    "environ": "CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0",
+}
+```
 
 ### process.name
 `process.name(pid: int) -> str`
