@@ -115,6 +115,7 @@ The <b>process.kill</b> will kill a process using the KILL signal given its proc
 `process.list() -> List<Dict>`
 
 The <b>process.list</b> method will return a list of dictionarys that describe each process. The dictionaries follow the schema:
+
 ```json
 {
     "pid": "9812",
@@ -200,12 +201,16 @@ Results will be in the format:
     { "ip": "127.0.0.1", "port": 80, "protocol": "tcp", "status": "timeout"},
 ]
 ```
+
 A ports status can be open, closed, or timeout:
+
 |**State**|**Protocol**| **Meaning**                                          |
 |---------|------------|------------------------------------------------------|
 | open    | tcp        | Connection successful.                               |
 | close   | tcp        | Connection refused.                                  |
-| timeout | udp        | Connection was refused, dropped, or didn't respond   |
+| timeout | tcp        | Connection dropped or didn't respond.                |
+| open    | udp        | Connection returned some data.                       |
+| timeout | udp        | Connection was refused, dropped, or didn't respond.  |
 
 Each IP in the specified CIDR will be returned regardless of if it returns any open ports.
 Be mindful of this when scanning large CIDRs as it may create largo return objects.
@@ -223,9 +228,11 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 The <b>pivot.port_forward</b> method is being proposed to providde socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
 ### pivot.ncat
-`pivot.ncat(address: str, port: int, data: str, str: portocol ) -> str`
+`pivot.ncat(address: str, port: int, data: str, portocol: str ) -> str`
 
 The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
+
+`portocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
 
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
