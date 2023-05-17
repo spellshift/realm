@@ -2,7 +2,7 @@ use anyhow::Result;
 use gazebo::prelude::SliceExt;
 use starlark::values::none::NoneType;
 
-use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_RELOCATION, IMAGE_RELOCATION_0, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG, IMAGE_ORDINAL_FLAG32, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME}, LibraryLoader::LoadLibraryA, WindowsProgramming::{IMAGE_THUNK_DATA64, IMAGE_THUNK_DATA32}};
+use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_RELOCATION, IMAGE_RELOCATION_0, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG, IMAGE_ORDINAL_FLAG32, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64}, LibraryLoader::LoadLibraryA, WindowsProgramming::{IMAGE_THUNK_DATA64, IMAGE_THUNK_DATA32}};
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     System::{
@@ -15,6 +15,13 @@ use windows_sys::Win32::{
 use std::ffi::CStr;
 use std::ptr;
 use std::ffi::c_void;
+
+fn debug_wait() {
+    println!("Hit me!");
+    let stdin_handle = std::io::stdin();
+    let mut tmp_string = String::new();
+    let _ = stdin_handle.read_line(&mut tmp_string).unwrap();
+}
 
 // #[derive(Debug, Copy, Clone)]
 // struct BaseRelocationBlock {
@@ -29,12 +36,10 @@ struct BaseRelocationEntry {
 
 impl BaseRelocationEntry {
     fn new(c_bytes: u16) -> Self {
-        let offset_byte_mask: u16 = 0b1111_1111_1111_0000;
-        let offset = (c_bytes & offset_byte_mask) >> 4;
-        // let reloc_type = c_bytes & 0xfff;
-        let reloc_type_byte_mask: u16 = 0b0000_0000_0000_1111;
-        let reloc_type = c_bytes & reloc_type_byte_mask;
-        // let offset = c_bytes >> 12;
+        let reloc_type_bit_mask: u16 = 0b1111_0000_0000_0000;
+        let reloc_type = (c_bytes & reloc_type_bit_mask) >> 12;
+        let offset_bit_mask: u16 = 0b0000_1111_1111_1111;
+        let offset = c_bytes & offset_bit_mask;
         Self {
             offset: offset,
             reloc_type: reloc_type,
@@ -170,7 +175,6 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
         return Ok(());
     }
 
-    // PE-Bear: "BaseReloc" - 0x2C400.
     let mut base_image_relocation_table: *mut IMAGE_BASE_RELOCATION = 
         (new_dll_base as usize + relocation_directory.VirtualAddress as usize) as *mut IMAGE_BASE_RELOCATION;
     println!("base_image_relocation_table: {:#04x}", (base_image_relocation_table as usize));
@@ -195,12 +199,14 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
         let relocation_block_entries_count = (relocation_block.SizeOfBlock as usize - std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) / BaseRelocationEntry::c_size();
         println!("relocation_block_entries_count {}", relocation_block_entries_count);
         println!("");
+        // ---- Up to here things look right. ----
 
         let mut relocation_entry_ptr: *mut u16 = (base_image_relocation_table as usize + std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) as *mut u16;
         // for (DWORD i = 0; i < relocationsCount; i++)
         for _index in 1..relocation_block_entries_count {
             let relocation_entry: BaseRelocationEntry = BaseRelocationEntry::new(unsafe{*relocation_entry_ptr});
-
+            
+            println!("relocation_entry.reloc_type: {}", relocation_entry.reloc_type);
             // if (relocationEntries[i].Type == 0) { continue; }
             // If the reloction type isn't 0 try relocating it.
             if relocation_entry.reloc_type != 0 {
@@ -398,10 +404,10 @@ mod tests {
     #[test]
     fn test_dll_reflect_new_base_relocation_entry() -> anyhow::Result<()>{
         // Get the path to our test dll file.
-        let test_entry: u16 = 0xA008;
+        let test_entry: u16 = 0xA148;
         let base_reloc_entry = BaseRelocationEntry::new(test_entry);
-        assert_eq!(base_reloc_entry.offset, 2560);
-        assert_eq!(base_reloc_entry.reloc_type, 8);
+        assert_eq!(base_reloc_entry.offset, 0x148);
+        assert_eq!(base_reloc_entry.reloc_type, 0xa);
         Ok(())
     }
 
