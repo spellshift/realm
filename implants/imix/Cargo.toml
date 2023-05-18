@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eldritch = { path = "../eldritch" }
+eldritch = { path = "../lib/eldritch" }
 clap = { version = "3.0" }
 rand = "0.8.5"
 openssl = { version = "0.10", features = ["vendored"] }

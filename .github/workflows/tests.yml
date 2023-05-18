@@ -88,13 +88,13 @@ jobs:
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: "./implants/pkg/tavern -> ../target"
+        workspaces: "./implants/lib/tavern -> ../target"
     - name: Install latest nextest release
       uses: taiki-e/install-action@nextest
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
     - name: 🔎 Run tests
-      run: cd ./implants/pkg/tavern && cargo llvm-cov nextest --lcov --output-path lcov.info
+      run: cd ./implants/lib/tavern && cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
 
@@ -122,13 +122,13 @@ jobs:
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: "./implants/eldritch -> ../target"
+        workspaces: "./implants/lib/eldritch -> ../target"
         components: llvm-tools-preview
     - name: Install latest nextest release
       uses: taiki-e/install-action@nextest
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
     - name: 🔎 Run tests
-      run: cd ./implants/eldritch && cargo llvm-cov nextest --lcov --output-path lcov.info
+      run: cd ./implants/lib/eldritch && cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3

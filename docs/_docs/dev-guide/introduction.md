@@ -1,6 +1,6 @@
 ---
 title: Introduction
-tags: 
+tags:
  - Dev Guide
 description: Read this before contributing to Realm!
 permalink: dev-guide/introduction
@@ -15,7 +15,7 @@ Realm is under heavy active development and documentation can go stale quickly i
 
 We will do our best during code review to catch changes that require documentation updates, but sometimes things will slip by. If you notice a discrepancy between our codebase and the documentation, please kindly [file an issue](https://github.com/kcarretto/realm/issues/new?labels=documentation&title=Documentation%20Discrepancy:&body=Please%20include%20the%20location%20of%20the%20inaccurate%20documentation%20and%20a%20helpful%20description%20of%20what%20needs%20improvement.) to track it or submit a PR to correct it. You can use the ["Edit this page"](https://github.com/kcarretto/realm/edit/main/docs/_docs/dev-guide/introduction.md) feature in the right navbar of the documentation to quickly navigate to the appropriate section of documentation that requires an update.
 
-### Testing 
+### Testing
 
 Realm contains code across a variety of languages and frameworks. Testing helps ensure our codebase remains stable, enables us to refactor and develop new features with confidence, and can help new Realm developers understand the expected behaviour of our code. Below is an outline of the testing requirements for each portion of the codebase, as well as guidance on testing best practices.
 
@@ -60,7 +60,7 @@ A Task represents a set of instructions to perform on a Target system. For examp
 References malicious code or persistence mechanisms that are deployed to compromise target systems. Some configration information for Implants (e.g. `ImplantConfigs`) can be managed through Tavern.
 
 ### Agent
-An Agent is a type of implant which retrieves execution instructons by connecting to our backend infrastructure (calling back) and querying for new tasks. 
+An Agent is a type of implant which retrieves execution instructons by connecting to our backend infrastructure (calling back) and querying for new tasks.
 
 # Project Structure
 * **[.devcontainer](https://github.com/KCarretto/realm/tree/main/.devcontainer)** contains settings required for configuring a VSCode dev container that can be used for Realm development
@@ -68,7 +68,7 @@ An Agent is a type of implant which retrieves execution instructons by connectin
 * **[docs](https://github.com/KCarretto/realm/tree/main/docs)** contains the Jekyll code for the documentation site that you're reading now!
 * **[implants](https://github.com/KCarretto/realm/tree/main/implants)** is the parent folder of any implant executables or libraries
     * **[implants/contrib](https://github.com/KCarretto/realm/tree/main/implants/contrib)** contains example information which might be useful to project contributors
-    * **[implants/eldritch](https://github.com/KCarretto/realm/tree/main/implants/eldritch)** is the source of our eldritch library (Rust)
+    * **[implants/lib/eldritch](https://github.com/KCarretto/realm/tree/main/implants/lib/eldritch)** is the source of our eldritch library (Rust)
     * **[implants/imix](https://github.com/KCarretto/realm/tree/main/implants/imix)** is our agent that executes eldritch tomes (Rust)
 * **[tavern](https://github.com/KCarretto/realm/tree/main/tavern)** is the parent folder of Tavern related code and packages, and stores the `main.go` executable for the service
     * **[tavern/auth](https://github.com/KCarretto/realm/tree/main/tavern/auth)** is a package for managing authentication for Tavern, and is used by various packages that rely on obtaining viewer information
