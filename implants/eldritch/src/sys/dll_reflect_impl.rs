@@ -2,7 +2,7 @@ use anyhow::Result;
 use gazebo::prelude::SliceExt;
 use starlark::values::none::NoneType;
 
-use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_RELOCATION, IMAGE_RELOCATION_0, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG, IMAGE_ORDINAL_FLAG32, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64}, LibraryLoader::LoadLibraryA, WindowsProgramming::{IMAGE_THUNK_DATA64, IMAGE_THUNK_DATA32}};
+use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_DIRECTORY_ENTRY}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_RELOCATION, IMAGE_RELOCATION_0, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG, IMAGE_ORDINAL_FLAG32, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW}, LibraryLoader::LoadLibraryA, WindowsProgramming::{IMAGE_THUNK_DATA64, IMAGE_THUNK_DATA32}};
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     System::{
@@ -12,7 +12,7 @@ use windows_sys::Win32::{
         Memory::{VirtualAllocEx,MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
     },
 };
-use std::ffi::CStr;
+use std::{ffi::CStr, mem::size_of};
 use std::ptr;
 use std::ffi::c_void;
 
@@ -160,7 +160,7 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
         // std::memcpy(sectionDestination, sectionBytes, section->SizeOfRawData);
         unsafe{std::ptr::copy(section_bytes as *const c_void, section_destination as *mut c_void, section.SizeOfRawData as usize)}
 
-        println!("{}:{:#08x}:{:#08x}", String::from_utf8(section.Name.to_vec())?, section.PointerToRawData, section.PointerToRelocations);
+        println!("{}:{:#08x}:{:#08x}", String::from_utf8(section.Name.to_vec())?, section.PointerToRawData, section_destination);
     }
 
     Ok(())
@@ -175,14 +175,19 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
         return Ok(());
     }
 
-    let mut base_image_relocation_table: *mut IMAGE_BASE_RELOCATION = 
+    let mut relocation_block_ref: *mut IMAGE_BASE_RELOCATION = 
         (new_dll_base as usize + relocation_directory.VirtualAddress as usize) as *mut IMAGE_BASE_RELOCATION;
-    println!("base_image_relocation_table: {:#04x}", (base_image_relocation_table as usize));
+    println!("image_base_delta:     {}", image_base_delta);
+    println!("relocation_block_ref: {:#04x}", (relocation_block_ref as usize));
     // 	while (relocationsProcessed < relocations.Size) 
     loop {
-        let relocation_block = (unsafe{*base_image_relocation_table as IMAGE_BASE_RELOCATION});
-        let relocation_block_size = relocation_block.SizeOfBlock;
-        if relocation_block_size == 0 {
+        // if relocation_block_ref as usize > (new_dll_base as usize + relocation_directory.Size as usize) {
+        //     println!("Stopping a run away train");
+        //     break;
+        // }
+        let relocation_block = unsafe{*relocation_block_ref as IMAGE_BASE_RELOCATION};
+        if relocation_block.SizeOfBlock == 0 ||
+            relocation_block.VirtualAddress == 0 {
             break;
         }
         
@@ -198,30 +203,27 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
         // } BASE_RELOCATION_ENTRY, *PBASE_RELOCATION_ENTRY;
         let relocation_block_entries_count = (relocation_block.SizeOfBlock as usize - std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) / BaseRelocationEntry::c_size();
         println!("relocation_block_entries_count {}", relocation_block_entries_count);
+        println!("relocation_block.VirtualAddress: {}", relocation_block.VirtualAddress);
         println!("");
         // ---- Up to here things look right. ----
 
-        let mut relocation_entry_ptr: *mut u16 = (base_image_relocation_table as usize + std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) as *mut u16;
-        // for (DWORD i = 0; i < relocationsCount; i++)
+        let mut relocation_entry_ptr: *mut u16 = (relocation_block_ref as usize + std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) as *mut u16;
         for _index in 1..relocation_block_entries_count {
             let relocation_entry: BaseRelocationEntry = BaseRelocationEntry::new(unsafe{*relocation_entry_ptr});
-            
             println!("relocation_entry.reloc_type: {}", relocation_entry.reloc_type);
-            // if (relocationEntries[i].Type == 0) { continue; }
-            // If the reloction type isn't 0 try relocating it.
-            if relocation_entry.reloc_type != 0 {
-                // Calculate the adress of the relocation record in the new_dll memory.
-                let ptr_to_relocation_to_update = (new_dll_base as usize + relocation_block.VirtualAddress as usize + relocation_entry.offset as usize) as *mut usize;
-                // Calculate the relocation value relocation record + the image delta.
-                let new_reloc_value = unsafe { *ptr_to_relocation_to_update } as usize + image_base_delta as usize;
-                // Update the value we point at.
-                unsafe { *ptr_to_relocation_to_update = new_reloc_value };
-                // Update the relocation entry pointer by incrementing by the size of an entry.
-                relocation_entry_ptr = (relocation_entry_ptr as usize + BaseRelocationEntry::c_size()) as *mut u16;    
+            println!("relocation_entry.offset:     {}", relocation_entry.offset);
+            if relocation_entry.reloc_type as u32 == IMAGE_REL_BASED_DIR64 || relocation_entry.reloc_type as u32 == IMAGE_REL_BASED_HIGHLOW {
+                let addr_to_be_patched = (new_dll_base as usize + relocation_block.VirtualAddress as usize + relocation_entry.offset as usize) as *mut usize;
+                println!("addr_to_be_patched: {:?}", addr_to_be_patched);
+                let new_value_at_addr  = unsafe { *addr_to_be_patched } + image_base_delta as usize;
+                println!("new_value_at_addr:  {:#08x}", new_value_at_addr);
+                unsafe { *addr_to_be_patched = new_value_at_addr };
             }
+            // Unable to validate up to here but %40 confident this is working.
+            // Big improvement over last iteration.
+            relocation_entry_ptr = (relocation_entry_ptr as usize + BaseRelocationEntry::c_size()) as *mut u16;    
         }
-
-        base_image_relocation_table = (base_image_relocation_table as usize + relocation_block_size as usize) as *mut IMAGE_BASE_RELOCATION;
+        relocation_block_ref = (relocation_block_ref as usize + relocation_block.SizeOfBlock as usize) as *mut IMAGE_BASE_RELOCATION;
     }
     // uiValueB = (ULONG_PTR)&((PIMAGE_NT_HEADERS)uiHeaderValue)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_BASERELOC ];
     Ok(())
@@ -365,11 +367,6 @@ pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneTy
     // perform image base relocations
     process_dll_image_relocation(new_dll_base, pe_header.clone(), image_base_delta)?;
 
-    // println!("Hit me!");
-    // let stdin_handle = std::io::stdin();
-    // let mut tmp_string = String::new();
-    // let _ = stdin_handle.read_line(&mut tmp_string).unwrap();    
-
 	// resolve import address table
     // process_import_address_tables(new_dll_base, pe_header.clone(), image_base_delta)?;
 
@@ -450,6 +447,16 @@ mod tests {
             assert_eq!(expected_virtual_addr[section_index], section.VirtualAddress);
             assert_eq!(expected_characteristics[section_index], section.Characteristics);
         }
+        Ok(())
+    }
+
+    #[test]
+    fn test_dll_reflect_against_loadlibrarya() -> anyhow::Result<()>{
+        let read_in_dll_bytes = include_bytes!("..\\..\\..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll");
+        let dll_bytes = read_in_dll_bytes.to_vec();
+
+        let _res = handle_dll_reflect(dll_bytes, Some(0))?;
+
         Ok(())
     }
 
