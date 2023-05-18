@@ -67,7 +67,7 @@ fn test_golem_main_basic_async() -> anyhow::Result<()> {
     cmd.arg("../../tests/golem_cli_test/download_test.tome");
     cmd.assert()
         .success()
-        .stderr(predicate::str::contains(r#"OKAY!"#));
+        .stdout(predicate::str::contains(r#"OKAY!"#));
 
     Ok(())
 }
@@ -106,10 +106,10 @@ fn test_golem_main_embedded_files() -> anyhow::Result<()> {
 
     cmd.assert()
         .success()
-        .stderr(predicate::str::contains(r#"This script just prints"#));
+        .stdout(predicate::str::contains(r#"This script just prints"#));
     cmd.assert()
         .success()
-        .stderr(predicate::str::contains(r#"hello from an embedded shell script"#));
+        .stdout(predicate::str::contains(r#"hello from an embedded shell script"#));
 
     Ok(())
 }
