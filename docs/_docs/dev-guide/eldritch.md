@@ -1,6 +1,6 @@
 ---
 title: Eldritch
-tags: 
+tags:
  - Dev Guide
 description: Want to contribute to Eldritch? Start here!
 permalink: dev-guide/eldritch
@@ -49,7 +49,7 @@ The <b>module.function</b> describe your function and edge cases.
 
 ```
 #### Eldritch definition
-`implants/Eldritch/src/module.rs`
+`implants/lib/eldritch/src/module.rs`
 Add a function definition here, where `module.rs` is the name of the module you selected above. This is how the Eldritch language is made aware that your function exists.
 
 Add the import for your functions implementation at the top, try to keep these in alphabetical order for readability.
@@ -76,7 +76,7 @@ You may notice that some functions follow the pattern:
 This pattern is only used for none type returns since we're returning Starlark None. Returning like this in the module file is more streamlined than having each module return a special starlark type.
 
 ### Eldritch Implementation
-`implants/Eldritch/src/module/function_impl.rs`
+`implants/lib/eldritch/src/module/function_impl.rs`
 Add your function implementation here, where `/module/` is the name of the module you selected above and `/function_impl.rs` is the name of your function with `_impl.rs` appended after it. This should match what's been put in the module file.
 This file will contain the actual implementation, helper functions, and unit tests for your function.
 
@@ -173,7 +173,7 @@ In order to run concurrent tasks we need to build an asynchronous function. This
 The starlark bindings we're using to create Eldritch are not asynchronous therefore the Eldritch function itself cannot be asynchronous.
 To get around this we use the [`tokio::runtime::Runtime.block_on()`](https://docs.rs/tokio/latest/tokio/runtime/struct.Runtime.html#method.block_on) function in conjunction with two asynchronous helpers.
 
-We'll create the following three functions to manage concurrent tasks: 
+We'll create the following three functions to manage concurrent tasks:
 * `pub fn function` - Eldritch function implementation which will implement the `tokio::runtime::Runtime.block_on()` function.
 * `async fn handle_function` - Async helper function that will start, track, and join async tasks.
 * `async fn run_function` - Async function runner that gets spawned by the `handle_function` function.
@@ -229,12 +229,12 @@ pub fn function(arg1: Vec<String>) -> Result<Vec<String>> {
 ```
 
 **Implementation tips:**
-* If running a lot of concurrent tasks the system may run out of open file descriptors. Either handle this error with a wait and retry, or proactively rate limit your tasks well below the default limits. 
+* If running a lot of concurrent tasks the system may run out of open file descriptors. Either handle this error with a wait and retry, or proactively rate limit your tasks well below the default limits.
 
 
 ### Testing async code requires some additional work
 You'll need to write tests for your synchronous and asynchronous code.
-Async tests will start 
+Async tests will start
 
 Tests for async functions may look like this:
 ```RUST
