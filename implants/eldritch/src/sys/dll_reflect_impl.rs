@@ -166,8 +166,23 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
     Ok(())
 }
 
-// We've copied all the sections from our DLL into memory and now we need to update some of the pointers to make senes.
-// On disk the memory pointers are set to the offset so inorder to update the pointer of our now in memory DLL we add the delta between the image bases.
+//The relocation table in `.reloc` is used to help load a PE file when it's base address 
+// does not match the expected address (which is common). The expected base address is 
+// stored in Nt Header ---> Optional Header ---> `ImageBase`. This is the address that all 
+// pointers in the code have been hardcoded to work with. To update these hardcoded values 
+// we'll rebase the loaded image. To rebase the loaded image the loader will read through 
+// `.reloc` looping over the relocation blocks (`IMAGE_BASE_RELOCATION`). Blocks loosely 
+// correlate to PE sections Eg. `.text`. Each block has a number of 2 byte entries 
+// (offset: 12bits, type: 4bits). Each entry corresponds to a hardcoded pointer in memory 
+// that will need to be updated. The loader will loop over each entry in the block using 
+// the offset to determine where in the loaded section a reference needs to be updated. 
+// The address of the hardcoded reference can be calculated as: 
+// (new_dll_base as usize + relocation_block.VirtualAddress as usize + relocation_entry.offset as usize) as *mut usize;
+// The hardcoded reference is then updated by adding the image base delta. The difference 
+// between the hardcoded image base `NtHeader.OptionalHeader.ImageBase` and the image base 
+// of the newly loaded PE.
+// https://0xrick.github.io/win-internals/pe7/
+// http://research32.blogspot.com/2015/01/base-relocation-table.html
 fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFileHeaders64, image_base_delta: usize) -> Result<()>{
     let relocation_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize];	
     if relocation_directory.Size == 0 {
@@ -221,7 +236,7 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
             }
             // Unable to validate up to here but %40 confident this is working.
             // Big improvement over last iteration.
-            relocation_entry_ptr = (relocation_entry_ptr as usize + BaseRelocationEntry::c_size()) as *mut u16;    
+            relocation_entry_ptr = (relocation_entry_ptr as usize + BaseRelocationEntry::c_size()) as *mut u16;
         }
         relocation_block_ref = (relocation_block_ref as usize + relocation_block.SizeOfBlock as usize) as *mut IMAGE_BASE_RELOCATION;
     }
