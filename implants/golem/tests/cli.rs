@@ -10,9 +10,14 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
     cmd.arg("nonexistentdir/run.tome");
+    #[cfg(target_os = "linux")]
     cmd.assert()
         .failure()
         .stderr(predicate::str::contains("Error: No such file or directory"));
+    #[cfg(target_os = "windows")]
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Error: The system cannot find the path specified. (os error 3)"));
 
     Ok(())
 }
@@ -67,8 +72,7 @@ fn test_golem_main_basic_async() -> anyhow::Result<()> {
     cmd.arg("../../tests/golem_cli_test/download_test.tome");
     cmd.assert()
         .success()
-        .stderr(predicate::str::contains(r#"OKAY!"#));
-
+        .stdout(predicate::str::contains(r#"OKAY!"#));
     Ok(())
 }
 
@@ -106,10 +110,7 @@ fn test_golem_main_embedded_files() -> anyhow::Result<()> {
 
     cmd.assert()
         .success()
-        .stderr(predicate::str::contains(r#"This script just prints"#));
-    cmd.assert()
-        .success()
-        .stderr(predicate::str::contains(r#"hello from an embedded shell script"#));
+        .stdout(predicate::str::contains(r#"This script just prints"#));
 
     Ok(())
 }

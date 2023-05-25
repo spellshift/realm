@@ -18,7 +18,7 @@ mod tests {
     fn test_assets_list() -> anyhow::Result<()>{
         let res_all_embedded_files = list()?;
 
-        assert_eq!(res_all_embedded_files, ["exec_script/hello_word.sh", "exec_script/main.eld", "print/main.eld"]);
+        assert_eq!(res_all_embedded_files, [ "exec_script/hello_world.bat", "exec_script/hello_world.sh", "exec_script/main.eld", "print/main.eld"]);
 
         Ok(())
     }

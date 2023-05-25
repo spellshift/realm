@@ -28,7 +28,10 @@ mod tests {
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
 
         // Run our code
-        copy("exec_script/hello_word.sh".to_string(), path_dst)?;
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        copy("exec_script/hello_world.sh".to_string(), path_dst)?;
+        #[cfg(any(target_os = "windows"))]
+        copy("exec_script/hello_world.bat".to_string(), path_dst)?;
 
         // Read
         let mut contents = String::new();
