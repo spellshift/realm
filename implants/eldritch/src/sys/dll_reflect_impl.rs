@@ -1,27 +1,30 @@
 use anyhow::Result;
-use gazebo::prelude::SliceExt;
 use starlark::values::none::NoneType;
 
-use windows_sys::Win32::System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_DIRECTORY_ENTRY}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_RELOCATION, IMAGE_RELOCATION_0, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG, IMAGE_ORDINAL_FLAG32, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW}, LibraryLoader::LoadLibraryA, WindowsProgramming::{IMAGE_THUNK_DATA64, IMAGE_THUNK_DATA32}};
+use windows_sys::Win32::{System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH}, LibraryLoader::LoadLibraryA, WindowsProgramming::{IMAGE_THUNK_DATA64}}, Foundation::{HINSTANCE, BOOL}};
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     System::{
-        Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_NT_HEADERS32,IMAGE_SECTION_HEADER},
+        Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},
         SystemServices::{IMAGE_DOS_HEADER},
-        LibraryLoader::{GetModuleHandleA, GetProcAddress},
-        Memory::{VirtualAllocEx,MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
+        LibraryLoader::{GetProcAddress},
+        Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
     },
 };
-use std::{ffi::CStr, mem::size_of};
+use std::{ffi::CStr};
 use std::ptr;
 use std::ffi::c_void;
 
-fn debug_wait() {
-    println!("Hit me!");
-    let stdin_handle = std::io::stdin();
-    let mut tmp_string = String::new();
-    let _ = stdin_handle.read_line(&mut tmp_string).unwrap();
-}
+#[allow(non_camel_case_types)]
+type fnDllMain =
+    unsafe extern "system" fn(module: HINSTANCE, call_reason: u32, reserved: *mut c_void) -> BOOL;
+
+// fn debug_wait() {
+//     println!("Hit me!");
+//     let stdin_handle = std::io::stdin();
+//     let mut tmp_string = String::new();
+//     let _ = stdin_handle.read_line(&mut tmp_string).unwrap();
+// }
 
 // #[derive(Debug, Copy, Clone)]
 // struct BaseRelocationBlock {
@@ -125,30 +128,6 @@ impl PeFileHeaders32 {
     }
 }
 
-fn get_module_handle_a(module_name: Option<String>) -> Result<usize> {
-    unsafe {
-        let module_handle = match module_name {
-            Some(local_module_name) => {
-                    GetModuleHandleA( format!("{}\0",local_module_name).as_str().as_ptr())
-            },
-            None => {
-                    GetModuleHandleA(ptr::null())
-            },
-        };
-        Ok(module_handle as usize)
-    }
-}
-
-fn get_proc_address(hmodule: isize, proc_name: String) -> Result<unsafe extern "system" fn() -> isize> {
-    unsafe {
-        let proc_handle: unsafe extern "system" fn() -> isize = GetProcAddress(
-            hmodule, 
-            "LoadLibraryA\0".as_ptr()
-        ).unwrap();
-        Ok(proc_handle)
-    }
-}
-
 // Load the DLL sections (Eg: .reloc, .text, .rdata) into memory
 fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: PeFileHeaders64) -> Result<()> {
     println!();
@@ -166,7 +145,7 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
     Ok(())
 }
 
-//The relocation table in `.reloc` is used to help load a PE file when it's base address 
+// The relocation table in `.reloc` is used to help load a PE file when it's base address 
 // does not match the expected address (which is common). The expected base address is 
 // stored in Nt Header ---> Optional Header ---> `ImageBase`. This is the address that all 
 // pointers in the code have been hardcoded to work with. To update these hardcoded values 
@@ -192,8 +171,8 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
 
     let mut relocation_block_ref: *mut IMAGE_BASE_RELOCATION = 
         (new_dll_base as usize + relocation_directory.VirtualAddress as usize) as *mut IMAGE_BASE_RELOCATION;
-    println!("image_base_delta:     {}", image_base_delta);
-    println!("relocation_block_ref: {:#04x}", (relocation_block_ref as usize));
+    // println!("image_base_delta:     {}", image_base_delta);
+    // println!("relocation_block_ref: {:#04x}", (relocation_block_ref as usize));
     // 	while (relocationsProcessed < relocations.Size) 
     loop {
         // if relocation_block_ref as usize > (new_dll_base as usize + relocation_directory.Size as usize) {
@@ -205,9 +184,9 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
             relocation_block.VirtualAddress == 0 {
             break;
         }
-        
-        println!("relocation_block.VirtualAddress {:#04x}", relocation_block.VirtualAddress);
-        println!("relocation_block.SizeOfBlock {:#04x}", relocation_block.SizeOfBlock);
+
+        // println!("relocation_block.VirtualAddress {:#04x}", relocation_block.VirtualAddress);
+        // println!("relocation_block.SizeOfBlock {:#04x}", relocation_block.SizeOfBlock);
         // This needs to be calculated since the relocation_block doesn't track it.
         // Luckily the relocation_entry is a static size: u16.
         // Unfortunately the struct uses offset bits which is annoying in Rust.
@@ -217,22 +196,20 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
         //      USHORT Type : 4;
         // } BASE_RELOCATION_ENTRY, *PBASE_RELOCATION_ENTRY;
         let relocation_block_entries_count = (relocation_block.SizeOfBlock as usize - std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) / BaseRelocationEntry::c_size();
-        println!("relocation_block_entries_count {}", relocation_block_entries_count);
-        println!("relocation_block.VirtualAddress: {}", relocation_block.VirtualAddress);
-        println!("");
+        // println!("relocation_block_entries_count {}", relocation_block_entries_count);
+        // println!("relocation_block.VirtualAddress: {}", relocation_block.VirtualAddress);
+        // println!("");
         // ---- Up to here things look right. ----
 
         let mut relocation_entry_ptr: *mut u16 = (relocation_block_ref as usize + std::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) as *mut u16;
         for _index in 1..relocation_block_entries_count {
             let relocation_entry: BaseRelocationEntry = BaseRelocationEntry::new(unsafe{*relocation_entry_ptr});
-            println!("relocation_entry.reloc_type: {}", relocation_entry.reloc_type);
-            println!("relocation_entry.offset:     {}", relocation_entry.offset);
             if relocation_entry.reloc_type as u32 == IMAGE_REL_BASED_DIR64 || relocation_entry.reloc_type as u32 == IMAGE_REL_BASED_HIGHLOW {
                 let addr_to_be_patched = (new_dll_base as usize + relocation_block.VirtualAddress as usize + relocation_entry.offset as usize) as *mut usize;
-                println!("addr_to_be_patched: {:?}", addr_to_be_patched);
                 let new_value_at_addr  = unsafe { *addr_to_be_patched } + image_base_delta as usize;
-                println!("new_value_at_addr:  {:#08x}", new_value_at_addr);
+                println!("Value before: {:#08x}", unsafe{*addr_to_be_patched});
                 unsafe { *addr_to_be_patched = new_value_at_addr };
+                println!("Value after:  {:#08x}", unsafe{*addr_to_be_patched});
             }
             // Unable to validate up to here but %40 confident this is working.
             // Big improvement over last iteration.
@@ -244,27 +221,27 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: PeFi
     Ok(())
 }
 
-//def IMAGE_SNAP_BY_ORDINAL(Ordinal): return ((Ordinal & IMAGE_ORDINAL_FLAG) != 0)
-fn image_snap_by_ordinal(ordinal: u64) -> bool{
+// AND the ILT entry (a 64 or 32 bit value) by the b10000000... to get the most signifacnt bit.
+// Check if that most significant bit is 0 or 1. 
+// If it's 1 then the function should be loaded by ordinal reference.   - return True
+// If it's 0 then the function should be loaded by name.                - return False
+fn image_snap_by_ordinal(ordinal: usize) -> bool{
     #[cfg(target_arch = "x86_64")]
-    return (ordinal & IMAGE_ORDINAL_FLAG64) != 0;
+    return (ordinal as u64 & IMAGE_ORDINAL_FLAG64) != 0;
     #[cfg(target_arch = "x86")]   
-    return (ordinal & IMAGE_ORDINAL_FLAG32) != 0;
+    return (ordinal as u32 & IMAGE_ORDINAL_FLAG32) != 0;
 }
 
-// def IMAGE_ORDINAL(Ordinal): return (Ordinal & 65535)
-fn image_ordinal(ordinal: u64) -> u64 {
-    return ordinal & 65535;
+/// Extract the 0-15 bytes which represent the ordinal
+/// reference to import the function with.
+/// C variation: `def IMAGE_ORDINAL(Ordinal): return (Ordinal & 0xffff)`
+fn image_ordinal(ordinal: usize) -> u16 {
+    return (ordinal & 0xffff) as u16;
 }
 
-fn update_library_first_thunk_ref(mut library_first_thunk_ref: *mut IMAGE_THUNK_DATA64 ) -> *mut IMAGE_THUNK_DATA64 {
-    library_first_thunk_ref = (library_first_thunk_ref as usize + 1 as usize) as *mut IMAGE_THUNK_DATA64;
-    return library_first_thunk_ref;
-}
 
-fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: PeFileHeaders64, image_base_delta: usize) -> Result<()>{
-    let import_directory = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
-    let import_directory_block_size = import_directory.Size;
+fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: PeFileHeaders64) -> Result<()>{
+    let import_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
 	
     if import_directory.Size == 0 {
         // No relocations to process
@@ -273,82 +250,64 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: PeF
 
     let mut base_image_import_table: *mut IMAGE_IMPORT_DESCRIPTOR = (new_dll_base as usize + import_directory.VirtualAddress as usize) as *mut IMAGE_IMPORT_DESCRIPTOR;
     loop {
-        let import_table_entry = unsafe{*base_image_import_table};
-        if import_table_entry.Name == 0 {
+        let import_table_descriptor = unsafe{*base_image_import_table};
+        if import_table_descriptor.Name == 0 {
             break;
         }
-        println!("NameRVA: {:#06x}", import_table_entry.Name);
+        // println!("NameRVA: {:#06x}", import_table_descriptor.Name);
 
-        let slice = (new_dll_base as usize + import_table_entry.Name as usize) as *const i8;
-        let library_name = (unsafe { CStr::from_ptr(slice) }).to_str()?;
-        println!("library_name: {}", library_name); // gotta cut the null terminated strings out.
-        let library_handle = unsafe { LoadLibraryA( format!("{}\0",library_name).as_str().as_ptr()) };
+        let slice = (new_dll_base as usize + import_table_descriptor.Name as usize) as *const i8;
+        let library_name = unsafe { CStr::from_ptr(slice) };
+        println!("library_name: {}", library_name.to_str()?); // gotta cut the null terminated strings out.
+        let library_handle = unsafe { LoadLibraryA( library_name.as_ptr() as *const u8) };
+        println!("library_handle: {:#08x}", library_handle);
         if library_handle != 0 {
             #[cfg(target_arch = "x86_64")]
-            let mut library_first_thunk_ref = (new_dll_base as usize + import_table_entry.FirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
+            let mut library_thunk_ref = (new_dll_base as usize + import_table_descriptor.FirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
             #[cfg(target_arch = "x86")]
-            let mut library_first_thunk_ref = (new_dll_base as usize + import_table_entry.FirstThunk as usize) as *mut IMAGE_THUNK_DATA32;
-
+            let mut library_first_thunk_ref = (new_dll_base as usize + import_table_descriptor.FirstThunk as usize) as *mut IMAGE_THUNK_DATA32;
+            // println!("library_thunk_ref: {:#08x}", library_thunk_ref as usize);
             loop {
-                let mut library_first_thunk = unsafe{(*library_first_thunk_ref)};
+                // Simply dereferencing a pointer may result in the struct being copied instead of referenced.
+                // Eg. let mut library_thunk: IMAGE_THUNK_DATA64 = unsafe { *library_thunk_ref };
+                // Instead we need to dereference to a mutable reference.
+                // We can't just set it equal since that will be a pointer to the object.
+                // To use it each line would need to dereference the pointer then access the field.
+                // let mut library_thunk: *mut IMAGE_THUNK_DATA64 = library_thunk_ref
+                let mut library_thunk = unsafe { &mut *library_thunk_ref };
+                println!("library_thunk_ref         {:p}", library_thunk_ref);
+                println!("library_thunk             {:p}", library_thunk);
+                println!("library_thunk.u1.Function {:p}", &unsafe{library_thunk.u1.Function});
 
-                println!("{:?}", library_first_thunk_ref);
                 // Access of a union field is unsafe
-                if unsafe{library_first_thunk.u1.AddressOfData} == 0 {
+                if unsafe{library_thunk.u1.AddressOfData} == 0 {
                     break;
                 }
-                if image_snap_by_ordinal(unsafe{library_first_thunk.u1.Ordinal}) {
-                    println!("HERE1");
-                    // LPCSTR functionOrdinal = (LPCSTR)IMAGE_ORDINAL(thunk->u1.Ordinal);
-                    let function_ordinal = image_ordinal(unsafe{library_first_thunk.u1.Ordinal}) as u8;
-                    // thunk->u1.Function = (DWORD_PTR)GetProcAddress(library, functionOrdinal);
-                    println!("HERE2");
-                    library_first_thunk.u1.Function = match unsafe { GetProcAddress(library_handle, &function_ordinal) } {
-                        Some(local_thunk_function) => {
-                            if cfg!(target_pointer_width = "64") {
-                                local_thunk_function as u64
-                            } else if cfg!(target_pointer_width = "32") {
-                                (local_thunk_function as u32).into()
-                            } else {
-                                return Err(anyhow::anyhow!("Target pointer width isnt 64 or 32."));
-                            }
-                        },
-                        None => unsafe{library_first_thunk.u1.Function},
-                    };
-                    println!("HERE3");
-                    println!("library_first_thunk.u1.Function: {:?}", unsafe{library_first_thunk.u1.Function})
+                println!("library_thunk.u1.Function before: {:#08x}", unsafe{library_thunk.u1.Function});
+                if image_snap_by_ordinal(unsafe{library_thunk.u1.Ordinal as usize}) {
+                    // println!("Import by ordinal");
+                    // Calculate the ordinal reference to the function from the library_thunk entry.
+                    let function_ordinal = image_ordinal(unsafe{library_thunk.u1.Ordinal as usize}) as *const u8;
+                    // println!("library_thunk.u1.Function: {:?}", unsafe{library_thunk.u1.Function});
+                    // Get the address of the function using `GetProcAddress` and update the thunks reference.
+                    library_thunk.u1.Function = unsafe { GetProcAddress(library_handle, function_ordinal).unwrap() as _};
                 } else {
-                    println!("HERE4");
-                    // PIMAGE_IMPORT_BY_NAME functionName = (PIMAGE_IMPORT_BY_NAME)((DWORD_PTR)dllBase + thunk->u1.AddressOfData);
-                    let function_name_ref: *mut IMAGE_IMPORT_BY_NAME = (new_dll_base as usize + unsafe{library_first_thunk.u1.AddressOfData} as usize) as *mut IMAGE_IMPORT_BY_NAME;
-                    println!("function_name: {:?}", (unsafe { CStr::from_ptr( (*function_name_ref).Name.as_ptr() as *const i8) }).to_str()?);
-                    let function_name = unsafe{*function_name_ref}.Name[0];
-                    // DWORD_PTR functionAddress = (DWORD_PTR)GetProcAddress(library, functionName->Name);
-                    // thunk->u1.Function = functionAddress;
-                    println!("HERE5");
-
-                    library_first_thunk.u1.Function = match unsafe { GetProcAddress(library_handle, &function_name) } {
-                        Some(local_thunk_function) => {
-                            if cfg!(target_pointer_width = "64") {
-                                local_thunk_function as u64
-                            } else if cfg!(target_pointer_width = "32") {
-                                (local_thunk_function as u32).into()
-                            } else {
-                                return Err(anyhow::anyhow!("Target pointer width isnt 64 or 32."));
-                            }
-                        },
-                        None => unsafe{library_first_thunk.u1.Function},
-                    };
-                    println!("HERE6");
-                    println!("library_first_thunk.u1.Function: {:?}", unsafe{library_first_thunk.u1.Function})
+                    // println!("Import by name");
+                    // Calculate a refernce to the function name by adding the dll_base and name's RVA.
+                    let function_name_ref: *mut IMAGE_IMPORT_BY_NAME = (new_dll_base as usize + unsafe{library_thunk.u1.AddressOfData} as usize) as *mut IMAGE_IMPORT_BY_NAME;
+                    // println!("(*function_name_ref).Name: {:?}", unsafe{CStr::from_ptr((*function_name_ref).Name.as_ptr() as *const i8)} );
+                    // Get the address of the function using `GetProcAddress` and update the thunks reference.
+                    // println!("library_thunk.u1.Function: {:#08x}", unsafe{library_thunk.u1.Function});
+                    // debug_wait();
+                    let tmp_new_func_addr = unsafe{ GetProcAddress(library_handle, (*function_name_ref).Name.as_ptr()).unwrap() as _};
+                    // println!("tmp_new_func_addr: {:#08x}", tmp_new_func_addr); // This seems to point to the functions in the DLL.
+                    library_thunk.u1.Function = tmp_new_func_addr;
+                    // println!("library_thunk.u1.Function: {:#08x}", unsafe{library_thunk.u1.Function}); // This seems to get updated correctly.
                 }
-                println!("HERE7");
-                // Original thunk ref and new thunk ref need to be updated.
-                library_first_thunk_ref = update_library_first_thunk_ref(library_first_thunk_ref);
-                
+                println!("library_thunk.u1.Function after:  {:#08x}", unsafe{library_thunk.u1.Function});
+                library_thunk_ref = (library_thunk_ref as usize + std::mem::size_of::<usize>()) as *mut IMAGE_THUNK_DATA64;
             }
         }
-        println!("HERE7");
         base_image_import_table = (base_image_import_table as usize + std::mem::size_of::<IMAGE_IMPORT_DESCRIPTOR>() as usize) as *mut IMAGE_IMPORT_DESCRIPTOR;
     }
 
@@ -378,15 +337,22 @@ pub fn handle_dll_reflect(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneTy
         return Err(anyhow::anyhow!("image_base ptr was greater than dll_mem ptr."));
     }
     let image_base_delta = new_dll_base as usize - pe_header.nt_headers.OptionalHeader.ImageBase as usize;
+    let entry_point = (new_dll_base as usize + pe_header.nt_headers.OptionalHeader.AddressOfEntryPoint as usize) as *const fnDllMain;
+    let dll_main_func = unsafe { std::mem::transmute::<_, fnDllMain>(entry_point) };
+    println!("dll_main_func:   {:#08x}", dll_main_func as usize);
+    println!("entry_point:     {:#08x}", entry_point as usize);
+    println!("new_dll_base:    {:#08x}", new_dll_base as usize);
+    // debug_wait(); // attach debugger seems to fail out when 
 
     // perform image base relocations
     process_dll_image_relocation(new_dll_base, pe_header.clone(), image_base_delta)?;
 
 	// resolve import address table
-    // process_import_address_tables(new_dll_base, pe_header.clone(), image_base_delta)?;
+    process_import_address_tables(new_dll_base, pe_header.clone())?;
 
-    // get this module's image base address
-    let current_process_module_base = get_module_handle_a(None)?;
+    // Execute DllMain
+    unsafe{dll_main_func(new_dll_base as isize, DLL_PROCESS_ATTACH, 0 as *mut c_void);}
+
     Ok(NoneType)
 }
 
@@ -411,7 +377,6 @@ mod tests {
     use sysinfo::{Pid, Signal};
     use tempfile::NamedTempFile;
     use sysinfo::{ProcessExt,System,SystemExt,PidExt};
-
 
     #[test]
     fn test_dll_reflect_new_base_relocation_entry() -> anyhow::Result<()>{
@@ -467,11 +432,9 @@ mod tests {
 
     #[test]
     fn test_dll_reflect_against_loadlibrarya() -> anyhow::Result<()>{
-        let read_in_dll_bytes = include_bytes!("..\\..\\..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll");
-        let dll_bytes = read_in_dll_bytes.to_vec();
-
-        let _res = handle_dll_reflect(dll_bytes, Some(0))?;
-
+        let file_path = "..\\..\\..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll";
+        let module_base_addr = unsafe{ LoadLibraryA(file_path.as_ptr())};
+        println!("module_base_addr: {:#08x}", module_base_addr);
         Ok(())
     }
 
@@ -492,6 +455,8 @@ mod tests {
         let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();
         let target_pid = expected_process.unwrap().id();
 
+        // Set env var in our process cuz rn we only self inject.
+        std::env::set_var("LIBTESTFILE", path.clone());
         // Run our code.
         let _res = handle_dll_reflect(dll_bytes, Some(target_pid))?;
 

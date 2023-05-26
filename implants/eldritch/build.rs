@@ -3,9 +3,9 @@ fn build_tests_create_file_dll(){
     use std::{process::{Command, Stdio}, path::Path, io::{BufReader, BufRead}};
 
     // Define which files should cause this section to be rebuilt.
-    println!("cargo:rerun-if-changed=tests/create_file_dll/src/lib.rs");
-    println!("cargo:rerun-if-changed=tests/create_file_dll/src/main.rs");
-    println!("cargo:rerun-if-changed=tests/create_file_dll/Cargo.toml");
+    println!("cargo:rerun-if-changed=..\\..\\tests\\create_file_dll\\src\\lib.rs");
+    println!("cargo:rerun-if-changed=..\\..\\tests\\create_file_dll\\src\\main.rs");
+    println!("cargo:rerun-if-changed=..\\..\\tests\\create_file_dll\\Cargo.toml");
 
     // Get the path of the create_file_dll workspace member
     let cargo_root = env!("CARGO_MANIFEST_DIR");
