@@ -1,8 +1,5 @@
 use anyhow::Result;
-use starlark::values::none::NoneType;
-
-use windows_sys::Win32::{System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH}, LibraryLoader::LoadLibraryA, WindowsProgramming::{IMAGE_THUNK_DATA64}}, Foundation::{HINSTANCE, BOOL}};
-#[cfg(target_os = "windows")]
+use windows_sys::Win32::{System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH}, LibraryLoader::LoadLibraryA, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL}};
 use windows_sys::Win32::{
     System::{
         Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},
@@ -298,7 +295,7 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: PeF
 }
 
 #[no_mangle]
-pub fn reflective_loader(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneType> {
+pub fn reflective_loader(dll_bytes: Vec<u8>) -> Result<()> {
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
 
@@ -306,7 +303,9 @@ pub fn reflective_loader(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneTyp
     let pe_header = PeFileHeaders64::new(dll_bytes.clone())?;
     #[cfg(target_arch = "x86")]
     let pe_header = PeFileHeaders32::new(dll_bytes.clone())?;
-
+    if pe_header.dos_header.e_magic != 23117 {
+        return Err(anyhow::anyhow!("DOS Header mismatch"));
+    }
     // Allocate memory for our DLL to be loaded into
     let new_dll_base = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
     
@@ -337,7 +336,7 @@ pub fn reflective_loader(dll_bytes: Vec<u8>, pid: Option<u32>) -> Result<NoneTyp
     // Execute DllMain
     unsafe{dll_main_func(new_dll_base as isize, DLL_PROCESS_ATTACH, 0 as *mut c_void);}
 
-    Ok(NoneType)
+    Ok(())
 }
 
 
@@ -364,7 +363,7 @@ mod tests {
     #[test]
     fn test_dll_reflect_parse_pe_headers() -> anyhow::Result<()>{
         // Get the path to our test dll file.
-        let read_in_dll_bytes = include_bytes!("..\\..\\..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll");
+        let read_in_dll_bytes = include_bytes!("..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll");
         let dll_bytes = read_in_dll_bytes.to_vec();
 
         let pe_file_headers = PeFileHeaders64::new(dll_bytes)?; //get_dos_headers(dll_bytes.as_ptr() as usize)?;
@@ -405,7 +404,7 @@ mod tests {
 
     #[test]
     fn test_dll_reflect_against_loadlibrarya() -> anyhow::Result<()>{
-        let file_path = "..\\..\\..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll";
+        let file_path = "..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll";
         let module_base_addr = unsafe{ LoadLibraryA(file_path.as_ptr())};
         println!("module_base_addr: {:#08x}", module_base_addr);
         Ok(())
@@ -420,18 +419,13 @@ mod tests {
         tmp_file.close()?;
 
         // Get the path to our test dll file.
-        let read_in_dll_bytes = include_bytes!("..\\..\\..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll");
+        let read_in_dll_bytes = include_bytes!("..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll");
         let dll_bytes = read_in_dll_bytes.to_vec();
-
-        // Out target process is notepad for stability and control.
-        // The temp file is passed through an environment variable.
-        let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();
-        let target_pid = expected_process.unwrap().id();
 
         // Set env var in our process cuz rn we only self inject.
         std::env::set_var("LIBTESTFILE", path.clone());
         // Run our code.
-        let _res = handle_dll_reflect(dll_bytes, Some(target_pid))?;
+        let _res = reflective_loader(dll_bytes)?;
 
         let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
         thread::sleep(delay);
