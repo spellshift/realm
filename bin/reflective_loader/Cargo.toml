@@ -8,7 +8,19 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+[profile.release]
+strip = true  # Automatically strip symbols from the binary.
+opt-level = "z"  # Optimize for size.
+lto = true
+codegen-units = 1
+panic = "abort"
+
 [dependencies]
+anyhow = "1.0.65"
+
+[dev-dependencies]
+tempfile = "3.3.0"
+sysinfo = "0.28.4"
 
 [dependencies.windows-sys]
 version = "0.45.0"
@@ -21,5 +33,6 @@ features = [
     "Win32_System_Memory",
     "Win32_System_Diagnostics_Debug",
     "Win32_System_SystemInformation",
-    "Win32_System_SystemServices"
+    "Win32_System_SystemServices",
+    "Win32_System_WindowsProgramming"
 ]

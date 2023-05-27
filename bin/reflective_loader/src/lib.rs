@@ -1,5 +1,6 @@
 use std::os::raw::c_void;
 use windows_sys::Win32::Foundation::HINSTANCE;
+mod loader; 
 
 type DWORD = i32;
 type LPVOID = *mut c_void;
