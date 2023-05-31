@@ -21,6 +21,9 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
+[dependencies]
+ntapi = "0.4.1"
+
 [dev-dependencies]
 tempfile = "3.3.0"
 
