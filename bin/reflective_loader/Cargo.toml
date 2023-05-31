@@ -8,6 +8,12 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+[profile.dev]
+opt-level = "z"  # This reduces the numebr of symbols not found.
+lto = true
+codegen-units = 1
+panic = "abort"
+
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.
 opt-level = "z"  # Optimize for size.
@@ -15,12 +21,8 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
-[dependencies]
-anyhow = "1.0.65"
-
 [dev-dependencies]
 tempfile = "3.3.0"
-sysinfo = "0.28.4"
 
 [dependencies.windows-sys]
 version = "0.45.0"
