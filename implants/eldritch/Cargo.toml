@@ -27,6 +27,7 @@ gazebo = "0.8.1"
 nix = "0.26.1"
 eval = "0.4.3"
 rust-embed="6.6.0"
+object = "0.31.1"
 
 [dependencies.windows-sys]
 version = "0.45.0"
