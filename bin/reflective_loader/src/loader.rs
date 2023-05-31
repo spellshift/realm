@@ -1,4 +1,3 @@
-use anyhow::Result;
 use windows_sys::Win32::{System::{Memory::VirtualAlloc, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_SECTION_HEADER_0}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH}, LibraryLoader::LoadLibraryA, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL}};
 use windows_sys::Win32::{
     System::{
@@ -8,6 +7,7 @@ use windows_sys::Win32::{
         Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
     },
 };
+use core::{result::Result};
 use core::ffi::CStr;
 use core::ptr;
 use core::ffi::c_void;
@@ -48,12 +48,12 @@ struct PeFileHeaders64 {
 // Pares the PE file from a series of bytes
 #[cfg(target_arch = "x86_64")]
 impl PeFileHeaders64 {
-    fn new(dll_bytes: *mut c_void) -> Result<Self> {
+    fn new(dll_bytes: *mut c_void) -> Result<Self, &'static str> {
         // DOS Headers
         let dos_header_base_ref = dll_bytes as usize;
         let dos_headers = unsafe { *((dos_header_base_ref) as *mut IMAGE_DOS_HEADER) };
         if dos_headers.e_magic != 0x5A4D {
-            return Err(anyhow::anyhow!("PE Magic header mismatch. Expected 0x5A4D == MZ == 21117. File does not appear to be a PE executable."));
+            return Err("PE Magic header mismatch. Expected 0x5A4D == MZ == 21117. File does not appear to be a PE executable.");
         }
 
         // NT Headers
@@ -61,7 +61,7 @@ impl PeFileHeaders64 {
         let nt_headers = unsafe { *((nt_header_base_ref) as *mut IMAGE_NT_HEADERS64) };
 
         if nt_headers.Signature != 0x4550 {
-            return Err(anyhow::anyhow!("NT Signature mismatch. Expected 0x4550 == PE == 17744. File does not appear to be a PE executable."))
+            return Err("NT Signature mismatch. Expected 0x4550 == PE == 17744. File does not appear to be a PE executable.");
         }
 
         // Section Headers
@@ -90,10 +90,13 @@ impl PeFileHeaders64 {
             let cur_section = unsafe { *cur_section_ref.clone() };
             
             let section_name_tmp_ref = unsafe{core::slice::from_raw_parts(cur_section.Name.as_ptr(), 8)};
-            let section_name_tmp = core::str::from_utf8(section_name_tmp_ref)?;
+            let section_name_tmp = match core::str::from_utf8(section_name_tmp_ref) {
+                Ok(local_section_name_tmp) => local_section_name_tmp,
+                Err(err) => return Err("Unable to convert from_utf8"),
+            };
 
             if valid_section_headers.contains( &section_name_tmp ) {
-                return Err(anyhow::anyhow!("Section header name {} unknown. PE file paresing failed.", section_name_tmp ));
+                return Err("Section header name unknown. PE file parsing failed." );
             }
             section_headers[section_index as usize] = cur_section;
 
@@ -120,7 +123,7 @@ impl PeFileHeaders32 {
 }
 
 // Load the DLL sections (Eg: .reloc, .text, .rdata) into memory
-fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: &PeFileHeaders64) -> Result<()> {
+fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: &PeFileHeaders64) -> Result<(), &'static str> {
     for (section_index, section) in pe_file_headers.section_headers.iter().enumerate() {
         if section_index >= pe_file_headers.nt_headers.FileHeader.NumberOfSections as usize { break; }
         // LPVOID sectionDestination = (LPVOID)((DWORD_PTR)dllBase + (DWORD_PTR)section->VirtualAddress);
@@ -151,7 +154,7 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
 // of the newly loaded PE.
 // https://0xrick.github.io/win-internals/pe7/
 // http://research32.blogspot.com/2015/01/base-relocation-table.html
-fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, image_base_delta: usize) -> Result<()>{
+fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, image_base_delta: usize) -> Result<(), &'static str>{
     let relocation_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize];	
     if relocation_directory.Size == 0 {
         // No relocations to process
@@ -227,7 +230,7 @@ fn image_ordinal(ordinal: usize) -> u16 {
 }
 
 
-fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64) -> Result<()>{
+fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64) -> Result<(), &'static str>{
     let import_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
 	
     if import_directory.Size == 0 {
@@ -302,7 +305,7 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
 }
 
 #[no_mangle] // change to ptr to memory address.
-pub fn reflective_loader(dll_bytes: *mut c_void) -> Result<()> {
+pub fn reflective_loader(dll_bytes: *mut c_void) -> Result<(), &'static str> {
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
 
@@ -312,7 +315,7 @@ pub fn reflective_loader(dll_bytes: *mut c_void) -> Result<()> {
     let pe_header = PeFileHeaders32::new(dll_bytes)?;
 
     if pe_header.dos_header.e_magic != 23117 {
-        return Err(anyhow::anyhow!("DOS Header mismatch"));
+        return Err("DOS Header mismatch");
     }
     // Allocate memory for our DLL to be loaded into
     let new_dll_base = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
@@ -325,7 +328,7 @@ pub fn reflective_loader(dll_bytes: *mut c_void) -> Result<()> {
 
     // Get distance between new dll memory and on disk image base.
     if pe_header.nt_headers.OptionalHeader.ImageBase as usize > new_dll_base as usize {
-        return Err(anyhow::anyhow!("image_base ptr was greater than dll_mem ptr."));
+        return Err("image_base ptr was greater than dll_mem ptr.");
     }
     let image_base = pe_header.nt_headers.OptionalHeader.ImageBase as usize;
     let image_base_delta = new_dll_base as usize - image_base;
@@ -376,7 +379,10 @@ mod tests {
         let read_in_dll_bytes = include_bytes!("..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll");
         let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
 
-        let pe_file_headers = PeFileHeaders64::new(dll_bytes)?; //get_dos_headers(dll_bytes.as_ptr() as usize)?;
+        let pe_file_headers: PeFileHeaders64 = match PeFileHeaders64::new(dll_bytes){
+            Ok(local_pe_file_headers) => local_pe_file_headers,
+            Err(err) => panic!("Failed to pares PE header: {}", err),
+        }; //get_dos_headers(dll_bytes.as_ptr() as usize)?;
         // 0x5A4D == a"ZM" == d23117 --- PE Magic number is static.
         assert_eq!(23117, pe_file_headers.dos_header.e_magic);
         // 0x020B == d523
@@ -436,7 +442,7 @@ mod tests {
         // Set env var in our process cuz rn we only self inject.
         std::env::set_var("LIBTESTFILE", path.clone());
         // Run our code.
-        let _res = reflective_loader(dll_bytes)?;
+        let _res = reflective_loader(dll_bytes);
 
         let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
         thread::sleep(delay);
