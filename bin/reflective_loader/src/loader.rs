@@ -1,10 +1,9 @@
 use ntapi::{ntpsapi::PEB_LDR_DATA, ntldr::LDR_DATA_TABLE_ENTRY, ntpebteb::PEB};
-use windows_sys::{Win32::{System::{Memory::{VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS, VIRTUAL_FREE_TYPE, VirtualAlloc}, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_SECTION_HEADER_0, IMAGE_DIRECTORY_ENTRY_EXPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH, IMAGE_EXPORT_DIRECTORY}, LibraryLoader::LoadLibraryA, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL, FARPROC, HANDLE}}, core::PCSTR};
+use windows_sys::{Win32::{System::{Memory::{VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS}, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_SECTION_HEADER_0, IMAGE_DIRECTORY_ENTRY_EXPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH, IMAGE_EXPORT_DIRECTORY}, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL, FARPROC}}, core::PCSTR};
 use windows_sys::Win32::{
     System::{
         Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},
         SystemServices::{IMAGE_DOS_HEADER},
-        LibraryLoader::{GetProcAddress},
         Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
     },
 };
@@ -17,8 +16,32 @@ const PE_MAGIC: u16 = 0x5A4D; // MZ
 const NT_SIGNATURE: u32 = 0x4550; // PE
 
 #[allow(non_camel_case_types)]
-type fnDllMain =
-    unsafe extern "system" fn(module: HINSTANCE, call_reason: u32, reserved: *mut c_void) -> BOOL;
+type fnDllMain = unsafe extern "system" fn(module: HINSTANCE, call_reason: u32, reserved: *mut c_void) -> BOOL;
+
+#[allow(non_camel_case_types)]
+type fnLoadLibraryA = unsafe extern "system" fn(lplibfilename: PCSTR) -> HINSTANCE;
+
+#[allow(non_camel_case_types)]
+type fnGetProcAddress = unsafe extern "system" fn(hmodule: HINSTANCE, lpprocname: PCSTR) -> FARPROC;
+
+// #[allow(non_camel_case_types)]
+// type fnFlushInstructionCache = unsafe extern "system" fn(hprocess: HANDLE, lpbaseaddress: *const c_void, dwsize: usize) -> BOOL;
+
+#[allow(non_camel_case_types)]
+type fnVirtualAlloc = unsafe extern "system" fn(lpaddress: *const c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut c_void;
+
+// #[allow(non_camel_case_types)]
+// type fnVirtualFree = unsafe extern "system" fn(lpaddress: *mut c_void, dwsize: usize, dwfreetype: VIRTUAL_FREE_TYPE) -> BOOL;
+
+// #[allow(non_camel_case_types)]
+// type fnExitThread = unsafe extern "system" fn(dwexitcode: u32) -> !;
+
+const KERNEL32_HASH: u32 = 0x6ddb9555;
+const NTDLL_HASH: u32 = 0x1edab0ed;
+const LOAD_LIBRARY_A_HASH: u32 = 0xb7072fdb;
+const GET_PROC_ADDRESS_HASH: u32 = 0xdecfc1bf;
+const VIRTUAL_ALLOC_HASH: u32 = 0x97bc257;
+
 
 #[derive(Debug, Copy, Clone)]
 struct BaseRelocationEntry {
@@ -127,8 +150,6 @@ pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut
     dest
 }
 
-
-
 /// Copy each DLL section into the newly allocated memory.
 /// Each section is copied according to it's VirtualAddress.
 #[no_mangle]
@@ -140,6 +161,7 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
         unsafe { memcpy(section_destination as *mut u8, section_bytes as *const u8, section.SizeOfRawData as usize) };
     }
 }
+
 // The relocation table in `.reloc` is used to help load a PE file when it's base address 
 // does not match the expected address (which is common). The expected base address is 
 // stored in Nt Header ---> Optional Header ---> `ImageBase`. This is the address that all 
@@ -157,7 +179,7 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
 // of the newly loaded PE.
 // https://0xrick.github.io/win-internals/pe7/
 // http://research32.blogspot.com/2015/01/base-relocation-table.html
-fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, image_base_delta: usize) -> () {
+fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, image_base_delta: isize) -> () {
     let relocation_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize];	
     if relocation_directory.Size == 0 {
         // No relocations to process
@@ -215,7 +237,7 @@ fn image_ordinal(ordinal: usize) -> u16 {
     return (ordinal & 0xffff) as u16;
 }
 
-fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64) -> () {
+fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, load_library_a: fnLoadLibraryA, get_proc_address: fnGetProcAddress) -> () {
     let import_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
 	
     if import_directory.Size == 0 {
@@ -232,7 +254,7 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
 
         let slice = (new_dll_base as usize + import_table_descriptor.Name as usize) as *const i8;
         let library_name = unsafe { CStr::from_ptr(slice) };
-        let library_handle = unsafe { LoadLibraryA( library_name.as_ptr() as *const u8) };
+        let library_handle = unsafe { load_library_a( library_name.as_ptr() as *const u8) };
         if library_handle != 0 {
             #[cfg(target_arch = "x86_64")]
             let mut library_thunk_ref = (new_dll_base as usize + import_table_descriptor.FirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
@@ -255,12 +277,12 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
                     // Calculate the ordinal reference to the function from the library_thunk entry.
                     let function_ordinal = image_ordinal(unsafe{library_thunk.u1.Ordinal as usize}) as *const u8;
                     // Get the address of the function using `GetProcAddress` and update the thunks reference.
-                    library_thunk.u1.Function = unsafe { GetProcAddress(library_handle, function_ordinal).unwrap() as _};
+                    library_thunk.u1.Function = unsafe { get_proc_address(library_handle, function_ordinal).unwrap() as _};
                 } else {
                     // Calculate a refernce to the function name by adding the dll_base and name's RVA.
                     let function_name_ref: *mut IMAGE_IMPORT_BY_NAME = (new_dll_base as usize + unsafe{library_thunk.u1.AddressOfData} as usize) as *mut IMAGE_IMPORT_BY_NAME;
                     // Get the address of the function using `GetProcAddress` and update the thunks reference.
-                    let tmp_new_func_addr = unsafe{ GetProcAddress(library_handle, (*function_name_ref).Name.as_ptr()).unwrap() as _};
+                    let tmp_new_func_addr = unsafe{ get_proc_address(library_handle, (*function_name_ref).Name.as_ptr()).unwrap() as _};
                     library_thunk.u1.Function = tmp_new_func_addr;
                 }
                 library_thunk_ref = (library_thunk_ref as usize + core::mem::size_of::<usize>()) as *mut IMAGE_THUNK_DATA64;
@@ -271,35 +293,6 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
 
 }
 
-unsafe fn get_current_rip() -> usize {
-    let rip: u64;
-    unsafe { asm!(
-        "lea {}, [rip]", out(reg) rip
-    ) };
-    rip as usize
-}
-
-/// Walk backwords from our current instruction pointer to find the DOS header.
-/// Validate that the NT header is valid too since it's not uncommon for `pop r10` `MZ` to appear.
-unsafe fn get_current_base() -> usize {
-    for cur_base in (0..get_current_rip()).rev() {
-        let dos_header_base_ref = cur_base as *mut IMAGE_DOS_HEADER;
-        if unsafe { (*dos_header_base_ref).e_magic == PE_MAGIC } {
-            let tmp_e_lfanew = (*dos_header_base_ref).e_lfanew;
-            if tmp_e_lfanew as u32 <= 1024 && tmp_e_lfanew as usize >= core::mem::size_of::<IMAGE_DOS_HEADER>(){
-                let nt_header_base_ref = cur_base as usize + tmp_e_lfanew as usize;
-                let nt_headers = unsafe { *((nt_header_base_ref) as *mut IMAGE_NT_HEADERS64) };
-
-                if nt_headers.Signature == NT_SIGNATURE {
-                    return cur_base;
-                }    
-            }
-        }
-    }
-    return 0;
-}
-
-#[link_section = ".text"]
 /// Get a pointer to the Thread Environment Block (TEB)
 pub unsafe fn get_teb() -> *mut ntapi::ntpebteb::TEB 
 {
@@ -308,7 +301,6 @@ pub unsafe fn get_teb() -> *mut ntapi::ntpebteb::TEB
     teb
 }
 
-#[link_section = ".text"]
 /// Get a pointer to the Process Environment Block (PEB)
 pub unsafe fn get_peb() -> *mut PEB 
 {
@@ -317,7 +309,6 @@ pub unsafe fn get_peb() -> *mut PEB
     peb
 }
 
-#[link_section = ".text"]
 /// Generate a unique hash
 pub fn dbj2_hash(buffer: &[u8]) -> u32 
 {
@@ -347,7 +338,6 @@ pub fn dbj2_hash(buffer: &[u8]) -> u32
     return hsh;
 }
 
-#[link_section = ".text"]
 /// Get loaded module by hash
 pub unsafe fn get_loaded_module_by_hash(module_hash: u32) -> Option<*mut u8> 
 {
@@ -372,10 +362,10 @@ pub unsafe fn get_loaded_module_by_hash(module_hash: u32) -> Option<*mut u8>
     return None;
 }
 
-#[link_section = ".text"]
 /// Get the address of an export by hash
-unsafe fn get_export_by_hash(module_base: *mut u8, export_name_hash: u32, pe_file: &PeFileHeaders64) -> Option<usize>
+unsafe fn get_export_by_hash(module_base: *mut u8, export_name_hash: u32) -> Option<usize>
 {
+    let pe_file = PeFileHeaders64::new(module_base as *mut c_void);
     let nt_headers = pe_file.nt_headers;
     let export_directory = (module_base as usize + nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT as usize].VirtualAddress as usize) as *mut IMAGE_EXPORT_DIRECTORY;
     let names = from_raw_parts((module_base as usize + (*export_directory).AddressOfNames as usize) as *const u32, (*export_directory).NumberOfNames as _);
@@ -398,7 +388,6 @@ unsafe fn get_export_by_hash(module_base: *mut u8, export_name_hash: u32, pe_fil
     return None;
 }
 
-#[link_section = ".text"]
 /// Get the length of a C String
 pub unsafe fn get_cstr_len(pointer: *const char) -> usize 
 {
@@ -412,7 +401,6 @@ pub unsafe fn get_cstr_len(pointer: *const char) -> usize
     (tmp - pointer as u64) as _
 }
 
-#[link_section = ".text"]
 #[allow(dead_code)]
 /// Checks to see if the architecture x86 or x86_64
 pub fn is_wow64() -> bool 
@@ -426,14 +414,6 @@ pub fn is_wow64() -> bool
     return true;
 }
 
-#[link_section = ".text"]
-/// Read memory from a location specified by an offset relative to the beginning of the GS segment.
-pub unsafe fn __readgsqword(offset: u64) -> u64 
-{
-    let output: u64;
-    asm!("mov {}, gs:[{}]", out(reg) output, in(reg) offset);
-    output
-}
 
 #[no_mangle]
 pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
@@ -445,81 +425,29 @@ pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
     #[cfg(target_arch = "x86")]
     let pe_header = PeFileHeaders32::new(dll_bytes)?;
 
-    // let KERNEL32_HASH: u32 = 0x6ddb9555;
-    // let NTDLL_HASH: u32 = 0x1edab0ed;
-    // let LOAD_LIBRARY_A_HASH: u32 = 0xb7072fdb;
-    // let GET_PROC_ADDRESS_HASH: u32 = 0xdecfc1bf;
-    // let VIRTUAL_ALLOC_HASH: u32 = 0x97bc257;
-    // let VIRTUAL_PROTECT_HASH: u32 = 0xe857500d;
-    // let FLUSH_INSTRUCTION_CACHE_HASH: u32 = 0xefb7bf9d;
-    // let VIRTUAL_FREE_HASH: u32 = 0xe144a60e;
-    // let EXIT_THREAD_HASH: u32 = 0xc165d757;
+    if pe_header.dos_headers.e_magic != PE_MAGIC { panic!("Target DLL does not appear to be a DLL.") }
 
-    // let kernel32_base = unsafe { get_loaded_module_by_hash(KERNEL32_HASH).unwrap() };
-    // let ntdll_base = unsafe { get_loaded_module_by_hash(NTDLL_HASH).unwrap() };
+    let kernel32_base = unsafe { get_loaded_module_by_hash(KERNEL32_HASH).unwrap() };
+    let ntdll_base = unsafe { get_loaded_module_by_hash(NTDLL_HASH).unwrap() };
 
-    // if kernel32_base.is_null() || ntdll_base.is_null() 
-    // {
-    //     panic!("Could not find kernel32 and ntdll");
-    // }
+    if kernel32_base.is_null() || ntdll_base.is_null() 
+    {
+        panic!("Could not find kernel32 and ntdll");
+    }
 
-    // // Create function pointers
-    // #[allow(non_camel_case_types)]
-    // type fnLoadLibraryA = unsafe extern "system" fn(lplibfilename: PCSTR) -> HINSTANCE;
+    // Create function pointers
+    // Get exports
+    let loadlib_addy = unsafe { get_export_by_hash(kernel32_base, LOAD_LIBRARY_A_HASH).unwrap() };
+    let load_library_a = unsafe { transmute::<_, fnLoadLibraryA>(loadlib_addy) };
 
-    // #[allow(non_camel_case_types)]
-    // type fnGetProcAddress = unsafe extern "system" fn(hmodule: HINSTANCE, lpprocname: PCSTR) -> FARPROC;
+    let getproc_addy = unsafe { get_export_by_hash(kernel32_base, GET_PROC_ADDRESS_HASH).unwrap() };
+    let get_proc_address = unsafe { transmute::<_, fnGetProcAddress>(getproc_addy) };
 
-    // #[allow(non_camel_case_types)]
-    // type fnFlushInstructionCache = unsafe extern "system" fn(hprocess: HANDLE, lpbaseaddress: *const c_void, dwsize: usize) -> BOOL;
-
-    // #[allow(non_camel_case_types)]
-    // type fnVirtualAlloc = unsafe extern "system" fn(lpaddress: *const c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut c_void;
-
-    // #[allow(non_camel_case_types)]
-    // type fnVirtualProtect = unsafe extern "system" fn(lpaddress: *const c_void, dwsize: usize, flnewprotect: PAGE_PROTECTION_FLAGS, lpfloldprotect: *mut PAGE_PROTECTION_FLAGS) -> BOOL;
-
-    // #[allow(non_camel_case_types)]
-    // type fnVirtualFree = unsafe extern "system" fn(lpaddress: *mut c_void, dwsize: usize, dwfreetype: VIRTUAL_FREE_TYPE) -> BOOL;
-
-    // #[allow(non_camel_case_types)]
-    // type fnExitThread = unsafe extern "system" fn(dwexitcode: u32) -> !;
-
-    // #[allow(non_camel_case_types)]
-    // type fnDllMain = unsafe extern "system" fn(module: HINSTANCE, call_reason: u32, reserved: *mut c_void) -> BOOL;
-
-    // // Get exports
-    // let loadlib_addy = unsafe { get_export_by_hash(kernel32_base, LOAD_LIBRARY_A_HASH, &pe_header).unwrap() };
-    // let load_library_a = unsafe { transmute::<_, fnLoadLibraryA>(loadlib_addy) };
-
-    // let getproc_addy = unsafe { get_export_by_hash(kernel32_base, GET_PROC_ADDRESS_HASH, &pe_header).unwrap() };
-    // let get_proc_address = unsafe { transmute::<_, fnGetProcAddress>(getproc_addy) };
-
-    // let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, VIRTUAL_ALLOC_HASH, &pe_header).unwrap() };
-    // let virtual_alloc = unsafe { transmute::<_, fnVirtualAlloc>(virtualalloc_addy) };
-
-    // let virtualprotect_addy = unsafe{get_export_by_hash(kernel32_base, VIRTUAL_PROTECT_HASH, &pe_header).unwrap()};
-    // let virtual_protect = unsafe{transmute::<_, fnVirtualProtect>(virtualprotect_addy)};
-
-    // let flushcache_addy = unsafe{get_export_by_hash(kernel32_base, FLUSH_INSTRUCTION_CACHE_HASH, &pe_header).unwrap()};
-    // let flush_instruction_cache = unsafe{transmute::<_, fnFlushInstructionCache>(flushcache_addy)};
-
-    // let virtualfree_addy = unsafe{get_export_by_hash(kernel32_base, VIRTUAL_FREE_HASH, &pe_header).unwrap()};
-    // let _virtual_free = unsafe{transmute::<_, fnVirtualFree>(virtualfree_addy)};
-
-    // let exitthread_addy = unsafe{get_export_by_hash(kernel32_base, EXIT_THREAD_HASH, &pe_header).unwrap()};
-    // let _exit_thread = unsafe{transmute::<_, fnExitThread>(exitthread_addy)};
-
-    // if loadlib_addy == 0 || getproc_addy == 0 || virtualalloc_addy == 0 || virtualprotect_addy == 0 || flushcache_addy == 0 || virtualfree_addy == 0 || exitthread_addy == 0
-    // {
-    //     panic!("Failed to load all API functions");
-    // }
-
-
-    // let loader_image_base = unsafe{get_current_base()};
+    let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, VIRTUAL_ALLOC_HASH).unwrap() };
+    let virtual_alloc = unsafe { transmute::<_, fnVirtualAlloc>(virtualalloc_addy) };
 
     // Allocate memory for our DLL to be loaded into
-    let new_dll_base: *mut c_void = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
+    let new_dll_base: *mut c_void = unsafe { virtual_alloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
     
     // // copy over DLL image sections to the newly allocated space for the DLL
     relocate_dll_image_sections(new_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
@@ -528,7 +456,7 @@ pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
     if pe_header.nt_headers.OptionalHeader.ImageBase as usize > new_dll_base as usize {
         panic!("image_base ptr was greater than dll_mem ptr.");
     }
-    let image_base_delta = new_dll_base as usize - pe_header.nt_headers.OptionalHeader.ImageBase as usize;
+    let image_base_delta = new_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
     let entry_point = (new_dll_base as usize + pe_header.nt_headers.OptionalHeader.AddressOfEntryPoint as usize) as *const fnDllMain;
     let dll_main_func = unsafe { core::mem::transmute::<_, fnDllMain>(entry_point) };
 
@@ -536,7 +464,7 @@ pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
     process_dll_image_relocation(new_dll_base, &pe_header, image_base_delta);
 
 	// resolve import address table
-    process_import_address_tables(new_dll_base, &pe_header);
+    process_import_address_tables(new_dll_base, &pe_header, load_library_a, get_proc_address);
 
     // Execute DllMain
     unsafe{dll_main_func(new_dll_base as isize, DLL_PROCESS_ATTACH, 0 as *mut c_void);}
@@ -555,25 +483,35 @@ mod tests {
 
     const TEST_PAYLOAD: &[u8] = include_bytes!("..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll");
 
-     // Check that the function addr and the value of RIP during the function are close
     #[test]
-    fn test_dll_reflect_get_current_rip() -> () {
-        let fn_ptr = get_current_rip;
-        let res = unsafe{get_current_rip()};
-        assert!((res as isize - fn_ptr as isize).abs() < 0x10000)
+    fn test_dll_reflect_get_export_by_hash() -> () {
+        // Try getting the function pointer
+        let kernel32_hash = 0x6ddb9555;
+        let virtual_alloc_hash: u32 = 0x97bc257;
+        let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
+        let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, virtual_alloc_hash).unwrap() };
+        println!("{:#016x}", virtualalloc_addy);
+        assert!(virtualalloc_addy > 0);
+        // Try calling the function
+        #[allow(non_camel_case_types)]
+        type fnVirtualAlloc = unsafe extern "system" fn(lpaddress: *const c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut c_void;    
+        let virtual_alloc = unsafe { transmute::<_, fnVirtualAlloc>(virtualalloc_addy) };
+        let res = unsafe{virtual_alloc(core::ptr::null(), 1024, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)};
+        assert!(res as usize > 0 );
     }
 
     #[test]
-    fn test_dll_reflect_get_current_base() -> () {
-        let fn_ptr = get_current_base;
-        let res = unsafe{get_current_base()};
-        let parsed_file = PeFileHeaders64::new(res as *mut c_void);
-        assert!(res > 0);
-        assert!(res < fn_ptr as usize);
-        assert!(parsed_file.section_headers.len() > 0);
-        assert_eq!(parsed_file.nt_headers.Signature, NT_SIGNATURE);
-        assert_eq!(parsed_file.dos_headers.e_magic, PE_MAGIC);
+    fn test_dll_reflect_get_module_by_hash() -> () {
+        let kernel32_hash = 0x6ddb9555;
+        let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
+        assert!(kernel32_base as usize > 0);
+    }
 
+    #[test]
+    fn test_dll_reflect_dbj2_hash() -> () {
+        let test = "kernel32.dll".as_bytes();
+        let res = dbj2_hash(test);
+        assert_eq!(res, 0x6ddb9555);
     }
 
     #[test]
