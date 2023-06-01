@@ -34,6 +34,7 @@ jobs:
       uses: codecov/codecov-action@v3
   implants:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       matrix:
         os:
