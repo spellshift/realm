@@ -12,7 +12,7 @@ use windows_sys::Win32::{System::{SystemServices::{IMAGE_DOS_HEADER}, Diagnostic
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     let mut should_err = false;
     let res_u8_vec: Vec<u8> = 
-        u32_vec.iter().map(|x| if *x < u8::MAX as u32 { *x as u8 }else{ should_err = true; u8::MAX }).collect();
+        u32_vec.iter().map(|x| if *x <= u8::MAX as u32 { *x as u8 }else{ should_err = true; u8::MAX }).collect();
     if should_err { return Err(anyhow::anyhow!("Error casting eldritch number to u8. Number was too big."))}
     Ok(res_u8_vec)
 }
@@ -173,6 +173,7 @@ pub fn dll_reflect(dll_bytes: Vec<u32>, pid: u32) -> anyhow::Result<NoneType> {
 mod tests {
     use super::*;
 
+    use starlark::{syntax::{AstModule, Dialect}, starlark_module, environment::{GlobalsBuilder, Module}, collections::SmallMap, values::{Value, dict::Dict, AllocValue}, eval::Evaluator};
     use sysinfo::{System, SystemExt, Pid, PidExt, Signal, ProcessExt};
     use tempfile::NamedTempFile;
     use std::{process::Command, time, thread, path::Path, fs};
@@ -207,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dll_reflect_simple() -> anyhow::Result<()> {
+    fn test_dll_reflect_simple() -> anyhow::Result<()> {        
         let test_dll_bytes = include_bytes!("..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
         const DLL_EXEC_WAIT_TIME: u64 = 3;
         
@@ -246,4 +247,84 @@ mod tests {
         }
         Ok(())
     }
+
+    #[test]
+    fn test_dll_reflect_starlark() -> anyhow::Result<()> {
+        const DLL_EXEC_WAIT_TIME: u64 = 3;
+        // Get unique and unused temp file path
+        let tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        tmp_file.close()?;
+        
+        let test_dll_bytes = include_bytes!("..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
+
+        let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();
+        let target_pid = expected_process.unwrap().id() as i32;
+
+        let test_eldritch_script = format!(r#"
+func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'])
+"#);
+
+        let ast: AstModule;
+        match AstModule::parse(
+                "test.eldritch",
+                test_eldritch_script.to_owned(),
+                &Dialect::Standard
+            ) {
+                Ok(res) => ast = res,
+                Err(err) => return Err(err),
+        }
+
+        #[starlark_module]
+        fn func_dll_reflect(builder: &mut GlobalsBuilder) {
+            fn func_dll_reflect(dll_bytes: Vec<u32>, pid: u32) -> anyhow::Result<NoneType> {
+                dll_reflect(dll_bytes, pid)
+            }
+        }
+
+        let globals = GlobalsBuilder::extended().with(func_dll_reflect).build();
+        let module: Module = Module::new();
+
+        let res: SmallMap<Value, Value> = SmallMap::new();
+        let mut input_params: Dict = Dict::new(res);
+        let target_pid_key = module.heap().alloc_str("target_pid").to_value().get_hashed()?;
+        let target_pid_value = Value::new_int(target_pid);
+        input_params.insert_hashed(target_pid_key, target_pid_value);
+
+        let dll_bytes_key = module.heap().alloc_str("dll_bytes").to_value().get_hashed()?;
+        let mut tmp_list: Vec<Value> = Vec::new();
+        for byte in test_dll_bytes {
+            tmp_list.push(Value::new_int(*byte as i32));
+        }
+        let dll_bytes_value = module.heap().alloc(tmp_list);
+        input_params.insert_hashed(dll_bytes_key, dll_bytes_value);
+
+        module.set("input_params", input_params.alloc_value(module.heap()));
+
+        let mut eval: Evaluator = Evaluator::new(&module);
+        let res: Value = eval.eval_module(ast, &globals).unwrap();
+        let _res_string = res.to_string();
+
+        let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
+        thread::sleep(delay);
+
+        let test_path = Path::new(path.as_str());
+        assert!(test_path.is_file());
+
+        // Delete test file
+        let _ = fs::remove_file(test_path);
+
+        // kill the target process notepad
+        let mut sys = System::new();
+        sys.refresh_processes();
+        match sys.process(Pid::from_u32(target_pid as u32)) {
+            Some(res) => {
+                res.kill_with(Signal::Kill);
+            },
+            None => {
+            },
+        }
+        Ok(())
+    }
+
 }
