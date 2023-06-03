@@ -178,6 +178,8 @@ mod tests {
     use tempfile::NamedTempFile;
     use std::{process::Command, time, thread, path::Path, fs};
 
+    const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
+    const TEST_DLL_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
 
     #[test]
     fn test_dll_reflect_get_u8_vec_form_u32_vec_simple() -> anyhow::Result<()> {
@@ -201,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_dll_reflect_lookup_export() -> anyhow::Result<()> {
-        let test_dll_bytes = include_bytes!("..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
+        let test_dll_bytes = LOADER_BYTES;
         let loader_address_offset: usize = get_export_address_by_name(test_dll_bytes, "reflective_loader")?;
         assert_eq!(loader_address_offset, 0xBC0);
         Ok(())
@@ -209,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_dll_reflect_simple() -> anyhow::Result<()> {        
-        let test_dll_bytes = include_bytes!("..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
+        let test_dll_bytes = TEST_DLL_BYTES;
         const DLL_EXEC_WAIT_TIME: u64 = 3;
         
         // Get unique and unused temp file path
@@ -250,13 +252,13 @@ mod tests {
 
     #[test]
     fn test_dll_reflect_starlark() -> anyhow::Result<()> {
-        const DLL_EXEC_WAIT_TIME: u64 = 3;
+        const DLL_EXEC_WAIT_TIME: u64 = 5;
         // Get unique and unused temp file path
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
         tmp_file.close()?;
         
-        let test_dll_bytes = include_bytes!("..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
+        let test_dll_bytes = TEST_DLL_BYTES;
 
         let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();
         let target_pid = expected_process.unwrap().id() as i32;

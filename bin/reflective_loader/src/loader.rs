@@ -19,6 +19,9 @@ const NT_SIGNATURE: u32 = 0x4550; // PE
 type fnDllMain = unsafe extern "system" fn(module: HINSTANCE, call_reason: u32, reserved: *mut c_void) -> BOOL;
 
 #[allow(non_camel_case_types)]
+type generic_fn = unsafe extern "system" fn() -> ();
+
+#[allow(non_camel_case_types)]
 type fnLoadLibraryA = unsafe extern "system" fn(lplibfilename: PCSTR) -> HINSTANCE;
 
 #[allow(non_camel_case_types)]
@@ -105,10 +108,6 @@ impl PeFileHeaders64 {
             Characteristics: 0
         };
         let mut section_headers: [IMAGE_SECTION_HEADER; MAX_PE_SECTIONS] = [null_section; MAX_PE_SECTIONS];
-        let valid_section_headers = 
-            [".rdata", ".data",".text",".pdata",".reloc",".bss",".cormeta",".debug$F",".debug$P","debug$S",
-            ".debug$T",".drective",".edata",".idata",".pdata",".idlsym",".rsrc",".sbss",".sdata",".srdata",
-            ".sxdata",".tls",".tls$",".vsdata",".xdata"];
 
         let mut cur_section_ref = (nt_header_base_ref + 264 as usize ) as *mut IMAGE_SECTION_HEADER;
         for section_index in 0..nt_headers.FileHeader.NumberOfSections {
@@ -120,9 +119,6 @@ impl PeFileHeaders64 {
                 Err(_err) => panic!("Unable to convert from_utf8"),
             };
 
-            if valid_section_headers.contains( &section_name_tmp ) {
-                panic!("Section header name unknown. PE file parsing failed." );
-            }
             section_headers[section_index as usize] = cur_section;
 
             cur_section_ref =
@@ -185,7 +181,6 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeF
         // No relocations to process
         return;
     }
-
     let mut relocation_block_ref: *mut IMAGE_BASE_RELOCATION = 
         (new_dll_base as usize + relocation_directory.VirtualAddress as usize) as *mut IMAGE_BASE_RELOCATION;
     loop {
@@ -204,11 +199,14 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeF
         //      USHORT Type : 4;
         // } BASE_RELOCATION_ENTRY, *PBASE_RELOCATION_ENTRY;
         let relocation_block_entries_count = (relocation_block.SizeOfBlock as usize - core::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) / BaseRelocationEntry::c_size();
-
+        // println!("relocation_block: {:#08x} relocation_block_entries_count: {}",relocation_block.VirtualAddress, relocation_block_entries_count);
         let mut relocation_entry_ptr: *mut u16 = (relocation_block_ref as usize + core::mem::size_of::<IMAGE_BASE_RELOCATION>() as usize) as *mut u16;
-        for _index in 1..relocation_block_entries_count {
+        for _index in 0..relocation_block_entries_count {
+            // println!("{:#04x}", unsafe{*relocation_entry_ptr});
             let relocation_entry: BaseRelocationEntry = BaseRelocationEntry::new(unsafe{*relocation_entry_ptr});
             if relocation_entry.reloc_type as u32 == IMAGE_REL_BASED_DIR64 || relocation_entry.reloc_type as u32 == IMAGE_REL_BASED_HIGHLOW {
+                // println!("entry: offset:{:#04x} type:{:#04x}", relocation_entry.offset, relocation_entry.reloc_type);
+                // println!("rva dest: {:#08x}", relocation_block.VirtualAddress as usize + relocation_entry.offset as usize);
                 let addr_to_be_patched = (new_dll_base as usize + relocation_block.VirtualAddress as usize + relocation_entry.offset as usize) as *mut usize;
                 let new_value_at_addr  = unsafe { *addr_to_be_patched } + image_base_delta as usize;
                 unsafe { *addr_to_be_patched = new_value_at_addr };
@@ -401,20 +399,6 @@ pub unsafe fn get_cstr_len(pointer: *const char) -> usize
     (tmp - pointer as u64) as _
 }
 
-#[allow(dead_code)]
-/// Checks to see if the architecture x86 or x86_64
-pub fn is_wow64() -> bool 
-{
-    // A usize is 4 bytes on 32 bit and 8 bytes on 64 bit
-    if core::mem::size_of::<usize>() == 4 
-    {
-        return false;
-    }
-
-    return true;
-}
-
-
 #[no_mangle]
 pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
     #[cfg(not(target_os = "windows"))]
@@ -459,15 +443,18 @@ pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
     let image_base_delta = new_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
     let entry_point = (new_dll_base as usize + pe_header.nt_headers.OptionalHeader.AddressOfEntryPoint as usize) as *const fnDllMain;
     let dll_main_func = unsafe { core::mem::transmute::<_, fnDllMain>(entry_point) };
-
     // perform image base relocations
     process_dll_image_relocation(new_dll_base, &pe_header, image_base_delta);
-
 	// resolve import address table
     process_import_address_tables(new_dll_base, &pe_header, load_library_a, get_proc_address);
 
     // Execute DllMain
     unsafe{dll_main_func(new_dll_base as isize, DLL_PROCESS_ATTACH, 0 as *mut c_void);}
+
+    // Launch sliver -- need to dynamically get the entrypoint for the dlls exported function.
+    // let start_w_ptr = (new_dll_base as usize + 0xA15E70 ) as *const generic_fn;
+    // let start_w_sliver = unsafe{ core::mem::transmute::<_, generic_fn>(start_w_ptr)};
+    // unsafe{start_w_sliver()};
 
     new_dll_base as usize
 }
@@ -479,12 +466,14 @@ mod tests {
     use super::*;
     use core::time;
     use std::{thread, path::Path, fs};
+    use object::{Object, LittleEndian, read::pe::PeFile, pe::ImageNtHeaders64};
     use tempfile::NamedTempFile;
+    use windows_sys::Win32::{System::{Memory::VirtualAlloc, LibraryLoader::LoadLibraryA}, Foundation::GetLastError};
 
     const TEST_PAYLOAD: &[u8] = include_bytes!("..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll");
 
     #[test]
-    fn test_dll_reflect_get_export_by_hash() -> () {
+    fn test_reflective_loader_get_export_by_hash() -> () {
         // Try getting the function pointer
         let kernel32_hash = 0x6ddb9555;
         let virtual_alloc_hash: u32 = 0x97bc257;
@@ -501,21 +490,21 @@ mod tests {
     }
 
     #[test]
-    fn test_dll_reflect_get_module_by_hash() -> () {
+    fn test_reflective_loader_get_module_by_hash() -> () {
         let kernel32_hash = 0x6ddb9555;
         let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
         assert!(kernel32_base as usize > 0);
     }
 
     #[test]
-    fn test_dll_reflect_dbj2_hash() -> () {
+    fn test_reflective_loader_dbj2_hash() -> () {
         let test = "kernel32.dll".as_bytes();
         let res = dbj2_hash(test);
         assert_eq!(res, 0x6ddb9555);
     }
 
     #[test]
-    fn test_dll_reflect_new_base_relocation_entry() -> () {
+    fn test_reflective_loader_new_base_relocation_entry_low() -> () {
         // Get the path to our test dll file.
         let test_entry: u16 = 0xA148;
         let base_reloc_entry = BaseRelocationEntry::new(test_entry);
@@ -523,25 +512,26 @@ mod tests {
         assert_eq!(base_reloc_entry.reloc_type, 0xa);
     }
 
-    // #[test]
-    // fn test_dll_reflect_debug() -> () {
-    //     // Get the path to our test dll file.
-    //     let lib_base = unsafe{ LoadLibraryA(TEST_PAYLOAD_PATH.as_ptr())};
-    //     if lib_base == 0 { 
-    //         let err = unsafe{GetLastError()}; 
-    //         println!("Failed to load library {}. Last error: {}", TEST_PAYLOAD_PATH, err);
-    //         assert!(false);
-    //     }
-    //     let new_lib_base = reflective_loader(TEST_PAYLOAD.as_ptr() as *mut c_void);
-
-    //     let known_good_library: PeFileHeaders64 = PeFileHeaders64::new(lib_base as *mut c_void);
-    //     println!("parsed_lib {:?}", known_good_library.dos_headers.e_magic);
-    //     let unknown_library: PeFileHeaders64 = PeFileHeaders64::new(new_lib_base as *mut c_void);
-    //     println!("parsed_lib {:?}", unknown_library.dos_headers.e_magic);
-    // }
+    #[test]
+    fn test_reflective_loader_new_base_relocation_entry_medium() -> () {
+        // Get the path to our test dll file.
+        let test_entry: u16 = 0xA928;
+        let base_reloc_entry = BaseRelocationEntry::new(test_entry);
+        assert_eq!(base_reloc_entry.offset, 0x928);
+        assert_eq!(base_reloc_entry.reloc_type, 0xa);
+    }
 
     #[test]
-    fn test_dll_reflect_parse_pe_headers() -> () {
+    fn test_reflective_loader_new_base_relocation_entry_high() -> () {
+        // Get the path to our test dll file.
+        let test_entry: u16 = 0xAFA8;
+        let base_reloc_entry = BaseRelocationEntry::new(test_entry);
+        assert_eq!(base_reloc_entry.offset, 0xFA8);
+        assert_eq!(base_reloc_entry.reloc_type, 0xa);
+    }
+
+    #[test]
+    fn test_reflective_loader_parse_pe_headers() -> () {
         
         // Get the path to our test dll file.
         let read_in_dll_bytes = TEST_PAYLOAD;
@@ -586,8 +576,8 @@ mod tests {
 
 
     #[test]
-    fn test_dll_reflect_simple() -> () {
-        const DLL_EXEC_WAIT_TIME: u64 = 5;
+    fn test_reflective_loader_simple() -> () {
+        const DLL_EXEC_WAIT_TIME: u64 = 999;
         // Get unique and unused temp file path
         let tmp_file = NamedTempFile::new().unwrap();
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
@@ -612,5 +602,52 @@ mod tests {
         // Delete test file
         let _ = fs::remove_file(test_path);
     }
+
+    // Compare the relocated bytes from our reflective_loader and
+    // LoadLibraryA function. Using object library to parse the PE
+    // to remove our parsing as a potential error.
+    #[test]
+    fn test_reflective_loader_process_relocations() -> anyhow::Result<()> {
+        // Get the path to our test dll file.
+        let read_in_dll_bytes = TEST_PAYLOAD;
+        let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
+
+        let pe_header = PeFileHeaders64::new(dll_bytes);
+        // Allocate memory for our DLL to be loaded into
+        let test_dll_base: *mut c_void = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
+        // copy over DLL image sections to the newly allocated space for the DLL
+        relocate_dll_image_sections(test_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
+        let image_base_delta = test_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
+        process_dll_image_relocation(test_dll_base, &pe_header, image_base_delta);
+
+        let good_dll_base = unsafe{ LoadLibraryA("C:\\Users\\user\\Documents\\realm\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll\0".as_ptr()) };
+        if good_dll_base == 0 {
+            let last_err = unsafe{GetLastError()};
+            return Err(anyhow::anyhow!("Failed to load test DLL with `LoadLibraryA` check that the file exists. Last error: {}", last_err));
+        }
+        // Parse bytes from disk.
+        let pe_file = object::read::pe::PeFile64::parse(read_in_dll_bytes)?;
+        let section_table = pe_file.section_table();
+        let good_image_base_delta = good_dll_base - pe_file.nt_headers().optional_header.image_base.get(LittleEndian) as isize;
+
+        println!();
+        // Loop over the relocations and check against the updated dll bytes.
+        let mut blocks = pe_file.data_directories().relocation_blocks(read_in_dll_bytes, &section_table)?.unwrap();
+        while let Some(block) = blocks.next()? {
+            for reloc in block {
+                let test_addr = (test_dll_base as usize + reloc.virtual_address as usize) as *mut usize;
+                if test_addr as usize > test_dll_base as usize + pe_header.nt_headers.OptionalHeader.SizeOfImage as usize { panic!("About to read out of bounds in test") }
+
+                let known_good_addr = (good_dll_base as usize + reloc.virtual_address as usize) as *mut usize;
+                if known_good_addr as usize > good_dll_base as usize + pe_header.nt_headers.OptionalHeader.SizeOfImage as usize { panic!("About to read out of bounds in known good") }
+
+                assert_eq!((unsafe{*test_addr} as usize - image_base_delta as usize), (unsafe{*known_good_addr} as usize - good_image_base_delta as usize));
+            }
+        }
+
+
+        Ok(())
+    }
+
 }
 
