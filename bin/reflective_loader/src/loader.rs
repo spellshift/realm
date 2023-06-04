@@ -577,7 +577,7 @@ mod tests {
 
     #[test]
     fn test_reflective_loader_simple() -> () {
-        const DLL_EXEC_WAIT_TIME: u64 = 999;
+        const DLL_EXEC_WAIT_TIME: u64 = 3;
         // Get unique and unused temp file path
         let tmp_file = NamedTempFile::new().unwrap();
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
