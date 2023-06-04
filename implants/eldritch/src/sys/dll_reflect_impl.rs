@@ -205,7 +205,7 @@ mod tests {
     fn test_dll_reflect_lookup_export() -> anyhow::Result<()> {
         let test_dll_bytes = LOADER_BYTES;
         let loader_address_offset: usize = get_export_address_by_name(test_dll_bytes, "reflective_loader")?;
-        assert_eq!(loader_address_offset, 0xBC0);
+        assert_eq!(loader_address_offset, 0x953);
         Ok(())
     }
 
