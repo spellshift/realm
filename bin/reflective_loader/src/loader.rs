@@ -232,7 +232,7 @@ fn image_ordinal(ordinal: usize) -> u16 {
     return (ordinal & 0xffff) as u16;
 }
 
-fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, load_library_a: fnLoadLibraryA, get_proc_address_fn: fnGetProcAddress, get_last_error_fn: fnGetLastError) -> () {
+fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, load_library_a_fn: fnLoadLibraryA, get_proc_address_fn: fnGetProcAddress, get_last_error_fn: fnGetLastError) -> () {
     let import_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
 	
     if import_directory.Size == 0 {
@@ -249,7 +249,7 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
 
         let slice = (new_dll_base as usize + import_table_descriptor.Name as usize) as *const i8;
         let library_name = unsafe { CStr::from_ptr(slice) };
-        let library_handle = unsafe { load_library_a( library_name.as_ptr() as *const u8) };
+        let library_handle = load_library_a(load_library_a_fn, get_last_error_fn, library_name.as_ptr() as *const u8);
         if library_handle != 0 {
             #[cfg(target_arch = "x86_64")]
             let mut library_thunk_ref = (new_dll_base as usize + import_table_descriptor.FirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
@@ -423,6 +423,19 @@ fn get_proc_address(fn_ptr: fnGetProcAddress, err_ptr: fnGetLastError, h_module:
         }
     };
     proc_handle as isize
+}
+
+
+// pub unsafe fn LoadLibraryA(lplibfilename: P0) ->  Result<HMODULE>
+fn load_library_a(fn_ptr: fnLoadLibraryA, err_ptr: fnGetLastError, lplibfilename: PCSTR) -> HINSTANCE {
+    let library_handle = unsafe { fn_ptr(lplibfilename) };
+    if library_handle == 0 {
+        let error_code = unsafe { err_ptr() };
+        if error_code != 0 {
+            panic!("Failed to load library. Last error returned: {}", error_code);
+        }
+    }
+    library_handle
 }
 
 #[no_mangle]
