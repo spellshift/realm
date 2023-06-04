@@ -7,10 +7,14 @@ use windows_sys::Win32::{
         Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
     },
 };
-use core::{ffi::CStr, arch::asm, slice::from_raw_parts, mem::transmute};
+use core::{ffi::CStr, arch::asm, slice::from_raw_parts, mem::transmute, ptr::null_mut};
 use core::ptr;
 use core::ffi::c_void;
 
+ // This is an assumption that may be wrong. Due to no_std it's ideal to keep things
+ // on the stack which has a default size of 1024KB. If more sections are needed
+ // we can rework this hopefully by then a no_std zero-copy pe parser will exist
+ // and our home grown PE parser can be removed.
 const MAX_PE_SECTIONS: usize = 32;
 const PE_MAGIC: u16 = 0x5A4D; // MZ
 const NT_SIGNATURE: u32 = 0x4550; // PE
@@ -33,6 +37,9 @@ type fnGetProcAddress = unsafe extern "system" fn(hmodule: HINSTANCE, lpprocname
 #[allow(non_camel_case_types)]
 type fnVirtualAlloc = unsafe extern "system" fn(lpaddress: *const c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut c_void;
 
+#[allow(non_camel_case_types)]
+type fnGetLastError = unsafe extern "system" fn() -> u32;
+
 // #[allow(non_camel_case_types)]
 // type fnVirtualFree = unsafe extern "system" fn(lpaddress: *mut c_void, dwsize: usize, dwfreetype: VIRTUAL_FREE_TYPE) -> BOOL;
 
@@ -44,7 +51,7 @@ const NTDLL_HASH: u32 = 0x1edab0ed;
 const LOAD_LIBRARY_A_HASH: u32 = 0xb7072fdb;
 const GET_PROC_ADDRESS_HASH: u32 = 0xdecfc1bf;
 const VIRTUAL_ALLOC_HASH: u32 = 0x97bc257;
-
+const GET_LAST_ERROR_HASH: u32  = 0x8160BDC3;
 
 #[derive(Debug, Copy, Clone)]
 struct BaseRelocationEntry {
@@ -225,7 +232,7 @@ fn image_ordinal(ordinal: usize) -> u16 {
     return (ordinal & 0xffff) as u16;
 }
 
-fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, load_library_a: fnLoadLibraryA, get_proc_address: fnGetProcAddress) -> () {
+fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, load_library_a: fnLoadLibraryA, get_proc_address_fn: fnGetProcAddress, get_last_error_fn: fnGetLastError) -> () {
     let import_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
 	
     if import_directory.Size == 0 {
@@ -265,12 +272,14 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
                     // Calculate the ordinal reference to the function from the library_thunk entry.
                     let function_ordinal = image_ordinal(unsafe{library_thunk.u1.Ordinal as usize}) as *const u8;
                     // Get the address of the function using `GetProcAddress` and update the thunks reference.
-                    library_thunk.u1.Function = unsafe { get_proc_address(library_handle, function_ordinal).unwrap() as _};
+                    library_thunk.u1.Function = get_proc_address(get_proc_address_fn, get_last_error_fn ,library_handle, function_ordinal) as _;
                 } else {
                     // Calculate a refernce to the function name by adding the dll_base and name's RVA.
                     let function_name_ref: *mut IMAGE_IMPORT_BY_NAME = (new_dll_base as usize + unsafe{library_thunk.u1.AddressOfData} as usize) as *mut IMAGE_IMPORT_BY_NAME;
                     // Get the address of the function using `GetProcAddress` and update the thunks reference.
-                    let tmp_new_func_addr = unsafe{ get_proc_address(library_handle, (*function_name_ref).Name.as_ptr()).unwrap() as _};
+                    let function_name = unsafe {(*function_name_ref ).Name.as_ptr()};
+                    // let tmp_new_func_addr = unsafe{ get_proc_address_fn(library_handle, function_name).unwrap() as _};
+                    let tmp_new_func_addr = get_proc_address(get_proc_address_fn, get_last_error_fn, library_handle, function_name) as _;
                     library_thunk.u1.Function = tmp_new_func_addr;
                 }
                 library_thunk_ref = (library_thunk_ref as usize + core::mem::size_of::<usize>()) as *mut IMAGE_THUNK_DATA64;
@@ -389,6 +398,33 @@ pub unsafe fn get_cstr_len(pointer: *const char) -> usize
     (tmp - pointer as u64) as _
 }
 
+// pub unsafe fn VirtualAlloc(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
+fn virtual_alloc(fn_ptr: fnVirtualAlloc, err_ptr: fnGetLastError, lp_address: *const c_void, dw_size: usize, fl_allocation_type: u32, fl_protect: u32) -> *mut c_void {
+    let buffer_handle: *mut c_void = unsafe{ fn_ptr(lp_address, dw_size, fl_allocation_type, fl_protect) };
+    if buffer_handle == null_mut() {
+        let error_code = unsafe { err_ptr() };
+        if error_code != 0 {
+            panic!("Failed to allocate memory. Last error returned: {}", error_code);
+        }
+    }
+    buffer_handle
+}
+
+// pub unsafe fn GetProcAddress(hmodule: P0, lpprocname: P1) -> FARPROC
+fn get_proc_address(fn_ptr: fnGetProcAddress, err_ptr: fnGetLastError, h_module: isize, lp_proc_name: *const u8) -> isize {
+    let proc_handle = match unsafe { fn_ptr(h_module, lp_proc_name) } {
+        Some(local_proc_handle) => local_proc_handle,
+        None => {
+            let error_code = unsafe { err_ptr() };
+            if error_code != 0 {
+                panic!("Failed to find function {:?} in module. Last error returned: {}", lp_proc_name, error_code);
+            }
+            panic!("No process found");
+        }
+    };
+    proc_handle as isize
+}
+
 #[no_mangle]
 pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
     #[cfg(not(target_os = "windows"))]
@@ -411,32 +447,34 @@ pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
 
     // Create function pointers
     // Get exports
-    let loadlib_addy = unsafe { get_export_by_hash(kernel32_base, LOAD_LIBRARY_A_HASH).unwrap() };
-    let load_library_a = unsafe { transmute::<_, fnLoadLibraryA>(loadlib_addy) };
+    let loadlib_addy = unsafe { get_export_by_hash(kernel32_base, LOAD_LIBRARY_A_HASH).expect("Couldn't lookup LoadLibraryA export by hash") };
+    let load_library_a_fn = unsafe { transmute::<_, fnLoadLibraryA>(loadlib_addy) };
 
-    let getproc_addy = unsafe { get_export_by_hash(kernel32_base, GET_PROC_ADDRESS_HASH).unwrap() };
-    let get_proc_address = unsafe { transmute::<_, fnGetProcAddress>(getproc_addy) };
+    let getproc_addy = unsafe { get_export_by_hash(kernel32_base, GET_PROC_ADDRESS_HASH).expect("Couldn't lookup GetProcAddress export by hash") };
+    let get_proc_address_fn = unsafe { transmute::<_, fnGetProcAddress>(getproc_addy) };
 
-    let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, VIRTUAL_ALLOC_HASH).unwrap() };
-    let virtual_alloc = unsafe { transmute::<_, fnVirtualAlloc>(virtualalloc_addy) };
+    let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, VIRTUAL_ALLOC_HASH).expect("Couldn't lookup VirtualAlloc export by hash") };
+    let virtual_alloc_fn = unsafe { transmute::<_, fnVirtualAlloc>(virtualalloc_addy) };
+
+    let getlasterror_addy = unsafe { get_export_by_hash(kernel32_base, GET_LAST_ERROR_HASH).expect("Couldn't lookup GetLastError export by hash") };
+    let get_last_error_fn = unsafe{ transmute::<_, fnGetLastError>(getlasterror_addy)};
 
     // Allocate memory for our DLL to be loaded into
-    let new_dll_base: *mut c_void = unsafe { virtual_alloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
-    
+    let new_dll_base: *mut c_void = virtual_alloc(virtual_alloc_fn, get_last_error_fn, ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+
     // // copy over DLL image sections to the newly allocated space for the DLL
     relocate_dll_image_sections(new_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
 
     // Get distance between new dll memory and on disk image base.
-    if pe_header.nt_headers.OptionalHeader.ImageBase as usize > new_dll_base as usize {
-        panic!("image_base ptr was greater than dll_mem ptr.");
-    }
     let image_base_delta = new_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
-    let entry_point = (new_dll_base as usize + pe_header.nt_headers.OptionalHeader.AddressOfEntryPoint as usize) as *const fnDllMain;
-    let dll_main_func = unsafe { core::mem::transmute::<_, fnDllMain>(entry_point) };
+
     // perform image base relocations
     process_dll_image_relocation(new_dll_base, &pe_header, image_base_delta);
 	// resolve import address table
-    process_import_address_tables(new_dll_base, &pe_header, load_library_a, get_proc_address);
+    process_import_address_tables(new_dll_base, &pe_header, load_library_a_fn, get_proc_address_fn, get_last_error_fn);
+
+    let entry_point = (new_dll_base as usize + pe_header.nt_headers.OptionalHeader.AddressOfEntryPoint as usize) as *const fnDllMain;
+    let dll_main_func = unsafe { core::mem::transmute::<_, fnDllMain>(entry_point) };
 
     // Execute DllMain
     unsafe{dll_main_func(new_dll_base as isize, DLL_PROCESS_ATTACH, 0 as *mut c_void);}
@@ -461,7 +499,7 @@ mod tests {
     use windows_sys::Win32::{System::{Memory::VirtualAlloc, LibraryLoader::LoadLibraryA}, Foundation::GetLastError};
 
     const TEST_PAYLOAD: &[u8] = include_bytes!("..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll");
-    const TEST_PAYLOAD_RELATIVE_PATH: &str = "..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll";
+    const TEST_PAYLOAD_RELATIVE_PATH: &str = "..\\create_file_dll\\target\\debug\\create_file_dll.dll";
 
     #[test]
     fn test_reflective_loader_get_export_by_hash() -> () {
@@ -488,9 +526,19 @@ mod tests {
 
     #[test]
     fn test_reflective_loader_dbj2_hash() -> () {
-        let test = "kernel32.dll".as_bytes();
-        let res = dbj2_hash(test);
-        assert_eq!(res, 0x6ddb9555);
+        let test_names = [
+            "kernel32.dll".as_bytes(),
+            "GetLastError".as_bytes(),
+        ];
+        let test_hashes: [u32; 2] = [
+            0x6ddb9555,
+            0x8160BDC3,
+        ];
+        for (index, name) in test_names.iter().enumerate() {
+            let expected = test_hashes[index];
+            let res = dbj2_hash(&name);
+            assert_eq!(res, expected);
+        }
     }
 
     #[test]
@@ -596,7 +644,7 @@ mod tests {
     // LoadLibraryA function. Using object library to parse the PE
     // to remove our parsing as a potential error.
     #[test]
-    fn test_reflective_loader_process_relocations() -> anyhow::Result<()> {
+    fn test_reflective_loader_process_dll_image_relocation() -> anyhow::Result<()> {
         let mut test_payload_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         test_payload_path.push(TEST_PAYLOAD_RELATIVE_PATH);
 
@@ -644,7 +692,7 @@ mod tests {
     // imports reference points to the same function that LoadLibrary
     // would set it to.
     #[test]
-    fn test_reflective_loader_updated_imports() -> anyhow::Result<()> {
+    fn test_reflective_loader_process_import_address_tables() -> anyhow::Result<()> {
         let mut test_payload_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         test_payload_path.push(TEST_PAYLOAD_RELATIVE_PATH);
 
