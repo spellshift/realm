@@ -19,6 +19,14 @@ const MAX_PE_SECTIONS: usize = 32;
 const PE_MAGIC: u16 = 0x5A4D; // MZ
 const NT_SIGNATURE: u32 = 0x4550; // PE
 
+
+const KERNEL32_HASH: u32 = 0x6ddb9555;
+const NTDLL_HASH: u32 = 0x1edab0ed;
+const LOAD_LIBRARY_A_HASH: u32 = 0xb7072fdb;
+const GET_PROC_ADDRESS_HASH: u32 = 0xdecfc1bf;
+const VIRTUAL_ALLOC_HASH: u32 = 0x97bc257;
+const GET_LAST_ERROR_HASH: u32  = 0x8160BDC3;
+
 #[allow(non_camel_case_types)]
 type fnDllMain = unsafe extern "system" fn(module: HINSTANCE, call_reason: u32, reserved: *mut c_void) -> BOOL;
 
@@ -46,12 +54,45 @@ type fnGetLastError = unsafe extern "system" fn() -> u32;
 // #[allow(non_camel_case_types)]
 // type fnExitThread = unsafe extern "system" fn(dwexitcode: u32) -> !;
 
-const KERNEL32_HASH: u32 = 0x6ddb9555;
-const NTDLL_HASH: u32 = 0x1edab0ed;
-const LOAD_LIBRARY_A_HASH: u32 = 0xb7072fdb;
-const GET_PROC_ADDRESS_HASH: u32 = 0xdecfc1bf;
-const VIRTUAL_ALLOC_HASH: u32 = 0x97bc257;
-const GET_LAST_ERROR_HASH: u32  = 0x8160BDC3;
+// pub unsafe fn VirtualAlloc(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
+fn virtual_alloc(fn_ptr: fnVirtualAlloc, err_ptr: fnGetLastError, lp_address: *const c_void, dw_size: usize, fl_allocation_type: u32, fl_protect: u32) -> *mut c_void {
+    let buffer_handle: *mut c_void = unsafe{ fn_ptr(lp_address, dw_size, fl_allocation_type, fl_protect) };
+    if buffer_handle == null_mut() {
+        let error_code = unsafe { err_ptr() };
+        if error_code != 0 {
+            panic!("Failed to allocate memory. Last error returned: {}", error_code);
+        }
+    }
+    buffer_handle
+}
+
+// pub unsafe fn GetProcAddress(hmodule: P0, lpprocname: P1) -> FARPROC
+fn get_proc_address(fn_ptr: fnGetProcAddress, err_ptr: fnGetLastError, h_module: isize, lp_proc_name: *const u8) -> isize {
+    let proc_handle = match unsafe { fn_ptr(h_module, lp_proc_name) } {
+        Some(local_proc_handle) => local_proc_handle,
+        None => {
+            let error_code = unsafe { err_ptr() };
+            if error_code != 0 {
+                panic!("Failed to find function {:?} in module. Last error returned: {}", lp_proc_name, error_code);
+            }
+            panic!("No process found");
+        }
+    };
+    proc_handle as isize
+}
+
+
+// pub unsafe fn LoadLibraryA(lplibfilename: P0) ->  Result<HMODULE>
+fn load_library_a(fn_ptr: fnLoadLibraryA, err_ptr: fnGetLastError, lplibfilename: PCSTR) -> HINSTANCE {
+    let library_handle = unsafe { fn_ptr(lplibfilename) };
+    if library_handle == 0 {
+        let error_code = unsafe { err_ptr() };
+        if error_code != 0 {
+            panic!("Failed to load library. Last error returned: {}", error_code);
+        }
+    }
+    library_handle
+}
 
 #[derive(Debug, Copy, Clone)]
 struct BaseRelocationEntry {
@@ -396,46 +437,6 @@ pub unsafe fn get_cstr_len(pointer: *const char) -> usize
     }
 
     (tmp - pointer as u64) as _
-}
-
-// pub unsafe fn VirtualAlloc(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
-fn virtual_alloc(fn_ptr: fnVirtualAlloc, err_ptr: fnGetLastError, lp_address: *const c_void, dw_size: usize, fl_allocation_type: u32, fl_protect: u32) -> *mut c_void {
-    let buffer_handle: *mut c_void = unsafe{ fn_ptr(lp_address, dw_size, fl_allocation_type, fl_protect) };
-    if buffer_handle == null_mut() {
-        let error_code = unsafe { err_ptr() };
-        if error_code != 0 {
-            panic!("Failed to allocate memory. Last error returned: {}", error_code);
-        }
-    }
-    buffer_handle
-}
-
-// pub unsafe fn GetProcAddress(hmodule: P0, lpprocname: P1) -> FARPROC
-fn get_proc_address(fn_ptr: fnGetProcAddress, err_ptr: fnGetLastError, h_module: isize, lp_proc_name: *const u8) -> isize {
-    let proc_handle = match unsafe { fn_ptr(h_module, lp_proc_name) } {
-        Some(local_proc_handle) => local_proc_handle,
-        None => {
-            let error_code = unsafe { err_ptr() };
-            if error_code != 0 {
-                panic!("Failed to find function {:?} in module. Last error returned: {}", lp_proc_name, error_code);
-            }
-            panic!("No process found");
-        }
-    };
-    proc_handle as isize
-}
-
-
-// pub unsafe fn LoadLibraryA(lplibfilename: P0) ->  Result<HMODULE>
-fn load_library_a(fn_ptr: fnLoadLibraryA, err_ptr: fnGetLastError, lplibfilename: PCSTR) -> HINSTANCE {
-    let library_handle = unsafe { fn_ptr(lplibfilename) };
-    if library_handle == 0 {
-        let error_code = unsafe { err_ptr() };
-        if error_code != 0 {
-            panic!("Failed to load library. Last error returned: {}", error_code);
-        }
-    }
-    library_handle
 }
 
 #[no_mangle]
