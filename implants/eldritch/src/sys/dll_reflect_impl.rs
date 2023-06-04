@@ -7,7 +7,7 @@ use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::System::Threading::CreateRemoteThread;
 use windows_sys::Win32::{System::{SystemServices::{IMAGE_DOS_HEADER}, Diagnostics::Debug::{IMAGE_NT_HEADERS64, WriteProcessMemory}, Threading::{OpenProcess, PROCESS_ALL_ACCESS, PROCESS_ACCESS_RIGHTS}, Memory::{VirtualAllocEx, VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE}}, Foundation::{GetLastError, BOOL, HANDLE, FALSE}};
 
-
+const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
 
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     let mut should_err = false;
@@ -72,7 +72,7 @@ fn create_remote_thread(hprocess: isize, lpthreadattributes: *const SECURITY_ATT
 }
 
 fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str) -> anyhow::Result<usize> {
-    let pe_file = object::read::pe::PeFile64::parse(pe_bytes)?;//object::File::parse(pe_bytes)?;
+    let pe_file = object::read::pe::PeFile64::parse(pe_bytes)?;
 
     let section = match pe_file.section_by_name(".text") {
         Some(local_section) => local_section,
@@ -87,6 +87,10 @@ fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str) -> anyhow::Res
             break;
         }
     }
+    if section_raw_data_ptr == 0x0 {
+        return Err(anyhow::anyhow!("Failed to find pointer to text section."))
+    }
+    // Section offset for .text.
     let rva_offset = section.address() as usize - section_raw_data_ptr as usize - pe_file.relative_address_base() as usize;
 
     let exported_functions = pe_file.exports()?;
@@ -102,7 +106,7 @@ fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str) -> anyhow::Res
 fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32) -> anyhow::Result<()>{
     let loader_function_name = "reflective_loader";
 
-    let reflective_loader_dll = include_bytes!("..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
+    let reflective_loader_dll = LOADER_BYTES;
     
     let dos_header = reflective_loader_dll.as_ptr() as *mut IMAGE_DOS_HEADER;
     let nt_header = (reflective_loader_dll.as_ptr() as usize + (unsafe { *dos_header }).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
@@ -142,7 +146,6 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32) -> anyhow::Result<()>{
         target_dll_bytes.len() as usize)?;
 
     // Find the loader entrypoint and hand off execution
-    // entrypoint bytes: 41 57 41 56 41 55 41 54 56 57 55 53 48 81 EC B8 06 00 00 48 8B 51 08 48 89 8C 24 F8 00 00 00 4C 8B 41 10 48 8D B4 24 30 05 00 00 48 89 F1
     let loader_address_offset = get_export_address_by_name(
         reflective_loader_dll, 
         loader_function_name)?;
@@ -156,7 +159,7 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32) -> anyhow::Result<()>{
         remote_buffer_target_dll,
         0,
         null_mut(),
-        );
+        )?;
 
     Ok(())
 }
@@ -178,7 +181,6 @@ mod tests {
     use tempfile::NamedTempFile;
     use std::{process::Command, time, thread, path::Path, fs};
 
-    const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
     const TEST_DLL_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
 
     #[test]
@@ -206,6 +208,19 @@ mod tests {
         let test_dll_bytes = LOADER_BYTES;
         let loader_address_offset: usize = get_export_address_by_name(test_dll_bytes, "reflective_loader")?;
         assert_eq!(loader_address_offset, 0x953);
+        Ok(())
+    }
+
+    #[test]
+    fn test_dll_reflect_loader_portability() -> anyhow::Result<()> {
+        let pe_file = object::read::pe::PeFile64::parse(LOADER_BYTES)?;
+        // Make sure the loader doesn't have a relocations section.
+        for section in pe_file.section_table().iter() {
+            let section_name = String::from_utf8(section.name.to_vec())?;
+            assert!(!section_name.contains(".reloc"));
+        }
+        // Make sure the loadre doesn't have any imports.
+        assert_eq!(pe_file.imports()?.len(), 0);
         Ok(())
     }
 
