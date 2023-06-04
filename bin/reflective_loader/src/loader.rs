@@ -466,7 +466,7 @@ mod tests {
     use super::*;
     use core::time;
     use std::{thread, path::Path, fs};
-    use object::{Object, LittleEndian, read::pe::PeFile, pe::ImageNtHeaders64};
+    use object::{Object, LittleEndian, read::pe::{PeFile, ImageNtHeaders, ImageThunkData, self}, pe::ImageNtHeaders64};
     use tempfile::NamedTempFile;
     use windows_sys::Win32::{System::{Memory::VirtualAlloc, LibraryLoader::LoadLibraryA}, Foundation::GetLastError};
 
@@ -630,7 +630,6 @@ mod tests {
         let section_table = pe_file.section_table();
         let good_image_base_delta = good_dll_base - pe_file.nt_headers().optional_header.image_base.get(LittleEndian) as isize;
 
-        println!();
         // Loop over the relocations and check against the updated dll bytes.
         let mut blocks = pe_file.data_directories().relocation_blocks(read_in_dll_bytes, &section_table)?.unwrap();
         while let Some(block) = blocks.next()? {
@@ -644,7 +643,51 @@ mod tests {
                 assert_eq!((unsafe{*test_addr} as usize - image_base_delta as usize), (unsafe{*known_good_addr} as usize - good_image_base_delta as usize));
             }
         }
+        Ok(())
+    }
 
+    // Compare the import bytes from our reflective_loader and
+    // LoadLibraryA function. Using object library to parse the PE
+    // to remove our parsing as a potential error. Checks that the
+    // imports reference has been updated.
+    #[test]
+    fn test_reflective_loader_updated_imports() -> anyhow::Result<()> {
+        // Get the path to our test dll file.
+        let read_in_dll_bytes = TEST_PAYLOAD;
+        let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
+
+        let pe_header = PeFileHeaders64::new(dll_bytes);
+        // Allocate memory for our DLL to be loaded into
+        let test_dll_base: *mut c_void = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
+        // copy over DLL image sections to the newly allocated space for the DLL
+        relocate_dll_image_sections(test_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
+        let image_base_delta = test_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
+        process_dll_image_relocation(test_dll_base, &pe_header, image_base_delta);
+
+        let good_dll_base = unsafe{ LoadLibraryA("C:\\Users\\user\\Documents\\realm\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll\0".as_ptr()) };
+        if good_dll_base == 0 {
+            let last_err = unsafe{GetLastError()};
+            return Err(anyhow::anyhow!("Failed to load test DLL with `LoadLibraryA` check that the file exists. Last error: {}", last_err));
+        }
+        // Parse bytes from disk.
+        let pe_file = object::read::pe::PeFile64::parse(read_in_dll_bytes)?;
+        let section_table = pe_file.section_table();
+
+        if let Some(import_table) = pe_file.data_directories().import_table(read_in_dll_bytes, &section_table)? {
+            let mut import_descs = import_table.descriptors()?;
+            while let Some(import_desc) = import_descs.next()? {
+                let import_name_index = import_desc.name.get(LittleEndian);
+    
+                let lookup_thunks = import_table.thunks(import_desc.original_first_thunk.get(LittleEndian))?;
+                let mut thunks = lookup_thunks.clone();
+
+                while let Some(thunk) = thunks.next::<ImageNtHeaders64>()? {
+                    let good_first_few_fn_bytes = unsafe{*((thunk.address() as usize + good_dll_base as usize) as *const usize)};
+                    let test_first_few_fn_bytes = unsafe{*((thunk.address() as usize + test_dll_base as usize) as *const usize)};
+                    assert_eq!(test_first_few_fn_bytes, good_first_few_fn_bytes);
+                }
+            }
+        }
 
         Ok(())
     }
