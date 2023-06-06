@@ -1,12 +1,6 @@
 use ntapi::{ntpsapi::PEB_LDR_DATA, ntldr::LDR_DATA_TABLE_ENTRY, ntpebteb::PEB};
 use windows_sys::{Win32::{System::{Memory::{VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS}, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_SECTION_HEADER_0, IMAGE_DIRECTORY_ENTRY_EXPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH, IMAGE_EXPORT_DIRECTORY}, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL, FARPROC}}, core::PCSTR};
-use windows_sys::Win32::{
-    System::{
-        Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},
-        SystemServices::{IMAGE_DOS_HEADER},
-        Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE},
-    },
-};
+use windows_sys::Win32::{System::{Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},SystemServices::{IMAGE_DOS_HEADER},Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE}}};
 use core::{ffi::CStr, arch::asm, slice::from_raw_parts, mem::transmute, ptr::null_mut};
 use core::ptr;
 use core::ffi::c_void;
@@ -115,6 +109,8 @@ impl BaseRelocationEntry {
         return core::mem::size_of::<u16>();
     }
 }
+
+
 struct PeFileHeaders64 {
     dos_headers: IMAGE_DOS_HEADER,
     nt_headers: IMAGE_NT_HEADERS64,
@@ -180,7 +176,7 @@ impl PeFileHeaders64 {
 /// implement our own copy function that doesn't call etiher.
 #[no_mangle]
 pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
-    for i in 0..n { // This calls memcpy
+    for i in 0..n {
         let local_src = unsafe { src.add(i) };
         let local_dest = unsafe { dest.add(i) };
         unsafe{*local_dest = *local_src};
@@ -190,7 +186,6 @@ pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut
 
 /// Copy each DLL section into the newly allocated memory.
 /// Each section is copied according to it's VirtualAddress.
-#[no_mangle]
 fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: &PeFileHeaders64) -> () {
     for (section_index, section) in pe_file_headers.section_headers.iter().enumerate() {
         if section_index >= pe_file_headers.nt_headers.FileHeader.NumberOfSections as usize { return; } 
@@ -262,8 +257,6 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeF
 fn image_snap_by_ordinal(ordinal: usize) -> bool{
     #[cfg(target_arch = "x86_64")]
     return (ordinal as u64 & IMAGE_ORDINAL_FLAG64) != 0;
-    #[cfg(target_arch = "x86")]   
-    return (ordinal as u32 & IMAGE_ORDINAL_FLAG32) != 0;
 }
 
 /// Extract the 0-15 bytes which represent the ordinal
@@ -294,8 +287,6 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
         if library_handle != 0 {
             #[cfg(target_arch = "x86_64")]
             let mut library_thunk_ref = (new_dll_base as usize + import_table_descriptor.FirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
-            #[cfg(target_arch = "x86")]
-            let mut library_first_thunk_ref = (new_dll_base as usize + import_table_descriptor.FirstThunk as usize) as *mut IMAGE_THUNK_DATA32;
             loop {
                 // Simply dereferencing a pointer may result in the struct being copied instead of referenced.
                 // let mut library_thunk: IMAGE_THUNK_DATA64 = unsafe { *library_thunk_ref };
@@ -446,8 +437,6 @@ pub fn reflective_loader(dll_bytes: *mut c_void) -> usize {
 
     #[cfg(target_arch = "x86_64")]
     let pe_header = PeFileHeaders64::new(dll_bytes);
-    #[cfg(target_arch = "x86")]
-    let pe_header = PeFileHeaders32::new(dll_bytes)?;
 
     if pe_header.dos_headers.e_magic != PE_MAGIC { panic!("Target DLL does not appear to be a DLL.") }
 
@@ -518,8 +507,8 @@ mod tests {
     #[test]
     fn test_reflective_loader_get_export_by_hash() -> () {
         // Try getting the function pointer
-        let kernel32_hash = 0x6ddb9555;
-        let virtual_alloc_hash: u32 = 0x97bc257;
+        let kernel32_hash = KERNEL32_HASH;
+        let virtual_alloc_hash = VIRTUAL_ALLOC_HASH;
         let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
         let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, virtual_alloc_hash).unwrap() };
         assert!(virtualalloc_addy > 0);
@@ -533,20 +522,28 @@ mod tests {
 
     #[test]
     fn test_reflective_loader_get_module_by_hash() -> () {
-        let kernel32_hash = 0x6ddb9555;
+        let kernel32_hash = KERNEL32_HASH;
         let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
         assert!(kernel32_base as usize > 0);
     }
-
+    
     #[test]
     fn test_reflective_loader_dbj2_hash() -> () {
         let test_names = [
             "kernel32.dll".as_bytes(),
+            "ntdll.dll".as_bytes(),
+            "LoadLibraryA".as_bytes(),
+            "GetProcAddress".as_bytes(),
+            "VirtualAlloc".as_bytes(),
             "GetLastError".as_bytes(),
         ];
-        let test_hashes: [u32; 2] = [
-            0x6ddb9555,
-            0x8160BDC3,
+        let test_hashes = [
+            KERNEL32_HASH,
+            NTDLL_HASH,
+            LOAD_LIBRARY_A_HASH,
+            GET_PROC_ADDRESS_HASH,
+            VIRTUAL_ALLOC_HASH,
+            GET_LAST_ERROR_HASH,
         ];
         for (index, name) in test_names.iter().enumerate() {
             let expected = test_hashes[index];
