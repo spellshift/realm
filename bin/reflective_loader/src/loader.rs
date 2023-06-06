@@ -505,6 +505,48 @@ mod tests {
     const TEST_PAYLOAD_RELATIVE_PATH: &str = "..\\create_file_dll\\target\\debug\\create_file_dll.dll";
 
     #[test]
+    fn test_reflective_loader_memcpy_simple() -> () {
+        let source_buffer = [0,1,2,3,4];
+        let mut dest_buffer = [0,0,0,0,0];
+        unsafe { memcpy(dest_buffer.as_mut_ptr(), source_buffer.as_ptr(), source_buffer.len()) };
+        for (index, byte) in source_buffer.iter().enumerate() {
+            assert_eq!(*byte, dest_buffer[index]);
+        }
+    }
+
+    #[test]
+    fn test_reflective_loader_memcpy_overlapping_fwd() -> () {
+        let dest_offset = 3;
+        let source_offset = 0;
+        let common_buffer = [0,1,2,3,4,5,6,7,8,9,10];
+        let expected_output = common_buffer.clone();
+
+        let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
+        let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
+
+        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
+        for index in 0..common_buffer.len() - (dest_offset + source_offset) { 
+            assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
+        }
+    }
+
+    #[test]
+    fn test_reflective_loader_memcpy_overlapping_rev() -> () {
+        let dest_offset = 0;
+        let source_offset = 3;
+        let common_buffer = [0,1,2,3,4,5,6,7,8,9,10];
+        let expected_output = common_buffer.clone();
+
+        let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
+        let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
+
+        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
+        for index in 0..common_buffer.len() - (dest_offset + source_offset) {
+            assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
+        }
+    }
+
+    #[test]
     fn test_reflective_loader_get_export_by_hash() -> () {
         // Try getting the function pointer
         let kernel32_hash = KERNEL32_HASH;
