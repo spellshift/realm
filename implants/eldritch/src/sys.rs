@@ -60,9 +60,9 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         dll_inject_impl::dll_inject(dll_path, pid)
     }
-    fn dll_reflect(this: SysLibrary, dll_bytes: Vec<u32>, pid: u32) -> anyhow::Result<NoneType> {
+    fn dll_reflect(this: SysLibrary, dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        dll_reflect_impl::dll_reflect(dll_bytes, pid)
+        dll_reflect_impl::dll_reflect(dll_bytes, pid, function_name)
     }
     fn is_linux(this: SysLibrary) -> anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

