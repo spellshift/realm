@@ -95,7 +95,7 @@ The <b>file.compress</b> method compresses a file using the gzip algorithm. If t
 ### file.copy
 `file.copy(src: str, dst: str) -> None`
 
-The <b>file.copy</b> copies a file from src path to dst path. If dst file doesn't exist it will be created.
+The <b>file.copy</b> method copies a file from src path to dst path. If dst file doesn't exist it will be created.
 
 ### file.download
 `file.download(uri: str, dst: str) -> None`
@@ -105,7 +105,7 @@ The <b>file.download</b> method downloads a file at the URI specified in `uri` t
 ### file.exists
 `file.exists(path: str) -> bool`
 
-The <b>file.exists</b> checks if a file or directory exists at the path specified.
+The <b>file.exists</b> method checks if a file or directory exists at the path specified.
 
 ### file.hash
 `file.hash(path: str) -> str`
@@ -247,7 +247,7 @@ The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a wa
 ### process.kill
 `process.kill(pid: int) -> None`
 
-The <b>process.kill</b> will kill a process using the KILL signal given its process id.
+The <b>process.kill</b> method will kill a process using the KILL signal given its process id.
 
 ### process.list
 `process.list() -> List<Dict>`
@@ -305,5 +305,5 @@ The <b>sys.is_windows</b> method returns `True` if on a windows system and fales
 ### sys.shell
 `sys.shell(cmd: str) -> str`
 
-The <b>sys.shell</b> Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout from the process will be returned. If your command errors the error will be ignored and not passed back to you.
+The <b>sys.shell</b> method takes a string and runs it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout from the process will be returned. If your command errors the error will be ignored and not passed back to you.
 
