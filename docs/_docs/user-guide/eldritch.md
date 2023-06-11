@@ -55,18 +55,42 @@ It currently contains five modules:
 
 Functions fall into one of these five modules. This is done to improve clarity about function use.
 
+---
+
 ## Assets
+### assets.copy
+`assets.copy(src: str, dst: str) -> None`
+
+The <b>assets.copy</b> method copies an embedded file from the agent to disk.
+The `srt` variable will be the path from the `embed_files_golem_prod` as the root dir.
+For example `embed_files_golem_prod/sliver/agent-x64` can be referenced as `sliver/agent-x64`.
+If `dst` exists it will be overwritten. If it doesn't exist the function will fail.
+
+```python
+def deploy_agent():
+    if file.is_dir("/usr/bin"):
+        assets.copy("sliver/agent-x64","/usr/bin/notsu")
+        sys.exec("/usr/bin/notsu",[],true)
+deploy_agent()
+```
+
+### assets.list
+`assets.list() -> List<str>`
+
+The <b>assets.list</b> method returns a list of asset names that the agent is aware of.
+
+---
 
 ## File
 ### file.append
 `file.append(path: str, content: str) -> None`
 
-The <b>file.append</b> Append content str to file at path. If no file exists at path create the file with the contents content.
+The <b>file.append</b> method appends the `content` to file at `path`. If no file exists at path create the file with the contents content.
 
 ### file.compress
 `file.compress(src: str, dst: str) -> None`
 
-The <b>file.compress</b> function compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
+The <b>file.compress</b> method compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
 
 ### file.copy
 `file.copy(src: str, dst: str) -> None`
@@ -86,17 +110,17 @@ The <b>file.exists</b> checks if a file or directory exists at the path specifie
 ### file.hash
 `file.hash(path: str) -> str`
 
-The <b>file.hash</b> takes a sha256 hash of the file specified in path.
+The <b>file.hash</b> method returns a sha256 hash of the file specified in `path`.
 
 ### file.is_dir
 `file.is_dir(path: str) -> bool`
 
-The <b>file.is_dir</b> checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return false.
+The <b>file.is_dir</b> method checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return `False`.
 
 ### file.is_file
 `file.is_file(path: str) -> bool`
 
-The <b>file.is_file</b> checks if a path exists and is a file. If it doesn't exist or is not a file it will return false.
+The <b>file.is_file</b> method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`.
 
 ### file.mkdir
 `file.mkdir(path: str) -> None`
@@ -133,7 +157,7 @@ The <b>file.replace_all</b> method finds all strings matching a regex pattern in
 The <b>file.template</b> method will read a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
 If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
 The `args` dictionary currently supports values of: `int`, `str`, and `List`.
-`autoescape` when true will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
 
 ### file.timestomp
 `file.timestomp(src: str, dst: str) -> None`
@@ -144,6 +168,8 @@ The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick
 `file.write(path: str, content: str) -> None`
 
 The <b>file.write</b> method is very cool, and will be even cooler when Nick documents it.
+
+---
 
 ## Pivot
 ### pivot.arp_scan
@@ -259,22 +285,22 @@ The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a rem
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
 
-If disown is not used stdout from the process will be returned. When disown is true the return string will be `"No output"`.
+If disown is not used stdout from the process will be returned. When disown is `True` the return string will be `"No output"`.
 
 ### sys.is_linux
 `sys.is_linux() -> bool`
 
-The <b>sys.is_linux</b> method returns true if on a linux system and fales on everything else.
+The <b>sys.is_linux</b> method returns `True` if on a linux system and fales on everything else.
 
 ### sys.is_macos
 `sys.is_macos() -> bool`
 
-The <b>sys.is_macos</b> method returns true if on a mac os system and false on everything else.
+The <b>sys.is_macos</b> method returns `True` if on a mac os system and `False` on everything else.
 
 ### sys.is_windows
 `sys.is_windows() -> bool`
 
-The <b>sys.is_windows</b> method returns true if on a windows system and fales on everything else.
+The <b>sys.is_windows</b> method returns `True` if on a windows system and fales on everything else.
 
 ### sys.shell
 `sys.shell(cmd: str) -> str`
