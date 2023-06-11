@@ -1,4 +1,3 @@
-use std::io::Read;
 use std::{os::raw::c_void, ptr::null_mut};
 use object::{Object, ObjectSection};
 use object::LittleEndian as LE;
