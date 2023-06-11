@@ -250,7 +250,7 @@ mod tests {
     fn test_dll_reflect_get_export_address_by_name_on_disk() -> anyhow::Result<()> {
         let test_dll_bytes = LOADER_BYTES;
         let loader_address_offset: usize = get_export_address_by_name(test_dll_bytes, "reflective_loader", false)?;
-        assert_eq!(loader_address_offset, 0x76F);
+        assert_eq!(loader_address_offset, 0x75c);
         Ok(())
     }
 
@@ -258,10 +258,9 @@ mod tests {
     fn test_dll_reflect_get_export_address_by_name_in_memory() -> anyhow::Result<()> {
         let test_dll_bytes = TEST_DLL_BYTES;
         let loader_address_offset: usize = get_export_address_by_name(test_dll_bytes, "demo_init", true)?;
-        assert_eq!(loader_address_offset, 0x1A40);
+        assert_eq!(loader_address_offset, 0x2cf0);
         Ok(())
     }
-
     #[test]
     fn test_dll_reflect_loader_portability() -> anyhow::Result<()> {
         let pe_file = object::read::pe::PeFile64::parse(LOADER_BYTES)?;
