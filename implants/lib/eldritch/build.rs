@@ -57,18 +57,6 @@ fn build_bin_reflective_loader(){
         .lines()
         .filter_map(|line| line.ok())
         .for_each(|line| println!("cargo dll build: {}", line));    
-
-    // let res_pack = Command::new("upx").args(&["--best","--lzma",".\\target\\release\\reflective_loader.dll"])
-    //     .current_dir(test_dll_path.clone())
-    //     .stderr(Stdio::piped())
-    //     .spawn().unwrap().stderr.unwrap();
-
-    // let reader = BufReader::new(res_pack);
-    // reader
-    //     .lines()
-    //     .filter_map(|line| line.ok())
-    //     .for_each(|line| println!("cargo dll upx: {}", line));    
-    
     
     let relative_path_to_test_dll_file = "..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll";
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll_file);
