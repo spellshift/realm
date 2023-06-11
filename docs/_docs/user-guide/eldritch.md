@@ -96,6 +96,14 @@ The <b>file.replace</b> method is very cool, and will be even cooler when Nick d
 
 The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value.
 
+### file.template
+`file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
+
+The <b>file.template</b> method will read a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
+If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
+The `args` dictionary currently supports values of: `int`, `str`, and `List`.
+`autoescape` when true will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
 ### file.timestomp
 `file.timestomp(src: str, dst: str) -> None`
 
@@ -106,7 +114,6 @@ The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick
 
 The <b>file.write</b> method is very cool, and will be even cooler when Nick documents it.
 
-
 ### pivot.arp_scan
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
 
@@ -116,7 +123,6 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
 
 The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specificed port and interface, with the specificed username and password (if provided).
-
 
 ### process.kill
 `process.kill(pid: int) -> None`
@@ -141,6 +147,11 @@ The <b>process.list</b> method will return a list of dictionarys that describe e
     "environ": "CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0",
 }
 ```
+
+### process.name
+`process.name(pid: int) -> str`
+
+The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
 
 ### pivot.ncat
 `pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
@@ -202,11 +213,6 @@ The <b>pivot.ssh_exec</b> method is being proposed to allow users a way to move 
 `pivot.ssh_password_spray(targets: List<str>, port: int, credentials: List<str>, keys: List<str>, command: str, shell_path: str) -> List<str>`
 
 The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more felxiblity but may be adding complexity.
-
-### process.name
-`process.name(pid: int) -> str`
-
-The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
 
 ### sys.dll_inject
 `sys.dll_inject(dll_path: str, pid: int) -> None`
