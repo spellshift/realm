@@ -206,6 +206,8 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -
 }
 
 pub fn dll_reflect(dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
+    #[cfg(not(target_os = "windows"))]
+    return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
     let local_dll_bytes = get_u8_vec_form_u32_vec(dll_bytes)?;
     handle_dll_reflect(local_dll_bytes, pid, function_name.as_str())?;
     Ok(NoneType)
