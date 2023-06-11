@@ -17,11 +17,30 @@ Eldritch doesn't implement any form of error handling. If a function fails it wi
 If you're using a functions that has a chance to error (functions that do file / network IO) test preemptively with function like `is_file`, `is_dir`, `is_windows`, etc.
 
 For example:
-```Python
-if is_linux():
-    if is_file("/etc/passwd"):
-        file.read("/etc/passwd")
+```python
+def read_passwd():
+    if is_linux():
+        if is_file("/etc/passwd"):
+            file.read("/etc/passwd")
+read_passwd()
 ```
+
+```python
+def write_systemd_service():
+    if is_linux():
+        if is_dir("/lib/systemd/system/"):
+            service_args = {
+                "name":"my-service",
+                "desc":"A test",
+                "binary_path":"/bin/false",
+            }
+            assets.copy("systemd-template.j2", "/tmp/systemd-template.j2")
+            file.template("/tmp/systemd-template.j2","/lib/systemd/system/myservice.service",args,False)
+            file.remove("/tmp/systemd-template.j2")
+
+write_systemd_service()
+```
+
 
 
 # Standard Library
