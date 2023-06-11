@@ -1,12 +1,17 @@
 ---
 title: Eldritch
-tags: 
+tags:
  - User Guide
 description: Eldritch User Guide
 permalink: user-guide/eldritch
 ---
 # Overview
-![/assets/img/coming-soon.gif](/assets/img/coming-soon.gif)
+Eldritch is a pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust).
+
+Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
+By embedding the interpreter into the agent conditional logic can be quickly evaluated without requiring multiple callbacks.
+
+Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
 ## Data types
 Eldritch currently only supports the [default starlark data types.](https://github.com/facebookexperimental/starlark-rust/blob/main/docs/types.md)
@@ -40,7 +45,6 @@ def write_systemd_service():
 
 write_systemd_service()
 ```
-
 
 
 # Standard Library
@@ -95,7 +99,7 @@ The <b>file.compress</b> method compresses a file using the gzip algorithm. If t
 ### file.copy
 `file.copy(src: str, dst: str) -> None`
 
-The <b>file.copy</b> method copies a file from src path to dst path. If dst file doesn't exist it will be created.
+The <b>file.copy</b> method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
 
 ### file.download
 `file.download(uri: str, dst: str) -> None`
@@ -130,7 +134,7 @@ The <b>file.mkdir</b> method is very cool, and will be even cooler when Nick doc
 ### file.moveto
 `file.moveto(src: str, dst: str) -> None`
 
-The <b>file.moveto</b> method will move a file or directory from src to dst. If the dst directory or file exists it will be deleted before being replaced. To ensure consistency across systems.
+The <b>file.moveto</b> method moves a file or directory from src to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.read
 `file.read(path: str) -> str`
@@ -140,7 +144,7 @@ The <b>file.read</b> method will read the contents of a file. If the file or dir
 ### file.remove
 `file.remove(path: str) -> None`
 
-The <b>file.remove</b> method will delete a file or directory (and it's contents) specified by path.
+The <b>file.remove</b> method deletes a file or directory (and it's contents) specified by path.
 
 ### file.replace
 `file.replace(path: str, pattern: str, value: str) -> None`
@@ -154,7 +158,7 @@ The <b>file.replace_all</b> method finds all strings matching a regex pattern in
 ### file.template
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
-The <b>file.template</b> method will read a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
+The <b>file.template</b> method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
 If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
 The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 `autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
@@ -180,7 +184,7 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
 
-The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specificed port and interface, with the specificed username and password (if provided).
+The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided).
 
 ### pivot.ncat
 `pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
@@ -200,6 +204,7 @@ Inputs:
 - `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`
 
 Results will be in the format:
+
 ```JSON
 [
     { "ip": "127.0.0.1", "port": 22, "protocol": "tcp", "status": "open"},
@@ -226,7 +231,7 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 ### pivot.port_forward
 `pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
 
-The <b>pivot.port_forward</b> method is being proposed to providde socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
+The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
 ### pivot.smb_exec
 `pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
@@ -241,7 +246,7 @@ The <b>pivot.ssh_exec</b> method is being proposed to allow users a way to move 
 ### pivot.ssh_password_spray
 `pivot.ssh_password_spray(targets: List<str>, port: int, credentials: List<str>, keys: List<str>, command: str, shell_path: str) -> List<str>`
 
-The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more felxiblity but may be adding complexity.
+The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more flexibility but may be adding complexity.
 
 ## Process
 ### process.kill
@@ -252,7 +257,7 @@ The <b>process.kill</b> method will kill a process using the KILL signal given i
 ### process.list
 `process.list() -> List<Dict>`
 
-The <b>process.list</b> method will return a list of dictionarys that describe each process. The dictionaries follow the schema:
+The <b>process.list</b> method returns a list of dictionaries that describe each process. The dictionaries follow the schema:
 
 ```json
 {
@@ -290,7 +295,7 @@ If disown is not used stdout from the process will be returned. When disown is `
 ### sys.is_linux
 `sys.is_linux() -> bool`
 
-The <b>sys.is_linux</b> method returns `True` if on a linux system and fales on everything else.
+The <b>sys.is_linux</b> method returns `True` if on a linux system and `False` on everything else.
 
 ### sys.is_macos
 `sys.is_macos() -> bool`
@@ -300,7 +305,7 @@ The <b>sys.is_macos</b> method returns `True` if on a mac os system and `False` 
 ### sys.is_windows
 `sys.is_windows() -> bool`
 
-The <b>sys.is_windows</b> method returns `True` if on a windows system and fales on everything else.
+The <b>sys.is_windows</b> method returns `True` if on a windows system and `False` on everything else.
 
 ### sys.shell
 `sys.shell(cmd: str) -> str`
