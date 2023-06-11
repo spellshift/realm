@@ -44,8 +44,20 @@ write_systemd_service()
 
 
 # Standard Library
-The Standard Library is very cool, and will be even cooler when Nick documents it.
+The standard library is the default functionality that eldritch provides.
 
+It currently contains five modules:
+- `assets` - Used to interact with files stored natively in the agent.
+- `file` - Used to interact with files on the system.
+- `pivot` - Used to identify and move between systems.
+- `process` - Used to interact with processes on the system.
+- `sys` - General system capabilities can include loading libraries, or information about the current context.
+
+Functions fall into one of these five modules. This is done to improve clarity about function use.
+
+## Assets
+
+## File
 ### file.append
 `file.append(path: str, content: str) -> None`
 
@@ -133,6 +145,7 @@ The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick
 
 The <b>file.write</b> method is very cool, and will be even cooler when Nick documents it.
 
+## Pivot
 ### pivot.arp_scan
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
 
@@ -142,35 +155,6 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
 
 The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specificed port and interface, with the specificed username and password (if provided).
-
-### process.kill
-`process.kill(pid: int) -> None`
-
-The <b>process.kill</b> will kill a process using the KILL signal given its process id.
-
-### process.list
-`process.list() -> List<Dict>`
-
-The <b>process.list</b> method will return a list of dictionarys that describe each process. The dictionaries follow the schema:
-
-```json
-{
-    "pid": "9812",
-    "ppid": "1",
-    "status": "Sleeping",
-    "name": "golem",
-    "path": "/usr/bin/golem",
-    "username": "root",
-    "command": "/usr/bin/golem -i",
-    "cwd": "/root/",
-    "environ": "CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0",
-}
-```
-
-### process.name
-`process.name(pid: int) -> str`
-
-The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
 
 ### pivot.ncat
 `pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
@@ -233,6 +217,37 @@ The <b>pivot.ssh_exec</b> method is being proposed to allow users a way to move 
 
 The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more felxiblity but may be adding complexity.
 
+## Process
+### process.kill
+`process.kill(pid: int) -> None`
+
+The <b>process.kill</b> will kill a process using the KILL signal given its process id.
+
+### process.list
+`process.list() -> List<Dict>`
+
+The <b>process.list</b> method will return a list of dictionarys that describe each process. The dictionaries follow the schema:
+
+```json
+{
+    "pid": "9812",
+    "ppid": "1",
+    "status": "Sleeping",
+    "name": "golem",
+    "path": "/usr/bin/golem",
+    "username": "root",
+    "command": "/usr/bin/golem -i",
+    "cwd": "/root/",
+    "environ": "CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0",
+}
+```
+
+### process.name
+`process.name(pid: int) -> str`
+
+The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
+
+## Sys
 ### sys.dll_inject
 `sys.dll_inject(dll_path: str, pid: int) -> None`
 
