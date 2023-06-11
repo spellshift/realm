@@ -480,13 +480,12 @@ pub fn reflective_loader(user_data_ptr_and_dll_bytes: *mut c_void) -> usize {
 
     // perform image base relocations
     process_dll_image_relocation(new_dll_base, &pe_header, image_base_delta);
-	// resolve import address table
+    // resolve import address table
     process_import_address_tables(new_dll_base, &pe_header, load_library_a_fn, get_proc_address_fn, get_last_error_fn);
 
+    // Execute DllMain
     let entry_point = (new_dll_base as usize + pe_header.nt_headers.OptionalHeader.AddressOfEntryPoint as usize) as *const FnDllMain;
     let dll_main_func = unsafe { core::mem::transmute::<_, FnDllMain>(entry_point) };
-
-    // Execute DllMain
     unsafe{dll_main_func(new_dll_base as isize, DLL_PROCESS_ATTACH, 0 as *mut c_void);}
 
     // Call the function the user specified.
