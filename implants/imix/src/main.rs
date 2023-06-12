@@ -69,7 +69,6 @@ async fn handle_exec_timeout_and_response(task: graphql::GraphQLTask, print_chan
 
     // Define a future for our execution task
     let exec_future = handle_exec_tome(task.clone(), print_channel_sender.clone());
-
     // Execute that future with a timeout defined by the timeout argument.
     let tome_result = match tokio::time::timeout(timeout_duration, exec_future).await {
         Ok(res) => {
@@ -271,16 +270,19 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                         println!("main_loop: error adding new task. Non-unique taskID\n");
                     }
                 },
-                None => {}, // Task queued successfully
+                None => {
+                    if debug {
+                        println!("main_loop: Task queued successfully\n");
+                    }
+                }, // Task queued successfully
             }
         }
-
-        if debug { println!("Sleeping"); }
         // 3. Sleep till callback time
         //                                  time_to_wait          -         time_elapsed
         let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs() ;
-        tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await;
-
+        if debug { println!("Sleeping {}", time_to_sleep); }
+        tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await; // This seems to wait for other threads to finish.
+        // std::thread::sleep(std::time::Duration::new(time_to_sleep, 24601)); // This just sleeps our thread.
 
         // :clap: :clap: make new map!
         let mut running_exec_futures: HashMap<String, ExecTask> = HashMap::new();
@@ -487,8 +489,9 @@ sys.shell(input_params["cmd"])
 
     }
 
+
     #[test]
-    fn imix_test_main_loop_run_once() -> Result<()> {
+    fn imix_test_main_loop_double_sleep() -> Result<()> {
 
         // Response expectations are poped in reverse order.
         let server = Server::run();
@@ -508,7 +511,7 @@ sys.shell(input_params["cmd"])
             ])
             .times(1)
             .respond_with(status_code(200)
-            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Exec stuff","parameters":"{\"cmd\":\"echo main_loop_test_success\"}","tome":{"id":"21474836482","name":"sys exec","description":"Execute system things.","paramDefs":"{\"paramDefs\":[{\"name\":\"cmd\",\"type\":\"string\"}]}","eldritch":"print(sys.shell(input_params[\"cmd\"]))","files":[]},"bundle":null}}]}}"#)),
+            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Sleep1","parameters":"{}","tome":{"id":"21474836482","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"sys.shell(\"sleep 5\")","files":[]},"bundle":null}},{"id":"17179869186","job":{"id":"4294967298","name":"Sleep1","parameters":"{}","tome":{"id":"21474836483","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"sys.shell(\"sleep 6\")","files":[]},"bundle":null}}]}}"#)),
         );
 
         let tmp_file_new = NamedTempFile::new()?;
@@ -519,8 +522,8 @@ sys.shell(input_params["cmd"])
     "target_forward_connect_ip": "127.0.0.1",
     "target_name": "test1234",
     "callback_config": {{
-        "interval": 8,
-        "jitter": 1,
+        "interval": 4,
+        "jitter": 0,
         "timeout": 4,
         "c2_configs": [
         {{
@@ -536,15 +539,77 @@ sys.shell(input_params["cmd"])
             .build()
             .unwrap();
 
-        // let (sender, receiver) = channel::<String>();
-
-        // // Define a future for our execution task
-        // let exec_future = handle_exec_tome(test_tome_input, sender.clone())
+        // Define a future for our execution task
+        let start_time = Utc::now().time();
         let exec_future = main_loop(path_new, true);
         let _result = runtime.block_on(exec_future).unwrap();
-    
-        assert!(true);
+        let end_time = Utc::now().time();
+        let diff = (end_time - start_time).num_milliseconds();
+        println!("time_diff: {}", diff);
+        assert!(diff < 8500);
         Ok(())
     }
+
+    #[test]
+    fn imix_test_main_loop_sleep_long() -> Result<()> {
+
+        // Response expectations are poped in reverse order.
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
+        );
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*claimTasks.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967298","name":"Sleep1","parameters":"{}","tome":{"id":"21474836483","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"sys.shell(\"sleep 12\")","files":[]},"bundle":null}}]}}"#)),
+        );
+
+        let tmp_file_new = NamedTempFile::new()?;
+        let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
+        let url = server.url("/graphql").to_string();
+        let _ = std::fs::write(path_new.clone(),format!(r#"{{
+    "service_configs": [],
+    "target_forward_connect_ip": "127.0.0.1",
+    "target_name": "test1234",
+    "callback_config": {{
+        "interval": 4,
+        "jitter": 0,
+        "timeout": 4,
+        "c2_configs": [
+        {{
+            "priority": 1,
+            "uri": "{url}"
+        }}
+        ]
+    }}
+}}"#));
+
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        // Define a future for our execution task
+        let start_time = Utc::now().time();
+        let exec_future = main_loop(path_new, true);
+        let _result = runtime.block_on(exec_future).unwrap();
+        let end_time = Utc::now().time();
+        let diff = (end_time - start_time).num_milliseconds();
+        println!("time_diff: {}", diff);
+        assert!(diff < 8500);
+        Ok(())
+    }
+
+
 }
 
