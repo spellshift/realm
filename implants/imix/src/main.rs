@@ -168,7 +168,7 @@ fn get_os_pretty_name() -> Result<String> {
 
 // Async handler for port scanning.
 async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
-    let debug = true;
+    let debug = false;
     let version_string = "v0.1.0";
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
