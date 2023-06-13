@@ -165,7 +165,21 @@ The <b>sys.is_macos</b> method returns true if on a mac os system and false on e
 ### sys.shell
 `sys.shell(cmd: str) -> str`
 
-The <b>sys.shell</b> Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout from the process will be returned. If your command errors the error will be ignored and not passed back to you.
+The <b>sys.shell</b> Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout and stderr will be returned to you as a dictionary with keys: `stdout`, `stderr`. For example:
+
+```python
+sys.shell("whoami")
+{
+    "stdout":"root\n",
+    "stderr":"",
+}
+sys.shell("ls /nofile")
+{
+    "stdout":"",
+    "stderr":"ls: cannot access '/nofile': No such file or directory\n",
+}
+```
+
 
 ### pivot.ssh_exec
 `pivot.ssh_exec(target: str, port: int, username: str, password: str, key: str, command: str, shell_path: str) -> List<str>`

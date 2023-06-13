@@ -442,7 +442,7 @@ mod tests {
                     description: "Execute a command in the default system shell".to_string(),
                     eldritch: r#"
 print("custom_print_handler_test")
-sys.shell(input_params["cmd"])
+sys.shell(input_params["cmd"])["stdout"]
 "#.to_string(),
                     files: [].to_vec(),
                     param_defs: Some(r#"{"params":[{"name":"cmd","type":"string"}]}"#.to_string()),

@@ -10,7 +10,7 @@ use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
+use starlark::values::{StarlarkValue, Value, Heap, dict::Dict, UnpackValue, ValueLike, ProvidesStaticType};
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
@@ -71,8 +71,8 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_macos_impl::is_macos()
     }
-    fn shell(this: SysLibrary, cmd: String) -> anyhow::Result<String> {
+    fn shell<'v>(this:  SysLibrary, starlark_heap: &'v Heap, cmd: String) ->  anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        shell_impl::shell(cmd)
+        shell_impl::shell(starlark_heap, cmd)
     }
 }
