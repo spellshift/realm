@@ -15,6 +15,12 @@ use starlark::{starlark_type, starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 
+struct CommandOutput {
+    stdout: String,
+    stderr: String,
+    status: i32,
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "SysLibrary")]
 pub struct SysLibrary();
@@ -51,9 +57,9 @@ impl<'v> UnpackValue<'v> for SysLibrary {
 // This is where all of the "sys.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn exec(this: SysLibrary, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<String> {
+    fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        exec_impl::exec(path, args, disown)
+        exec_impl::exec(starlark_heap, path, args, disown)
     }
     fn dll_inject(this: SysLibrary, dll_path: String, pid: u32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

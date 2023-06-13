@@ -6,6 +6,8 @@ use starlark::values::dict::Dict;
 use std::process::{Command};
 use std::str;
 
+use super::CommandOutput;
+
 pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
 
     let cmd_res = handle_shell(cmd)?;
@@ -23,11 +25,7 @@ pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
 
     Ok(dict_res)
 }
-struct CommandOutput {
-    stdout: String,
-    stderr: String,
-    status: i32,
-}
+
 fn handle_shell(cmd: String) -> Result<CommandOutput> {
     let command_string: &str;
     let command_args: Vec<&str>;
