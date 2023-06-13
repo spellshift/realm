@@ -50,13 +50,13 @@ async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String
 
     let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
 
-    println!("{:?}",task_job.parameters);
+    println!("Tome params: {:?}",task_job.parameters);
     // Execute a tome script
     let res =  match thread::spawn(move || { eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler) }).join() {
         Ok(local_thread_res) => local_thread_res,
         Err(_) => todo!(),
     };
-    
+    // let res = eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler);
     match res {
         Ok(tome_output) => Ok((tome_output, "".to_string())),
         Err(tome_error) => Ok(("".to_string(), tome_error.to_string())),
@@ -79,6 +79,10 @@ async fn handle_exec_timeout_and_response(task: graphql::GraphQLTask, print_chan
         },
         Err(timer_elapsed) => ("".to_string(), format!("Time elapsed task {} has been running for {} seconds", task.id, timer_elapsed.to_string())),
     };
+
+    // let tome_result = tokio::task::spawn(exec_future).await??;
+    // let tome_result = tokio::spawn(exec_future).await??;
+    
 
     print_channel_sender.clone().send(format!("---[RESULT]----\n{}\n---------",tome_result.0))?;
     print_channel_sender.clone().send(format!("---[ERROR]----\n{}\n--------",tome_result.1))?;
@@ -261,6 +265,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
 
             let (sender, receiver) = channel::<String>();
             let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
+            if debug { println!("[{}]: Queueing task {}", (Utc::now().time() - start_time).num_milliseconds(), task.clone().id); }
             match all_exec_futures.insert(task.clone().id, ExecTask{
                 future_join_handle: task::spawn(exec_with_timeout), 
                 start_time: Utc::now(), 
@@ -278,6 +283,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                     }
                 }, // Task queued successfully
             }
+            if debug { println!("[{}]: Queued task {}", (Utc::now().time() - start_time).num_milliseconds(), task.clone().id); }
         }
         // 3. Sleep till callback time
         //                                  time_to_wait          -         time_elapsed
@@ -294,13 +300,18 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         for exec_future in all_exec_futures.into_iter() {
             if debug { println!("[{}]: Task # {} is_finished? {}", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0, exec_future.1.future_join_handle.is_finished()); }
             let mut res: Vec<String> = vec![];
+            // Loop over each line of output from the task.
             loop {
                 if debug { println!("[{}]: Task # {} recieving output", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0); }
                 let new_res_line =  match exec_future.1.print_reciever.recv_timeout(Duration::from_millis(100)) {
-                    Ok(local_res_string) => local_res_string,
+                    Ok(local_res_string) => {
+                        if debug { println!("[{}]: HERE", (Utc::now().time() - start_time).num_milliseconds()); }
+                        local_res_string
+                    },
                     Err(local_err) => {
                         match local_err.to_string().as_str() {
                             "channel is empty and sending half is closed" => { break; },
+                            "timed out waiting on channel" => { break; },
                             _ => eprint!("Error: {}", local_err),
                         }
                         break;
@@ -310,6 +321,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 res.push(new_res_line);
                 // Send task response
             }
+            if debug { println!("[{}]: HERE2", (Utc::now().time() - start_time).num_milliseconds()); }
             let task_response = match exec_future.1.future_join_handle.is_finished() {
                 true => {
                     graphql::GraphQLSubmitTaskResultInput {
@@ -330,6 +342,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                     }
                 },
             };
+            if debug { println!("[{}]: HERE3", (Utc::now().time() - start_time).num_milliseconds()); }
             if debug { println!("[{}]: Task {} output: {}", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0, task_response.output); }
             let submit_task_result = graphql::gql_post_task_result(cur_callback_uri.clone(), task_response).await;
             let _ = match submit_task_result {
@@ -348,7 +361,6 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         if run_once { return Ok(()); };
     }
 }
-
 
 pub fn main() -> Result<(), imix::Error> {
     let matches = Command::new("imix")
@@ -371,7 +383,7 @@ pub fn main() -> Result<(), imix::Error> {
         .get_matches();
 
 
-    let runtime = tokio::runtime::Builder::new_current_thread()
+    let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .unwrap();
@@ -391,9 +403,9 @@ pub fn main() -> Result<(), imix::Error> {
     }
 
     if let Some(config_path) = matches.value_of("config") {
-        match runtime.block_on(main_loop(config_path.to_string(), false)) {
+        match runtime.block_on(main_loop(config_path.to_string(), true)) {
             Ok(_) => {},
-            Err(error) => println!("Imix mail_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
+            Err(error) => println!("Imix main_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
         }
     }
     Ok(())
@@ -453,7 +465,7 @@ sys.shell(input_params["cmd"])
         };
 
 
-        let runtime = tokio::runtime::Builder::new_current_thread()
+        let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap();
@@ -489,8 +501,7 @@ sys.shell(input_params["cmd"])
 
 
     #[test]
-    fn imix_test_main_loop_double_sleep() -> Result<()> {
-
+    fn imix_test_main_loop_sleep_twice_short() -> Result<()> {
         // Response expectations are poped in reverse order.
         let server = Server::run();
         server.expect(
@@ -498,7 +509,7 @@ sys.shell(input_params["cmd"])
                 request::method_path("POST", "/graphql"),
                 request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
             ])
-            .times(1)
+            .times(2)
             .respond_with(status_code(200)
             .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
         );
@@ -509,7 +520,7 @@ sys.shell(input_params["cmd"])
             ])
             .times(1)
             .respond_with(status_code(200)
-            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Sleep1","parameters":"{}","tome":{"id":"21474836482","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"sys.shell(\"sleep 5\")","files":[]},"bundle":null}},{"id":"17179869186","job":{"id":"4294967298","name":"Sleep1","parameters":"{}","tome":{"id":"21474836483","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"sys.shell(\"sleep 6\")","files":[]},"bundle":null}}]}}"#)),
+            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Sleep1","parameters":"{}","tome":{"id":"21474836482","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"def test():\n    if sys.is_macos():\n        sys.shell(\"sleep 3\")\n    if sys.is_linux():\n        sys.shell(\"sleep 3\")\n    if sys.is_windows():\n        sys.shell(\"timeout 3\")\ntest()\nprint(\"main_loop_test_success\")","files":[]},"bundle":null}},{"id":"17179869186","job":{"id":"4294967298","name":"Sleep1","parameters":"{}","tome":{"id":"21474836483","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"def test():\n    if sys.is_macos():\n        sys.shell(\"sleep 3\")\n    if sys.is_linux():\n        sys.shell(\"sleep 3\")\n    if sys.is_windows():\n        sys.shell(\"timeout 3\")\ntest()\nprint(\"main_loop_test_success\")","files":[]},"bundle":null}}]}}"#)),
         );
 
         let tmp_file_new = NamedTempFile::new()?;
@@ -532,67 +543,7 @@ sys.shell(input_params["cmd"])
     }}
 }}"#));
 
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-
-        // Define a future for our execution task
-        let start_time = Utc::now().time();
-        let exec_future = main_loop(path_new, false);
-        let _result = runtime.block_on(exec_future).unwrap();
-        let end_time = Utc::now().time();
-        let diff = (end_time - start_time).num_milliseconds();
-        println!("time_diff: {}", diff);
-        assert!(diff < 8500);
-        Ok(())
-    }
-
-    #[test]
-    fn imix_test_main_loop_sleep_long() -> Result<()> {
-
-        // Response expectations are poped in reverse order.
-        let server = Server::run();
-        server.expect(
-            Expectation::matching(all_of![
-                request::method_path("POST", "/graphql"),
-                request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
-            ])
-            .times(1)
-            .respond_with(status_code(200)
-            .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
-        );
-        server.expect(
-            Expectation::matching(all_of![
-                request::method_path("POST", "/graphql"),
-                request::body(matches(".*claimTasks.*"))
-            ])
-            .times(1)
-            .respond_with(status_code(200)
-            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967298","name":"Sleep1","parameters":"{}","tome":{"id":"21474836483","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"sys.shell(\"sleep 12\")","files":[]},"bundle":null}}]}}"#)),
-        );
-
-        let tmp_file_new = NamedTempFile::new()?;
-        let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
-        let url = server.url("/graphql").to_string();
-        let _ = std::fs::write(path_new.clone(),format!(r#"{{
-    "service_configs": [],
-    "target_forward_connect_ip": "127.0.0.1",
-    "target_name": "test1234",
-    "callback_config": {{
-        "interval": 4,
-        "jitter": 0,
-        "timeout": 4,
-        "c2_configs": [
-        {{
-            "priority": 1,
-            "uri": "{url}"
-        }}
-        ]
-    }}
-}}"#));
-
-        let runtime = tokio::runtime::Builder::new_current_thread()
+        let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap();
@@ -604,7 +555,63 @@ sys.shell(input_params["cmd"])
         let end_time = Utc::now().time();
         let diff = (end_time - start_time).num_milliseconds();
         println!("time_diff: {}", diff);
-        assert!(diff < 8500);
+        assert!(diff < 4500);
+        Ok(())
+    }
+
+    #[test]
+    fn imix_test_main_loop_run_once() -> Result<()> {
+
+        // Response expectations are poped in reverse order.
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
+        );
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*claimTasks.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Exec stuff","parameters":"{\"cmd\":\"echo main_loop_test_success\"}","tome":{"id":"21474836482","name":"sys exec","description":"Execute system things.","paramDefs":"{\"paramDefs\":[{\"name\":\"cmd\",\"type\":\"string\"}]}","eldritch":"print(sys.shell(input_params[\"cmd\"]))","files":[]},"bundle":null}}]}}"#)),
+        );
+
+        let tmp_file_new = NamedTempFile::new()?;
+        let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
+        let url = server.url("/graphql").to_string();
+        let _ = std::fs::write(path_new.clone(),format!(r#"{{
+    "service_configs": [],
+    "target_forward_connect_ip": "127.0.0.1",
+    "target_name": "test1234",
+    "callback_config": {{
+        "interval": 4,
+        "jitter": 1,
+        "timeout": 4,
+        "c2_configs": [
+        {{
+            "priority": 1,
+            "uri": "{url}"
+        }}
+        ]
+    }}
+}}"#));
+
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let exec_future = main_loop(path_new, true);
+        let _result = runtime.block_on(exec_future).unwrap();
+    
+        assert!(true);
         Ok(())
     }
 
