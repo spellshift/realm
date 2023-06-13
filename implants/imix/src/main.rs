@@ -393,7 +393,7 @@ pub fn main() -> Result<(), imix::Error> {
     }
 
     if let Some(config_path) = matches.value_of("config") {
-        match runtime.block_on(main_loop(config_path.to_string(), true)) {
+        match runtime.block_on(main_loop(config_path.to_string(), false)) {
             Ok(_) => {},
             Err(error) => eprintln!("Imix main_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
         }
