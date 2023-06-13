@@ -50,7 +50,6 @@ async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String
 
     let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
 
-    println!("Tome params: {:?}",task_job.parameters);
     // Execute a tome script
     let res =  match thread::spawn(move || { eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler) }).join() {
         Ok(local_thread_res) => local_thread_res,
@@ -133,7 +132,7 @@ fn get_primary_ip() -> Result<String> {
             }
         },
         Err(e) => {
-            println!("Error getting primary ip address:\n{e}");
+            eprintln!("Error getting primary ip address:\n{e}");
             "DANGER-UNKNOWN".to_string()
         },
     };
@@ -250,9 +249,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri.clone(), claim_tasks_input.clone()).await {
             Ok(tasks) => tasks,
             Err(error) => {
-                if debug {
-                    println!("main_loop: error claiming task\n{:?}", error)
-                }
+                if debug { println!("main_loop: error claiming task\n{:?}", error) }
                 let empty_vec = vec![];
                 empty_vec
             },
@@ -273,14 +270,10 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 print_reciever: receiver,
             }) {
                 Some(_old_task) => {
-                    if debug {
-                        println!("main_loop: error adding new task. Non-unique taskID\n");
-                    }
+                    if debug {println!("main_loop: error adding new task. Non-unique taskID\n");}
                 },
                 None => {
-                    if debug {
-                        println!("main_loop: Task queued successfully\n");
-                    }
+                    if debug {println!("main_loop: Task queued successfully\n");}
                 }, // Task queued successfully
             }
             if debug { println!("[{}]: Queued task {}", (Utc::now().time() - start_time).num_milliseconds(), task.clone().id); }
@@ -305,7 +298,6 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 if debug { println!("[{}]: Task # {} recieving output", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0); }
                 let new_res_line =  match exec_future.1.print_reciever.recv_timeout(Duration::from_millis(100)) {
                     Ok(local_res_string) => {
-                        if debug { println!("[{}]: HERE", (Utc::now().time() - start_time).num_milliseconds()); }
                         local_res_string
                     },
                     Err(local_err) => {
@@ -321,7 +313,6 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 res.push(new_res_line);
                 // Send task response
             }
-            if debug { println!("[{}]: HERE2", (Utc::now().time() - start_time).num_milliseconds()); }
             let task_response = match exec_future.1.future_join_handle.is_finished() {
                 true => {
                     graphql::GraphQLSubmitTaskResultInput {
@@ -342,7 +333,6 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                     }
                 },
             };
-            if debug { println!("[{}]: HERE3", (Utc::now().time() - start_time).num_milliseconds()); }
             if debug { println!("[{}]: Task {} output: {}", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0, task_response.output); }
             let submit_task_result = graphql::gql_post_task_result(cur_callback_uri.clone(), task_response).await;
             let _ = match submit_task_result {
@@ -405,7 +395,7 @@ pub fn main() -> Result<(), imix::Error> {
     if let Some(config_path) = matches.value_of("config") {
         match runtime.block_on(main_loop(config_path.to_string(), true)) {
             Ok(_) => {},
-            Err(error) => println!("Imix main_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
+            Err(error) => eprintln!("Imix main_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
         }
     }
     Ok(())
@@ -426,7 +416,6 @@ mod tests {
         let primary_ip_address = match get_primary_ip() {
             Ok(local_primary_ip) => local_primary_ip,
             Err(local_error) => {
-                println!("An error occured during testing default_ip:{local_error}");
                 assert_eq!(false,true);
                 "DANGER-UNKNOWN".to_string()
             },
@@ -437,7 +426,6 @@ mod tests {
     #[test]
     fn imix_test_get_os_pretty_name() { 
         let res = get_os_pretty_name().unwrap();
-        println!("{res}");
         assert!(!res.contains("UNKNOWN"));
     }
 
@@ -479,7 +467,6 @@ sys.shell(input_params["cmd"])
         let stdout = receiver.recv_timeout(Duration::from_millis(500)).unwrap();
         assert_eq!(stdout, "custom_print_handler_test".to_string());
 
-        println!("{:?}", result.clone());
         let mut bool_res = false;
 
         if cfg!(target_os = "linux") ||
@@ -554,7 +541,6 @@ sys.shell(input_params["cmd"])
         let _result = runtime.block_on(exec_future).unwrap();
         let end_time = Utc::now().time();
         let diff = (end_time - start_time).num_milliseconds();
-        println!("time_diff: {}", diff);
         assert!(diff < 4500);
         Ok(())
     }
