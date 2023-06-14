@@ -505,15 +505,14 @@ sys.shell(input_params["cmd"])
             errors: None,
             extensions: None,
         };
-        println!("{}", serde_json::to_string(&post_result_response)?);
         server.expect(
             Expectation::matching(all_of![
                 request::method_path("POST", "/graphql"),
-                request::body(matches(".*"))
+                request::body(matches(".*variables.*execStartedAt.*"))
             ])
             .times(1)
             .respond_with(status_code(200)
-            .body(serde_json::to_string(&post_result_response)?)),
+            .body(serde_json::to_string(&post_result_response)?))
         );
 
         let claim_task_response = GraphQLResponse {
@@ -544,16 +543,16 @@ sys.shell(input_params["cmd"])
         server.expect(
             Expectation::matching(all_of![
                 request::method_path("POST", "/graphql"),
-                request::body(matches(".*claimTasks.*"))
+                request::body(matches(".*variables.*hostPlatform.*"))
             ])
             .times(1)
             .respond_with(status_code(200)
             .body(serde_json::to_string(&claim_task_response)?))
         );
-
+        let url = server.url("/graphql").to_string();
+        // let url = "http://127.0.0.1:80/graphql";
         let tmp_file_new = NamedTempFile::new()?;
         let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
-        let url = server.url("/graphql").to_string();
         let _ = std::fs::write(path_new.clone(),format!(r#"{{
     "service_configs": [],
     "target_forward_connect_ip": "127.0.0.1",
@@ -576,10 +575,6 @@ sys.shell(input_params["cmd"])
             .build()
             .unwrap();
 
-        // let (sender, receiver) = channel::<String>();
-
-        // // Define a future for our execution task
-        // let exec_future = handle_exec_tome(test_tome_input, sender.clone())
         let exec_future = main_loop(path_new, true);
         let _result = runtime.block_on(exec_future)?;
         assert!(true);
