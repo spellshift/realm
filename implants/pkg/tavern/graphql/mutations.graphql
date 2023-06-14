@@ -4,6 +4,7 @@ mutation ClaimTasks($input: ClaimTasksInput!) {
         job {
             id,
             name,
+            parameters,
             tome {
                 id,
                 name,
