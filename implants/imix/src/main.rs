@@ -258,7 +258,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         let tavern_client = tavern::http::new_client(&cur_callback_uri, auth_token)?;
 
         // 1b) Collect new tasks
-        let new_tasks = match tavern_client.claim_tasks(claim_tasks_input).await {
+        let new_tasks = match tavern_client.claim_tasks(claim_tasks_input.clone()).await {
             Ok(tasks) => tasks,
             Err(error) => {
                 if debug {
