@@ -49,4 +49,3 @@ pub struct Config {
 
 pub mod windows;
 pub mod linux;
-pub mod graphql;

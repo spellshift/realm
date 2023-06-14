@@ -128,6 +128,7 @@ mod tests {
                         job: Job{
                             id: String::from("10"),
                             name: String::from("test_job"),
+                            parameters: None,
                             tome: Tome{
                                 id: String::from("15"),
                                 name: String::from("test_tome"),

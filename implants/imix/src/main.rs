@@ -10,15 +10,15 @@ use clap::{Command, arg};
 use anyhow::{Result, Error};
 use tokio::task::{self, JoinHandle};
 use tokio::time::Duration;
-use imix::graphql::{GraphQLTask, self};
 use eldritch::{eldritch_run,EldritchPrintHandler};
 use uuid::Uuid;
 use sys_info::{os_release,linux_os_release};
+use tavern::{Task, ClaimTasksInput, HostPlatform, SubmitTaskResultInput};
 
 pub struct ExecTask {
     future_join_handle: JoinHandle<Result<(), Error>>,
     start_time: DateTime<Utc>,
-    graphql_task: GraphQLTask,
+    graphql_task: Task,
     print_reciever: Receiver<String>,
 }
 
@@ -36,23 +36,25 @@ async fn install(config_path: String) -> Result<(), imix::Error> {
 
     unimplemented!("The current OS/Service Manager is not supported")
 }
-async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String>) -> Result<(String,String)> {
+async fn handle_exec_tome(task: Task, print_channel_sender: Sender<String>) -> Result<(String,String)> {
     // TODO: Download auxillary files from CDN
 
     // Read a tome script
-    let task_job = match task.job {
-        Some(job) => job,
-        None => return Ok(("".to_string(), format!("No job associated for task ID: {}", task.id))),
-    };
+    // let task_job = match task.job {
+    //     Some(job) => job,
+    //     None => return Ok(("".to_string(), format!("No job associated for task ID: {}", task.id))),
+    // };
+    
+    let task_job = task.job;
 
-    let tome_name = task_job.tome.name;
+    let tome_filename = task_job.tome.name;
     let tome_contents = task_job.tome.eldritch;
+    let tome_parameters = task_job.tome.param_defs;
 
     let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
 
-    println!("{:?}",task_job.parameters);
     // Execute a tome script
-    let res =  match thread::spawn(move || { eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler) }).join() {
+    let res =  match thread::spawn(move || { eldritch_run(tome_filename, tome_contents, tome_parameters, &print_handler) }).join() {
         Ok(local_thread_res) => local_thread_res,
         Err(_) => todo!(),
     };
@@ -63,7 +65,7 @@ async fn handle_exec_tome(task: GraphQLTask, print_channel_sender: Sender<String
     }
 }
 
-async fn handle_exec_timeout_and_response(task: graphql::GraphQLTask, print_channel_sender: Sender<String>) -> Result<(), Error> {
+async fn handle_exec_timeout_and_response(task: Task, print_channel_sender: Sender<String>) -> Result<(), Error> {
     // Tasks will be forcebly stopped after 1 week.
     let timeout_duration = Duration::from_secs(60*60*24*7); // 1 Week.
 
@@ -137,15 +139,15 @@ fn get_primary_ip() -> Result<String> {
     Ok(res)
 }
 
-fn get_host_platform() -> Result<String> {
+fn get_host_platform() -> Result<HostPlatform> {
     if cfg!(target_os = "linux") {
-        return Ok("Linux".to_string());
+        return Ok(HostPlatform::Linux);
     } else if cfg!(target_os = "windows") {
-        return Ok("Windows".to_string());
+        return Ok(HostPlatform::Windows);
     } else if cfg!(target_os = "macos") {
-        return Ok("MacOS".to_string());
+        return Ok(HostPlatform::MacOS);
     } else {
-        return Ok("Unknown".to_string());
+        return Ok(HostPlatform::Unknown);
     }
 }
 
@@ -168,6 +170,7 @@ fn get_os_pretty_name() -> Result<String> {
 async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
     let debug = true;
     let version_string = "v0.1.0";
+    let auth_token = "letmeinnn";
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
@@ -210,7 +213,17 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
             if debug {
                 return Err(anyhow::anyhow!("Unable to get host platform id\n{}", error));
             }
-            "Unknown".to_string()
+            HostPlatform::Unknown
+        },
+    };
+
+    let primary_ip = match get_primary_ip() {
+        Ok(tmp_primary_ip) => Some(tmp_primary_ip),
+        Err(error) => {
+            if debug {
+                return Err(anyhow::anyhow!("Unable to get primary ip\n{}", error));
+            }
+            None
         },
     };
 
@@ -224,14 +237,16 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         },
     };
 
-    let claim_tasks_input = graphql::GraphQLClaimTasksInput {
+    let claim_tasks_input = ClaimTasksInput {
         principal: principal,
         hostname: hostname,
         session_identifier: session_id,
         host_identifier: host_id,
         agent_identifier: format!("{}-{}","imix",version_string),
-        host_platform: host_platform,
+        host_platform,
+        host_primary_ip: primary_ip,
     };
+
 
     loop {
         // 0. Get loop start time
@@ -241,8 +256,10 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         // 1a) calculate callback uri
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
 
+        let tavern_client = tavern::http::new_client(&cur_callback_uri, auth_token)?;
+
         // 1b) Collect new tasks
-        let new_tasks = match graphql::gql_claim_tasks(cur_callback_uri.clone(), claim_tasks_input.clone()).await {
+        let new_tasks = match tavern_client.claim_tasks(claim_tasks_input.clone()).await {
             Ok(tasks) => tasks,
             Err(error) => {
                 if debug {
@@ -256,7 +273,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         if debug { println!("Starting {} new tasks", new_tasks.len()); }
         // 2. Start new tasks
         for task in new_tasks {
-            if debug { println!("Launching:\n{:?}", task.clone().job.unwrap().tome.eldritch); }
+            if debug { println!("Launching:\n{:?}", task.clone().job.tome.eldritch); }
 
             let (sender, receiver) = channel::<String>();
             let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
@@ -308,34 +325,21 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 res.push(new_res_line);
                 // Send task response
             }
-            let task_response = match exec_future.1.future_join_handle.is_finished() {
-                true => {
-                    graphql::GraphQLSubmitTaskResultInput {
-                        task_id: exec_future.1.graphql_task.id.clone(),
-                        exec_started_at: exec_future.1.start_time,
-                        exec_finished_at: Some(Utc::now()),
-                        output: res.join("\n"),
-                        error: "".to_string(),
-                    }
-                },
-                false => {
-                    graphql::GraphQLSubmitTaskResultInput {
-                        task_id: exec_future.1.graphql_task.id.clone(),
-                        exec_started_at: exec_future.1.start_time,
-                        exec_finished_at: None,
-                        output: res.join("\n"),
-                        error: "".to_string(),
-                    }
-                },
+            let task_response_exec_finished_at = match exec_future.1.future_join_handle.is_finished() {
+                true => Some(Utc::now()),
+                false => None,
+            };
+            let task_response = SubmitTaskResultInput {
+                task_id: exec_future.1.graphql_task.id.clone(),
+                exec_started_at: exec_future.1.start_time,
+                exec_finished_at: task_response_exec_finished_at,
+                output: res.join("\n"),
+                error: None,
             };
             if debug {
                 println!("{}", task_response.output);
             }
-            let submit_task_result = graphql::gql_post_task_result(cur_callback_uri.clone(), task_response).await;
-            let _ = match submit_task_result {
-                Ok(_) => Ok(()), // Currently no reason to save the task since it's the task we just answered.
-                Err(error) => Err(error),
-            };
+            let _submit_task_result = tavern_client.submit_task_result(task_response).await?;
 
                 // Only re-insert the runnine exec futures
             if !exec_future.1.future_join_handle.is_finished() {
@@ -405,7 +409,7 @@ pub fn main() -> Result<(), imix::Error> {
 mod tests {
     use httptest::{Server, Expectation, matchers::{request}, responders::status_code, all_of};
     use httptest::matchers::matches;
-    use imix::{graphql::{GraphQLJob, GraphQLTome}};
+    use tavern::{Job, Tome};
     use tempfile::NamedTempFile;
     use super::*;
 
@@ -431,12 +435,13 @@ mod tests {
 
     #[test]
     fn imix_handle_exec_tome() {
-        let test_tome_input = GraphQLTask{
+        let test_tome_input = Task{
             id: "17179869185".to_string(),
-            job: Some(GraphQLJob {
+            job: Job {
                 id: "4294967297".to_string(),
                 name: "Test Exec".to_string(),
-                tome: GraphQLTome {
+                parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
+                tome: Tome {
                     id: "21474836482".to_string(),
                     name: "Shell execute".to_string(),
                     description: "Execute a command in the default system shell".to_string(),
@@ -444,12 +449,11 @@ mod tests {
 print("custom_print_handler_test")
 sys.shell(input_params["cmd"])
 "#.to_string(),
-                    files: [].to_vec(),
+                    files: None,
                     param_defs: Some(r#"{"params":[{"name":"cmd","type":"string"}]}"#.to_string()),
                 },
-                parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
                 bundle: None,
-            }),
+            },
         };
 
 
