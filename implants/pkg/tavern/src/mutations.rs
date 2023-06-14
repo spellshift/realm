@@ -49,7 +49,7 @@ pub mod claim_tasks {
             }
         }
     }
-    #[derive(Serialize)]
+    #[derive(Serialize, Clone)]
     pub struct ClaimTasksInput {
         pub principal: String,
         pub hostname: String,
@@ -64,7 +64,7 @@ pub mod claim_tasks {
         #[serde(rename = "agentIdentifier")]
         pub agent_identifier: String,
     }
-    #[derive(Serialize)]
+    #[derive(Serialize, Clone)]
     pub struct Variables {
         pub input: ClaimTasksInput,
     }
@@ -140,7 +140,7 @@ pub mod submit_task_result {
     #[allow(dead_code)]
     type ID = String;
     type Time = crate::scalars::Time;
-    #[derive(Serialize)]
+    #[derive(Serialize, Clone)]
     pub struct SubmitTaskResultInput {
         #[serde(rename = "taskID")]
         pub task_id: ID,
@@ -151,7 +151,7 @@ pub mod submit_task_result {
         pub output: String,
         pub error: Option<String>,
     }
-    #[derive(Serialize)]
+    #[derive(Serialize, Clone)]
     pub struct Variables {
         pub input: SubmitTaskResultInput,
     }

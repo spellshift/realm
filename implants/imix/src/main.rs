@@ -247,7 +247,6 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         host_primary_ip: primary_ip,
     };
 
-
     loop {
         // 0. Get loop start time
         let loop_start_time = Instant::now();
@@ -259,7 +258,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         let tavern_client = tavern::http::new_client(&cur_callback_uri, auth_token)?;
 
         // 1b) Collect new tasks
-        let new_tasks = match tavern_client.claim_tasks(claim_tasks_input.clone()).await {
+        let new_tasks = match tavern_client.claim_tasks(claim_tasks_input).await {
             Ok(tasks) => tasks,
             Err(error) => {
                 if debug {

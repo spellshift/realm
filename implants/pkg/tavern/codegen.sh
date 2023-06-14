@@ -4,5 +4,5 @@ if [ ! -x "$(which graphql-client)" ] ; then
     cargo install graphql_client_cli;
 fi
 echo "[Tavern][Rust] Generating GraphQL Code...";
-graphql-client generate --output-directory ./src --schema-path ./graphql/schema.graphql --custom-scalars-module='crate::scalars' --response-derives='Serialize,Clone' ./graphql/mutations.graphql
+graphql-client generate --output-directory ./src --schema-path ./graphql/schema.graphql --custom-scalars-module='crate::scalars' --variables-derives='Clone' --response-derives='Serialize,Clone' ./graphql/mutations.graphql
 echo "[Tavern][Rust] Code Generation Complete";
