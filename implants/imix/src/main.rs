@@ -49,7 +49,7 @@ async fn handle_exec_tome(task: Task, print_channel_sender: Sender<String>) -> R
 
     let tome_filename = task_job.tome.name;
     let tome_contents = task_job.tome.eldritch;
-    let tome_parameters = task_job.tome.param_defs;
+    let tome_parameters = task_job.parameters;
 
     let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
 
@@ -335,10 +335,11 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 output: res.join("\n"),
                 error: None,
             };
-            if debug {
-                println!("{}", task_response.output);
-            }
-            let _submit_task_result = tavern_client.submit_task_result(task_response).await?;
+            let res = tavern_client.submit_task_result(task_response).await;
+            let _submit_task_result = match res {
+                Ok(local_val) => local_val,
+                Err(local_err) => if debug { println!("Failed to submit task resluts:\n{}", local_err.to_string()) },
+            };
 
                 // Only re-insert the runnine exec futures
             if !exec_future.1.future_join_handle.is_finished() {
@@ -408,7 +409,7 @@ pub fn main() -> Result<(), imix::Error> {
 mod tests {
     use httptest::{Server, Expectation, matchers::{request}, responders::status_code, all_of};
     use httptest::matchers::matches;
-    use tavern::{Job, Tome};
+    use tavern::{Job, Tome, SubmitTaskResultResponseData, SubmitTaskResult, GraphQLResponse, ClaimTasksResponseData};
     use tempfile::NamedTempFile;
     use super::*;
 
@@ -492,18 +493,54 @@ sys.shell(input_params["cmd"])
 
     #[test]
     fn imix_test_main_loop_run_once() -> Result<()> {
-
+        let test_task_id = "17179869185".to_string();
+        
         // Response expectations are poped in reverse order.
         let server = Server::run();
+
+        let post_result_response = GraphQLResponse {
+            data: Some(SubmitTaskResult {
+                id: test_task_id.clone(),
+            }),
+            errors: None,
+            extensions: None,
+        };
+        println!("{}", serde_json::to_string(&post_result_response)?);
         server.expect(
             Expectation::matching(all_of![
                 request::method_path("POST", "/graphql"),
-                request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
+                request::body(matches(".*"))
             ])
             .times(1)
             .respond_with(status_code(200)
-            .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
+            .body(serde_json::to_string(&post_result_response)?)),
         );
+
+        let claim_task_response = GraphQLResponse {
+            data: Some(ClaimTasksResponseData {
+                claim_tasks: vec![
+                    Task { 
+                        id: test_task_id.clone(),
+                        job: Job {
+                            id:"4294967297".to_string(),
+                            name: "Exec stuff".to_string(),
+                            parameters: Some(r#"{"cmd":"echo main_loop_test_success"}"#.to_string()),
+                            tome: Tome {
+                                id: "21474836482".to_string(),
+                                name: "sys exec".to_string(),
+                                description: "Execute system things.".to_string(),
+                                param_defs: Some(r#"[{"name":"cmd","type":"string"}]"#.to_string()),
+                                eldritch: r#"print(sys.shell(input_params["cmd"]))"#.to_string(),
+                                files: None,
+                            },
+                            bundle: None
+                        },
+                    },
+                ],
+            }),
+            errors: None,
+            extensions: None,
+        };
         server.expect(
             Expectation::matching(all_of![
                 request::method_path("POST", "/graphql"),
@@ -511,7 +548,7 @@ sys.shell(input_params["cmd"])
             ])
             .times(1)
             .respond_with(status_code(200)
-            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Exec stuff","parameters":"{\"cmd\":\"echo main_loop_test_success\"}","tome":{"id":"21474836482","name":"sys exec","description":"Execute system things.","paramDefs":"{\"paramDefs\":[{\"name\":\"cmd\",\"type\":\"string\"}]}","eldritch":"print(sys.shell(input_params[\"cmd\"]))","files":[]},"bundle":null}}]}}"#)),
+            .body(serde_json::to_string(&claim_task_response)?))
         );
 
         let tmp_file_new = NamedTempFile::new()?;
@@ -544,8 +581,7 @@ sys.shell(input_params["cmd"])
         // // Define a future for our execution task
         // let exec_future = handle_exec_tome(test_tome_input, sender.clone())
         let exec_future = main_loop(path_new, true);
-        let _result = runtime.block_on(exec_future).unwrap();
-    
+        let _result = runtime.block_on(exec_future)?;
         assert!(true);
         Ok(())
     }

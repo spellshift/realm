@@ -49,12 +49,17 @@ impl Transport {
 #[async_trait]
 impl crate::Executor for Transport {
     async fn exec<Variables: Serialize+Send, GraphQLResponse: DeserializeOwned>(&self, query: QueryBody<Variables>) -> Result<GraphQLResponse> {
-        let req = self.http.post(self.url.as_str())
+        println!("HERE");
+        let req: reqwest::RequestBuilder = self.http.post(self.url.as_str())
             .json(&query)
             .header("Content-Type", "application/json")
             .header(AUTH_HEADER, self.auth_token.as_str());
+        println!("HERE2");
         let resp = req.send().await?;
-        let gql_resp = resp.json::<GraphQLResponse>().await?;
+        let resp_debug = resp.status();
+        println!("resp_debug: {}", resp_debug.to_string());
+        let resp_json = resp.json::<GraphQLResponse>().await?;
+        let gql_resp = resp_json;
         Ok(gql_resp)
     }
 }
