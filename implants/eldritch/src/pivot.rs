@@ -67,22 +67,22 @@ fn methods(builder: &mut MethodsBuilder) {
         smb_exec_impl::smb_exec(target, port, username, password, hash, command)
     }     
     // May want these too: PSRemoting, WMI, WinRM
-    fn port_scan<'v>(this:  PivotLibrary, starlark_heap: &'v Heap, target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict<'v>>> {
+    fn port_scan<'v>(this:  PivotLibrary, starlark_heap: &'v Heap, target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        port_scan_impl::port_scan(starlark_heap, target_cidrs, ports, portocol, timeout)
+        port_scan_impl::port_scan(starlark_heap, target_cidrs, ports, protocol, timeout)
     }
     fn arp_scan(this:  PivotLibrary, target_cidrs: Vec<String>) ->  anyhow::Result<Vec<String>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         arp_scan_impl::arp_scan(target_cidrs)
     }
-    fn port_forward(this:  PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, portocol: String) ->  anyhow::Result<NoneType> {
+    fn port_forward(this:  PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, protocol: String) ->  anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        port_forward_impl::port_forward(listen_address, listen_port, forward_address, forward_port, portocol)?;
+        port_forward_impl::port_forward(listen_address, listen_port, forward_address, forward_port, protocol)?;
         Ok(NoneType{})
     }
-    fn ncat(this:  PivotLibrary, address: String, port: i32, data: String, portocol: String) ->  anyhow::Result<String> {
+    fn ncat(this:  PivotLibrary, address: String, port: i32, data: String, protocol: String) ->  anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        ncat_impl::ncat(address, port, data, portocol)
+        ncat_impl::ncat(address, port, data, protocol)
     }
     // Seems to have the best protocol support - https://github.com/ajmwagar/merino
     fn bind_proxy(this:  PivotLibrary, listen_address: String, listen_port: i32, username: String, password: String) ->  anyhow::Result<NoneType> {

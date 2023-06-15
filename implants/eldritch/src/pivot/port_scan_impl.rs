@@ -336,8 +336,8 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
 // ]
 
 // Non-async wrapper for our async scan.
-pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32>, portocol: String, timeout: i32) -> Result<Vec<Dict>> {
-    if portocol != TCP && portocol != UDP {
+pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout: i32) -> Result<Vec<Dict>> {
+    if protocol != TCP && protocol != UDP {
         return Err(anyhow::anyhow!("Unsupported protocol. Use 'tcp' or 'udp'."))
     }
 
@@ -347,7 +347,7 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
         .unwrap();
 
     let response = runtime.block_on(
-        handle_port_scan(target_cidrs, ports, portocol, timeout)
+        handle_port_scan(target_cidrs, ports, protocol, timeout)
     );
 
     match response {
