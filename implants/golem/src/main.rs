@@ -72,7 +72,7 @@ fn main() -> anyhow::Result<()> {
             tome_files_and_content.push( (tome_path, tome_contents) )
         }
 
-        let runtime = tokio::runtime::Builder::new_current_thread()
+        let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap();
