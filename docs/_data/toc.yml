@@ -10,6 +10,8 @@
       children:
         - title: Standard Library
           url: "user-guide/eldritch#standard-library"
+    - title: "Golem"
+      url: "user-guide/golem"
 - title: Developer Guide
   url: dev-guide
   links:
