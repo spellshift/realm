@@ -71,7 +71,7 @@ After installing the gcloud CLI, run `gcloud auth application-default login` to 
 terraform apply -var="gcp_project=new-realm-deployment" -var="oauth_client_id=12345.apps.googleusercontent.com" -var="oauth_client_secret=ABCDEFG" -var="oauth_domain=test-tavern.redteam.toys"
 ```
 
-After terraform completes succesfully, head to the [DNS mappings for Cloud Run](https://console.cloud.google.com/run/domains) and wait for a certificate to successfully provision. This may take a while, so go enjoy a nice cup of coffee ☕
+After terraform completes successfully, head to the [DNS mappings for Cloud Run](https://console.cloud.google.com/run/domains) and wait for a certificate to successfully provision. This may take a while, so go enjoy a nice cup of coffee ☕
 
 After your certificate has successfully provisioned, it may still take a while (e.g. an hour or two) before you are able to visit Tavern using your custom OAuth Domain (if configured).
 
