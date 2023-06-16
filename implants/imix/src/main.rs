@@ -449,7 +449,7 @@ mod tests {
                     description: "Execute a command in the default system shell".to_string(),
                     eldritch: r#"
 print("custom_print_handler_test")
-sys.shell(input_params["cmd"])
+sys.shell(input_params["cmd"])["stdout"]
 "#.to_string(),
                     files: None,
                     param_defs: Some(r#"{"params":[{"name":"cmd","type":"string"}]}"#.to_string()),
@@ -491,7 +491,6 @@ sys.shell(input_params["cmd"])
         assert_eq!(bool_res, true);
 
     }
-
 
     #[test]
     fn imix_test_main_loop_sleep_twice_short() -> Result<()> {
@@ -685,7 +684,5 @@ print("main_loop_test_success")"#.to_string(),
         assert!(true);
         Ok(())
     }
-
-
 }
 
