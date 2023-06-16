@@ -497,28 +497,73 @@ sys.shell(input_params["cmd"])
     fn imix_test_main_loop_sleep_twice_short() -> Result<()> {
         // Response expectations are poped in reverse order.
         let server = Server::run();
+        let test_task_id = "17179869185".to_string();
+        let post_result_response = GraphQLResponse {
+            data: Some(SubmitTaskResult {
+                id: test_task_id.clone(),
+            }),
+            errors: None,
+            extensions: None,
+        };
         server.expect(
             Expectation::matching(all_of![
                 request::method_path("POST", "/graphql"),
-                request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
-            ])
-            .times(2)
-            .respond_with(status_code(200)
-            .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
-        );
-        server.expect(
-            Expectation::matching(all_of![
-                request::method_path("POST", "/graphql"),
-                request::body(matches(".*claimTasks.*"))
+                request::body(matches(".*variables.*execStartedAt.*"))
             ])
             .times(1)
             .respond_with(status_code(200)
-            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Sleep1","parameters":"{}","tome":{"id":"21474836482","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"def test():\n    if sys.is_macos():\n        sys.shell(\"sleep 3\")\n    if sys.is_linux():\n        sys.shell(\"sleep 3\")\n    if sys.is_windows():\n        sys.shell(\"timeout 3\")\ntest()\nprint(\"main_loop_test_success\")","files":[]},"bundle":null}},{"id":"17179869186","job":{"id":"4294967298","name":"Sleep1","parameters":"{}","tome":{"id":"21474836483","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"def test():\n    if sys.is_macos():\n        sys.shell(\"sleep 3\")\n    if sys.is_linux():\n        sys.shell(\"sleep 3\")\n    if sys.is_windows():\n        sys.shell(\"timeout 3\")\ntest()\nprint(\"main_loop_test_success\")","files":[]},"bundle":null}}]}}"#)),
+            .body(serde_json::to_string(&post_result_response)?))
         );
+
+        let test_task = Task { 
+            id: test_task_id,
+            job: Job {
+                id:"4294967297".to_string(),
+                name: "Exec stuff".to_string(),
+                parameters: None,
+                tome: Tome {
+                    id: "21474836482".to_string(),
+                    name: "sys exec".to_string(),
+                    description: "Execute system things.".to_string(),
+                    param_defs: None,
+                    eldritch: r#"
+def test():
+if sys.is_macos():
+sys.shell("sleep 3")
+if sys.is_linux():
+sys.shell("sleep 3")
+if sys.is_windows():
+sys.shell("timeout 3")
+test()
+print("main_loop_test_success")"#.to_string(),
+                    files: None,
+                },
+                bundle: None
+            },
+        };
+        let claim_task_response = GraphQLResponse {
+            data: Some(ClaimTasksResponseData {
+                claim_tasks: vec![
+                    test_task.clone(),
+                    test_task.clone()
+                ],
+            }),
+            errors: None,
+            extensions: None,
+        };
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*variables.*hostPlatform.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(serde_json::to_string(&claim_task_response)?))
+        );
+        let url = server.url("/graphql").to_string();
 
         let tmp_file_new = NamedTempFile::new()?;
         let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
-        let url = server.url("/graphql").to_string();
         let _ = std::fs::write(path_new.clone(),format!(r#"{{
     "service_configs": [],
     "target_forward_connect_ip": "127.0.0.1",
@@ -610,7 +655,7 @@ sys.shell(input_params["cmd"])
             .body(serde_json::to_string(&claim_task_response)?))
         );
         let url = server.url("/graphql").to_string();
-        // let url = "http://127.0.0.1:80/graphql";
+
         let tmp_file_new = NamedTempFile::new()?;
         let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
         let _ = std::fs::write(path_new.clone(),format!(r#"{{
