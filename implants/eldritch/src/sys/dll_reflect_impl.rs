@@ -1,14 +1,18 @@
-use std::{os::raw::c_void, ptr::null_mut};
-use object::{Object, ObjectSection};
-use object::LittleEndian as LE;
-
 use starlark::values::none::NoneType;
-use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
-use windows_sys::Win32::System::Threading::CreateRemoteThread;
-use windows_sys::Win32::{System::{SystemServices::{IMAGE_DOS_HEADER}, Diagnostics::Debug::{IMAGE_NT_HEADERS64, WriteProcessMemory}, Threading::{OpenProcess, PROCESS_ALL_ACCESS, PROCESS_ACCESS_RIGHTS}, Memory::{VirtualAllocEx, VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE}}, Foundation::{GetLastError, BOOL, HANDLE, FALSE}};
 
+#[cfg(target_os = "windows")]
+use {std::{os::raw::c_void, ptr::null_mut},
+    object::{Object, ObjectSection},
+    object::LittleEndian as LE,
+    windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
+    windows_sys::Win32::System::Threading::CreateRemoteThread,
+    windows_sys::Win32::{System::{SystemServices::{IMAGE_DOS_HEADER}, Diagnostics::Debug::{IMAGE_NT_HEADERS64, WriteProcessMemory}, Threading::{OpenProcess, PROCESS_ALL_ACCESS, PROCESS_ACCESS_RIGHTS}, Memory::{VirtualAllocEx, VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE}}, Foundation::{GetLastError, BOOL, HANDLE, FALSE}}};
+
+
+#[cfg(target_os = "windows")]
 const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
 
+#[cfg(target_os = "windows")]
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     let mut should_err = false;
     let res_u8_vec: Vec<u8> = 
@@ -17,6 +21,7 @@ fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     Ok(res_u8_vec)
 }
 
+#[cfg(target_os = "windows")]
 // pub unsafe fn OpenProcess(dwdesiredaccess: PROCESS_ACCESS_RIGHTS, binherithandle: super::super::Foundation::BOOL, dwprocessid: u32) -> super::super::Foundation::HANDLE
 fn open_process(dwdesiredaccess: PROCESS_ACCESS_RIGHTS, binherithandle: BOOL, dwprocessid: u32) -> anyhow::Result<HANDLE> {
     let process_handle: HANDLE = unsafe{ OpenProcess(dwdesiredaccess, binherithandle, dwprocessid) };
@@ -29,6 +34,7 @@ fn open_process(dwdesiredaccess: PROCESS_ACCESS_RIGHTS, binherithandle: BOOL, dw
     Ok(process_handle)
 }
 
+#[cfg(target_os = "windows")]
 // pub unsafe fn VirtualAllocEx(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
 fn virtual_alloc_ex(hprocess: HANDLE, lpaddress: *const c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> anyhow::Result<*mut c_void> {
     let buffer_handle: *mut c_void = unsafe{ VirtualAllocEx(hprocess, lpaddress, dwsize, flallocationtype, flprotect) };
@@ -41,7 +47,7 @@ fn virtual_alloc_ex(hprocess: HANDLE, lpaddress: *const c_void, dwsize: usize, f
     Ok(buffer_handle)
 }
 
-
+#[cfg(target_os = "windows")]
 // pub unsafe fn WriteProcessMemory(hprocess: super::super::super::Foundation::HANDLE, lpbaseaddress: *const ::core::ffi::c_void, lpbuffer: *const ::core::ffi::c_void, nsize: usize, lpnumberofbyteswritten: *mut usize) -> super::super::super::Foundation::BOOL
 fn write_process_memory(hprocess: HANDLE, lpbaseaddress: *const c_void, lpbuffer: *const c_void, nsize: usize) -> anyhow::Result<usize> {
     let mut lpnumberofbyteswritten: usize = 0;
@@ -55,6 +61,7 @@ fn write_process_memory(hprocess: HANDLE, lpbaseaddress: *const c_void, lpbuffer
     Ok(lpnumberofbyteswritten)
 }
 
+#[cfg(target_os = "windows")]
 // fn CreateRemoteThread(hprocess: isize, lpthreadattributes: *const SECURITY_ATTRIBUTES, dwstacksize: usize, lpstartaddress: Option<fn(*mut c_void) -> u32>, lpparameter: *const c_void, dwcreationflags: u32, lpthreadid: *mut u32) -> isize
 fn create_remote_thread(hprocess: isize, lpthreadattributes: *const SECURITY_ATTRIBUTES, dwstacksize: usize, lpstartaddress: Option<*mut c_void>, lpparameter: *const c_void, dwcreationflags: u32, lpthreadid: *mut u32) -> anyhow::Result<isize> {
     let tmp_lpstartaddress: Option<unsafe extern "system" fn(_) -> _> = match lpstartaddress {
@@ -70,7 +77,7 @@ fn create_remote_thread(hprocess: isize, lpthreadattributes: *const SECURITY_ATT
     }
     Ok(res)
 }
-
+#[cfg(target_os = "windows")]
 fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str, in_memory: bool) -> anyhow::Result<usize> {
     let pe_file = object::read::pe::PeFile64::parse(pe_bytes)?;
 
@@ -108,10 +115,12 @@ fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str, in_memory: boo
     Err(anyhow::anyhow!("Function {} not found", export_name))
 }
 
+#[cfg(target_os = "windows")]
 struct UserData {
     function_offset: u64,
 }
 
+#[cfg(target_os = "windows")]
 fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -> anyhow::Result<()>{
     let loader_function_name = "reflective_loader";
     let reflective_loader_dll = LOADER_BYTES;
@@ -208,11 +217,26 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -
 pub fn dll_reflect(dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
-    let local_dll_bytes = get_u8_vec_form_u32_vec(dll_bytes)?;
-    handle_dll_reflect(local_dll_bytes, pid, function_name.as_str())?;
-    Ok(NoneType)
+    #[cfg(target_os = "windows")]
+    {
+        let local_dll_bytes = get_u8_vec_form_u32_vec(dll_bytes)?;
+        handle_dll_reflect(local_dll_bytes, pid, function_name.as_str())?;
+        Ok(NoneType)    
+    }
 }
 
+#[cfg(not(target_os = "windows"))]
+mod tests {
+    #[test]
+    fn test_dll_reflect_non_windows_test() -> anyhow::Result<()> {
+        let res = super::dll_reflect(Vec::new(), 0, "Garbage".to_string());
+        match res  {
+            Ok(_none_type) => return Err(anyhow::anyhow!("dll_reflect should have errored out.")),
+            Err(local_err) => assert!(local_err.to_string().contains("This OS isn't supported by the dll_reflect")),
+        }
+        Ok(())
+    }
+}
 
 #[cfg(target_os = "windows")]
 #[cfg(test)]
@@ -224,6 +248,7 @@ mod tests {
     use tempfile::NamedTempFile;
     use std::{process::Command, time, thread, path::Path, fs};
 
+    #[cfg(target_os = "windows")]
     const TEST_DLL_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
 
     #[test]
