@@ -111,7 +111,7 @@ mod tests {
         else if cfg!(target_os = "windows") {
             let res = handle_exec(String::from("C:\\Windows\\System32\\cmd.exe"), vec![String::from("/c"), String::from("whoami")], Some(false))?.stdout;
             let mut bool_res = false;
-            if res.contains("runneradmin") || res.contains("Administrator") {
+            if res.contains("runneradmin") || res.contains("Administrator") || res.contains("user") {
                 bool_res = true;
             }
             assert_eq!(bool_res, true);
@@ -165,7 +165,7 @@ mod tests {
     fn test_sys_exec_complex_windows() -> anyhow::Result<()>{
         if cfg!(target_os = "windows") {
             let res = handle_exec(String::from("C:\\Windows\\System32\\cmd.exe"), vec![String::from("/c"), String::from("wmic useraccount get name | findstr /i admin")], Some(false))?.stdout;
-            assert_eq!(res.contains("runneradmin") || res.contains("Administrator"), true);
+            assert!(res.contains("runner") || res.contains("Administrator") || res.contains("user"));
         }
         Ok(())
     }

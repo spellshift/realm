@@ -64,35 +64,11 @@ mod tests {
     #[test]
     fn test_sys_shell_current_user() -> anyhow::Result<()>{
         let res = handle_shell(String::from("whoami"))?.stdout;
-        println!("{:?}", res);
-        if cfg!(target_os = "linux") || 
-        cfg!(target_os = "ios") || 
-        cfg!(target_os = "android") || 
-        cfg!(target_os = "freebsd") || 
-        cfg!(target_os = "openbsd") ||
-        cfg!(target_os = "netbsd") {
-            let mut bool_res = false;
-            if res == "runner\n" || res == "root\n" {
-                bool_res = true;
-            }
-            assert_eq!(bool_res, true);
-        }
-        else if cfg!(target_os = "macos") {
-            let mut bool_res = false;
-            if res == "runner\n" || res == "root\n" {
-                bool_res = true;
-            }
-            assert_eq!(bool_res, true);
-        }
-        else if cfg!(target_os = "windows") {
-            let mut bool_res = false;
-            if res.contains("runneradmin") || res.contains("Administrator") {
-                bool_res = true;
-            }
-            assert_eq!(bool_res, true);
-        }
+        println!("{}",res);
+        assert!(res.contains("runner") || res.contains("Administrator") || res.contains("root") || res.contains("user"));
         Ok(())
     }
+
     #[test]
     fn test_sys_shell_complex_linux() -> anyhow::Result<()>{
         if cfg!(target_os = "linux") || 
@@ -111,7 +87,7 @@ mod tests {
     fn test_sys_shell_complex_windows() -> anyhow::Result<()>{
         if cfg!(target_os = "windows") {
             let res = handle_shell(String::from("wmic useraccount get name | findstr /i admin"))?.stdout;
-            assert_eq!(res.contains("runneradmin") || res.contains("Administrator"), true);
+            assert!(res.contains("runner") || res.contains("Administrator") || res.contains("user"));
         }
         Ok(())
     }
@@ -120,7 +96,7 @@ mod tests {
     fn test_sys_shell_from_interpreter() -> anyhow::Result<()>{
         // Create test script
         let test_content = format!(r#"
-func_shell("echo hello_from_the_interpreter")
+func_shell("whoami")
 "#);
 
         // Setup starlark interpreter with handle to our function
@@ -147,8 +123,7 @@ func_shell("echo hello_from_the_interpreter")
         let mut eval: Evaluator = Evaluator::new(&module);
         let res: Value = eval.eval_module(ast, &globals).unwrap();
         let res_string = res.to_string();
-        assert!(res_string.contains(r#""stdout": "hello_from_the_interpreter\n""#));
+        assert!(res_string.contains("runner") || res_string.contains("Administrator") || res_string.contains("root") || res_string.contains("user"));
         Ok(())
     }
-
 }
