@@ -4,7 +4,7 @@ pub mod claim_tasks {
     #![allow(dead_code)]
     use std::result::Result;
     pub const OPERATION_NAME: &str = "ClaimTasks";
-    pub const QUERY : & str = "mutation ClaimTasks($input: ClaimTasksInput!) {\n    claimTasks(input: $input) {\n        id,\n        job {\n            id,\n            name,\n            tome {\n                id,\n                name,\n                description,\n                paramDefs,\n                eldritch,\n                files {\n                    id,\n                    name,\n                    size,\n                    hash,\n                }\n            },\n            bundle {\n                id,\n                name,\n                size,\n                hash,\n            }\n        }\n    }\n}\n\nmutation SubmitTaskResult($input: SubmitTaskResultInput!) {\n    submitTaskResult(input: $input) {\n        id\n    }\n}" ;
+    pub const QUERY : & str = "mutation ClaimTasks($input: ClaimTasksInput!) {\n    claimTasks(input: $input) {\n        id,\n        job {\n            id,\n            name,\n            parameters,\n            tome {\n                id,\n                name,\n                description,\n                paramDefs,\n                eldritch,\n                files {\n                    id,\n                    name,\n                    size,\n                    hash,\n                }\n            },\n            bundle {\n                id,\n                name,\n                size,\n                hash,\n            }\n        }\n    }\n}\n\nmutation SubmitTaskResult($input: SubmitTaskResultInput!) {\n    submitTaskResult(input: $input) {\n        id\n    }\n}" ;
     use super::*;
     use serde::{Deserialize, Serialize};
     #[allow(dead_code)]
@@ -15,7 +15,7 @@ pub mod claim_tasks {
     type Int = i64;
     #[allow(dead_code)]
     type ID = String;
-    #[derive()]
+    #[derive(Clone)]
     pub enum SessionHostPlatform {
         Windows,
         Linux,
@@ -49,7 +49,7 @@ pub mod claim_tasks {
             }
         }
     }
-    #[derive(Serialize)]
+    #[derive(Serialize, Clone)]
     pub struct ClaimTasksInput {
         pub principal: String,
         pub hostname: String,
@@ -64,29 +64,30 @@ pub mod claim_tasks {
         #[serde(rename = "agentIdentifier")]
         pub agent_identifier: String,
     }
-    #[derive(Serialize)]
+    #[derive(Serialize, Clone)]
     pub struct Variables {
         pub input: ClaimTasksInput,
     }
     impl Variables {}
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Clone)]
     pub struct ResponseData {
         #[serde(rename = "claimTasks")]
         pub claim_tasks: Vec<ClaimTasksClaimTasks>,
     }
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Clone)]
     pub struct ClaimTasksClaimTasks {
         pub id: ID,
         pub job: ClaimTasksClaimTasksJob,
     }
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Clone)]
     pub struct ClaimTasksClaimTasksJob {
         pub id: ID,
         pub name: String,
+        pub parameters: Option<String>,
         pub tome: ClaimTasksClaimTasksJobTome,
         pub bundle: Option<ClaimTasksClaimTasksJobBundle>,
     }
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Clone)]
     pub struct ClaimTasksClaimTasksJobTome {
         pub id: ID,
         pub name: String,
@@ -96,14 +97,14 @@ pub mod claim_tasks {
         pub eldritch: String,
         pub files: Option<Vec<ClaimTasksClaimTasksJobTomeFiles>>,
     }
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Clone)]
     pub struct ClaimTasksClaimTasksJobTomeFiles {
         pub id: ID,
         pub name: String,
         pub size: Int,
         pub hash: String,
     }
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Clone)]
     pub struct ClaimTasksClaimTasksJobBundle {
         pub id: ID,
         pub name: String,
@@ -127,7 +128,7 @@ pub mod submit_task_result {
     #![allow(dead_code)]
     use std::result::Result;
     pub const OPERATION_NAME: &str = "SubmitTaskResult";
-    pub const QUERY : & str = "mutation ClaimTasks($input: ClaimTasksInput!) {\n    claimTasks(input: $input) {\n        id,\n        job {\n            id,\n            name,\n            tome {\n                id,\n                name,\n                description,\n                paramDefs,\n                eldritch,\n                files {\n                    id,\n                    name,\n                    size,\n                    hash,\n                }\n            },\n            bundle {\n                id,\n                name,\n                size,\n                hash,\n            }\n        }\n    }\n}\n\nmutation SubmitTaskResult($input: SubmitTaskResultInput!) {\n    submitTaskResult(input: $input) {\n        id\n    }\n}" ;
+    pub const QUERY : & str = "mutation ClaimTasks($input: ClaimTasksInput!) {\n    claimTasks(input: $input) {\n        id,\n        job {\n            id,\n            name,\n            parameters,\n            tome {\n                id,\n                name,\n                description,\n                paramDefs,\n                eldritch,\n                files {\n                    id,\n                    name,\n                    size,\n                    hash,\n                }\n            },\n            bundle {\n                id,\n                name,\n                size,\n                hash,\n            }\n        }\n    }\n}\n\nmutation SubmitTaskResult($input: SubmitTaskResultInput!) {\n    submitTaskResult(input: $input) {\n        id\n    }\n}" ;
     use super::*;
     use serde::{Deserialize, Serialize};
     #[allow(dead_code)]
@@ -139,7 +140,7 @@ pub mod submit_task_result {
     #[allow(dead_code)]
     type ID = String;
     type Time = crate::scalars::Time;
-    #[derive(Serialize)]
+    #[derive(Serialize, Clone)]
     pub struct SubmitTaskResultInput {
         #[serde(rename = "taskID")]
         pub task_id: ID,
@@ -150,17 +151,17 @@ pub mod submit_task_result {
         pub output: String,
         pub error: Option<String>,
     }
-    #[derive(Serialize)]
+    #[derive(Serialize, Clone)]
     pub struct Variables {
         pub input: SubmitTaskResultInput,
     }
     impl Variables {}
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Clone)]
     pub struct ResponseData {
         #[serde(rename = "submitTaskResult")]
         pub submit_task_result: Option<SubmitTaskResultSubmitTaskResult>,
     }
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize, Serialize, Clone)]
     pub struct SubmitTaskResultSubmitTaskResult {
         pub id: ID,
     }
