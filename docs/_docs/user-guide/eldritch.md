@@ -290,8 +290,6 @@ The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a rem
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
 
-When disown is true the returned dictionary will be `{"stdout":"","stderr":"","status":0}`.
-If disown is not used stdout from the process will be returned stdout, stderr, and the status code will be returned to you as a dictionary with keys: `stdout`, `stderr`, `status`. For example:
 
 ```python
 sys.execute("/bin/bash",["-c", "whoami"])
