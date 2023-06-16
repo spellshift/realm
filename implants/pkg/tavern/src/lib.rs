@@ -14,9 +14,16 @@ pub use mutations::claim_tasks::{
     ClaimTasksClaimTasksJobTomeFiles as File,
     ClaimTasksClaimTasksJobBundle as Bundle,
     SessionHostPlatform as HostPlatform,
+    ResponseData as ClaimTasksResponseData,
 };
 pub use mutations::submit_task_result::{
-    SubmitTaskResultInput
+    SubmitTaskResultInput,
+    SubmitTaskResultSubmitTaskResult as SubmitTaskResult,
+    ResponseData as SubmitTaskResultResponseData,
+};
+
+pub use graphql_client::{
+    Response as GraphQLResponse,
 };
 
 use async_trait::async_trait;
@@ -128,6 +135,7 @@ mod tests {
                         job: Job{
                             id: String::from("10"),
                             name: String::from("test_job"),
+                            parameters: None,
                             tome: Tome{
                                 id: String::from("15"),
                                 name: String::from("test_tome"),
@@ -178,6 +186,7 @@ mod tests {
             output: String::from("It works!"),
             error: None,
         };
+        println!("task_response: {}", serde_json::to_string(&input).unwrap());
         let resp = client.submit_task_result(input).await;
         assert!(resp.is_ok());
     }
