@@ -492,65 +492,6 @@ sys.shell(input_params["cmd"])["stdout"]
 
     }
 
-
-    #[test]
-    fn imix_test_main_loop_sleep_twice_short() -> Result<()> {
-        // Response expectations are poped in reverse order.
-        let server = Server::run();
-        server.expect(
-            Expectation::matching(all_of![
-                request::method_path("POST", "/graphql"),
-                request::body(matches(".*ImixPostResult.*main_loop_test_success.*"))
-            ])
-            .times(2)
-            .respond_with(status_code(200)
-            .body(r#"{"data":{"submitTaskResult":{"id":"17179869185"}}}"#)),
-        );
-        server.expect(
-            Expectation::matching(all_of![
-                request::method_path("POST", "/graphql"),
-                request::body(matches(".*claimTasks.*"))
-            ])
-            .times(1)
-            .respond_with(status_code(200)
-            .body(r#"{"data":{"claimTasks":[{"id":"17179869185","job":{"id":"4294967297","name":"Sleep1","parameters":"{}","tome":{"id":"21474836482","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"def test():\n    if sys.is_macos():\n        sys.shell(\"sleep 3\")\n    if sys.is_linux():\n        sys.shell(\"sleep 3\")\n    if sys.is_windows():\n        sys.shell(\"timeout 3\")\ntest()\nprint(\"main_loop_test_success\")","files":[]},"bundle":null}},{"id":"17179869186","job":{"id":"4294967298","name":"Sleep1","parameters":"{}","tome":{"id":"21474836483","name":"sleep","description":"sleep stuff","paramDefs":"{}","eldritch":"def test():\n    if sys.is_macos():\n        sys.shell(\"sleep 3\")\n    if sys.is_linux():\n        sys.shell(\"sleep 3\")\n    if sys.is_windows():\n        sys.shell(\"timeout 3\")\ntest()\nprint(\"main_loop_test_success\")","files":[]},"bundle":null}}]}}"#)),
-        );
-
-        let tmp_file_new = NamedTempFile::new()?;
-        let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
-        let url = server.url("/graphql").to_string();
-        let _ = std::fs::write(path_new.clone(),format!(r#"{{
-    "service_configs": [],
-    "target_forward_connect_ip": "127.0.0.1",
-    "target_name": "test1234",
-    "callback_config": {{
-        "interval": 4,
-        "jitter": 0,
-        "timeout": 4,
-        "c2_configs": [
-        {{
-            "priority": 1,
-            "uri": "{url}"
-        }}
-        ]
-    }}
-}}"#));
-
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-
-        // Define a future for our execution task
-        let start_time = Utc::now().time();
-        let exec_future = main_loop(path_new, true);
-        let _result = runtime.block_on(exec_future).unwrap();
-        let end_time = Utc::now().time();
-        let diff = (end_time - start_time).num_milliseconds();
-        assert!(diff < 4500);
-        Ok(())
-    }
-
     #[test]
     fn imix_test_main_loop_sleep_twice_short() -> Result<()> {
         // Response expectations are poped in reverse order.
@@ -743,7 +684,5 @@ print("main_loop_test_success")"#.to_string(),
         assert!(true);
         Ok(())
     }
-
-
 }
 
