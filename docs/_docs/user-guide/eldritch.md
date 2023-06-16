@@ -285,12 +285,26 @@ The <b>process.name</b> method is very cool, and will be even cooler when Nick d
 The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
 
 ### sys.exec
-`sys.exec(path: str, args: List<str>, disown: bool) -> str`
+`sys.exec(path: str, args: List<str>, disown: bool) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
 
-If disown is not used stdout from the process will be returned. When disown is `True` the return string will be `"No output"`.
+
+```python
+sys.execute("/bin/bash",["-c", "whoami"])
+{
+    "stdout":"root\n",
+    "stderr":"",
+    "status":0,
+}
+sys.execute("/bin/bash",["-c", "ls /nofile"])
+{
+    "stdout":"",
+    "stderr":"ls: cannot access '/nofile': No such file or directory\n",
+    "status":2,
+}
+```
 
 ### sys.is_linux
 `sys.is_linux() -> bool`
@@ -308,7 +322,22 @@ The <b>sys.is_macos</b> method returns `True` if on a mac os system and `False` 
 The <b>sys.is_windows</b> method returns `True` if on a windows system and `False` on everything else.
 
 ### sys.shell
-`sys.shell(cmd: str) -> str`
+`sys.shell(cmd: str) -> Dict`
 
-The <b>sys.shell</b> method takes a string and runs it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout from the process will be returned. If your command errors the error will be ignored and not passed back to you.
+The <b>sys.shell</b> Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout, stderr, and the status code will be returned to you as a dictionary with keys: `stdout`, `stderr`, `status`. For example:
+
+```python
+sys.shell("whoami")
+{
+    "stdout":"root\n",
+    "stderr":"",
+    "status":0,
+}
+sys.shell("ls /nofile")
+{
+    "stdout":"",
+    "stderr":"ls: cannot access '/nofile': No such file or directory\n",
+    "status":2,
+}
+```
 
