@@ -49,7 +49,7 @@ The <b>module.function</b> describe your function and edge cases.
 
 ```
 #### Eldritch definition
-`implants/Eldritch/src/module.rs`
+`implants/lib/eldritch/src/module.rs`
 Add a function definition here, where `module.rs` is the name of the module you selected above. This is how the Eldritch language is made aware that your function exists.
 
 Add the import for your functions implementation at the top, try to keep these in alphabetical order for readability.
@@ -76,7 +76,7 @@ You may notice that some functions follow the pattern:
 This pattern is only used for none type returns since we're returning Starlark None. Returning like this in the module file is more streamlined than having each module return a special starlark type.
 
 ### Eldritch Implementation
-`implants/Eldritch/src/module/function_impl.rs`
+`implants/lib/eldritch/src/module/function_impl.rs`
 Add your function implementation here, where `/module/` is the name of the module you selected above and `/function_impl.rs` is the name of your function with `_impl.rs` appended after it. This should match what's been put in the module file.
 This file will contain the actual implementation, helper functions, and unit tests for your function.
 

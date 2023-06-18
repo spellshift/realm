@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eldritch = { path = "../eldritch" }
+eldritch = { path = "../lib/eldritch" }
 tokio = { version = "1.19.1" , features = ["macros"] }
 clap = { version = "3.2.23" }
 starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }

@@ -1,9 +1,9 @@
 [workspace]
 members = [
     "imix",
-    "eldritch",
     "golem",
-    "pkg/tavern",
+    "lib/eldritch",
+    "lib/tavern",
 ]
 
 [profile.release]
