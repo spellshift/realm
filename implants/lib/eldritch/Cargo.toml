@@ -4,29 +4,28 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-starlark = { workspace = true }
 allocative = { workspace = true }
 allocative_derive = { workspace = true }
-tempfile = { workspace = true }
 anyhow = { workspace = true }
-derive_more = { workspace = true }
-sha256 = { workspace = true }
-sysinfo = { workspace = true }
-regex = { workspace = true }
-reqwest = { workspace = true , features = ["blocking", "stream"] }
-httptest = { workspace = true }
-tokio = { workspace = true , features = ["macros", "rt-multi-thread"] }
 async-recursion = { workspace = true }
-tokio-stream = { workspace = true }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = { workspace = true }
+derive_more = { workspace = true }
+eval = { workspace = true }
 flate2 = { workspace = true }
-tar = { workspace = true }
-tera = { workspace = true }
 gazebo = { workspace = true }
 nix = { workspace = true }
-eval = { workspace = true }
+regex = { workspace = true }
+reqwest = { workspace = true , features = ["blocking", "stream"] }
 rust-embed = { workspace = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { workspace = true }
+sha256 = { workspace = true }
+starlark = { workspace = true }
+sysinfo = { workspace = true }
+tar = { workspace = true }
+tempfile = { workspace = true }
+tera = { workspace = true }
+tokio = { workspace = true , features = ["macros", "rt-multi-thread"] }
+tokio-stream = { workspace = true }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
@@ -35,3 +34,6 @@ windows-sys = { workspace = true, features = [
     "Win32_System_Diagnostics_Debug",
     "Win32_Security",
 ]}
+
+[dev-dependencies]
+httptest = { workspace = true }

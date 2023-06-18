@@ -4,21 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eldritch = { path = "../lib/eldritch" }
-tokio = { version = "1.19.1" , features = ["macros"] }
-clap = { version = "3.2.23" }
-starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }
-anyhow = "1.0.65"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.87"
-structopt = "0.3.23"
-gazebo = "0.8.1"
-itertools = "0.10"
-thiserror = "1.0.30"
-lsp-types = "0.93.0"
-rust-embed = { version = "6.6.0" }
+eldritch = { workspace = true }
+tokio = { workspace = true, features = ["macros"] }
+clap = { workspace = true }
+starlark = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+structopt = { workspace = true }
+gazebo = { workspace = true }
+itertools = { workspace = true }
+thiserror = { workspace = true }
+lsp-types = { workspace = true }
+rust-embed = { workspace = true }
 
 [dev-dependencies]
-assert_cmd = "2.0.6"
-predicates = "2.1"
-tempfile = "3.3.0"
+assert_cmd = { workspace = true }
+predicates = { workspace = true}
+tempfile = { workspace = true }
