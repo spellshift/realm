@@ -25,7 +25,7 @@ fn build_tests_create_file_dll(){
         .filter_map(|line| line.ok())
         .for_each(|line| println!("cargo dll build: {}", line));
 
-    let relative_path_to_test_dll_file = "..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll";
+    let relative_path_to_test_dll_file = "..\\..\\..\\tests\\create_file_dll\\target\\debug\\create_file_dll.dll";
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll_file);
     assert!(test_dll_path.is_file());
 }
