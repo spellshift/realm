@@ -9,7 +9,7 @@ fn build_tests_create_file_dll(){
 
     // Get the path of the create_file_dll workspace member
     let cargo_root = env!("CARGO_MANIFEST_DIR");
-    let relative_path_to_test_dll = "..\\..\\tests\\create_file_dll\\";
+    let relative_path_to_test_dll = "..\\..\\..\\tests\\create_file_dll\\";
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll);
     assert!(test_dll_path.is_dir());
 
