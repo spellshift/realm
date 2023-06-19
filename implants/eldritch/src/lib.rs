@@ -72,7 +72,10 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
     }
 
     let tome_params_str: String = match tome_parameters {
-        Some(param_string) => param_string,
+        Some(local_param_string) => match local_param_string.as_str() {
+            "" => "{}".to_string(), // If we get "" as our params update it to "{}"
+            _ => local_param_string // Otherwise return our string.
+        },
         None => "{}".to_string(),
     };
 
@@ -83,7 +86,11 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut input_params: Dict = Dict::new(res);
     
-    let parsed: serde_json::Value = serde_json::from_str(&tome_params_str)?;
+    let parsed: serde_json::Value = match serde_json::from_str(&tome_params_str){
+        Ok(local_value) => local_value,
+        Err(local_err) => return Err(anyhow::anyhow!("[imix] error decoding tome_params to JSON: {}: {}", local_err.to_string(), tome_params_str)),
+    };
+
     let param_map: serde_json::Map<String, serde_json::Value> = match parsed.as_object() {
         Some(tmp_param_map) => tmp_param_map.clone(),
         None => Map::new(),
