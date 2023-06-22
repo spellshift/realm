@@ -384,6 +384,7 @@ pub fn main() -> Result<(), imix::Error> {
 
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(128)
         .enable_all()
         .build()
         .unwrap();
