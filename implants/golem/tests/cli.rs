@@ -30,7 +30,7 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     cmd.arg("../../tests/golem_cli_test/syntax_fail.tome");
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains("[TASK ERROR] ../../tests/golem_cli_test/syntax_fail.tome: error: Parse error: unexpected string literal 'win' here"));
+        .stderr(predicate::str::contains("[TASK ERROR] ../../tests/golem_cli_test/syntax_fail.tome: [eldritch] Unable to parse eldritch tome: error: Parse error: unexpected string literal \'win\' here"));
 
     Ok(())
 }

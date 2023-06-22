@@ -1,10 +1,10 @@
 # Build 
 ```
-cd ./implants/eldritch/
+cd ./implants/lib/eldritch/
 cargo build
 ```
 # Test 
 ```
-cd ./implants/eldritch/
+cd ./implants/lib/eldritch/
 cargo test
 ```

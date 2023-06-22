@@ -329,22 +329,26 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 res.push(new_res_line);
                 // Send task response
             }
-            let task_response_exec_finished_at = match exec_future.1.future_join_handle.is_finished() {
+            let task_is_finished = exec_future.1.future_join_handle.is_finished();
+            let task_response_exec_finished_at = match task_is_finished {
                 true => Some(Utc::now()),
                 false => None,
             };
-            let task_response = SubmitTaskResultInput {
-                task_id: exec_future.1.graphql_task.id.clone(),
-                exec_started_at: exec_future.1.start_time,
-                exec_finished_at: task_response_exec_finished_at,
-                output: res.join("\n"),
-                error: None,
-            };
-            let res = tavern_client.submit_task_result(task_response).await;
-            let _submit_task_result = match res {
-                Ok(local_val) => local_val,
-                Err(local_err) => if debug { println!("Failed to submit task resluts:\n{}", local_err.to_string()) },
-            };
+            // If the task is finished or there's new data send a task_result.
+            if task_is_finished || res.len() > 0 {
+                let task_response = SubmitTaskResultInput {
+                    task_id: exec_future.1.graphql_task.id.clone(),
+                    exec_started_at: exec_future.1.start_time,
+                    exec_finished_at: task_response_exec_finished_at,
+                    output: res.join("\n"),
+                    error: None,
+                };
+                let res = tavern_client.submit_task_result(task_response).await;
+                let _submit_task_result = match res {
+                    Ok(local_val) => local_val,
+                    Err(local_err) => if debug { println!("Failed to submit task resluts:\n{}", local_err.to_string()) },
+                };
+            }
 
             // Only re-insert the runnine exec futures
             if !exec_future.1.future_join_handle.is_finished() {
@@ -380,6 +384,7 @@ pub fn main() -> Result<(), imix::Error> {
 
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(128)
         .enable_all()
         .build()
         .unwrap();
