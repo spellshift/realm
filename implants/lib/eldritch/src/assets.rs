@@ -14,7 +14,7 @@ use rust_embed::RustEmbed;
 
 #[cfg(debug_assertions)]
 #[derive(RustEmbed)]
-#[folder = "../../bin/embedded_files_test"]
+#[folder = "../../../bin/embedded_files_test"]
 pub struct Asset;
 
 #[cfg(not(debug_assertions))]
