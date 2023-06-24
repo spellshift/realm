@@ -13,10 +13,11 @@ eval = { workspace = true }
 flate2 = { workspace = true }
 gazebo = { workspace = true }
 nix = { workspace = true }
+object = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
 rust-embed = { workspace = true }
-serde = { version = "1.0", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha256 = { workspace = true }
 starlark = { workspace = true }
@@ -33,6 +34,8 @@ windows-sys = { workspace = true, features = [
     "Win32_System_Memory",
     "Win32_System_Diagnostics_Debug",
     "Win32_Security",
+    "Win32_System_SystemInformation",
+    "Win32_System_SystemServices"
 ]}
 
 [dev-dependencies]

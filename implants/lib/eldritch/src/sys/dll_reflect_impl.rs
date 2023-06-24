@@ -10,7 +10,7 @@ use {std::{os::raw::c_void, ptr::null_mut},
 
 
 #[cfg(target_os = "windows")]
-const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
+const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
 
 #[cfg(target_os = "windows")]
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
@@ -249,7 +249,7 @@ mod tests {
     use std::{process::Command, time, thread, path::Path, fs};
 
     #[cfg(target_os = "windows")]
-    const TEST_DLL_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
+    const TEST_DLL_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll");
 
     #[test]
     fn test_dll_reflect_get_u8_vec_form_u32_vec_simple() -> anyhow::Result<()> {
