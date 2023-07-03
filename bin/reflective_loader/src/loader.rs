@@ -322,19 +322,12 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
 
 }
 
-/// Get a pointer to the Thread Environment Block (TEB)
-pub unsafe fn get_teb() -> *mut ntapi::ntpebteb::TEB 
-{
-    let teb: *mut ntapi::ntpebteb::TEB;
-    asm!("mov {teb}, gs:[0x30]", teb = out(reg) teb);
-    teb
-}
 
 /// Get a pointer to the Process Environment Block (PEB)
 pub unsafe fn get_peb() -> *mut PEB 
 {
-    let teb = get_teb();
-    let peb = (*teb).ProcessEnvironmentBlock;
+    let peb: *mut PEB;
+    asm!("mov {peb}, gs:[0x60]", peb = out(reg) peb);
     peb
 }
 
