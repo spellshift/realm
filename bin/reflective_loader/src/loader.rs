@@ -127,7 +127,22 @@ impl PeFileHeaders64 {
         }
 
         // Section Headers - hopefully there isn't more than MAX_PE_SECTIONS sections.
-        let mut section_headers: [IMAGE_SECTION_HEADER; MAX_PE_SECTIONS] = unsafe{ core::mem::zeroed() };
+        let null_section = IMAGE_SECTION_HEADER {
+            Name: [0; 8], 
+            Misc: IMAGE_SECTION_HEADER_0 { 
+                PhysicalAddress: 0, 
+            },
+            VirtualAddress: 0, 
+            SizeOfRawData: 0, 
+            PointerToRawData: 0, 
+            PointerToRelocations: 0, 
+            PointerToLinenumbers: 0, 
+            NumberOfRelocations: 0, 
+            NumberOfLinenumbers: 0, 
+            Characteristics: 0
+        };
+        let mut section_headers: [IMAGE_SECTION_HEADER; MAX_PE_SECTIONS] = [null_section; MAX_PE_SECTIONS];
+        // let mut section_headers: [IMAGE_SECTION_HEADER; MAX_PE_SECTIONS] = unsafe{ core::mem::zeroed() };
         let optional_headers_start_ptr = unsafe{&(*(nt_headers_base_ptr as *mut IMAGE_NT_HEADERS64)).OptionalHeader as *const _ as usize};
         let section_headers_start_ptr = optional_headers_start_ptr + nt_headers.FileHeader.SizeOfOptionalHeader as usize;
         let mut cur_section_ptr = section_headers_start_ptr as *mut IMAGE_SECTION_HEADER;
@@ -160,6 +175,12 @@ pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut
     }
     dest
 }
+
+// #[no_mangle]
+// pub unsafe extern "C" fn memset(dest: *mut u8, val: u8, n: usize) -> () {
+//     core::intrinsics::volatile_set_memory(dest, val, n)
+// }
+
 
 /// Copy each DLL section into the newly allocated memory.
 /// Each section is copied according to it's VirtualAddress.
