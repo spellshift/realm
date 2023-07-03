@@ -4,6 +4,8 @@ use std::process::{Command,Stdio}; // Run programs
 use std::io::prelude::*;
 use std::str;
 
+const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test/";
+
 // Test running `./golem ./nonexistentdir/run.tome`
 #[test]
 fn test_golem_main_file_not_found() -> anyhow::Result<()> {
@@ -27,10 +29,10 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
 fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
-    cmd.arg("../../bin/golem_cli_test/syntax_fail.tome");
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}syntax_fail.tome"));
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains("[TASK ERROR] ../../bin/golem_cli_test/syntax_fail.tome: [eldritch] Unable to parse eldritch tome: error: Parse error: unexpected string literal \'win\' here"));
+        .stderr(predicate::str::contains(format!("[TASK ERROR] {GOLEM_CLI_TEST_DIR}syntax_fail.tome: [eldritch] Unable to parse eldritch tome: error: Parse error: unexpected string literal \'win\' here")));
 
     Ok(())
 }
@@ -41,7 +43,7 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
 fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
-    cmd.arg("../../bin/golem_cli_test/hello_world.tome");
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}hello_world.tome"));
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("[\"HELLO\"]"));
@@ -55,7 +57,7 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
 fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
-    cmd.arg("../../bin/golem_cli_test/eldritch_test.tome");
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}eldritch_test.tome"));
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"[\"append\", \"compress\""#));
@@ -69,7 +71,7 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
 fn test_golem_main_basic_async() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
-    cmd.arg("../../bin/golem_cli_test/download_test.tome");
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}download_test.tome"));
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"OKAY!"#));
