@@ -35,18 +35,9 @@ type FnLoadLibraryA = unsafe extern "system" fn(lplibfilename: PCSTR) -> HINSTAN
 
 type FnGetProcAddress = unsafe extern "system" fn(hmodule: HINSTANCE, lpprocname: PCSTR) -> FARPROC;
 
-// #[allow(non_camel_case_types)]
-// type fnFlushInstructionCache = unsafe extern "system" fn(hprocess: HANDLE, lpbaseaddress: *const c_void, dwsize: usize) -> BOOL;
-
 type FnVirtualAlloc = unsafe extern "system" fn(lpaddress: *const c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut c_void;
 
 type FnGetLastError = unsafe extern "system" fn() -> u32;
-
-// #[allow(non_camel_case_types)]
-// type fnVirtualFree = unsafe extern "system" fn(lpaddress: *mut c_void, dwsize: usize, dwfreetype: VIRTUAL_FREE_TYPE) -> BOOL;
-
-// #[allow(non_camel_case_types)]
-// type fnExitThread = unsafe extern "system" fn(dwexitcode: u32) -> !;
 
 // pub unsafe fn VirtualAlloc(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
 fn virtual_alloc(fn_ptr: FnVirtualAlloc, err_ptr: FnGetLastError, lp_address: *const c_void, dw_size: usize, fl_allocation_type: u32, fl_protect: u32) -> *mut c_void {
@@ -161,7 +152,7 @@ impl PeFileHeaders64 {
 /// not being able to find memmove or memcpy we need to 
 /// implement our own copy function that doesn't call etiher.
 #[no_mangle]
-pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+unsafe fn mycopy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
     for i in 0..n {
         let local_src = unsafe { src.add(i) };
         let local_dest = unsafe { dest.add(i) };
@@ -177,7 +168,8 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
         if section_index >= pe_file_headers.nt_headers.FileHeader.NumberOfSections as usize { return; } 
         let section_destination = new_dll_base as usize + section.VirtualAddress as usize;
         let section_bytes = old_dll_bytes as usize + section.PointerToRawData as usize;
-        unsafe { memcpy(section_destination as *mut u8, section_bytes as *const u8, section.SizeOfRawData as usize) };
+        
+        unsafe { mycopy(section_destination as *mut u8, section_bytes as *const u8, section.SizeOfRawData as usize) };
     }
 }
 
@@ -530,7 +522,7 @@ mod tests {
     fn test_reflective_loader_memcpy_simple() -> () {
         let source_buffer = [0,1,2,3,4];
         let mut dest_buffer = [0,0,0,0,0];
-        unsafe { memcpy(dest_buffer.as_mut_ptr(), source_buffer.as_ptr(), source_buffer.len()) };
+        unsafe { mycopy(dest_buffer.as_mut_ptr(), source_buffer.as_ptr(), source_buffer.len()) };
         for (index, byte) in source_buffer.iter().enumerate() {
             assert_eq!(*byte, dest_buffer[index]);
         }
@@ -546,7 +538,7 @@ mod tests {
         let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
         let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
 
-        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
+        unsafe { mycopy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
         for index in 0..common_buffer.len() - (dest_offset + source_offset) { 
             assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
         }
@@ -562,7 +554,7 @@ mod tests {
         let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
         let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
 
-        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
+        unsafe { mycopy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
         for index in 0..common_buffer.len() - (dest_offset + source_offset) {
             assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
         }
