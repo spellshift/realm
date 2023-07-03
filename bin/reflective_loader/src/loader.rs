@@ -152,7 +152,7 @@ impl PeFileHeaders64 {
 /// not being able to find memmove or memcpy we need to 
 /// implement our own copy function that doesn't call etiher.
 #[no_mangle]
-unsafe fn mycopy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
     for i in 0..n {
         let local_src = unsafe { src.add(i) };
         let local_dest = unsafe { dest.add(i) };
@@ -169,7 +169,7 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
         let section_destination = new_dll_base as usize + section.VirtualAddress as usize;
         let section_bytes = old_dll_bytes as usize + section.PointerToRawData as usize;
         
-        unsafe { mycopy(section_destination as *mut u8, section_bytes as *const u8, section.SizeOfRawData as usize) };
+        unsafe { memcpy(section_destination as *mut u8, section_bytes as *const u8, section.SizeOfRawData as usize) };
     }
 }
 
@@ -522,7 +522,7 @@ mod tests {
     fn test_reflective_loader_memcpy_simple() -> () {
         let source_buffer = [0,1,2,3,4];
         let mut dest_buffer = [0,0,0,0,0];
-        unsafe { mycopy(dest_buffer.as_mut_ptr(), source_buffer.as_ptr(), source_buffer.len()) };
+        unsafe { memcpy(dest_buffer.as_mut_ptr(), source_buffer.as_ptr(), source_buffer.len()) };
         for (index, byte) in source_buffer.iter().enumerate() {
             assert_eq!(*byte, dest_buffer[index]);
         }
@@ -538,7 +538,7 @@ mod tests {
         let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
         let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
 
-        unsafe { mycopy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
+        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
         for index in 0..common_buffer.len() - (dest_offset + source_offset) { 
             assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
         }
@@ -554,7 +554,7 @@ mod tests {
         let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
         let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
 
-        unsafe { mycopy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
+        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
         for index in 0..common_buffer.len() - (dest_offset + source_offset) {
             assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
         }
