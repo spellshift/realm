@@ -21,7 +21,7 @@ export const FormRadioGroup = (props: Props) => {
     return (
         <RadioGroup value={selected} onChange={setSelected}>
         <RadioGroup.Label> 
-            <h2 className="text-base font-semibold text-gray-900">Select a tome</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Select a tome</h2>
         </RadioGroup.Label>
         <div className="-space-y-px rounded-md bg-white mt-4 flex flex-col gap-2">
             {data.map((tome, tomeIdx) => (

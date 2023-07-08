@@ -3,10 +3,19 @@ import { Text, Stack, StackItem, Card, CardBody, Checkbox, Flex } from "@chakra-
 
 export function areEqual(prevProps: any, nextProps: any) {
     const session = prevProps.sessionsToDisplay[prevProps.index];
-    return prevProps.sessionsToDisplay === nextProps.sessionsToDisplay && prevProps.sessionsSelected[session.id] === nextProps.sessionsSelected[session.id];
+    const nextSession = nextProps.sessionsToDisplay[nextProps.index];
+    return prevProps.sessionsToDisplay === nextProps.sessionsToDisplay && prevProps.sessionsSelected[session.id] === nextProps.sessionsSelected[nextSession.id];
 }
 
-export const TabOption = (props: any) => {
+type Props = {
+    index: number;
+    style: any;
+    sessionsToDisplay: Array<any>;
+    toggleCheck: (arg: any) => void;
+    sessionsSelected: any;
+};
+
+export const SessionOption = (props: Props) => {
     const {index, style, sessionsToDisplay, toggleCheck, sessionsSelected } = props;
     // Your card component goes here
     const session = sessionsToDisplay[index];
@@ -42,4 +51,4 @@ export const TabOption = (props: any) => {
     );
 };
 
-export default React.memo(TabOption, areEqual);
+export default React.memo(SessionOption, areEqual);

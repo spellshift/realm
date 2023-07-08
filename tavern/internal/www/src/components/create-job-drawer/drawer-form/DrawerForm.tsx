@@ -30,13 +30,6 @@ export const DrawerForm = (props: Props) => {
         },
     });
 
-    // const handleSetTargets = (newTargets: any) => {
-    //   console.log(newTargets);
-    //   formik.setFieldValue('sessions', newTargets);
-    // }
-
-    console.log(formik.values);
-
     return (
         <form
         id='create-job-form'

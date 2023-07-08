@@ -2,10 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+.option-container{
+  width: 100%;
+  background-color: #EDF2F7;
+}
 .md-scroll-container{
     width: 100%;
-    max-height: 400px;
-    min-height: 200px;
+    height: 400px;
     overflow-y: scroll;
     background-color: #EDF2F7;
 }

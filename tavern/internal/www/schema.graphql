@@ -295,15 +295,11 @@ type Query {
   ): [Node]!
 }
 type Session implements Node {
-<<<<<<< HEAD
   id: ID!
   """A human readable identifier for the session."""
   name: String!
-=======
-  id: ID! #this
->>>>>>> fix(job-form): Add filter handling to target selection
   """The identity the session is authenticated as (e.g. 'root')"""
-  principal: String #This
+  principal: String
   """The hostname of the system the session is running on."""
   hostname: String
   """Unique identifier for the session. Unique to each instance of the session."""
@@ -317,13 +313,8 @@ type Session implements Node {
   """Platform the agent is operating on."""
   hostPlatform: SessionSessionHostPlatform!
   """Timestamp of when a task was last claimed or updated for a target"""
-<<<<<<< HEAD
   lastSeenAt: Time
   tags: [Tag!]
-=======
-  lastseenat: Time @goField(name: "LastSeenAt", forceResolver: false)
-  tags: [Tag!] #This
->>>>>>> fix(job-form): Add filter handling to target selection
   tasks: [Task!]
 }
 """Ordering options for Session connections"""

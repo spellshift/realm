@@ -12,7 +12,7 @@ export const CreateJob = () => {
     const [currStep, setCurrStep] = useState<number>(0);
 
     const steps = [
-        { name: 'Customize tome', description: 'Step 1', href: '#', step: 0 },
+        { name: 'Select a tome', description: 'Step 1', href: '#', step: 0 },
         { name: 'Select agent sessions', description: 'Step 2', href: '#', step: 1 },
         { name: 'Job finalized', description: 'Done', href: '#', step: 2 },
     ];
@@ -43,7 +43,7 @@ export const CreateJob = () => {
     return (
         <PageWrapper>
             <div className="border-b border-gray-200 pb-6 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Create new Job</h3>
+                <h3 className="text-2xl font-semibold leading-6 text-gray-900">Create new job</h3>
                 <div className="mt-3 sm:mt-0 sm:ml-4">            
                     <Link to="/jobs">
                         <button

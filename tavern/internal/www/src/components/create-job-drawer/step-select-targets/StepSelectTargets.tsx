@@ -14,12 +14,7 @@ type StepSelectTargetsParams = {
 }
 export const StepSelectTargets = (props: StepSelectTargetsParams) => {
     const {step, currStep, setCurrStep, targets, setFieldValue, handleSubmit} = props;
-
-    // const handleNext = () => {
-    //     //setCurrStep(step +1);
-    //     console.log(targets);
-    // };
-
+    
     const handleBack = () => {
         setCurrStep(step -1);
     }

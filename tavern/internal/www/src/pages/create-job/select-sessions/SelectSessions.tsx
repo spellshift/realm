@@ -1,7 +1,6 @@
 import { gql, useQuery } from "@apollo/client";
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import React, { useState } from "react";
-import { TabOptions } from "./tab-options";
+import { SessionView } from "./session-view";
 
 type Props = {
     setCurrStep: (arg1: number) => void;
@@ -10,7 +9,7 @@ type Props = {
 export const SelectSessions = (props: Props) => {
     const {setCurrStep, formik} = props;
     const [filteredSessions, setFilteredSessions] = useState([])
-    const [selectedSessions, setSelectedSessions] = useState({});
+    const [selectedSessions, setSelectedSessions] = useState<any>({});
 
     const GET_TAGS = gql`
         query get_tags($where: TagWhereInput){
@@ -48,27 +47,27 @@ export const SelectSessions = (props: Props) => {
     const { loading: groupTagLoading, error: groupTagError, data: groupTagData } = useQuery(GET_TAGS, GROUP_PARAMS);
     const { loading: sessionsLoading, error: sessionsError, data: sessionsData } = useQuery(GET_SESSIONS);
 
+    function getSelectedCount(){
+        let targetCount = 0;
+        for (var key in selectedSessions) {
+            if (selectedSessions[key] === true) {
+                targetCount = targetCount +1;
+            } 
+        }
+        return targetCount;
+    }
+    const selectedCount = getSelectedCount();
+
     return (
         <div className="flex flex-col gap-6">
-            <h2 className="text-base font-semibold text-gray-900">Select agent sessions</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Select agent sessions</h2>
             {serviceTagLoading || groupTagLoading || sessionsLoading ?
             (
                 <div>
                     Loading...
                 </div>
             ): (
-                <Tabs size='md' variant='enclosed' colorScheme="purple">
-                <TabList>
-                    <Tab className="font-semibold py-6">Session options</Tab>
-                    <Tab className="font-semibold py-6">Sessions selected</Tab>
-                </TabList>
-                <TabPanels>
-                    <TabOptions sessions={sessionsData?.sessions} groups={groupTagData?.tags} services={serviceTagData?.tags} filteredSessions={filteredSessions} setFilteredSessions={setFilteredSessions} selectedSessions={selectedSessions} setSelectedSessions={setSelectedSessions} />
-                    <TabPanel>
-                        Here 2
-                    </TabPanel>
-                </TabPanels>
-                </Tabs>
+                <SessionView sessions={sessionsData?.sessions} groups={groupTagData?.tags} services={serviceTagData?.tags} selectedSessions={selectedSessions} setSelectedSessions={setSelectedSessions} />
             )}
              <div className="flex flex-row gap-2">
                 <button
@@ -80,7 +79,7 @@ export const SelectSessions = (props: Props) => {
                 <button
                     className="btn-primary"
                     onClick={() => null}
-                    disabled={true}
+                    disabled={selectedCount < 1}
                 >
                     Continue
                 </button>
