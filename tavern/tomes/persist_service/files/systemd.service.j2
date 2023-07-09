@@ -1,0 +1,23 @@
+[Unit]
+Description={{ SERVICE_DESC }}
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+{% if SERVICE_WORKING_DIR is defined %}
+WorkingDirectory={{ SERVICE_WORKING_DIR }}
+{% endif %}
+ExecStart={{ SERVICE_START_CMD }}
+{% if SERVICE_STOP_CMD is defined %}
+ExecStop={{ SERVICE_STOP_CMD }}
+{% endif %}
+{% if SERVICE_START_PRE_CMD is defined %}
+ExecStartPre={{ SERVICE_START_PRE_CMD }}
+{% endif %}
+{% if SERVICE_PID_FILE is defined %}
+PIDFile={{ SERVICE_PID_FILE }}
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target
