@@ -83,10 +83,15 @@ deploy_agent()
 
 The <b>assets.list</b> method returns a list of asset names that the agent is aware of.
 
+### assets.read_binary
+`assets.read_binary(src: str) -> List<int>`
+
+The <b>assets.read_binary</b> method returns a list of u32 numbers representing the asset files bytes.
+
 ### assets.read
 `assets.read(src: str) -> str`
 
-The <b>assets.read</b> method returns a UTF-8 string representation of the file. 
+The <b>assets.read</b> method returns a UTF-8 string representation of the asset file.
 
 ---
 

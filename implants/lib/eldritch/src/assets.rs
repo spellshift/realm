@@ -1,5 +1,6 @@
 mod copy_impl;
 mod list_impl;
+mod read_binary_impl;
 mod read_impl;
 
 use allocative::Allocative;
@@ -69,8 +70,13 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         list_impl::list()
     }
+    fn read_binary(this: AssetsLibrary, src: String) -> anyhow::Result<Vec<u32>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        read_binary_impl::read_binary(src)
+    }
     fn read(this: AssetsLibrary, src: String) -> anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         read_impl::read(src)
     }
+
 }
