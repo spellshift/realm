@@ -1,6 +1,5 @@
-name: example
-description: An example tome!
-paramdefs:
+name: Hello world
+description: Simple tome to print hello world.
 - label: Message
   name: msg
   placeholder: Something to print

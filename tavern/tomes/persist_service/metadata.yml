@@ -1,0 +1,9 @@
+name: Port scan
+description: Scan a list of ports in a list of CIDRs.
+parameter_definitions:
+  - name: service_name
+    type: string
+  - name: service_desc
+    type: string
+  - name: executable_name
+    type: string

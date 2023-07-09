@@ -14,14 +14,15 @@ use starlark::{starlark_simple_value, starlark_module};
 use serde::{Serialize,Serializer};
 use rust_embed::RustEmbed;
 
-#[cfg(debug_assertions)]
+#[cfg(test)]
 #[derive(RustEmbed)]
 #[folder = "../../../tests/embedded_files_test"]
 pub struct Asset;
 
-#[cfg(not(debug_assertions))]
+#[cfg(not(test))]
 #[derive(RustEmbed)]
 #[folder = "../../../implants/golem/embed_files_golem_prod"]
+// #[folder = "../../../tavern/tomes"]
 pub struct Asset;
 
 
