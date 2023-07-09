@@ -1,5 +1,6 @@
 mod copy_impl;
 mod list_impl;
+mod read_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -67,5 +68,9 @@ fn methods(builder: &mut MethodsBuilder) {
     fn list(this: AssetsLibrary) -> anyhow::Result<Vec<String>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         list_impl::list()
+    }
+    fn read(this: AssetsLibrary, src: String) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        read_impl::read(src)
     }
 }

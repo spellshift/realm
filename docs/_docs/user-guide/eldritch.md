@@ -83,6 +83,11 @@ deploy_agent()
 
 The <b>assets.list</b> method returns a list of asset names that the agent is aware of.
 
+### assets.read
+`assets.read(src: str) -> str`
+
+The <b>assets.read</b> method returns a UTF-8 string representation of the file. 
+
 ---
 
 ## File
