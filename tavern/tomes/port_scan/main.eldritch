@@ -1,0 +1,21 @@
+def pad_number(num):
+    max_len = 5 # 65535
+    res = str(num)
+    for x in range(0, max_len - len(str(num))):
+        res = "0{}".format(res)
+    return res
+
+def sort_by_ip_then_port(test_dict):
+    return "{}{}".format(test_dict['ip'],pad_number(test_dict['port']))
+
+def port_scan(target_cidrs, ports, protocol, timeout):
+    scan_res = pivot.port_scan(target_cidrs, ports, protocol, timeout)
+    for port_res in sorted(scan_res, key=sort_by_ip_then_port):
+        print(port_res)
+
+port_scan(
+    input_params['cidrs'],
+    input_params['ports'],
+    input_params['protocol'],
+    input_params['timeout']
+)

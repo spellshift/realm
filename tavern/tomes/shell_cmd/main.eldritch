@@ -1,0 +1,7 @@
+def shell_cmd(cmd):
+    res = sys.shell(cmd)
+    print("stdout: {}".format(res['stdout']))
+    print("stderr: {}".format(res['stderr']))
+    print("status: {}".format(res['status']))
+
+shell_cmd(input_params['cmd'])
