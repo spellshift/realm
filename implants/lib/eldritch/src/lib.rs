@@ -174,7 +174,7 @@ dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_di
 dir(process) == ["kill", "list", "name"]
 dir(sys) == ["dll_inject", "exec", "is_linux", "is_macos", "is_windows", "shell"]
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_exec", "ssh_password_spray"]
-dir(assets) == ["copy","list"]
+dir(assets) == ["copy","list","read_binary","read"]
 "#,
         );
     }
