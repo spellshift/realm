@@ -1,7 +1,7 @@
 use anyhow::Result;
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use sysinfo::{System, SystemExt, UserExt};
-use std::{path::Path, os::{linux::fs::MetadataExt, unix::prelude::PermissionsExt}, fs::DirEntry};
+use std::{os::{linux::fs::MetadataExt, unix::prelude::PermissionsExt}, fs::DirEntry};
 use chrono::{Utc, DateTime, NaiveDateTime};
 use super::{File, FileType};
 
@@ -68,44 +68,47 @@ fn handle_list(path: String) -> Result<Vec<File>> {
     Ok(final_res)
 }
 
+fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict>{
+    let res: SmallMap<Value, Value> = SmallMap::new();
+    let mut tmp_res = Dict::new(res);
+
+    let tmp_value1 = starlark_heap.alloc_str(&file.name);
+    tmp_res.insert_hashed(const_frozen_string!("file_name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
+
+    let file_size = file.size.try_into().expect(format!("`file.list`: Failed to convert file size {} from u32 to i32.", file.size).as_str());
+    tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed().unwrap(), Value::new_int(file_size));
+
+    let tmp_value2 = starlark_heap.alloc_str(&file.owner);
+    tmp_res.insert_hashed(const_frozen_string!("owner").to_value().get_hashed().unwrap(), tmp_value2.to_value());
+
+    let tmp_value3 = starlark_heap.alloc_str(&file.group);
+    tmp_res.insert_hashed(const_frozen_string!("group").to_value().get_hashed().unwrap(), tmp_value3.to_value());
+
+    let tmp_value4 = starlark_heap.alloc_str(&file.permissions);
+    tmp_res.insert_hashed(const_frozen_string!("permissions").to_value().get_hashed().unwrap(), tmp_value4.to_value());
+
+    let tmp_value5 = starlark_heap.alloc_str(&file.time_modified);
+    tmp_res.insert_hashed(const_frozen_string!("modified").to_value().get_hashed().unwrap(), tmp_value5.to_value());
+
+    let tmp_value6 = starlark_heap.alloc_str(&file.file_type.to_string());
+    tmp_res.insert_hashed(const_frozen_string!("type").to_value().get_hashed().unwrap(), tmp_value6.to_value());
+
+    Ok(tmp_res)
+}
+
 pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
     let mut final_res: Vec<Dict> = Vec::new();
     for file in handle_list(path)? {
-        let res: SmallMap<Value, Value> = SmallMap::new();
-        let mut tmp_res = Dict::new(res);
-
-        let tmp_value1 = starlark_heap.alloc_str(&file.name);
-        tmp_res.insert_hashed(const_frozen_string!("file_name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
-
-        let file_size = file.size.try_into().expect(format!("`file.list`: Failed to convert file size {} from u32 to i32.", file.size).as_str());
-        tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed().unwrap(), Value::new_int(file_size));
-
-        let tmp_value2 = starlark_heap.alloc_str(&file.owner);
-        tmp_res.insert_hashed(const_frozen_string!("owner").to_value().get_hashed().unwrap(), tmp_value2.to_value());
-
-        let tmp_value3 = starlark_heap.alloc_str(&file.group);
-        tmp_res.insert_hashed(const_frozen_string!("group").to_value().get_hashed().unwrap(), tmp_value3.to_value());
-
-        let tmp_value4 = starlark_heap.alloc_str(&file.permissions);
-        tmp_res.insert_hashed(const_frozen_string!("permissions").to_value().get_hashed().unwrap(), tmp_value4.to_value());
-
-        let tmp_value5 = starlark_heap.alloc_str(&file.time_modified);
-        tmp_res.insert_hashed(const_frozen_string!("modified").to_value().get_hashed().unwrap(), tmp_value5.to_value());
-
-        let tmp_value6 = starlark_heap.alloc_str(&file.file_type.to_string());
-        tmp_res.insert_hashed(const_frozen_string!("type").to_value().get_hashed().unwrap(), tmp_value6.to_value());
-
+        let tmp_res = create_dict_from_file(starlark_heap, file)?;
         final_res.push(tmp_res);
-
     }
-    Ok(Vec::new())
+    Ok(final_res)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::prelude::*;
-    use tempfile::{NamedTempFile, tempdir};
+    use tempfile::{tempdir};
 
     #[test]
     fn test_file_list() -> anyhow::Result<()>{
@@ -123,12 +126,11 @@ mod tests {
             std::fs::File::create(test_dir_to_create)?;
         }
 
-        let list_res = handle_list(test_dir.path().to_str().unwrap().to_string())?;
-
-        for path in list_res {
-            println!("{:?}", path);
-        }
+        let binding = Heap::new();
+        let list_res = list(&binding, test_dir.path().to_str().unwrap().to_string())?;
+        assert_eq!(list_res.len(), (expected_dirs.len()+expected_files.len()));
 
         Ok(())
     }
+
 }
