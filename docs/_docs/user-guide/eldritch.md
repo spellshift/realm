@@ -126,6 +126,45 @@ The <b>file.is_dir</b> method checks if a path exists and is a directory. If it 
 
 The <b>file.is_file</b> method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`.
 
+### file.list
+`file.list(path: str) -> List<Dict>`
+
+The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traveresed with `../`.
+Each file is represented by a Dict type.
+Here is an example of the Dict layout:
+
+```JSON
+[
+    {
+        "file_name": "implants",
+        "size": 4096,
+        "owner": "root",
+        "group": "0",
+        "permissions": "40755",
+        "modified": "2023-07-09 01:35:40 UTC",
+        "type": "Directory"
+    },
+    {
+        "file_name": "README.md",
+        "size": 750,
+        "owner": "root",
+        "group": "0",
+        "permissions": "100644",
+        "modified": "2023-07-08 02:49:47 UTC",
+        "type": "File"
+    },
+    {
+        "file_name": ".git",
+        "size": 4096,
+        "owner": "root",
+        "group": "0",
+        "permissions": "40755",
+        "modified": "2023-07-10 21:14:06 UTC",
+        "type": "Directory"
+    }
+]
+```
+
 ### file.mkdir
 `file.mkdir(path: str) -> None`
 
