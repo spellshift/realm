@@ -1,9 +1,34 @@
 use anyhow::Result;
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use sysinfo::{System, SystemExt, UserExt};
-use std::{os::{linux::fs::MetadataExt, unix::prelude::PermissionsExt}, fs::DirEntry};
+use std::fs::DirEntry;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+#[cfg(target_os = "macos")]
+use std::os::macos::fs::MetadataExt;
+#[cfg(target_os = "linux")]
+use std::os::linux::fs::MetadataExt;
+#[cfg(target_os = "windows")]
+use std::os::windows::fs::MetadataExt;
 use chrono::{Utc, DateTime, NaiveDateTime};
 use super::{File, FileType};
+
+fn get_permissions(file: DirEntry) -> Result<String> {
+    let permissions;
+    #[cfg(unix)]
+    {
+        permissions = format!("{:o}", file.metadata()?.permissions().mode());
+    }
+    #[cfg(target_os = "windows")]
+    {
+        if file.metadata()?.permissions().readonly() {
+            permissions = "Read only"
+        } else {
+            permissions = "Not read only"
+        }
+    }
+    Ok(permissions)
+}
 
 fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
     let mut sys = System::new();
@@ -34,14 +59,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
 
     let tmp_group_gid = dir_entry_metadata.st_gid();
 
-    #[cfg(not(target_os = "windows"))]
-    let permissions = format!("{:o}", dir_entry_metadata.permissions().mode());
-    // Windows sucks.
-    #[cfg(target_os = "windows")]
-    let permissions = match dir_entry_metadata.permissions().readonly(){
-        true => "Read Only".to_string(),
-        false => "Not Read Only".to_string(),
-    };
+    let permissions = get_permissions(dir_entry)?;
 
     let timestamp = dir_entry_metadata.st_mtime();
     let naive_datetime = NaiveDateTime::from_timestamp_opt(timestamp, 0).expect("file.list: Failed to convert epoch to timedate.");
@@ -128,6 +146,7 @@ mod tests {
 
         let binding = Heap::new();
         let list_res = list(&binding, test_dir.path().to_str().unwrap().to_string())?;
+        println!("{:?}", list_res);
         assert_eq!(list_res.len(), (expected_dirs.len()+expected_files.len()));
 
         Ok(())
