@@ -115,6 +115,15 @@ export const SessionView = (props: Props) => {
                                         <Button leftIcon={<TrashIcon className=" h-4 w-4"/>} size={"sm"} onClick={()=> handleUnCheckAllFiltered()}>Clear selected</Button>
                                     </StackItem>
                             </StackItem>
+
+                            {filteredSessions.length === 0 && (
+                                <StackItem>
+                                    <Text fontSize={"sm"} p={2} textAlign="center">
+                                        {filteredSessions.length !== sessions.length && "Try adjusting filter. "}
+                                        No results found.
+                                    </Text>
+                                </StackItem>   
+                            )}
                             <StackItem className="md-scroll-container" >
                                 <AutoSizer disableHeight>
                                     {({width}) => {
@@ -132,9 +141,6 @@ export const SessionView = (props: Props) => {
                                     }}
                                 </AutoSizer>
                             </StackItem>
-                            {filteredSessions.length === 0 &&
-                                <Text fontSize={"sm"} p={2}>Try adjusting filter. No results found.</Text>
-                            }
                         </Stack>
                     </Box>
                 </StackItem>

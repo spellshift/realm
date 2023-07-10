@@ -30,3 +30,11 @@ export type SessionType = {
     principal: string;
     tags: Array<TomeTag>;
 }
+export type SelectedSessions = {
+    [sessionId: string]: boolean
+};
+export type TagContextType = {
+    sessions: Array<SessionType>,
+    groupTags: Array<TomeTag>,
+    serviceTags: Array<TomeTag>
+}

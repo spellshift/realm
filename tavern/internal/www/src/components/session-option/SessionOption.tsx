@@ -28,7 +28,7 @@ export const SessionOption = (props: Props) => {
     const isChecked = sessionsSelected[session.id];
 
     return (
-        <div style={style}>
+        <div style={style} key={`session_option_${session.id}`}>
             <Card>
                 <CardBody>
                     <Checkbox colorScheme={"purple"} size="lg" isChecked={isChecked} onChange={()=> toggleCheck(session.id)}>

@@ -1,6 +1,6 @@
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useFormik } from "formik";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FormSteps } from "../../components/form-steps";
 import { PageWrapper } from "../../components/page-wrapper";
@@ -21,10 +21,11 @@ export const CreateJob = () => {
         initialValues: {
         tome: null,
         params: [],
-        sessions: {},
+        sessions: [],
         },
-        validationSchema: createJobSchema(),
         onSubmit: values => {
+            console.log("here");
+            console.log(values);
             alert(JSON.stringify(values, null, 2));
         },
     });
@@ -35,6 +36,8 @@ export const CreateJob = () => {
                 return <SelectTome setCurrStep={setCurrStep} formik={formik} />
             case 1:
                 return <SelectSessions setCurrStep={setCurrStep} formik={formik} />
+            case 2:
+                return <div>{formik.values.sessions.join(",")}</div>
             default:
                 return <div>{step}</div>;
         }
@@ -59,7 +62,7 @@ export const CreateJob = () => {
             <form
                 id='create-job-form'
                 className="py-6"
-                onSubmit={(e) => formik.handleSubmit}
+                //onSubmit={(e) => formik.handleSubmit}
             >
                 <div className="grid grid-cols-12">
                     <div className=" col-span-3">

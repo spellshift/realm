@@ -1,5 +1,7 @@
 import { gql, useQuery } from "@apollo/client";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
+import { TagContext } from "../../../context/TagContext";
+import { SelectedSessions } from "../../../utils/consts";
 import { SessionView } from "./session-view";
 
 type Props = {
@@ -8,66 +10,41 @@ type Props = {
 }
 export const SelectSessions = (props: Props) => {
     const {setCurrStep, formik} = props;
-    const [filteredSessions, setFilteredSessions] = useState([])
     const [selectedSessions, setSelectedSessions] = useState<any>({});
 
-    const GET_TAGS = gql`
-        query get_tags($where: TagWhereInput){
-        tags(where: $where) {
-            id
-            name
-            kind   
-        }
-        }
-    `;
-    const GET_SESSIONS = gql`
-        query get_sessions{
-            sessions {
-                id
-                name
-                principal
-                hostname
-                tags {
-                    id
-                    kind
-                    name
-                }        
-            }
-        }
-    `;
+    const {data, isLoading, error } = useContext(TagContext);
 
-    const SERVICE_PARAMS = {
-        variables: { where: { kind: "service" }}
-    }
-    const GROUP_PARAMS = {
-        variables: { where: { kind: "group" }}
-    }
-
-    const { loading: serviceTagLoading, error: serviceTagError, data: serviceTagData } = useQuery(GET_TAGS, SERVICE_PARAMS);
-    const { loading: groupTagLoading, error: groupTagError, data: groupTagData } = useQuery(GET_TAGS, GROUP_PARAMS);
-    const { loading: sessionsLoading, error: sessionsError, data: sessionsData } = useQuery(GET_SESSIONS);
-
-    function getSelectedCount(){
-        let targetCount = 0;
-        for (var key in selectedSessions) {
+    function isSessionSelected(){
+        for (let key in selectedSessions) {
             if (selectedSessions[key] === true) {
-                targetCount = targetCount +1;
+                return true;
             } 
         }
-        return targetCount;
+        return false;
     }
-    const selectedCount = getSelectedCount();
+    const hasSessionSelected = isSessionSelected();
+
+    const handleClickContinue = (selectedSessions: SelectedSessions) => {
+        const sessionToSubmit = [] as Array<string>;
+        for (let key in selectedSessions) {
+            if (selectedSessions[key] === true) {
+               sessionToSubmit.push(key);
+            } 
+        }
+        formik.setFieldValue('sessions', sessionToSubmit);
+        formik.handleSubmit();
+    }
 
     return (
         <div className="flex flex-col gap-6">
             <h2 className="text-xl font-semibold text-gray-900">Select agent sessions</h2>
-            {serviceTagLoading || groupTagLoading || sessionsLoading ?
+            {isLoading || data === undefined ?
             (
                 <div>
                     Loading...
                 </div>
             ): (
-                <SessionView sessions={sessionsData?.sessions} groups={groupTagData?.tags} services={serviceTagData?.tags} selectedSessions={selectedSessions} setSelectedSessions={setSelectedSessions} />
+                <SessionView sessions={data?.sessions || []} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedSessions={selectedSessions} setSelectedSessions={setSelectedSessions} />
             )}
              <div className="flex flex-row gap-2">
                 <button
@@ -78,8 +55,13 @@ export const SelectSessions = (props: Props) => {
                  </button>
                 <button
                     className="btn-primary"
-                    onClick={() => null}
-                    disabled={selectedCount < 1}
+                    type="submit"
+                    onClick={(e) => {
+                        console.log("here in onclick")
+                        console.log(e);
+                        handleClickContinue(selectedSessions)
+                    }}
+                    disabled={!hasSessionSelected}
                 >
                     Continue
                 </button>

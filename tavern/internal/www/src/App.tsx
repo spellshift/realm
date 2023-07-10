@@ -11,6 +11,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Home } from "./pages/home";
 import { CreateJob } from "./pages/create-job";
 import 'react-virtualized/styles.css';
+import { TagContextProvider } from "./context/TagContext";
 
 const GET_TOMES = gql`
     query get_tomes{
@@ -44,6 +45,8 @@ export const App = () => {
 
   return (
     <ChakraProvider theme={theme}>
-      <RouterProvider router={router} />
+      <TagContextProvider>
+        <RouterProvider router={router} />
+      </TagContextProvider>
     </ChakraProvider>
 )}
