@@ -6,6 +6,7 @@ mod exists_impl;
 mod hash_impl;
 mod is_dir_impl;
 mod is_file_impl;
+mod list_impl;
 mod mkdir_impl;
 mod read_impl;
 mod remove_impl;
@@ -16,13 +17,16 @@ mod template_impl;
 mod timestomp_impl;
 mod write_impl;
 
+use std::fmt;
+
 use allocative::Allocative;
 use derive_more::Display;
 
+use starlark::values::dict::Dict;
 use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap};
 use starlark::{starlark_type, starlark_simple_value, starlark_module};
 use serde::{Serialize,Serializer};
 
@@ -56,6 +60,45 @@ impl<'v> UnpackValue<'v> for FileLibrary {
 
     fn unpack_value(value: Value<'v>) -> Option<Self> {
         Some(*value.downcast_ref::<FileLibrary>().unwrap())
+    }
+}
+
+enum FileType {
+    File,
+    Directory,
+    Link,
+    Unknown,
+}
+#[derive(Debug)]
+struct File {
+    name: String,
+    file_type: FileType,
+    size: u64,
+    owner: String,
+    group: String,
+    permissions: String,
+    time_modified: String,
+}
+
+impl fmt::Debug for FileType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FileType::File => write!(f, "File"),
+            FileType::Directory => write!(f, "Directory"),
+            FileType::Link => write!(f, "Link"),
+            FileType::Unknown => write!(f, "Unknown"),
+        }
+    }
+}
+
+impl fmt::Display for FileType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FileType::File => write!(f, "File"),
+            FileType::Directory => write!(f, "Directory"),
+            FileType::Link => write!(f, "Link"),
+            FileType::Unknown => write!(f, "Unknown"),
+        }
     }
 }
 
@@ -97,6 +140,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn is_file(this: FileLibrary, path: String) -> anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_file_impl::is_file(path)
+    }
+    fn list<'v>(this: FileLibrary, starlark_heap: &'v Heap, path: String) ->  anyhow::Result<Vec<Dict<'v>>>  {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        list_impl::list(starlark_heap, path)
     }
     fn mkdir(this: FileLibrary, path: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
