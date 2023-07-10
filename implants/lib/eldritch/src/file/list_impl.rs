@@ -11,7 +11,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
 
     let file_name = match dir_entry.file_name().into_string() {
         Ok(local_file_name) => local_file_name,
-        Err(local_err) => return Err(anyhow::anyhow!("file.list: Unable to convert file name to string.")),
+        Err(_) => return Err(anyhow::anyhow!("file.list: Unable to convert file name to string.")),
     };
 
     let mut file_type = FileType::Unknown;
