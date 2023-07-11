@@ -12,6 +12,7 @@ derive_more = { workspace = true }
 eval = { workspace = true }
 flate2 = { workspace = true }
 gazebo = { workspace = true }
+network-interface = { workspace = true }
 nix = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
