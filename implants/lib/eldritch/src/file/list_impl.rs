@@ -13,21 +13,13 @@ use std::os::windows::fs::MetadataExt;
 use chrono::{Utc, DateTime, NaiveDateTime};
 use super::{File, FileType};
 
-fn get_permissions(file: DirEntry) -> Result<String> {
-    let permissions;
-    #[cfg(unix)]
-    {
-        permissions = format!("{:o}", file.metadata()?.permissions().mode());
-    }
-    #[cfg(target_os = "windows")]
-    {
-        if file.metadata()?.permissions().readonly() {
-            permissions = "Read only"
-        } else {
-            permissions = "Not read only"
-        }
-    }
-    Ok(permissions)
+const UNKNOWN: &str = "UNKNOWN";
+
+// https://stackoverflow.com/questions/6161776/convert-windows-filetime-to-second-in-unix-linux
+fn windows_tick_to_unix_tick(windows_tick: u64) -> i64{
+    const WINDOWS_TICK: u64 = 10000000;
+    const SEC_TO_UNIX_EPOCH: u64 = 11644473600;
+    return (windows_tick / WINDOWS_TICK - SEC_TO_UNIX_EPOCH) as i64;
 }
 
 fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
@@ -53,15 +45,50 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
 
     let file_size = dir_entry_metadata.len();
 
-    let tmp_owner_uid = dir_entry_metadata.st_uid();
-    let tmp_sysinfo_owner_uid = sysinfo::Uid::try_from(tmp_owner_uid as usize).expect("file.list: Failed to convert u32 to UID");
-    let owner_username = sys.get_user_by_id(&tmp_sysinfo_owner_uid).expect("file.list: Failed to resolve username from UID");
+    #[cfg(unix)]
+    let owner_username = {
+        let tmp_owner_uid = dir_entry_metadata.st_uid();
+        let tmp_sysinfo_owner_uid = sysinfo::Uid::try_from(tmp_owner_uid as usize).expect("file.list: Failed to convert u32 to UID");
+        let owner_username = sys.get_user_by_id(&tmp_sysinfo_owner_uid).expect("file.list: Failed to resolve username from UID").name().to_string();
+        owner_username
+    };
+    #[cfg(not(unix))]
+    let owner_username = {
+        UNKNOWN.to_string()
+    };
 
-    let tmp_group_gid = dir_entry_metadata.st_gid();
+    #[cfg(unix)]
+    let group_id = {
+        dir_entry_metadata.st_gid();
+    };
+    #[cfg(not(unix))]
+    let group_id = {
+        UNKNOWN // This is bad but windows file ownership is very different.
+    };
 
-    let permissions = get_permissions(dir_entry)?;
+    #[cfg(unix)]
+    let timestamp = {
+        dir_entry_metadata.st_mtime()
+    };
+    #[cfg(not(unix))]
+    let timestamp = {
+        let win_timestamp = dir_entry_metadata.last_write_time();
+        windows_tick_to_unix_tick(win_timestamp)
+    };
 
-    let timestamp = dir_entry_metadata.st_mtime();
+    #[cfg(unix)]
+    let permissions ={
+        format!("{:o}", file.metadata()?.permissions().mode());
+    };
+    #[cfg(target_os = "windows")]
+    let permissions = {
+        if dir_entry.metadata()?.permissions().readonly() {
+            "Read only"
+        } else {
+            "Not read only"
+        }
+    };
+
     let naive_datetime = NaiveDateTime::from_timestamp_opt(timestamp, 0).expect("file.list: Failed to convert epoch to timedate.");
     let time_modified: DateTime<Utc> = DateTime::from_utc(naive_datetime, Utc);
     
@@ -69,9 +96,9 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
         name: file_name,
         file_type: file_type,
         size: file_size,
-        owner: owner_username.name().to_string(),
-        group: tmp_group_gid.to_string(),
-        permissions: permissions,
+        owner: owner_username,
+        group: group_id.to_string(),
+        permissions: permissions.to_string(),
         time_modified: time_modified.to_string(),
     })
 
