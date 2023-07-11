@@ -59,7 +59,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
 
     #[cfg(unix)]
     let group_id = {
-        dir_entry_metadata.st_gid();
+        dir_entry_metadata.st_gid().to_string()
     };
     #[cfg(not(unix))]
     let group_id = {
@@ -78,7 +78,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
 
     #[cfg(unix)]
     let permissions ={
-        format!("{:o}", file.metadata()?.permissions().mode());
+        format!("{:o}", dir_entry_metadata.permissions().mode())
     };
     #[cfg(target_os = "windows")]
     let permissions = {
