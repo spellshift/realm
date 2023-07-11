@@ -1,4 +1,3 @@
-import { gql, useQuery } from "@apollo/client";
 import React, { useContext, useState } from "react";
 import { TagContext } from "../../../context/TagContext";
 import { SelectedSessions } from "../../../utils/consts";
@@ -53,13 +52,11 @@ export const SelectSessions = (props: Props) => {
                 >
                      Back
                  </button>
-                <button
+                 <button
                     className="btn-primary"
-                    type="submit"
-                    onClick={(e) => {
-                        console.log("here in onclick")
-                        console.log(e);
-                        handleClickContinue(selectedSessions)
+                    onClick={(event) => {
+                        event.preventDefault();
+                        handleClickContinue(selectedSessions);
                     }}
                     disabled={!hasSessionSelected}
                 >

@@ -1,33 +1,31 @@
 import react, { useState } from 'react'
 import { RadioGroup } from '@headlessui/react'
 import { Tome } from '../../utils/consts'
-
-const settings = [
-  { name: 'Shell execute', description: 'Execute a shell script using the default interpreter. /bin/bash for macos & linux, and cmd.exe for windows.' },
-]
+import { Heading } from '@chakra-ui/react'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
 type Props = {
-    data: Array<Tome>;
-    selected: Tome | null,
-    setSelected: (arg: Tome) => void;
+    label: string;
+    data: Array<any>;
+    selected: any,
+    setSelected: (arg: any) => void;
  }
 export const FormRadioGroup = (props: Props) => {
-    const { data, selected, setSelected } = props;
+    const { label, data, selected, setSelected } = props;
 
     return (
         <RadioGroup value={selected} onChange={setSelected}>
         <RadioGroup.Label> 
-            <h2 className="text-xl font-semibold text-gray-900">Select a tome</h2>
+            <Heading size="sm" >{label}</Heading>
         </RadioGroup.Label>
         <div className="-space-y-px rounded-md bg-white mt-4 flex flex-col gap-2">
-            {data.map((tome, tomeIdx) => (
+            {data.map((item, tomeIdx) => (
             <RadioGroup.Option
-                key={tome.name}
-                value={tome}
+                key={item.name}
+                value={item}
                 className={({ checked }) =>
                 classNames(
                     tomeIdx === 0 ? 'rounded-tl-md rounded-tr-md' : '',
@@ -54,13 +52,13 @@ export const FormRadioGroup = (props: Props) => {
                         as="span"
                         className={classNames(checked ? 'text-purple-900' : 'text-gray-900', 'block text-sm font-medium')}
                     >
-                        {tome.name}
+                        {item.name}
                     </RadioGroup.Label>
                     <RadioGroup.Description
                         as="span"
                         className={classNames(checked ? 'text-purple-700' : 'text-gray-500', 'block text-sm')}
                     >
-                        {tome.description}
+                        {item.description}
                     </RadioGroup.Description>
                     </span>
                 </>

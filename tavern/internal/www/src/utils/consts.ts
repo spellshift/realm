@@ -38,3 +38,9 @@ export type TagContextType = {
     groupTags: Array<TomeTag>,
     serviceTags: Array<TomeTag>
 }
+export type JobProps = {
+    name: string,
+    tome: Tome | null,
+    params: any,
+    sessions: Array<string>,
+};

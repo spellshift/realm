@@ -1,6 +1,6 @@
 import { Heading, Text, Stack, StackItem, Box, Button, FormLabel, Switch, Divider } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
-import React, { ChangeEvent, FC, useCallback, useState } from "react";
+import React, { FC, useCallback } from "react";
 import { SessionType, TomeTag } from "../../../../utils/consts";
 import {
     AutoSizer as _AutoSizer,

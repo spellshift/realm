@@ -1,34 +1,31 @@
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useFormik } from "formik";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FormSteps } from "../../components/form-steps";
 import { PageWrapper } from "../../components/page-wrapper";
+import { useSubmitJob } from "../../hooks/useSubmitJob";
 import { SelectSessions } from "./select-sessions";
 import { SelectTome } from "./select-tome";
-import { createJobSchema } from "./validation";
 
 export const CreateJob = () => {
     const [currStep, setCurrStep] = useState<number>(0);
+    const {submitJob, data, loading, error, reset} = useSubmitJob();
 
     const steps = [
         { name: 'Select a tome', description: 'Step 1', href: '#', step: 0 },
         { name: 'Select agent sessions', description: 'Step 2', href: '#', step: 1 },
-        { name: 'Job finalized', description: 'Done', href: '#', step: 2 },
     ];
 
     const formik = useFormik({
         initialValues: {
+        name: "",
         tome: null,
         params: [],
         sessions: [],
         },
-        onSubmit: values => {
-            console.log("here");
-            console.log(values);
-            alert(JSON.stringify(values, null, 2));
-        },
-    });
+        onSubmit: (values: any) => submitJob(values),
+    } );
 
     function getStepView(step: number){
         switch(step) {
@@ -36,10 +33,8 @@ export const CreateJob = () => {
                 return <SelectTome setCurrStep={setCurrStep} formik={formik} />
             case 1:
                 return <SelectSessions setCurrStep={setCurrStep} formik={formik} />
-            case 2:
-                return <div>{formik.values.sessions.join(",")}</div>
             default:
-                return <div>{step}</div>;
+                return <div>An error has occured</div>;
         }
     }
 
