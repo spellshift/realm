@@ -1,11 +1,17 @@
+import { gql, useQuery } from "@apollo/client";
 import React from "react";
 import { Link } from "react-router-dom";
 
 import { CreateJobDrawer } from "../../components/create-job-drawer/CreateJobDrawer";
 import { FormSteps } from "../../components/form-steps";
 import { PageWrapper } from "../../components/page-wrapper";
+import { GET_JOB_QUERY } from "../../utils/queries";
 
 export const JobList = () => {
+
+    const { loading, error, data } = useQuery(GET_JOB_QUERY);
+    
+
     return (
         <PageWrapper>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
@@ -20,6 +26,11 @@ export const JobList = () => {
                         </button>
                     </Link>
                 </div>
+            </div>
+            <div>
+                {data?.jobs?.map((item: any) =>{
+                    return <div key={item?.id}>{item?.name}</div>
+                })}
             </div>
         </PageWrapper>
     );

@@ -10,7 +10,7 @@ import { SelectTome } from "./select-tome";
 
 export const CreateJob = () => {
     const [currStep, setCurrStep] = useState<number>(0);
-    const {submitJob, data, loading, error, reset} = useSubmitJob();
+    const {submitJob, loading, error, reset} = useSubmitJob();
 
     const steps = [
         { name: 'Select a tome', description: 'Step 1', href: '#', step: 0 },
@@ -57,7 +57,6 @@ export const CreateJob = () => {
             <form
                 id='create-job-form'
                 className="py-6"
-                //onSubmit={(e) => formik.handleSubmit}
             >
                 <div className="grid grid-cols-12">
                     <div className=" col-span-3">

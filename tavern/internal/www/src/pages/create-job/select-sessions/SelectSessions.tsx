@@ -59,8 +59,9 @@ export const SelectSessions = (props: Props) => {
                         handleClickContinue(selectedSessions);
                     }}
                     disabled={!hasSessionSelected}
+                    type="submit"
                 >
-                    Continue
+                    Submit
                 </button>
              </div>
         </div>

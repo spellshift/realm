@@ -12,10 +12,10 @@ const FormTextField = (props: Props) => {
                 <Heading size="sm" >{label}</Heading>
             </FormLabel>
             <Input
+                colorScheme="purple"
                 name={htmlFor}
                 {...rest}
                 size='sm'
-                className="focus:border-1 focus:border-purple-700"
             />
         </div>
     )
