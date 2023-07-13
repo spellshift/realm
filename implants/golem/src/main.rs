@@ -6,7 +6,7 @@ use std::fs;
 use std::process;
 use std::thread;
 
-use eldritch::{eldritch_run};
+use eldritch::{eldritch_run,StdPrintHandler};
 
 mod inter;
 
@@ -16,7 +16,7 @@ async fn execute_tomes_in_parallel(tome_name_and_content: Vec<(String, String)>)
     for tome_data in tome_name_and_content {
         let tmp_row = (
             tome_data.0.clone().to_string(), 
-            thread::spawn(|| { eldritch_run(tome_data.0, tome_data.1, None) })
+            thread::spawn(|| { eldritch_run(tome_data.0, tome_data.1, None, &StdPrintHandler{}) })
         );
         all_tome_futures.push(tmp_row)
     }
@@ -72,7 +72,7 @@ fn main() -> anyhow::Result<()> {
             tome_files_and_content.push( (tome_path, tome_contents) )
         }
 
-        let runtime = tokio::runtime::Builder::new_current_thread()
+        let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap();

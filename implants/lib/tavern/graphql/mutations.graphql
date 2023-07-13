@@ -1,0 +1,35 @@
+mutation ClaimTasks($input: ClaimTasksInput!) {
+    claimTasks(input: $input) {
+        id,
+        job {
+            id,
+            name,
+            parameters,
+            tome {
+                id,
+                name,
+                description,
+                paramDefs,
+                eldritch,
+                files {
+                    id,
+                    name,
+                    size,
+                    hash,
+                }
+            },
+            bundle {
+                id,
+                name,
+                size,
+                hash,
+            }
+        }
+    }
+}
+
+mutation SubmitTaskResult($input: SubmitTaskResultInput!) {
+    submitTaskResult(input: $input) {
+        id
+    }
+}

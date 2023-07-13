@@ -3,7 +3,7 @@
 /target/
 tests/create_file_dll/target/
 tests/create_file_dll/Cargo.lock
-cmd/implants/eldritch/target/
+cmd/implants/lib/eldritch/target/
 cmd/implants/target/
 cmd/implants/Cargo.lock
 
