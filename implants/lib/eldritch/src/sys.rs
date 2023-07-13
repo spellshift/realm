@@ -1,4 +1,5 @@
 mod exec_impl;
+mod hostname_impl;
 mod is_linux_impl;
 mod is_windows_impl;
 mod is_macos_impl;
