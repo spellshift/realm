@@ -14,11 +14,12 @@ mod tests {
     fn test_hostname() -> Result<()>{
         let host = match hostname() {
             Ok(tmp_hostname) => tmp_hostname,
-            Err(error) => {
-                return Err(anyhow::anyhow!("Unable to get system hostname{}", error));
+            Err(_error) => {
+                "ERROR".to_string()
             }
         };
         println!("{host}");
+        assert!(host != "ERROR");
         Ok(())
     }
 }
