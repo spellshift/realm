@@ -1,4 +1,5 @@
 mod exec_impl;
+mod get_os_impl;
 mod is_linux_impl;
 mod is_windows_impl;
 mod is_macos_impl;
@@ -60,6 +61,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         exec_impl::exec(starlark_heap, path, args, disown)
+    }
+    fn get_os<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        get_os_impl::get_os(starlark_heap)
     }
     fn dll_inject(this: SysLibrary, dll_path: String, pid: u32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
