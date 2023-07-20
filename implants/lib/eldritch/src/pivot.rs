@@ -61,9 +61,9 @@ impl<'v> UnpackValue<'v> for PivotLibrary {
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn ssh_exec<'v>(this: PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, command: String) ->  anyhow::Result<Dict<'v>> {
+    fn ssh_exec<'v>(this: PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        ssh_exec_impl::ssh_exec(starlark_heap, target, port, username, password, key, key_password, command)
+        ssh_exec_impl::ssh_exec(starlark_heap, target, port, command, username, password, key, key_password, timeout)
     }
     fn ssh_password_spray(this:  PivotLibrary, targets: Vec<String>, port: i32, credentials: Vec<String>, keys: Vec<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -127,19 +127,19 @@ pub struct Session {
 }
 
 impl Session {
-    async fn connect<A: ToSocketAddrs>(
+    async fn connect(
         user: String,
         password: Option<String>,
         key: Option<String>,
         key_password: Option<&str>,
-        addrs: A,
+        addrs: String,
     ) -> anyhow::Result<Self> {
         let config = client::Config {
             ..<_>::default()
         };
         let config = Arc::new(config);
         let sh = Client {};
-        let mut session = client::connect(config, addrs, sh).await?;
+        let mut session = client::connect(config, addrs.clone(), sh).await?;
 
         // Try key auth first
         match key {
@@ -163,7 +163,7 @@ impl Session {
             },
             None => {},
         }
-        return Err(anyhow::anyhow!("Failed to authenticate to host {}", user));
+        return Err(anyhow::anyhow!("Failed to authenticate to host {}@{}", user, addrs.clone()));
     }
 
     async fn call(&mut self, command: &str) -> anyhow::Result<CommandResult> {

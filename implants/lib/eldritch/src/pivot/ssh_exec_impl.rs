@@ -8,9 +8,12 @@ struct SSHExecOutput {
     status: i32,
 }
 
-async fn handle_ssh_exec(target: String, port: u16, username: String, password: Option<String>, key: Option<String>, key_password: Option<&str>, command: String) -> Result<SSHExecOutput> {
+async fn handle_ssh_exec(target: String, port: u16, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<&str>, timeout: Option<u32>) -> Result<SSHExecOutput> {
+    let mut ssh = tokio::time::timeout(
+        std::time::Duration::from_secs(timeout.unwrap_or(3).into()),
+        Session::connect(username, password, key, key_password, format!("{}:{}", target, port)),
 
-    let mut ssh = Session::connect(username, password, key, key_password, format!("{}:{}", target, port)).await?;
+    ).await??;
     let r = ssh.call(&command).await?;
     ssh.close().await?;
 
@@ -22,7 +25,7 @@ async fn handle_ssh_exec(target: String, port: u16, username: String, password: 
     )
 }
 
-pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, command: String) -> Result<Dict> {
+pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) -> Result<Dict> {
     
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -33,7 +36,7 @@ pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, username: Strin
     let local_port: u16 = port.try_into()?;
 
     let cmd_res = match runtime.block_on(
-        handle_ssh_exec(target, local_port, username, password, key, key_password_ref, command)
+        handle_ssh_exec(target, local_port, command, username, password, key, key_password_ref, timeout)
     ) {
         Ok(local_res) => local_res,
         Err(local_err) => return Err(anyhow::anyhow!("Failed to run handle_ssh_exec: {}", local_err.to_string())),
@@ -53,6 +56,7 @@ pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, username: Strin
 #[cfg(test)]
 mod tests {
     use async_trait::async_trait;
+    use tokio::net::TcpListener;
     use tokio::task;
     use std::process::Command;
     use std::sync::{Mutex, Arc};
@@ -172,9 +176,16 @@ mod tests {
         ).await.unwrap_or(Ok(()));
     }
 
+        // Tests run concurrently so each test needs a unique port.
+        async fn allocate_localhost_unused_ports() -> anyhow::Result<i32> {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            Ok(listener.local_addr().unwrap().port().into())
+        }
+    
+
     #[tokio::test]
     async fn test_pivot_ssh_exec() -> anyhow::Result<()> {
-        let ssh_port = 2222;
+        let ssh_port = allocate_localhost_unused_ports().await? as u16;;
         let ssh_host = "127.0.0.1".to_string();
         let ssh_command = r#"echo "hello world""#.to_string();
         let test_server_task = task::spawn(
@@ -183,7 +194,7 @@ mod tests {
 
         let key_pass = "test123";
         let ssh_client_task = task::spawn(
-            handle_ssh_exec(ssh_host.clone(), ssh_port.into(), "root".to_string(), Some("some_password".to_string()), Some(String::from("-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----")), Some(key_pass), ssh_command)
+            handle_ssh_exec(ssh_host.clone(), ssh_port.into(), ssh_command, "root".to_string(), Some("some_password".to_string()), Some(String::from("-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----")), Some(key_pass), Some(2))
         );
 
         let (_a, actual_response) = tokio::join!(test_server_task, ssh_client_task);
