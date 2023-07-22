@@ -330,6 +330,20 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
 ]
 ```
 
+### sys.get_os
+`sys.get_os() -> Dict`
+
+The <b>sys.get_os</b> method returns a dictionary that describes the current systems OS.
+An example is below:
+
+```json
+{
+    "arch": "x86_64",
+    "desktop_env": "Unknown: Unknown",
+    "distro": "Debian GNU/Linux 10 (buster)",
+    "platform": "Linux"
+}
+
 ### sys.is_linux
 `sys.is_linux() -> bool`
 
