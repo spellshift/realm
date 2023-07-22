@@ -8,6 +8,7 @@ allocative = { workspace = true }
 allocative_derive = { workspace = true }
 anyhow = { workspace = true }
 async-recursion = { workspace = true }
+chrono = { workspace = true }
 derive_more = { workspace = true }
 eval = { workspace = true }
 flate2 = { workspace = true }
