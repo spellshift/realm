@@ -63,12 +63,14 @@ impl<'v> UnpackValue<'v> for FileLibrary {
     }
 }
 
+#[derive(Debug)]
 enum FileType {
     File,
     Directory,
     Link,
     Unknown,
 }
+
 #[derive(Debug)]
 struct File {
     name: String,
@@ -80,27 +82,6 @@ struct File {
     time_modified: String,
 }
 
-impl fmt::Debug for FileType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            FileType::File => write!(f, "File"),
-            FileType::Directory => write!(f, "Directory"),
-            FileType::Link => write!(f, "Link"),
-            FileType::Unknown => write!(f, "Unknown"),
-        }
-    }
-}
-
-impl fmt::Display for FileType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            FileType::File => write!(f, "File"),
-            FileType::Directory => write!(f, "Directory"),
-            FileType::Link => write!(f, "Link"),
-            FileType::Unknown => write!(f, "Unknown"),
-        }
-    }
-}
 
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
