@@ -83,6 +83,16 @@ deploy_agent()
 
 The <b>assets.list</b> method returns a list of asset names that the agent is aware of.
 
+### assets.read_binary
+`assets.read_binary(src: str) -> List<int>`
+
+The <b>assets.read_binary</b> method returns a list of u32 numbers representing the asset files bytes.
+
+### assets.read
+`assets.read(src: str) -> str`
+
+The <b>assets.read</b> method returns a UTF-8 string representation of the asset file.
+
 ---
 
 ## File
@@ -125,6 +135,45 @@ The <b>file.is_dir</b> method checks if a path exists and is a directory. If it 
 `file.is_file(path: str) -> bool`
 
 The <b>file.is_file</b> method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`.
+
+### file.list
+`file.list(path: str) -> List<Dict>`
+
+The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traveresed with `../`.
+Each file is represented by a Dict type.
+Here is an example of the Dict layout:
+
+```JSON
+[
+    {
+        "file_name": "implants",
+        "size": 4096,
+        "owner": "root",
+        "group": "0",
+        "permissions": "40755",
+        "modified": "2023-07-09 01:35:40 UTC",
+        "type": "Directory"
+    },
+    {
+        "file_name": "README.md",
+        "size": 750,
+        "owner": "root",
+        "group": "0",
+        "permissions": "100644",
+        "modified": "2023-07-08 02:49:47 UTC",
+        "type": "File"
+    },
+    {
+        "file_name": ".git",
+        "size": 4096,
+        "owner": "root",
+        "group": "0",
+        "permissions": "40755",
+        "modified": "2023-07-10 21:14:06 UTC",
+        "type": "Directory"
+    }
+]
+```
 
 ### file.mkdir
 `file.mkdir(path: str) -> None`
@@ -305,6 +354,44 @@ sys.execute("/bin/bash",["-c", "ls /nofile"])
     "status":2,
 }
 ```
+
+### sys.get_ip
+`sys.get_ip() -> List<Dict>`
+
+The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionary. An example is available below:
+
+```JSON
+[
+    {
+        "name": "eth0",
+        "ips": [
+            "172.17.0.2"
+        ],
+        "mac": "02:42:ac:11:00:02"
+    },
+    {
+        "name": "lo",
+        "ips": [
+            "127.0.0.1"
+        ],
+        "mac": "00:00:00:00:00:00"
+    }
+]
+```
+
+### sys.get_os
+`sys.get_os() -> Dict`
+
+The <b>sys.get_os</b> method returns a dictionary that describes the current systems OS.
+An example is below:
+
+```json
+{
+    "arch": "x86_64",
+    "desktop_env": "Unknown: Unknown",
+    "distro": "Debian GNU/Linux 10 (buster)",
+    "platform": "Linux"
+}
 
 ### sys.is_linux
 `sys.is_linux() -> bool`

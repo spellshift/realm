@@ -170,11 +170,11 @@ mod tests {
         a.globals(globals);
         a.all_true(
             r#"
-dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
+dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "list", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
 dir(process) == ["kill", "list", "name"]
-dir(sys) == ["dll_inject", "exec", "is_linux", "is_macos", "is_windows", "shell"]
+dir(sys) == ["dll_inject", "exec", "get_ip", "get_os", "is_linux", "is_macos", "is_windows", "shell"]
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_exec", "ssh_password_spray"]
-dir(assets) == ["copy","list"]
+dir(assets) == ["copy","list","read","read_binary"]
 "#,
         );
     }
