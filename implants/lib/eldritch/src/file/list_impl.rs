@@ -1,4 +1,5 @@
 use anyhow::Result;
+use gazebo::any;
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use sysinfo::{System, SystemExt, UserExt};
 use std::fs::DirEntry;
@@ -16,6 +17,7 @@ use super::{File, FileType};
 const UNKNOWN: &str = "UNKNOWN";
 
 // https://stackoverflow.com/questions/6161776/convert-windows-filetime-to-second-in-unix-linux
+#[cfg(target_os = "windows")]
 fn windows_tick_to_unix_tick(windows_tick: u64) -> i64{
     const WINDOWS_TICK: u64 = 10000000;
     const SEC_TO_UNIX_EPOCH: u64 = 11644473600;
@@ -31,27 +33,34 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
         Err(_) => return Err(anyhow::anyhow!("file.list: Unable to convert file name to string.")),
     };
 
-    let mut file_type = FileType::Unknown;
-    let tmp_file_type = dir_entry.file_type().expect("file.list: Unable to determine type");
-    if tmp_file_type.is_dir() {
-        file_type = FileType::Directory;
-    } else if tmp_file_type.is_file() {
-        file_type = FileType::File;
-    } else if tmp_file_type.is_symlink() {
-        file_type = FileType::Link;
-    }
+    let file_type = match dir_entry.file_type() {
+        Ok(tmp_file_type) => {
+            if tmp_file_type.is_dir() {
+                FileType::Directory
+            } else if tmp_file_type.is_file() {
+                FileType::File
+            } else if tmp_file_type.is_symlink() {
+                FileType::Link
+            } else {
+                FileType::Unknown
+            }
+        },
+        Err(_) => FileType::Unknown,
+    };
 
     let dir_entry_metadata = dir_entry.metadata().expect("file.list: Unable to get dir_entry metadata.");
 
     let file_size = dir_entry_metadata.len();
 
     #[cfg(unix)]
-    let owner_username = {
-        let tmp_owner_uid = dir_entry_metadata.st_uid();
-        let tmp_sysinfo_owner_uid = sysinfo::Uid::try_from(tmp_owner_uid as usize).expect("file.list: Failed to convert u32 to UID");
-        let owner_username = sys.get_user_by_id(&tmp_sysinfo_owner_uid).expect("file.list: Failed to resolve username from UID").name().to_string();
-        owner_username
+    let owner_username = match sysinfo::Uid::try_from(dir_entry_metadata.st_uid() as usize) {
+        Ok(local_uid) => match sys.get_user_by_id(&local_uid) {
+            Some(user_name_string) => user_name_string.name().to_string(),
+            None => UNKNOWN.to_string(),
+        },
+        Err(_) => UNKNOWN.to_string(),
     };
+
     #[cfg(not(unix))]
     let owner_username = {
         UNKNOWN.to_string()
@@ -89,7 +98,10 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
         }
     };
 
-    let naive_datetime = NaiveDateTime::from_timestamp_opt(timestamp, 0).expect("file.list: Failed to convert epoch to timedate.");
+    let naive_datetime = match NaiveDateTime::from_timestamp_opt(timestamp, 0) {
+        Some(local_naive_datetime) => local_naive_datetime,
+        None => return Err(anyhow::anyhow!("Failed to get time from timestamp for file {}", file_name)),
+    };
     let time_modified: DateTime<Utc> = DateTime::from_utc(naive_datetime, Utc);
     
     Ok(File {
@@ -120,7 +132,7 @@ fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict>{
     let tmp_value1 = starlark_heap.alloc_str(&file.name);
     tmp_res.insert_hashed(const_frozen_string!("file_name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
 
-    let file_size = file.size.try_into().expect(format!("`file.list`: Failed to convert file size {} from u32 to i32.", file.size).as_str());
+    let file_size = file.size as i32;
     tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed().unwrap(), Value::new_int(file_size));
 
     let tmp_value2 = starlark_heap.alloc_str(&file.owner);
@@ -153,7 +165,7 @@ pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::{tempdir};
+    use tempfile::tempdir;
 
     #[test]
     fn test_file_list() -> anyhow::Result<()>{
