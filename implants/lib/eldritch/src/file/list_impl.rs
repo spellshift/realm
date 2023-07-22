@@ -1,5 +1,4 @@
 use anyhow::Result;
-use gazebo::any;
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use sysinfo::{System, SystemExt, UserExt};
 use std::fs::DirEntry;
@@ -48,7 +47,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
         Err(_) => FileType::Unknown,
     };
 
-    let dir_entry_metadata = dir_entry.metadata().expect("file.list: Unable to get dir_entry metadata.");
+    let dir_entry_metadata = dir_entry.metadata()?;
 
     let file_size = dir_entry_metadata.len();
 
@@ -155,7 +154,11 @@ fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict>{
 
 pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
     let mut final_res: Vec<Dict> = Vec::new();
-    for file in handle_list(path)? {
+    let file_list = match handle_list(path) {
+        Ok(local_file_list) => local_file_list,
+        Err(local_err) => return Err(anyhow::anyhow!("Failed to get file list: {}", local_err.to_string())),
+    };
+    for file in file_list {
         let tmp_res = create_dict_from_file(starlark_heap, file)?;
         final_res.push(tmp_res);
     }
