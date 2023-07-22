@@ -288,9 +288,19 @@ The <b>pivot.port_forward</b> method is being proposed to provide socat like fun
 The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb.
 
 ### pivot.ssh_exec
-`pivot.ssh_exec(target: str, port: int, username: str, password: str, key: str, command: str, shell_path: str) -> List<str>`
+`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
 
-The <b>pivot.ssh_exec</b> method is being proposed to allow users a way to move between hosts running ssh.
+The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell. If no password or key is specified the function will error out with:
+`Failed to run handle_ssh_exec: Failed to authenticate to host`
+If the connection is successful but the command fails no output will be returned but the status code will be set.
+Not returning stderr is a limitation of the way we're performing execution. Since it's not using the SSH shell directive we're limited on the return output we can capture. 
+
+```json
+{
+    "stdout": "uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\n",
+    "status": 0
+}
+```
 
 ### pivot.ssh_password_spray
 `pivot.ssh_password_spray(targets: List<str>, port: int, credentials: List<str>, keys: List<str>, command: str, shell_path: str) -> List<str>`
@@ -334,7 +344,7 @@ The <b>process.name</b> method is very cool, and will be even cooler when Nick d
 The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
 
 ### sys.exec
-`sys.exec(path: str, args: List<str>, disown: bool) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
