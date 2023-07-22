@@ -8,10 +8,12 @@ allocative = { workspace = true }
 allocative_derive = { workspace = true }
 anyhow = { workspace = true }
 async-recursion = { workspace = true }
+chrono = { workspace = true }
 derive_more = { workspace = true }
 eval = { workspace = true }
 flate2 = { workspace = true }
 gazebo = { workspace = true }
+network-interface = { workspace = true }
 nix = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
@@ -34,6 +36,7 @@ windows-sys = { workspace = true, features = [
     "Win32_System_Diagnostics_Debug",
     "Win32_Security",
 ]}
+whoami = { workspace = true }
 
 [dev-dependencies]
 httptest = { workspace = true }
