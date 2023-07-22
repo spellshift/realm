@@ -63,7 +63,7 @@ impl<'v> UnpackValue<'v> for FileLibrary {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Display)]
 enum FileType {
     File,
     Directory,
@@ -71,7 +71,8 @@ enum FileType {
     Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Display)]
+#[display(fmt = "{} {} {} {} {} {} {}", name, file_type, size, owner, group, permissions, time_modified)]
 struct File {
     name: String,
     file_type: FileType,
