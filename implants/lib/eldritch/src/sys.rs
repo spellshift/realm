@@ -1,4 +1,5 @@
 mod exec_impl;
+mod get_ip_impl;
 mod is_linux_impl;
 mod is_windows_impl;
 mod is_macos_impl;
@@ -64,6 +65,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn dll_inject(this: SysLibrary, dll_path: String, pid: u32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         dll_inject_impl::dll_inject(dll_path, pid)
+    }
+    fn get_ip<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        get_ip_impl::get_ip(starlark_heap)
     }
     fn is_linux(this: SysLibrary) -> anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
