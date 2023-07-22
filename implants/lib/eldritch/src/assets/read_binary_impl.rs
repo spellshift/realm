@@ -5,10 +5,11 @@ pub fn read_binary(src: String) -> Result<Vec<u32>> {
         Some(local_src_file) => local_src_file.data,
         None => return Err(anyhow::anyhow!("Embedded file {src} not found.")),
     };
-    let mut result = Vec::new();
-    for byte in src_file_bytes.iter() {
-        result.push(*byte as u32);
-    }
+    let result = src_file_bytes.iter().map(|x| *x as u32).collect::<Vec<u32>>();
+    // let mut result = Vec::new();
+    // for byt: Vec<u32>e in src_file_bytes.iter() {
+    //     result.push(*byte as u32);
+    // }
     Ok(result)
 }
 
