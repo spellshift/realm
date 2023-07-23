@@ -5,13 +5,15 @@
       url: "user-guide/getting-started"
     - title: "Tavern"
       url: "user-guide/tavern"
+    - title: "Imix"
+      url: "user-guide/imix"
+    - title: "Golem"
+      url: "user-guide/golem"
     - title: "Eldritch"
       url: "user-guide/eldritch"
       children:
         - title: Standard Library
           url: "user-guide/eldritch#standard-library"
-    - title: "Golem"
-      url: "user-guide/golem"
 - title: Developer Guide
   url: dev-guide
   links:
@@ -46,15 +48,11 @@
           url: "dev-guide/eldritch#Overview"
         - title: "Creating a function"
           url: "dev-guide/eldritch#creating-a-function"
+        - title: "OS Specific functions"
+          url: "dev-guide/eldritch#os-specific-functions"
+        - title: "Notes about using dictionary type Dict"
+          url: "dev-guide/eldritch#notes-about-using-dictionary-type-dict"
         - title: "Notes about asynchronous Eldritch code"
           url: "dev-guide/eldritch#notes-about-asynchronous-eldritch-code"
-  # links:
-  #   - title: "Getting Started"
-  #     url: "user-guide/getting-started"
-  #   - title: "Eldritch"
-  #     url: "user-guide/eldritch"
-  #     children:
-  #       - title: Standard Library
-  #         url: "user-guide/eldritch#StandardLibrary"
 - title: "About"
   url: "about"
