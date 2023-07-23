@@ -35,7 +35,7 @@ Want to get hands on now?  <a href="{{ '/user-guide/getting-started' | prepend: 
 <h5><a href="{{ '/user-guide/golem' | prepend: site.baseurl }}">Standalone interpreter (golem)</a></h5>
 <ul>
 <li>Interactive shell for testing hands-on testing.</li>
-<li>Embedded files that execute autonomously on execuiton.</li>
+<li>Embedded files that execute autonomously on execution.</li>
 </ul>
 
 <h5><a href="{{ '/user-guide/eldritch' | prepend: site.baseurl }}">Built-in interpreter (eldritch)</a></h5>

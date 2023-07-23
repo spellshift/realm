@@ -39,7 +39,7 @@ The imix config is as follows:
 ```
 
 - `service_configs`: Currently unused.
-- `target_forward_connect_ip`: The IP address that you the red teamer would interact with the host through. This is to help keep track of agents when a hosts internal IP is different from the one you interact with in the case of a proxied host.
+- `target_forward_connect_ip`: The IP address that you the red teamer would interact with the host through. This is to help keep track of agents when a hosts internal IP is different from the one you interact with in the case of a host behind a proxy.
 - `target_name`: Currently unused.
 - `callback_config`: Define where and when the agent should callback.
     - `interval`: Number of seconds between callbacks.

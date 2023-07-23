@@ -139,7 +139,7 @@ The <b>file.is_file</b> method checks if a path exists and is a file. If it does
 ### file.list
 `file.list(path: str) -> List<Dict>`
 
-The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traveresed with `../`.
+The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
 Each file is represented by a Dict type.
 Here is an example of the Dict layout:
 
