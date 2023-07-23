@@ -130,6 +130,80 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 
 ![/assets/img/tavern/graphiql.png](/assets/img/tavern/graphiql.png)
 
+#### Some sample queries to get started
+**List all sessions**
+```graphql
+query get_sessions {
+	sessions {
+    id
+    identifier
+    name
+    hostPlatform
+    hostIdentifier
+    hostPrimaryIP
+  }
+}
+```
+
+**Create a tome**
+```graphql
+mutation CreateTome ($input: CreateTomeInput!) {
+  createTome(input: $input) {
+    id
+    name
+  }
+}	
+```
+```json
+{
+  "input": {
+    "name": "Test tome",
+    "description": "Just a sample",
+    "eldritch": "print(input_params['print_string'])",
+    "fileIDs": [],
+    "paramDefs": "{\"print_string\":\"str\"}"
+  }
+}
+```
+
+**Create a job**
+```graphql
+mutation createJob($input: CreateJobInput!, $sess:[ID!]!){
+  createJob(input: $input, sessionIDs: $sess) {
+    id
+  }
+}
+```
+```json
+{
+  "input": {
+    "name": "Run test tome",
+    "tomeID": "21474836488",
+    "parameters": "{\"print_string\":\"Hello World\"}"
+  },
+  "sess": ["8589934593"]
+}
+```
+**Get all task and job output**
+```graphql
+query get_task_res {
+  jobs {
+    tasks {
+      id
+      output
+      job {
+        tome {
+          eldritch
+        }
+        parameters
+      }
+      execFinishedAt
+    }
+  }
+}
+```
+
+
 ### Creating a New Model
 
 1. Initialize the schema `cd tavern && go run entgo.io/ent/cmd/ent init <NAME>`

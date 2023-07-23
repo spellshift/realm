@@ -8,6 +8,8 @@ permalink: /dev-guide/
 
 Welcome to the {{ site.title }} Developer Guide! Here you can quickly jump to a particular page.
 
+<a href="{{ '/user-guide/getting-started' | prepend: site.baseurl }}">Follow this guide to setup a dev instance of realm.</a>
+
 <div class="section-index">
     <hr class="panel-line">
     {% for post in site.docs  %}  
