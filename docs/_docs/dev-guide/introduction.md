@@ -17,11 +17,11 @@ We will do our best during code review to catch changes that require documentati
 
 ### Testing 
 
-Realm contains code across a variety of languages and frameworks. Testing helps ensure our codebase remains stable, enables us to refactor and develop new features with confidence, and can help new Realm developers understand the expected behaviour of our code. Below is an outline of the testing requirements for each portion of the codebase, as well as guidance on testing best practices.
+Realm contains code across a variety of languages and frameworks. Testing helps ensure our codebase remains stable, enables us to refactor and develop new features with confidence, and can help new Realm developers understand the expected behavior of our code. Below is an outline of the testing requirements for each portion of the codebase, as well as guidance on testing best practices.
 
 #### Eldritch
 
-Any methods added to the Eldritch Standard Library should have tests colocated in the method's `<name>_impl.rs` file. Here are a few things to keep in mind:
+Any methods added to the Eldritch Standard Library should have tests collocated in the method's `<name>_impl.rs` file. Here are a few things to keep in mind:
 * Tests should be cross platform
     * Rely on [NamedTempFile](https://docs.rs/tempfile/1.1.1/tempfile/struct.NamedTempFile.html) for temporary files
     * Rely on [path.join](https://doc.rust-lang.org/stable/std/path/struct.Path.html) to construct OS-agnostic paths
@@ -34,7 +34,7 @@ All code changes to Tavern must be tested. Below are some standards for test wri
 * Conventionally, please colocate your test code with the code it is testing and include it in the `<packagename>_test` package
 * We rely on the standard [testify](https://github.com/stretchr/testify) assert & require libraries for ensuring expected values (or errors) are returned
 * To enable a variety of inputs for a test case, we rely on closure-driven testing for Golang, you can read more about it [here](https://medium.com/@cep21/closure-driven-tests-an-alternative-style-to-table-driven-tests-in-go-628a41497e5e)
-* Reuseable test code should go in a subpackage suffixed with test
+* Reuseable test code should go in a sub-package suffixed with test
     * For example, reuseable test code for the `ent` package would be located in the `ent/enttest` package
     * This convention is even used in the Golang standard library (e.g. [net/http](https://pkg.go.dev/net/http/httptest))
 * Please use existing tests as a reference for writing new tests
@@ -48,7 +48,7 @@ In an attempt to reduce the complexity of merges, we enforce a linear history fo
 
 # Terminology
 
-Throughout the documentation terms like "agent" or "implant" are used to refrence various components (or types of components) in our codebase. Below we attempt to define some of those terms, to add some clarity to that other documentation.
+Throughout the documentation terms like "agent" or "implant" are used to reference various components (or types of components) in our codebase. Below we attempt to define some of those terms, to add some clarity to that other documentation.
 
 ### Target
 A Target is a system that is in-scope for the current engagement. It is used to establish a logical boundary between different systems in an engagement (e.g. between a webserver and a database). This enables operations to _target_ a particular system, for example you may want to list files on a web server in your engagement scope.
@@ -57,19 +57,22 @@ A Target is a system that is in-scope for the current engagement. It is used to 
 A Task represents a set of instructions to perform on a Target system. For example, listing files could be a Task. When listing files across various Targets, one Task per Target will be created for tracking the individual execution output.
 
 ### Implant
-References malicious code or persistence mechanisms that are deployed to compromise target systems. Some configration information for Implants (e.g. `ImplantConfigs`) can be managed through Tavern.
+References malicious code or persistence mechanisms that are deployed to compromise target systems. Some configuration information for Implants (e.g. `ImplantConfigs`) can be managed through Tavern.
 
 ### Agent
-An Agent is a type of implant which retrieves execution instructons by connecting to our backend infrastructure (calling back) and querying for new tasks. 
+An Agent is a type of implant which retrieves execution instructions by connecting to our backend infrastructure (calling back) and querying for new tasks. 
 
 # Project Structure
 * **[.devcontainer](https://github.com/KCarretto/realm/tree/main/.devcontainer)** contains settings required for configuring a VSCode dev container that can be used for Realm development
 * **[.github](https://github.com/KCarretto/realm/tree/main/.github)** contains GitHub related actions, issue templates, etc
+* **[docker](https://github.com/KCarretto/realm/tree/main/docker)** docker containers for production builds
 * **[docs](https://github.com/KCarretto/realm/tree/main/docs)** contains the Jekyll code for the documentation site that you're reading now!
 * **[implants](https://github.com/KCarretto/realm/tree/main/implants)** is the parent folder of any implant executables or libraries
-    * **[implants/contrib](https://github.com/KCarretto/realm/tree/main/implants/contrib)** contains example information which might be useful to project contributors
-    * **[implants/eldritch](https://github.com/KCarretto/realm/tree/main/implants/eldritch)** is the source of our eldritch library (Rust)
+    * **[implants/golem](https://github.com/KCarretto/realm/tree/main/implants/golem)** the stand-alone interpreter that implements the eldritch language (Rust)
+    * **[implants/golem/embed_files_golem_prod](https://github.com/KCarretto/realm/tree/main/implants/golem/embed_files_golem_prod)** Files and scripts that will be embedded into production builds of imix, golem, and eldritch. These files can be accessed through the [`assets` module.](https://docs.realm.pub/user-guide/eldritch#assets)
     * **[implants/imix](https://github.com/KCarretto/realm/tree/main/implants/imix)** is our agent that executes eldritch tomes (Rust)
+    * **[implants/lib/eldritch](https://github.com/KCarretto/realm/tree/main/implants/lib/eldritch)** is the source of our eldritch library (Rust)
+    * **[implants/lib/tavern](https://github.com/KCarretto/realm/tree/main/implants/lib/tavern)** is the source of our agents graphql API to interface with Tavern (Rust)
 * **[tavern](https://github.com/KCarretto/realm/tree/main/tavern)** is the parent folder of Tavern related code and packages, and stores the `main.go` executable for the service
     * **[tavern/auth](https://github.com/KCarretto/realm/tree/main/tavern/auth)** is a package for managing authentication for Tavern, and is used by various packages that rely on obtaining viewer information
     * **[tavern/ent](https://github.com/KCarretto/realm/tree/main/tavern/ent)** contains models and related code for interacting with the database (most of this is code generated by **[entgo](https://entgo.io/))**
@@ -77,7 +80,9 @@ An Agent is a type of implant which retrieves execution instructons by connectin
     * **[tavern/graphql](https://github.com/KCarretto/realm/tree/main/tavern/graphql)** contains our GraphQL definitions and resolvers (most of this code is generated by **[entgo](https://entgo.io/)** and **[gqlgen](https://github.com/99designs/gqlgen))**
     * **[tavern/internal](https://github.com/KCarretto/realm/tree/main/tavern/internal)** contains various internal packages that makeup Tavern
         * **[tavern/internal/www](https://github.com/KCarretto/realm/tree/main/tavern/internal/www)** contains Tavern's UI code
-* **[vscode](https://github.com/KCarretto/realm/tree/main/vscode)** contains our Eldritch VSCode integration source code
+* **[terraform](https://github.com/KCarretto/realm/tree/main/terraform)** contains the Terraform used to deploy a production ready Realm instance. See [Tavern User Guide](https://docs.realm.pub/user-guide/tavern) to learn how to use.
+* **[tests](https://github.com/KCarretto/realm/tree/main/tests)** miscellaneous files and example code used for testing. Generally won't be used but required for some niche situations like deadlocking cargo build.
+* **[vscode](https://github.com/KCarretto/realm/tree/main/vscode)** contains our Eldritch VSCode integration source code **(Unmaintained)**
 
 # Where to Start?
 If you'd like to make a contribution to Realm but aren't sure where to start or what features could use help, please consult our [Good First Issues](https://github.com/KCarretto/realm/labels/good%20first%20issue) for some starting ideas.
