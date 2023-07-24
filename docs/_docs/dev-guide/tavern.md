@@ -218,7 +218,7 @@ query get_task_res {
 ### Adding Mutations
 
 1. Update the `mutation.graphql` schema file to include your new mutation and please include it in the section for the model it's mutating if applicable (e.g. createUser should be defined near all the related User mutations)
-    * **Note:** Input types such as `Create<NAME>Input` or `Update<NAME>Input` will already be generated if you [added the approproate annotations to your ent schema](https://entgo.io/docs/tutorial-todo-gql#install-and-configure-entgql). If you require custom input mutations (e.g. `ClaimTasksInput`) then add them to the `inputs.graphql` file (Golang code will be generated in tavern/graphql/models e.g. `models.ClaimTasksInput`).
+    * **Note:** Input types such as `Create<NAME>Input` or `Update<NAME>Input` will already be generated if you [added the appropriate annotations to your ent schema](https://entgo.io/docs/tutorial-todo-gql#install-and-configure-entgql). If you require custom input mutations (e.g. `ClaimTasksInput`) then add them to the `inputs.graphql` file (Golang code will be generated in tavern/graphql/models e.g. `models.ClaimTasksInput`).
 2. Run `go generate ./...`
 3. Implement generated the generated mutation resolver method in `tavern/graphql/mutation.resolvers.go`
     * Depending on the mutation you're trying to implement, a one liner such as `return r.client.<NAME>.Create().SetInput(input).Save(ctx)` might be sufficient
