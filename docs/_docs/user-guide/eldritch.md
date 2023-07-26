@@ -178,7 +178,7 @@ Here is an example of the Dict layout:
 ### file.mkdir
 `file.mkdir(path: str) -> None`
 
-The <b>file.mkdir</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.mkdir</b> method is make a new dirctory at `path`.
 
 ### file.moveto
 `file.moveto(src: str, dst: str) -> None`
