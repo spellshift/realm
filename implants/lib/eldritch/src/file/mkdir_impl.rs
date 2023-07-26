@@ -22,8 +22,6 @@ mod tests {
         let path_dir = String::from(tmp_dir_parent.path().to_str().unwrap()).clone();
         tmp_dir_parent.close()?;
         
-        fs::remove_dir_all(path_dir.clone()).ok();
-
         let result = mkdir(path_dir.clone());
         assert!(result.is_ok(), "Expected mkdir to succeed, but it failed: {:?}", result);
 
