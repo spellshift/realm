@@ -220,7 +220,8 @@ The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick
 ### file.write
 `file.write(path: str, content: str) -> None`
 
-The <b>file.write</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.write</b> method writes to a given file path with the given content.
+If a file or directory already exists at this path, the method will fail.
 
 ---
 
