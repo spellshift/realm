@@ -15,7 +15,9 @@ use std::os::macos::fs::MetadataExt;
 use std::os::unix::fs::PermissionsExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
-use sysinfo::{System, SystemExt, UserExt};
+#[cfg(not(target_os = "windows"))]
+use sysinfo::UserExt;
+use sysinfo::{System, SystemExt};
 
 const UNKNOWN: &str = "UNKNOWN";
 
@@ -113,8 +115,8 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
         file_type,
         size: file_size,
         owner: owner_username,
-        group: group_id,
-        permissions,
+        group: group_id.to_string(),
+        permissions: permissions.to_string(),
         time_modified: time_modified.to_string(),
     })
 }
