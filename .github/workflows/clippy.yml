@@ -1,0 +1,19 @@
+name: Cargo Clippy
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  clippy_check:
+    name: Check Clippy for Formatting Errors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Clippy for Linting
+        working-directory: ./implants
+        env:
+          SQLX_OFFLINE: true
+        run: cargo clippy --all-targets --all-features -- -D warnings
