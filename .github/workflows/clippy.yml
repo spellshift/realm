@@ -1,4 +1,4 @@
-name: Cargo Clippy
+name: Cargo Clippy and Format
 
 on:
   push:
@@ -7,8 +7,18 @@ on:
     branches: [ "master" ]
 
 jobs:
-  clippy_check:
-    name: Check Clippy for Formatting Errors
+  rust_check:
+    name: Check Fmt for Formatting Errors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Clippy for Linting
+        working-directory: ./implants
+        env:
+          SQLX_OFFLINE: true
+        run: cargo fmt --check
+
+    name: Check Clippy for Best Rust Practices
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

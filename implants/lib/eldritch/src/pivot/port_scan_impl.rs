@@ -310,21 +310,12 @@ async fn handle_port_scan_timeout(
                             .await
                             .unwrap());
                     }
-                    _ => {
-                        Err(scan_err)
-                    }
+                    _ => Err(scan_err),
                 },
             }
         }
         // If our timeout timer has expired set the port state to timeout and return.
-        Err(_timer_elapsed) => {
-            Ok((
-                target.clone(),
-                port,
-                protocol.clone(),
-                TIMEOUT.to_string(),
-            ))
-        }
+        Err(_timer_elapsed) => Ok((target.clone(), port, protocol.clone(), TIMEOUT.to_string())),
     }
 }
 
@@ -618,7 +609,7 @@ mod tests {
 
         let host = "127.0.0.1".to_string();
         let proto = TCP.to_string();
-        
+
         let expected_response: Vec<(String, i32, String, String)> = vec![
             (host.clone(), test_ports[0], proto.clone(), OPEN.to_string()),
             (host.clone(), test_ports[1], proto.clone(), OPEN.to_string()),
@@ -721,11 +712,12 @@ res
         );
 
         // Setup starlark interpreter with handle to our function
-        
-        let ast: AstModule = match AstModule::parse("test.eldritch", test_content, &Dialect::Standard) {
-            Ok(res) => res,
-            Err(err) => return Err(err),
-        };
+
+        let ast: AstModule =
+            match AstModule::parse("test.eldritch", test_content, &Dialect::Standard) {
+                Ok(res) => res,
+                Err(err) => return Err(err),
+            };
 
         #[starlark_module]
         fn func_port_scan(builder: &mut GlobalsBuilder) {

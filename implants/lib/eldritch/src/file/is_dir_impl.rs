@@ -47,8 +47,7 @@ mod tests {
                 .join("win_test_is_dir_nonexistent")
                 .to_str()
                 .unwrap(),
-        )
-        ;
+        );
         // Run our code
 
         let res = is_dir(path)?;

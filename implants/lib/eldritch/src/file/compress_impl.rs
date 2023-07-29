@@ -73,12 +73,7 @@ pub fn compress(src: String, dst: String) -> Result<()> {
 
     // Setup buffered reader writer.
     let f_src = std::io::BufReader::new(std::fs::File::open(tmp_src.clone()).unwrap());
-    let mut f_dst = std::io::BufWriter::new(
-        OpenOptions::new()
-            .create(true)
-            .write(true)
-            .open(dst)?,
-    );
+    let mut f_dst = std::io::BufWriter::new(OpenOptions::new().create(true).write(true).open(dst)?);
 
     let mut deflater = flate2::bufread::GzEncoder::new(f_src, Compression::fast());
 

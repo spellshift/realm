@@ -223,7 +223,8 @@ dir(assets) == ["copy","list","read","read_binary"]
         // Create test script
         let test_content = r#"
 sys.shell(input_params['cmd2'])
-"#.to_string();
+"#
+        .to_string();
         let param_string =
             r#"{"cmd":"id","cmd2":"echo hello_world","cmd3":"ls -lah /tmp/"}"#.to_string();
         let test_res = eldritch_run(
@@ -241,7 +242,8 @@ sys.shell(input_params['cmd2'])
         // Create test script
         let test_content = r#"
 input_params["number"]
-"#.to_string();
+"#
+        .to_string();
         let param_string = r#"{"number":1}"#.to_string();
         let test_res = eldritch_run(
             "test.tome".to_string(),
@@ -259,7 +261,8 @@ input_params["number"]
         let test_content = r#"
 x = input_params["number"] - 1
 x
-"#.to_string();
+"#
+        .to_string();
         let param_string = format!("{{\"number\":{}}}", u64::MAX);
         let test_res = eldritch_run(
             "test.tome".to_string(),
@@ -276,7 +279,8 @@ x
         // Create test script
         let test_content = r#"
 input_params
-"#.to_string();
+"#
+        .to_string();
         let param_string = r#"{"list_key":["item1","item2","item3"]}"#.to_string();
         let test_res = eldritch_run(
             "test.tome".to_string(),
@@ -295,9 +299,7 @@ input_params
     async fn test_library_async() -> anyhow::Result<()> {
         // just using a temp file for its path
         let tmp_file = NamedTempFile::new()?;
-        let path = String::from(tmp_file.path().to_str().unwrap())
-            
-            .replace('\\', "\\\\");
+        let path = String::from(tmp_file.path().to_str().unwrap()).replace('\\', "\\\\");
         let test_content = format!(
             r#"
 file.download("https://www.google.com/", "{path}")
@@ -324,7 +326,8 @@ file.download("https://www.google.com/", "{path}")
 print("Hello")
 print("World")
 print("123")
-"#.to_string();
+"#
+        .to_string();
         let (sender, receiver) = channel::<String>();
 
         let test_res = thread::spawn(|| {

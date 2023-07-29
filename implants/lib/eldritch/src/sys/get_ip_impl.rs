@@ -80,7 +80,6 @@ pub fn get_ip(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 
 #[cfg(test)]
 mod tests {
-    
 
     use super::*;
 

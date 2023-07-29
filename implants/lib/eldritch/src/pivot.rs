@@ -24,7 +24,6 @@ use starlark::{starlark_module, starlark_simple_value, starlark_type};
 
 use serde::{Serialize, Serializer};
 
-
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "PivotLibrary")]
 pub struct PivotLibrary();
@@ -261,7 +260,7 @@ impl Session {
                 .await?;
             return Ok(Self { session });
         }
-        
+
         // If key auth doesn't work try password auth
         if let Some(local_pass) = password {
             let _auth_res: bool = session.authenticate_password(user, local_pass).await?;

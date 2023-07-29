@@ -80,9 +80,7 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
                 .to_value()
                 .get_hashed()
                 .unwrap(),
-            starlark_heap
-                .alloc_str(&process.cmd().join(" "))
-                .to_value(),
+            starlark_heap.alloc_str(&process.cmd().join(" ")).to_value(),
         );
         tmp_res.insert_hashed(
             const_frozen_string!("cwd").to_value().get_hashed().unwrap(),

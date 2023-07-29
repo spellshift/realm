@@ -80,10 +80,8 @@ mod tests {
         // Create destination directory and the file path we expect after moveto "win"
         let tmp_dir_new = tempdir()?;
         let path_new = String::from(tmp_dir_new.path().to_str().unwrap());
-        let path_new_file =
-            String::from(tmp_dir_new.path().join("myfile").to_str().unwrap());
-        let path_new_file_win =
-            String::from(tmp_dir_new.path().join("myfile2").to_str().unwrap());
+        let path_new_file = String::from(tmp_dir_new.path().join("myfile").to_str().unwrap());
+        let path_new_file_win = String::from(tmp_dir_new.path().join("myfile2").to_str().unwrap());
 
         let _ = File::create(path_new_file.clone())?;
 

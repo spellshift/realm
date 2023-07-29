@@ -47,7 +47,7 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
     let command_string: &str;
     let command_args: Vec<&str>;
 
-     if cfg!(target_os = "windows") {
+    if cfg!(target_os = "windows") {
         command_string = "cmd";
         command_args = ["/c", cmd.as_str()].to_vec();
     } else {
@@ -130,14 +130,16 @@ mod tests {
         // Create test script
         let test_content = r#"
 func_shell("whoami")
-"#.to_string();
+"#
+        .to_string();
 
         // Setup starlark interpreter with handle to our function
-        
-        let ast: AstModule = match AstModule::parse("test.eldritch", test_content, &Dialect::Standard) {
-            Ok(res) => res,
-            Err(err) => return Err(err),
-        };
+
+        let ast: AstModule =
+            match AstModule::parse("test.eldritch", test_content, &Dialect::Standard) {
+                Ok(res) => res,
+                Err(err) => return Err(err),
+            };
 
         #[starlark_module]
         fn func_shell(builder: &mut GlobalsBuilder) {

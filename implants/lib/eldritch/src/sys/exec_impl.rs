@@ -198,10 +198,7 @@ mod tests {
 
             let _res = handle_exec(
                 String::from("/bin/sh"),
-                vec![
-                    String::from("-c"),
-                    format!("touch {}", path),
-                ],
+                vec![String::from("-c"), format!("touch {}", path)],
                 Some(true),
             )?;
             thread::sleep(time::Duration::from_secs(2));
