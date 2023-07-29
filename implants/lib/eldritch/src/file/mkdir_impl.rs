@@ -2,10 +2,7 @@ use anyhow::Result;
 use std::fs;
 
 pub fn mkdir(path: String) -> Result<()> {
-    match fs::create_dir(&path) {
-        Ok(_) => return Ok(()),
-        Err(_) => return Err(anyhow::anyhow!(format!("Failed to create directory at path: {}", path))),
-    }
+    fs::create_dir(&path).map_err(|_| anyhow::anyhow!(format!("Failed to create directory at path: {}", path)))
 }
 
 #[cfg(test)]

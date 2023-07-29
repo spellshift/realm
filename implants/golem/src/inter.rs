@@ -31,8 +31,6 @@ use starlark::errors::EvalSeverity;
 use starlark::read_line::ReadLine;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
-use anyhow;
-use serde_json;
 
 use eval::Context;
 use eval::ContextMode;
@@ -47,9 +45,7 @@ mod types;
     about = "Evaluate Starlark code",
     global_settings(&[AppSettings::ColoredHelp]),
 )]
-struct Args {
-
-}
+struct Args {}
 
 #[derive(Default)]
 struct Stats {
@@ -68,7 +64,6 @@ impl Display for Stats {
         ))
     }
 }
-
 
 impl Stats {
     fn increment(&mut self, x: EvalSeverity) {
@@ -113,12 +108,7 @@ fn interactive(ctx: &Context) -> anyhow::Result<()> {
 }
 
 pub fn interactive_main() -> anyhow::Result<()> {
-    let ctx = Context::new(
-        ContextMode::Run,
-        true,
-        &vec![],
-        true,
-    )?;
+    let ctx = Context::new(ContextMode::Run, true, &[], true)?;
 
     interactive(&ctx)?;
     Ok(())

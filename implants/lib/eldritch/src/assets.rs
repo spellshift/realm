@@ -8,11 +8,11 @@ use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike};
+use starlark::{starlark_module, starlark_simple_value, starlark_type};
 
-use serde::{Serialize,Serializer};
 use rust_embed::RustEmbed;
+use serde::{Serialize, Serializer};
 
 #[cfg(debug_assertions)]
 #[derive(RustEmbed)]
@@ -23,7 +23,6 @@ pub struct Asset;
 #[derive(RustEmbed)]
 #[folder = "../../../implants/golem/embed_files_golem_prod"]
 pub struct Asset;
-
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "AssetsLibrary")]
@@ -62,21 +61,40 @@ impl<'v> UnpackValue<'v> for AssetsLibrary {
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
     fn copy(this: AssetsLibrary, src: String, dest: String) -> anyhow::Result<NoneType> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        if false {
+            println!(
+                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
+                this
+            );
+        }
         copy_impl::copy(src, dest)?;
-        Ok(NoneType{})
+        Ok(NoneType {})
     }
     fn list(this: AssetsLibrary) -> anyhow::Result<Vec<String>> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        if false {
+            println!(
+                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
+                this
+            );
+        }
         list_impl::list()
     }
     fn read_binary(this: AssetsLibrary, src: String) -> anyhow::Result<Vec<u32>> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        if false {
+            println!(
+                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
+                this
+            );
+        }
         read_binary_impl::read_binary(src)
     }
     fn read(this: AssetsLibrary, src: String) -> anyhow::Result<String> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        if false {
+            println!(
+                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
+                this
+            );
+        }
         read_impl::read(src)
     }
-
 }

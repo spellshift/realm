@@ -2,11 +2,10 @@ use anyhow::Result;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
-
 pub fn append(path: String, content: String) -> Result<()> {
     let mut file = OpenOptions::new()
         .create(true) //Do we want to create the file if it doesn't exist? - Yes!
-        .write(true)    
+        .write(true)
         .append(true)
         .open(path)?;
 
@@ -14,21 +13,19 @@ pub fn append(path: String, content: String) -> Result<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::BufReader;
-    use std::fs::File;
     use std::fs::remove_file;
+    use std::fs::File;
+    use std::io::BufReader;
     use tempfile::NamedTempFile;
-
 
     #[test]
     fn test_append_nonexisting() -> anyhow::Result<()> {
         // Create file and then delete it (so we know it doesnt exist)
         let tmp_file = NamedTempFile::new()?;
-        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        let path = String::from(tmp_file.path().to_str().unwrap());
         tmp_file.close()?;
 
         // Run  our code
@@ -46,7 +43,7 @@ mod tests {
         // Cleanup
         remove_file(path)?;
         Ok(())
-    }    
+    }
     #[test]
     fn test_append_existing() -> anyhow::Result<()> {
         // Create file

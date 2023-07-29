@@ -6,7 +6,7 @@ use super::Config;
 
 pub const SYSTEMD_DIR: &str = "/lib/systemd/system/";
 
-pub async fn install(config: Config)-> Result<(), super::Error> {
+pub async fn install(config: Config) -> Result<(), super::Error> {
     // go through each service config consuming the structs
     for service_config in config.service_configs.into_iter() {
         let service_name = service_config.name;
@@ -48,14 +48,23 @@ WantedBy=multi-user.target
         fs::write(service_file_path, service_file_content)?;
 
         // copy the currently running binary to the exec path (yes order is right)
-        let curr_exec_path = std::env::args().nth(0).unwrap();
+        let curr_exec_path = std::env::args().next().unwrap();
         fs::copy(curr_exec_path, service_executable_path)?;
 
         // daemon reload/enable service/start service
         Command::new("systemctl").arg("daemon-reload").output()?;
-        Command::new("systemctl").arg("restart").arg(&service_name).output()?;
-        Command::new("systemctl").arg("enable").arg(&service_name).output()?;
-        Command::new("systemctl").arg("start").arg(&service_name).output()?;
+        Command::new("systemctl")
+            .arg("restart")
+            .arg(&service_name)
+            .output()?;
+        Command::new("systemctl")
+            .arg("enable")
+            .arg(&service_name)
+            .output()?;
+        Command::new("systemctl")
+            .arg("start")
+            .arg(&service_name)
+            .output()?;
     }
     Ok(())
 }

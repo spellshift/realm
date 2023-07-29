@@ -1,7 +1,7 @@
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
-use std::process::{Command,Stdio}; // Run programs
 use std::io::prelude::*;
+use std::process::{Command, Stdio}; // Run programs
 use std::str;
 
 // Test running `./golem ./nonexistentdir/run.tome`
@@ -15,9 +15,9 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
         .failure()
         .stderr(predicate::str::contains("Error: No such file or directory"));
     #[cfg(target_os = "windows")]
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Error: The system cannot find the path specified. (os error 3)"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "Error: The system cannot find the path specified. (os error 3)",
+    ));
 
     Ok(())
 }
@@ -35,7 +35,6 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     Ok(())
 }
 
-
 // Test running `./golem ../../tests/golem_cli_test/hello_world.tome`
 #[test]
 fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
@@ -49,7 +48,6 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     Ok(())
 }
 
-
 // Test running `./golem ../../tests/golem_cli_test/eldritch_test.tome`
 #[test]
 fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
@@ -62,7 +60,6 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
 
     Ok(())
 }
-
 
 // Test running `./golem ../../tests/golem_cli_test/eldritch_test.tome`
 #[test]
@@ -114,4 +111,3 @@ fn test_golem_main_embedded_files() -> anyhow::Result<()> {
 
     Ok(())
 }
-

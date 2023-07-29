@@ -35,7 +35,7 @@ mod tests {
     fn test_write_fail_file_exists() -> anyhow::Result<()> {
         // Attempt to write to a file that already exists and fail
         let tmp_file = NamedTempFile::new()?;
-        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        let path = String::from(tmp_file.path().to_str().unwrap());
 
         assert!(write(path, "Hello World!".to_string()).is_err());
         tmp_file.close()?;

@@ -8,10 +8,10 @@ use derive_more::Display;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike};
+use starlark::{starlark_module, starlark_simple_value, starlark_type};
 
-use serde::{Serialize,Serializer};
+use serde::{Serialize, Serializer};
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "ProcessLibrary")]
@@ -50,16 +50,32 @@ impl<'v> UnpackValue<'v> for ProcessLibrary {
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
     fn kill(this: ProcessLibrary, pid: i32) -> anyhow::Result<NoneType> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        if false {
+            println!(
+                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
+                this
+            );
+        }
         kill_impl::kill(pid)?;
-        Ok(NoneType{})
+        Ok(NoneType {})
     }
-    fn list<'v>(this: ProcessLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+    fn list<'v>(this: ProcessLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
+        //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
+        if false {
+            println!(
+                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
+                this
+            );
+        }
         list_impl::list(starlark_heap)
     }
     fn name(this: ProcessLibrary, pid: i32) -> anyhow::Result<String> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        if false {
+            println!(
+                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
+                this
+            );
+        }
         name_impl::name(pid)
     }
 }

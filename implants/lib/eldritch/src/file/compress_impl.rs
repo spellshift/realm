@@ -1,7 +1,11 @@
-use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write}};
+use std::{
+    fs::{File, OpenOptions},
+    io::{Read, Write},
+    path::Path,
+};
 
 use anyhow::Result;
-use flate2::{Compression};
+use flate2::Compression;
 use tar::{Builder, HeaderMode};
 use tempfile::NamedTempFile;
 
@@ -11,46 +15,54 @@ fn tar_dir(src: String, dst: String) -> Result<String> {
     // Create the tar bulider
     let tmp_tar_file = match File::create(dst.clone()) {
         Ok(file) => file,
-        Err(error) => return Err(anyhow::anyhow!("File {} failed to create.\n{:?}", dst.clone(), error)),
+        Err(error) => {
+            return Err(anyhow::anyhow!(
+                "File {} failed to create.\n{:?}",
+                dst,
+                error
+            ))
+        }
     };
     let mut tar_builder = Builder::new(tmp_tar_file);
-    tar_builder.mode(
-        HeaderMode::Deterministic
-    );
+    tar_builder.mode(HeaderMode::Deterministic);
 
-    let src_path_obj = src_path.clone().file_name().unwrap().to_str().unwrap();
+    let src_path_obj = src_path.file_name().unwrap().to_str().unwrap();
 
     // Add all files from source dir with the name of the dir.
-    match tar_builder.append_dir_all(src_path_obj.clone(), src_path.clone() ) {
-        Ok(_) => {},
+    match tar_builder.append_dir_all(src_path_obj, src_path) {
+        Ok(_) => {}
         Err(error) => {
-            return Err(
-                anyhow::anyhow!("Appending dir {} failed.\n{:?}", 
-                    src_path_obj.clone(),
-                    error
-                )
-            )
-        },
+            return Err(anyhow::anyhow!(
+                "Appending dir {} failed.\n{:?}",
+                src_path_obj,
+                error
+            ))
+        }
     }
 
     match tar_builder.finish() {
-        Ok(_) => {},
-        Err(error) => return Err(anyhow::anyhow!("Error creating tar ball failed\n{:?}", error)),
+        Ok(_) => {}
+        Err(error) => {
+            return Err(anyhow::anyhow!(
+                "Error creating tar ball failed\n{:?}",
+                error
+            ))
+        }
     }
 
-    Ok(dst.clone())
+    Ok(dst)
 }
 
 pub fn compress(src: String, dst: String) -> Result<()> {
     // Setup src path strings.
-    let mut tmp_src = src.clone();
+    let mut tmp_src = src;
     let src_path = Path::new(&tmp_src);
 
     let tmp_tar_file_src = NamedTempFile::new()?;
     let tmp_tar_file_src_path = String::from(tmp_tar_file_src.path().to_str().unwrap());
 
     // If our source is a dir create a tarball and update the src file to the tar ball.
-    if src_path.clone().is_dir() {
+    if src_path.is_dir() {
         tmp_src = match tar_dir(tmp_src, tmp_tar_file_src_path) {
             Ok(new_file_path) => new_file_path,
             Err(err) => return Err(err),
@@ -62,22 +74,21 @@ pub fn compress(src: String, dst: String) -> Result<()> {
     // Setup buffered reader writer.
     let f_src = std::io::BufReader::new(std::fs::File::open(tmp_src.clone()).unwrap());
     let mut f_dst = std::io::BufWriter::new(
-            OpenOptions::new()
+        OpenOptions::new()
             .create(true)
-            .write(true)    
-            .open(dst.clone())?
+            .write(true)
+            .open(dst)?,
     );
 
-    
     let mut deflater = flate2::bufread::GzEncoder::new(f_src, Compression::fast());
 
-    // Write 
-    let read_buffer_size = 1024*50;
+    // Write
+    let read_buffer_size = 1024 * 50;
     let mut bytes_read = read_buffer_size;
     while bytes_read != 0 {
         let mut buffer: Vec<u8> = vec![0; read_buffer_size];
         bytes_read = deflater.read(&mut buffer)?;
-        let _ = f_dst.write_all(&mut buffer[0..bytes_read]);
+        let _ = f_dst.write_all(&buffer[0..bytes_read]);
     }
 
     Ok(())
@@ -86,12 +97,15 @@ pub fn compress(src: String, dst: String) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{io::{prelude::*, BufReader}, fs};
     use sha256::try_digest;
+    use std::{
+        fs,
+        io::{prelude::*, BufReader},
+    };
     use tempfile::{tempdir, NamedTempFile};
-    
+
     #[test]
-    fn test_compress_basic() -> anyhow::Result<()>{
+    fn test_compress_basic() -> anyhow::Result<()> {
         // Create files
         let mut tmp_file_src = NamedTempFile::new()?;
         let path_src = String::from(tmp_file_src.path().to_str().unwrap());
@@ -102,23 +116,26 @@ mod tests {
         tmp_file_src.write_all(b"Hello, world!")?;
 
         // Run our code
-        compress(path_src, path_dst.clone())?;
+        compress(path_src, path_dst)?;
 
         // Hash
         let hash = try_digest(tmp_file_dst.path())?;
 
         // Compare
-        assert_eq!(hash, "a4a62449deb847be376f523c527ddb8e37eda2a4a71dd293d3ddcd4c4a81941f");
+        assert_eq!(
+            hash,
+            "a4a62449deb847be376f523c527ddb8e37eda2a4a71dd293d3ddcd4c4a81941f"
+        );
 
         Ok(())
     }
 
     #[test]
-    fn test_compress_tar_dir() -> anyhow::Result<()>{
+    fn test_compress_tar_dir() -> anyhow::Result<()> {
         // Create files
         let tmp_dir_src = tempdir()?;
         let path_src = String::from(tmp_dir_src.path().to_str().unwrap());
-        for (i,v) in ["Hello", "World", "Goodbye"].iter().enumerate() {
+        for (i, v) in ["Hello", "World", "Goodbye"].iter().enumerate() {
             let tmp_file = format!("{}/{}.txt", path_src.clone(), i);
             let _res = fs::write(tmp_file, v);
         }
@@ -126,24 +143,26 @@ mod tests {
         let tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
 
-        // Run our code 
+        // Run our code
         // Test with trailing slash.
-        tar_dir(format!("{}/", path_src.clone()), path_dst.clone())?;
+        tar_dir(format!("{}/", path_src), path_dst.clone())?;
 
         // Test for known strings.
         let mut res = 0;
-        let searchstrings = ["Hello", "World", "Goodbye", "/0.txt", "/1.txt", "/2.txt", "ustar"];
+        let searchstrings = [
+            "Hello", "World", "Goodbye", "/0.txt", "/1.txt", "/2.txt", "ustar",
+        ];
         for cur_string in searchstrings {
             let tar_file = File::open(path_dst.clone())?;
-            let reader = BufReader::new(tar_file);    
-            for line in reader.lines(){
+            let reader = BufReader::new(tar_file);
+            for line in reader.lines() {
                 let line = line.unwrap();
-                if line.contains(cur_string){
+                if line.contains(cur_string) {
                     res += 1;
                 }
             }
         }
-        
+
         assert_eq!(res, searchstrings.len());
         Ok(())
     }

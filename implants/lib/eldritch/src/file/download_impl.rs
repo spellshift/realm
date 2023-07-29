@@ -1,13 +1,10 @@
 use anyhow::Result;
-use tokio::{
-    io::{ AsyncWriteExt },
-    fs::{ File },
-};
-use tokio_stream::StreamExt;
 use std::path::PathBuf;
+use tokio::{fs::File, io::AsyncWriteExt};
+use tokio_stream::StreamExt;
 
 async fn handle_download(uri: String, dst: String) -> Result<()> {
-    // Create our file 
+    // Create our file
     let mut dest = {
         let fname = PathBuf::from(dst);
         File::create(fname).await?
@@ -15,10 +12,8 @@ async fn handle_download(uri: String, dst: String) -> Result<()> {
 
     // Download as a stream of bytes.
     // there's no checking at all happening here, for anything
-    let mut stream = reqwest::get(uri)
-        .await?
-        .bytes_stream();
-    
+    let mut stream = reqwest::get(uri).await?.bytes_stream();
+
     // Write the stream of bytes to the file in chunks
     while let Some(chunk_result) = stream.next().await {
         let chunk = chunk_result?;
@@ -36,22 +31,20 @@ pub fn download(uri: String, dst: String) -> Result<()> {
         .build()
         .unwrap();
 
-    let response = runtime.block_on(
-        handle_download(uri, dst)
-    );
+    let response = runtime.block_on(handle_download(uri, dst));
 
     match response {
         Ok(_) => Ok(()),
-        Err(_) => return response,
+        Err(_) => response,
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use httptest::{Server, Expectation, matchers::*, responders::*};
+    use httptest::{matchers::*, responders::*, Expectation, Server};
+    use std::fs::{read_to_string, remove_file};
     use tempfile::NamedTempFile;
-    use std::fs::{remove_file, read_to_string};
 
     #[test]
     fn test_download_file() -> anyhow::Result<()> {
@@ -59,13 +52,12 @@ mod tests {
         let server = Server::run();
         server.expect(
             Expectation::matching(request::method_path("GET", "/foo"))
-            .respond_with(status_code(200)
-            .body("test body")),
+                .respond_with(status_code(200).body("test body")),
         );
 
         // just using a temp file for its path
         let tmp_file = NamedTempFile::new()?;
-        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        let path = String::from(tmp_file.path().to_str().unwrap());
         tmp_file.close()?;
 
         // reference test server uri
@@ -75,8 +67,7 @@ mod tests {
         download(url, path.clone())?;
 
         // Read the file
-        let contents = read_to_string(path.clone())
-            .expect("Something went wrong reading the file");
+        let contents = read_to_string(path.clone()).expect("Something went wrong reading the file");
 
         // check file written correctly
         assert_eq!(contents, "test body");

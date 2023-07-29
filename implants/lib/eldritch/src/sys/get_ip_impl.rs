@@ -1,6 +1,10 @@
 use anyhow::Result;
-use network_interface::{NetworkInterfaceConfig, NetworkInterface};
-use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
+use network_interface::{NetworkInterface, NetworkInterfaceConfig};
+use starlark::{
+    collections::SmallMap,
+    const_frozen_string,
+    values::{dict::Dict, Heap, Value},
+};
 
 const UNKNOWN: &str = "UNKNOWN";
 
@@ -14,7 +18,6 @@ struct NetInterface {
 fn handle_get_ip() -> Result<Vec<NetInterface>> {
     let mut res = Vec::new();
     for network_interface in NetworkInterface::show()? {
-
         let mac_addr = match network_interface.mac_addr {
             Some(local_mac) => local_mac,
             None => UNKNOWN.to_string(),
@@ -24,37 +27,47 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
         for ip in network_interface.addr {
             ips.push(ip.ip());
         }
-        
-        res.push(NetInterface{
+
+        res.push(NetInterface {
             name: network_interface.name,
-            ips: ips,
+            ips,
             mac: mac_addr,
         });
     }
     Ok(res)
 }
 
-fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> Result<Dict>{
+fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> Result<Dict> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 
     let tmp_value1 = starlark_heap.alloc_str(&interface.name);
-    tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
+    tmp_res.insert_hashed(
+        const_frozen_string!("name")
+            .to_value()
+            .get_hashed()
+            .unwrap(),
+        tmp_value1.to_value(),
+    );
 
     let mut tmp_value2_arr = Vec::<Value>::new();
     for ip in interface.ips {
         tmp_value2_arr.push(starlark_heap.alloc_str(&ip.to_string()).to_value());
     }
     let tmp_value2 = starlark_heap.alloc(tmp_value2_arr);
-    tmp_res.insert_hashed(const_frozen_string!("ips").to_value().get_hashed().unwrap(), tmp_value2);
+    tmp_res.insert_hashed(
+        const_frozen_string!("ips").to_value().get_hashed().unwrap(),
+        tmp_value2,
+    );
 
     let tmp_value3 = starlark_heap.alloc_str(&interface.mac);
-    tmp_res.insert_hashed(const_frozen_string!("mac").to_value().get_hashed().unwrap(), tmp_value3.to_value());
-
+    tmp_res.insert_hashed(
+        const_frozen_string!("mac").to_value().get_hashed().unwrap(),
+        tmp_value3.to_value(),
+    );
 
     Ok(tmp_res)
 }
-
 
 pub fn get_ip(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     let mut final_res: Vec<Dict> = Vec::new();
@@ -67,7 +80,7 @@ pub fn get_ip(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 
 #[cfg(test)]
 mod tests {
-    use std::net::{Ipv4Addr, IpAddr};
+    
 
     use super::*;
 
