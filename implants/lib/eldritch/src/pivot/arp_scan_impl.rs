@@ -22,7 +22,7 @@ struct ArpResponse {
     interface: String,
 }
 
-// use pnet to listen on given interface for ARP packets
+
 fn start_listener(
     interface: NetworkInterface,
     data: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>>,
@@ -42,12 +42,15 @@ fn start_listener(
             return;
         }
     };
-    let ips = data
+    let ips = match data
         .lock()
-        .unwrap()
-        .keys()
-        .cloned()
-        .collect::<Vec<Ipv4Addr>>();
+        {
+            Ok(lock) => lock.keys().cloned().collect::<Vec<Ipv4Addr>>(),
+            Err(err) => {
+                println!("Failed to get lock on ips: {}", err);
+                return;
+            }
+        };
     for ip in ips {
         let ip_to_use = match interface
             .ips
@@ -59,7 +62,13 @@ fn start_listener(
             None => continue,
         };
         let mut arp_packet = [0u8; 28];
-        let mut arp = MutableArpPacket::new(&mut arp_packet).unwrap();
+        let mut arp = match MutableArpPacket::new(&mut arp_packet) {
+            Some(arp) => arp,
+            None => {
+                println!("Failed to create MutableArpPacket to send.");
+                return;
+            }
+        };
         arp.set_hardware_type(pnet::packet::arp::ArpHardwareType(1));
         arp.set_protocol_type(pnet::packet::ethernet::EtherType(0x0800));
         arp.set_hw_addr_len(6);
@@ -70,19 +79,38 @@ fn start_listener(
         arp.set_target_hw_addr(MacAddr::zero());
         arp.set_target_proto_addr(ip);
         let mut eth_packet = [0u8; 60];
-        let mut eth = MutableEthernetPacket::new(&mut eth_packet).unwrap();
+        let mut eth = match MutableEthernetPacket::new(&mut eth_packet) {
+            Some(eth) => eth,
+            None => {
+                println!("Failed to create MutableEthernetPacket to send.");
+                return;
+            }
+        };
         eth.set_destination(MacAddr::broadcast());
         eth.set_source(mac);
         eth.set_ethertype(EtherType(0x0806));
         eth.set_payload(arp.packet());
-        let tx_res = tx.send_to(eth.packet(), None).unwrap();
-        if let Err(err) = tx_res {
-            println!("Failed to tx on dev {}: {}", interface.name, err);
-            return;
-        }
+        match tx.send_to(eth.packet(), None) {
+            Some(Ok(_)) => {},
+            Some(Err(err)) => {
+                println!("Failed to tx on {}: {}", interface.name, err);
+                return;
+            },
+            None => {
+                println!("Failed to tx on {}: Returned None", interface.name);
+                return;
+            }
+        };
         let now = SystemTime::now();
         loop {
-            if now.elapsed().unwrap() > Duration::from_secs(5) {
+            let elapsed = match now.elapsed() {
+                Ok(elapsed) => elapsed,
+                Err(err) => {
+                    println!("Failed to get elapsed time on {}: {}", interface.name, err);
+                    return;
+                }
+            };
+            if elapsed > Duration::from_secs(5) {
                 break;
             }
             match rx.next() {
@@ -101,12 +129,24 @@ fn start_listener(
                     let source_ip = arp.get_sender_proto_addr();
                     let source_mac = arp.get_sender_hw_addr();
                     if source_ip == ip {
-                        *data.lock().unwrap().get_mut(&ip).unwrap() = Some(ArpResponse {
-                            _source_ip: source_ip,
-                            source_mac,
-                            interface: interface.name.clone(),
-                        });
-                        break;
+                        match data.lock() {
+                            Ok(mut lock) => {
+                                if let Some(target) = lock.get_mut(&ip) {
+                                    *target = Some(ArpResponse {
+                                                     _source_ip: source_ip,
+                                                     source_mac,
+                                                     interface: interface.name.clone(),
+                                                 });
+                                    break;
+                                }
+                                println!("Failed to find {} in HashMap", ip);
+                                return;
+                            },
+                            Err(err) => {
+                                println!("Failed to get lock on data: {}", err);
+                                return;
+                            }
+                        }
                     }
                 }
                 Err(e) => {
@@ -121,11 +161,12 @@ fn start_listener(
     }
 }
 
+#[cfg(not(target_os = "windows"))]
 pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
     let target_cidrs = target_cidrs
         .iter()
         .map(|cidr| {
-            let (addr, prefix) = cidr.split_at(cidr.find('/').unwrap());
+            let (addr, prefix) = cidr.split_at(cidr.find('/').ok_or(anyhow::anyhow!("Failed to find / in Network {}", cidr))?);
             let addr = match Ipv4Addr::from_str(addr) {
                 Ok(addr) => addr,
                 Err(_) => {
@@ -153,20 +194,23 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
                 Arc::new(Mutex::new(HashMap::new()));
             for target_cidr in target_cidrs {
                 for ip in target_cidr.iter() {
-                    listener_out.lock().unwrap().insert(ip, None);
+                    match listener_out.lock() {
+                        Ok(mut listener_lock) => {listener_lock.insert(ip, None);},
+                        Err(err) => return Err(anyhow::anyhow!("Failed to get lock on IP List: {}", err))
+                    }
                 }
             }
             let interfaces = datalink::interfaces();
             for interface in interfaces {
                 let inner_out = listener_out.clone();
-                let interface = interface.clone();
+                let inner_interface = interface.clone();
                 let thread = std::thread::spawn(move || {
-                    start_listener(interface, inner_out);
+                    start_listener(inner_interface, inner_out);
                 });
-                thread.join().unwrap();
+                thread.join().map_err(|err| anyhow::anyhow!("Failed to join thread for interface {}: {:?}", interface.name, err))?
             }
             let mut out: Vec<Dict> = Vec::new();
-            let final_listener_output = listener_out.lock().unwrap().clone();
+            let final_listener_output = listener_out.lock().map_err(|err| anyhow::anyhow!("Failed to get final data lock: {}", err))?.clone();
             for (ipaddr, res) in final_listener_output {
                 if let Some(res) = res {
                     let hit_small_map = SmallMap::new();
@@ -175,18 +219,18 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
                     let source_mac_value = starlark_heap.alloc_str(&res.source_mac.to_string());
                     let interface_value = starlark_heap.alloc_str(&res.interface.to_string());
                     hit_dict.insert_hashed(
-                        const_frozen_string!("IP").to_value().get_hashed().unwrap(),
+                        const_frozen_string!("ip").to_value().get_hashed()?,
                         ipaddr_value.to_value(),
                     );
                     hit_dict.insert_hashed(
-                        const_frozen_string!("MAC").to_value().get_hashed().unwrap(),
+                        const_frozen_string!("mac").to_value().get_hashed()?,
                         source_mac_value.to_value(),
                     );
                     hit_dict.insert_hashed(
-                        const_frozen_string!("Interface")
+                        const_frozen_string!("interface")
                             .to_value()
                             .get_hashed()
-                            .unwrap(),
+                            ?,
                         interface_value.to_value(),
                     );
                     out.push(hit_dict);
@@ -196,4 +240,9 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
         }
         Err(e) => Err(e),
     }
+}
+
+#[cfg(target_os = "windows")]
+pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
+    Err(anyhow::anyhow!("ARP Scanning is not available on Windows."))
 }
