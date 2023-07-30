@@ -77,7 +77,8 @@ fn start_listener(
         eth.set_payload(arp.packet());
         let tx_res = tx.send_to(eth.packet(), None).unwrap();
         if let Err(err) = tx_res {
-            return println!("Failed to tx: {} {}", interface.name, err);
+            println!("Failed to tx on dev {}: {}", interface.name, err);
+            return;
         }
         let now = SystemTime::now();
         loop {
