@@ -15,13 +15,12 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
-#[derive(Debug, Clone)]
-struct ArpResponse {
+#[derive(Debug, Clone, PartialEq)]
+pub struct ArpResponse {
     _source_ip: Ipv4Addr,
     source_mac: MacAddr,
     interface: String,
 }
-
 
 fn start_listener(
     interface: NetworkInterface,
@@ -42,15 +41,13 @@ fn start_listener(
             return;
         }
     };
-    let ips = match data
-        .lock()
-        {
-            Ok(lock) => lock.keys().cloned().collect::<Vec<Ipv4Addr>>(),
-            Err(err) => {
-                println!("Failed to get lock on ips: {}", err);
-                return;
-            }
-        };
+    let ips = match data.lock() {
+        Ok(lock) => lock.keys().cloned().collect::<Vec<Ipv4Addr>>(),
+        Err(err) => {
+            println!("Failed to get lock on ips: {}", err);
+            return;
+        }
+    };
     for ip in ips {
         let ip_to_use = match interface
             .ips
@@ -91,11 +88,11 @@ fn start_listener(
         eth.set_ethertype(EtherType(0x0806));
         eth.set_payload(arp.packet());
         match tx.send_to(eth.packet(), None) {
-            Some(Ok(_)) => {},
+            Some(Ok(_)) => {}
             Some(Err(err)) => {
                 println!("Failed to tx on {}: {}", interface.name, err);
                 return;
-            },
+            }
             None => {
                 println!("Failed to tx on {}: Returned None", interface.name);
                 return;
@@ -133,15 +130,15 @@ fn start_listener(
                             Ok(mut lock) => {
                                 if let Some(target) = lock.get_mut(&ip) {
                                     *target = Some(ArpResponse {
-                                                     _source_ip: source_ip,
-                                                     source_mac,
-                                                     interface: interface.name.clone(),
-                                                 });
+                                        _source_ip: source_ip,
+                                        source_mac,
+                                        interface: interface.name.clone(),
+                                    });
                                     break;
                                 }
                                 println!("Failed to find {} in HashMap", ip);
                                 return;
-                            },
+                            }
                             Err(err) => {
                                 println!("Failed to get lock on data: {}", err);
                                 return;
@@ -162,11 +159,18 @@ fn start_listener(
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
+pub fn handle_arp_scan(
+    target_cidrs: Vec<String>,
+) -> Result<HashMap<Ipv4Addr, Option<ArpResponse>>> {
+    let listener_out: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
     let target_cidrs = target_cidrs
         .iter()
         .map(|cidr| {
-            let (addr, prefix) = cidr.split_at(cidr.find('/').ok_or(anyhow::anyhow!("Failed to find / in Network {}", cidr))?);
+            let (addr, prefix) = cidr.split_at(
+                cidr.find('/')
+                    .ok_or(anyhow::anyhow!("Failed to find / in Network {}", cidr))?,
+            );
             let addr = match Ipv4Addr::from_str(addr) {
                 Ok(addr) => addr,
                 Err(_) => {
@@ -187,62 +191,114 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
             };
             Ok(network)
         })
-        .collect::<Result<Vec<Ipv4Network>>>();
-    match target_cidrs {
-        Ok(target_cidrs) => {
-            let listener_out: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>> =
-                Arc::new(Mutex::new(HashMap::new()));
-            for target_cidr in target_cidrs {
-                for ip in target_cidr.iter() {
-                    match listener_out.lock() {
-                        Ok(mut listener_lock) => {listener_lock.insert(ip, None);},
-                        Err(err) => return Err(anyhow::anyhow!("Failed to get lock on IP List: {}", err))
-                    }
+        .collect::<Result<Vec<Ipv4Network>>>()?;
+    for target_cidr in target_cidrs {
+        for ip in target_cidr.iter() {
+            match listener_out.lock() {
+                Ok(mut listener_lock) => {
+                    listener_lock.insert(ip, None);
                 }
+                Err(err) => return Err(anyhow::anyhow!("Failed to get lock on IP List: {}", err)),
             }
-            let interfaces = datalink::interfaces();
-            for interface in interfaces {
-                let inner_out = listener_out.clone();
-                let inner_interface = interface.clone();
-                let thread = std::thread::spawn(move || {
-                    start_listener(inner_interface, inner_out);
-                });
-                thread.join().map_err(|err| anyhow::anyhow!("Failed to join thread for interface {}: {:?}", interface.name, err))?
-            }
-            let mut out: Vec<Dict> = Vec::new();
-            let final_listener_output = listener_out.lock().map_err(|err| anyhow::anyhow!("Failed to get final data lock: {}", err))?.clone();
-            for (ipaddr, res) in final_listener_output {
-                if let Some(res) = res {
-                    let hit_small_map = SmallMap::new();
-                    let mut hit_dict = Dict::new(hit_small_map);
-                    let ipaddr_value = starlark_heap.alloc_str(&ipaddr.to_string());
-                    let source_mac_value = starlark_heap.alloc_str(&res.source_mac.to_string());
-                    let interface_value = starlark_heap.alloc_str(&res.interface.to_string());
-                    hit_dict.insert_hashed(
-                        const_frozen_string!("ip").to_value().get_hashed()?,
-                        ipaddr_value.to_value(),
-                    );
-                    hit_dict.insert_hashed(
-                        const_frozen_string!("mac").to_value().get_hashed()?,
-                        source_mac_value.to_value(),
-                    );
-                    hit_dict.insert_hashed(
-                        const_frozen_string!("interface")
-                            .to_value()
-                            .get_hashed()
-                            ?,
-                        interface_value.to_value(),
-                    );
-                    out.push(hit_dict);
-                }
-            }
-            Ok(out)
         }
-        Err(e) => Err(e),
     }
+    let interfaces = datalink::interfaces();
+    for interface in interfaces {
+        let inner_out = listener_out.clone();
+        let inner_interface = interface.clone();
+        let thread = std::thread::spawn(move || {
+            start_listener(inner_interface, inner_out);
+        });
+        thread.join().map_err(|err| {
+            anyhow::anyhow!(
+                "Failed to join thread for interface {}: {:?}",
+                interface.name,
+                err
+            )
+        })?
+    }
+    let out = listener_out
+        .lock()
+        .map_err(|err| anyhow::anyhow!("Failed to get final lock when returning results: {}", err))?
+        .clone();
+    Ok(out)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
+    let mut out: Vec<Dict> = Vec::new();
+    let final_listener_output = handle_arp_scan(target_cidrs)?;
+    for (ipaddr, res) in final_listener_output {
+        if let Some(res) = res {
+            let hit_small_map = SmallMap::new();
+            let mut hit_dict = Dict::new(hit_small_map);
+            let ipaddr_value = starlark_heap.alloc_str(&ipaddr.to_string());
+            let source_mac_value = starlark_heap.alloc_str(&res.source_mac.to_string());
+            let interface_value = starlark_heap.alloc_str(&res.interface.to_string());
+            hit_dict.insert_hashed(
+                const_frozen_string!("ip").to_value().get_hashed()?,
+                ipaddr_value.to_value(),
+            );
+            hit_dict.insert_hashed(
+                const_frozen_string!("mac").to_value().get_hashed()?,
+                source_mac_value.to_value(),
+            );
+            hit_dict.insert_hashed(
+                const_frozen_string!("interface").to_value().get_hashed()?,
+                interface_value.to_value(),
+            );
+            out.push(hit_dict);
+        }
+    }
+    Ok(out)
 }
 
 #[cfg(target_os = "windows")]
 pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
     Err(anyhow::anyhow!("ARP Scanning is not available on Windows."))
+}
+
+#[cfg(target_os = "windows")]
+#[cfg(test)]
+mod tests {
+    use super::arp_scan;
+
+    #[test]
+    fn test_windows_failure() {
+        assert_eq!(
+            arp_scan(starlark_heap, ["127.0.0.1/8".to_string()]),
+            Err(anyhow::anyhow!("ARP Scanning is not available on Windows."))
+        );
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use crate::pivot::arp_scan_impl::handle_arp_scan;
+
+    #[test]
+    fn test_positive() {
+        assert_eq!(
+            handle_arp_scan(Vec::from(["127.0.0.1/32".to_string()])).unwrap(),
+            HashMap::from([("127.0.0.1".parse().unwrap(), None)])
+        );
+    }
+
+    #[test]
+    fn test_no_slash() {
+        assert!(handle_arp_scan(Vec::from(["127.0.0.1".to_string()])).is_err());
+    }
+
+    #[test]
+    fn test_invalid_ipv4() {
+        assert!(handle_arp_scan(Vec::from(["127.0.0.256".to_string()])).is_err());
+    }
+
+    #[test]
+    fn test_invalid_cidr() {
+        assert!(handle_arp_scan(Vec::from(["127.0.0.1/33".to_string()])).is_err());
+    }
 }
