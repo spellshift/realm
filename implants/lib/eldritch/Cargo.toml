@@ -40,6 +40,8 @@ windows-sys = { workspace = true, features = [
     "Win32_Security",
 ]}
 whoami = { workspace = true }
+pnet = "0.34.0"
+ipnetwork = "0.20.0"
 
 [dev-dependencies]
 httptest = { workspace = true }
