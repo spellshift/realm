@@ -1,12 +1,15 @@
 use anyhow::Result;
 use ipnetwork::{IpNetwork, Ipv4Network};
-use pnet::datalink::Channel::Ethernet;
-use pnet::datalink::{self, channel, NetworkInterface};
-use pnet::packet::arp::{ArpOperations, ArpPacket, MutableArpPacket};
-use pnet::packet::ethernet::MutableEthernetPacket;
-use pnet::packet::ethernet::{EtherType, EthernetPacket};
-use pnet::packet::Packet;
-use pnet::util::MacAddr;
+#[cfg(not(target_os = "windows"))]
+use pnet::{
+    datalink::{self, channel, Channel::Ethernet, NetworkInterface},
+    packet::{
+        arp::{ArpOperations, ArpPacket, MutableArpPacket},
+        ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
+        Packet
+    },
+    util::MacAddr
+};
 use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
 use starlark::values::{dict::Dict, Heap};
@@ -15,6 +18,8 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
+
+#[cfg(not(target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArpResponse {
     _source_ip: Ipv4Addr,
@@ -22,6 +27,7 @@ pub struct ArpResponse {
     interface: String,
 }
 
+#[cfg(not(target_os = "windows"))]
 fn start_listener(
     interface: NetworkInterface,
     data: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>>,
