@@ -186,7 +186,7 @@ Limit changes to the implementation file.
 
 OS specific restrictions should be done in the **Eldritch Implementation** you should only have to worry about it in your: `function_impl.rs`.
 This ensures that all functions are exposed in every version of the Eldritch language.
-To prevent errors and compiler warnings use the `#[cfg(target_os = "windows")]` conditional compiler flag to supress OS specific code.
+To prevent errors and compiler warnings use the `#[cfg(target_os = "windows")]` conditional compiler flag to suppress OS specific code.
 For all non supported OSes return an error with a message explaining which OSes are supported.
 **Example**
 ```rust
@@ -198,7 +198,7 @@ For all non supported OSes return an error with a message explaining which OSes 
 ---
 The `Dict` type requires dynamic memory allocation in starlark. In order to achieve this we can leverage the `starlark::Heap` and push entries onto it. It's pretty simple to implement and starlark does some magic to streamline the process. To make the heap available to your function simply add it as an argument to your function.
 
-## Different function declerations
+## Different function decelerations
 `implants/lib/eldritch/src/module.rs`
 
 ```rust
@@ -207,11 +207,11 @@ The `Dict` type requires dynamic memory allocation in starlark. In order to achi
 
 `implants/lib/eldritch/src/module/function_impl.rs`
 ```rust
-pub fn function(starlark_heap: &Heap) -> Result<Dict> {
+pub fn function(starlark_heap: &Heap, arg1: String, arg2: u8, arg3: Vec<String>) -> Result<Dict> {
 ```
 
 ## Split starlark boilerplate and function implementation
-One note is when working with starlark `Dict` types it preferedd that a `handle_` function be implemented which returns a real data type and that data type is translated from the rust data type to starlark `Dict` in the `function` for example:
+One note is when working with starlark `Dict` types it preferred that a `handle_` function be implemented which returns a real data type and that data type is translated from the rust data type to starlark `Dict` in the `function` for example:
 
 ```rust
 struct OsInfo {
@@ -328,7 +328,9 @@ pub fn function(arg1: Vec<String>) -> Result<Vec<String>> {
 
 ### Testing async code requires some additional work
 You'll need to write tests for your synchronous and asynchronous code.
-Async tests will start 
+Async tests will usually start two threads one for your function and one that mocks (or reimplements) the feature you're testing against.
+For example if testing a port scanner or netcat like function you'll want to run a test port listener for your feature to connect to.
+Network ports test servers have been implemented in `pivot.ncat` and `pivot.port_scan` an example SSH server has been implemented in `pivot.ssh_exec`.
 
 Tests for async functions may look like this:
 ```rust
