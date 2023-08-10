@@ -40,6 +40,21 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Beacon struct {
+		AgentIdentifier func(childComplexity int) int
+		HostIdentifier  func(childComplexity int) int
+		HostPlatform    func(childComplexity int) int
+		HostPrimaryIP   func(childComplexity int) int
+		Hostname        func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Identifier      func(childComplexity int) int
+		LastSeenAt      func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Principal       func(childComplexity int) int
+		Tags            func(childComplexity int) int
+		Tasks           func(childComplexity int) int
+	}
+
 	File struct {
 		CreatedAt      func(childComplexity int) int
 		Hash           func(childComplexity int) int
@@ -63,11 +78,11 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		ClaimTasks       func(childComplexity int, input models.ClaimTasksInput) int
-		CreateJob        func(childComplexity int, sessionIDs []int, input ent.CreateJobInput) int
+		CreateJob        func(childComplexity int, beaconIDs []int, input ent.CreateJobInput) int
 		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
 		SubmitTaskResult func(childComplexity int, input models.SubmitTaskResultInput) int
-		UpdateSession    func(childComplexity int, sessionID int, input ent.UpdateSessionInput) int
+		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
 		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
@@ -80,39 +95,25 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Files    func(childComplexity int, where *ent.FileWhereInput) int
-		Jobs     func(childComplexity int, where *ent.JobWhereInput) int
-		Node     func(childComplexity int, id int) int
-		Nodes    func(childComplexity int, ids []int) int
-		Sessions func(childComplexity int, where *ent.SessionWhereInput) int
-		Tags     func(childComplexity int, where *ent.TagWhereInput) int
-		Tomes    func(childComplexity int, where *ent.TomeWhereInput) int
-		Users    func(childComplexity int, where *ent.UserWhereInput) int
-	}
-
-	Session struct {
-		AgentIdentifier func(childComplexity int) int
-		HostIdentifier  func(childComplexity int) int
-		HostPlatform    func(childComplexity int) int
-		HostPrimaryIP   func(childComplexity int) int
-		Hostname        func(childComplexity int) int
-		ID              func(childComplexity int) int
-		Identifier      func(childComplexity int) int
-		LastSeenAt      func(childComplexity int) int
-		Name            func(childComplexity int) int
-		Principal       func(childComplexity int) int
-		Tags            func(childComplexity int) int
-		Tasks           func(childComplexity int) int
+		Beacons func(childComplexity int, where *ent.BeaconWhereInput) int
+		Files   func(childComplexity int, where *ent.FileWhereInput) int
+		Jobs    func(childComplexity int, where *ent.JobWhereInput) int
+		Node    func(childComplexity int, id int) int
+		Nodes   func(childComplexity int, ids []int) int
+		Tags    func(childComplexity int, where *ent.TagWhereInput) int
+		Tomes   func(childComplexity int, where *ent.TomeWhereInput) int
+		Users   func(childComplexity int, where *ent.UserWhereInput) int
 	}
 
 	Tag struct {
-		ID       func(childComplexity int) int
-		Kind     func(childComplexity int) int
-		Name     func(childComplexity int) int
-		Sessions func(childComplexity int) int
+		Beacons func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Kind    func(childComplexity int) int
+		Name    func(childComplexity int) int
 	}
 
 	Task struct {
+		Beacon         func(childComplexity int) int
 		ClaimedAt      func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Error          func(childComplexity int) int
@@ -122,7 +123,6 @@ type ComplexityRoot struct {
 		Job            func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
-		Session        func(childComplexity int) int
 	}
 
 	Tome struct {
@@ -159,6 +159,90 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Beacon.agentIdentifier":
+		if e.complexity.Beacon.AgentIdentifier == nil {
+			break
+		}
+
+		return e.complexity.Beacon.AgentIdentifier(childComplexity), true
+
+	case "Beacon.hostIdentifier":
+		if e.complexity.Beacon.HostIdentifier == nil {
+			break
+		}
+
+		return e.complexity.Beacon.HostIdentifier(childComplexity), true
+
+	case "Beacon.hostPlatform":
+		if e.complexity.Beacon.HostPlatform == nil {
+			break
+		}
+
+		return e.complexity.Beacon.HostPlatform(childComplexity), true
+
+	case "Beacon.hostPrimaryIP":
+		if e.complexity.Beacon.HostPrimaryIP == nil {
+			break
+		}
+
+		return e.complexity.Beacon.HostPrimaryIP(childComplexity), true
+
+	case "Beacon.hostname":
+		if e.complexity.Beacon.Hostname == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Hostname(childComplexity), true
+
+	case "Beacon.id":
+		if e.complexity.Beacon.ID == nil {
+			break
+		}
+
+		return e.complexity.Beacon.ID(childComplexity), true
+
+	case "Beacon.identifier":
+		if e.complexity.Beacon.Identifier == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Identifier(childComplexity), true
+
+	case "Beacon.lastSeenAt":
+		if e.complexity.Beacon.LastSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Beacon.LastSeenAt(childComplexity), true
+
+	case "Beacon.name":
+		if e.complexity.Beacon.Name == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Name(childComplexity), true
+
+	case "Beacon.principal":
+		if e.complexity.Beacon.Principal == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Principal(childComplexity), true
+
+	case "Beacon.tags":
+		if e.complexity.Beacon.Tags == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Tags(childComplexity), true
+
+	case "Beacon.tasks":
+		if e.complexity.Beacon.Tasks == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Tasks(childComplexity), true
 
 	case "File.createdAt":
 		if e.complexity.File.CreatedAt == nil {
@@ -287,7 +371,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateJob(childComplexity, args["sessionIDs"].([]int), args["input"].(ent.CreateJobInput)), true
+		return e.complexity.Mutation.CreateJob(childComplexity, args["beaconIDs"].([]int), args["input"].(ent.CreateJobInput)), true
 
 	case "Mutation.createTag":
 		if e.complexity.Mutation.CreateTag == nil {
@@ -325,17 +409,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SubmitTaskResult(childComplexity, args["input"].(models.SubmitTaskResultInput)), true
 
-	case "Mutation.updateSession":
-		if e.complexity.Mutation.UpdateSession == nil {
+	case "Mutation.updateBeacon":
+		if e.complexity.Mutation.UpdateBeacon == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateSession_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_updateBeacon_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateSession(childComplexity, args["sessionID"].(int), args["input"].(ent.UpdateSessionInput)), true
+		return e.complexity.Mutation.UpdateBeacon(childComplexity, args["beaconID"].(int), args["input"].(ent.UpdateBeaconInput)), true
 
 	case "Mutation.updateTag":
 		if e.complexity.Mutation.UpdateTag == nil {
@@ -389,6 +473,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "Query.beacons":
+		if e.complexity.Query.Beacons == nil {
+			break
+		}
+
+		args, err := ec.field_Query_beacons_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Beacons(childComplexity, args["where"].(*ent.BeaconWhereInput)), true
+
 	case "Query.files":
 		if e.complexity.Query.Files == nil {
 			break
@@ -437,18 +533,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]int)), true
 
-	case "Query.sessions":
-		if e.complexity.Query.Sessions == nil {
-			break
-		}
-
-		args, err := ec.field_Query_sessions_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Sessions(childComplexity, args["where"].(*ent.SessionWhereInput)), true
-
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
 			break
@@ -485,89 +569,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Users(childComplexity, args["where"].(*ent.UserWhereInput)), true
 
-	case "Session.agentIdentifier":
-		if e.complexity.Session.AgentIdentifier == nil {
+	case "Tag.beacons":
+		if e.complexity.Tag.Beacons == nil {
 			break
 		}
 
-		return e.complexity.Session.AgentIdentifier(childComplexity), true
-
-	case "Session.hostIdentifier":
-		if e.complexity.Session.HostIdentifier == nil {
-			break
-		}
-
-		return e.complexity.Session.HostIdentifier(childComplexity), true
-
-	case "Session.hostPlatform":
-		if e.complexity.Session.HostPlatform == nil {
-			break
-		}
-
-		return e.complexity.Session.HostPlatform(childComplexity), true
-
-	case "Session.hostPrimaryIP":
-		if e.complexity.Session.HostPrimaryIP == nil {
-			break
-		}
-
-		return e.complexity.Session.HostPrimaryIP(childComplexity), true
-
-	case "Session.hostname":
-		if e.complexity.Session.Hostname == nil {
-			break
-		}
-
-		return e.complexity.Session.Hostname(childComplexity), true
-
-	case "Session.id":
-		if e.complexity.Session.ID == nil {
-			break
-		}
-
-		return e.complexity.Session.ID(childComplexity), true
-
-	case "Session.identifier":
-		if e.complexity.Session.Identifier == nil {
-			break
-		}
-
-		return e.complexity.Session.Identifier(childComplexity), true
-
-	case "Session.lastSeenAt":
-		if e.complexity.Session.LastSeenAt == nil {
-			break
-		}
-
-		return e.complexity.Session.LastSeenAt(childComplexity), true
-
-	case "Session.name":
-		if e.complexity.Session.Name == nil {
-			break
-		}
-
-		return e.complexity.Session.Name(childComplexity), true
-
-	case "Session.principal":
-		if e.complexity.Session.Principal == nil {
-			break
-		}
-
-		return e.complexity.Session.Principal(childComplexity), true
-
-	case "Session.tags":
-		if e.complexity.Session.Tags == nil {
-			break
-		}
-
-		return e.complexity.Session.Tags(childComplexity), true
-
-	case "Session.tasks":
-		if e.complexity.Session.Tasks == nil {
-			break
-		}
-
-		return e.complexity.Session.Tasks(childComplexity), true
+		return e.complexity.Tag.Beacons(childComplexity), true
 
 	case "Tag.id":
 		if e.complexity.Tag.ID == nil {
@@ -590,12 +597,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tag.Name(childComplexity), true
 
-	case "Tag.sessions":
-		if e.complexity.Tag.Sessions == nil {
+	case "Task.beacon":
+		if e.complexity.Task.Beacon == nil {
 			break
 		}
 
-		return e.complexity.Tag.Sessions(childComplexity), true
+		return e.complexity.Task.Beacon(childComplexity), true
 
 	case "Task.claimedAt":
 		if e.complexity.Task.ClaimedAt == nil {
@@ -659,13 +666,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Task.Output(childComplexity), true
-
-	case "Task.session":
-		if e.complexity.Task.Session == nil {
-			break
-		}
-
-		return e.complexity.Task.Session(childComplexity), true
 
 	case "Tome.createdAt":
 		if e.complexity.Tome.CreatedAt == nil {
@@ -766,6 +766,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputBeaconOrder,
+		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateJobInput,
 		ec.unmarshalInputCreateTagInput,
@@ -774,8 +776,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFileWhereInput,
 		ec.unmarshalInputJobOrder,
 		ec.unmarshalInputJobWhereInput,
-		ec.unmarshalInputSessionOrder,
-		ec.unmarshalInputSessionWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
 		ec.unmarshalInputTagWhereInput,
@@ -783,7 +783,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTaskWhereInput,
 		ec.unmarshalInputTomeOrder,
 		ec.unmarshalInputTomeWhereInput,
-		ec.unmarshalInputUpdateSessionInput,
+		ec.unmarshalInputUpdateBeaconInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateUserInput,
 		ec.unmarshalInputUserWhereInput,
@@ -855,6 +855,196 @@ enum Role {
 }`, BuiltIn: false},
 	{Name: "../schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+type Beacon implements Node {
+  id: ID!
+  """A human readable identifier for the beacon."""
+  name: String!
+  """The identity the beacon is authenticated as (e.g. 'root')"""
+  principal: String
+  """The hostname of the system the beacon is running on."""
+  hostname: String
+  """Unique identifier for the beacon. Unique to each instance of the beacon."""
+  identifier: String!
+  """Identifies the agent that the beacon is running as (e.g. 'imix')."""
+  agentIdentifier: String
+  """Unique identifier for the host the beacon is running on."""
+  hostIdentifier: String
+  """Primary interface IP address reported by the agent."""
+  hostPrimaryIP: String
+  """Platform the agent is operating on."""
+  hostPlatform: BeaconHostPlatform!
+  """Timestamp of when a task was last claimed or updated for the beacon."""
+  lastSeenAt: Time
+  tags: [Tag!]
+  tasks: [Task!]
+}
+"""BeaconHostPlatform is enum for the field host_platform"""
+enum BeaconHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/ent/beacon.HostPlatform") {
+  Windows
+  Linux
+  MacOS
+  BSD
+  Unknown
+}
+"""Ordering options for Beacon connections"""
+input BeaconOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Beacons."""
+  field: BeaconOrderField!
+}
+"""Properties by which Beacon connections can be ordered."""
+enum BeaconOrderField {
+  LAST_SEEN_AT
+}
+"""
+BeaconWhereInput is used for filtering Beacon objects.
+Input was generated by ent.
+"""
+input BeaconWhereInput {
+  not: BeaconWhereInput
+  and: [BeaconWhereInput!]
+  or: [BeaconWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """name field predicates"""
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """principal field predicates"""
+  principal: String
+  principalNEQ: String
+  principalIn: [String!]
+  principalNotIn: [String!]
+  principalGT: String
+  principalGTE: String
+  principalLT: String
+  principalLTE: String
+  principalContains: String
+  principalHasPrefix: String
+  principalHasSuffix: String
+  principalIsNil: Boolean
+  principalNotNil: Boolean
+  principalEqualFold: String
+  principalContainsFold: String
+  """hostname field predicates"""
+  hostname: String
+  hostnameNEQ: String
+  hostnameIn: [String!]
+  hostnameNotIn: [String!]
+  hostnameGT: String
+  hostnameGTE: String
+  hostnameLT: String
+  hostnameLTE: String
+  hostnameContains: String
+  hostnameHasPrefix: String
+  hostnameHasSuffix: String
+  hostnameIsNil: Boolean
+  hostnameNotNil: Boolean
+  hostnameEqualFold: String
+  hostnameContainsFold: String
+  """identifier field predicates"""
+  identifier: String
+  identifierNEQ: String
+  identifierIn: [String!]
+  identifierNotIn: [String!]
+  identifierGT: String
+  identifierGTE: String
+  identifierLT: String
+  identifierLTE: String
+  identifierContains: String
+  identifierHasPrefix: String
+  identifierHasSuffix: String
+  identifierEqualFold: String
+  identifierContainsFold: String
+  """agent_identifier field predicates"""
+  agentIdentifier: String
+  agentIdentifierNEQ: String
+  agentIdentifierIn: [String!]
+  agentIdentifierNotIn: [String!]
+  agentIdentifierGT: String
+  agentIdentifierGTE: String
+  agentIdentifierLT: String
+  agentIdentifierLTE: String
+  agentIdentifierContains: String
+  agentIdentifierHasPrefix: String
+  agentIdentifierHasSuffix: String
+  agentIdentifierIsNil: Boolean
+  agentIdentifierNotNil: Boolean
+  agentIdentifierEqualFold: String
+  agentIdentifierContainsFold: String
+  """host_identifier field predicates"""
+  hostIdentifier: String
+  hostIdentifierNEQ: String
+  hostIdentifierIn: [String!]
+  hostIdentifierNotIn: [String!]
+  hostIdentifierGT: String
+  hostIdentifierGTE: String
+  hostIdentifierLT: String
+  hostIdentifierLTE: String
+  hostIdentifierContains: String
+  hostIdentifierHasPrefix: String
+  hostIdentifierHasSuffix: String
+  hostIdentifierIsNil: Boolean
+  hostIdentifierNotNil: Boolean
+  hostIdentifierEqualFold: String
+  hostIdentifierContainsFold: String
+  """host_primary_ip field predicates"""
+  hostPrimaryIP: String
+  hostPrimaryIPNEQ: String
+  hostPrimaryIPIn: [String!]
+  hostPrimaryIPNotIn: [String!]
+  hostPrimaryIPGT: String
+  hostPrimaryIPGTE: String
+  hostPrimaryIPLT: String
+  hostPrimaryIPLTE: String
+  hostPrimaryIPContains: String
+  hostPrimaryIPHasPrefix: String
+  hostPrimaryIPHasSuffix: String
+  hostPrimaryIPIsNil: Boolean
+  hostPrimaryIPNotNil: Boolean
+  hostPrimaryIPEqualFold: String
+  hostPrimaryIPContainsFold: String
+  """host_platform field predicates"""
+  hostPlatform: BeaconHostPlatform
+  hostPlatformNEQ: BeaconHostPlatform
+  hostPlatformIn: [BeaconHostPlatform!]
+  hostPlatformNotIn: [BeaconHostPlatform!]
+  """last_seen_at field predicates"""
+  lastSeenAt: Time
+  lastSeenAtNEQ: Time
+  lastSeenAtIn: [Time!]
+  lastSeenAtNotIn: [Time!]
+  lastSeenAtGT: Time
+  lastSeenAtGTE: Time
+  lastSeenAtLT: Time
+  lastSeenAtLTE: Time
+  lastSeenAtIsNil: Boolean
+  lastSeenAtNotNil: Boolean
+  """tags edge predicates"""
+  hasTags: Boolean
+  hasTagsWith: [TagWhereInput!]
+  """tasks edge predicates"""
+  hasTasks: Boolean
+  hasTasksWith: [TaskWhereInput!]
+}
 """
 CreateJobInput is used for create Job object.
 Input was generated by ent.
@@ -875,7 +1065,7 @@ input CreateTagInput {
   name: String!
   """Describes the type of tag this is"""
   kind: TagKind!
-  sessionIDs: [ID!]
+  beaconIDs: [ID!]
 }
 """
 CreateTomeInput is used for create Tome object.
@@ -1144,203 +1334,13 @@ type Query {
     ids: [ID!]!
   ): [Node]!
 }
-type Session implements Node {
-  id: ID!
-  """A human readable identifier for the session."""
-  name: String!
-  """The identity the session is authenticated as (e.g. 'root')"""
-  principal: String
-  """The hostname of the system the session is running on."""
-  hostname: String
-  """Unique identifier for the session. Unique to each instance of the session."""
-  identifier: String!
-  """Identifies the agent that the session is running as (e.g. 'imix')."""
-  agentIdentifier: String
-  """Unique identifier for the host the session is running on."""
-  hostIdentifier: String
-  """Primary interface IP address reported by the agent."""
-  hostPrimaryIP: String
-  """Platform the agent is operating on."""
-  hostPlatform: SessionHostPlatform!
-  """Timestamp of when a task was last claimed or updated for a target"""
-  lastSeenAt: Time
-  tags: [Tag!]
-  tasks: [Task!]
-}
-"""SessionHostPlatform is enum for the field host_platform"""
-enum SessionHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/ent/session.HostPlatform") {
-  Windows
-  Linux
-  MacOS
-  BSD
-  Unknown
-}
-"""Ordering options for Session connections"""
-input SessionOrder {
-  """The ordering direction."""
-  direction: OrderDirection! = ASC
-  """The field by which to order Sessions."""
-  field: SessionOrderField!
-}
-"""Properties by which Session connections can be ordered."""
-enum SessionOrderField {
-  LAST_SEEN_AT
-}
-"""
-SessionWhereInput is used for filtering Session objects.
-Input was generated by ent.
-"""
-input SessionWhereInput {
-  not: SessionWhereInput
-  and: [SessionWhereInput!]
-  or: [SessionWhereInput!]
-  """id field predicates"""
-  id: ID
-  idNEQ: ID
-  idIn: [ID!]
-  idNotIn: [ID!]
-  idGT: ID
-  idGTE: ID
-  idLT: ID
-  idLTE: ID
-  """name field predicates"""
-  name: String
-  nameNEQ: String
-  nameIn: [String!]
-  nameNotIn: [String!]
-  nameGT: String
-  nameGTE: String
-  nameLT: String
-  nameLTE: String
-  nameContains: String
-  nameHasPrefix: String
-  nameHasSuffix: String
-  nameEqualFold: String
-  nameContainsFold: String
-  """principal field predicates"""
-  principal: String
-  principalNEQ: String
-  principalIn: [String!]
-  principalNotIn: [String!]
-  principalGT: String
-  principalGTE: String
-  principalLT: String
-  principalLTE: String
-  principalContains: String
-  principalHasPrefix: String
-  principalHasSuffix: String
-  principalIsNil: Boolean
-  principalNotNil: Boolean
-  principalEqualFold: String
-  principalContainsFold: String
-  """hostname field predicates"""
-  hostname: String
-  hostnameNEQ: String
-  hostnameIn: [String!]
-  hostnameNotIn: [String!]
-  hostnameGT: String
-  hostnameGTE: String
-  hostnameLT: String
-  hostnameLTE: String
-  hostnameContains: String
-  hostnameHasPrefix: String
-  hostnameHasSuffix: String
-  hostnameIsNil: Boolean
-  hostnameNotNil: Boolean
-  hostnameEqualFold: String
-  hostnameContainsFold: String
-  """identifier field predicates"""
-  identifier: String
-  identifierNEQ: String
-  identifierIn: [String!]
-  identifierNotIn: [String!]
-  identifierGT: String
-  identifierGTE: String
-  identifierLT: String
-  identifierLTE: String
-  identifierContains: String
-  identifierHasPrefix: String
-  identifierHasSuffix: String
-  identifierEqualFold: String
-  identifierContainsFold: String
-  """agent_identifier field predicates"""
-  agentIdentifier: String
-  agentIdentifierNEQ: String
-  agentIdentifierIn: [String!]
-  agentIdentifierNotIn: [String!]
-  agentIdentifierGT: String
-  agentIdentifierGTE: String
-  agentIdentifierLT: String
-  agentIdentifierLTE: String
-  agentIdentifierContains: String
-  agentIdentifierHasPrefix: String
-  agentIdentifierHasSuffix: String
-  agentIdentifierIsNil: Boolean
-  agentIdentifierNotNil: Boolean
-  agentIdentifierEqualFold: String
-  agentIdentifierContainsFold: String
-  """host_identifier field predicates"""
-  hostIdentifier: String
-  hostIdentifierNEQ: String
-  hostIdentifierIn: [String!]
-  hostIdentifierNotIn: [String!]
-  hostIdentifierGT: String
-  hostIdentifierGTE: String
-  hostIdentifierLT: String
-  hostIdentifierLTE: String
-  hostIdentifierContains: String
-  hostIdentifierHasPrefix: String
-  hostIdentifierHasSuffix: String
-  hostIdentifierIsNil: Boolean
-  hostIdentifierNotNil: Boolean
-  hostIdentifierEqualFold: String
-  hostIdentifierContainsFold: String
-  """host_primary_ip field predicates"""
-  hostPrimaryIP: String
-  hostPrimaryIPNEQ: String
-  hostPrimaryIPIn: [String!]
-  hostPrimaryIPNotIn: [String!]
-  hostPrimaryIPGT: String
-  hostPrimaryIPGTE: String
-  hostPrimaryIPLT: String
-  hostPrimaryIPLTE: String
-  hostPrimaryIPContains: String
-  hostPrimaryIPHasPrefix: String
-  hostPrimaryIPHasSuffix: String
-  hostPrimaryIPIsNil: Boolean
-  hostPrimaryIPNotNil: Boolean
-  hostPrimaryIPEqualFold: String
-  hostPrimaryIPContainsFold: String
-  """host_platform field predicates"""
-  hostPlatform: SessionHostPlatform
-  hostPlatformNEQ: SessionHostPlatform
-  hostPlatformIn: [SessionHostPlatform!]
-  hostPlatformNotIn: [SessionHostPlatform!]
-  """last_seen_at field predicates"""
-  lastSeenAt: Time
-  lastSeenAtNEQ: Time
-  lastSeenAtIn: [Time!]
-  lastSeenAtNotIn: [Time!]
-  lastSeenAtGT: Time
-  lastSeenAtGTE: Time
-  lastSeenAtLT: Time
-  lastSeenAtLTE: Time
-  lastSeenAtIsNil: Boolean
-  lastSeenAtNotNil: Boolean
-  """tags edge predicates"""
-  hasTags: Boolean
-  hasTagsWith: [TagWhereInput!]
-  """tasks edge predicates"""
-  hasTasks: Boolean
-  hasTasksWith: [TaskWhereInput!]
-}
 type Tag implements Node {
   id: ID!
   """Name of the tag"""
   name: String!
   """Describes the type of tag this is"""
   kind: TagKind!
-  sessions: [Session!]
+  beacons: [Beacon!]
 }
 """TagKind is enum for the field kind"""
 enum TagKind @goModel(model: "github.com/kcarretto/realm/tavern/ent/tag.Kind") {
@@ -1394,9 +1394,9 @@ input TagWhereInput {
   kindNEQ: TagKind
   kindIn: [TagKind!]
   kindNotIn: [TagKind!]
-  """sessions edge predicates"""
-  hasSessions: Boolean
-  hasSessionsWith: [SessionWhereInput!]
+  """beacons edge predicates"""
+  hasBeacons: Boolean
+  hasBeaconsWith: [BeaconWhereInput!]
 }
 type Task implements Node {
   id: ID!
@@ -1415,7 +1415,7 @@ type Task implements Node {
   """Error, if any, produced while executing the Task"""
   error: String
   job: Job!
-  session: Session!
+  beacon: Beacon!
 }
 """Ordering options for Task connections"""
 input TaskOrder {
@@ -1535,9 +1535,9 @@ input TaskWhereInput {
   """job edge predicates"""
   hasJob: Boolean
   hasJobWith: [JobWhereInput!]
-  """session edge predicates"""
-  hasSession: Boolean
-  hasSessionWith: [SessionWhereInput!]
+  """beacon edge predicates"""
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
 }
 type Tome implements Node {
   id: ID!
@@ -1666,13 +1666,13 @@ input TomeWhereInput {
   hasFilesWith: [FileWhereInput!]
 }
 """
-UpdateSessionInput is used for update Session object.
+UpdateBeaconInput is used for update Beacon object.
 Input was generated by ent.
 """
-input UpdateSessionInput {
-  """A human readable identifier for the session."""
+input UpdateBeaconInput {
+  """A human readable identifier for the beacon."""
   name: String
-  """The hostname of the system the session is running on."""
+  """The hostname of the system the beacon is running on."""
   hostname: String
   clearHostname: Boolean
   addTagIDs: [ID!]
@@ -1688,9 +1688,9 @@ input UpdateTagInput {
   name: String
   """Describes the type of tag this is"""
   kind: TagKind
-  addSessionIDs: [ID!]
-  removeSessionIDs: [ID!]
-  clearSessions: Boolean
+  addBeaconIDs: [ID!]
+  removeBeaconIDs: [ID!]
+  clearBeacons: Boolean
 }
 """
 UpdateUserInput is used for update User object.
@@ -1774,7 +1774,7 @@ input UserWhereInput {
 	{Name: "../schema/query.graphql", Input: `extend type Query {
   files(where: FileWhereInput): [File!]!
   jobs(where: JobWhereInput): [Job!]!
-  sessions(where: SessionWhereInput): [Session!]!
+  beacons(where: BeaconWhereInput): [Beacon!]!
   tags(where: TagWhereInput): [Tag!]!
   tomes(where: TomeWhereInput): [Tome!]!
   users(where: UserWhereInput): [User!]!
@@ -1783,12 +1783,12 @@ input UserWhereInput {
     ###
     # Job
     ###
-    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
+    createJob(beaconIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
 
     ###
-    # Session
+    # Beacon
     ###
-    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session! @requireRole(role: USER)
+    updateBeacon(beaconID: ID!, input: UpdateBeaconInput!): Beacon! @requireRole(role: USER)
 
     ###
     # Tag
@@ -1813,25 +1813,25 @@ input UserWhereInput {
     updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
 }`, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
-  """The identity the session is authenticated as (e.g. 'root')"""
+  """The identity the beacon is authenticated as (e.g. 'root')"""
   principal: String!
 
-  """The hostname of the system the session is running on."""
+  """The hostname of the system the beacon is running on."""
   hostname: String!
 
   """The platform the agent is operating on."""
-  hostPlatform: SessionHostPlatform!
+  hostPlatform: BeaconHostPlatform!
 
   """The IP address of the hosts primary interface (if available)."""
   hostPrimaryIP: String
 
-  """Unique identifier of the session, each running instance will be different."""
-  sessionIdentifier: String!
+  """Unique identifier of the beacon, each running instance will be different."""
+  beaconIdentifier: String!
 
-  """Unique identifier of the underlying host system the session is running on."""
+  """Unique identifier of the underlying host system the beacon is running on."""
   hostIdentifier: String!
 
-  """Name of the agent program the session is running as (e.g. 'imix')"""
+  """Name of the agent program the beacon is running as (e.g. 'imix')"""
   agentIdentifier: String!
 }
 

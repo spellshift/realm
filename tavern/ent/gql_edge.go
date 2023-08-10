@@ -8,6 +8,30 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+func (b *Beacon) Tags(ctx context.Context) (result []*Tag, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = b.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = b.Edges.TagsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = b.QueryTags().All(ctx)
+	}
+	return result, err
+}
+
+func (b *Beacon) Tasks(ctx context.Context) (result []*Task, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = b.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = b.Edges.TasksOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = b.QueryTasks().All(ctx)
+	}
+	return result, err
+}
+
 func (j *Job) Tome(ctx context.Context) (*Tome, error) {
 	result, err := j.Edges.TomeOrErr()
 	if IsNotLoaded(err) {
@@ -44,38 +68,14 @@ func (j *Job) Creator(ctx context.Context) (*User, error) {
 	return result, MaskNotFound(err)
 }
 
-func (s *Session) Tags(ctx context.Context) (result []*Tag, err error) {
+func (t *Tag) Beacons(ctx context.Context) (result []*Beacon, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = t.NamedBeacons(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = s.Edges.TagsOrErr()
+		result, err = t.Edges.BeaconsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = s.QueryTags().All(ctx)
-	}
-	return result, err
-}
-
-func (s *Session) Tasks(ctx context.Context) (result []*Task, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = s.Edges.TasksOrErr()
-	}
-	if IsNotLoaded(err) {
-		result, err = s.QueryTasks().All(ctx)
-	}
-	return result, err
-}
-
-func (t *Tag) Sessions(ctx context.Context) (result []*Session, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedSessions(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = t.Edges.SessionsOrErr()
-	}
-	if IsNotLoaded(err) {
-		result, err = t.QuerySessions().All(ctx)
+		result, err = t.QueryBeacons().All(ctx)
 	}
 	return result, err
 }
@@ -88,10 +88,10 @@ func (t *Task) Job(ctx context.Context) (*Job, error) {
 	return result, err
 }
 
-func (t *Task) Session(ctx context.Context) (*Session, error) {
-	result, err := t.Edges.SessionOrErr()
+func (t *Task) Beacon(ctx context.Context) (*Beacon, error) {
+	result, err := t.Edges.BeaconOrErr()
 	if IsNotLoaded(err) {
-		result, err = t.QuerySession().Only(ctx)
+		result, err = t.QueryBeacon().Only(ctx)
 	}
 	return result, err
 }

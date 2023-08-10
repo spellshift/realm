@@ -2,12 +2,12 @@ type Mutation {
     ###
     # Job
     ###
-    createJob(sessionIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
+    createJob(beaconIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
 
     ###
-    # Session
+    # Beacon
     ###
-    updateSession(sessionID: ID!, input: UpdateSessionInput!): Session! @requireRole(role: USER)
+    updateBeacon(beaconID: ID!, input: UpdateBeaconInput!): Beacon! @requireRole(role: USER)
 
     ###
     # Tag

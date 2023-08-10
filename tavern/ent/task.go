@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/job"
-	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -34,17 +34,17 @@ type Task struct {
 	Error string `json:"error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
-	Edges        TaskEdges `json:"edges"`
-	job_tasks    *int
-	task_session *int
+	Edges       TaskEdges `json:"edges"`
+	job_tasks   *int
+	task_beacon *int
 }
 
 // TaskEdges holds the relations/edges for other nodes in the graph.
 type TaskEdges struct {
 	// Job holds the value of the job edge.
 	Job *Job `json:"job,omitempty"`
-	// Session holds the value of the session edge.
-	Session *Session `json:"session,omitempty"`
+	// Beacon holds the value of the beacon edge.
+	Beacon *Beacon `json:"beacon,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -65,17 +65,17 @@ func (e TaskEdges) JobOrErr() (*Job, error) {
 	return nil, &NotLoadedError{edge: "job"}
 }
 
-// SessionOrErr returns the Session value or an error if the edge
+// BeaconOrErr returns the Beacon value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e TaskEdges) SessionOrErr() (*Session, error) {
+func (e TaskEdges) BeaconOrErr() (*Beacon, error) {
 	if e.loadedTypes[1] {
-		if e.Session == nil {
+		if e.Beacon == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: session.Label}
+			return nil, &NotFoundError{label: beacon.Label}
 		}
-		return e.Session, nil
+		return e.Beacon, nil
 	}
-	return nil, &NotLoadedError{edge: "session"}
+	return nil, &NotLoadedError{edge: "beacon"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -91,7 +91,7 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case task.ForeignKeys[0]: // job_tasks
 			values[i] = new(sql.NullInt64)
-		case task.ForeignKeys[1]: // task_session
+		case task.ForeignKeys[1]: // task_beacon
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Task", columns[i])
@@ -165,10 +165,10 @@ func (t *Task) assignValues(columns []string, values []any) error {
 			}
 		case task.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field task_session", value)
+				return fmt.Errorf("unexpected type %T for edge-field task_beacon", value)
 			} else if value.Valid {
-				t.task_session = new(int)
-				*t.task_session = int(value.Int64)
+				t.task_beacon = new(int)
+				*t.task_beacon = int(value.Int64)
 			}
 		}
 	}
@@ -180,9 +180,9 @@ func (t *Task) QueryJob() *JobQuery {
 	return NewTaskClient(t.config).QueryJob(t)
 }
 
-// QuerySession queries the "session" edge of the Task entity.
-func (t *Task) QuerySession() *SessionQuery {
-	return NewTaskClient(t.config).QuerySession(t)
+// QueryBeacon queries the "beacon" edge of the Task entity.
+func (t *Task) QueryBeacon() *BeaconQuery {
+	return NewTaskClient(t.config).QueryBeacon(t)
 }
 
 // Update returns a builder for updating this Task.

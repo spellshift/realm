@@ -149,6 +149,30 @@ func DenyMutationOperationRule(op ent.Op) MutationRule {
 	return OnMutationOperation(rule, op)
 }
 
+// The BeaconQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type BeaconQueryRuleFunc func(context.Context, *ent.BeaconQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f BeaconQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.BeaconQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.BeaconQuery", q)
+}
+
+// The BeaconMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type BeaconMutationRuleFunc func(context.Context, *ent.BeaconMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f BeaconMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.BeaconMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.BeaconMutation", m)
+}
+
 // The FileQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type FileQueryRuleFunc func(context.Context, *ent.FileQuery) error
@@ -195,30 +219,6 @@ func (f JobMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) e
 		return f(ctx, m)
 	}
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.JobMutation", m)
-}
-
-// The SessionQueryRuleFunc type is an adapter to allow the use of ordinary
-// functions as a query rule.
-type SessionQueryRuleFunc func(context.Context, *ent.SessionQuery) error
-
-// EvalQuery return f(ctx, q).
-func (f SessionQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
-	if q, ok := q.(*ent.SessionQuery); ok {
-		return f(ctx, q)
-	}
-	return Denyf("ent/privacy: unexpected query type %T, expect *ent.SessionQuery", q)
-}
-
-// The SessionMutationRuleFunc type is an adapter to allow the use of ordinary
-// functions as a mutation rule.
-type SessionMutationRuleFunc func(context.Context, *ent.SessionMutation) error
-
-// EvalMutation calls f(ctx, m).
-func (f SessionMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
-	if m, ok := m.(*ent.SessionMutation); ok {
-		return f(ctx, m)
-	}
-	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.SessionMutation", m)
 }
 
 // The TagQueryRuleFunc type is an adapter to allow the use of ordinary

@@ -14,9 +14,9 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
-	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -28,12 +28,12 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Beacon is the client for interacting with the Beacon builders.
+	Beacon *BeaconClient
 	// File is the client for interacting with the File builders.
 	File *FileClient
 	// Job is the client for interacting with the Job builders.
 	Job *JobClient
-	// Session is the client for interacting with the Session builders.
-	Session *SessionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Task is the client for interacting with the Task builders.
@@ -57,9 +57,9 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Beacon = NewBeaconClient(c.config)
 	c.File = NewFileClient(c.config)
 	c.Job = NewJobClient(c.config)
-	c.Session = NewSessionClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tome = NewTomeClient(c.config)
@@ -144,15 +144,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		File:    NewFileClient(cfg),
-		Job:     NewJobClient(cfg),
-		Session: NewSessionClient(cfg),
-		Tag:     NewTagClient(cfg),
-		Task:    NewTaskClient(cfg),
-		Tome:    NewTomeClient(cfg),
-		User:    NewUserClient(cfg),
+		ctx:    ctx,
+		config: cfg,
+		Beacon: NewBeaconClient(cfg),
+		File:   NewFileClient(cfg),
+		Job:    NewJobClient(cfg),
+		Tag:    NewTagClient(cfg),
+		Task:   NewTaskClient(cfg),
+		Tome:   NewTomeClient(cfg),
+		User:   NewUserClient(cfg),
 	}, nil
 }
 
@@ -170,22 +170,22 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		File:    NewFileClient(cfg),
-		Job:     NewJobClient(cfg),
-		Session: NewSessionClient(cfg),
-		Tag:     NewTagClient(cfg),
-		Task:    NewTaskClient(cfg),
-		Tome:    NewTomeClient(cfg),
-		User:    NewUserClient(cfg),
+		ctx:    ctx,
+		config: cfg,
+		Beacon: NewBeaconClient(cfg),
+		File:   NewFileClient(cfg),
+		Job:    NewJobClient(cfg),
+		Tag:    NewTagClient(cfg),
+		Task:   NewTaskClient(cfg),
+		Tome:   NewTomeClient(cfg),
+		User:   NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		File.
+//		Beacon.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -208,7 +208,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.File, c.Job, c.Session, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Job, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -218,7 +218,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.File, c.Job, c.Session, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Job, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -227,12 +227,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *BeaconMutation:
+		return c.Beacon.mutate(ctx, m)
 	case *FileMutation:
 		return c.File.mutate(ctx, m)
 	case *JobMutation:
 		return c.Job.mutate(ctx, m)
-	case *SessionMutation:
-		return c.Session.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
 	case *TaskMutation:
@@ -243,6 +243,156 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// BeaconClient is a client for the Beacon schema.
+type BeaconClient struct {
+	config
+}
+
+// NewBeaconClient returns a client for the Beacon from the given config.
+func NewBeaconClient(c config) *BeaconClient {
+	return &BeaconClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `beacon.Hooks(f(g(h())))`.
+func (c *BeaconClient) Use(hooks ...Hook) {
+	c.hooks.Beacon = append(c.hooks.Beacon, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `beacon.Intercept(f(g(h())))`.
+func (c *BeaconClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Beacon = append(c.inters.Beacon, interceptors...)
+}
+
+// Create returns a builder for creating a Beacon entity.
+func (c *BeaconClient) Create() *BeaconCreate {
+	mutation := newBeaconMutation(c.config, OpCreate)
+	return &BeaconCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Beacon entities.
+func (c *BeaconClient) CreateBulk(builders ...*BeaconCreate) *BeaconCreateBulk {
+	return &BeaconCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Beacon.
+func (c *BeaconClient) Update() *BeaconUpdate {
+	mutation := newBeaconMutation(c.config, OpUpdate)
+	return &BeaconUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BeaconClient) UpdateOne(b *Beacon) *BeaconUpdateOne {
+	mutation := newBeaconMutation(c.config, OpUpdateOne, withBeacon(b))
+	return &BeaconUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BeaconClient) UpdateOneID(id int) *BeaconUpdateOne {
+	mutation := newBeaconMutation(c.config, OpUpdateOne, withBeaconID(id))
+	return &BeaconUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Beacon.
+func (c *BeaconClient) Delete() *BeaconDelete {
+	mutation := newBeaconMutation(c.config, OpDelete)
+	return &BeaconDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BeaconClient) DeleteOne(b *Beacon) *BeaconDeleteOne {
+	return c.DeleteOneID(b.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BeaconClient) DeleteOneID(id int) *BeaconDeleteOne {
+	builder := c.Delete().Where(beacon.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BeaconDeleteOne{builder}
+}
+
+// Query returns a query builder for Beacon.
+func (c *BeaconClient) Query() *BeaconQuery {
+	return &BeaconQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBeacon},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Beacon entity by its id.
+func (c *BeaconClient) Get(ctx context.Context, id int) (*Beacon, error) {
+	return c.Query().Where(beacon.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BeaconClient) GetX(ctx context.Context, id int) *Beacon {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTags queries the tags edge of a Beacon.
+func (c *BeaconClient) QueryTags(b *Beacon) *TagQuery {
+	query := (&TagClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, beacon.TagsTable, beacon.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTasks queries the tasks edge of a Beacon.
+func (c *BeaconClient) QueryTasks(b *Beacon) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, beacon.TasksTable, beacon.TasksColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BeaconClient) Hooks() []Hook {
+	return c.hooks.Beacon
+}
+
+// Interceptors returns the client interceptors.
+func (c *BeaconClient) Interceptors() []Interceptor {
+	return c.inters.Beacon
+}
+
+func (c *BeaconClient) mutate(ctx context.Context, m *BeaconMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BeaconCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BeaconUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BeaconUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BeaconDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Beacon mutation op: %q", m.Op())
 	}
 }
 
@@ -547,156 +697,6 @@ func (c *JobClient) mutate(ctx context.Context, m *JobMutation) (Value, error) {
 	}
 }
 
-// SessionClient is a client for the Session schema.
-type SessionClient struct {
-	config
-}
-
-// NewSessionClient returns a client for the Session from the given config.
-func NewSessionClient(c config) *SessionClient {
-	return &SessionClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `session.Hooks(f(g(h())))`.
-func (c *SessionClient) Use(hooks ...Hook) {
-	c.hooks.Session = append(c.hooks.Session, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `session.Intercept(f(g(h())))`.
-func (c *SessionClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Session = append(c.inters.Session, interceptors...)
-}
-
-// Create returns a builder for creating a Session entity.
-func (c *SessionClient) Create() *SessionCreate {
-	mutation := newSessionMutation(c.config, OpCreate)
-	return &SessionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Session entities.
-func (c *SessionClient) CreateBulk(builders ...*SessionCreate) *SessionCreateBulk {
-	return &SessionCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Session.
-func (c *SessionClient) Update() *SessionUpdate {
-	mutation := newSessionMutation(c.config, OpUpdate)
-	return &SessionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *SessionClient) UpdateOne(s *Session) *SessionUpdateOne {
-	mutation := newSessionMutation(c.config, OpUpdateOne, withSession(s))
-	return &SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *SessionClient) UpdateOneID(id int) *SessionUpdateOne {
-	mutation := newSessionMutation(c.config, OpUpdateOne, withSessionID(id))
-	return &SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Session.
-func (c *SessionClient) Delete() *SessionDelete {
-	mutation := newSessionMutation(c.config, OpDelete)
-	return &SessionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *SessionClient) DeleteOne(s *Session) *SessionDeleteOne {
-	return c.DeleteOneID(s.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *SessionClient) DeleteOneID(id int) *SessionDeleteOne {
-	builder := c.Delete().Where(session.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &SessionDeleteOne{builder}
-}
-
-// Query returns a query builder for Session.
-func (c *SessionClient) Query() *SessionQuery {
-	return &SessionQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeSession},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Session entity by its id.
-func (c *SessionClient) Get(ctx context.Context, id int) (*Session, error) {
-	return c.Query().Where(session.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *SessionClient) GetX(ctx context.Context, id int) *Session {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTags queries the tags edge of a Session.
-func (c *SessionClient) QueryTags(s *Session) *TagQuery {
-	query := (&TagClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(session.Table, session.FieldID, id),
-			sqlgraph.To(tag.Table, tag.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, session.TagsTable, session.TagsPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryTasks queries the tasks edge of a Session.
-func (c *SessionClient) QueryTasks(s *Session) *TaskQuery {
-	query := (&TaskClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(session.Table, session.FieldID, id),
-			sqlgraph.To(task.Table, task.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, session.TasksTable, session.TasksColumn),
-		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *SessionClient) Hooks() []Hook {
-	return c.hooks.Session
-}
-
-// Interceptors returns the client interceptors.
-func (c *SessionClient) Interceptors() []Interceptor {
-	return c.inters.Session
-}
-
-func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&SessionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&SessionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&SessionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Session mutation op: %q", m.Op())
-	}
-}
-
 // TagClient is a client for the Tag schema.
 type TagClient struct {
 	config
@@ -790,15 +790,15 @@ func (c *TagClient) GetX(ctx context.Context, id int) *Tag {
 	return obj
 }
 
-// QuerySessions queries the sessions edge of a Tag.
-func (c *TagClient) QuerySessions(t *Tag) *SessionQuery {
-	query := (&SessionClient{config: c.config}).Query()
+// QueryBeacons queries the beacons edge of a Tag.
+func (c *TagClient) QueryBeacons(t *Tag) *BeaconQuery {
+	query := (&BeaconClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tag.Table, tag.FieldID, id),
-			sqlgraph.To(session.Table, session.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, tag.SessionsTable, tag.SessionsPrimaryKey...),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.BeaconsTable, tag.BeaconsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -940,15 +940,15 @@ func (c *TaskClient) QueryJob(t *Task) *JobQuery {
 	return query
 }
 
-// QuerySession queries the session edge of a Task.
-func (c *TaskClient) QuerySession(t *Task) *SessionQuery {
-	query := (&SessionClient{config: c.config}).Query()
+// QueryBeacon queries the beacon edge of a Task.
+func (c *TaskClient) QueryBeacon(t *Task) *BeaconQuery {
+	query := (&BeaconClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(task.Table, task.FieldID, id),
-			sqlgraph.To(session.Table, session.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, task.SessionTable, task.SessionColumn),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, task.BeaconTable, task.BeaconColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -1237,9 +1237,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		File, Job, Session, Tag, Task, Tome, User []ent.Hook
+		Beacon, File, Job, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		File, Job, Session, Tag, Task, Tome, User []ent.Interceptor
+		Beacon, File, Job, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

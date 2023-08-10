@@ -27,8 +27,8 @@ const (
 	FieldError = "error"
 	// EdgeJob holds the string denoting the job edge name in mutations.
 	EdgeJob = "job"
-	// EdgeSession holds the string denoting the session edge name in mutations.
-	EdgeSession = "session"
+	// EdgeBeacon holds the string denoting the beacon edge name in mutations.
+	EdgeBeacon = "beacon"
 	// Table holds the table name of the task in the database.
 	Table = "tasks"
 	// JobTable is the table that holds the job relation/edge.
@@ -38,13 +38,13 @@ const (
 	JobInverseTable = "jobs"
 	// JobColumn is the table column denoting the job relation/edge.
 	JobColumn = "job_tasks"
-	// SessionTable is the table that holds the session relation/edge.
-	SessionTable = "tasks"
-	// SessionInverseTable is the table name for the Session entity.
-	// It exists in this package in order to avoid circular dependency with the "session" package.
-	SessionInverseTable = "sessions"
-	// SessionColumn is the table column denoting the session relation/edge.
-	SessionColumn = "task_session"
+	// BeaconTable is the table that holds the beacon relation/edge.
+	BeaconTable = "tasks"
+	// BeaconInverseTable is the table name for the Beacon entity.
+	// It exists in this package in order to avoid circular dependency with the "beacon" package.
+	BeaconInverseTable = "beacons"
+	// BeaconColumn is the table column denoting the beacon relation/edge.
+	BeaconColumn = "task_beacon"
 )
 
 // Columns holds all SQL columns for task fields.
@@ -63,7 +63,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"job_tasks",
-	"task_session",
+	"task_beacon",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

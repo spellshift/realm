@@ -1,15 +1,17 @@
 state: |
   INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
-  INSERT INTO `sessions` (id, name, hostname, identifier)
+  INSERT INTO `beacons` (id, name, hostname, identifier)
     VALUES (1337,"delightful-lich","boring","ABCDEFG-123456");
   INSERT INTO `tags` (id, name, kind)
     VALUES (4000,"very-neat-tag","group");
+  INSERT INTO `beacon_tags` (beacon_id, tag_id)
+    VALUES (1337,4000);
 requestor:
   session_token: secretToken
 query: |
-  mutation AddTag($sessionID: ID!, $input: UpdateSessionInput!) {
-    updateSession(sessionID: $sessionID, input: $input) {
+  mutation RemoveTag($beaconID: ID!, $input: UpdateBeaconInput!) {
+    updateBeacon(beaconID: $beaconID, input: $input) {
       id
       tags {
         id
@@ -17,13 +19,12 @@ query: |
     }
   }
 variables:
-  sessionID: 1337
+  beaconID: 1337
   input:
-    addTagIDs:
+    removeTagIDs:
       - 4000
 
 expected:
-  updateSession:
+  updateBeacon:
     id: "1337"
-    tags:
-      - id: "4000"
+    tags: []

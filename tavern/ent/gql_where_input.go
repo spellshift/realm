@@ -7,15 +7,661 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
-	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
 	"github.com/kcarretto/realm/tavern/ent/user"
 )
+
+// BeaconWhereInput represents a where input for filtering Beacon queries.
+type BeaconWhereInput struct {
+	Predicates []predicate.Beacon  `json:"-"`
+	Not        *BeaconWhereInput   `json:"not,omitempty"`
+	Or         []*BeaconWhereInput `json:"or,omitempty"`
+	And        []*BeaconWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "principal" field predicates.
+	Principal             *string  `json:"principal,omitempty"`
+	PrincipalNEQ          *string  `json:"principalNEQ,omitempty"`
+	PrincipalIn           []string `json:"principalIn,omitempty"`
+	PrincipalNotIn        []string `json:"principalNotIn,omitempty"`
+	PrincipalGT           *string  `json:"principalGT,omitempty"`
+	PrincipalGTE          *string  `json:"principalGTE,omitempty"`
+	PrincipalLT           *string  `json:"principalLT,omitempty"`
+	PrincipalLTE          *string  `json:"principalLTE,omitempty"`
+	PrincipalContains     *string  `json:"principalContains,omitempty"`
+	PrincipalHasPrefix    *string  `json:"principalHasPrefix,omitempty"`
+	PrincipalHasSuffix    *string  `json:"principalHasSuffix,omitempty"`
+	PrincipalIsNil        bool     `json:"principalIsNil,omitempty"`
+	PrincipalNotNil       bool     `json:"principalNotNil,omitempty"`
+	PrincipalEqualFold    *string  `json:"principalEqualFold,omitempty"`
+	PrincipalContainsFold *string  `json:"principalContainsFold,omitempty"`
+
+	// "hostname" field predicates.
+	Hostname             *string  `json:"hostname,omitempty"`
+	HostnameNEQ          *string  `json:"hostnameNEQ,omitempty"`
+	HostnameIn           []string `json:"hostnameIn,omitempty"`
+	HostnameNotIn        []string `json:"hostnameNotIn,omitempty"`
+	HostnameGT           *string  `json:"hostnameGT,omitempty"`
+	HostnameGTE          *string  `json:"hostnameGTE,omitempty"`
+	HostnameLT           *string  `json:"hostnameLT,omitempty"`
+	HostnameLTE          *string  `json:"hostnameLTE,omitempty"`
+	HostnameContains     *string  `json:"hostnameContains,omitempty"`
+	HostnameHasPrefix    *string  `json:"hostnameHasPrefix,omitempty"`
+	HostnameHasSuffix    *string  `json:"hostnameHasSuffix,omitempty"`
+	HostnameIsNil        bool     `json:"hostnameIsNil,omitempty"`
+	HostnameNotNil       bool     `json:"hostnameNotNil,omitempty"`
+	HostnameEqualFold    *string  `json:"hostnameEqualFold,omitempty"`
+	HostnameContainsFold *string  `json:"hostnameContainsFold,omitempty"`
+
+	// "identifier" field predicates.
+	Identifier             *string  `json:"identifier,omitempty"`
+	IdentifierNEQ          *string  `json:"identifierNEQ,omitempty"`
+	IdentifierIn           []string `json:"identifierIn,omitempty"`
+	IdentifierNotIn        []string `json:"identifierNotIn,omitempty"`
+	IdentifierGT           *string  `json:"identifierGT,omitempty"`
+	IdentifierGTE          *string  `json:"identifierGTE,omitempty"`
+	IdentifierLT           *string  `json:"identifierLT,omitempty"`
+	IdentifierLTE          *string  `json:"identifierLTE,omitempty"`
+	IdentifierContains     *string  `json:"identifierContains,omitempty"`
+	IdentifierHasPrefix    *string  `json:"identifierHasPrefix,omitempty"`
+	IdentifierHasSuffix    *string  `json:"identifierHasSuffix,omitempty"`
+	IdentifierEqualFold    *string  `json:"identifierEqualFold,omitempty"`
+	IdentifierContainsFold *string  `json:"identifierContainsFold,omitempty"`
+
+	// "agent_identifier" field predicates.
+	AgentIdentifier             *string  `json:"agentIdentifier,omitempty"`
+	AgentIdentifierNEQ          *string  `json:"agentIdentifierNEQ,omitempty"`
+	AgentIdentifierIn           []string `json:"agentIdentifierIn,omitempty"`
+	AgentIdentifierNotIn        []string `json:"agentIdentifierNotIn,omitempty"`
+	AgentIdentifierGT           *string  `json:"agentIdentifierGT,omitempty"`
+	AgentIdentifierGTE          *string  `json:"agentIdentifierGTE,omitempty"`
+	AgentIdentifierLT           *string  `json:"agentIdentifierLT,omitempty"`
+	AgentIdentifierLTE          *string  `json:"agentIdentifierLTE,omitempty"`
+	AgentIdentifierContains     *string  `json:"agentIdentifierContains,omitempty"`
+	AgentIdentifierHasPrefix    *string  `json:"agentIdentifierHasPrefix,omitempty"`
+	AgentIdentifierHasSuffix    *string  `json:"agentIdentifierHasSuffix,omitempty"`
+	AgentIdentifierIsNil        bool     `json:"agentIdentifierIsNil,omitempty"`
+	AgentIdentifierNotNil       bool     `json:"agentIdentifierNotNil,omitempty"`
+	AgentIdentifierEqualFold    *string  `json:"agentIdentifierEqualFold,omitempty"`
+	AgentIdentifierContainsFold *string  `json:"agentIdentifierContainsFold,omitempty"`
+
+	// "host_identifier" field predicates.
+	HostIdentifier             *string  `json:"hostIdentifier,omitempty"`
+	HostIdentifierNEQ          *string  `json:"hostIdentifierNEQ,omitempty"`
+	HostIdentifierIn           []string `json:"hostIdentifierIn,omitempty"`
+	HostIdentifierNotIn        []string `json:"hostIdentifierNotIn,omitempty"`
+	HostIdentifierGT           *string  `json:"hostIdentifierGT,omitempty"`
+	HostIdentifierGTE          *string  `json:"hostIdentifierGTE,omitempty"`
+	HostIdentifierLT           *string  `json:"hostIdentifierLT,omitempty"`
+	HostIdentifierLTE          *string  `json:"hostIdentifierLTE,omitempty"`
+	HostIdentifierContains     *string  `json:"hostIdentifierContains,omitempty"`
+	HostIdentifierHasPrefix    *string  `json:"hostIdentifierHasPrefix,omitempty"`
+	HostIdentifierHasSuffix    *string  `json:"hostIdentifierHasSuffix,omitempty"`
+	HostIdentifierIsNil        bool     `json:"hostIdentifierIsNil,omitempty"`
+	HostIdentifierNotNil       bool     `json:"hostIdentifierNotNil,omitempty"`
+	HostIdentifierEqualFold    *string  `json:"hostIdentifierEqualFold,omitempty"`
+	HostIdentifierContainsFold *string  `json:"hostIdentifierContainsFold,omitempty"`
+
+	// "host_primary_ip" field predicates.
+	HostPrimaryIP             *string  `json:"hostPrimaryIP,omitempty"`
+	HostPrimaryIPNEQ          *string  `json:"hostPrimaryIPNEQ,omitempty"`
+	HostPrimaryIPIn           []string `json:"hostPrimaryIPIn,omitempty"`
+	HostPrimaryIPNotIn        []string `json:"hostPrimaryIPNotIn,omitempty"`
+	HostPrimaryIPGT           *string  `json:"hostPrimaryIPGT,omitempty"`
+	HostPrimaryIPGTE          *string  `json:"hostPrimaryIPGTE,omitempty"`
+	HostPrimaryIPLT           *string  `json:"hostPrimaryIPLT,omitempty"`
+	HostPrimaryIPLTE          *string  `json:"hostPrimaryIPLTE,omitempty"`
+	HostPrimaryIPContains     *string  `json:"hostPrimaryIPContains,omitempty"`
+	HostPrimaryIPHasPrefix    *string  `json:"hostPrimaryIPHasPrefix,omitempty"`
+	HostPrimaryIPHasSuffix    *string  `json:"hostPrimaryIPHasSuffix,omitempty"`
+	HostPrimaryIPIsNil        bool     `json:"hostPrimaryIPIsNil,omitempty"`
+	HostPrimaryIPNotNil       bool     `json:"hostPrimaryIPNotNil,omitempty"`
+	HostPrimaryIPEqualFold    *string  `json:"hostPrimaryIPEqualFold,omitempty"`
+	HostPrimaryIPContainsFold *string  `json:"hostPrimaryIPContainsFold,omitempty"`
+
+	// "host_platform" field predicates.
+	HostPlatform      *beacon.HostPlatform  `json:"hostPlatform,omitempty"`
+	HostPlatformNEQ   *beacon.HostPlatform  `json:"hostPlatformNEQ,omitempty"`
+	HostPlatformIn    []beacon.HostPlatform `json:"hostPlatformIn,omitempty"`
+	HostPlatformNotIn []beacon.HostPlatform `json:"hostPlatformNotIn,omitempty"`
+
+	// "last_seen_at" field predicates.
+	LastSeenAt       *time.Time  `json:"lastSeenAt,omitempty"`
+	LastSeenAtNEQ    *time.Time  `json:"lastSeenAtNEQ,omitempty"`
+	LastSeenAtIn     []time.Time `json:"lastSeenAtIn,omitempty"`
+	LastSeenAtNotIn  []time.Time `json:"lastSeenAtNotIn,omitempty"`
+	LastSeenAtGT     *time.Time  `json:"lastSeenAtGT,omitempty"`
+	LastSeenAtGTE    *time.Time  `json:"lastSeenAtGTE,omitempty"`
+	LastSeenAtLT     *time.Time  `json:"lastSeenAtLT,omitempty"`
+	LastSeenAtLTE    *time.Time  `json:"lastSeenAtLTE,omitempty"`
+	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
+	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
+
+	// "tags" edge predicates.
+	HasTags     *bool            `json:"hasTags,omitempty"`
+	HasTagsWith []*TagWhereInput `json:"hasTagsWith,omitempty"`
+
+	// "tasks" edge predicates.
+	HasTasks     *bool             `json:"hasTasks,omitempty"`
+	HasTasksWith []*TaskWhereInput `json:"hasTasksWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *BeaconWhereInput) AddPredicates(predicates ...predicate.Beacon) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the BeaconWhereInput filter on the BeaconQuery builder.
+func (i *BeaconWhereInput) Filter(q *BeaconQuery) (*BeaconQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyBeaconWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyBeaconWhereInput is returned in case the BeaconWhereInput is empty.
+var ErrEmptyBeaconWhereInput = errors.New("ent: empty predicate BeaconWhereInput")
+
+// P returns a predicate for filtering beacons.
+// An error is returned if the input is empty or invalid.
+func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
+	var predicates []predicate.Beacon
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, beacon.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Beacon, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, beacon.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Beacon, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, beacon.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, beacon.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, beacon.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, beacon.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, beacon.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, beacon.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, beacon.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, beacon.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, beacon.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, beacon.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, beacon.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, beacon.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, beacon.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, beacon.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, beacon.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, beacon.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, beacon.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, beacon.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, beacon.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, beacon.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, beacon.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, beacon.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Principal != nil {
+		predicates = append(predicates, beacon.PrincipalEQ(*i.Principal))
+	}
+	if i.PrincipalNEQ != nil {
+		predicates = append(predicates, beacon.PrincipalNEQ(*i.PrincipalNEQ))
+	}
+	if len(i.PrincipalIn) > 0 {
+		predicates = append(predicates, beacon.PrincipalIn(i.PrincipalIn...))
+	}
+	if len(i.PrincipalNotIn) > 0 {
+		predicates = append(predicates, beacon.PrincipalNotIn(i.PrincipalNotIn...))
+	}
+	if i.PrincipalGT != nil {
+		predicates = append(predicates, beacon.PrincipalGT(*i.PrincipalGT))
+	}
+	if i.PrincipalGTE != nil {
+		predicates = append(predicates, beacon.PrincipalGTE(*i.PrincipalGTE))
+	}
+	if i.PrincipalLT != nil {
+		predicates = append(predicates, beacon.PrincipalLT(*i.PrincipalLT))
+	}
+	if i.PrincipalLTE != nil {
+		predicates = append(predicates, beacon.PrincipalLTE(*i.PrincipalLTE))
+	}
+	if i.PrincipalContains != nil {
+		predicates = append(predicates, beacon.PrincipalContains(*i.PrincipalContains))
+	}
+	if i.PrincipalHasPrefix != nil {
+		predicates = append(predicates, beacon.PrincipalHasPrefix(*i.PrincipalHasPrefix))
+	}
+	if i.PrincipalHasSuffix != nil {
+		predicates = append(predicates, beacon.PrincipalHasSuffix(*i.PrincipalHasSuffix))
+	}
+	if i.PrincipalIsNil {
+		predicates = append(predicates, beacon.PrincipalIsNil())
+	}
+	if i.PrincipalNotNil {
+		predicates = append(predicates, beacon.PrincipalNotNil())
+	}
+	if i.PrincipalEqualFold != nil {
+		predicates = append(predicates, beacon.PrincipalEqualFold(*i.PrincipalEqualFold))
+	}
+	if i.PrincipalContainsFold != nil {
+		predicates = append(predicates, beacon.PrincipalContainsFold(*i.PrincipalContainsFold))
+	}
+	if i.Hostname != nil {
+		predicates = append(predicates, beacon.HostnameEQ(*i.Hostname))
+	}
+	if i.HostnameNEQ != nil {
+		predicates = append(predicates, beacon.HostnameNEQ(*i.HostnameNEQ))
+	}
+	if len(i.HostnameIn) > 0 {
+		predicates = append(predicates, beacon.HostnameIn(i.HostnameIn...))
+	}
+	if len(i.HostnameNotIn) > 0 {
+		predicates = append(predicates, beacon.HostnameNotIn(i.HostnameNotIn...))
+	}
+	if i.HostnameGT != nil {
+		predicates = append(predicates, beacon.HostnameGT(*i.HostnameGT))
+	}
+	if i.HostnameGTE != nil {
+		predicates = append(predicates, beacon.HostnameGTE(*i.HostnameGTE))
+	}
+	if i.HostnameLT != nil {
+		predicates = append(predicates, beacon.HostnameLT(*i.HostnameLT))
+	}
+	if i.HostnameLTE != nil {
+		predicates = append(predicates, beacon.HostnameLTE(*i.HostnameLTE))
+	}
+	if i.HostnameContains != nil {
+		predicates = append(predicates, beacon.HostnameContains(*i.HostnameContains))
+	}
+	if i.HostnameHasPrefix != nil {
+		predicates = append(predicates, beacon.HostnameHasPrefix(*i.HostnameHasPrefix))
+	}
+	if i.HostnameHasSuffix != nil {
+		predicates = append(predicates, beacon.HostnameHasSuffix(*i.HostnameHasSuffix))
+	}
+	if i.HostnameIsNil {
+		predicates = append(predicates, beacon.HostnameIsNil())
+	}
+	if i.HostnameNotNil {
+		predicates = append(predicates, beacon.HostnameNotNil())
+	}
+	if i.HostnameEqualFold != nil {
+		predicates = append(predicates, beacon.HostnameEqualFold(*i.HostnameEqualFold))
+	}
+	if i.HostnameContainsFold != nil {
+		predicates = append(predicates, beacon.HostnameContainsFold(*i.HostnameContainsFold))
+	}
+	if i.Identifier != nil {
+		predicates = append(predicates, beacon.IdentifierEQ(*i.Identifier))
+	}
+	if i.IdentifierNEQ != nil {
+		predicates = append(predicates, beacon.IdentifierNEQ(*i.IdentifierNEQ))
+	}
+	if len(i.IdentifierIn) > 0 {
+		predicates = append(predicates, beacon.IdentifierIn(i.IdentifierIn...))
+	}
+	if len(i.IdentifierNotIn) > 0 {
+		predicates = append(predicates, beacon.IdentifierNotIn(i.IdentifierNotIn...))
+	}
+	if i.IdentifierGT != nil {
+		predicates = append(predicates, beacon.IdentifierGT(*i.IdentifierGT))
+	}
+	if i.IdentifierGTE != nil {
+		predicates = append(predicates, beacon.IdentifierGTE(*i.IdentifierGTE))
+	}
+	if i.IdentifierLT != nil {
+		predicates = append(predicates, beacon.IdentifierLT(*i.IdentifierLT))
+	}
+	if i.IdentifierLTE != nil {
+		predicates = append(predicates, beacon.IdentifierLTE(*i.IdentifierLTE))
+	}
+	if i.IdentifierContains != nil {
+		predicates = append(predicates, beacon.IdentifierContains(*i.IdentifierContains))
+	}
+	if i.IdentifierHasPrefix != nil {
+		predicates = append(predicates, beacon.IdentifierHasPrefix(*i.IdentifierHasPrefix))
+	}
+	if i.IdentifierHasSuffix != nil {
+		predicates = append(predicates, beacon.IdentifierHasSuffix(*i.IdentifierHasSuffix))
+	}
+	if i.IdentifierEqualFold != nil {
+		predicates = append(predicates, beacon.IdentifierEqualFold(*i.IdentifierEqualFold))
+	}
+	if i.IdentifierContainsFold != nil {
+		predicates = append(predicates, beacon.IdentifierContainsFold(*i.IdentifierContainsFold))
+	}
+	if i.AgentIdentifier != nil {
+		predicates = append(predicates, beacon.AgentIdentifierEQ(*i.AgentIdentifier))
+	}
+	if i.AgentIdentifierNEQ != nil {
+		predicates = append(predicates, beacon.AgentIdentifierNEQ(*i.AgentIdentifierNEQ))
+	}
+	if len(i.AgentIdentifierIn) > 0 {
+		predicates = append(predicates, beacon.AgentIdentifierIn(i.AgentIdentifierIn...))
+	}
+	if len(i.AgentIdentifierNotIn) > 0 {
+		predicates = append(predicates, beacon.AgentIdentifierNotIn(i.AgentIdentifierNotIn...))
+	}
+	if i.AgentIdentifierGT != nil {
+		predicates = append(predicates, beacon.AgentIdentifierGT(*i.AgentIdentifierGT))
+	}
+	if i.AgentIdentifierGTE != nil {
+		predicates = append(predicates, beacon.AgentIdentifierGTE(*i.AgentIdentifierGTE))
+	}
+	if i.AgentIdentifierLT != nil {
+		predicates = append(predicates, beacon.AgentIdentifierLT(*i.AgentIdentifierLT))
+	}
+	if i.AgentIdentifierLTE != nil {
+		predicates = append(predicates, beacon.AgentIdentifierLTE(*i.AgentIdentifierLTE))
+	}
+	if i.AgentIdentifierContains != nil {
+		predicates = append(predicates, beacon.AgentIdentifierContains(*i.AgentIdentifierContains))
+	}
+	if i.AgentIdentifierHasPrefix != nil {
+		predicates = append(predicates, beacon.AgentIdentifierHasPrefix(*i.AgentIdentifierHasPrefix))
+	}
+	if i.AgentIdentifierHasSuffix != nil {
+		predicates = append(predicates, beacon.AgentIdentifierHasSuffix(*i.AgentIdentifierHasSuffix))
+	}
+	if i.AgentIdentifierIsNil {
+		predicates = append(predicates, beacon.AgentIdentifierIsNil())
+	}
+	if i.AgentIdentifierNotNil {
+		predicates = append(predicates, beacon.AgentIdentifierNotNil())
+	}
+	if i.AgentIdentifierEqualFold != nil {
+		predicates = append(predicates, beacon.AgentIdentifierEqualFold(*i.AgentIdentifierEqualFold))
+	}
+	if i.AgentIdentifierContainsFold != nil {
+		predicates = append(predicates, beacon.AgentIdentifierContainsFold(*i.AgentIdentifierContainsFold))
+	}
+	if i.HostIdentifier != nil {
+		predicates = append(predicates, beacon.HostIdentifierEQ(*i.HostIdentifier))
+	}
+	if i.HostIdentifierNEQ != nil {
+		predicates = append(predicates, beacon.HostIdentifierNEQ(*i.HostIdentifierNEQ))
+	}
+	if len(i.HostIdentifierIn) > 0 {
+		predicates = append(predicates, beacon.HostIdentifierIn(i.HostIdentifierIn...))
+	}
+	if len(i.HostIdentifierNotIn) > 0 {
+		predicates = append(predicates, beacon.HostIdentifierNotIn(i.HostIdentifierNotIn...))
+	}
+	if i.HostIdentifierGT != nil {
+		predicates = append(predicates, beacon.HostIdentifierGT(*i.HostIdentifierGT))
+	}
+	if i.HostIdentifierGTE != nil {
+		predicates = append(predicates, beacon.HostIdentifierGTE(*i.HostIdentifierGTE))
+	}
+	if i.HostIdentifierLT != nil {
+		predicates = append(predicates, beacon.HostIdentifierLT(*i.HostIdentifierLT))
+	}
+	if i.HostIdentifierLTE != nil {
+		predicates = append(predicates, beacon.HostIdentifierLTE(*i.HostIdentifierLTE))
+	}
+	if i.HostIdentifierContains != nil {
+		predicates = append(predicates, beacon.HostIdentifierContains(*i.HostIdentifierContains))
+	}
+	if i.HostIdentifierHasPrefix != nil {
+		predicates = append(predicates, beacon.HostIdentifierHasPrefix(*i.HostIdentifierHasPrefix))
+	}
+	if i.HostIdentifierHasSuffix != nil {
+		predicates = append(predicates, beacon.HostIdentifierHasSuffix(*i.HostIdentifierHasSuffix))
+	}
+	if i.HostIdentifierIsNil {
+		predicates = append(predicates, beacon.HostIdentifierIsNil())
+	}
+	if i.HostIdentifierNotNil {
+		predicates = append(predicates, beacon.HostIdentifierNotNil())
+	}
+	if i.HostIdentifierEqualFold != nil {
+		predicates = append(predicates, beacon.HostIdentifierEqualFold(*i.HostIdentifierEqualFold))
+	}
+	if i.HostIdentifierContainsFold != nil {
+		predicates = append(predicates, beacon.HostIdentifierContainsFold(*i.HostIdentifierContainsFold))
+	}
+	if i.HostPrimaryIP != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPEQ(*i.HostPrimaryIP))
+	}
+	if i.HostPrimaryIPNEQ != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPNEQ(*i.HostPrimaryIPNEQ))
+	}
+	if len(i.HostPrimaryIPIn) > 0 {
+		predicates = append(predicates, beacon.HostPrimaryIPIn(i.HostPrimaryIPIn...))
+	}
+	if len(i.HostPrimaryIPNotIn) > 0 {
+		predicates = append(predicates, beacon.HostPrimaryIPNotIn(i.HostPrimaryIPNotIn...))
+	}
+	if i.HostPrimaryIPGT != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPGT(*i.HostPrimaryIPGT))
+	}
+	if i.HostPrimaryIPGTE != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPGTE(*i.HostPrimaryIPGTE))
+	}
+	if i.HostPrimaryIPLT != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPLT(*i.HostPrimaryIPLT))
+	}
+	if i.HostPrimaryIPLTE != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPLTE(*i.HostPrimaryIPLTE))
+	}
+	if i.HostPrimaryIPContains != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPContains(*i.HostPrimaryIPContains))
+	}
+	if i.HostPrimaryIPHasPrefix != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPHasPrefix(*i.HostPrimaryIPHasPrefix))
+	}
+	if i.HostPrimaryIPHasSuffix != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPHasSuffix(*i.HostPrimaryIPHasSuffix))
+	}
+	if i.HostPrimaryIPIsNil {
+		predicates = append(predicates, beacon.HostPrimaryIPIsNil())
+	}
+	if i.HostPrimaryIPNotNil {
+		predicates = append(predicates, beacon.HostPrimaryIPNotNil())
+	}
+	if i.HostPrimaryIPEqualFold != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPEqualFold(*i.HostPrimaryIPEqualFold))
+	}
+	if i.HostPrimaryIPContainsFold != nil {
+		predicates = append(predicates, beacon.HostPrimaryIPContainsFold(*i.HostPrimaryIPContainsFold))
+	}
+	if i.HostPlatform != nil {
+		predicates = append(predicates, beacon.HostPlatformEQ(*i.HostPlatform))
+	}
+	if i.HostPlatformNEQ != nil {
+		predicates = append(predicates, beacon.HostPlatformNEQ(*i.HostPlatformNEQ))
+	}
+	if len(i.HostPlatformIn) > 0 {
+		predicates = append(predicates, beacon.HostPlatformIn(i.HostPlatformIn...))
+	}
+	if len(i.HostPlatformNotIn) > 0 {
+		predicates = append(predicates, beacon.HostPlatformNotIn(i.HostPlatformNotIn...))
+	}
+	if i.LastSeenAt != nil {
+		predicates = append(predicates, beacon.LastSeenAtEQ(*i.LastSeenAt))
+	}
+	if i.LastSeenAtNEQ != nil {
+		predicates = append(predicates, beacon.LastSeenAtNEQ(*i.LastSeenAtNEQ))
+	}
+	if len(i.LastSeenAtIn) > 0 {
+		predicates = append(predicates, beacon.LastSeenAtIn(i.LastSeenAtIn...))
+	}
+	if len(i.LastSeenAtNotIn) > 0 {
+		predicates = append(predicates, beacon.LastSeenAtNotIn(i.LastSeenAtNotIn...))
+	}
+	if i.LastSeenAtGT != nil {
+		predicates = append(predicates, beacon.LastSeenAtGT(*i.LastSeenAtGT))
+	}
+	if i.LastSeenAtGTE != nil {
+		predicates = append(predicates, beacon.LastSeenAtGTE(*i.LastSeenAtGTE))
+	}
+	if i.LastSeenAtLT != nil {
+		predicates = append(predicates, beacon.LastSeenAtLT(*i.LastSeenAtLT))
+	}
+	if i.LastSeenAtLTE != nil {
+		predicates = append(predicates, beacon.LastSeenAtLTE(*i.LastSeenAtLTE))
+	}
+	if i.LastSeenAtIsNil {
+		predicates = append(predicates, beacon.LastSeenAtIsNil())
+	}
+	if i.LastSeenAtNotNil {
+		predicates = append(predicates, beacon.LastSeenAtNotNil())
+	}
+
+	if i.HasTags != nil {
+		p := beacon.HasTags()
+		if !*i.HasTags {
+			p = beacon.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTagsWith) > 0 {
+		with := make([]predicate.Tag, 0, len(i.HasTagsWith))
+		for _, w := range i.HasTagsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTagsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beacon.HasTagsWith(with...))
+	}
+	if i.HasTasks != nil {
+		p := beacon.HasTasks()
+		if !*i.HasTasks {
+			p = beacon.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTasksWith) > 0 {
+		with := make([]predicate.Task, 0, len(i.HasTasksWith))
+		for _, w := range i.HasTasksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTasksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beacon.HasTasksWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyBeaconWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return beacon.And(predicates...), nil
+	}
+}
 
 // FileWhereInput represents a where input for filtering File queries.
 type FileWhereInput struct {
@@ -747,652 +1393,6 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 	}
 }
 
-// SessionWhereInput represents a where input for filtering Session queries.
-type SessionWhereInput struct {
-	Predicates []predicate.Session  `json:"-"`
-	Not        *SessionWhereInput   `json:"not,omitempty"`
-	Or         []*SessionWhereInput `json:"or,omitempty"`
-	And        []*SessionWhereInput `json:"and,omitempty"`
-
-	// "id" field predicates.
-	ID      *int  `json:"id,omitempty"`
-	IDNEQ   *int  `json:"idNEQ,omitempty"`
-	IDIn    []int `json:"idIn,omitempty"`
-	IDNotIn []int `json:"idNotIn,omitempty"`
-	IDGT    *int  `json:"idGT,omitempty"`
-	IDGTE   *int  `json:"idGTE,omitempty"`
-	IDLT    *int  `json:"idLT,omitempty"`
-	IDLTE   *int  `json:"idLTE,omitempty"`
-
-	// "name" field predicates.
-	Name             *string  `json:"name,omitempty"`
-	NameNEQ          *string  `json:"nameNEQ,omitempty"`
-	NameIn           []string `json:"nameIn,omitempty"`
-	NameNotIn        []string `json:"nameNotIn,omitempty"`
-	NameGT           *string  `json:"nameGT,omitempty"`
-	NameGTE          *string  `json:"nameGTE,omitempty"`
-	NameLT           *string  `json:"nameLT,omitempty"`
-	NameLTE          *string  `json:"nameLTE,omitempty"`
-	NameContains     *string  `json:"nameContains,omitempty"`
-	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
-	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
-	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
-	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
-
-	// "principal" field predicates.
-	Principal             *string  `json:"principal,omitempty"`
-	PrincipalNEQ          *string  `json:"principalNEQ,omitempty"`
-	PrincipalIn           []string `json:"principalIn,omitempty"`
-	PrincipalNotIn        []string `json:"principalNotIn,omitempty"`
-	PrincipalGT           *string  `json:"principalGT,omitempty"`
-	PrincipalGTE          *string  `json:"principalGTE,omitempty"`
-	PrincipalLT           *string  `json:"principalLT,omitempty"`
-	PrincipalLTE          *string  `json:"principalLTE,omitempty"`
-	PrincipalContains     *string  `json:"principalContains,omitempty"`
-	PrincipalHasPrefix    *string  `json:"principalHasPrefix,omitempty"`
-	PrincipalHasSuffix    *string  `json:"principalHasSuffix,omitempty"`
-	PrincipalIsNil        bool     `json:"principalIsNil,omitempty"`
-	PrincipalNotNil       bool     `json:"principalNotNil,omitempty"`
-	PrincipalEqualFold    *string  `json:"principalEqualFold,omitempty"`
-	PrincipalContainsFold *string  `json:"principalContainsFold,omitempty"`
-
-	// "hostname" field predicates.
-	Hostname             *string  `json:"hostname,omitempty"`
-	HostnameNEQ          *string  `json:"hostnameNEQ,omitempty"`
-	HostnameIn           []string `json:"hostnameIn,omitempty"`
-	HostnameNotIn        []string `json:"hostnameNotIn,omitempty"`
-	HostnameGT           *string  `json:"hostnameGT,omitempty"`
-	HostnameGTE          *string  `json:"hostnameGTE,omitempty"`
-	HostnameLT           *string  `json:"hostnameLT,omitempty"`
-	HostnameLTE          *string  `json:"hostnameLTE,omitempty"`
-	HostnameContains     *string  `json:"hostnameContains,omitempty"`
-	HostnameHasPrefix    *string  `json:"hostnameHasPrefix,omitempty"`
-	HostnameHasSuffix    *string  `json:"hostnameHasSuffix,omitempty"`
-	HostnameIsNil        bool     `json:"hostnameIsNil,omitempty"`
-	HostnameNotNil       bool     `json:"hostnameNotNil,omitempty"`
-	HostnameEqualFold    *string  `json:"hostnameEqualFold,omitempty"`
-	HostnameContainsFold *string  `json:"hostnameContainsFold,omitempty"`
-
-	// "identifier" field predicates.
-	Identifier             *string  `json:"identifier,omitempty"`
-	IdentifierNEQ          *string  `json:"identifierNEQ,omitempty"`
-	IdentifierIn           []string `json:"identifierIn,omitempty"`
-	IdentifierNotIn        []string `json:"identifierNotIn,omitempty"`
-	IdentifierGT           *string  `json:"identifierGT,omitempty"`
-	IdentifierGTE          *string  `json:"identifierGTE,omitempty"`
-	IdentifierLT           *string  `json:"identifierLT,omitempty"`
-	IdentifierLTE          *string  `json:"identifierLTE,omitempty"`
-	IdentifierContains     *string  `json:"identifierContains,omitempty"`
-	IdentifierHasPrefix    *string  `json:"identifierHasPrefix,omitempty"`
-	IdentifierHasSuffix    *string  `json:"identifierHasSuffix,omitempty"`
-	IdentifierEqualFold    *string  `json:"identifierEqualFold,omitempty"`
-	IdentifierContainsFold *string  `json:"identifierContainsFold,omitempty"`
-
-	// "agent_identifier" field predicates.
-	AgentIdentifier             *string  `json:"agentIdentifier,omitempty"`
-	AgentIdentifierNEQ          *string  `json:"agentIdentifierNEQ,omitempty"`
-	AgentIdentifierIn           []string `json:"agentIdentifierIn,omitempty"`
-	AgentIdentifierNotIn        []string `json:"agentIdentifierNotIn,omitempty"`
-	AgentIdentifierGT           *string  `json:"agentIdentifierGT,omitempty"`
-	AgentIdentifierGTE          *string  `json:"agentIdentifierGTE,omitempty"`
-	AgentIdentifierLT           *string  `json:"agentIdentifierLT,omitempty"`
-	AgentIdentifierLTE          *string  `json:"agentIdentifierLTE,omitempty"`
-	AgentIdentifierContains     *string  `json:"agentIdentifierContains,omitempty"`
-	AgentIdentifierHasPrefix    *string  `json:"agentIdentifierHasPrefix,omitempty"`
-	AgentIdentifierHasSuffix    *string  `json:"agentIdentifierHasSuffix,omitempty"`
-	AgentIdentifierIsNil        bool     `json:"agentIdentifierIsNil,omitempty"`
-	AgentIdentifierNotNil       bool     `json:"agentIdentifierNotNil,omitempty"`
-	AgentIdentifierEqualFold    *string  `json:"agentIdentifierEqualFold,omitempty"`
-	AgentIdentifierContainsFold *string  `json:"agentIdentifierContainsFold,omitempty"`
-
-	// "host_identifier" field predicates.
-	HostIdentifier             *string  `json:"hostIdentifier,omitempty"`
-	HostIdentifierNEQ          *string  `json:"hostIdentifierNEQ,omitempty"`
-	HostIdentifierIn           []string `json:"hostIdentifierIn,omitempty"`
-	HostIdentifierNotIn        []string `json:"hostIdentifierNotIn,omitempty"`
-	HostIdentifierGT           *string  `json:"hostIdentifierGT,omitempty"`
-	HostIdentifierGTE          *string  `json:"hostIdentifierGTE,omitempty"`
-	HostIdentifierLT           *string  `json:"hostIdentifierLT,omitempty"`
-	HostIdentifierLTE          *string  `json:"hostIdentifierLTE,omitempty"`
-	HostIdentifierContains     *string  `json:"hostIdentifierContains,omitempty"`
-	HostIdentifierHasPrefix    *string  `json:"hostIdentifierHasPrefix,omitempty"`
-	HostIdentifierHasSuffix    *string  `json:"hostIdentifierHasSuffix,omitempty"`
-	HostIdentifierIsNil        bool     `json:"hostIdentifierIsNil,omitempty"`
-	HostIdentifierNotNil       bool     `json:"hostIdentifierNotNil,omitempty"`
-	HostIdentifierEqualFold    *string  `json:"hostIdentifierEqualFold,omitempty"`
-	HostIdentifierContainsFold *string  `json:"hostIdentifierContainsFold,omitempty"`
-
-	// "host_primary_ip" field predicates.
-	HostPrimaryIP             *string  `json:"hostPrimaryIP,omitempty"`
-	HostPrimaryIPNEQ          *string  `json:"hostPrimaryIPNEQ,omitempty"`
-	HostPrimaryIPIn           []string `json:"hostPrimaryIPIn,omitempty"`
-	HostPrimaryIPNotIn        []string `json:"hostPrimaryIPNotIn,omitempty"`
-	HostPrimaryIPGT           *string  `json:"hostPrimaryIPGT,omitempty"`
-	HostPrimaryIPGTE          *string  `json:"hostPrimaryIPGTE,omitempty"`
-	HostPrimaryIPLT           *string  `json:"hostPrimaryIPLT,omitempty"`
-	HostPrimaryIPLTE          *string  `json:"hostPrimaryIPLTE,omitempty"`
-	HostPrimaryIPContains     *string  `json:"hostPrimaryIPContains,omitempty"`
-	HostPrimaryIPHasPrefix    *string  `json:"hostPrimaryIPHasPrefix,omitempty"`
-	HostPrimaryIPHasSuffix    *string  `json:"hostPrimaryIPHasSuffix,omitempty"`
-	HostPrimaryIPIsNil        bool     `json:"hostPrimaryIPIsNil,omitempty"`
-	HostPrimaryIPNotNil       bool     `json:"hostPrimaryIPNotNil,omitempty"`
-	HostPrimaryIPEqualFold    *string  `json:"hostPrimaryIPEqualFold,omitempty"`
-	HostPrimaryIPContainsFold *string  `json:"hostPrimaryIPContainsFold,omitempty"`
-
-	// "host_platform" field predicates.
-	HostPlatform      *session.HostPlatform  `json:"hostPlatform,omitempty"`
-	HostPlatformNEQ   *session.HostPlatform  `json:"hostPlatformNEQ,omitempty"`
-	HostPlatformIn    []session.HostPlatform `json:"hostPlatformIn,omitempty"`
-	HostPlatformNotIn []session.HostPlatform `json:"hostPlatformNotIn,omitempty"`
-
-	// "last_seen_at" field predicates.
-	LastSeenAt       *time.Time  `json:"lastSeenAt,omitempty"`
-	LastSeenAtNEQ    *time.Time  `json:"lastSeenAtNEQ,omitempty"`
-	LastSeenAtIn     []time.Time `json:"lastSeenAtIn,omitempty"`
-	LastSeenAtNotIn  []time.Time `json:"lastSeenAtNotIn,omitempty"`
-	LastSeenAtGT     *time.Time  `json:"lastSeenAtGT,omitempty"`
-	LastSeenAtGTE    *time.Time  `json:"lastSeenAtGTE,omitempty"`
-	LastSeenAtLT     *time.Time  `json:"lastSeenAtLT,omitempty"`
-	LastSeenAtLTE    *time.Time  `json:"lastSeenAtLTE,omitempty"`
-	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
-	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
-
-	// "tags" edge predicates.
-	HasTags     *bool            `json:"hasTags,omitempty"`
-	HasTagsWith []*TagWhereInput `json:"hasTagsWith,omitempty"`
-
-	// "tasks" edge predicates.
-	HasTasks     *bool             `json:"hasTasks,omitempty"`
-	HasTasksWith []*TaskWhereInput `json:"hasTasksWith,omitempty"`
-}
-
-// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
-func (i *SessionWhereInput) AddPredicates(predicates ...predicate.Session) {
-	i.Predicates = append(i.Predicates, predicates...)
-}
-
-// Filter applies the SessionWhereInput filter on the SessionQuery builder.
-func (i *SessionWhereInput) Filter(q *SessionQuery) (*SessionQuery, error) {
-	if i == nil {
-		return q, nil
-	}
-	p, err := i.P()
-	if err != nil {
-		if err == ErrEmptySessionWhereInput {
-			return q, nil
-		}
-		return nil, err
-	}
-	return q.Where(p), nil
-}
-
-// ErrEmptySessionWhereInput is returned in case the SessionWhereInput is empty.
-var ErrEmptySessionWhereInput = errors.New("ent: empty predicate SessionWhereInput")
-
-// P returns a predicate for filtering sessions.
-// An error is returned if the input is empty or invalid.
-func (i *SessionWhereInput) P() (predicate.Session, error) {
-	var predicates []predicate.Session
-	if i.Not != nil {
-		p, err := i.Not.P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'not'", err)
-		}
-		predicates = append(predicates, session.Not(p))
-	}
-	switch n := len(i.Or); {
-	case n == 1:
-		p, err := i.Or[0].P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'or'", err)
-		}
-		predicates = append(predicates, p)
-	case n > 1:
-		or := make([]predicate.Session, 0, n)
-		for _, w := range i.Or {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'or'", err)
-			}
-			or = append(or, p)
-		}
-		predicates = append(predicates, session.Or(or...))
-	}
-	switch n := len(i.And); {
-	case n == 1:
-		p, err := i.And[0].P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'and'", err)
-		}
-		predicates = append(predicates, p)
-	case n > 1:
-		and := make([]predicate.Session, 0, n)
-		for _, w := range i.And {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'and'", err)
-			}
-			and = append(and, p)
-		}
-		predicates = append(predicates, session.And(and...))
-	}
-	predicates = append(predicates, i.Predicates...)
-	if i.ID != nil {
-		predicates = append(predicates, session.IDEQ(*i.ID))
-	}
-	if i.IDNEQ != nil {
-		predicates = append(predicates, session.IDNEQ(*i.IDNEQ))
-	}
-	if len(i.IDIn) > 0 {
-		predicates = append(predicates, session.IDIn(i.IDIn...))
-	}
-	if len(i.IDNotIn) > 0 {
-		predicates = append(predicates, session.IDNotIn(i.IDNotIn...))
-	}
-	if i.IDGT != nil {
-		predicates = append(predicates, session.IDGT(*i.IDGT))
-	}
-	if i.IDGTE != nil {
-		predicates = append(predicates, session.IDGTE(*i.IDGTE))
-	}
-	if i.IDLT != nil {
-		predicates = append(predicates, session.IDLT(*i.IDLT))
-	}
-	if i.IDLTE != nil {
-		predicates = append(predicates, session.IDLTE(*i.IDLTE))
-	}
-	if i.Name != nil {
-		predicates = append(predicates, session.NameEQ(*i.Name))
-	}
-	if i.NameNEQ != nil {
-		predicates = append(predicates, session.NameNEQ(*i.NameNEQ))
-	}
-	if len(i.NameIn) > 0 {
-		predicates = append(predicates, session.NameIn(i.NameIn...))
-	}
-	if len(i.NameNotIn) > 0 {
-		predicates = append(predicates, session.NameNotIn(i.NameNotIn...))
-	}
-	if i.NameGT != nil {
-		predicates = append(predicates, session.NameGT(*i.NameGT))
-	}
-	if i.NameGTE != nil {
-		predicates = append(predicates, session.NameGTE(*i.NameGTE))
-	}
-	if i.NameLT != nil {
-		predicates = append(predicates, session.NameLT(*i.NameLT))
-	}
-	if i.NameLTE != nil {
-		predicates = append(predicates, session.NameLTE(*i.NameLTE))
-	}
-	if i.NameContains != nil {
-		predicates = append(predicates, session.NameContains(*i.NameContains))
-	}
-	if i.NameHasPrefix != nil {
-		predicates = append(predicates, session.NameHasPrefix(*i.NameHasPrefix))
-	}
-	if i.NameHasSuffix != nil {
-		predicates = append(predicates, session.NameHasSuffix(*i.NameHasSuffix))
-	}
-	if i.NameEqualFold != nil {
-		predicates = append(predicates, session.NameEqualFold(*i.NameEqualFold))
-	}
-	if i.NameContainsFold != nil {
-		predicates = append(predicates, session.NameContainsFold(*i.NameContainsFold))
-	}
-	if i.Principal != nil {
-		predicates = append(predicates, session.PrincipalEQ(*i.Principal))
-	}
-	if i.PrincipalNEQ != nil {
-		predicates = append(predicates, session.PrincipalNEQ(*i.PrincipalNEQ))
-	}
-	if len(i.PrincipalIn) > 0 {
-		predicates = append(predicates, session.PrincipalIn(i.PrincipalIn...))
-	}
-	if len(i.PrincipalNotIn) > 0 {
-		predicates = append(predicates, session.PrincipalNotIn(i.PrincipalNotIn...))
-	}
-	if i.PrincipalGT != nil {
-		predicates = append(predicates, session.PrincipalGT(*i.PrincipalGT))
-	}
-	if i.PrincipalGTE != nil {
-		predicates = append(predicates, session.PrincipalGTE(*i.PrincipalGTE))
-	}
-	if i.PrincipalLT != nil {
-		predicates = append(predicates, session.PrincipalLT(*i.PrincipalLT))
-	}
-	if i.PrincipalLTE != nil {
-		predicates = append(predicates, session.PrincipalLTE(*i.PrincipalLTE))
-	}
-	if i.PrincipalContains != nil {
-		predicates = append(predicates, session.PrincipalContains(*i.PrincipalContains))
-	}
-	if i.PrincipalHasPrefix != nil {
-		predicates = append(predicates, session.PrincipalHasPrefix(*i.PrincipalHasPrefix))
-	}
-	if i.PrincipalHasSuffix != nil {
-		predicates = append(predicates, session.PrincipalHasSuffix(*i.PrincipalHasSuffix))
-	}
-	if i.PrincipalIsNil {
-		predicates = append(predicates, session.PrincipalIsNil())
-	}
-	if i.PrincipalNotNil {
-		predicates = append(predicates, session.PrincipalNotNil())
-	}
-	if i.PrincipalEqualFold != nil {
-		predicates = append(predicates, session.PrincipalEqualFold(*i.PrincipalEqualFold))
-	}
-	if i.PrincipalContainsFold != nil {
-		predicates = append(predicates, session.PrincipalContainsFold(*i.PrincipalContainsFold))
-	}
-	if i.Hostname != nil {
-		predicates = append(predicates, session.HostnameEQ(*i.Hostname))
-	}
-	if i.HostnameNEQ != nil {
-		predicates = append(predicates, session.HostnameNEQ(*i.HostnameNEQ))
-	}
-	if len(i.HostnameIn) > 0 {
-		predicates = append(predicates, session.HostnameIn(i.HostnameIn...))
-	}
-	if len(i.HostnameNotIn) > 0 {
-		predicates = append(predicates, session.HostnameNotIn(i.HostnameNotIn...))
-	}
-	if i.HostnameGT != nil {
-		predicates = append(predicates, session.HostnameGT(*i.HostnameGT))
-	}
-	if i.HostnameGTE != nil {
-		predicates = append(predicates, session.HostnameGTE(*i.HostnameGTE))
-	}
-	if i.HostnameLT != nil {
-		predicates = append(predicates, session.HostnameLT(*i.HostnameLT))
-	}
-	if i.HostnameLTE != nil {
-		predicates = append(predicates, session.HostnameLTE(*i.HostnameLTE))
-	}
-	if i.HostnameContains != nil {
-		predicates = append(predicates, session.HostnameContains(*i.HostnameContains))
-	}
-	if i.HostnameHasPrefix != nil {
-		predicates = append(predicates, session.HostnameHasPrefix(*i.HostnameHasPrefix))
-	}
-	if i.HostnameHasSuffix != nil {
-		predicates = append(predicates, session.HostnameHasSuffix(*i.HostnameHasSuffix))
-	}
-	if i.HostnameIsNil {
-		predicates = append(predicates, session.HostnameIsNil())
-	}
-	if i.HostnameNotNil {
-		predicates = append(predicates, session.HostnameNotNil())
-	}
-	if i.HostnameEqualFold != nil {
-		predicates = append(predicates, session.HostnameEqualFold(*i.HostnameEqualFold))
-	}
-	if i.HostnameContainsFold != nil {
-		predicates = append(predicates, session.HostnameContainsFold(*i.HostnameContainsFold))
-	}
-	if i.Identifier != nil {
-		predicates = append(predicates, session.IdentifierEQ(*i.Identifier))
-	}
-	if i.IdentifierNEQ != nil {
-		predicates = append(predicates, session.IdentifierNEQ(*i.IdentifierNEQ))
-	}
-	if len(i.IdentifierIn) > 0 {
-		predicates = append(predicates, session.IdentifierIn(i.IdentifierIn...))
-	}
-	if len(i.IdentifierNotIn) > 0 {
-		predicates = append(predicates, session.IdentifierNotIn(i.IdentifierNotIn...))
-	}
-	if i.IdentifierGT != nil {
-		predicates = append(predicates, session.IdentifierGT(*i.IdentifierGT))
-	}
-	if i.IdentifierGTE != nil {
-		predicates = append(predicates, session.IdentifierGTE(*i.IdentifierGTE))
-	}
-	if i.IdentifierLT != nil {
-		predicates = append(predicates, session.IdentifierLT(*i.IdentifierLT))
-	}
-	if i.IdentifierLTE != nil {
-		predicates = append(predicates, session.IdentifierLTE(*i.IdentifierLTE))
-	}
-	if i.IdentifierContains != nil {
-		predicates = append(predicates, session.IdentifierContains(*i.IdentifierContains))
-	}
-	if i.IdentifierHasPrefix != nil {
-		predicates = append(predicates, session.IdentifierHasPrefix(*i.IdentifierHasPrefix))
-	}
-	if i.IdentifierHasSuffix != nil {
-		predicates = append(predicates, session.IdentifierHasSuffix(*i.IdentifierHasSuffix))
-	}
-	if i.IdentifierEqualFold != nil {
-		predicates = append(predicates, session.IdentifierEqualFold(*i.IdentifierEqualFold))
-	}
-	if i.IdentifierContainsFold != nil {
-		predicates = append(predicates, session.IdentifierContainsFold(*i.IdentifierContainsFold))
-	}
-	if i.AgentIdentifier != nil {
-		predicates = append(predicates, session.AgentIdentifierEQ(*i.AgentIdentifier))
-	}
-	if i.AgentIdentifierNEQ != nil {
-		predicates = append(predicates, session.AgentIdentifierNEQ(*i.AgentIdentifierNEQ))
-	}
-	if len(i.AgentIdentifierIn) > 0 {
-		predicates = append(predicates, session.AgentIdentifierIn(i.AgentIdentifierIn...))
-	}
-	if len(i.AgentIdentifierNotIn) > 0 {
-		predicates = append(predicates, session.AgentIdentifierNotIn(i.AgentIdentifierNotIn...))
-	}
-	if i.AgentIdentifierGT != nil {
-		predicates = append(predicates, session.AgentIdentifierGT(*i.AgentIdentifierGT))
-	}
-	if i.AgentIdentifierGTE != nil {
-		predicates = append(predicates, session.AgentIdentifierGTE(*i.AgentIdentifierGTE))
-	}
-	if i.AgentIdentifierLT != nil {
-		predicates = append(predicates, session.AgentIdentifierLT(*i.AgentIdentifierLT))
-	}
-	if i.AgentIdentifierLTE != nil {
-		predicates = append(predicates, session.AgentIdentifierLTE(*i.AgentIdentifierLTE))
-	}
-	if i.AgentIdentifierContains != nil {
-		predicates = append(predicates, session.AgentIdentifierContains(*i.AgentIdentifierContains))
-	}
-	if i.AgentIdentifierHasPrefix != nil {
-		predicates = append(predicates, session.AgentIdentifierHasPrefix(*i.AgentIdentifierHasPrefix))
-	}
-	if i.AgentIdentifierHasSuffix != nil {
-		predicates = append(predicates, session.AgentIdentifierHasSuffix(*i.AgentIdentifierHasSuffix))
-	}
-	if i.AgentIdentifierIsNil {
-		predicates = append(predicates, session.AgentIdentifierIsNil())
-	}
-	if i.AgentIdentifierNotNil {
-		predicates = append(predicates, session.AgentIdentifierNotNil())
-	}
-	if i.AgentIdentifierEqualFold != nil {
-		predicates = append(predicates, session.AgentIdentifierEqualFold(*i.AgentIdentifierEqualFold))
-	}
-	if i.AgentIdentifierContainsFold != nil {
-		predicates = append(predicates, session.AgentIdentifierContainsFold(*i.AgentIdentifierContainsFold))
-	}
-	if i.HostIdentifier != nil {
-		predicates = append(predicates, session.HostIdentifierEQ(*i.HostIdentifier))
-	}
-	if i.HostIdentifierNEQ != nil {
-		predicates = append(predicates, session.HostIdentifierNEQ(*i.HostIdentifierNEQ))
-	}
-	if len(i.HostIdentifierIn) > 0 {
-		predicates = append(predicates, session.HostIdentifierIn(i.HostIdentifierIn...))
-	}
-	if len(i.HostIdentifierNotIn) > 0 {
-		predicates = append(predicates, session.HostIdentifierNotIn(i.HostIdentifierNotIn...))
-	}
-	if i.HostIdentifierGT != nil {
-		predicates = append(predicates, session.HostIdentifierGT(*i.HostIdentifierGT))
-	}
-	if i.HostIdentifierGTE != nil {
-		predicates = append(predicates, session.HostIdentifierGTE(*i.HostIdentifierGTE))
-	}
-	if i.HostIdentifierLT != nil {
-		predicates = append(predicates, session.HostIdentifierLT(*i.HostIdentifierLT))
-	}
-	if i.HostIdentifierLTE != nil {
-		predicates = append(predicates, session.HostIdentifierLTE(*i.HostIdentifierLTE))
-	}
-	if i.HostIdentifierContains != nil {
-		predicates = append(predicates, session.HostIdentifierContains(*i.HostIdentifierContains))
-	}
-	if i.HostIdentifierHasPrefix != nil {
-		predicates = append(predicates, session.HostIdentifierHasPrefix(*i.HostIdentifierHasPrefix))
-	}
-	if i.HostIdentifierHasSuffix != nil {
-		predicates = append(predicates, session.HostIdentifierHasSuffix(*i.HostIdentifierHasSuffix))
-	}
-	if i.HostIdentifierIsNil {
-		predicates = append(predicates, session.HostIdentifierIsNil())
-	}
-	if i.HostIdentifierNotNil {
-		predicates = append(predicates, session.HostIdentifierNotNil())
-	}
-	if i.HostIdentifierEqualFold != nil {
-		predicates = append(predicates, session.HostIdentifierEqualFold(*i.HostIdentifierEqualFold))
-	}
-	if i.HostIdentifierContainsFold != nil {
-		predicates = append(predicates, session.HostIdentifierContainsFold(*i.HostIdentifierContainsFold))
-	}
-	if i.HostPrimaryIP != nil {
-		predicates = append(predicates, session.HostPrimaryIPEQ(*i.HostPrimaryIP))
-	}
-	if i.HostPrimaryIPNEQ != nil {
-		predicates = append(predicates, session.HostPrimaryIPNEQ(*i.HostPrimaryIPNEQ))
-	}
-	if len(i.HostPrimaryIPIn) > 0 {
-		predicates = append(predicates, session.HostPrimaryIPIn(i.HostPrimaryIPIn...))
-	}
-	if len(i.HostPrimaryIPNotIn) > 0 {
-		predicates = append(predicates, session.HostPrimaryIPNotIn(i.HostPrimaryIPNotIn...))
-	}
-	if i.HostPrimaryIPGT != nil {
-		predicates = append(predicates, session.HostPrimaryIPGT(*i.HostPrimaryIPGT))
-	}
-	if i.HostPrimaryIPGTE != nil {
-		predicates = append(predicates, session.HostPrimaryIPGTE(*i.HostPrimaryIPGTE))
-	}
-	if i.HostPrimaryIPLT != nil {
-		predicates = append(predicates, session.HostPrimaryIPLT(*i.HostPrimaryIPLT))
-	}
-	if i.HostPrimaryIPLTE != nil {
-		predicates = append(predicates, session.HostPrimaryIPLTE(*i.HostPrimaryIPLTE))
-	}
-	if i.HostPrimaryIPContains != nil {
-		predicates = append(predicates, session.HostPrimaryIPContains(*i.HostPrimaryIPContains))
-	}
-	if i.HostPrimaryIPHasPrefix != nil {
-		predicates = append(predicates, session.HostPrimaryIPHasPrefix(*i.HostPrimaryIPHasPrefix))
-	}
-	if i.HostPrimaryIPHasSuffix != nil {
-		predicates = append(predicates, session.HostPrimaryIPHasSuffix(*i.HostPrimaryIPHasSuffix))
-	}
-	if i.HostPrimaryIPIsNil {
-		predicates = append(predicates, session.HostPrimaryIPIsNil())
-	}
-	if i.HostPrimaryIPNotNil {
-		predicates = append(predicates, session.HostPrimaryIPNotNil())
-	}
-	if i.HostPrimaryIPEqualFold != nil {
-		predicates = append(predicates, session.HostPrimaryIPEqualFold(*i.HostPrimaryIPEqualFold))
-	}
-	if i.HostPrimaryIPContainsFold != nil {
-		predicates = append(predicates, session.HostPrimaryIPContainsFold(*i.HostPrimaryIPContainsFold))
-	}
-	if i.HostPlatform != nil {
-		predicates = append(predicates, session.HostPlatformEQ(*i.HostPlatform))
-	}
-	if i.HostPlatformNEQ != nil {
-		predicates = append(predicates, session.HostPlatformNEQ(*i.HostPlatformNEQ))
-	}
-	if len(i.HostPlatformIn) > 0 {
-		predicates = append(predicates, session.HostPlatformIn(i.HostPlatformIn...))
-	}
-	if len(i.HostPlatformNotIn) > 0 {
-		predicates = append(predicates, session.HostPlatformNotIn(i.HostPlatformNotIn...))
-	}
-	if i.LastSeenAt != nil {
-		predicates = append(predicates, session.LastSeenAtEQ(*i.LastSeenAt))
-	}
-	if i.LastSeenAtNEQ != nil {
-		predicates = append(predicates, session.LastSeenAtNEQ(*i.LastSeenAtNEQ))
-	}
-	if len(i.LastSeenAtIn) > 0 {
-		predicates = append(predicates, session.LastSeenAtIn(i.LastSeenAtIn...))
-	}
-	if len(i.LastSeenAtNotIn) > 0 {
-		predicates = append(predicates, session.LastSeenAtNotIn(i.LastSeenAtNotIn...))
-	}
-	if i.LastSeenAtGT != nil {
-		predicates = append(predicates, session.LastSeenAtGT(*i.LastSeenAtGT))
-	}
-	if i.LastSeenAtGTE != nil {
-		predicates = append(predicates, session.LastSeenAtGTE(*i.LastSeenAtGTE))
-	}
-	if i.LastSeenAtLT != nil {
-		predicates = append(predicates, session.LastSeenAtLT(*i.LastSeenAtLT))
-	}
-	if i.LastSeenAtLTE != nil {
-		predicates = append(predicates, session.LastSeenAtLTE(*i.LastSeenAtLTE))
-	}
-	if i.LastSeenAtIsNil {
-		predicates = append(predicates, session.LastSeenAtIsNil())
-	}
-	if i.LastSeenAtNotNil {
-		predicates = append(predicates, session.LastSeenAtNotNil())
-	}
-
-	if i.HasTags != nil {
-		p := session.HasTags()
-		if !*i.HasTags {
-			p = session.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasTagsWith) > 0 {
-		with := make([]predicate.Tag, 0, len(i.HasTagsWith))
-		for _, w := range i.HasTagsWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasTagsWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, session.HasTagsWith(with...))
-	}
-	if i.HasTasks != nil {
-		p := session.HasTasks()
-		if !*i.HasTasks {
-			p = session.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasTasksWith) > 0 {
-		with := make([]predicate.Task, 0, len(i.HasTasksWith))
-		for _, w := range i.HasTasksWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasTasksWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, session.HasTasksWith(with...))
-	}
-	switch len(predicates) {
-	case 0:
-		return nil, ErrEmptySessionWhereInput
-	case 1:
-		return predicates[0], nil
-	default:
-		return session.And(predicates...), nil
-	}
-}
-
 // TagWhereInput represents a where input for filtering Tag queries.
 type TagWhereInput struct {
 	Predicates []predicate.Tag  `json:"-"`
@@ -1431,9 +1431,9 @@ type TagWhereInput struct {
 	KindIn    []tag.Kind `json:"kindIn,omitempty"`
 	KindNotIn []tag.Kind `json:"kindNotIn,omitempty"`
 
-	// "sessions" edge predicates.
-	HasSessions     *bool                `json:"hasSessions,omitempty"`
-	HasSessionsWith []*SessionWhereInput `json:"hasSessionsWith,omitempty"`
+	// "beacons" edge predicates.
+	HasBeacons     *bool               `json:"hasBeacons,omitempty"`
+	HasBeaconsWith []*BeaconWhereInput `json:"hasBeaconsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1583,23 +1583,23 @@ func (i *TagWhereInput) P() (predicate.Tag, error) {
 		predicates = append(predicates, tag.KindNotIn(i.KindNotIn...))
 	}
 
-	if i.HasSessions != nil {
-		p := tag.HasSessions()
-		if !*i.HasSessions {
+	if i.HasBeacons != nil {
+		p := tag.HasBeacons()
+		if !*i.HasBeacons {
 			p = tag.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasSessionsWith) > 0 {
-		with := make([]predicate.Session, 0, len(i.HasSessionsWith))
-		for _, w := range i.HasSessionsWith {
+	if len(i.HasBeaconsWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconsWith))
+		for _, w := range i.HasBeaconsWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasSessionsWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasBeaconsWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, tag.HasSessionsWith(with...))
+		predicates = append(predicates, tag.HasBeaconsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -1722,9 +1722,9 @@ type TaskWhereInput struct {
 	HasJob     *bool            `json:"hasJob,omitempty"`
 	HasJobWith []*JobWhereInput `json:"hasJobWith,omitempty"`
 
-	// "session" edge predicates.
-	HasSession     *bool                `json:"hasSession,omitempty"`
-	HasSessionWith []*SessionWhereInput `json:"hasSessionWith,omitempty"`
+	// "beacon" edge predicates.
+	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
+	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -2069,23 +2069,23 @@ func (i *TaskWhereInput) P() (predicate.Task, error) {
 		}
 		predicates = append(predicates, task.HasJobWith(with...))
 	}
-	if i.HasSession != nil {
-		p := task.HasSession()
-		if !*i.HasSession {
+	if i.HasBeacon != nil {
+		p := task.HasBeacon()
+		if !*i.HasBeacon {
 			p = task.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasSessionWith) > 0 {
-		with := make([]predicate.Session, 0, len(i.HasSessionWith))
-		for _, w := range i.HasSessionWith {
+	if len(i.HasBeaconWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconWith))
+		for _, w := range i.HasBeaconWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasSessionWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasBeaconWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, task.HasSessionWith(with...))
+		predicates = append(predicates, task.HasBeaconWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

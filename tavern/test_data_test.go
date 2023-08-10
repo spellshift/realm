@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestCreateTestData ensures createTestData runs without error and creates at least one session.
+// TestCreateTestData ensures createTestData runs without error and creates at least one beacon.
 func TestCreateTestData(t *testing.T) {
 	var (
 		ctx            = context.Background()
@@ -19,5 +19,5 @@ func TestCreateTestData(t *testing.T) {
 	defer graph.Close()
 
 	createTestData(ctx, graph)
-	assert.True(t, graph.Session.Query().ExistX(ctx))
+	assert.True(t, graph.Beacon.Query().ExistX(ctx))
 }

@@ -27,8 +27,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		)
 	}
 
-	// Create test sessions (with tags)
-	var testSessions []*ent.Session
+	// Create test beacons (with tags)
+	var testBeacons []*ent.Beacon
 	for groupNum := 1; groupNum <= 15; groupNum++ {
 		gTag := client.Tag.Create().
 			SetKind(tag.KindGroup).
@@ -39,8 +39,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			hostName := fmt.Sprintf("Group %d - %s", groupNum, svcTag.Name)
 			hostID := newRandomIdentifier()
 
-			testSessions = append(testSessions,
-				client.Session.Create().
+			testBeacons = append(testBeacons,
+				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
 					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
@@ -50,8 +50,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SaveX(ctx),
 			)
 
-			testSessions = append(testSessions,
-				client.Session.Create().
+			testBeacons = append(testBeacons,
+				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-10*time.Minute)).
 					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
@@ -61,8 +61,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SaveX(ctx),
 			)
 
-			testSessions = append(testSessions,
-				client.Session.Create().
+			testBeacons = append(testBeacons,
+				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Hour)).
 					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
@@ -92,14 +92,14 @@ func createTestData(ctx context.Context, client *ent.Client) {
 
 	// Queued
 	client.Task.Create().
-		SetSession(testSessions[0]).
+		SetBeacon(testBeacons[0]).
 		SetCreatedAt(timeAgo(5 * time.Minute)).
 		SetJob(printJob).
 		SaveX(ctx)
 
 	// Claimed
 	client.Task.Create().
-		SetSession(testSessions[1]).
+		SetBeacon(testBeacons[1]).
 		SetCreatedAt(timeAgo(5 * time.Minute)).
 		SetClaimedAt(timeAgo(1 * time.Minute)).
 		SetJob(printJob).
@@ -107,7 +107,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 
 	// Completed
 	client.Task.Create().
-		SetSession(testSessions[2]).
+		SetBeacon(testBeacons[2]).
 		SetCreatedAt(timeAgo(5 * time.Minute)).
 		SetClaimedAt(timeAgo(1 * time.Minute)).
 		SetExecStartedAt(timeAgo(5 * time.Second)).
@@ -118,7 +118,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 
 	// Mid-Execution
 	client.Task.Create().
-		SetSession(testSessions[3]).
+		SetBeacon(testBeacons[3]).
 		SetCreatedAt(timeAgo(5 * time.Minute)).
 		SetClaimedAt(timeAgo(1 * time.Minute)).
 		SetExecStartedAt(timeAgo(5 * time.Second)).
@@ -128,7 +128,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 
 	// Failed
 	client.Task.Create().
-		SetSession(testSessions[4]).
+		SetBeacon(testBeacons[4]).
 		SetCreatedAt(timeAgo(5 * time.Minute)).
 		SetClaimedAt(timeAgo(1 * time.Minute)).
 		SetExecStartedAt(timeAgo(5 * time.Second)).
@@ -139,7 +139,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 
 	// Stale
 	client.Task.Create().
-		SetSession(testSessions[5]).
+		SetBeacon(testBeacons[5]).
 		SetCreatedAt(timeAgo(1 * time.Hour)).
 		SetJob(printJob).
 		SaveX(ctx)

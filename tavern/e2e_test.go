@@ -12,9 +12,9 @@ import (
 
 	tavern "github.com/kcarretto/realm/tavern"
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
 	"github.com/kcarretto/realm/tavern/ent/job"
-	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,8 +41,8 @@ func TestEndToEnd(t *testing.T) {
 		assert.Equal(t, tavern.OKStatusText, string(body))
 	})
 
-	// Helper for performing session callbacks
-	sessionCallback := func(t *testing.T, identifier string) (*ent.Session, claimTasksResponse) {
+	// Helper for performing beacon callbacks
+	beaconCallback := func(t *testing.T, identifier string) (*ent.Beacon, claimTasksResponse) {
 		req := graphQLQuery{
 			OperationName: "ClaimTasks",
 			Query: `mutation ClaimTasks($input: ClaimTasksInput!) {
@@ -61,12 +61,12 @@ func TestEndToEnd(t *testing.T) {
 			}`,
 			Variables: map[string]any{
 				"input": map[string]any{
-					"principal":         "root",
-					"hostname":          "some_hostname",
-					"hostPlatform":      session.HostPlatformUnknown,
-					"sessionIdentifier": identifier,
-					"hostIdentifier":    "uniquely_identifies_host.For_example_a_serial_number",
-					"agentIdentifier":   "uniquely_identifies_this_agent",
+					"principal":        "root",
+					"hostname":         "some_hostname",
+					"hostPlatform":     beacon.HostPlatformUnknown,
+					"beaconIdentifier": identifier,
+					"hostIdentifier":   "uniquely_identifies_host.For_example_a_serial_number",
+					"agentIdentifier":  "uniquely_identifies_this_agent",
 				},
 			},
 		}
@@ -81,12 +81,12 @@ func TestEndToEnd(t *testing.T) {
 		err = json.Unmarshal(body, &graphQLResp)
 		require.NoError(t, err)
 
-		testSession, err := graph.Session.Query().
-			Where(session.Identifier(identifier)).
+		testBeacon, err := graph.Beacon.Query().
+			Where(beacon.Identifier(identifier)).
 			Only(ctx)
 		require.NoError(t, err)
-		assert.NotZero(t, testSession.LastSeenAt)
-		return testSession, graphQLResp
+		assert.NotZero(t, testBeacon.LastSeenAt)
+		return testBeacon, graphQLResp
 	}
 
 	var (
@@ -96,17 +96,17 @@ func TestEndToEnd(t *testing.T) {
 		createdBundleID int
 	)
 
-	// Session First Callback
-	firstSessionIdentifier := "first_session"
-	t.Run("SessionFirstCallback", func(t *testing.T) {
-		_, resp := sessionCallback(t, firstSessionIdentifier)
+	// Beacon First Callback
+	firstBeaconIdentifier := "first_beacon"
+	t.Run("BeaconFirstCallback", func(t *testing.T) {
+		_, resp := beaconCallback(t, firstBeaconIdentifier)
 		assert.Len(t, resp.Data.ClaimTasks, 0)
 	})
 
 	// Create a Job (assumes a default tome has been properly configured)
 	t.Run("CreateJob", func(t *testing.T) {
-		testSession, err := graph.Session.Query().
-			Where(session.Identifier(firstSessionIdentifier)).
+		testBeacon, err := graph.Beacon.Query().
+			Where(beacon.Identifier(firstBeaconIdentifier)).
 			Only(ctx)
 		require.NoError(t, err)
 
@@ -117,9 +117,9 @@ func TestEndToEnd(t *testing.T) {
 
 		req := graphQLQuery{
 			OperationName: "CreateJob",
-			Query:         "mutation CreateJob($sessionIDs: [ID!]!, $input: CreateJobInput!) { createJob(sessionIDs: $sessionIDs, input: $input) { id } }",
+			Query:         "mutation CreateJob($beaconIDs: [ID!]!, $input: CreateJobInput!) { createJob(beaconIDs: $beaconIDs, input: $input) { id } }",
 			Variables: map[string]any{
-				"sessionIDs": []int{testSession.ID},
+				"beaconIDs": []int{testBeacon.ID},
 				"input": map[string]any{
 					"name":   "unit test",
 					"tomeID": testTome.ID,
@@ -148,14 +148,14 @@ func TestEndToEnd(t *testing.T) {
 		assert.Len(t, testTasks, 1)
 		createdTaskID = testTasks[0].ID
 
-		testTaskSession, err := testTasks[0].Session(ctx)
+		testTaskBeacon, err := testTasks[0].Beacon(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, testSession.ID, testTaskSession.ID)
+		assert.Equal(t, testBeacon.ID, testTaskBeacon.ID)
 	})
 
-	// Session Second Callback
-	t.Run("SessionSecondCallback", func(t *testing.T) {
-		_, resp := sessionCallback(t, firstSessionIdentifier)
+	// Beacon Second Callback
+	t.Run("BeaconSecondCallback", func(t *testing.T) {
+		_, resp := beaconCallback(t, firstBeaconIdentifier)
 		require.NotEmpty(t, resp.Data.ClaimTasks)
 		assert.Len(t, resp.Data.ClaimTasks, 1)
 

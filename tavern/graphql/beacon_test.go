@@ -10,15 +10,15 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
-	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSessionMutations(t *testing.T) {
+func TestBeaconMutations(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
@@ -37,8 +37,8 @@ func TestSessionMutations(t *testing.T) {
 			SetName("TestTag2").
 			SaveX(ctx),
 	}
-	testSessions := []*ent.Session{
-		graph.Session.Create().
+	testBeacons := []*ent.Beacon{
+		graph.Beacon.Create().
 			SetPrincipal("admin").
 			SetAgentIdentifier("TEST").
 			SetIdentifier("SOME_ID").
@@ -46,7 +46,7 @@ func TestSessionMutations(t *testing.T) {
 			SetHostname("SOME_HOSTNAME").
 			SetLastSeenAt(time.Now().Add(-10 * time.Minute)).
 			SaveX(ctx),
-		graph.Session.Create().
+		graph.Beacon.Create().
 			SetIdentifier("ANOTHER_ID").
 			SetHostname("BAD_HOSTNAME").
 			SetLastSeenAt(time.Now().Add(-10 * time.Minute)).
@@ -65,7 +65,7 @@ func TestSessionMutations(t *testing.T) {
 	testTasks := []*ent.Task{
 		graph.Task.Create().
 			SetJob(testJob).
-			SetSession(testSessions[0]).
+			SetBeacon(testBeacons[0]).
 			SaveX(ctx),
 	}
 
@@ -105,50 +105,50 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 		}
 
 		/*
-		* Test when the `claimTasks` mutation is run by a session that does not exist.
+		* Test when the `claimTasks` mutation is run by a beacon that does not exist.
 		*
-		* Expected that the session is created, but no tasks are returned.
+		* Expected that the beacon is created, but no tasks are returned.
 		 */
-		t.Run("NewSession", func(t *testing.T) {
+		t.Run("NewBeacon", func(t *testing.T) {
 			expectedIdentifier := "NEW_ID"
 			expected := map[string]any{
-				"principal":         "newuser",
-				"hostname":          "NEW_HOSTNAME",
-				"hostPlatform":      session.HostPlatformWindows,
-				"sessionIdentifier": expectedIdentifier,
-				"hostIdentifier":    "NEW_HOST_ID",
-				"agentIdentifier":   "NEW_AGENT_ID",
+				"principal":        "newuser",
+				"hostname":         "NEW_HOSTNAME",
+				"hostPlatform":     beacon.HostPlatformWindows,
+				"beaconIdentifier": expectedIdentifier,
+				"hostIdentifier":   "NEW_HOST_ID",
+				"agentIdentifier":  "NEW_AGENT_ID",
 			}
 			ids, err := claimTasks(expected)
 			require.NoError(t, err)
 			assert.Empty(t, ids)
-			testSession, err := graph.Session.Query().
-				Where(session.Identifier(expectedIdentifier)).
+			testBeacon, err := graph.Beacon.Query().
+				Where(beacon.Identifier(expectedIdentifier)).
 				Only(ctx)
 			require.NoError(t, err)
-			assert.NotNil(t, testSession)
-			assert.NotZero(t, testSession.LastSeenAt)
-			assert.Equal(t, expected["principal"], testSession.Principal)
-			assert.Equal(t, expected["hostname"], testSession.Hostname)
-			assert.Equal(t, expected["sessionIdentifier"], testSession.Identifier)
-			assert.Equal(t, expected["hostIdentifier"], testSession.HostIdentifier)
-			assert.Equal(t, expected["agentIdentifier"], testSession.AgentIdentifier)
+			assert.NotNil(t, testBeacon)
+			assert.NotZero(t, testBeacon.LastSeenAt)
+			assert.Equal(t, expected["principal"], testBeacon.Principal)
+			assert.Equal(t, expected["hostname"], testBeacon.Hostname)
+			assert.Equal(t, expected["beaconIdentifier"], testBeacon.Identifier)
+			assert.Equal(t, expected["hostIdentifier"], testBeacon.HostIdentifier)
+			assert.Equal(t, expected["agentIdentifier"], testBeacon.AgentIdentifier)
 		})
 
 		/*
-		 * Test when the `claimTasks` mutation is run by a session that already exists.
+		 * Test when the `claimTasks` mutation is run by a beacon that already exists.
 		 *
-		 * Expected that the session is updated, and our test task is returned.
+		 * Expected that the beacon is updated, and our test task is returned.
 		 */
-		t.Run("ExistingSession", func(t *testing.T) {
+		t.Run("ExistingBeacon", func(t *testing.T) {
 			expected := map[string]any{
-				"principal":         "admin",
-				"hostname":          "SOME_HOSTNAME",
-				"hostPlatform":      session.HostPlatformMacOS,
-				"hostPrimaryIP":     "10.0.0.1",
-				"sessionIdentifier": "SOME_ID",
-				"hostIdentifier":    "SOME_HOST_ID",
-				"agentIdentifier":   "SOME_AGENT_ID",
+				"principal":        "admin",
+				"hostname":         "SOME_HOSTNAME",
+				"hostPlatform":     beacon.HostPlatformMacOS,
+				"hostPrimaryIP":    "10.0.0.1",
+				"beaconIdentifier": "SOME_ID",
+				"hostIdentifier":   "SOME_HOST_ID",
+				"agentIdentifier":  "SOME_AGENT_ID",
 			}
 			ids, err := claimTasks(expected)
 			require.NoError(t, err)
@@ -157,17 +157,17 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			testTask := graph.Task.GetX(ctx, testTasks[0].ID)
 			assert.NotZero(t, testTask.ClaimedAt)
 
-			testSession, err := testTask.Session(ctx)
+			testBeacon, err := testTask.Beacon(ctx)
 			require.NoError(t, err)
-			assert.Equal(t, testSessions[0].ID, testSession.ID)
-			assert.NotZero(t, testSession.LastSeenAt)
-			assert.Equal(t, expected["principal"], testSession.Principal)
-			assert.Equal(t, expected["hostname"], testSession.Hostname)
-			assert.Equal(t, expected["sessionIdentifier"], testSession.Identifier)
-			assert.Equal(t, expected["hostIdentifier"], testSession.HostIdentifier)
-			assert.Equal(t, expected["agentIdentifier"], testSession.AgentIdentifier)
-			assert.Equal(t, expected["hostPlatform"], testSession.HostPlatform)
-			assert.Equal(t, expected["hostPrimaryIP"], testSession.HostPrimaryIP)
+			assert.Equal(t, testBeacons[0].ID, testBeacon.ID)
+			assert.NotZero(t, testBeacon.LastSeenAt)
+			assert.Equal(t, expected["principal"], testBeacon.Principal)
+			assert.Equal(t, expected["hostname"], testBeacon.Hostname)
+			assert.Equal(t, expected["beaconIdentifier"], testBeacon.Identifier)
+			assert.Equal(t, expected["hostIdentifier"], testBeacon.HostIdentifier)
+			assert.Equal(t, expected["agentIdentifier"], testBeacon.AgentIdentifier)
+			assert.Equal(t, expected["hostPlatform"], testBeacon.HostPlatform)
+			assert.Equal(t, expected["hostPrimaryIP"], testBeacon.HostPrimaryIP)
 		})
 	})
 
@@ -249,54 +249,54 @@ mutation newSubmitTaskResultTest($input: SubmitTaskResultInput!) {
 		})
 	})
 
-	t.Run("UpdateSession", func(t *testing.T) {
-		// Define the UpdateSession mutation
+	t.Run("UpdateBeacon", func(t *testing.T) {
+		// Define the UpdateBeacon mutation
 		mut := `
-mutation newUpdateSessionTest($sessionID: ID!, $input: UpdateSessionInput!) {
-	updateSession(sessionID: $sessionID, input: $input) {
+mutation newUpdateBeaconTest($beaconID: ID!, $input: UpdateBeaconInput!) {
+	updateBeacon(beaconID: $beaconID, input: $input) {
 		id
 	}
 }`
 		// Create a closure to execute the mutation
-		updateSession := func(sessionID int, input map[string]any) (int, error) {
+		updateBeacon := func(beaconID int, input map[string]any) (int, error) {
 			// Make our request to the GraphQL API
 			var resp struct {
-				UpdateSession struct{ ID string }
+				UpdateBeacon struct{ ID string }
 			}
 			err := gqlClient.Post(
 				mut,
 				&resp,
-				client.Var("sessionID", sessionID),
+				client.Var("beaconID", beaconID),
 				client.Var("input", input),
 			)
 			if err != nil {
 				return 0, err
 			}
 
-			return convertID(resp.UpdateSession.ID), nil
+			return convertID(resp.UpdateBeacon.ID), nil
 		}
 
 		/*
-		* Test updating tags and changing hostname for an existing session.
+		* Test updating tags and changing hostname for an existing beacon.
 		*
-		* Expected that the session is updated with the new set of tags and a better hostname.
+		* Expected that the beacon is updated with the new set of tags and a better hostname.
 		 */
-		t.Run("UpdateSession", func(t *testing.T) {
+		t.Run("UpdateBeacon", func(t *testing.T) {
 			expected := map[string]any{
 				"hostname":     "BETTER_HOSTNAME",
 				"addTagIDs":    testTags[0].ID,
 				"removeTagIDs": testTags[1].ID,
 			}
-			id, err := updateSession(testSessions[1].ID, expected)
+			id, err := updateBeacon(testBeacons[1].ID, expected)
 			require.NoError(t, err)
 			require.NotZero(t, id)
-			assert.Equal(t, testSessions[1].ID, id)
-			testSession := graph.Session.GetX(ctx, id)
-			assert.Equal(t, expected["hostname"], testSession.Hostname)
-			testSessionTags, err := testSession.Tags(ctx)
+			assert.Equal(t, testBeacons[1].ID, id)
+			testBeacon := graph.Beacon.GetX(ctx, id)
+			assert.Equal(t, expected["hostname"], testBeacon.Hostname)
+			testBeaconTags, err := testBeacon.Tags(ctx)
 			require.NoError(t, err)
-			assert.Len(t, testSessionTags, 1)
-			assert.Equal(t, testTags[0].ID, testSessionTags[0].ID)
+			assert.Len(t, testBeaconTags, 1)
+			assert.Equal(t, testTags[0].ID, testBeaconTags[0].ID)
 		})
 	})
 }

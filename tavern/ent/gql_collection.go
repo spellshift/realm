@@ -10,6 +10,102 @@ import (
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (b *BeaconQuery) CollectFields(ctx context.Context, satisfies ...string) (*BeaconQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return b, nil
+	}
+	if err := b.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (b *BeaconQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "tags":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TagClient{config: b.config}).Query()
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			b.WithNamedTags(alias, func(wq *TagQuery) {
+				*wq = *query
+			})
+		case "tasks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TaskClient{config: b.config}).Query()
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			b.WithNamedTasks(alias, func(wq *TaskQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type beaconPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []BeaconPaginateOption
+}
+
+func newBeaconPaginateArgs(rv map[string]interface{}) *beaconPaginateArgs {
+	args := &beaconPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				err1, err2 error
+				order      = &BeaconOrder{Field: &BeaconOrderField{}}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithBeaconOrder(order))
+			}
+		case *BeaconOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithBeaconOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*BeaconWhereInput); ok {
+		args.opts = append(args.opts, WithBeaconFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (f *FileQuery) CollectFields(ctx context.Context, satisfies ...string) (*FileQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -192,102 +288,6 @@ func newJobPaginateArgs(rv map[string]interface{}) *jobPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (s *SessionQuery) CollectFields(ctx context.Context, satisfies ...string) (*SessionQuery, error) {
-	fc := graphql.GetFieldContext(ctx)
-	if fc == nil {
-		return s, nil
-	}
-	if err := s.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-func (s *SessionQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
-	path = append([]string(nil), path...)
-	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
-		switch field.Name {
-		case "tags":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&TagClient{config: s.config}).Query()
-			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
-				return err
-			}
-			s.WithNamedTags(alias, func(wq *TagQuery) {
-				*wq = *query
-			})
-		case "tasks":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&TaskClient{config: s.config}).Query()
-			)
-			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
-				return err
-			}
-			s.WithNamedTasks(alias, func(wq *TaskQuery) {
-				*wq = *query
-			})
-		}
-	}
-	return nil
-}
-
-type sessionPaginateArgs struct {
-	first, last   *int
-	after, before *Cursor
-	opts          []SessionPaginateOption
-}
-
-func newSessionPaginateArgs(rv map[string]interface{}) *sessionPaginateArgs {
-	args := &sessionPaginateArgs{}
-	if rv == nil {
-		return args
-	}
-	if v := rv[firstField]; v != nil {
-		args.first = v.(*int)
-	}
-	if v := rv[lastField]; v != nil {
-		args.last = v.(*int)
-	}
-	if v := rv[afterField]; v != nil {
-		args.after = v.(*Cursor)
-	}
-	if v := rv[beforeField]; v != nil {
-		args.before = v.(*Cursor)
-	}
-	if v, ok := rv[orderByField]; ok {
-		switch v := v.(type) {
-		case map[string]interface{}:
-			var (
-				err1, err2 error
-				order      = &SessionOrder{Field: &SessionOrderField{}}
-			)
-			if d, ok := v[directionField]; ok {
-				err1 = order.Direction.UnmarshalGQL(d)
-			}
-			if f, ok := v[fieldField]; ok {
-				err2 = order.Field.UnmarshalGQL(f)
-			}
-			if err1 == nil && err2 == nil {
-				args.opts = append(args.opts, WithSessionOrder(order))
-			}
-		case *SessionOrder:
-			if v != nil {
-				args.opts = append(args.opts, WithSessionOrder(v))
-			}
-		}
-	}
-	if v, ok := rv[whereField].(*SessionWhereInput); ok {
-		args.opts = append(args.opts, WithSessionFilter(v.Filter))
-	}
-	return args
-}
-
-// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (t *TagQuery) CollectFields(ctx context.Context, satisfies ...string) (*TagQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -303,16 +303,16 @@ func (t *TagQuery) collectField(ctx context.Context, op *graphql.OperationContex
 	path = append([]string(nil), path...)
 	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
 		switch field.Name {
-		case "sessions":
+		case "beacons":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&SessionClient{config: t.config}).Query()
+				query = (&BeaconClient{config: t.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
 			}
-			t.WithNamedSessions(alias, func(wq *SessionQuery) {
+			t.WithNamedBeacons(alias, func(wq *BeaconQuery) {
 				*wq = *query
 			})
 		}
@@ -397,16 +397,16 @@ func (t *TaskQuery) collectField(ctx context.Context, op *graphql.OperationConte
 				return err
 			}
 			t.withJob = query
-		case "session":
+		case "beacon":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&SessionClient{config: t.config}).Query()
+				query = (&BeaconClient{config: t.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
 			}
-			t.withSession = query
+			t.withBeacon = query
 		}
 	}
 	return nil

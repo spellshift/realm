@@ -15,30 +15,30 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Session holds the schema definition for the Session entity.
-type Session struct {
+// Beacon holds the schema definition for the Beacon entity.
+type Beacon struct {
 	ent.Schema
 }
 
-// Fields of the Session.
-func (Session) Fields() []ent.Field {
+// Fields of the Beacon.
+func (Beacon) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
 			NotEmpty().
 			Unique().
 			DefaultFunc(namegen.GetRandomName).
-			Comment("A human readable identifier for the session."),
+			Comment("A human readable identifier for the beacon."),
 		field.String("principal").
 			Optional().
 			NotEmpty().
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
-			Comment("The identity the session is authenticated as (e.g. 'root')"),
+			Comment("The identity the beacon is authenticated as (e.g. 'root')"),
 		field.String("hostname").
 			Optional().
 			NotEmpty().
-			Comment("The hostname of the system the session is running on."),
+			Comment("The hostname of the system the beacon is running on."),
 		field.String("identifier").
 			DefaultFunc(newRandomIdentifier).
 			NotEmpty().
@@ -46,21 +46,21 @@ func (Session) Fields() []ent.Field {
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
-			Comment("Unique identifier for the session. Unique to each instance of the session."),
+			Comment("Unique identifier for the beacon. Unique to each instance of the beacon."),
 		field.String("agent_identifier").
 			Optional().
 			NotEmpty().
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
-			Comment("Identifies the agent that the session is running as (e.g. 'imix')."),
+			Comment("Identifies the agent that the beacon is running as (e.g. 'imix')."),
 		field.String("host_identifier").
 			Optional().
 			NotEmpty().
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
-			Comment("Unique identifier for the host the session is running on."),
+			Comment("Unique identifier for the host the beacon is running on."),
 		field.String("host_primary_ip").
 			Optional().
 			Annotations(
@@ -80,26 +80,26 @@ func (Session) Fields() []ent.Field {
 				entgql.OrderField("LAST_SEEN_AT"),
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
-			Comment("Timestamp of when a task was last claimed or updated for a target"),
+			Comment("Timestamp of when a task was last claimed or updated for the beacon."),
 	}
 }
 
-// Edges of the Target.
-func (Session) Edges() []ent.Edge {
+// Edges of the Beacon.
+func (Beacon) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("tags", Tag.Type).
-			Comment("Tags used to group the session with other sessions"),
+			Comment("Tags used to group this beacon with other beacons."),
 		edge.From("tasks", Task.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
-			Ref("session").
-			Comment("Tasks that have been assigned to the session"),
+			Ref("beacon").
+			Comment("Tasks that have been assigned to the beacon."),
 	}
 }
 
 // Annotations describes additional information for the ent.
-func (Session) Annotations() []schema.Annotation {
+func (Beacon) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.Mutations(
 			entgql.MutationUpdate(),

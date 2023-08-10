@@ -8,6 +8,25 @@ import (
 )
 
 var (
+	// BeaconsColumns holds the columns for the "beacons" table.
+	BeaconsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "principal", Type: field.TypeString, Nullable: true},
+		{Name: "hostname", Type: field.TypeString, Nullable: true},
+		{Name: "identifier", Type: field.TypeString, Unique: true},
+		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
+		{Name: "host_identifier", Type: field.TypeString, Nullable: true},
+		{Name: "host_primary_ip", Type: field.TypeString, Nullable: true},
+		{Name: "host_platform", Type: field.TypeEnum, Enums: []string{"Windows", "Linux", "MacOS", "BSD", "Unknown"}, Default: "Unknown"},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+	}
+	// BeaconsTable holds the schema information for the "beacons" table.
+	BeaconsTable = &schema.Table{
+		Name:       "beacons",
+		Columns:    BeaconsColumns,
+		PrimaryKey: []*schema.Column{BeaconsColumns[0]},
+	}
 	// FilesColumns holds the columns for the "files" table.
 	FilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -70,25 +89,6 @@ var (
 			},
 		},
 	}
-	// SessionsColumns holds the columns for the "sessions" table.
-	SessionsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "principal", Type: field.TypeString, Nullable: true},
-		{Name: "hostname", Type: field.TypeString, Nullable: true},
-		{Name: "identifier", Type: field.TypeString, Unique: true},
-		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
-		{Name: "host_identifier", Type: field.TypeString, Nullable: true},
-		{Name: "host_primary_ip", Type: field.TypeString, Nullable: true},
-		{Name: "host_platform", Type: field.TypeEnum, Enums: []string{"Windows", "Linux", "MacOS", "BSD", "Unknown"}, Default: "Unknown"},
-		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
-	}
-	// SessionsTable holds the schema information for the "sessions" table.
-	SessionsTable = &schema.Table{
-		Name:       "sessions",
-		Columns:    SessionsColumns,
-		PrimaryKey: []*schema.Column{SessionsColumns[0]},
-	}
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -112,7 +112,7 @@ var (
 		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "job_tasks", Type: field.TypeInt},
-		{Name: "task_session", Type: field.TypeInt},
+		{Name: "task_beacon", Type: field.TypeInt},
 	}
 	// TasksTable holds the schema information for the "tasks" table.
 	TasksTable = &schema.Table{
@@ -127,9 +127,9 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "tasks_sessions_session",
+				Symbol:     "tasks_beacons_beacon",
 				Columns:    []*schema.Column{TasksColumns[9]},
-				RefColumns: []*schema.Column{SessionsColumns[0]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
@@ -167,26 +167,26 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
-	// SessionTagsColumns holds the columns for the "session_tags" table.
-	SessionTagsColumns = []*schema.Column{
-		{Name: "session_id", Type: field.TypeInt},
+	// BeaconTagsColumns holds the columns for the "beacon_tags" table.
+	BeaconTagsColumns = []*schema.Column{
+		{Name: "beacon_id", Type: field.TypeInt},
 		{Name: "tag_id", Type: field.TypeInt},
 	}
-	// SessionTagsTable holds the schema information for the "session_tags" table.
-	SessionTagsTable = &schema.Table{
-		Name:       "session_tags",
-		Columns:    SessionTagsColumns,
-		PrimaryKey: []*schema.Column{SessionTagsColumns[0], SessionTagsColumns[1]},
+	// BeaconTagsTable holds the schema information for the "beacon_tags" table.
+	BeaconTagsTable = &schema.Table{
+		Name:       "beacon_tags",
+		Columns:    BeaconTagsColumns,
+		PrimaryKey: []*schema.Column{BeaconTagsColumns[0], BeaconTagsColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "session_tags_session_id",
-				Columns:    []*schema.Column{SessionTagsColumns[0]},
-				RefColumns: []*schema.Column{SessionsColumns[0]},
+				Symbol:     "beacon_tags_beacon_id",
+				Columns:    []*schema.Column{BeaconTagsColumns[0]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "session_tags_tag_id",
-				Columns:    []*schema.Column{SessionTagsColumns[1]},
+				Symbol:     "beacon_tags_tag_id",
+				Columns:    []*schema.Column{BeaconTagsColumns[1]},
 				RefColumns: []*schema.Column{TagsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -194,14 +194,14 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		BeaconsTable,
 		FilesTable,
 		JobsTable,
-		SessionsTable,
 		TagsTable,
 		TasksTable,
 		TomesTable,
 		UsersTable,
-		SessionTagsTable,
+		BeaconTagsTable,
 	}
 )
 
@@ -211,7 +211,7 @@ func init() {
 	JobsTable.ForeignKeys[1].RefTable = FilesTable
 	JobsTable.ForeignKeys[2].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = JobsTable
-	TasksTable.ForeignKeys[1].RefTable = SessionsTable
-	SessionTagsTable.ForeignKeys[0].RefTable = SessionsTable
-	SessionTagsTable.ForeignKeys[1].RefTable = TagsTable
+	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
+	BeaconTagsTable.ForeignKeys[0].RefTable = BeaconsTable
+	BeaconTagsTable.ForeignKeys[1].RefTable = TagsTable
 }

@@ -14,9 +14,9 @@ import (
 	"entgo.io/ent/dialect/sql/schema"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/hashicorp/go-multierror"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
 	"github.com/kcarretto/realm/tavern/ent/job"
-	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -30,13 +30,13 @@ type Noder interface {
 }
 
 // IsNode implements the Node interface check for GQLGen.
+func (n *Beacon) IsNode() {}
+
+// IsNode implements the Node interface check for GQLGen.
 func (n *File) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Job) IsNode() {}
-
-// IsNode implements the Node interface check for GQLGen.
-func (n *Session) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Tag) IsNode() {}
@@ -108,6 +108,18 @@ func (c *Client) Noder(ctx context.Context, id int, opts ...NodeOption) (_ Noder
 
 func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error) {
 	switch table {
+	case beacon.Table:
+		query := c.Beacon.Query().
+			Where(beacon.ID(id))
+		query, err := query.CollectFields(ctx, "Beacon")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
 	case file.Table:
 		query := c.File.Query().
 			Where(file.ID(id))
@@ -124,18 +136,6 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		query := c.Job.Query().
 			Where(job.ID(id))
 		query, err := query.CollectFields(ctx, "Job")
-		if err != nil {
-			return nil, err
-		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
-	case session.Table:
-		query := c.Session.Query().
-			Where(session.ID(id))
-		query, err := query.CollectFields(ctx, "Session")
 		if err != nil {
 			return nil, err
 		}
@@ -265,6 +265,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		idmap[id] = append(idmap[id], &noders[i])
 	}
 	switch table {
+	case beacon.Table:
+		query := c.Beacon.Query().
+			Where(beacon.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Beacon")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
 	case file.Table:
 		query := c.File.Query().
 			Where(file.IDIn(ids...))
@@ -285,22 +301,6 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Job.Query().
 			Where(job.IDIn(ids...))
 		query, err := query.CollectFields(ctx, "Job")
-		if err != nil {
-			return nil, err
-		}
-		nodes, err := query.All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, node := range nodes {
-			for _, noder := range idmap[node.ID] {
-				*noder = node
-			}
-		}
-	case session.Table:
-		query := c.Session.Query().
-			Where(session.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Session")
 		if err != nil {
 			return nil, err
 		}

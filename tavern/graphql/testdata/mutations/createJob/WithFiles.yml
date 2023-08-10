@@ -1,7 +1,7 @@
 state: |
   INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
-  INSERT INTO `sessions` (id, name, identifier)
+  INSERT INTO `beacons` (id, name, identifier)
     VALUES (1337,"delightful-lich","ABCDEFG-123456");
   INSERT INTO `tomes` (id, name, description, eldritch, hash, created_at, last_modified_at)
     VALUES (2000,"Test Tome","Used in a unit test :D", "print('Hello World!')", "abcdefg", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
@@ -13,8 +13,8 @@ state: |
 requestor:
   session_token: secretToken
 query: |
-  mutation CreateJobWithNoFiles($sessionIDs: [ID!]!, $input: CreateJobInput!) {
-    createJob(sessionIDs:$sessionIDs, input:$input) {
+  mutation CreateJobWithNoFiles($beaconIDs: [ID!]!, $input: CreateJobInput!) {
+    createJob(beaconIDs:$beaconIDs, input:$input) {
       name
       tome {
         id
@@ -24,7 +24,7 @@ query: |
         }
       }
       tasks {
-      session {
+      beacon {
           id
         }
         job {
@@ -37,7 +37,7 @@ query: |
     }
   }
 variables:
-  sessionIDs:
+  beaconIDs:
     - 1337
   input:
     name: "WonderfulJob"
@@ -53,7 +53,7 @@ expected:
         - id: "3000"
         - id: "3001"
     tasks:
-      - session:
+      - beacon:
           id: "1337"
         job:
           name: "WonderfulJob"

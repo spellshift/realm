@@ -28,7 +28,7 @@ autobind:
   - github.com/kcarretto/realm/tavern/ent/file
   - github.com/kcarretto/realm/tavern/ent/user
   - github.com/kcarretto/realm/tavern/ent/tag
-  - github.com/kcarretto/realm/tavern/ent/session
+  - github.com/kcarretto/realm/tavern/ent/beacon
   - github.com/kcarretto/realm/tavern/ent/job
   - github.com/kcarretto/realm/tavern/ent/task
   - github.com/kcarretto/realm/tavern/ent/tome
@@ -51,4 +51,4 @@ models:
       - github.com/kcarretto/realm/tavern/ent/tag.Kind
   HostPlatform:
     model:
-      - github.com/kcarretto/realm/tavern/ent/session.HostPlatform
+      - github.com/kcarretto/realm/tavern/ent/beacon.HostPlatform

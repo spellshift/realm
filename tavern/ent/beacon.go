@@ -8,42 +8,42 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/kcarretto/realm/tavern/ent/session"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 )
 
-// Session is the model entity for the Session schema.
-type Session struct {
+// Beacon is the model entity for the Beacon schema.
+type Beacon struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// A human readable identifier for the session.
+	// A human readable identifier for the beacon.
 	Name string `json:"name,omitempty"`
-	// The identity the session is authenticated as (e.g. 'root')
+	// The identity the beacon is authenticated as (e.g. 'root')
 	Principal string `json:"principal,omitempty"`
-	// The hostname of the system the session is running on.
+	// The hostname of the system the beacon is running on.
 	Hostname string `json:"hostname,omitempty"`
-	// Unique identifier for the session. Unique to each instance of the session.
+	// Unique identifier for the beacon. Unique to each instance of the beacon.
 	Identifier string `json:"identifier,omitempty"`
-	// Identifies the agent that the session is running as (e.g. 'imix').
+	// Identifies the agent that the beacon is running as (e.g. 'imix').
 	AgentIdentifier string `json:"agent_identifier,omitempty"`
-	// Unique identifier for the host the session is running on.
+	// Unique identifier for the host the beacon is running on.
 	HostIdentifier string `json:"host_identifier,omitempty"`
 	// Primary interface IP address reported by the agent.
 	HostPrimaryIP string `json:"host_primary_ip,omitempty"`
 	// Platform the agent is operating on.
-	HostPlatform session.HostPlatform `json:"host_platform,omitempty"`
-	// Timestamp of when a task was last claimed or updated for a target
+	HostPlatform beacon.HostPlatform `json:"host_platform,omitempty"`
+	// Timestamp of when a task was last claimed or updated for the beacon.
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the SessionQuery when eager-loading is set.
-	Edges SessionEdges `json:"edges"`
+	// The values are being populated by the BeaconQuery when eager-loading is set.
+	Edges BeaconEdges `json:"edges"`
 }
 
-// SessionEdges holds the relations/edges for other nodes in the graph.
-type SessionEdges struct {
-	// Tags used to group the session with other sessions
+// BeaconEdges holds the relations/edges for other nodes in the graph.
+type BeaconEdges struct {
+	// Tags used to group this beacon with other beacons.
 	Tags []*Tag `json:"tags,omitempty"`
-	// Tasks that have been assigned to the session
+	// Tasks that have been assigned to the beacon.
 	Tasks []*Task `json:"tasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
@@ -57,7 +57,7 @@ type SessionEdges struct {
 
 // TagsOrErr returns the Tags value or an error if the edge
 // was not loaded in eager-loading.
-func (e SessionEdges) TagsOrErr() ([]*Tag, error) {
+func (e BeaconEdges) TagsOrErr() ([]*Tag, error) {
 	if e.loadedTypes[0] {
 		return e.Tags, nil
 	}
@@ -66,7 +66,7 @@ func (e SessionEdges) TagsOrErr() ([]*Tag, error) {
 
 // TasksOrErr returns the Tasks value or an error if the edge
 // was not loaded in eager-loading.
-func (e SessionEdges) TasksOrErr() ([]*Task, error) {
+func (e BeaconEdges) TasksOrErr() ([]*Task, error) {
 	if e.loadedTypes[1] {
 		return e.Tasks, nil
 	}
@@ -74,206 +74,206 @@ func (e SessionEdges) TasksOrErr() ([]*Task, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Session) scanValues(columns []string) ([]any, error) {
+func (*Beacon) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case session.FieldID:
+		case beacon.FieldID:
 			values[i] = new(sql.NullInt64)
-		case session.FieldName, session.FieldPrincipal, session.FieldHostname, session.FieldIdentifier, session.FieldAgentIdentifier, session.FieldHostIdentifier, session.FieldHostPrimaryIP, session.FieldHostPlatform:
+		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldHostname, beacon.FieldIdentifier, beacon.FieldAgentIdentifier, beacon.FieldHostIdentifier, beacon.FieldHostPrimaryIP, beacon.FieldHostPlatform:
 			values[i] = new(sql.NullString)
-		case session.FieldLastSeenAt:
+		case beacon.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Session", columns[i])
+			return nil, fmt.Errorf("unexpected column %q for type Beacon", columns[i])
 		}
 	}
 	return values, nil
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the Session fields.
-func (s *Session) assignValues(columns []string, values []any) error {
+// to the Beacon fields.
+func (b *Beacon) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case session.FieldID:
+		case beacon.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			s.ID = int(value.Int64)
-		case session.FieldName:
+			b.ID = int(value.Int64)
+		case beacon.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				s.Name = value.String
+				b.Name = value.String
 			}
-		case session.FieldPrincipal:
+		case beacon.FieldPrincipal:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field principal", values[i])
 			} else if value.Valid {
-				s.Principal = value.String
+				b.Principal = value.String
 			}
-		case session.FieldHostname:
+		case beacon.FieldHostname:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hostname", values[i])
 			} else if value.Valid {
-				s.Hostname = value.String
+				b.Hostname = value.String
 			}
-		case session.FieldIdentifier:
+		case beacon.FieldIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field identifier", values[i])
 			} else if value.Valid {
-				s.Identifier = value.String
+				b.Identifier = value.String
 			}
-		case session.FieldAgentIdentifier:
+		case beacon.FieldAgentIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field agent_identifier", values[i])
 			} else if value.Valid {
-				s.AgentIdentifier = value.String
+				b.AgentIdentifier = value.String
 			}
-		case session.FieldHostIdentifier:
+		case beacon.FieldHostIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field host_identifier", values[i])
 			} else if value.Valid {
-				s.HostIdentifier = value.String
+				b.HostIdentifier = value.String
 			}
-		case session.FieldHostPrimaryIP:
+		case beacon.FieldHostPrimaryIP:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field host_primary_ip", values[i])
 			} else if value.Valid {
-				s.HostPrimaryIP = value.String
+				b.HostPrimaryIP = value.String
 			}
-		case session.FieldHostPlatform:
+		case beacon.FieldHostPlatform:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field host_platform", values[i])
 			} else if value.Valid {
-				s.HostPlatform = session.HostPlatform(value.String)
+				b.HostPlatform = beacon.HostPlatform(value.String)
 			}
-		case session.FieldLastSeenAt:
+		case beacon.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
 			} else if value.Valid {
-				s.LastSeenAt = value.Time
+				b.LastSeenAt = value.Time
 			}
 		}
 	}
 	return nil
 }
 
-// QueryTags queries the "tags" edge of the Session entity.
-func (s *Session) QueryTags() *TagQuery {
-	return NewSessionClient(s.config).QueryTags(s)
+// QueryTags queries the "tags" edge of the Beacon entity.
+func (b *Beacon) QueryTags() *TagQuery {
+	return NewBeaconClient(b.config).QueryTags(b)
 }
 
-// QueryTasks queries the "tasks" edge of the Session entity.
-func (s *Session) QueryTasks() *TaskQuery {
-	return NewSessionClient(s.config).QueryTasks(s)
+// QueryTasks queries the "tasks" edge of the Beacon entity.
+func (b *Beacon) QueryTasks() *TaskQuery {
+	return NewBeaconClient(b.config).QueryTasks(b)
 }
 
-// Update returns a builder for updating this Session.
-// Note that you need to call Session.Unwrap() before calling this method if this Session
+// Update returns a builder for updating this Beacon.
+// Note that you need to call Beacon.Unwrap() before calling this method if this Beacon
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (s *Session) Update() *SessionUpdateOne {
-	return NewSessionClient(s.config).UpdateOne(s)
+func (b *Beacon) Update() *BeaconUpdateOne {
+	return NewBeaconClient(b.config).UpdateOne(b)
 }
 
-// Unwrap unwraps the Session entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the Beacon entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (s *Session) Unwrap() *Session {
-	_tx, ok := s.config.driver.(*txDriver)
+func (b *Beacon) Unwrap() *Beacon {
+	_tx, ok := b.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: Session is not a transactional entity")
+		panic("ent: Beacon is not a transactional entity")
 	}
-	s.config.driver = _tx.drv
-	return s
+	b.config.driver = _tx.drv
+	return b
 }
 
 // String implements the fmt.Stringer.
-func (s *Session) String() string {
+func (b *Beacon) String() string {
 	var builder strings.Builder
-	builder.WriteString("Session(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString("Beacon(")
+	builder.WriteString(fmt.Sprintf("id=%v, ", b.ID))
 	builder.WriteString("name=")
-	builder.WriteString(s.Name)
+	builder.WriteString(b.Name)
 	builder.WriteString(", ")
 	builder.WriteString("principal=")
-	builder.WriteString(s.Principal)
+	builder.WriteString(b.Principal)
 	builder.WriteString(", ")
 	builder.WriteString("hostname=")
-	builder.WriteString(s.Hostname)
+	builder.WriteString(b.Hostname)
 	builder.WriteString(", ")
 	builder.WriteString("identifier=")
-	builder.WriteString(s.Identifier)
+	builder.WriteString(b.Identifier)
 	builder.WriteString(", ")
 	builder.WriteString("agent_identifier=")
-	builder.WriteString(s.AgentIdentifier)
+	builder.WriteString(b.AgentIdentifier)
 	builder.WriteString(", ")
 	builder.WriteString("host_identifier=")
-	builder.WriteString(s.HostIdentifier)
+	builder.WriteString(b.HostIdentifier)
 	builder.WriteString(", ")
 	builder.WriteString("host_primary_ip=")
-	builder.WriteString(s.HostPrimaryIP)
+	builder.WriteString(b.HostPrimaryIP)
 	builder.WriteString(", ")
 	builder.WriteString("host_platform=")
-	builder.WriteString(fmt.Sprintf("%v", s.HostPlatform))
+	builder.WriteString(fmt.Sprintf("%v", b.HostPlatform))
 	builder.WriteString(", ")
 	builder.WriteString("last_seen_at=")
-	builder.WriteString(s.LastSeenAt.Format(time.ANSIC))
+	builder.WriteString(b.LastSeenAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedTags returns the Tags named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (s *Session) NamedTags(name string) ([]*Tag, error) {
-	if s.Edges.namedTags == nil {
+func (b *Beacon) NamedTags(name string) ([]*Tag, error) {
+	if b.Edges.namedTags == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := s.Edges.namedTags[name]
+	nodes, ok := b.Edges.namedTags[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (s *Session) appendNamedTags(name string, edges ...*Tag) {
-	if s.Edges.namedTags == nil {
-		s.Edges.namedTags = make(map[string][]*Tag)
+func (b *Beacon) appendNamedTags(name string, edges ...*Tag) {
+	if b.Edges.namedTags == nil {
+		b.Edges.namedTags = make(map[string][]*Tag)
 	}
 	if len(edges) == 0 {
-		s.Edges.namedTags[name] = []*Tag{}
+		b.Edges.namedTags[name] = []*Tag{}
 	} else {
-		s.Edges.namedTags[name] = append(s.Edges.namedTags[name], edges...)
+		b.Edges.namedTags[name] = append(b.Edges.namedTags[name], edges...)
 	}
 }
 
 // NamedTasks returns the Tasks named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (s *Session) NamedTasks(name string) ([]*Task, error) {
-	if s.Edges.namedTasks == nil {
+func (b *Beacon) NamedTasks(name string) ([]*Task, error) {
+	if b.Edges.namedTasks == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := s.Edges.namedTasks[name]
+	nodes, ok := b.Edges.namedTasks[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (s *Session) appendNamedTasks(name string, edges ...*Task) {
-	if s.Edges.namedTasks == nil {
-		s.Edges.namedTasks = make(map[string][]*Task)
+func (b *Beacon) appendNamedTasks(name string, edges ...*Task) {
+	if b.Edges.namedTasks == nil {
+		b.Edges.namedTasks = make(map[string][]*Task)
 	}
 	if len(edges) == 0 {
-		s.Edges.namedTasks[name] = []*Task{}
+		b.Edges.namedTasks[name] = []*Task{}
 	} else {
-		s.Edges.namedTasks[name] = append(s.Edges.namedTasks[name], edges...)
+		b.Edges.namedTasks[name] = append(b.Edges.namedTasks[name], edges...)
 	}
 }
 
-// Sessions is a parsable slice of Session.
-type Sessions []*Session
+// Beacons is a parsable slice of Beacon.
+type Beacons []*Beacon

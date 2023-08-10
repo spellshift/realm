@@ -29,10 +29,10 @@ func TestCreateJob(t *testing.T) {
 	gqlClient := client.New(srv)
 
 	// Initialize sample data
-	testSessions := []*ent.Session{
-		graph.Session.Create().
+	testBeacons := []*ent.Beacon{
+		graph.Beacon.Create().
 			SaveX(ctx),
-		graph.Session.Create().
+		graph.Beacon.Create().
 			SaveX(ctx),
 	}
 	testTome := graph.Tome.Create().
@@ -62,7 +62,7 @@ func TestCreateJob(t *testing.T) {
 	// Run Tests
 	t.Run("CreateWithoutFiles", newCreateJobTest(
 		gqlClient,
-		[]int{testSessions[0].ID, testSessions[1].ID},
+		[]int{testBeacons[0].ID, testBeacons[1].ID},
 		ent.CreateJobInput{
 			Name:       "TestJob",
 			Parameters: &expectedJobParams,
@@ -97,13 +97,13 @@ func TestCreateJob(t *testing.T) {
 				assert.Empty(t, task.Output)
 				assert.Empty(t, task.Error)
 				assert.Equal(t, job.ID, task.QueryJob().OnlyIDX(ctx))
-				assert.Equal(t, testSessions[i].ID, task.QuerySession().OnlyIDX(ctx))
+				assert.Equal(t, testBeacons[i].ID, task.QueryBeacon().OnlyIDX(ctx))
 			}
 		},
 	))
 	t.Run("CreateWithFiles", newCreateJobTest(
 		gqlClient,
-		[]int{testSessions[0].ID, testSessions[1].ID},
+		[]int{testBeacons[0].ID, testBeacons[1].ID},
 		ent.CreateJobInput{
 			Name:   "TestJobWithFiles",
 			TomeID: testTomeWithFiles.ID,
@@ -150,16 +150,16 @@ func TestCreateJob(t *testing.T) {
 				assert.Empty(t, task.Output)
 				assert.Empty(t, task.Error)
 				assert.Equal(t, job.ID, task.QueryJob().OnlyIDX(ctx))
-				assert.Equal(t, testSessions[i].ID, task.QuerySession().OnlyIDX(ctx))
+				assert.Equal(t, testBeacons[i].ID, task.QueryBeacon().OnlyIDX(ctx))
 			}
 		},
 	))
 }
 
-func newCreateJobTest(gqlClient *client.Client, sessionIDs []int, input ent.CreateJobInput, checks ...func(t *testing.T, id int, err error)) func(t *testing.T) {
+func newCreateJobTest(gqlClient *client.Client, beaconIDs []int, input ent.CreateJobInput, checks ...func(t *testing.T, id int, err error)) func(t *testing.T) {
 	return func(t *testing.T) {
 		// Define the mutatation for testing, taking the input as a variable
-		mut := `mutation newCreateJobTest($sessionIDs: [ID!]!, $input: CreateJobInput!) { createJob(sessionIDs:$sessionIDs, input:$input) {
+		mut := `mutation newCreateJobTest($beaconIDs: [ID!]!, $input: CreateJobInput!) { createJob(beaconIDs:$beaconIDs, input:$input) {
 			id
 			tasks {
 				id
@@ -176,7 +176,7 @@ func newCreateJobTest(gqlClient *client.Client, sessionIDs []int, input ent.Crea
 			}
 		}
 		err := gqlClient.Post(mut, &resp,
-			client.Var("sessionIDs", sessionIDs),
+			client.Var("beaconIDs", beaconIDs),
 			client.Var("input", map[string]interface{}{
 				"name":       input.Name,
 				"parameters": input.Parameters,

@@ -17,8 +17,8 @@ import (
 // region    ************************** generated!.gotpl **************************
 
 type MutationResolver interface {
-	CreateJob(ctx context.Context, sessionIDs []int, input ent.CreateJobInput) (*ent.Job, error)
-	UpdateSession(ctx context.Context, sessionID int, input ent.UpdateSessionInput) (*ent.Session, error)
+	CreateJob(ctx context.Context, beaconIDs []int, input ent.CreateJobInput) (*ent.Job, error)
+	UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error)
 	CreateTag(ctx context.Context, input ent.CreateTagInput) (*ent.Tag, error)
 	UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error)
 	ClaimTasks(ctx context.Context, input models.ClaimTasksInput) ([]*ent.Task, error)
@@ -50,14 +50,14 @@ func (ec *executionContext) field_Mutation_createJob_args(ctx context.Context, r
 	var err error
 	args := map[string]interface{}{}
 	var arg0 []int
-	if tmp, ok := rawArgs["sessionIDs"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sessionIDs"))
+	if tmp, ok := rawArgs["beaconIDs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconIDs"))
 		arg0, err = ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["sessionIDs"] = arg0
+	args["beaconIDs"] = arg0
 	var arg1 ent.CreateJobInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
@@ -115,22 +115,22 @@ func (ec *executionContext) field_Mutation_submitTaskResult_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateSession_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updateBeacon_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
-	if tmp, ok := rawArgs["sessionID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sessionID"))
+	if tmp, ok := rawArgs["beaconID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconID"))
 		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["sessionID"] = arg0
-	var arg1 ent.UpdateSessionInput
+	args["beaconID"] = arg0
+	var arg1 ent.UpdateBeaconInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateSessionInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUpdateSessionInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateBeaconInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUpdateBeaconInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -210,7 +210,7 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateJob(rctx, fc.Args["sessionIDs"].([]int), fc.Args["input"].(ent.CreateJobInput))
+			return ec.resolvers.Mutation().CreateJob(rctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateJobInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
@@ -291,8 +291,8 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_updateSession(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_updateSession(ctx, field)
+func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateBeacon(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -306,7 +306,7 @@ func (ec *executionContext) _Mutation_updateSession(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateSession(rctx, fc.Args["sessionID"].(int), fc.Args["input"].(ent.UpdateSessionInput))
+			return ec.resolvers.Mutation().UpdateBeacon(rctx, fc.Args["beaconID"].(int), fc.Args["input"].(ent.UpdateBeaconInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
@@ -326,10 +326,10 @@ func (ec *executionContext) _Mutation_updateSession(ctx context.Context, field g
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*ent.Session); ok {
+		if data, ok := tmp.(*ent.Beacon); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Session`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Beacon`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -341,12 +341,12 @@ func (ec *executionContext) _Mutation_updateSession(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Session)
+	res := resTmp.(*ent.Beacon)
 	fc.Result = res
-	return ec.marshalNSession2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐSession(ctx, field.Selections, res)
+	return ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeacon(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_updateSession(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -355,31 +355,31 @@ func (ec *executionContext) fieldContext_Mutation_updateSession(ctx context.Cont
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Session_id(ctx, field)
+				return ec.fieldContext_Beacon_id(ctx, field)
 			case "name":
-				return ec.fieldContext_Session_name(ctx, field)
+				return ec.fieldContext_Beacon_name(ctx, field)
 			case "principal":
-				return ec.fieldContext_Session_principal(ctx, field)
+				return ec.fieldContext_Beacon_principal(ctx, field)
 			case "hostname":
-				return ec.fieldContext_Session_hostname(ctx, field)
+				return ec.fieldContext_Beacon_hostname(ctx, field)
 			case "identifier":
-				return ec.fieldContext_Session_identifier(ctx, field)
+				return ec.fieldContext_Beacon_identifier(ctx, field)
 			case "agentIdentifier":
-				return ec.fieldContext_Session_agentIdentifier(ctx, field)
+				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
 			case "hostIdentifier":
-				return ec.fieldContext_Session_hostIdentifier(ctx, field)
+				return ec.fieldContext_Beacon_hostIdentifier(ctx, field)
 			case "hostPrimaryIP":
-				return ec.fieldContext_Session_hostPrimaryIP(ctx, field)
+				return ec.fieldContext_Beacon_hostPrimaryIP(ctx, field)
 			case "hostPlatform":
-				return ec.fieldContext_Session_hostPlatform(ctx, field)
+				return ec.fieldContext_Beacon_hostPlatform(ctx, field)
 			case "lastSeenAt":
-				return ec.fieldContext_Session_lastSeenAt(ctx, field)
+				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
 			case "tags":
-				return ec.fieldContext_Session_tags(ctx, field)
+				return ec.fieldContext_Beacon_tags(ctx, field)
 			case "tasks":
-				return ec.fieldContext_Session_tasks(ctx, field)
+				return ec.fieldContext_Beacon_tasks(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Session", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
 	}
 	defer func() {
@@ -389,7 +389,7 @@ func (ec *executionContext) fieldContext_Mutation_updateSession(ctx context.Cont
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updateSession_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_updateBeacon_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -465,8 +465,8 @@ func (ec *executionContext) fieldContext_Mutation_createTag(ctx context.Context,
 				return ec.fieldContext_Tag_name(ctx, field)
 			case "kind":
 				return ec.fieldContext_Tag_kind(ctx, field)
-			case "sessions":
-				return ec.fieldContext_Tag_sessions(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Tag_beacons(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -554,8 +554,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTag(ctx context.Context,
 				return ec.fieldContext_Tag_name(ctx, field)
 			case "kind":
 				return ec.fieldContext_Tag_kind(ctx, field)
-			case "sessions":
-				return ec.fieldContext_Tag_sessions(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Tag_beacons(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -631,8 +631,8 @@ func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context
 				return ec.fieldContext_Task_error(ctx, field)
 			case "job":
 				return ec.fieldContext_Task_job(ctx, field)
-			case "session":
-				return ec.fieldContext_Task_session(ctx, field)
+			case "beacon":
+				return ec.fieldContext_Task_beacon(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
 		},
@@ -705,8 +705,8 @@ func (ec *executionContext) fieldContext_Mutation_submitTaskResult(ctx context.C
 				return ec.fieldContext_Task_error(ctx, field)
 			case "job":
 				return ec.fieldContext_Task_job(ctx, field)
-			case "session":
-				return ec.fieldContext_Task_session(ctx, field)
+			case "beacon":
+				return ec.fieldContext_Task_beacon(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
 		},
@@ -947,10 +947,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_createJob(ctx, field)
 			})
 
-		case "updateSession":
+		case "updateBeacon":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updateSession(ctx, field)
+				return ec._Mutation_updateBeacon(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {

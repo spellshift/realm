@@ -1,8 +1,8 @@
 state: |
-  INSERT INTO `sessions` (id, name, identifier)
-    VALUES (1337,"delightful-lich","EXISTING-SESSION");
+  INSERT INTO `beacons` (id, name, identifier)
+    VALUES (1337,"delightful-lich","EXISTING-BEACON");
 query: |
-  mutation ExistingSession($input: ClaimTasksInput!) {
+  mutation ExistingBeacon($input: ClaimTasksInput!) {
     claimTasks(input: $input) {
       id
     }
@@ -12,7 +12,7 @@ variables:
     principal: root
     hostname: some-machine
     hostPlatform: Linux
-    sessionIdentifier: EXISTING-SESSION
+    beaconIdentifier: EXISTING-BEACON
     hostIdentifier: MY-HOST
     agentIdentifier: COOL-TEST
 

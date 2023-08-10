@@ -11,15 +11,15 @@ import (
 
 	"github.com/kcarretto/realm/tavern/auth"
 	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/graphql/generated"
 	"github.com/kcarretto/realm/tavern/graphql/models"
 )
 
 // CreateJob is the resolver for the createJob field.
-func (r *mutationResolver) CreateJob(ctx context.Context, sessionIDs []int, input ent.CreateJobInput) (*ent.Job, error) {
+func (r *mutationResolver) CreateJob(ctx context.Context, beaconIDs []int, input ent.CreateJobInput) (*ent.Job, error) {
 	// 1. Begin Transaction
 	tx, err := r.client.Tx(ctx)
 	if err != nil {
@@ -76,14 +76,14 @@ func (r *mutationResolver) CreateJob(ctx context.Context, sessionIDs []int, inpu
 		return nil, rollback(tx, fmt.Errorf("failed to create job: %w", err))
 	}
 
-	// 8. Create tasks for each session
-	for _, sid := range sessionIDs {
+	// 8. Create tasks for each beacon
+	for _, sid := range beaconIDs {
 		_, err := client.Task.Create().
 			SetJob(job).
-			SetSessionID(sid).
+			SetBeaconID(sid).
 			Save(ctx)
 		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to create task for session (%q): %w", sid, err))
+			return nil, rollback(tx, fmt.Errorf("failed to create task for beacon (%q): %w", sid, err))
 		}
 	}
 
@@ -101,9 +101,9 @@ func (r *mutationResolver) CreateJob(ctx context.Context, sessionIDs []int, inpu
 	return job, nil
 }
 
-// UpdateSession is the resolver for the updateSession field.
-func (r *mutationResolver) UpdateSession(ctx context.Context, sessionID int, input ent.UpdateSessionInput) (*ent.Session, error) {
-	return r.client.Session.UpdateOneID(sessionID).SetInput(input).Save(ctx)
+// UpdateBeacon is the resolver for the updateBeacon field.
+func (r *mutationResolver) UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error) {
+	return r.client.Beacon.UpdateOneID(beaconID).SetInput(input).Save(ctx)
 }
 
 // CreateTag is the resolver for the createTag field.
@@ -118,51 +118,51 @@ func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.U
 
 // ClaimTasks is the resolver for the claimTasks field.
 func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTasksInput) ([]*ent.Task, error) {
-	// 1. Check if session already exists
-	agentSession, err := r.client.Session.Query().
-		Where(session.Identifier(input.SessionIdentifier)).
+	// 1. Check if beacon already exists
+	agentBeacon, err := r.client.Beacon.Query().
+		Where(beacon.Identifier(input.BeaconIdentifier)).
 		Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to query sessions: %w", err)
+		return nil, fmt.Errorf("failed to query beacons: %w", err)
 	}
 
-	// 2. Create session if it didn't already exist
+	// 2. Create beacon if it didn't already exist
 	if ent.IsNotFound(err) {
-		_, err = r.client.Session.Create().
+		_, err = r.client.Beacon.Create().
 			SetPrincipal(input.Principal).
 			SetHostname(input.Hostname).
 			SetNillableHostPrimaryIP(input.HostPrimaryIP).
 			SetHostPlatform(input.HostPlatform).
-			SetIdentifier(input.SessionIdentifier).
+			SetIdentifier(input.BeaconIdentifier).
 			SetAgentIdentifier(input.AgentIdentifier).
 			SetHostIdentifier(input.HostIdentifier).
 			SetLastSeenAt(time.Now()).
 			Save(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create new session: %w", err)
+			return nil, fmt.Errorf("failed to create new beacon: %w", err)
 		}
 
-		// New sessions won't have any tasks yet, so just return an empty list
+		// New beacons won't have any tasks yet, so just return an empty list
 		return []*ent.Task{}, nil
 	}
 
-	// 3. Update the existing session
-	agentSession, err = agentSession.Update().
+	// 3. Update the existing beacon
+	agentBeacon, err = agentBeacon.Update().
 		SetPrincipal(input.Principal).
 		SetHostname(input.Hostname).
 		SetNillableHostPrimaryIP(input.HostPrimaryIP).
 		SetHostPlatform(input.HostPlatform).
-		SetIdentifier(input.SessionIdentifier).
+		SetIdentifier(input.BeaconIdentifier).
 		SetAgentIdentifier(input.AgentIdentifier).
 		SetHostIdentifier(input.HostIdentifier).
 		SetLastSeenAt(time.Now()).
 		Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update existing session: %w", err)
+		return nil, fmt.Errorf("failed to update existing beacon: %w", err)
 	}
 
-	// 4. Load any queued tasks for the session
-	tasks, err := agentSession.QueryTasks().
+	// 4. Load any queued tasks for the beacon
+	tasks, err := agentBeacon.QueryTasks().
 		Where(task.ClaimedAtIsNil()).
 		All(ctx)
 	if err != nil {

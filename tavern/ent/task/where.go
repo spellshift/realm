@@ -497,24 +497,24 @@ func HasJobWith(preds ...predicate.Job) predicate.Task {
 	})
 }
 
-// HasSession applies the HasEdge predicate on the "session" edge.
-func HasSession() predicate.Task {
+// HasBeacon applies the HasEdge predicate on the "beacon" edge.
+func HasBeacon() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, SessionTable, SessionColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, BeaconTable, BeaconColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSessionWith applies the HasEdge predicate on the "session" edge with a given conditions (other predicates).
-func HasSessionWith(preds ...predicate.Session) predicate.Task {
+// HasBeaconWith applies the HasEdge predicate on the "beacon" edge with a given conditions (other predicates).
+func HasBeaconWith(preds ...predicate.Beacon) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SessionInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, SessionTable, SessionColumn),
+			sqlgraph.To(BeaconInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, BeaconTable, BeaconColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

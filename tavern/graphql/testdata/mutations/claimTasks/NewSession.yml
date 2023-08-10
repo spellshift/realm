@@ -1,5 +1,5 @@
 query: |
-  mutation NewSession($input: ClaimTasksInput!) {
+  mutation NewBeacon($input: ClaimTasksInput!) {
     claimTasks(input: $input) {
       id
     }
@@ -9,7 +9,7 @@ variables:
     principal: root
     hostname: some-machine
     hostPlatform: Linux
-    sessionIdentifier: SESSION-IDENTIFIER
+    beaconIdentifier: SESSION-IDENTIFIER
     hostIdentifier: MY-HOST
     agentIdentifier: COOL-TEST
 

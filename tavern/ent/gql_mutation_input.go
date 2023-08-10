@@ -6,6 +6,50 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/tag"
 )
 
+// UpdateBeaconInput represents a mutation input for updating beacons.
+type UpdateBeaconInput struct {
+	Name          *string
+	ClearHostname bool
+	Hostname      *string
+	ClearTags     bool
+	AddTagIDs     []int
+	RemoveTagIDs  []int
+}
+
+// Mutate applies the UpdateBeaconInput on the BeaconMutation builder.
+func (i *UpdateBeaconInput) Mutate(m *BeaconMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if i.ClearHostname {
+		m.ClearHostname()
+	}
+	if v := i.Hostname; v != nil {
+		m.SetHostname(*v)
+	}
+	if i.ClearTags {
+		m.ClearTags()
+	}
+	if v := i.AddTagIDs; len(v) > 0 {
+		m.AddTagIDs(v...)
+	}
+	if v := i.RemoveTagIDs; len(v) > 0 {
+		m.RemoveTagIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateBeaconInput on the BeaconUpdate builder.
+func (c *BeaconUpdate) SetInput(i UpdateBeaconInput) *BeaconUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateBeaconInput on the BeaconUpdateOne builder.
+func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateJobInput represents a mutation input for creating jobs.
 type CreateJobInput struct {
 	Name       string
@@ -28,63 +72,19 @@ func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
 	return c
 }
 
-// UpdateSessionInput represents a mutation input for updating sessions.
-type UpdateSessionInput struct {
-	Name          *string
-	ClearHostname bool
-	Hostname      *string
-	ClearTags     bool
-	AddTagIDs     []int
-	RemoveTagIDs  []int
-}
-
-// Mutate applies the UpdateSessionInput on the SessionMutation builder.
-func (i *UpdateSessionInput) Mutate(m *SessionMutation) {
-	if v := i.Name; v != nil {
-		m.SetName(*v)
-	}
-	if i.ClearHostname {
-		m.ClearHostname()
-	}
-	if v := i.Hostname; v != nil {
-		m.SetHostname(*v)
-	}
-	if i.ClearTags {
-		m.ClearTags()
-	}
-	if v := i.AddTagIDs; len(v) > 0 {
-		m.AddTagIDs(v...)
-	}
-	if v := i.RemoveTagIDs; len(v) > 0 {
-		m.RemoveTagIDs(v...)
-	}
-}
-
-// SetInput applies the change-set in the UpdateSessionInput on the SessionUpdate builder.
-func (c *SessionUpdate) SetInput(i UpdateSessionInput) *SessionUpdate {
-	i.Mutate(c.Mutation())
-	return c
-}
-
-// SetInput applies the change-set in the UpdateSessionInput on the SessionUpdateOne builder.
-func (c *SessionUpdateOne) SetInput(i UpdateSessionInput) *SessionUpdateOne {
-	i.Mutate(c.Mutation())
-	return c
-}
-
 // CreateTagInput represents a mutation input for creating tags.
 type CreateTagInput struct {
-	Name       string
-	Kind       tag.Kind
-	SessionIDs []int
+	Name      string
+	Kind      tag.Kind
+	BeaconIDs []int
 }
 
 // Mutate applies the CreateTagInput on the TagMutation builder.
 func (i *CreateTagInput) Mutate(m *TagMutation) {
 	m.SetName(i.Name)
 	m.SetKind(i.Kind)
-	if v := i.SessionIDs; len(v) > 0 {
-		m.AddSessionIDs(v...)
+	if v := i.BeaconIDs; len(v) > 0 {
+		m.AddBeaconIDs(v...)
 	}
 }
 
@@ -96,11 +96,11 @@ func (c *TagCreate) SetInput(i CreateTagInput) *TagCreate {
 
 // UpdateTagInput represents a mutation input for updating tags.
 type UpdateTagInput struct {
-	Name             *string
-	Kind             *tag.Kind
-	ClearSessions    bool
-	AddSessionIDs    []int
-	RemoveSessionIDs []int
+	Name            *string
+	Kind            *tag.Kind
+	ClearBeacons    bool
+	AddBeaconIDs    []int
+	RemoveBeaconIDs []int
 }
 
 // Mutate applies the UpdateTagInput on the TagMutation builder.
@@ -111,14 +111,14 @@ func (i *UpdateTagInput) Mutate(m *TagMutation) {
 	if v := i.Kind; v != nil {
 		m.SetKind(*v)
 	}
-	if i.ClearSessions {
-		m.ClearSessions()
+	if i.ClearBeacons {
+		m.ClearBeacons()
 	}
-	if v := i.AddSessionIDs; len(v) > 0 {
-		m.AddSessionIDs(v...)
+	if v := i.AddBeaconIDs; len(v) > 0 {
+		m.AddBeaconIDs(v...)
 	}
-	if v := i.RemoveSessionIDs; len(v) > 0 {
-		m.RemoveSessionIDs(v...)
+	if v := i.RemoveBeaconIDs; len(v) > 0 {
+		m.RemoveBeaconIDs(v...)
 	}
 }
 
