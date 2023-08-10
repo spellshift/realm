@@ -16,7 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -837,20 +837,20 @@ func (f *File) ToEdge(order *FileOrder) *FileEdge {
 	}
 }
 
-// JobEdge is the edge representation of Job.
-type JobEdge struct {
-	Node   *Job   `json:"node"`
+// QuestEdge is the edge representation of Quest.
+type QuestEdge struct {
+	Node   *Quest `json:"node"`
 	Cursor Cursor `json:"cursor"`
 }
 
-// JobConnection is the connection containing edges to Job.
-type JobConnection struct {
-	Edges      []*JobEdge `json:"edges"`
-	PageInfo   PageInfo   `json:"pageInfo"`
-	TotalCount int        `json:"totalCount"`
+// QuestConnection is the connection containing edges to Quest.
+type QuestConnection struct {
+	Edges      []*QuestEdge `json:"edges"`
+	PageInfo   PageInfo     `json:"pageInfo"`
+	TotalCount int          `json:"totalCount"`
 }
 
-func (c *JobConnection) build(nodes []*Job, pager *jobPager, after *Cursor, first *int, before *Cursor, last *int) {
+func (c *QuestConnection) build(nodes []*Quest, pager *questPager, after *Cursor, first *int, before *Cursor, last *int) {
 	c.PageInfo.HasNextPage = before != nil
 	c.PageInfo.HasPreviousPage = after != nil
 	if first != nil && *first+1 == len(nodes) {
@@ -860,21 +860,21 @@ func (c *JobConnection) build(nodes []*Job, pager *jobPager, after *Cursor, firs
 		c.PageInfo.HasPreviousPage = true
 		nodes = nodes[:len(nodes)-1]
 	}
-	var nodeAt func(int) *Job
+	var nodeAt func(int) *Quest
 	if last != nil {
 		n := len(nodes) - 1
-		nodeAt = func(i int) *Job {
+		nodeAt = func(i int) *Quest {
 			return nodes[n-i]
 		}
 	} else {
-		nodeAt = func(i int) *Job {
+		nodeAt = func(i int) *Quest {
 			return nodes[i]
 		}
 	}
-	c.Edges = make([]*JobEdge, len(nodes))
+	c.Edges = make([]*QuestEdge, len(nodes))
 	for i := range nodes {
 		node := nodeAt(i)
-		c.Edges[i] = &JobEdge{
+		c.Edges[i] = &QuestEdge{
 			Node:   node,
 			Cursor: pager.toCursor(node),
 		}
@@ -888,123 +888,123 @@ func (c *JobConnection) build(nodes []*Job, pager *jobPager, after *Cursor, firs
 	}
 }
 
-// JobPaginateOption enables pagination customization.
-type JobPaginateOption func(*jobPager) error
+// QuestPaginateOption enables pagination customization.
+type QuestPaginateOption func(*questPager) error
 
-// WithJobOrder configures pagination ordering.
-func WithJobOrder(order *JobOrder) JobPaginateOption {
+// WithQuestOrder configures pagination ordering.
+func WithQuestOrder(order *QuestOrder) QuestPaginateOption {
 	if order == nil {
-		order = DefaultJobOrder
+		order = DefaultQuestOrder
 	}
 	o := *order
-	return func(pager *jobPager) error {
+	return func(pager *questPager) error {
 		if err := o.Direction.Validate(); err != nil {
 			return err
 		}
 		if o.Field == nil {
-			o.Field = DefaultJobOrder.Field
+			o.Field = DefaultQuestOrder.Field
 		}
 		pager.order = &o
 		return nil
 	}
 }
 
-// WithJobFilter configures pagination filter.
-func WithJobFilter(filter func(*JobQuery) (*JobQuery, error)) JobPaginateOption {
-	return func(pager *jobPager) error {
+// WithQuestFilter configures pagination filter.
+func WithQuestFilter(filter func(*QuestQuery) (*QuestQuery, error)) QuestPaginateOption {
+	return func(pager *questPager) error {
 		if filter == nil {
-			return errors.New("JobQuery filter cannot be nil")
+			return errors.New("QuestQuery filter cannot be nil")
 		}
 		pager.filter = filter
 		return nil
 	}
 }
 
-type jobPager struct {
-	order  *JobOrder
-	filter func(*JobQuery) (*JobQuery, error)
+type questPager struct {
+	order  *QuestOrder
+	filter func(*QuestQuery) (*QuestQuery, error)
 }
 
-func newJobPager(opts []JobPaginateOption) (*jobPager, error) {
-	pager := &jobPager{}
+func newQuestPager(opts []QuestPaginateOption) (*questPager, error) {
+	pager := &questPager{}
 	for _, opt := range opts {
 		if err := opt(pager); err != nil {
 			return nil, err
 		}
 	}
 	if pager.order == nil {
-		pager.order = DefaultJobOrder
+		pager.order = DefaultQuestOrder
 	}
 	return pager, nil
 }
 
-func (p *jobPager) applyFilter(query *JobQuery) (*JobQuery, error) {
+func (p *questPager) applyFilter(query *QuestQuery) (*QuestQuery, error) {
 	if p.filter != nil {
 		return p.filter(query)
 	}
 	return query, nil
 }
 
-func (p *jobPager) toCursor(j *Job) Cursor {
-	return p.order.Field.toCursor(j)
+func (p *questPager) toCursor(q *Quest) Cursor {
+	return p.order.Field.toCursor(q)
 }
 
-func (p *jobPager) applyCursors(query *JobQuery, after, before *Cursor) *JobQuery {
+func (p *questPager) applyCursors(query *QuestQuery, after, before *Cursor) *QuestQuery {
 	for _, predicate := range cursorsToPredicates(
 		p.order.Direction, after, before,
-		p.order.Field.field, DefaultJobOrder.Field.field,
+		p.order.Field.field, DefaultQuestOrder.Field.field,
 	) {
 		query = query.Where(predicate)
 	}
 	return query
 }
 
-func (p *jobPager) applyOrder(query *JobQuery, reverse bool) *JobQuery {
+func (p *questPager) applyOrder(query *QuestQuery, reverse bool) *QuestQuery {
 	direction := p.order.Direction
 	if reverse {
 		direction = direction.reverse()
 	}
 	query = query.Order(direction.orderFunc(p.order.Field.field))
-	if p.order.Field != DefaultJobOrder.Field {
-		query = query.Order(direction.orderFunc(DefaultJobOrder.Field.field))
+	if p.order.Field != DefaultQuestOrder.Field {
+		query = query.Order(direction.orderFunc(DefaultQuestOrder.Field.field))
 	}
 	return query
 }
 
-func (p *jobPager) orderExpr(reverse bool) sql.Querier {
+func (p *questPager) orderExpr(reverse bool) sql.Querier {
 	direction := p.order.Direction
 	if reverse {
 		direction = direction.reverse()
 	}
 	return sql.ExprFunc(func(b *sql.Builder) {
 		b.Ident(p.order.Field.field).Pad().WriteString(string(direction))
-		if p.order.Field != DefaultJobOrder.Field {
-			b.Comma().Ident(DefaultJobOrder.Field.field).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultQuestOrder.Field {
+			b.Comma().Ident(DefaultQuestOrder.Field.field).Pad().WriteString(string(direction))
 		}
 	})
 }
 
-// Paginate executes the query and returns a relay based cursor connection to Job.
-func (j *JobQuery) Paginate(
+// Paginate executes the query and returns a relay based cursor connection to Quest.
+func (q *QuestQuery) Paginate(
 	ctx context.Context, after *Cursor, first *int,
-	before *Cursor, last *int, opts ...JobPaginateOption,
-) (*JobConnection, error) {
+	before *Cursor, last *int, opts ...QuestPaginateOption,
+) (*QuestConnection, error) {
 	if err := validateFirstLast(first, last); err != nil {
 		return nil, err
 	}
-	pager, err := newJobPager(opts)
+	pager, err := newQuestPager(opts)
 	if err != nil {
 		return nil, err
 	}
-	if j, err = pager.applyFilter(j); err != nil {
+	if q, err = pager.applyFilter(q); err != nil {
 		return nil, err
 	}
-	conn := &JobConnection{Edges: []*JobEdge{}}
+	conn := &QuestConnection{Edges: []*QuestEdge{}}
 	ignoredEdges := !hasCollectedField(ctx, edgesField)
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			if conn.TotalCount, err = j.Clone().Count(ctx); err != nil {
+			if conn.TotalCount, err = q.Clone().Count(ctx); err != nil {
 				return nil, err
 			}
 			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
@@ -1015,18 +1015,18 @@ func (j *JobQuery) Paginate(
 		return conn, nil
 	}
 
-	j = pager.applyCursors(j, after, before)
-	j = pager.applyOrder(j, last != nil)
+	q = pager.applyCursors(q, after, before)
+	q = pager.applyOrder(q, last != nil)
 	if limit := paginateLimit(first, last); limit != 0 {
-		j.Limit(limit)
+		q.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := j.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := q.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
 
-	nodes, err := j.All(ctx)
+	nodes, err := q.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1035,107 +1035,107 @@ func (j *JobQuery) Paginate(
 }
 
 var (
-	// JobOrderFieldCreatedAt orders Job by created_at.
-	JobOrderFieldCreatedAt = &JobOrderField{
-		field: job.FieldCreatedAt,
-		toCursor: func(j *Job) Cursor {
+	// QuestOrderFieldCreatedAt orders Quest by created_at.
+	QuestOrderFieldCreatedAt = &QuestOrderField{
+		field: quest.FieldCreatedAt,
+		toCursor: func(q *Quest) Cursor {
 			return Cursor{
-				ID:    j.ID,
-				Value: j.CreatedAt,
+				ID:    q.ID,
+				Value: q.CreatedAt,
 			}
 		},
 	}
-	// JobOrderFieldLastModifiedAt orders Job by last_modified_at.
-	JobOrderFieldLastModifiedAt = &JobOrderField{
-		field: job.FieldLastModifiedAt,
-		toCursor: func(j *Job) Cursor {
+	// QuestOrderFieldLastModifiedAt orders Quest by last_modified_at.
+	QuestOrderFieldLastModifiedAt = &QuestOrderField{
+		field: quest.FieldLastModifiedAt,
+		toCursor: func(q *Quest) Cursor {
 			return Cursor{
-				ID:    j.ID,
-				Value: j.LastModifiedAt,
+				ID:    q.ID,
+				Value: q.LastModifiedAt,
 			}
 		},
 	}
-	// JobOrderFieldName orders Job by name.
-	JobOrderFieldName = &JobOrderField{
-		field: job.FieldName,
-		toCursor: func(j *Job) Cursor {
+	// QuestOrderFieldName orders Quest by name.
+	QuestOrderFieldName = &QuestOrderField{
+		field: quest.FieldName,
+		toCursor: func(q *Quest) Cursor {
 			return Cursor{
-				ID:    j.ID,
-				Value: j.Name,
+				ID:    q.ID,
+				Value: q.Name,
 			}
 		},
 	}
 )
 
 // String implement fmt.Stringer interface.
-func (f JobOrderField) String() string {
+func (f QuestOrderField) String() string {
 	var str string
 	switch f.field {
-	case job.FieldCreatedAt:
+	case quest.FieldCreatedAt:
 		str = "CREATED_AT"
-	case job.FieldLastModifiedAt:
+	case quest.FieldLastModifiedAt:
 		str = "LAST_MODIFIED_AT"
-	case job.FieldName:
+	case quest.FieldName:
 		str = "NAME"
 	}
 	return str
 }
 
 // MarshalGQL implements graphql.Marshaler interface.
-func (f JobOrderField) MarshalGQL(w io.Writer) {
+func (f QuestOrderField) MarshalGQL(w io.Writer) {
 	io.WriteString(w, strconv.Quote(f.String()))
 }
 
 // UnmarshalGQL implements graphql.Unmarshaler interface.
-func (f *JobOrderField) UnmarshalGQL(v interface{}) error {
+func (f *QuestOrderField) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
-		return fmt.Errorf("JobOrderField %T must be a string", v)
+		return fmt.Errorf("QuestOrderField %T must be a string", v)
 	}
 	switch str {
 	case "CREATED_AT":
-		*f = *JobOrderFieldCreatedAt
+		*f = *QuestOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
-		*f = *JobOrderFieldLastModifiedAt
+		*f = *QuestOrderFieldLastModifiedAt
 	case "NAME":
-		*f = *JobOrderFieldName
+		*f = *QuestOrderFieldName
 	default:
-		return fmt.Errorf("%s is not a valid JobOrderField", str)
+		return fmt.Errorf("%s is not a valid QuestOrderField", str)
 	}
 	return nil
 }
 
-// JobOrderField defines the ordering field of Job.
-type JobOrderField struct {
+// QuestOrderField defines the ordering field of Quest.
+type QuestOrderField struct {
 	field    string
-	toCursor func(*Job) Cursor
+	toCursor func(*Quest) Cursor
 }
 
-// JobOrder defines the ordering of Job.
-type JobOrder struct {
-	Direction OrderDirection `json:"direction"`
-	Field     *JobOrderField `json:"field"`
+// QuestOrder defines the ordering of Quest.
+type QuestOrder struct {
+	Direction OrderDirection   `json:"direction"`
+	Field     *QuestOrderField `json:"field"`
 }
 
-// DefaultJobOrder is the default ordering of Job.
-var DefaultJobOrder = &JobOrder{
+// DefaultQuestOrder is the default ordering of Quest.
+var DefaultQuestOrder = &QuestOrder{
 	Direction: OrderDirectionAsc,
-	Field: &JobOrderField{
-		field: job.FieldID,
-		toCursor: func(j *Job) Cursor {
-			return Cursor{ID: j.ID}
+	Field: &QuestOrderField{
+		field: quest.FieldID,
+		toCursor: func(q *Quest) Cursor {
+			return Cursor{ID: q.ID}
 		},
 	},
 }
 
-// ToEdge converts Job into JobEdge.
-func (j *Job) ToEdge(order *JobOrder) *JobEdge {
+// ToEdge converts Quest into QuestEdge.
+func (q *Quest) ToEdge(order *QuestOrder) *QuestEdge {
 	if order == nil {
-		order = DefaultJobOrder
+		order = DefaultQuestOrder
 	}
-	return &JobEdge{
-		Node:   j,
-		Cursor: order.Field.toCursor(j),
+	return &QuestEdge{
+		Node:   q,
+		Cursor: order.Field.toCursor(q),
 	}
 }
 

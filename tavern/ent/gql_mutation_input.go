@@ -50,15 +50,15 @@ func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
 	return c
 }
 
-// CreateJobInput represents a mutation input for creating jobs.
-type CreateJobInput struct {
+// CreateQuestInput represents a mutation input for creating quests.
+type CreateQuestInput struct {
 	Name       string
 	Parameters *string
 	TomeID     int
 }
 
-// Mutate applies the CreateJobInput on the JobMutation builder.
-func (i *CreateJobInput) Mutate(m *JobMutation) {
+// Mutate applies the CreateQuestInput on the QuestMutation builder.
+func (i *CreateQuestInput) Mutate(m *QuestMutation) {
 	m.SetName(i.Name)
 	if v := i.Parameters; v != nil {
 		m.SetParameters(*v)
@@ -66,8 +66,8 @@ func (i *CreateJobInput) Mutate(m *JobMutation) {
 	m.SetTomeID(i.TomeID)
 }
 
-// SetInput applies the change-set in the CreateJobInput on the JobCreate builder.
-func (c *JobCreate) SetInput(i CreateJobInput) *JobCreate {
+// SetInput applies the change-set in the CreateQuestInput on the QuestCreate builder.
+func (c *QuestCreate) SetInput(i CreateQuestInput) *QuestCreate {
 	i.Mutate(c.Mutation())
 	return c
 }

@@ -64,21 +64,9 @@ type ComplexityRoot struct {
 		Size           func(childComplexity int) int
 	}
 
-	Job struct {
-		Bundle         func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Creator        func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Name           func(childComplexity int) int
-		Parameters     func(childComplexity int) int
-		Tasks          func(childComplexity int) int
-		Tome           func(childComplexity int) int
-	}
-
 	Mutation struct {
 		ClaimTasks       func(childComplexity int, input models.ClaimTasksInput) int
-		CreateJob        func(childComplexity int, beaconIDs []int, input ent.CreateJobInput) int
+		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
 		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
 		SubmitTaskResult func(childComplexity int, input models.SubmitTaskResultInput) int
@@ -97,12 +85,24 @@ type ComplexityRoot struct {
 	Query struct {
 		Beacons func(childComplexity int, where *ent.BeaconWhereInput) int
 		Files   func(childComplexity int, where *ent.FileWhereInput) int
-		Jobs    func(childComplexity int, where *ent.JobWhereInput) int
 		Node    func(childComplexity int, id int) int
 		Nodes   func(childComplexity int, ids []int) int
+		Quests  func(childComplexity int, where *ent.QuestWhereInput) int
 		Tags    func(childComplexity int, where *ent.TagWhereInput) int
 		Tomes   func(childComplexity int, where *ent.TomeWhereInput) int
 		Users   func(childComplexity int, where *ent.UserWhereInput) int
+	}
+
+	Quest struct {
+		Bundle         func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Creator        func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Parameters     func(childComplexity int) int
+		Tasks          func(childComplexity int) int
+		Tome           func(childComplexity int) int
 	}
 
 	Tag struct {
@@ -120,9 +120,9 @@ type ComplexityRoot struct {
 		ExecFinishedAt func(childComplexity int) int
 		ExecStartedAt  func(childComplexity int) int
 		ID             func(childComplexity int) int
-		Job            func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
+		Quest          func(childComplexity int) int
 	}
 
 	Tome struct {
@@ -286,69 +286,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.File.Size(childComplexity), true
 
-	case "Job.bundle":
-		if e.complexity.Job.Bundle == nil {
-			break
-		}
-
-		return e.complexity.Job.Bundle(childComplexity), true
-
-	case "Job.createdAt":
-		if e.complexity.Job.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.Job.CreatedAt(childComplexity), true
-
-	case "Job.creator":
-		if e.complexity.Job.Creator == nil {
-			break
-		}
-
-		return e.complexity.Job.Creator(childComplexity), true
-
-	case "Job.id":
-		if e.complexity.Job.ID == nil {
-			break
-		}
-
-		return e.complexity.Job.ID(childComplexity), true
-
-	case "Job.lastModifiedAt":
-		if e.complexity.Job.LastModifiedAt == nil {
-			break
-		}
-
-		return e.complexity.Job.LastModifiedAt(childComplexity), true
-
-	case "Job.name":
-		if e.complexity.Job.Name == nil {
-			break
-		}
-
-		return e.complexity.Job.Name(childComplexity), true
-
-	case "Job.parameters":
-		if e.complexity.Job.Parameters == nil {
-			break
-		}
-
-		return e.complexity.Job.Parameters(childComplexity), true
-
-	case "Job.tasks":
-		if e.complexity.Job.Tasks == nil {
-			break
-		}
-
-		return e.complexity.Job.Tasks(childComplexity), true
-
-	case "Job.tome":
-		if e.complexity.Job.Tome == nil {
-			break
-		}
-
-		return e.complexity.Job.Tome(childComplexity), true
-
 	case "Mutation.claimTasks":
 		if e.complexity.Mutation.ClaimTasks == nil {
 			break
@@ -361,17 +298,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ClaimTasks(childComplexity, args["input"].(models.ClaimTasksInput)), true
 
-	case "Mutation.createJob":
-		if e.complexity.Mutation.CreateJob == nil {
+	case "Mutation.createQuest":
+		if e.complexity.Mutation.CreateQuest == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createJob_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_createQuest_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateJob(childComplexity, args["beaconIDs"].([]int), args["input"].(ent.CreateJobInput)), true
+		return e.complexity.Mutation.CreateQuest(childComplexity, args["beaconIDs"].([]int), args["input"].(ent.CreateQuestInput)), true
 
 	case "Mutation.createTag":
 		if e.complexity.Mutation.CreateTag == nil {
@@ -497,18 +434,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Files(childComplexity, args["where"].(*ent.FileWhereInput)), true
 
-	case "Query.jobs":
-		if e.complexity.Query.Jobs == nil {
-			break
-		}
-
-		args, err := ec.field_Query_jobs_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Jobs(childComplexity, args["where"].(*ent.JobWhereInput)), true
-
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
 			break
@@ -532,6 +457,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]int)), true
+
+	case "Query.quests":
+		if e.complexity.Query.Quests == nil {
+			break
+		}
+
+		args, err := ec.field_Query_quests_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Quests(childComplexity, args["where"].(*ent.QuestWhereInput)), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
@@ -568,6 +505,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Users(childComplexity, args["where"].(*ent.UserWhereInput)), true
+
+	case "Quest.bundle":
+		if e.complexity.Quest.Bundle == nil {
+			break
+		}
+
+		return e.complexity.Quest.Bundle(childComplexity), true
+
+	case "Quest.createdAt":
+		if e.complexity.Quest.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Quest.CreatedAt(childComplexity), true
+
+	case "Quest.creator":
+		if e.complexity.Quest.Creator == nil {
+			break
+		}
+
+		return e.complexity.Quest.Creator(childComplexity), true
+
+	case "Quest.id":
+		if e.complexity.Quest.ID == nil {
+			break
+		}
+
+		return e.complexity.Quest.ID(childComplexity), true
+
+	case "Quest.lastModifiedAt":
+		if e.complexity.Quest.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Quest.LastModifiedAt(childComplexity), true
+
+	case "Quest.name":
+		if e.complexity.Quest.Name == nil {
+			break
+		}
+
+		return e.complexity.Quest.Name(childComplexity), true
+
+	case "Quest.parameters":
+		if e.complexity.Quest.Parameters == nil {
+			break
+		}
+
+		return e.complexity.Quest.Parameters(childComplexity), true
+
+	case "Quest.tasks":
+		if e.complexity.Quest.Tasks == nil {
+			break
+		}
+
+		return e.complexity.Quest.Tasks(childComplexity), true
+
+	case "Quest.tome":
+		if e.complexity.Quest.Tome == nil {
+			break
+		}
+
+		return e.complexity.Quest.Tome(childComplexity), true
 
 	case "Tag.beacons":
 		if e.complexity.Tag.Beacons == nil {
@@ -646,13 +646,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.ID(childComplexity), true
 
-	case "Task.job":
-		if e.complexity.Task.Job == nil {
-			break
-		}
-
-		return e.complexity.Task.Job(childComplexity), true
-
 	case "Task.lastModifiedAt":
 		if e.complexity.Task.LastModifiedAt == nil {
 			break
@@ -666,6 +659,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Task.Output(childComplexity), true
+
+	case "Task.quest":
+		if e.complexity.Task.Quest == nil {
+			break
+		}
+
+		return e.complexity.Task.Quest(childComplexity), true
 
 	case "Tome.createdAt":
 		if e.complexity.Tome.CreatedAt == nil {
@@ -769,13 +769,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputClaimTasksInput,
-		ec.unmarshalInputCreateJobInput,
+		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
-		ec.unmarshalInputJobOrder,
-		ec.unmarshalInputJobWhereInput,
+		ec.unmarshalInputQuestOrder,
+		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
 		ec.unmarshalInputTagWhereInput,
@@ -1046,13 +1046,13 @@ input BeaconWhereInput {
   hasTasksWith: [TaskWhereInput!]
 }
 """
-CreateJobInput is used for create Job object.
+CreateQuestInput is used for create Quest object.
 Input was generated by ent.
 """
-input CreateJobInput {
-  """Name of the job"""
+input CreateQuestInput {
+  """Name of the quest"""
   name: String!
-  """Value of parameters that were specified for the job (as a JSON string)."""
+  """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
   tomeID: ID!
 }
@@ -1187,42 +1187,83 @@ input FileWhereInput {
   hashEqualFold: String
   hashContainsFold: String
 }
-type Job implements Node {
+"""
+An object with an ID.
+Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
+"""
+interface Node @goModel(model: "github.com/kcarretto/realm/tavern/ent.Noder") {
+  """The id of the object."""
+  id: ID!
+}
+"""Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument."""
+enum OrderDirection {
+  """Specifies an ascending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
+  ASC
+  """Specifies a descending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
+  DESC
+}
+"""
+Information about pagination in a connection.
+https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
+"""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+  """When paginating backwards, the cursor to continue."""
+  startCursor: Cursor
+  """When paginating forwards, the cursor to continue."""
+  endCursor: Cursor
+}
+type Query {
+  """Fetches an object given its ID."""
+  node(
+    """ID of the object."""
+    id: ID!
+  ): Node
+  """Lookup nodes by a list of IDs."""
+  nodes(
+    """The list of node IDs."""
+    ids: [ID!]!
+  ): [Node]!
+}
+type Quest implements Node {
   id: ID!
   """Timestamp of when this ent was created"""
   createdAt: Time!
   """Timestamp of when this ent was last updated"""
   lastModifiedAt: Time!
-  """Name of the job"""
+  """Name of the quest"""
   name: String!
-  """Value of parameters that were specified for the job (as a JSON string)."""
+  """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
   tome: Tome!
   bundle: File
   tasks: [Task!]
   creator: User
 }
-"""Ordering options for Job connections"""
-input JobOrder {
+"""Ordering options for Quest connections"""
+input QuestOrder {
   """The ordering direction."""
   direction: OrderDirection! = ASC
-  """The field by which to order Jobs."""
-  field: JobOrderField!
+  """The field by which to order Quests."""
+  field: QuestOrderField!
 }
-"""Properties by which Job connections can be ordered."""
-enum JobOrderField {
+"""Properties by which Quest connections can be ordered."""
+enum QuestOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   NAME
 }
 """
-JobWhereInput is used for filtering Job objects.
+QuestWhereInput is used for filtering Quest objects.
 Input was generated by ent.
 """
-input JobWhereInput {
-  not: JobWhereInput
-  and: [JobWhereInput!]
-  or: [JobWhereInput!]
+input QuestWhereInput {
+  not: QuestWhereInput
+  and: [QuestWhereInput!]
+  or: [QuestWhereInput!]
   """id field predicates"""
   id: ID
   idNEQ: ID
@@ -1292,47 +1333,6 @@ input JobWhereInput {
   """creator edge predicates"""
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
-}
-"""
-An object with an ID.
-Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
-"""
-interface Node @goModel(model: "github.com/kcarretto/realm/tavern/ent.Noder") {
-  """The id of the object."""
-  id: ID!
-}
-"""Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument."""
-enum OrderDirection {
-  """Specifies an ascending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
-  ASC
-  """Specifies a descending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
-  DESC
-}
-"""
-Information about pagination in a connection.
-https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
-"""
-type PageInfo {
-  """When paginating forwards, are there more items?"""
-  hasNextPage: Boolean!
-  """When paginating backwards, are there more items?"""
-  hasPreviousPage: Boolean!
-  """When paginating backwards, the cursor to continue."""
-  startCursor: Cursor
-  """When paginating forwards, the cursor to continue."""
-  endCursor: Cursor
-}
-type Query {
-  """Fetches an object given its ID."""
-  node(
-    """ID of the object."""
-    id: ID!
-  ): Node
-  """Lookup nodes by a list of IDs."""
-  nodes(
-    """The list of node IDs."""
-    ids: [ID!]!
-  ): [Node]!
 }
 type Tag implements Node {
   id: ID!
@@ -1414,7 +1414,7 @@ type Task implements Node {
   output: String
   """Error, if any, produced while executing the Task"""
   error: String
-  job: Job!
+  quest: Quest!
   beacon: Beacon!
 }
 """Ordering options for Task connections"""
@@ -1532,9 +1532,9 @@ input TaskWhereInput {
   errorNotNil: Boolean
   errorEqualFold: String
   errorContainsFold: String
-  """job edge predicates"""
-  hasJob: Boolean
-  hasJobWith: [JobWhereInput!]
+  """quest edge predicates"""
+  hasQuest: Boolean
+  hasQuestWith: [QuestWhereInput!]
   """beacon edge predicates"""
   hasBeacon: Boolean
   hasBeaconWith: [BeaconWhereInput!]
@@ -1773,7 +1773,7 @@ input UserWhereInput {
 	{Name: "../schema/scalars.graphql", Input: `scalar Time`, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
   files(where: FileWhereInput): [File!]!
-  jobs(where: JobWhereInput): [Job!]!
+  quests(where: QuestWhereInput): [Quest!]!
   beacons(where: BeaconWhereInput): [Beacon!]!
   tags(where: TagWhereInput): [Tag!]!
   tomes(where: TomeWhereInput): [Tome!]!
@@ -1781,9 +1781,9 @@ input UserWhereInput {
 }`, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
     ###
-    # Job
+    # Quest
     ###
-    createJob(beaconIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
+    createQuest(beaconIDs: [ID!]!, input: CreateQuestInput!): Quest @requireRole(role: USER)
 
     ###
     # Beacon

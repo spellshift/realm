@@ -17,7 +17,7 @@ import (
 // region    ************************** generated!.gotpl **************************
 
 type MutationResolver interface {
-	CreateJob(ctx context.Context, beaconIDs []int, input ent.CreateJobInput) (*ent.Job, error)
+	CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error)
 	UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error)
 	CreateTag(ctx context.Context, input ent.CreateTagInput) (*ent.Tag, error)
 	UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error)
@@ -46,7 +46,7 @@ func (ec *executionContext) field_Mutation_claimTasks_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createJob_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_createQuest_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 []int
@@ -58,10 +58,10 @@ func (ec *executionContext) field_Mutation_createJob_args(ctx context.Context, r
 		}
 	}
 	args["beaconIDs"] = arg0
-	var arg1 ent.CreateJobInput
+	var arg1 ent.CreateQuestInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNCreateJobInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateJobInput(ctx, tmp)
+		arg1, err = ec.unmarshalNCreateQuestInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateQuestInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -195,8 +195,8 @@ func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, 
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_createJob(ctx, field)
+func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createQuest(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -210,7 +210,7 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateJob(rctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateJobInput))
+			return ec.resolvers.Mutation().CreateQuest(rctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
@@ -230,10 +230,10 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*ent.Job); ok {
+		if data, ok := tmp.(*ent.Quest); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Job`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Quest`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -242,12 +242,12 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Job)
+	res := resTmp.(*ent.Quest)
 	fc.Result = res
-	return ec.marshalOJob2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐJob(ctx, field.Selections, res)
+	return ec.marshalOQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuest(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -256,25 +256,25 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Job_id(ctx, field)
+				return ec.fieldContext_Quest_id(ctx, field)
 			case "createdAt":
-				return ec.fieldContext_Job_createdAt(ctx, field)
+				return ec.fieldContext_Quest_createdAt(ctx, field)
 			case "lastModifiedAt":
-				return ec.fieldContext_Job_lastModifiedAt(ctx, field)
+				return ec.fieldContext_Quest_lastModifiedAt(ctx, field)
 			case "name":
-				return ec.fieldContext_Job_name(ctx, field)
+				return ec.fieldContext_Quest_name(ctx, field)
 			case "parameters":
-				return ec.fieldContext_Job_parameters(ctx, field)
+				return ec.fieldContext_Quest_parameters(ctx, field)
 			case "tome":
-				return ec.fieldContext_Job_tome(ctx, field)
+				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
-				return ec.fieldContext_Job_bundle(ctx, field)
+				return ec.fieldContext_Quest_bundle(ctx, field)
 			case "tasks":
-				return ec.fieldContext_Job_tasks(ctx, field)
+				return ec.fieldContext_Quest_tasks(ctx, field)
 			case "creator":
-				return ec.fieldContext_Job_creator(ctx, field)
+				return ec.fieldContext_Quest_creator(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Job", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
 		},
 	}
 	defer func() {
@@ -284,7 +284,7 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createJob_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_createQuest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -629,8 +629,8 @@ func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context
 				return ec.fieldContext_Task_output(ctx, field)
 			case "error":
 				return ec.fieldContext_Task_error(ctx, field)
-			case "job":
-				return ec.fieldContext_Task_job(ctx, field)
+			case "quest":
+				return ec.fieldContext_Task_quest(ctx, field)
 			case "beacon":
 				return ec.fieldContext_Task_beacon(ctx, field)
 			}
@@ -703,8 +703,8 @@ func (ec *executionContext) fieldContext_Mutation_submitTaskResult(ctx context.C
 				return ec.fieldContext_Task_output(ctx, field)
 			case "error":
 				return ec.fieldContext_Task_error(ctx, field)
-			case "job":
-				return ec.fieldContext_Task_job(ctx, field)
+			case "quest":
+				return ec.fieldContext_Task_quest(ctx, field)
 			case "beacon":
 				return ec.fieldContext_Task_beacon(ctx, field)
 			}
@@ -941,10 +941,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createJob":
+		case "createQuest":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createJob(ctx, field)
+				return ec._Mutation_createQuest(ctx, field)
 			})
 
 		case "updateBeacon":

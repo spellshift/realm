@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -120,15 +120,15 @@ func (tc *TaskCreate) SetNillableError(s *string) *TaskCreate {
 	return tc
 }
 
-// SetJobID sets the "job" edge to the Job entity by ID.
-func (tc *TaskCreate) SetJobID(id int) *TaskCreate {
-	tc.mutation.SetJobID(id)
+// SetQuestID sets the "quest" edge to the Quest entity by ID.
+func (tc *TaskCreate) SetQuestID(id int) *TaskCreate {
+	tc.mutation.SetQuestID(id)
 	return tc
 }
 
-// SetJob sets the "job" edge to the Job entity.
-func (tc *TaskCreate) SetJob(j *Job) *TaskCreate {
-	return tc.SetJobID(j.ID)
+// SetQuest sets the "quest" edge to the Quest entity.
+func (tc *TaskCreate) SetQuest(q *Quest) *TaskCreate {
+	return tc.SetQuestID(q.ID)
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
@@ -195,8 +195,8 @@ func (tc *TaskCreate) check() error {
 	if _, ok := tc.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Task.last_modified_at"`)}
 	}
-	if _, ok := tc.mutation.JobID(); !ok {
-		return &ValidationError{Name: "job", err: errors.New(`ent: missing required edge "Task.job"`)}
+	if _, ok := tc.mutation.QuestID(); !ok {
+		return &ValidationError{Name: "quest", err: errors.New(`ent: missing required edge "Task.quest"`)}
 	}
 	if _, ok := tc.mutation.BeaconID(); !ok {
 		return &ValidationError{Name: "beacon", err: errors.New(`ent: missing required edge "Task.beacon"`)}
@@ -255,24 +255,24 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 		_spec.SetField(task.FieldError, field.TypeString, value)
 		_node.Error = value
 	}
-	if nodes := tc.mutation.JobIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.QuestIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   task.JobTable,
-			Columns: []string{task.JobColumn},
+			Table:   task.QuestTable,
+			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: job.FieldID,
+					Column: quest.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.job_tasks = &nodes[0]
+		_node.quest_tasks = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := tc.mutation.BeaconIDs(); len(nodes) > 0 {

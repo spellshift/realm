@@ -40,16 +40,16 @@ async fn handle_exec_tome(task: Task, print_channel_sender: Sender<String>) -> R
     // TODO: Download auxillary files from CDN
 
     // Read a tome script
-    // let task_job = match task.job {
-    //     Some(job) => job,
-    //     None => return Ok(("".to_string(), format!("No job associated for task ID: {}", task.id))),
+    // let task_quest = match task.quest {
+    //     Some(quest) => quest,
+    //     None => return Ok(("".to_string(), format!("No quest associated for task ID: {}", task.id))),
     // };
 
-    let task_job = task.job;
+    let task_quest = task.quest;
 
-    let tome_filename = task_job.tome.name;
-    let tome_contents = task_job.tome.eldritch;
-    let tome_parameters = task_job.parameters;
+    let tome_filename = task_quest.tome.name;
+    let tome_contents = task_quest.tome.eldritch;
+    let tome_parameters = task_quest.parameters;
 
     let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
 
@@ -58,7 +58,7 @@ async fn handle_exec_tome(task: Task, print_channel_sender: Sender<String>) -> R
         Ok(local_thread_res) => local_thread_res,
         Err(_) => todo!(),
     };
-    // let res = eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler);
+    // let res = eldritch_run(tome_name, tome_contents, task_quest.parameters, &print_handler);
     match res {
         Ok(tome_output) => Ok((tome_output, "".to_string())),
         Err(tome_error) => Ok(("".to_string(), tome_error.to_string())),
@@ -177,7 +177,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
-    // This hashmap tracks all jobs by their ID (key) and a tuple value: (future, channel_reciever)
+    // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
     let mut all_exec_futures: HashMap<String,  ExecTask> = HashMap::new();
 
     let principal = match get_principal() {
@@ -274,7 +274,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         if debug { println!("[{}]: Starting {} new tasks", (Utc::now().time() - start_time).num_milliseconds(), new_tasks.len()); }
         // 2. Start new tasks
         for task in new_tasks {
-            if debug { println!("Launching:\n{:?}", task.clone().job.tome.eldritch); }
+            if debug { println!("Launching:\n{:?}", task.clone().quest.tome.eldritch); }
 
             let (sender, receiver) = channel::<String>();
             let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
@@ -418,7 +418,7 @@ pub fn main() -> Result<(), imix::Error> {
 mod tests {
     use httptest::{Server, Expectation, matchers::{request}, responders::status_code, all_of};
     use httptest::matchers::matches;
-    use tavern::{Job, Tome, SubmitTaskResultResponseData, SubmitTaskResult, GraphQLResponse, ClaimTasksResponseData};
+    use tavern::{Quest, Tome, SubmitTaskResultResponseData, SubmitTaskResult, GraphQLResponse, ClaimTasksResponseData};
     use tempfile::NamedTempFile;
     use super::*;
 
@@ -444,7 +444,7 @@ mod tests {
     fn imix_handle_exec_tome() {
         let test_tome_input = Task{
             id: "17179869185".to_string(),
-            job: Job {
+            quest: Quest {
                 id: "4294967297".to_string(),
                 name: "Test Exec".to_string(),
                 parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
@@ -521,7 +521,7 @@ sys.shell(input_params["cmd"])["stdout"]
 
         let test_task = Task {
             id: test_task_id,
-            job: Job {
+            quest: Quest {
                 id:"4294967297".to_string(),
                 name: "Exec stuff".to_string(),
                 parameters: None,
@@ -629,7 +629,7 @@ print("main_loop_test_success")"#.to_string(),
                 claim_tasks: vec![
                     Task {
                         id: test_task_id.clone(),
-                        job: Job {
+                        quest: Quest {
                             id:"4294967297".to_string(),
                             name: "Exec stuff".to_string(),
                             parameters: Some(r#"{"cmd":"echo main_loop_test_success"}"#.to_string()),

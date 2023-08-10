@@ -7,7 +7,7 @@ import (
 
 	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/schema"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
@@ -80,25 +80,25 @@ func init() {
 	fileDescHash := fileFields[2].Descriptor()
 	// file.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	file.HashValidator = fileDescHash.Validators[0].(func(string) error)
-	jobMixin := schema.Job{}.Mixin()
-	jobMixinFields0 := jobMixin[0].Fields()
-	_ = jobMixinFields0
-	jobFields := schema.Job{}.Fields()
-	_ = jobFields
-	// jobDescCreatedAt is the schema descriptor for created_at field.
-	jobDescCreatedAt := jobMixinFields0[0].Descriptor()
-	// job.DefaultCreatedAt holds the default value on creation for the created_at field.
-	job.DefaultCreatedAt = jobDescCreatedAt.Default.(func() time.Time)
-	// jobDescLastModifiedAt is the schema descriptor for last_modified_at field.
-	jobDescLastModifiedAt := jobMixinFields0[1].Descriptor()
-	// job.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
-	job.DefaultLastModifiedAt = jobDescLastModifiedAt.Default.(func() time.Time)
-	// job.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
-	job.UpdateDefaultLastModifiedAt = jobDescLastModifiedAt.UpdateDefault.(func() time.Time)
-	// jobDescName is the schema descriptor for name field.
-	jobDescName := jobFields[0].Descriptor()
-	// job.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	job.NameValidator = jobDescName.Validators[0].(func(string) error)
+	questMixin := schema.Quest{}.Mixin()
+	questMixinFields0 := questMixin[0].Fields()
+	_ = questMixinFields0
+	questFields := schema.Quest{}.Fields()
+	_ = questFields
+	// questDescCreatedAt is the schema descriptor for created_at field.
+	questDescCreatedAt := questMixinFields0[0].Descriptor()
+	// quest.DefaultCreatedAt holds the default value on creation for the created_at field.
+	quest.DefaultCreatedAt = questDescCreatedAt.Default.(func() time.Time)
+	// questDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	questDescLastModifiedAt := questMixinFields0[1].Descriptor()
+	// quest.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	quest.DefaultLastModifiedAt = questDescLastModifiedAt.Default.(func() time.Time)
+	// quest.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	quest.UpdateDefaultLastModifiedAt = questDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// questDescName is the schema descriptor for name field.
+	questDescName := questFields[0].Descriptor()
+	// quest.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	quest.NameValidator = questDescName.Validators[0].(func(string) error)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.

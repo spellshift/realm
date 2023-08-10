@@ -38,7 +38,7 @@ export type TagContextType = {
     groupTags: Array<TomeTag>,
     serviceTags: Array<TomeTag>
 }
-export type JobProps = {
+export type QuestProps = {
     name: string,
     tome: Tome | null,
     params: any,

@@ -58,13 +58,13 @@ func TestBeaconMutations(t *testing.T) {
 		SetDescription("Ensures the world feels greeted").
 		SetEldritch(`print("Hello World!")`).
 		SaveX(ctx)
-	testJob := graph.Job.Create().
+	testQuest := graph.Quest.Create().
 		SetName("howdy-ho").
 		SetTome(testTome).
 		SaveX(ctx)
 	testTasks := []*ent.Task{
 		graph.Task.Create().
-			SetJob(testJob).
+			SetQuest(testQuest).
 			SetBeacon(testBeacons[0]).
 			SaveX(ctx),
 	}
@@ -75,7 +75,7 @@ func TestBeaconMutations(t *testing.T) {
 mutation newClaimTasksTest($input: ClaimTasksInput!) {
 	claimTasks(input: $input) {
 		id
-		job {
+		quest {
 			id
 		}
 	}
@@ -85,10 +85,10 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			// Make our request to the GraphQL API
 			var resp struct {
 				ClaimTasks []struct {
-					ID  string
-					Job struct {
+					ID    string
+					Quest struct {
 						ID string
-					} `json:"job"`
+					} `json:"quest"`
 				}
 			}
 			err := gqlClient.Post(mut, &resp, client.Var("input", input))

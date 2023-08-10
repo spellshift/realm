@@ -12,7 +12,7 @@ import {
 import logo from '../../assets/eldrich.png';
 
 const navigation = [
-  { name: 'Jobs', href: '#', icon: ClipboardDocumentCheckIcon, current: true },
+  { name: 'Quests', href: '#', icon: ClipboardDocumentCheckIcon, current: true },
   { name: 'Beacons', href: '#', icon: BugAntIcon, current: false },
   { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
   { name: 'Documentation', href: '#', icon: DocumentDuplicateIcon, current: false },

@@ -1,6 +1,6 @@
 extend type Query {
   files(where: FileWhereInput): [File!]!
-  jobs(where: JobWhereInput): [Job!]!
+  quests(where: QuestWhereInput): [Quest!]!
   beacons(where: BeaconWhereInput): [Beacon!]!
   tags(where: TagWhereInput): [Tag!]!
   tomes(where: TomeWhereInput): [Tome!]!

@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
-	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -23,7 +23,7 @@ type TaskQuery struct {
 	order      []OrderFunc
 	inters     []Interceptor
 	predicates []predicate.Task
-	withJob    *JobQuery
+	withQuest  *QuestQuery
 	withBeacon *BeaconQuery
 	withFKs    bool
 	modifiers  []func(*sql.Selector)
@@ -64,9 +64,9 @@ func (tq *TaskQuery) Order(o ...OrderFunc) *TaskQuery {
 	return tq
 }
 
-// QueryJob chains the current query on the "job" edge.
-func (tq *TaskQuery) QueryJob() *JobQuery {
-	query := (&JobClient{config: tq.config}).Query()
+// QueryQuest chains the current query on the "quest" edge.
+func (tq *TaskQuery) QueryQuest() *QuestQuery {
+	query := (&QuestClient{config: tq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -77,8 +77,8 @@ func (tq *TaskQuery) QueryJob() *JobQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(task.Table, task.FieldID, selector),
-			sqlgraph.To(job.Table, job.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, task.JobTable, task.JobColumn),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, task.QuestTable, task.QuestColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -300,7 +300,7 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		order:      append([]OrderFunc{}, tq.order...),
 		inters:     append([]Interceptor{}, tq.inters...),
 		predicates: append([]predicate.Task{}, tq.predicates...),
-		withJob:    tq.withJob.Clone(),
+		withQuest:  tq.withQuest.Clone(),
 		withBeacon: tq.withBeacon.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
@@ -308,14 +308,14 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 	}
 }
 
-// WithJob tells the query-builder to eager-load the nodes that are connected to
-// the "job" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TaskQuery) WithJob(opts ...func(*JobQuery)) *TaskQuery {
-	query := (&JobClient{config: tq.config}).Query()
+// WithQuest tells the query-builder to eager-load the nodes that are connected to
+// the "quest" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithQuest(opts ...func(*QuestQuery)) *TaskQuery {
+	query := (&QuestClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	tq.withJob = query
+	tq.withQuest = query
 	return tq
 }
 
@@ -410,11 +410,11 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
 		loadedTypes = [2]bool{
-			tq.withJob != nil,
+			tq.withQuest != nil,
 			tq.withBeacon != nil,
 		}
 	)
-	if tq.withJob != nil || tq.withBeacon != nil {
+	if tq.withQuest != nil || tq.withBeacon != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -441,9 +441,9 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := tq.withJob; query != nil {
-		if err := tq.loadJob(ctx, query, nodes, nil,
-			func(n *Task, e *Job) { n.Edges.Job = e }); err != nil {
+	if query := tq.withQuest; query != nil {
+		if err := tq.loadQuest(ctx, query, nodes, nil,
+			func(n *Task, e *Quest) { n.Edges.Quest = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -461,14 +461,14 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 	return nodes, nil
 }
 
-func (tq *TaskQuery) loadJob(ctx context.Context, query *JobQuery, nodes []*Task, init func(*Task), assign func(*Task, *Job)) error {
+func (tq *TaskQuery) loadQuest(ctx context.Context, query *QuestQuery, nodes []*Task, init func(*Task), assign func(*Task, *Quest)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Task)
 	for i := range nodes {
-		if nodes[i].job_tasks == nil {
+		if nodes[i].quest_tasks == nil {
 			continue
 		}
-		fk := *nodes[i].job_tasks
+		fk := *nodes[i].quest_tasks
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -477,7 +477,7 @@ func (tq *TaskQuery) loadJob(ctx context.Context, query *JobQuery, nodes []*Task
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(job.IDIn(ids...))
+	query.Where(quest.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -485,7 +485,7 @@ func (tq *TaskQuery) loadJob(ctx context.Context, query *JobQuery, nodes []*Task
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "job_tasks" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "quest_tasks" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

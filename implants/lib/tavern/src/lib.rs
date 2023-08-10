@@ -9,10 +9,10 @@ pub mod http;
 pub use mutations::claim_tasks::{
     ClaimTasksInput,
     ClaimTasksClaimTasks as Task,
-    ClaimTasksClaimTasksJob as Job,
-    ClaimTasksClaimTasksJobTome as Tome,
-    ClaimTasksClaimTasksJobTomeFiles as File,
-    ClaimTasksClaimTasksJobBundle as Bundle,
+    ClaimTasksClaimTasksQuest as Quest,
+    ClaimTasksClaimTasksQuestTome as Tome,
+    ClaimTasksClaimTasksQuestTomeFiles as File,
+    ClaimTasksClaimTasksQuestBundle as Bundle,
     BeaconHostPlatform as HostPlatform,
     ResponseData as ClaimTasksResponseData,
 };
@@ -132,9 +132,9 @@ mod tests {
                 claim_tasks: vec![
                     Task{
                         id: String::from("5"),
-                        job: Job{
+                        quest: Quest{
                             id: String::from("10"),
-                            name: String::from("test_job"),
+                            name: String::from("test_quest"),
                             parameters: None,
                             tome: Tome{
                                 id: String::from("15"),

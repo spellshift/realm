@@ -32,38 +32,38 @@ func (b *Beacon) Tasks(ctx context.Context) (result []*Task, err error) {
 	return result, err
 }
 
-func (j *Job) Tome(ctx context.Context) (*Tome, error) {
-	result, err := j.Edges.TomeOrErr()
+func (q *Quest) Tome(ctx context.Context) (*Tome, error) {
+	result, err := q.Edges.TomeOrErr()
 	if IsNotLoaded(err) {
-		result, err = j.QueryTome().Only(ctx)
+		result, err = q.QueryTome().Only(ctx)
 	}
 	return result, err
 }
 
-func (j *Job) Bundle(ctx context.Context) (*File, error) {
-	result, err := j.Edges.BundleOrErr()
+func (q *Quest) Bundle(ctx context.Context) (*File, error) {
+	result, err := q.Edges.BundleOrErr()
 	if IsNotLoaded(err) {
-		result, err = j.QueryBundle().Only(ctx)
+		result, err = q.QueryBundle().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (j *Job) Tasks(ctx context.Context) (result []*Task, err error) {
+func (q *Quest) Tasks(ctx context.Context) (result []*Task, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = j.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = q.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = j.Edges.TasksOrErr()
+		result, err = q.Edges.TasksOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = j.QueryTasks().All(ctx)
+		result, err = q.QueryTasks().All(ctx)
 	}
 	return result, err
 }
 
-func (j *Job) Creator(ctx context.Context) (*User, error) {
-	result, err := j.Edges.CreatorOrErr()
+func (q *Quest) Creator(ctx context.Context) (*User, error) {
+	result, err := q.Edges.CreatorOrErr()
 	if IsNotLoaded(err) {
-		result, err = j.QueryCreator().Only(ctx)
+		result, err = q.QueryCreator().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
@@ -80,10 +80,10 @@ func (t *Tag) Beacons(ctx context.Context) (result []*Beacon, err error) {
 	return result, err
 }
 
-func (t *Task) Job(ctx context.Context) (*Job, error) {
-	result, err := t.Edges.JobOrErr()
+func (t *Task) Quest(ctx context.Context) (*Quest, error) {
+	result, err := t.Edges.QuestOrErr()
 	if IsNotLoaded(err) {
-		result, err = t.QueryJob().Only(ctx)
+		result, err = t.QueryQuest().Only(ctx)
 	}
 	return result, err
 }

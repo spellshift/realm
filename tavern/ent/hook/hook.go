@@ -33,16 +33,16 @@ func (f FileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FileMutation", m)
 }
 
-// The JobFunc type is an adapter to allow the use of ordinary
-// function as Job mutator.
-type JobFunc func(context.Context, *ent.JobMutation) (ent.Value, error)
+// The QuestFunc type is an adapter to allow the use of ordinary
+// function as Quest mutator.
+type QuestFunc func(context.Context, *ent.QuestMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f JobFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.JobMutation); ok {
+func (f QuestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QuestMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.JobMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QuestMutation", m)
 }
 
 // The TagFunc type is an adapter to allow the use of ordinary

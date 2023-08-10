@@ -1,6 +1,6 @@
 ---
 title: Eldritch
-tags: 
+tags:
  - Dev Guide
 description: Want to implement new functionality in the agent? Start here!
 permalink: dev-guide/eldritch
@@ -219,7 +219,7 @@ struct OsInfo {
 }
 
 fn handle_get_os() -> Result<OsInfo> {
-    return Ok(OsInfo { 
+    return Ok(OsInfo {
         arch:           whoami::arch().to_string(),
     });
 }
@@ -262,12 +262,12 @@ PR #[238](https://github.com/KCarretto/realm/pull/238/files) This PR implements 
 # Notes about asynchronous Eldritch code
 ---
 ### Async example
-In order to run concurrent tasks we need to build an asynchronous function. This is useful if you're building a function that needs to do two things at once or that can benefit from running discrete jobs in parallel.
+In order to run concurrent tasks we need to build an asynchronous function. This is useful if you're building a function that needs to do two things at once or that can benefit from running discrete tasks in parallel.
 
 The starlark bindings we're using to create Eldritch are not asynchronous therefore the Eldritch function itself cannot be asynchronous.
 To get around this we use the [`tokio::runtime::Runtime.block_on()`](https://docs.rs/tokio/latest/tokio/runtime/struct.Runtime.html#method.block_on) function in conjunction with two asynchronous helpers.
 
-We'll create the following three functions to manage concurrent tasks: 
+We'll create the following three functions to manage concurrent tasks:
 * `pub fn function` - Eldritch function implementation which will implement the `tokio::runtime::Runtime.block_on()` function.
 * `async fn handle_function` - Async helper function that will start, track, and join async tasks.
 * `async fn run_function` - Async function runner that gets spawned by the `handle_function` function.
@@ -290,7 +290,7 @@ async fn handle_function(arg1: Vec<String>) -> Result<Vec<String>> {
         all_result_futures.push(task::spawn(resulting_future));
     }
 
-    // Await results of each job.
+    // Await results of each task.
     // We are not acting on scan results independently so it's okay to loop through each and only return when all have finished.
     for task in all_result_futures {
         match task.await? {
@@ -323,7 +323,7 @@ pub fn function(arg1: Vec<String>) -> Result<Vec<String>> {
 ```
 
 **Implementation tips:**
-* If running a lot of concurrent tasks the system may run out of open file descriptors. Either handle this error with a wait and retry, or proactively rate limit your tasks well below the default limits. 
+* If running a lot of concurrent tasks the system may run out of open file descriptors. Either handle this error with a wait and retry, or proactively rate limit your tasks well below the default limits.
 
 
 ### Testing async code requires some additional work

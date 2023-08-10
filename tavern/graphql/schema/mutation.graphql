@@ -1,8 +1,8 @@
 type Mutation {
     ###
-    # Job
+    # Quest
     ###
-    createJob(beaconIDs: [ID!]!, input: CreateJobInput!): Job @requireRole(role: USER)
+    createQuest(beaconIDs: [ID!]!, input: CreateQuestInput!): Quest @requireRole(role: USER)
 
     ###
     # Beacon

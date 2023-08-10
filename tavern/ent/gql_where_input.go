@@ -9,8 +9,8 @@ import (
 
 	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -997,12 +997,12 @@ func (i *FileWhereInput) P() (predicate.File, error) {
 	}
 }
 
-// JobWhereInput represents a where input for filtering Job queries.
-type JobWhereInput struct {
-	Predicates []predicate.Job  `json:"-"`
-	Not        *JobWhereInput   `json:"not,omitempty"`
-	Or         []*JobWhereInput `json:"or,omitempty"`
-	And        []*JobWhereInput `json:"and,omitempty"`
+// QuestWhereInput represents a where input for filtering Quest queries.
+type QuestWhereInput struct {
+	Predicates []predicate.Quest  `json:"-"`
+	Not        *QuestWhereInput   `json:"not,omitempty"`
+	Or         []*QuestWhereInput `json:"or,omitempty"`
+	And        []*QuestWhereInput `json:"and,omitempty"`
 
 	// "id" field predicates.
 	ID      *int  `json:"id,omitempty"`
@@ -1084,18 +1084,18 @@ type JobWhereInput struct {
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
-func (i *JobWhereInput) AddPredicates(predicates ...predicate.Job) {
+func (i *QuestWhereInput) AddPredicates(predicates ...predicate.Quest) {
 	i.Predicates = append(i.Predicates, predicates...)
 }
 
-// Filter applies the JobWhereInput filter on the JobQuery builder.
-func (i *JobWhereInput) Filter(q *JobQuery) (*JobQuery, error) {
+// Filter applies the QuestWhereInput filter on the QuestQuery builder.
+func (i *QuestWhereInput) Filter(q *QuestQuery) (*QuestQuery, error) {
 	if i == nil {
 		return q, nil
 	}
 	p, err := i.P()
 	if err != nil {
-		if err == ErrEmptyJobWhereInput {
+		if err == ErrEmptyQuestWhereInput {
 			return q, nil
 		}
 		return nil, err
@@ -1103,19 +1103,19 @@ func (i *JobWhereInput) Filter(q *JobQuery) (*JobQuery, error) {
 	return q.Where(p), nil
 }
 
-// ErrEmptyJobWhereInput is returned in case the JobWhereInput is empty.
-var ErrEmptyJobWhereInput = errors.New("ent: empty predicate JobWhereInput")
+// ErrEmptyQuestWhereInput is returned in case the QuestWhereInput is empty.
+var ErrEmptyQuestWhereInput = errors.New("ent: empty predicate QuestWhereInput")
 
-// P returns a predicate for filtering jobs.
+// P returns a predicate for filtering quests.
 // An error is returned if the input is empty or invalid.
-func (i *JobWhereInput) P() (predicate.Job, error) {
-	var predicates []predicate.Job
+func (i *QuestWhereInput) P() (predicate.Quest, error) {
+	var predicates []predicate.Quest
 	if i.Not != nil {
 		p, err := i.Not.P()
 		if err != nil {
 			return nil, fmt.Errorf("%w: field 'not'", err)
 		}
-		predicates = append(predicates, job.Not(p))
+		predicates = append(predicates, quest.Not(p))
 	}
 	switch n := len(i.Or); {
 	case n == 1:
@@ -1125,7 +1125,7 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 		}
 		predicates = append(predicates, p)
 	case n > 1:
-		or := make([]predicate.Job, 0, n)
+		or := make([]predicate.Quest, 0, n)
 		for _, w := range i.Or {
 			p, err := w.P()
 			if err != nil {
@@ -1133,7 +1133,7 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 			}
 			or = append(or, p)
 		}
-		predicates = append(predicates, job.Or(or...))
+		predicates = append(predicates, quest.Or(or...))
 	}
 	switch n := len(i.And); {
 	case n == 1:
@@ -1143,7 +1143,7 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 		}
 		predicates = append(predicates, p)
 	case n > 1:
-		and := make([]predicate.Job, 0, n)
+		and := make([]predicate.Quest, 0, n)
 		for _, w := range i.And {
 			p, err := w.P()
 			if err != nil {
@@ -1151,170 +1151,170 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 			}
 			and = append(and, p)
 		}
-		predicates = append(predicates, job.And(and...))
+		predicates = append(predicates, quest.And(and...))
 	}
 	predicates = append(predicates, i.Predicates...)
 	if i.ID != nil {
-		predicates = append(predicates, job.IDEQ(*i.ID))
+		predicates = append(predicates, quest.IDEQ(*i.ID))
 	}
 	if i.IDNEQ != nil {
-		predicates = append(predicates, job.IDNEQ(*i.IDNEQ))
+		predicates = append(predicates, quest.IDNEQ(*i.IDNEQ))
 	}
 	if len(i.IDIn) > 0 {
-		predicates = append(predicates, job.IDIn(i.IDIn...))
+		predicates = append(predicates, quest.IDIn(i.IDIn...))
 	}
 	if len(i.IDNotIn) > 0 {
-		predicates = append(predicates, job.IDNotIn(i.IDNotIn...))
+		predicates = append(predicates, quest.IDNotIn(i.IDNotIn...))
 	}
 	if i.IDGT != nil {
-		predicates = append(predicates, job.IDGT(*i.IDGT))
+		predicates = append(predicates, quest.IDGT(*i.IDGT))
 	}
 	if i.IDGTE != nil {
-		predicates = append(predicates, job.IDGTE(*i.IDGTE))
+		predicates = append(predicates, quest.IDGTE(*i.IDGTE))
 	}
 	if i.IDLT != nil {
-		predicates = append(predicates, job.IDLT(*i.IDLT))
+		predicates = append(predicates, quest.IDLT(*i.IDLT))
 	}
 	if i.IDLTE != nil {
-		predicates = append(predicates, job.IDLTE(*i.IDLTE))
+		predicates = append(predicates, quest.IDLTE(*i.IDLTE))
 	}
 	if i.CreatedAt != nil {
-		predicates = append(predicates, job.CreatedAtEQ(*i.CreatedAt))
+		predicates = append(predicates, quest.CreatedAtEQ(*i.CreatedAt))
 	}
 	if i.CreatedAtNEQ != nil {
-		predicates = append(predicates, job.CreatedAtNEQ(*i.CreatedAtNEQ))
+		predicates = append(predicates, quest.CreatedAtNEQ(*i.CreatedAtNEQ))
 	}
 	if len(i.CreatedAtIn) > 0 {
-		predicates = append(predicates, job.CreatedAtIn(i.CreatedAtIn...))
+		predicates = append(predicates, quest.CreatedAtIn(i.CreatedAtIn...))
 	}
 	if len(i.CreatedAtNotIn) > 0 {
-		predicates = append(predicates, job.CreatedAtNotIn(i.CreatedAtNotIn...))
+		predicates = append(predicates, quest.CreatedAtNotIn(i.CreatedAtNotIn...))
 	}
 	if i.CreatedAtGT != nil {
-		predicates = append(predicates, job.CreatedAtGT(*i.CreatedAtGT))
+		predicates = append(predicates, quest.CreatedAtGT(*i.CreatedAtGT))
 	}
 	if i.CreatedAtGTE != nil {
-		predicates = append(predicates, job.CreatedAtGTE(*i.CreatedAtGTE))
+		predicates = append(predicates, quest.CreatedAtGTE(*i.CreatedAtGTE))
 	}
 	if i.CreatedAtLT != nil {
-		predicates = append(predicates, job.CreatedAtLT(*i.CreatedAtLT))
+		predicates = append(predicates, quest.CreatedAtLT(*i.CreatedAtLT))
 	}
 	if i.CreatedAtLTE != nil {
-		predicates = append(predicates, job.CreatedAtLTE(*i.CreatedAtLTE))
+		predicates = append(predicates, quest.CreatedAtLTE(*i.CreatedAtLTE))
 	}
 	if i.LastModifiedAt != nil {
-		predicates = append(predicates, job.LastModifiedAtEQ(*i.LastModifiedAt))
+		predicates = append(predicates, quest.LastModifiedAtEQ(*i.LastModifiedAt))
 	}
 	if i.LastModifiedAtNEQ != nil {
-		predicates = append(predicates, job.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+		predicates = append(predicates, quest.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
 	}
 	if len(i.LastModifiedAtIn) > 0 {
-		predicates = append(predicates, job.LastModifiedAtIn(i.LastModifiedAtIn...))
+		predicates = append(predicates, quest.LastModifiedAtIn(i.LastModifiedAtIn...))
 	}
 	if len(i.LastModifiedAtNotIn) > 0 {
-		predicates = append(predicates, job.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+		predicates = append(predicates, quest.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
 	}
 	if i.LastModifiedAtGT != nil {
-		predicates = append(predicates, job.LastModifiedAtGT(*i.LastModifiedAtGT))
+		predicates = append(predicates, quest.LastModifiedAtGT(*i.LastModifiedAtGT))
 	}
 	if i.LastModifiedAtGTE != nil {
-		predicates = append(predicates, job.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+		predicates = append(predicates, quest.LastModifiedAtGTE(*i.LastModifiedAtGTE))
 	}
 	if i.LastModifiedAtLT != nil {
-		predicates = append(predicates, job.LastModifiedAtLT(*i.LastModifiedAtLT))
+		predicates = append(predicates, quest.LastModifiedAtLT(*i.LastModifiedAtLT))
 	}
 	if i.LastModifiedAtLTE != nil {
-		predicates = append(predicates, job.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+		predicates = append(predicates, quest.LastModifiedAtLTE(*i.LastModifiedAtLTE))
 	}
 	if i.Name != nil {
-		predicates = append(predicates, job.NameEQ(*i.Name))
+		predicates = append(predicates, quest.NameEQ(*i.Name))
 	}
 	if i.NameNEQ != nil {
-		predicates = append(predicates, job.NameNEQ(*i.NameNEQ))
+		predicates = append(predicates, quest.NameNEQ(*i.NameNEQ))
 	}
 	if len(i.NameIn) > 0 {
-		predicates = append(predicates, job.NameIn(i.NameIn...))
+		predicates = append(predicates, quest.NameIn(i.NameIn...))
 	}
 	if len(i.NameNotIn) > 0 {
-		predicates = append(predicates, job.NameNotIn(i.NameNotIn...))
+		predicates = append(predicates, quest.NameNotIn(i.NameNotIn...))
 	}
 	if i.NameGT != nil {
-		predicates = append(predicates, job.NameGT(*i.NameGT))
+		predicates = append(predicates, quest.NameGT(*i.NameGT))
 	}
 	if i.NameGTE != nil {
-		predicates = append(predicates, job.NameGTE(*i.NameGTE))
+		predicates = append(predicates, quest.NameGTE(*i.NameGTE))
 	}
 	if i.NameLT != nil {
-		predicates = append(predicates, job.NameLT(*i.NameLT))
+		predicates = append(predicates, quest.NameLT(*i.NameLT))
 	}
 	if i.NameLTE != nil {
-		predicates = append(predicates, job.NameLTE(*i.NameLTE))
+		predicates = append(predicates, quest.NameLTE(*i.NameLTE))
 	}
 	if i.NameContains != nil {
-		predicates = append(predicates, job.NameContains(*i.NameContains))
+		predicates = append(predicates, quest.NameContains(*i.NameContains))
 	}
 	if i.NameHasPrefix != nil {
-		predicates = append(predicates, job.NameHasPrefix(*i.NameHasPrefix))
+		predicates = append(predicates, quest.NameHasPrefix(*i.NameHasPrefix))
 	}
 	if i.NameHasSuffix != nil {
-		predicates = append(predicates, job.NameHasSuffix(*i.NameHasSuffix))
+		predicates = append(predicates, quest.NameHasSuffix(*i.NameHasSuffix))
 	}
 	if i.NameEqualFold != nil {
-		predicates = append(predicates, job.NameEqualFold(*i.NameEqualFold))
+		predicates = append(predicates, quest.NameEqualFold(*i.NameEqualFold))
 	}
 	if i.NameContainsFold != nil {
-		predicates = append(predicates, job.NameContainsFold(*i.NameContainsFold))
+		predicates = append(predicates, quest.NameContainsFold(*i.NameContainsFold))
 	}
 	if i.Parameters != nil {
-		predicates = append(predicates, job.ParametersEQ(*i.Parameters))
+		predicates = append(predicates, quest.ParametersEQ(*i.Parameters))
 	}
 	if i.ParametersNEQ != nil {
-		predicates = append(predicates, job.ParametersNEQ(*i.ParametersNEQ))
+		predicates = append(predicates, quest.ParametersNEQ(*i.ParametersNEQ))
 	}
 	if len(i.ParametersIn) > 0 {
-		predicates = append(predicates, job.ParametersIn(i.ParametersIn...))
+		predicates = append(predicates, quest.ParametersIn(i.ParametersIn...))
 	}
 	if len(i.ParametersNotIn) > 0 {
-		predicates = append(predicates, job.ParametersNotIn(i.ParametersNotIn...))
+		predicates = append(predicates, quest.ParametersNotIn(i.ParametersNotIn...))
 	}
 	if i.ParametersGT != nil {
-		predicates = append(predicates, job.ParametersGT(*i.ParametersGT))
+		predicates = append(predicates, quest.ParametersGT(*i.ParametersGT))
 	}
 	if i.ParametersGTE != nil {
-		predicates = append(predicates, job.ParametersGTE(*i.ParametersGTE))
+		predicates = append(predicates, quest.ParametersGTE(*i.ParametersGTE))
 	}
 	if i.ParametersLT != nil {
-		predicates = append(predicates, job.ParametersLT(*i.ParametersLT))
+		predicates = append(predicates, quest.ParametersLT(*i.ParametersLT))
 	}
 	if i.ParametersLTE != nil {
-		predicates = append(predicates, job.ParametersLTE(*i.ParametersLTE))
+		predicates = append(predicates, quest.ParametersLTE(*i.ParametersLTE))
 	}
 	if i.ParametersContains != nil {
-		predicates = append(predicates, job.ParametersContains(*i.ParametersContains))
+		predicates = append(predicates, quest.ParametersContains(*i.ParametersContains))
 	}
 	if i.ParametersHasPrefix != nil {
-		predicates = append(predicates, job.ParametersHasPrefix(*i.ParametersHasPrefix))
+		predicates = append(predicates, quest.ParametersHasPrefix(*i.ParametersHasPrefix))
 	}
 	if i.ParametersHasSuffix != nil {
-		predicates = append(predicates, job.ParametersHasSuffix(*i.ParametersHasSuffix))
+		predicates = append(predicates, quest.ParametersHasSuffix(*i.ParametersHasSuffix))
 	}
 	if i.ParametersIsNil {
-		predicates = append(predicates, job.ParametersIsNil())
+		predicates = append(predicates, quest.ParametersIsNil())
 	}
 	if i.ParametersNotNil {
-		predicates = append(predicates, job.ParametersNotNil())
+		predicates = append(predicates, quest.ParametersNotNil())
 	}
 	if i.ParametersEqualFold != nil {
-		predicates = append(predicates, job.ParametersEqualFold(*i.ParametersEqualFold))
+		predicates = append(predicates, quest.ParametersEqualFold(*i.ParametersEqualFold))
 	}
 	if i.ParametersContainsFold != nil {
-		predicates = append(predicates, job.ParametersContainsFold(*i.ParametersContainsFold))
+		predicates = append(predicates, quest.ParametersContainsFold(*i.ParametersContainsFold))
 	}
 
 	if i.HasTome != nil {
-		p := job.HasTome()
+		p := quest.HasTome()
 		if !*i.HasTome {
-			p = job.Not(p)
+			p = quest.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
@@ -1327,12 +1327,12 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, job.HasTomeWith(with...))
+		predicates = append(predicates, quest.HasTomeWith(with...))
 	}
 	if i.HasBundle != nil {
-		p := job.HasBundle()
+		p := quest.HasBundle()
 		if !*i.HasBundle {
-			p = job.Not(p)
+			p = quest.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
@@ -1345,12 +1345,12 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, job.HasBundleWith(with...))
+		predicates = append(predicates, quest.HasBundleWith(with...))
 	}
 	if i.HasTasks != nil {
-		p := job.HasTasks()
+		p := quest.HasTasks()
 		if !*i.HasTasks {
-			p = job.Not(p)
+			p = quest.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
@@ -1363,12 +1363,12 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, job.HasTasksWith(with...))
+		predicates = append(predicates, quest.HasTasksWith(with...))
 	}
 	if i.HasCreator != nil {
-		p := job.HasCreator()
+		p := quest.HasCreator()
 		if !*i.HasCreator {
-			p = job.Not(p)
+			p = quest.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
@@ -1381,15 +1381,15 @@ func (i *JobWhereInput) P() (predicate.Job, error) {
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, job.HasCreatorWith(with...))
+		predicates = append(predicates, quest.HasCreatorWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
-		return nil, ErrEmptyJobWhereInput
+		return nil, ErrEmptyQuestWhereInput
 	case 1:
 		return predicates[0], nil
 	default:
-		return job.And(predicates...), nil
+		return quest.And(predicates...), nil
 	}
 }
 
@@ -1718,9 +1718,9 @@ type TaskWhereInput struct {
 	ErrorEqualFold    *string  `json:"errorEqualFold,omitempty"`
 	ErrorContainsFold *string  `json:"errorContainsFold,omitempty"`
 
-	// "job" edge predicates.
-	HasJob     *bool            `json:"hasJob,omitempty"`
-	HasJobWith []*JobWhereInput `json:"hasJobWith,omitempty"`
+	// "quest" edge predicates.
+	HasQuest     *bool              `json:"hasQuest,omitempty"`
+	HasQuestWith []*QuestWhereInput `json:"hasQuestWith,omitempty"`
 
 	// "beacon" edge predicates.
 	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
@@ -2051,23 +2051,23 @@ func (i *TaskWhereInput) P() (predicate.Task, error) {
 		predicates = append(predicates, task.ErrorContainsFold(*i.ErrorContainsFold))
 	}
 
-	if i.HasJob != nil {
-		p := task.HasJob()
-		if !*i.HasJob {
+	if i.HasQuest != nil {
+		p := task.HasQuest()
+		if !*i.HasQuest {
 			p = task.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasJobWith) > 0 {
-		with := make([]predicate.Job, 0, len(i.HasJobWith))
-		for _, w := range i.HasJobWith {
+	if len(i.HasQuestWith) > 0 {
+		with := make([]predicate.Quest, 0, len(i.HasQuestWith))
+		for _, w := range i.HasQuestWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasJobWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasQuestWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, task.HasJobWith(with...))
+		predicates = append(predicates, task.HasQuestWith(with...))
 	}
 	if i.HasBeacon != nil {
 		p := task.HasBeacon()

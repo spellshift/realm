@@ -470,24 +470,24 @@ func ErrorContainsFold(v string) predicate.Task {
 	return predicate.Task(sql.FieldContainsFold(FieldError, v))
 }
 
-// HasJob applies the HasEdge predicate on the "job" edge.
-func HasJob() predicate.Task {
+// HasQuest applies the HasEdge predicate on the "quest" edge.
+func HasQuest() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, JobTable, JobColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, QuestTable, QuestColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasJobWith applies the HasEdge predicate on the "job" edge with a given conditions (other predicates).
-func HasJobWith(preds ...predicate.Job) predicate.Task {
+// HasQuestWith applies the HasEdge predicate on the "quest" edge with a given conditions (other predicates).
+func HasQuestWith(preds ...predicate.Quest) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(JobInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, JobTable, JobColumn),
+			sqlgraph.To(QuestInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, QuestTable, QuestColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

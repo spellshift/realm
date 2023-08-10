@@ -112,7 +112,7 @@ mod tests {
                         "claimTasks": [
                             {
                                 "id":"17179869185",
-                                "job": {
+                                "quest": {
                                     "id":"4294967297",
                                     "name":"test_exe3",
                                     "tome": {
@@ -127,7 +127,7 @@ mod tests {
                             },
                             {
                                 "id":"17179869186",
-                                "job": {
+                                "quest": {
                                     "id":"4294967298",
                                     "name":"test_exe2",
                                     "tome": {
@@ -152,7 +152,7 @@ mod tests {
             await.
             expect("failed to send graphql request");
         for task in response {
-            assert!(task.job.name.contains("test_exe"))
+            assert!(task.quest.name.contains("test_exe"))
         }
     }
 

@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -36,7 +36,7 @@ func (n *Beacon) IsNode() {}
 func (n *File) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Job) IsNode() {}
+func (n *Quest) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Tag) IsNode() {}
@@ -132,10 +132,10 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			return nil, err
 		}
 		return n, nil
-	case job.Table:
-		query := c.Job.Query().
-			Where(job.ID(id))
-		query, err := query.CollectFields(ctx, "Job")
+	case quest.Table:
+		query := c.Quest.Query().
+			Where(quest.ID(id))
+		query, err := query.CollectFields(ctx, "Quest")
 		if err != nil {
 			return nil, err
 		}
@@ -297,10 +297,10 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 				*noder = node
 			}
 		}
-	case job.Table:
-		query := c.Job.Query().
-			Where(job.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Job")
+	case quest.Table:
+		query := c.Quest.Query().
+			Where(quest.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Quest")
 		if err != nil {
 			return nil, err
 		}

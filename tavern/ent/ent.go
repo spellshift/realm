@@ -13,7 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -73,7 +73,7 @@ func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		beacon.Table: beacon.ValidColumn,
 		file.Table:   file.ValidColumn,
-		job.Table:    job.ValidColumn,
+		quest.Table:  quest.ValidColumn,
 		tag.Table:    tag.ValidColumn,
 		task.Table:   task.ValidColumn,
 		tome.Table:   tome.ValidColumn,

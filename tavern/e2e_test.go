@@ -14,7 +14,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/enttest"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,7 +48,7 @@ func TestEndToEnd(t *testing.T) {
 			Query: `mutation ClaimTasks($input: ClaimTasksInput!) {
 				claimTasks(input: $input) {
 					id
-					job {
+					quest {
 						id
 						tome {
 							id
@@ -90,7 +90,7 @@ func TestEndToEnd(t *testing.T) {
 	}
 
 	var (
-		createdJobID    int
+		createdQuestID  int
 		createdTaskID   int
 		defaultTomeID   int
 		createdBundleID int
@@ -103,8 +103,8 @@ func TestEndToEnd(t *testing.T) {
 		assert.Len(t, resp.Data.ClaimTasks, 0)
 	})
 
-	// Create a Job (assumes a default tome has been properly configured)
-	t.Run("CreateJob", func(t *testing.T) {
+	// Create a Quest (assumes a default tome has been properly configured)
+	t.Run("CreateQuest", func(t *testing.T) {
 		testBeacon, err := graph.Beacon.Query().
 			Where(beacon.Identifier(firstBeaconIdentifier)).
 			Only(ctx)
@@ -116,8 +116,8 @@ func TestEndToEnd(t *testing.T) {
 		defaultTomeID = testTome.ID
 
 		req := graphQLQuery{
-			OperationName: "CreateJob",
-			Query:         "mutation CreateJob($beaconIDs: [ID!]!, $input: CreateJobInput!) { createJob(beaconIDs: $beaconIDs, input: $input) { id } }",
+			OperationName: "CreateQuest",
+			Query:         "mutation CreateQuest($beaconIDs: [ID!]!, $input: CreateQuestInput!) { createQuest(beaconIDs: $beaconIDs, input: $input) { id } }",
 			Variables: map[string]any{
 				"beaconIDs": []int{testBeacon.ID},
 				"input": map[string]any{
@@ -131,18 +131,18 @@ func TestEndToEnd(t *testing.T) {
 		_, err = ts.Client().Post(testURL(ts, "graphql"), "application/json", bytes.NewBuffer(data))
 		require.NoError(t, err)
 
-		testJob, err := graph.Job.Query().
-			Where(job.Name("unit test")).
+		testQuest, err := graph.Quest.Query().
+			Where(quest.Name("unit test")).
 			Only(ctx)
 		require.NoError(t, err)
-		createdJobID = testJob.ID
+		createdQuestID = testQuest.ID
 
-		testBundle, err := testJob.Bundle(ctx)
+		testBundle, err := testQuest.Bundle(ctx)
 		require.NoError(t, err)
 		require.NotNil(t, testBundle)
 		createdBundleID = testBundle.ID
 
-		testTasks, err := testJob.Tasks(ctx)
+		testTasks, err := testQuest.Tasks(ctx)
 		require.NoError(t, err)
 		require.NotEmpty(t, testTasks)
 		assert.Len(t, testTasks, 1)
@@ -159,16 +159,16 @@ func TestEndToEnd(t *testing.T) {
 		require.NotEmpty(t, resp.Data.ClaimTasks)
 		assert.Len(t, resp.Data.ClaimTasks, 1)
 
-		jobID := convertID(resp.Data.ClaimTasks[0].Job.ID)
-		assert.Equal(t, createdJobID, jobID)
+		questID := convertID(resp.Data.ClaimTasks[0].Quest.ID)
+		assert.Equal(t, createdQuestID, questID)
 
 		taskID := convertID(resp.Data.ClaimTasks[0].ID)
 		assert.Equal(t, createdTaskID, taskID)
 
-		tomeID := convertID(resp.Data.ClaimTasks[0].Job.Tome.ID)
+		tomeID := convertID(resp.Data.ClaimTasks[0].Quest.Tome.ID)
 		assert.Equal(t, defaultTomeID, tomeID)
 
-		bundleID := convertID(resp.Data.ClaimTasks[0].Job.Bundle.ID)
+		bundleID := convertID(resp.Data.ClaimTasks[0].Quest.Bundle.ID)
 		assert.Equal(t, createdBundleID, bundleID)
 	})
 
@@ -183,8 +183,8 @@ type graphQLQuery struct {
 type claimTasksResponse struct {
 	Data struct {
 		ClaimTasks []struct {
-			ID  string `json:"id"`
-			Job struct {
+			ID    string `json:"id"`
+			Quest struct {
 				ID   string `json:"id"`
 				Tome struct {
 					ID string `json:"id"`
@@ -192,7 +192,7 @@ type claimTasksResponse struct {
 				Bundle struct {
 					ID string `json:"id"`
 				} `json:"bundle"`
-			} `json:"job"`
+			} `json:"quest"`
 		} `json:"claimTasks"`
 	} `json:"data"`
 }

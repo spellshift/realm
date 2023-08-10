@@ -18,8 +18,8 @@ import (
 	"github.com/kcarretto/realm/tavern/graphql/models"
 )
 
-// CreateJob is the resolver for the createJob field.
-func (r *mutationResolver) CreateJob(ctx context.Context, beaconIDs []int, input ent.CreateJobInput) (*ent.Job, error) {
+// CreateQuest is the resolver for the createQuest field.
+func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error) {
 	// 1. Begin Transaction
 	tx, err := r.client.Tx(ctx)
 	if err != nil {
@@ -36,13 +36,13 @@ func (r *mutationResolver) CreateJob(ctx context.Context, beaconIDs []int, input
 	}()
 
 	// 3. Load Tome
-	jobTome, err := client.Tome.Get(ctx, input.TomeID)
+	questTome, err := client.Tome.Get(ctx, input.TomeID)
 	if err != nil {
 		return nil, rollback(tx, fmt.Errorf("failed to load tome: %w", err))
 	}
 
 	// 4. Load Tome Files (ordered so that hashing is always the same)
-	bundleFiles, err := jobTome.QueryFiles().
+	bundleFiles, err := questTome.QueryFiles().
 		Order(ent.Asc(file.FieldID)).
 		All(ctx)
 	if err != nil {
@@ -65,21 +65,21 @@ func (r *mutationResolver) CreateJob(ctx context.Context, beaconIDs []int, input
 		creatorID = &creator.ID
 	}
 
-	// 7. Create Job
-	job, err := client.Job.Create().
+	// 7. Create Quest
+	quest, err := client.Quest.Create().
 		SetInput(input).
 		SetNillableBundleID(bundleID).
-		SetTome(jobTome).
+		SetTome(questTome).
 		SetNillableCreatorID(creatorID).
 		Save(ctx)
 	if err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to create job: %w", err))
+		return nil, rollback(tx, fmt.Errorf("failed to create quest: %w", err))
 	}
 
 	// 8. Create tasks for each beacon
 	for _, sid := range beaconIDs {
 		_, err := client.Task.Create().
-			SetJob(job).
+			SetQuest(quest).
 			SetBeaconID(sid).
 			Save(ctx)
 		if err != nil {
@@ -92,13 +92,13 @@ func (r *mutationResolver) CreateJob(ctx context.Context, beaconIDs []int, input
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
-	// 10. Load the job with our non transactional client (cannot use transaction after commit)
-	job, err = r.client.Job.Get(ctx, job.ID)
+	// 10. Load the quest with our non transactional client (cannot use transaction after commit)
+	quest, err = r.client.Quest.Get(ctx, quest.ID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load created job: %w", err)
+		return nil, fmt.Errorf("failed to load created quest: %w", err)
 	}
 
-	return job, nil
+	return quest, nil
 }
 
 // UpdateBeacon is the resolver for the updateBeacon field.

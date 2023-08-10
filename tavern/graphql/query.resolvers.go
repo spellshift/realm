@@ -23,16 +23,16 @@ func (r *queryResolver) Files(ctx context.Context, where *ent.FileWhereInput) ([
 	return r.client.File.Query().All(ctx)
 }
 
-// Jobs is the resolver for the jobs field.
-func (r *queryResolver) Jobs(ctx context.Context, where *ent.JobWhereInput) ([]*ent.Job, error) {
+// Quests is the resolver for the quests field.
+func (r *queryResolver) Quests(ctx context.Context, where *ent.QuestWhereInput) ([]*ent.Quest, error) {
 	if where != nil {
-		query, err := where.Filter(r.client.Job.Query())
+		query, err := where.Filter(r.client.Quest.Query())
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
 		return query.All(ctx)
 	}
-	return r.client.Job.Query().All(ctx)
+	return r.client.Quest.Query().All(ctx)
 }
 
 // Beacons is the resolver for the beacons field.

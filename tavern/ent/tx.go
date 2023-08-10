@@ -16,8 +16,8 @@ type Tx struct {
 	Beacon *BeaconClient
 	// File is the client for interacting with the File builders.
 	File *FileClient
-	// Job is the client for interacting with the Job builders.
-	Job *JobClient
+	// Quest is the client for interacting with the Quest builders.
+	Quest *QuestClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Task is the client for interacting with the Task builders.
@@ -159,7 +159,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Beacon = NewBeaconClient(tx.config)
 	tx.File = NewFileClient(tx.config)
-	tx.Job = NewJobClient(tx.config)
+	tx.Quest = NewQuestClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.Tome = NewTomeClient(tx.config)

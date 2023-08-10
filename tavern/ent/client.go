@@ -16,7 +16,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -32,8 +32,8 @@ type Client struct {
 	Beacon *BeaconClient
 	// File is the client for interacting with the File builders.
 	File *FileClient
-	// Job is the client for interacting with the Job builders.
-	Job *JobClient
+	// Quest is the client for interacting with the Quest builders.
+	Quest *QuestClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Task is the client for interacting with the Task builders.
@@ -59,7 +59,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Beacon = NewBeaconClient(c.config)
 	c.File = NewFileClient(c.config)
-	c.Job = NewJobClient(c.config)
+	c.Quest = NewQuestClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tome = NewTomeClient(c.config)
@@ -148,7 +148,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config: cfg,
 		Beacon: NewBeaconClient(cfg),
 		File:   NewFileClient(cfg),
-		Job:    NewJobClient(cfg),
+		Quest:  NewQuestClient(cfg),
 		Tag:    NewTagClient(cfg),
 		Task:   NewTaskClient(cfg),
 		Tome:   NewTomeClient(cfg),
@@ -174,7 +174,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config: cfg,
 		Beacon: NewBeaconClient(cfg),
 		File:   NewFileClient(cfg),
-		Job:    NewJobClient(cfg),
+		Quest:  NewQuestClient(cfg),
 		Tag:    NewTagClient(cfg),
 		Task:   NewTaskClient(cfg),
 		Tome:   NewTomeClient(cfg),
@@ -208,7 +208,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Beacon, c.File, c.Job, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Quest, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -218,7 +218,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Beacon, c.File, c.Job, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Quest, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -231,8 +231,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Beacon.mutate(ctx, m)
 	case *FileMutation:
 		return c.File.mutate(ctx, m)
-	case *JobMutation:
-		return c.Job.mutate(ctx, m)
+	case *QuestMutation:
+		return c.Quest.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
 	case *TaskMutation:
@@ -515,92 +515,92 @@ func (c *FileClient) mutate(ctx context.Context, m *FileMutation) (Value, error)
 	}
 }
 
-// JobClient is a client for the Job schema.
-type JobClient struct {
+// QuestClient is a client for the Quest schema.
+type QuestClient struct {
 	config
 }
 
-// NewJobClient returns a client for the Job from the given config.
-func NewJobClient(c config) *JobClient {
-	return &JobClient{config: c}
+// NewQuestClient returns a client for the Quest from the given config.
+func NewQuestClient(c config) *QuestClient {
+	return &QuestClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `job.Hooks(f(g(h())))`.
-func (c *JobClient) Use(hooks ...Hook) {
-	c.hooks.Job = append(c.hooks.Job, hooks...)
+// A call to `Use(f, g, h)` equals to `quest.Hooks(f(g(h())))`.
+func (c *QuestClient) Use(hooks ...Hook) {
+	c.hooks.Quest = append(c.hooks.Quest, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `job.Intercept(f(g(h())))`.
-func (c *JobClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Job = append(c.inters.Job, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `quest.Intercept(f(g(h())))`.
+func (c *QuestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Quest = append(c.inters.Quest, interceptors...)
 }
 
-// Create returns a builder for creating a Job entity.
-func (c *JobClient) Create() *JobCreate {
-	mutation := newJobMutation(c.config, OpCreate)
-	return &JobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a Quest entity.
+func (c *QuestClient) Create() *QuestCreate {
+	mutation := newQuestMutation(c.config, OpCreate)
+	return &QuestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Job entities.
-func (c *JobClient) CreateBulk(builders ...*JobCreate) *JobCreateBulk {
-	return &JobCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Quest entities.
+func (c *QuestClient) CreateBulk(builders ...*QuestCreate) *QuestCreateBulk {
+	return &QuestCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Job.
-func (c *JobClient) Update() *JobUpdate {
-	mutation := newJobMutation(c.config, OpUpdate)
-	return &JobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Quest.
+func (c *QuestClient) Update() *QuestUpdate {
+	mutation := newQuestMutation(c.config, OpUpdate)
+	return &QuestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *JobClient) UpdateOne(j *Job) *JobUpdateOne {
-	mutation := newJobMutation(c.config, OpUpdateOne, withJob(j))
-	return &JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *QuestClient) UpdateOne(q *Quest) *QuestUpdateOne {
+	mutation := newQuestMutation(c.config, OpUpdateOne, withQuest(q))
+	return &QuestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *JobClient) UpdateOneID(id int) *JobUpdateOne {
-	mutation := newJobMutation(c.config, OpUpdateOne, withJobID(id))
-	return &JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *QuestClient) UpdateOneID(id int) *QuestUpdateOne {
+	mutation := newQuestMutation(c.config, OpUpdateOne, withQuestID(id))
+	return &QuestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Job.
-func (c *JobClient) Delete() *JobDelete {
-	mutation := newJobMutation(c.config, OpDelete)
-	return &JobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Quest.
+func (c *QuestClient) Delete() *QuestDelete {
+	mutation := newQuestMutation(c.config, OpDelete)
+	return &QuestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *JobClient) DeleteOne(j *Job) *JobDeleteOne {
-	return c.DeleteOneID(j.ID)
+func (c *QuestClient) DeleteOne(q *Quest) *QuestDeleteOne {
+	return c.DeleteOneID(q.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *JobClient) DeleteOneID(id int) *JobDeleteOne {
-	builder := c.Delete().Where(job.ID(id))
+func (c *QuestClient) DeleteOneID(id int) *QuestDeleteOne {
+	builder := c.Delete().Where(quest.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &JobDeleteOne{builder}
+	return &QuestDeleteOne{builder}
 }
 
-// Query returns a query builder for Job.
-func (c *JobClient) Query() *JobQuery {
-	return &JobQuery{
+// Query returns a query builder for Quest.
+func (c *QuestClient) Query() *QuestQuery {
+	return &QuestQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeJob},
+		ctx:    &QueryContext{Type: TypeQuest},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a Job entity by its id.
-func (c *JobClient) Get(ctx context.Context, id int) (*Job, error) {
-	return c.Query().Where(job.ID(id)).Only(ctx)
+// Get returns a Quest entity by its id.
+func (c *QuestClient) Get(ctx context.Context, id int) (*Quest, error) {
+	return c.Query().Where(quest.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *JobClient) GetX(ctx context.Context, id int) *Job {
+func (c *QuestClient) GetX(ctx context.Context, id int) *Quest {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -608,92 +608,92 @@ func (c *JobClient) GetX(ctx context.Context, id int) *Job {
 	return obj
 }
 
-// QueryTome queries the tome edge of a Job.
-func (c *JobClient) QueryTome(j *Job) *TomeQuery {
+// QueryTome queries the tome edge of a Quest.
+func (c *QuestClient) QueryTome(q *Quest) *TomeQuery {
 	query := (&TomeClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := j.ID
+		id := q.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(job.Table, job.FieldID, id),
+			sqlgraph.From(quest.Table, quest.FieldID, id),
 			sqlgraph.To(tome.Table, tome.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, job.TomeTable, job.TomeColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, quest.TomeTable, quest.TomeColumn),
 		)
-		fromV = sqlgraph.Neighbors(j.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
-// QueryBundle queries the bundle edge of a Job.
-func (c *JobClient) QueryBundle(j *Job) *FileQuery {
+// QueryBundle queries the bundle edge of a Quest.
+func (c *QuestClient) QueryBundle(q *Quest) *FileQuery {
 	query := (&FileClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := j.ID
+		id := q.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(job.Table, job.FieldID, id),
+			sqlgraph.From(quest.Table, quest.FieldID, id),
 			sqlgraph.To(file.Table, file.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, job.BundleTable, job.BundleColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, quest.BundleTable, quest.BundleColumn),
 		)
-		fromV = sqlgraph.Neighbors(j.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
-// QueryTasks queries the tasks edge of a Job.
-func (c *JobClient) QueryTasks(j *Job) *TaskQuery {
+// QueryTasks queries the tasks edge of a Quest.
+func (c *QuestClient) QueryTasks(q *Quest) *TaskQuery {
 	query := (&TaskClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := j.ID
+		id := q.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(job.Table, job.FieldID, id),
+			sqlgraph.From(quest.Table, quest.FieldID, id),
 			sqlgraph.To(task.Table, task.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, job.TasksTable, job.TasksColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, quest.TasksTable, quest.TasksColumn),
 		)
-		fromV = sqlgraph.Neighbors(j.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
-// QueryCreator queries the creator edge of a Job.
-func (c *JobClient) QueryCreator(j *Job) *UserQuery {
+// QueryCreator queries the creator edge of a Quest.
+func (c *QuestClient) QueryCreator(q *Quest) *UserQuery {
 	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := j.ID
+		id := q.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(job.Table, job.FieldID, id),
+			sqlgraph.From(quest.Table, quest.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, job.CreatorTable, job.CreatorColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, quest.CreatorTable, quest.CreatorColumn),
 		)
-		fromV = sqlgraph.Neighbors(j.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *JobClient) Hooks() []Hook {
-	return c.hooks.Job
+func (c *QuestClient) Hooks() []Hook {
+	return c.hooks.Quest
 }
 
 // Interceptors returns the client interceptors.
-func (c *JobClient) Interceptors() []Interceptor {
-	return c.inters.Job
+func (c *QuestClient) Interceptors() []Interceptor {
+	return c.inters.Quest
 }
 
-func (c *JobClient) mutate(ctx context.Context, m *JobMutation) (Value, error) {
+func (c *QuestClient) mutate(ctx context.Context, m *QuestMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&JobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&JobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&JobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&QuestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown Job mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown Quest mutation op: %q", m.Op())
 	}
 }
 
@@ -924,15 +924,15 @@ func (c *TaskClient) GetX(ctx context.Context, id int) *Task {
 	return obj
 }
 
-// QueryJob queries the job edge of a Task.
-func (c *TaskClient) QueryJob(t *Task) *JobQuery {
-	query := (&JobClient{config: c.config}).Query()
+// QueryQuest queries the quest edge of a Task.
+func (c *TaskClient) QueryQuest(t *Task) *QuestQuery {
+	query := (&QuestClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(task.Table, task.FieldID, id),
-			sqlgraph.To(job.Table, job.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, task.JobTable, task.JobColumn),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, task.QuestTable, task.QuestColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -1237,9 +1237,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Beacon, File, Job, Tag, Task, Tome, User []ent.Hook
+		Beacon, File, Quest, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Beacon, File, Job, Tag, Task, Tome, User []ent.Interceptor
+		Beacon, File, Quest, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

@@ -13,8 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/job"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -32,7 +32,7 @@ const (
 	// Node types.
 	TypeBeacon = "Beacon"
 	TypeFile   = "File"
-	TypeJob    = "Job"
+	TypeQuest  = "Quest"
 	TypeTag    = "Tag"
 	TypeTask   = "Task"
 	TypeTome   = "Tome"
@@ -1722,8 +1722,8 @@ func (m *FileMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown File edge %s", name)
 }
 
-// JobMutation represents an operation that mutates the Job nodes in the graph.
-type JobMutation struct {
+// QuestMutation represents an operation that mutates the Quest nodes in the graph.
+type QuestMutation struct {
 	config
 	op               Op
 	typ              string
@@ -1743,21 +1743,21 @@ type JobMutation struct {
 	creator          *int
 	clearedcreator   bool
 	done             bool
-	oldValue         func(context.Context) (*Job, error)
-	predicates       []predicate.Job
+	oldValue         func(context.Context) (*Quest, error)
+	predicates       []predicate.Quest
 }
 
-var _ ent.Mutation = (*JobMutation)(nil)
+var _ ent.Mutation = (*QuestMutation)(nil)
 
-// jobOption allows management of the mutation configuration using functional options.
-type jobOption func(*JobMutation)
+// questOption allows management of the mutation configuration using functional options.
+type questOption func(*QuestMutation)
 
-// newJobMutation creates new mutation for the Job entity.
-func newJobMutation(c config, op Op, opts ...jobOption) *JobMutation {
-	m := &JobMutation{
+// newQuestMutation creates new mutation for the Quest entity.
+func newQuestMutation(c config, op Op, opts ...questOption) *QuestMutation {
+	m := &QuestMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeJob,
+		typ:           TypeQuest,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -1766,20 +1766,20 @@ func newJobMutation(c config, op Op, opts ...jobOption) *JobMutation {
 	return m
 }
 
-// withJobID sets the ID field of the mutation.
-func withJobID(id int) jobOption {
-	return func(m *JobMutation) {
+// withQuestID sets the ID field of the mutation.
+func withQuestID(id int) questOption {
+	return func(m *QuestMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *Job
+			value *Quest
 		)
-		m.oldValue = func(ctx context.Context) (*Job, error) {
+		m.oldValue = func(ctx context.Context) (*Quest, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().Job.Get(ctx, id)
+					value, err = m.Client().Quest.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -1788,10 +1788,10 @@ func withJobID(id int) jobOption {
 	}
 }
 
-// withJob sets the old Job of the mutation.
-func withJob(node *Job) jobOption {
-	return func(m *JobMutation) {
-		m.oldValue = func(context.Context) (*Job, error) {
+// withQuest sets the old Quest of the mutation.
+func withQuest(node *Quest) questOption {
+	return func(m *QuestMutation) {
+		m.oldValue = func(context.Context) (*Quest, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -1800,7 +1800,7 @@ func withJob(node *Job) jobOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m JobMutation) Client() *Client {
+func (m QuestMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -1808,7 +1808,7 @@ func (m JobMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m JobMutation) Tx() (*Tx, error) {
+func (m QuestMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -1819,7 +1819,7 @@ func (m JobMutation) Tx() (*Tx, error) {
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *JobMutation) ID() (id int, exists bool) {
+func (m *QuestMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1830,7 +1830,7 @@ func (m *JobMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *JobMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *QuestMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -1839,19 +1839,19 @@ func (m *JobMutation) IDs(ctx context.Context) ([]int, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Job.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().Quest.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (m *JobMutation) SetCreatedAt(t time.Time) {
+func (m *QuestMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
 }
 
 // CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *JobMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *QuestMutation) CreatedAt() (r time.Time, exists bool) {
 	v := m.created_at
 	if v == nil {
 		return
@@ -1859,10 +1859,10 @@ func (m *JobMutation) CreatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the Job entity.
-// If the Job object wasn't provided to the builder, the object is fetched from the database.
+// OldCreatedAt returns the old "created_at" field's value of the Quest entity.
+// If the Quest object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *JobMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *QuestMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
@@ -1877,17 +1877,17 @@ func (m *JobMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error)
 }
 
 // ResetCreatedAt resets all changes to the "created_at" field.
-func (m *JobMutation) ResetCreatedAt() {
+func (m *QuestMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (m *JobMutation) SetLastModifiedAt(t time.Time) {
+func (m *QuestMutation) SetLastModifiedAt(t time.Time) {
 	m.last_modified_at = &t
 }
 
 // LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
-func (m *JobMutation) LastModifiedAt() (r time.Time, exists bool) {
+func (m *QuestMutation) LastModifiedAt() (r time.Time, exists bool) {
 	v := m.last_modified_at
 	if v == nil {
 		return
@@ -1895,10 +1895,10 @@ func (m *JobMutation) LastModifiedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldLastModifiedAt returns the old "last_modified_at" field's value of the Job entity.
-// If the Job object wasn't provided to the builder, the object is fetched from the database.
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Quest entity.
+// If the Quest object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *JobMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+func (m *QuestMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
 	}
@@ -1913,17 +1913,17 @@ func (m *JobMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err e
 }
 
 // ResetLastModifiedAt resets all changes to the "last_modified_at" field.
-func (m *JobMutation) ResetLastModifiedAt() {
+func (m *QuestMutation) ResetLastModifiedAt() {
 	m.last_modified_at = nil
 }
 
 // SetName sets the "name" field.
-func (m *JobMutation) SetName(s string) {
+func (m *QuestMutation) SetName(s string) {
 	m.name = &s
 }
 
 // Name returns the value of the "name" field in the mutation.
-func (m *JobMutation) Name() (r string, exists bool) {
+func (m *QuestMutation) Name() (r string, exists bool) {
 	v := m.name
 	if v == nil {
 		return
@@ -1931,10 +1931,10 @@ func (m *JobMutation) Name() (r string, exists bool) {
 	return *v, true
 }
 
-// OldName returns the old "name" field's value of the Job entity.
-// If the Job object wasn't provided to the builder, the object is fetched from the database.
+// OldName returns the old "name" field's value of the Quest entity.
+// If the Quest object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *JobMutation) OldName(ctx context.Context) (v string, err error) {
+func (m *QuestMutation) OldName(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldName is only allowed on UpdateOne operations")
 	}
@@ -1949,17 +1949,17 @@ func (m *JobMutation) OldName(ctx context.Context) (v string, err error) {
 }
 
 // ResetName resets all changes to the "name" field.
-func (m *JobMutation) ResetName() {
+func (m *QuestMutation) ResetName() {
 	m.name = nil
 }
 
 // SetParameters sets the "parameters" field.
-func (m *JobMutation) SetParameters(s string) {
+func (m *QuestMutation) SetParameters(s string) {
 	m.parameters = &s
 }
 
 // Parameters returns the value of the "parameters" field in the mutation.
-func (m *JobMutation) Parameters() (r string, exists bool) {
+func (m *QuestMutation) Parameters() (r string, exists bool) {
 	v := m.parameters
 	if v == nil {
 		return
@@ -1967,10 +1967,10 @@ func (m *JobMutation) Parameters() (r string, exists bool) {
 	return *v, true
 }
 
-// OldParameters returns the old "parameters" field's value of the Job entity.
-// If the Job object wasn't provided to the builder, the object is fetched from the database.
+// OldParameters returns the old "parameters" field's value of the Quest entity.
+// If the Quest object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *JobMutation) OldParameters(ctx context.Context) (v string, err error) {
+func (m *QuestMutation) OldParameters(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldParameters is only allowed on UpdateOne operations")
 	}
@@ -1985,40 +1985,40 @@ func (m *JobMutation) OldParameters(ctx context.Context) (v string, err error) {
 }
 
 // ClearParameters clears the value of the "parameters" field.
-func (m *JobMutation) ClearParameters() {
+func (m *QuestMutation) ClearParameters() {
 	m.parameters = nil
-	m.clearedFields[job.FieldParameters] = struct{}{}
+	m.clearedFields[quest.FieldParameters] = struct{}{}
 }
 
 // ParametersCleared returns if the "parameters" field was cleared in this mutation.
-func (m *JobMutation) ParametersCleared() bool {
-	_, ok := m.clearedFields[job.FieldParameters]
+func (m *QuestMutation) ParametersCleared() bool {
+	_, ok := m.clearedFields[quest.FieldParameters]
 	return ok
 }
 
 // ResetParameters resets all changes to the "parameters" field.
-func (m *JobMutation) ResetParameters() {
+func (m *QuestMutation) ResetParameters() {
 	m.parameters = nil
-	delete(m.clearedFields, job.FieldParameters)
+	delete(m.clearedFields, quest.FieldParameters)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by id.
-func (m *JobMutation) SetTomeID(id int) {
+func (m *QuestMutation) SetTomeID(id int) {
 	m.tome = &id
 }
 
 // ClearTome clears the "tome" edge to the Tome entity.
-func (m *JobMutation) ClearTome() {
+func (m *QuestMutation) ClearTome() {
 	m.clearedtome = true
 }
 
 // TomeCleared reports if the "tome" edge to the Tome entity was cleared.
-func (m *JobMutation) TomeCleared() bool {
+func (m *QuestMutation) TomeCleared() bool {
 	return m.clearedtome
 }
 
 // TomeID returns the "tome" edge ID in the mutation.
-func (m *JobMutation) TomeID() (id int, exists bool) {
+func (m *QuestMutation) TomeID() (id int, exists bool) {
 	if m.tome != nil {
 		return *m.tome, true
 	}
@@ -2028,7 +2028,7 @@ func (m *JobMutation) TomeID() (id int, exists bool) {
 // TomeIDs returns the "tome" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // TomeID instead. It exists only for internal usage by the builders.
-func (m *JobMutation) TomeIDs() (ids []int) {
+func (m *QuestMutation) TomeIDs() (ids []int) {
 	if id := m.tome; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2036,28 +2036,28 @@ func (m *JobMutation) TomeIDs() (ids []int) {
 }
 
 // ResetTome resets all changes to the "tome" edge.
-func (m *JobMutation) ResetTome() {
+func (m *QuestMutation) ResetTome() {
 	m.tome = nil
 	m.clearedtome = false
 }
 
 // SetBundleID sets the "bundle" edge to the File entity by id.
-func (m *JobMutation) SetBundleID(id int) {
+func (m *QuestMutation) SetBundleID(id int) {
 	m.bundle = &id
 }
 
 // ClearBundle clears the "bundle" edge to the File entity.
-func (m *JobMutation) ClearBundle() {
+func (m *QuestMutation) ClearBundle() {
 	m.clearedbundle = true
 }
 
 // BundleCleared reports if the "bundle" edge to the File entity was cleared.
-func (m *JobMutation) BundleCleared() bool {
+func (m *QuestMutation) BundleCleared() bool {
 	return m.clearedbundle
 }
 
 // BundleID returns the "bundle" edge ID in the mutation.
-func (m *JobMutation) BundleID() (id int, exists bool) {
+func (m *QuestMutation) BundleID() (id int, exists bool) {
 	if m.bundle != nil {
 		return *m.bundle, true
 	}
@@ -2067,7 +2067,7 @@ func (m *JobMutation) BundleID() (id int, exists bool) {
 // BundleIDs returns the "bundle" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // BundleID instead. It exists only for internal usage by the builders.
-func (m *JobMutation) BundleIDs() (ids []int) {
+func (m *QuestMutation) BundleIDs() (ids []int) {
 	if id := m.bundle; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2075,13 +2075,13 @@ func (m *JobMutation) BundleIDs() (ids []int) {
 }
 
 // ResetBundle resets all changes to the "bundle" edge.
-func (m *JobMutation) ResetBundle() {
+func (m *QuestMutation) ResetBundle() {
 	m.bundle = nil
 	m.clearedbundle = false
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by ids.
-func (m *JobMutation) AddTaskIDs(ids ...int) {
+func (m *QuestMutation) AddTaskIDs(ids ...int) {
 	if m.tasks == nil {
 		m.tasks = make(map[int]struct{})
 	}
@@ -2091,17 +2091,17 @@ func (m *JobMutation) AddTaskIDs(ids ...int) {
 }
 
 // ClearTasks clears the "tasks" edge to the Task entity.
-func (m *JobMutation) ClearTasks() {
+func (m *QuestMutation) ClearTasks() {
 	m.clearedtasks = true
 }
 
 // TasksCleared reports if the "tasks" edge to the Task entity was cleared.
-func (m *JobMutation) TasksCleared() bool {
+func (m *QuestMutation) TasksCleared() bool {
 	return m.clearedtasks
 }
 
 // RemoveTaskIDs removes the "tasks" edge to the Task entity by IDs.
-func (m *JobMutation) RemoveTaskIDs(ids ...int) {
+func (m *QuestMutation) RemoveTaskIDs(ids ...int) {
 	if m.removedtasks == nil {
 		m.removedtasks = make(map[int]struct{})
 	}
@@ -2112,7 +2112,7 @@ func (m *JobMutation) RemoveTaskIDs(ids ...int) {
 }
 
 // RemovedTasks returns the removed IDs of the "tasks" edge to the Task entity.
-func (m *JobMutation) RemovedTasksIDs() (ids []int) {
+func (m *QuestMutation) RemovedTasksIDs() (ids []int) {
 	for id := range m.removedtasks {
 		ids = append(ids, id)
 	}
@@ -2120,7 +2120,7 @@ func (m *JobMutation) RemovedTasksIDs() (ids []int) {
 }
 
 // TasksIDs returns the "tasks" edge IDs in the mutation.
-func (m *JobMutation) TasksIDs() (ids []int) {
+func (m *QuestMutation) TasksIDs() (ids []int) {
 	for id := range m.tasks {
 		ids = append(ids, id)
 	}
@@ -2128,29 +2128,29 @@ func (m *JobMutation) TasksIDs() (ids []int) {
 }
 
 // ResetTasks resets all changes to the "tasks" edge.
-func (m *JobMutation) ResetTasks() {
+func (m *QuestMutation) ResetTasks() {
 	m.tasks = nil
 	m.clearedtasks = false
 	m.removedtasks = nil
 }
 
 // SetCreatorID sets the "creator" edge to the User entity by id.
-func (m *JobMutation) SetCreatorID(id int) {
+func (m *QuestMutation) SetCreatorID(id int) {
 	m.creator = &id
 }
 
 // ClearCreator clears the "creator" edge to the User entity.
-func (m *JobMutation) ClearCreator() {
+func (m *QuestMutation) ClearCreator() {
 	m.clearedcreator = true
 }
 
 // CreatorCleared reports if the "creator" edge to the User entity was cleared.
-func (m *JobMutation) CreatorCleared() bool {
+func (m *QuestMutation) CreatorCleared() bool {
 	return m.clearedcreator
 }
 
 // CreatorID returns the "creator" edge ID in the mutation.
-func (m *JobMutation) CreatorID() (id int, exists bool) {
+func (m *QuestMutation) CreatorID() (id int, exists bool) {
 	if m.creator != nil {
 		return *m.creator, true
 	}
@@ -2160,7 +2160,7 @@ func (m *JobMutation) CreatorID() (id int, exists bool) {
 // CreatorIDs returns the "creator" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // CreatorID instead. It exists only for internal usage by the builders.
-func (m *JobMutation) CreatorIDs() (ids []int) {
+func (m *QuestMutation) CreatorIDs() (ids []int) {
 	if id := m.creator; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2168,20 +2168,20 @@ func (m *JobMutation) CreatorIDs() (ids []int) {
 }
 
 // ResetCreator resets all changes to the "creator" edge.
-func (m *JobMutation) ResetCreator() {
+func (m *QuestMutation) ResetCreator() {
 	m.creator = nil
 	m.clearedcreator = false
 }
 
-// Where appends a list predicates to the JobMutation builder.
-func (m *JobMutation) Where(ps ...predicate.Job) {
+// Where appends a list predicates to the QuestMutation builder.
+func (m *QuestMutation) Where(ps ...predicate.Quest) {
 	m.predicates = append(m.predicates, ps...)
 }
 
-// WhereP appends storage-level predicates to the JobMutation builder. Using this method,
+// WhereP appends storage-level predicates to the QuestMutation builder. Using this method,
 // users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *JobMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.Job, len(ps))
+func (m *QuestMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Quest, len(ps))
 	for i := range ps {
 		p[i] = ps[i]
 	}
@@ -2189,36 +2189,36 @@ func (m *JobMutation) WhereP(ps ...func(*sql.Selector)) {
 }
 
 // Op returns the operation name.
-func (m *JobMutation) Op() Op {
+func (m *QuestMutation) Op() Op {
 	return m.op
 }
 
 // SetOp allows setting the mutation operation.
-func (m *JobMutation) SetOp(op Op) {
+func (m *QuestMutation) SetOp(op Op) {
 	m.op = op
 }
 
-// Type returns the node type of this mutation (Job).
-func (m *JobMutation) Type() string {
+// Type returns the node type of this mutation (Quest).
+func (m *QuestMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *JobMutation) Fields() []string {
+func (m *QuestMutation) Fields() []string {
 	fields := make([]string, 0, 4)
 	if m.created_at != nil {
-		fields = append(fields, job.FieldCreatedAt)
+		fields = append(fields, quest.FieldCreatedAt)
 	}
 	if m.last_modified_at != nil {
-		fields = append(fields, job.FieldLastModifiedAt)
+		fields = append(fields, quest.FieldLastModifiedAt)
 	}
 	if m.name != nil {
-		fields = append(fields, job.FieldName)
+		fields = append(fields, quest.FieldName)
 	}
 	if m.parameters != nil {
-		fields = append(fields, job.FieldParameters)
+		fields = append(fields, quest.FieldParameters)
 	}
 	return fields
 }
@@ -2226,15 +2226,15 @@ func (m *JobMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *JobMutation) Field(name string) (ent.Value, bool) {
+func (m *QuestMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case job.FieldCreatedAt:
+	case quest.FieldCreatedAt:
 		return m.CreatedAt()
-	case job.FieldLastModifiedAt:
+	case quest.FieldLastModifiedAt:
 		return m.LastModifiedAt()
-	case job.FieldName:
+	case quest.FieldName:
 		return m.Name()
-	case job.FieldParameters:
+	case quest.FieldParameters:
 		return m.Parameters()
 	}
 	return nil, false
@@ -2243,47 +2243,47 @@ func (m *JobMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *JobMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *QuestMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case job.FieldCreatedAt:
+	case quest.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case job.FieldLastModifiedAt:
+	case quest.FieldLastModifiedAt:
 		return m.OldLastModifiedAt(ctx)
-	case job.FieldName:
+	case quest.FieldName:
 		return m.OldName(ctx)
-	case job.FieldParameters:
+	case quest.FieldParameters:
 		return m.OldParameters(ctx)
 	}
-	return nil, fmt.Errorf("unknown Job field %s", name)
+	return nil, fmt.Errorf("unknown Quest field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *JobMutation) SetField(name string, value ent.Value) error {
+func (m *QuestMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case job.FieldCreatedAt:
+	case quest.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
 		return nil
-	case job.FieldLastModifiedAt:
+	case quest.FieldLastModifiedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLastModifiedAt(v)
 		return nil
-	case job.FieldName:
+	case quest.FieldName:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
 		return nil
-	case job.FieldParameters:
+	case quest.FieldParameters:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
@@ -2291,116 +2291,116 @@ func (m *JobMutation) SetField(name string, value ent.Value) error {
 		m.SetParameters(v)
 		return nil
 	}
-	return fmt.Errorf("unknown Job field %s", name)
+	return fmt.Errorf("unknown Quest field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *JobMutation) AddedFields() []string {
+func (m *QuestMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *JobMutation) AddedField(name string) (ent.Value, bool) {
+func (m *QuestMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *JobMutation) AddField(name string, value ent.Value) error {
+func (m *QuestMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown Job numeric field %s", name)
+	return fmt.Errorf("unknown Quest numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *JobMutation) ClearedFields() []string {
+func (m *QuestMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(job.FieldParameters) {
-		fields = append(fields, job.FieldParameters)
+	if m.FieldCleared(quest.FieldParameters) {
+		fields = append(fields, quest.FieldParameters)
 	}
 	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *JobMutation) FieldCleared(name string) bool {
+func (m *QuestMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *JobMutation) ClearField(name string) error {
+func (m *QuestMutation) ClearField(name string) error {
 	switch name {
-	case job.FieldParameters:
+	case quest.FieldParameters:
 		m.ClearParameters()
 		return nil
 	}
-	return fmt.Errorf("unknown Job nullable field %s", name)
+	return fmt.Errorf("unknown Quest nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *JobMutation) ResetField(name string) error {
+func (m *QuestMutation) ResetField(name string) error {
 	switch name {
-	case job.FieldCreatedAt:
+	case quest.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
-	case job.FieldLastModifiedAt:
+	case quest.FieldLastModifiedAt:
 		m.ResetLastModifiedAt()
 		return nil
-	case job.FieldName:
+	case quest.FieldName:
 		m.ResetName()
 		return nil
-	case job.FieldParameters:
+	case quest.FieldParameters:
 		m.ResetParameters()
 		return nil
 	}
-	return fmt.Errorf("unknown Job field %s", name)
+	return fmt.Errorf("unknown Quest field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *JobMutation) AddedEdges() []string {
+func (m *QuestMutation) AddedEdges() []string {
 	edges := make([]string, 0, 4)
 	if m.tome != nil {
-		edges = append(edges, job.EdgeTome)
+		edges = append(edges, quest.EdgeTome)
 	}
 	if m.bundle != nil {
-		edges = append(edges, job.EdgeBundle)
+		edges = append(edges, quest.EdgeBundle)
 	}
 	if m.tasks != nil {
-		edges = append(edges, job.EdgeTasks)
+		edges = append(edges, quest.EdgeTasks)
 	}
 	if m.creator != nil {
-		edges = append(edges, job.EdgeCreator)
+		edges = append(edges, quest.EdgeCreator)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *JobMutation) AddedIDs(name string) []ent.Value {
+func (m *QuestMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case job.EdgeTome:
+	case quest.EdgeTome:
 		if id := m.tome; id != nil {
 			return []ent.Value{*id}
 		}
-	case job.EdgeBundle:
+	case quest.EdgeBundle:
 		if id := m.bundle; id != nil {
 			return []ent.Value{*id}
 		}
-	case job.EdgeTasks:
+	case quest.EdgeTasks:
 		ids := make([]ent.Value, 0, len(m.tasks))
 		for id := range m.tasks {
 			ids = append(ids, id)
 		}
 		return ids
-	case job.EdgeCreator:
+	case quest.EdgeCreator:
 		if id := m.creator; id != nil {
 			return []ent.Value{*id}
 		}
@@ -2409,19 +2409,19 @@ func (m *JobMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *JobMutation) RemovedEdges() []string {
+func (m *QuestMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 4)
 	if m.removedtasks != nil {
-		edges = append(edges, job.EdgeTasks)
+		edges = append(edges, quest.EdgeTasks)
 	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *JobMutation) RemovedIDs(name string) []ent.Value {
+func (m *QuestMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case job.EdgeTasks:
+	case quest.EdgeTasks:
 		ids := make([]ent.Value, 0, len(m.removedtasks))
 		for id := range m.removedtasks {
 			ids = append(ids, id)
@@ -2432,34 +2432,34 @@ func (m *JobMutation) RemovedIDs(name string) []ent.Value {
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *JobMutation) ClearedEdges() []string {
+func (m *QuestMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 4)
 	if m.clearedtome {
-		edges = append(edges, job.EdgeTome)
+		edges = append(edges, quest.EdgeTome)
 	}
 	if m.clearedbundle {
-		edges = append(edges, job.EdgeBundle)
+		edges = append(edges, quest.EdgeBundle)
 	}
 	if m.clearedtasks {
-		edges = append(edges, job.EdgeTasks)
+		edges = append(edges, quest.EdgeTasks)
 	}
 	if m.clearedcreator {
-		edges = append(edges, job.EdgeCreator)
+		edges = append(edges, quest.EdgeCreator)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *JobMutation) EdgeCleared(name string) bool {
+func (m *QuestMutation) EdgeCleared(name string) bool {
 	switch name {
-	case job.EdgeTome:
+	case quest.EdgeTome:
 		return m.clearedtome
-	case job.EdgeBundle:
+	case quest.EdgeBundle:
 		return m.clearedbundle
-	case job.EdgeTasks:
+	case quest.EdgeTasks:
 		return m.clearedtasks
-	case job.EdgeCreator:
+	case quest.EdgeCreator:
 		return m.clearedcreator
 	}
 	return false
@@ -2467,39 +2467,39 @@ func (m *JobMutation) EdgeCleared(name string) bool {
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *JobMutation) ClearEdge(name string) error {
+func (m *QuestMutation) ClearEdge(name string) error {
 	switch name {
-	case job.EdgeTome:
+	case quest.EdgeTome:
 		m.ClearTome()
 		return nil
-	case job.EdgeBundle:
+	case quest.EdgeBundle:
 		m.ClearBundle()
 		return nil
-	case job.EdgeCreator:
+	case quest.EdgeCreator:
 		m.ClearCreator()
 		return nil
 	}
-	return fmt.Errorf("unknown Job unique edge %s", name)
+	return fmt.Errorf("unknown Quest unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *JobMutation) ResetEdge(name string) error {
+func (m *QuestMutation) ResetEdge(name string) error {
 	switch name {
-	case job.EdgeTome:
+	case quest.EdgeTome:
 		m.ResetTome()
 		return nil
-	case job.EdgeBundle:
+	case quest.EdgeBundle:
 		m.ResetBundle()
 		return nil
-	case job.EdgeTasks:
+	case quest.EdgeTasks:
 		m.ResetTasks()
 		return nil
-	case job.EdgeCreator:
+	case quest.EdgeCreator:
 		m.ResetCreator()
 		return nil
 	}
-	return fmt.Errorf("unknown Job edge %s", name)
+	return fmt.Errorf("unknown Quest edge %s", name)
 }
 
 // TagMutation represents an operation that mutates the Tag nodes in the graph.
@@ -2989,8 +2989,8 @@ type TaskMutation struct {
 	output           *string
 	error            *string
 	clearedFields    map[string]struct{}
-	job              *int
-	clearedjob       bool
+	quest            *int
+	clearedquest     bool
 	beacon           *int
 	clearedbeacon    bool
 	done             bool
@@ -3413,43 +3413,43 @@ func (m *TaskMutation) ResetError() {
 	delete(m.clearedFields, task.FieldError)
 }
 
-// SetJobID sets the "job" edge to the Job entity by id.
-func (m *TaskMutation) SetJobID(id int) {
-	m.job = &id
+// SetQuestID sets the "quest" edge to the Quest entity by id.
+func (m *TaskMutation) SetQuestID(id int) {
+	m.quest = &id
 }
 
-// ClearJob clears the "job" edge to the Job entity.
-func (m *TaskMutation) ClearJob() {
-	m.clearedjob = true
+// ClearQuest clears the "quest" edge to the Quest entity.
+func (m *TaskMutation) ClearQuest() {
+	m.clearedquest = true
 }
 
-// JobCleared reports if the "job" edge to the Job entity was cleared.
-func (m *TaskMutation) JobCleared() bool {
-	return m.clearedjob
+// QuestCleared reports if the "quest" edge to the Quest entity was cleared.
+func (m *TaskMutation) QuestCleared() bool {
+	return m.clearedquest
 }
 
-// JobID returns the "job" edge ID in the mutation.
-func (m *TaskMutation) JobID() (id int, exists bool) {
-	if m.job != nil {
-		return *m.job, true
+// QuestID returns the "quest" edge ID in the mutation.
+func (m *TaskMutation) QuestID() (id int, exists bool) {
+	if m.quest != nil {
+		return *m.quest, true
 	}
 	return
 }
 
-// JobIDs returns the "job" edge IDs in the mutation.
+// QuestIDs returns the "quest" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// JobID instead. It exists only for internal usage by the builders.
-func (m *TaskMutation) JobIDs() (ids []int) {
-	if id := m.job; id != nil {
+// QuestID instead. It exists only for internal usage by the builders.
+func (m *TaskMutation) QuestIDs() (ids []int) {
+	if id := m.quest; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetJob resets all changes to the "job" edge.
-func (m *TaskMutation) ResetJob() {
-	m.job = nil
-	m.clearedjob = false
+// ResetQuest resets all changes to the "quest" edge.
+func (m *TaskMutation) ResetQuest() {
+	m.quest = nil
+	m.clearedquest = false
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by id.
@@ -3760,8 +3760,8 @@ func (m *TaskMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.job != nil {
-		edges = append(edges, task.EdgeJob)
+	if m.quest != nil {
+		edges = append(edges, task.EdgeQuest)
 	}
 	if m.beacon != nil {
 		edges = append(edges, task.EdgeBeacon)
@@ -3773,8 +3773,8 @@ func (m *TaskMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case task.EdgeJob:
-		if id := m.job; id != nil {
+	case task.EdgeQuest:
+		if id := m.quest; id != nil {
 			return []ent.Value{*id}
 		}
 	case task.EdgeBeacon:
@@ -3800,8 +3800,8 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.clearedjob {
-		edges = append(edges, task.EdgeJob)
+	if m.clearedquest {
+		edges = append(edges, task.EdgeQuest)
 	}
 	if m.clearedbeacon {
 		edges = append(edges, task.EdgeBeacon)
@@ -3813,8 +3813,8 @@ func (m *TaskMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *TaskMutation) EdgeCleared(name string) bool {
 	switch name {
-	case task.EdgeJob:
-		return m.clearedjob
+	case task.EdgeQuest:
+		return m.clearedquest
 	case task.EdgeBeacon:
 		return m.clearedbeacon
 	}
@@ -3825,8 +3825,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *TaskMutation) ClearEdge(name string) error {
 	switch name {
-	case task.EdgeJob:
-		m.ClearJob()
+	case task.EdgeQuest:
+		m.ClearQuest()
 		return nil
 	case task.EdgeBeacon:
 		m.ClearBeacon()
@@ -3839,8 +3839,8 @@ func (m *TaskMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *TaskMutation) ResetEdge(name string) error {
 	switch name {
-	case task.EdgeJob:
-		m.ResetJob()
+	case task.EdgeQuest:
+		m.ResetQuest()
 		return nil
 	case task.EdgeBeacon:
 		m.ResetBeacon()

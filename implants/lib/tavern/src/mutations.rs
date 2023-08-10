@@ -4,7 +4,7 @@ pub mod claim_tasks {
     #![allow(dead_code)]
     use std::result::Result;
     pub const OPERATION_NAME: &str = "ClaimTasks";
-    pub const QUERY : & str = "mutation ClaimTasks($input: ClaimTasksInput!) {\n    claimTasks(input: $input) {\n        id,\n        job {\n            id,\n            name,\n            parameters,\n            tome {\n                id,\n                name,\n                description,\n                paramDefs,\n                eldritch,\n                files {\n                    id,\n                    name,\n                    size,\n                    hash,\n                }\n            },\n            bundle {\n                id,\n                name,\n                size,\n                hash,\n            }\n        }\n    }\n}\n\nmutation SubmitTaskResult($input: SubmitTaskResultInput!) {\n    submitTaskResult(input: $input) {\n        id\n    }\n}" ;
+    pub const QUERY : & str = "mutation ClaimTasks($input: ClaimTasksInput!) {\n    claimTasks(input: $input) {\n        id,\n        quest {\n            id,\n            name,\n            parameters,\n            tome {\n                id,\n                name,\n                description,\n                paramDefs,\n                eldritch,\n                files {\n                    id,\n                    name,\n                    size,\n                    hash,\n                }\n            },\n            bundle {\n                id,\n                name,\n                size,\n                hash,\n            }\n        }\n    }\n}\n\nmutation SubmitTaskResult($input: SubmitTaskResultInput!) {\n    submitTaskResult(input: $input) {\n        id\n    }\n}" ;
     use super::*;
     use serde::{Deserialize, Serialize};
     #[allow(dead_code)]
@@ -77,35 +77,35 @@ pub mod claim_tasks {
     #[derive(Deserialize, Serialize, Clone)]
     pub struct ClaimTasksClaimTasks {
         pub id: ID,
-        pub job: ClaimTasksClaimTasksJob,
+        pub quest: ClaimTasksClaimTasksQuest,
     }
     #[derive(Deserialize, Serialize, Clone)]
-    pub struct ClaimTasksClaimTasksJob {
+    pub struct ClaimTasksClaimTasksQuest {
         pub id: ID,
         pub name: String,
         pub parameters: Option<String>,
-        pub tome: ClaimTasksClaimTasksJobTome,
-        pub bundle: Option<ClaimTasksClaimTasksJobBundle>,
+        pub tome: ClaimTasksClaimTasksQuestTome,
+        pub bundle: Option<ClaimTasksClaimTasksQuestBundle>,
     }
     #[derive(Deserialize, Serialize, Clone)]
-    pub struct ClaimTasksClaimTasksJobTome {
+    pub struct ClaimTasksClaimTasksQuestTome {
         pub id: ID,
         pub name: String,
         pub description: String,
         #[serde(rename = "paramDefs")]
         pub param_defs: Option<String>,
         pub eldritch: String,
-        pub files: Option<Vec<ClaimTasksClaimTasksJobTomeFiles>>,
+        pub files: Option<Vec<ClaimTasksClaimTasksQuestTomeFiles>>,
     }
     #[derive(Deserialize, Serialize, Clone)]
-    pub struct ClaimTasksClaimTasksJobTomeFiles {
+    pub struct ClaimTasksClaimTasksQuestTomeFiles {
         pub id: ID,
         pub name: String,
         pub size: Int,
         pub hash: String,
     }
     #[derive(Deserialize, Serialize, Clone)]
-    pub struct ClaimTasksClaimTasksJobBundle {
+    pub struct ClaimTasksClaimTasksQuestBundle {
         pub id: ID,
         pub name: String,
         pub size: Int,
@@ -128,7 +128,7 @@ pub mod submit_task_result {
     #![allow(dead_code)]
     use std::result::Result;
     pub const OPERATION_NAME: &str = "SubmitTaskResult";
-    pub const QUERY : & str = "mutation ClaimTasks($input: ClaimTasksInput!) {\n    claimTasks(input: $input) {\n        id,\n        job {\n            id,\n            name,\n            parameters,\n            tome {\n                id,\n                name,\n                description,\n                paramDefs,\n                eldritch,\n                files {\n                    id,\n                    name,\n                    size,\n                    hash,\n                }\n            },\n            bundle {\n                id,\n                name,\n                size,\n                hash,\n            }\n        }\n    }\n}\n\nmutation SubmitTaskResult($input: SubmitTaskResultInput!) {\n    submitTaskResult(input: $input) {\n        id\n    }\n}" ;
+    pub const QUERY : & str = "mutation ClaimTasks($input: ClaimTasksInput!) {\n    claimTasks(input: $input) {\n        id,\n        quest {\n            id,\n            name,\n            parameters,\n            tome {\n                id,\n                name,\n                description,\n                paramDefs,\n                eldritch,\n                files {\n                    id,\n                    name,\n                    size,\n                    hash,\n                }\n            },\n            bundle {\n                id,\n                name,\n                size,\n                hash,\n            }\n        }\n    }\n}\n\nmutation SubmitTaskResult($input: SubmitTaskResultInput!) {\n    submitTaskResult(input: $input) {\n        id\n    }\n}" ;
     use super::*;
     use serde::{Deserialize, Serialize};
     #[allow(dead_code)]

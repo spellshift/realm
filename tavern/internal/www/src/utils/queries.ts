@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_JOB_QUERY = gql`
-    query GetJobs {
-        jobs{
+    query GetQuests {
+        quests{
             id
             name
             tasks{

@@ -25,19 +25,19 @@ const (
 	FieldOutput = "output"
 	// FieldError holds the string denoting the error field in the database.
 	FieldError = "error"
-	// EdgeJob holds the string denoting the job edge name in mutations.
-	EdgeJob = "job"
+	// EdgeQuest holds the string denoting the quest edge name in mutations.
+	EdgeQuest = "quest"
 	// EdgeBeacon holds the string denoting the beacon edge name in mutations.
 	EdgeBeacon = "beacon"
 	// Table holds the table name of the task in the database.
 	Table = "tasks"
-	// JobTable is the table that holds the job relation/edge.
-	JobTable = "tasks"
-	// JobInverseTable is the table name for the Job entity.
-	// It exists in this package in order to avoid circular dependency with the "job" package.
-	JobInverseTable = "jobs"
-	// JobColumn is the table column denoting the job relation/edge.
-	JobColumn = "job_tasks"
+	// QuestTable is the table that holds the quest relation/edge.
+	QuestTable = "tasks"
+	// QuestInverseTable is the table name for the Quest entity.
+	// It exists in this package in order to avoid circular dependency with the "quest" package.
+	QuestInverseTable = "quests"
+	// QuestColumn is the table column denoting the quest relation/edge.
+	QuestColumn = "quest_tasks"
 	// BeaconTable is the table that holds the beacon relation/edge.
 	BeaconTable = "tasks"
 	// BeaconInverseTable is the table name for the Beacon entity.
@@ -62,7 +62,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "tasks"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"job_tasks",
+	"quest_tasks",
 	"task_beacon",
 }
 

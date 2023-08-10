@@ -45,7 +45,7 @@ func (Task) Fields() []ent.Field {
 // Edges of the Task.
 func (Task) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("job", Job.Type).
+		edge.From("quest", Quest.Type).
 			Ref("tasks").
 			Required().
 			Unique(),

@@ -174,18 +174,18 @@ func newFilePaginateArgs(rv map[string]interface{}) *filePaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (j *JobQuery) CollectFields(ctx context.Context, satisfies ...string) (*JobQuery, error) {
+func (q *QuestQuery) CollectFields(ctx context.Context, satisfies ...string) (*QuestQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return j, nil
+		return q, nil
 	}
-	if err := j.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := q.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return j, nil
+	return q, nil
 }
 
-func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+func (q *QuestQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
 		switch field.Name {
@@ -193,57 +193,57 @@ func (j *JobQuery) collectField(ctx context.Context, op *graphql.OperationContex
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TomeClient{config: j.config}).Query()
+				query = (&TomeClient{config: q.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
 			}
-			j.withTome = query
+			q.withTome = query
 		case "bundle":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&FileClient{config: j.config}).Query()
+				query = (&FileClient{config: q.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
 			}
-			j.withBundle = query
+			q.withBundle = query
 		case "tasks":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TaskClient{config: j.config}).Query()
+				query = (&TaskClient{config: q.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
 			}
-			j.WithNamedTasks(alias, func(wq *TaskQuery) {
+			q.WithNamedTasks(alias, func(wq *TaskQuery) {
 				*wq = *query
 			})
 		case "creator":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&UserClient{config: j.config}).Query()
+				query = (&UserClient{config: q.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
 			}
-			j.withCreator = query
+			q.withCreator = query
 		}
 	}
 	return nil
 }
 
-type jobPaginateArgs struct {
+type questPaginateArgs struct {
 	first, last   *int
 	after, before *Cursor
-	opts          []JobPaginateOption
+	opts          []QuestPaginateOption
 }
 
-func newJobPaginateArgs(rv map[string]interface{}) *jobPaginateArgs {
-	args := &jobPaginateArgs{}
+func newQuestPaginateArgs(rv map[string]interface{}) *questPaginateArgs {
+	args := &questPaginateArgs{}
 	if rv == nil {
 		return args
 	}
@@ -264,7 +264,7 @@ func newJobPaginateArgs(rv map[string]interface{}) *jobPaginateArgs {
 		case map[string]interface{}:
 			var (
 				err1, err2 error
-				order      = &JobOrder{Field: &JobOrderField{}}
+				order      = &QuestOrder{Field: &QuestOrderField{}}
 			)
 			if d, ok := v[directionField]; ok {
 				err1 = order.Direction.UnmarshalGQL(d)
@@ -273,16 +273,16 @@ func newJobPaginateArgs(rv map[string]interface{}) *jobPaginateArgs {
 				err2 = order.Field.UnmarshalGQL(f)
 			}
 			if err1 == nil && err2 == nil {
-				args.opts = append(args.opts, WithJobOrder(order))
+				args.opts = append(args.opts, WithQuestOrder(order))
 			}
-		case *JobOrder:
+		case *QuestOrder:
 			if v != nil {
-				args.opts = append(args.opts, WithJobOrder(v))
+				args.opts = append(args.opts, WithQuestOrder(v))
 			}
 		}
 	}
-	if v, ok := rv[whereField].(*JobWhereInput); ok {
-		args.opts = append(args.opts, WithJobFilter(v.Filter))
+	if v, ok := rv[whereField].(*QuestWhereInput); ok {
+		args.opts = append(args.opts, WithQuestFilter(v.Filter))
 	}
 	return args
 }
@@ -387,16 +387,16 @@ func (t *TaskQuery) collectField(ctx context.Context, op *graphql.OperationConte
 	path = append([]string(nil), path...)
 	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
 		switch field.Name {
-		case "job":
+		case "quest":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&JobClient{config: t.config}).Query()
+				query = (&QuestClient{config: t.config}).Query()
 			)
 			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
 				return err
 			}
-			t.withJob = query
+			t.withQuest = query
 		case "beacon":
 			var (
 				alias = field.Alias

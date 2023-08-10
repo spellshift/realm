@@ -29,7 +29,7 @@ autobind:
   - github.com/kcarretto/realm/tavern/ent/user
   - github.com/kcarretto/realm/tavern/ent/tag
   - github.com/kcarretto/realm/tavern/ent/beacon
-  - github.com/kcarretto/realm/tavern/ent/job
+  - github.com/kcarretto/realm/tavern/ent/quest
   - github.com/kcarretto/realm/tavern/ent/task
   - github.com/kcarretto/realm/tavern/ent/tome
 

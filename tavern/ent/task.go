@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/ent/beacon"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -35,14 +35,14 @@ type Task struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
 	Edges       TaskEdges `json:"edges"`
-	job_tasks   *int
+	quest_tasks *int
 	task_beacon *int
 }
 
 // TaskEdges holds the relations/edges for other nodes in the graph.
 type TaskEdges struct {
-	// Job holds the value of the job edge.
-	Job *Job `json:"job,omitempty"`
+	// Quest holds the value of the quest edge.
+	Quest *Quest `json:"quest,omitempty"`
 	// Beacon holds the value of the beacon edge.
 	Beacon *Beacon `json:"beacon,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -52,17 +52,17 @@ type TaskEdges struct {
 	totalCount [2]map[string]int
 }
 
-// JobOrErr returns the Job value or an error if the edge
+// QuestOrErr returns the Quest value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e TaskEdges) JobOrErr() (*Job, error) {
+func (e TaskEdges) QuestOrErr() (*Quest, error) {
 	if e.loadedTypes[0] {
-		if e.Job == nil {
+		if e.Quest == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: job.Label}
+			return nil, &NotFoundError{label: quest.Label}
 		}
-		return e.Job, nil
+		return e.Quest, nil
 	}
-	return nil, &NotLoadedError{edge: "job"}
+	return nil, &NotLoadedError{edge: "quest"}
 }
 
 // BeaconOrErr returns the Beacon value or an error if the edge
@@ -89,7 +89,7 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case task.FieldCreatedAt, task.FieldLastModifiedAt, task.FieldClaimedAt, task.FieldExecStartedAt, task.FieldExecFinishedAt:
 			values[i] = new(sql.NullTime)
-		case task.ForeignKeys[0]: // job_tasks
+		case task.ForeignKeys[0]: // quest_tasks
 			values[i] = new(sql.NullInt64)
 		case task.ForeignKeys[1]: // task_beacon
 			values[i] = new(sql.NullInt64)
@@ -158,10 +158,10 @@ func (t *Task) assignValues(columns []string, values []any) error {
 			}
 		case task.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field job_tasks", value)
+				return fmt.Errorf("unexpected type %T for edge-field quest_tasks", value)
 			} else if value.Valid {
-				t.job_tasks = new(int)
-				*t.job_tasks = int(value.Int64)
+				t.quest_tasks = new(int)
+				*t.quest_tasks = int(value.Int64)
 			}
 		case task.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -175,9 +175,9 @@ func (t *Task) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// QueryJob queries the "job" edge of the Task entity.
-func (t *Task) QueryJob() *JobQuery {
-	return NewTaskClient(t.config).QueryJob(t)
+// QueryQuest queries the "quest" edge of the Task entity.
+func (t *Task) QueryQuest() *QuestQuery {
+	return NewTaskClient(t.config).QueryQuest(t)
 }
 
 // QueryBeacon queries the "beacon" edge of the Task entity.
