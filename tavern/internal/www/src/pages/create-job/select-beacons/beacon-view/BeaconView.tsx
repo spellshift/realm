@@ -1,7 +1,7 @@
 import { Heading, Text, Stack, StackItem, Box, Button, FormLabel, Switch, Divider } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import React, { FC, useCallback } from "react";
-import { SessionType, TomeTag } from "../../../../utils/consts";
+import { BeaconType, TomeTag } from "../../../../utils/consts";
 import {
     AutoSizer as _AutoSizer,
     AutoSizerProps,
@@ -10,35 +10,35 @@ import {
   } from "react-virtualized";
 
 import 'react-virtualized/styles.css';
-import { SessionFilterBar } from "../../../../components/session-filter-bar";
-import SessionOption from "../../../../components/session-option/SessionOption";
-import { useSessionFilter } from "../../../../hooks/useSessionFilter";
+import { BeaconFilterBar } from "../../../../components/beacon-filter-bar";
+import BeaconOption from "../../../../components/beacon-option/BeaconOption";
+import { useBeaconFilter } from "../../../../hooks/useBeaconFilter";
 
-const Grid = _Grid as unknown as FC<GridProps>;  
+const Grid = _Grid as unknown as FC<GridProps>;
 const AutoSizer = _AutoSizer as unknown as FC<AutoSizerProps>;
 
 type Props = {
-    sessions: Array<SessionType>;
+    beacons: Array<BeaconType>;
     groups: Array<TomeTag>;
     services: Array<TomeTag>;
-    selectedSessions: any;
-    setSelectedSessions: any;
+    selectedBeacons: any;
+    setSelectedBeacons: any;
 }
 
-export const SessionView = (props: Props) => {
+export const BeaconView = (props: Props) => {
     const CARD_HEIGHT = 100;
     const COLUMN_COUNT = 1;
 
-    const {sessions, groups, services, selectedSessions, setSelectedSessions} = props;
+    const {beacons, groups, services, selectedBeacons, setSelectedBeacons} = props;
 
     const {
-        filteredSessions,
+        filteredBeacons,
         setTypeFilters,
         setViewOnlySelected
-    } = useSessionFilter(sessions, selectedSessions);
+    } = useBeaconFilter(beacons, selectedBeacons);
 
     const toggleCheck = useCallback( (inputName :any) => {
-        setSelectedSessions((currentState: any) => {
+        setSelectedBeacons((currentState: any) => {
             const newState = {...currentState};
             newState[inputName] = !currentState[inputName];
             return newState;
@@ -46,31 +46,31 @@ export const SessionView = (props: Props) => {
     }, []);
 
     const handleCheckAllFiltered = useCallback( () => {
-        setSelectedSessions((currentState: any) => {
+        setSelectedBeacons((currentState: any) => {
             const newState = {...currentState};
-            filteredSessions.map((session :any) => {
-                newState[session.id] = true;
+            filteredBeacons.map((beacon :any) => {
+                newState[beacon.id] = true;
             });
             return newState;
         });
-    }, [filteredSessions]);
+    }, [filteredBeacons]);
 
     const handleUnCheckAllFiltered = useCallback( () => {
-        setSelectedSessions((currentState: any) => {
+        setSelectedBeacons((currentState: any) => {
             const newState = {...currentState};
-            filteredSessions.map((session :any) => {
-                newState[session.id] = false;
+            filteredBeacons.map((beacon :any) => {
+                newState[beacon.id] = false;
             });
             return newState;
         });
-    }, [filteredSessions]);
-      
+    }, [filteredBeacons]);
+
     const cellRenderer = (props: any, width: any) => {
             const {columnIndex, key, rowIndex, style} = props;
             const index = rowIndex * COLUMN_COUNT + columnIndex;
             return (
                 <div key={key} style={style}>
-                    <SessionOption index={index} style={{ width: width, height: CARD_HEIGHT }} sessionsToDisplay={filteredSessions} toggleCheck={toggleCheck} sessionsSelected={selectedSessions}  />
+                    <BeaconOption index={index} style={{ width: width, height: CARD_HEIGHT }} beaconsToDisplay={filteredBeacons} toggleCheck={toggleCheck} beaconsSelected={selectedBeacons}  />
                 </div>
             );
     };
@@ -78,10 +78,10 @@ export const SessionView = (props: Props) => {
 
     function getSelectedCount(){
         let targetCount = 0;
-        for (var key in selectedSessions) {
-            if (selectedSessions[key] === true) {
+        for (var key in selectedBeacons) {
+            if (selectedBeacons[key] === true) {
                 targetCount = targetCount +1;
-            } 
+            }
         }
         return targetCount;
     }
@@ -94,13 +94,13 @@ export const SessionView = (props: Props) => {
                 <StackItem>
                 <div className="flex flex-row justify-between gap-8">
                     <div className=" flex-1">
-                        <SessionFilterBar setFiltersSelected={setTypeFilters} groups={groups} services={services} sessions={sessions} />
+                        <BeaconFilterBar setFiltersSelected={setTypeFilters} groups={groups} services={services} beacons={beacons} />
                     </div>
                     <div className="flex flex-col gap-2">
                         <FormLabel htmlFor='isSelected'>
                             <Heading size="sm" >Filter by selected</Heading>
                         </FormLabel>
-                        <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value)=> !value)} />                 
+                        <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value)=> !value)} />
                     </div>
                 </div>
                 </StackItem>
@@ -109,20 +109,20 @@ export const SessionView = (props: Props) => {
                         <Stack direction="column" gap={2} width="full" height="full">
                             <StackItem>
                                     <StackItem>
-                                        <Button leftIcon={<PlusIcon className="h-4 w-4"/>} size={"sm"} onClick={()=> handleCheckAllFiltered()}>Select all ({filteredSessions.length})</Button>
+                                        <Button leftIcon={<PlusIcon className="h-4 w-4"/>} size={"sm"} onClick={()=> handleCheckAllFiltered()}>Select all ({filteredBeacons.length})</Button>
                                     </StackItem>
                                     <StackItem>
                                         <Button leftIcon={<TrashIcon className=" h-4 w-4"/>} size={"sm"} onClick={()=> handleUnCheckAllFiltered()}>Clear selected</Button>
                                     </StackItem>
                             </StackItem>
 
-                            {filteredSessions.length === 0 && (
+                            {filteredBeacons.length === 0 && (
                                 <StackItem>
                                     <Text fontSize={"sm"} p={2} textAlign="center">
-                                        {filteredSessions.length !== sessions.length && "Try adjusting filter. "}
+                                        {filteredBeacons.length !== beacons.length && "Try adjusting filter. "}
                                         No results found.
                                     </Text>
-                                </StackItem>   
+                                </StackItem>
                             )}
                             <StackItem className="md-scroll-container" >
                                 <AutoSizer disableHeight>
@@ -132,8 +132,8 @@ export const SessionView = (props: Props) => {
                                                     cellRenderer={(props) => cellRenderer(props, width)}
                                                     columnCount={COLUMN_COUNT}
                                                     columnWidth={width}
-                                                    height={filteredSessions.length * CARD_HEIGHT}
-                                                    rowCount={filteredSessions.length}
+                                                    height={filteredBeacons.length * CARD_HEIGHT}
+                                                    rowCount={filteredBeacons.length}
                                                     rowHeight={CARD_HEIGHT}
                                                     width={width}
                                             />
@@ -145,7 +145,7 @@ export const SessionView = (props: Props) => {
                     </Box>
                 </StackItem>
                 <StackItem className="flex flex-row items-end justify-end w-full">
-                    <Heading size="sm" mb={2} className=" self-end text-right">Total sessions selected ({selectedCount})</Heading>
+                    <Heading size="sm" mb={2} className=" self-end text-right">Total beacons selected ({selectedCount})</Heading>
                 </StackItem>
             </Stack>
         </div>

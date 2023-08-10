@@ -6,19 +6,19 @@ export const createJobSchema = () => {
         params: yup.object().shape({
             command: yup.string().required()
         }),
-        // sessions: yup.object().test('hasSessionSelected', 'At least one session required', (sessions: any) => {
-        //     for (let sVal in sessions) {
-        //         if (sessions[sVal]) {
+        // beacons: yup.object().test('hasBeaconSelected', 'At least one beacon required', (beacons: any) => {
+        //     for (let sVal in beacons) {
+        //         if (beacons[sVal]) {
         //             return true;
         //         }
         //     }
         //     return false;
         // }),
-        // get sessions() {
-        //     return this._sessions;
+        // get beacons() {
+        //     return this._beacons;
         // },
-        // set sessions(value) {
-        //     this._sessions = value;
+        // set beacons(value) {
+        //     this._beacons = value;
         // },
 
     }

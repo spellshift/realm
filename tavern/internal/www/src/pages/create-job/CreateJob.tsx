@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { FormSteps } from "../../components/form-steps";
 import { PageWrapper } from "../../components/page-wrapper";
 import { useSubmitJob } from "../../hooks/useSubmitJob";
-import { SelectSessions } from "./select-sessions";
+import { SelectBeacons } from "./select-beacons";
 import { SelectTome } from "./select-tome";
 
 export const CreateJob = () => {
@@ -14,7 +14,7 @@ export const CreateJob = () => {
 
     const steps = [
         { name: 'Select a tome', description: 'Step 1', href: '#', step: 0 },
-        { name: 'Select agent sessions', description: 'Step 2', href: '#', step: 1 },
+        { name: 'Select agent beacons', description: 'Step 2', href: '#', step: 1 },
     ];
 
     const formik = useFormik({
@@ -22,7 +22,7 @@ export const CreateJob = () => {
         name: "",
         tome: null,
         params: [],
-        sessions: [],
+        beacons: [],
         },
         onSubmit: (values: any) => submitJob(values),
     } );
@@ -32,7 +32,7 @@ export const CreateJob = () => {
             case 0:
                 return <SelectTome setCurrStep={setCurrStep} formik={formik} />
             case 1:
-                return <SelectSessions setCurrStep={setCurrStep} formik={formik} />
+                return <SelectBeacons setCurrStep={setCurrStep} formik={formik} />
             default:
                 return <div>An error has occured</div>;
         }
@@ -42,7 +42,7 @@ export const CreateJob = () => {
         <PageWrapper>
             <div className="border-b border-gray-200 pb-6 sm:flex sm:items-center sm:justify-between">
                 <h3 className="text-2xl font-semibold leading-6 text-gray-900">Create new job</h3>
-                <div className="mt-3 sm:mt-0 sm:ml-4">            
+                <div className="mt-3 sm:mt-0 sm:ml-4">
                     <Link to="/jobs">
                         <button
                             type="button"

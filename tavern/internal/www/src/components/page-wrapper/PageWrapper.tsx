@@ -9,11 +9,11 @@ import {
   PresentationChartLineIcon
 } from '@heroicons/react/24/outline'
 
-import logo from '../../assets/eldrich.png'; 
+import logo from '../../assets/eldrich.png';
 
 const navigation = [
   { name: 'Jobs', href: '#', icon: ClipboardDocumentCheckIcon, current: true },
-  { name: 'Agent sessions', href: '#', icon: BugAntIcon, current: false },
+  { name: 'Beacons', href: '#', icon: BugAntIcon, current: false },
   { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
   { name: 'Documentation', href: '#', icon: DocumentDuplicateIcon, current: false },
 ]
@@ -128,7 +128,7 @@ export const PageWrapper = (props: Props) => {
                 alt="Your Company"
                                   />
                 <div className="text-white text-2xl leading-6 font-semibold tracking-wide">Tavern</div>
-            </div> 
+            </div>
             <nav className="flex flex-1 flex-col">
               <ul role="list" className="flex flex-1 flex-col gap-y-7">
                 <li>

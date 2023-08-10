@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
-import { SessionType } from "../utils/consts";
+import { BeaconType } from "../utils/consts";
 
-export const useSessionFilter = (sessions: Array<SessionType>, selectedSessions: any) => {
+export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any) => {
 
-    const [filteredSessions, setFilteredSessions] = useState(sessions);
+    const [filteredBeacons, setFilteredBeacons] = useState(beacons);
 
     const [typeFilters, setTypeFilters] = useState([]);
 
@@ -11,8 +11,8 @@ export const useSessionFilter = (sessions: Array<SessionType>, selectedSessions:
 
     function getSearchTypes(typeFilters: any){
         return typeFilters.reduce((accumulator:any, currentValue:any) => {
-            if(currentValue.kind === "session"){
-                accumulator.session.push(currentValue.value);
+            if(currentValue.kind === "beacon"){
+                accumulator.beacon.push(currentValue.value);
             }
             else if(currentValue.kind === "service"){
                 accumulator.service.push(currentValue.value);
@@ -23,81 +23,81 @@ export const useSessionFilter = (sessions: Array<SessionType>, selectedSessions:
             return accumulator;
         },
         {
-            "session": [],
+            "beacon": [],
             "service": [],
             "group": []
         });
     };
-    
-    const filterByTypes = useCallback((filteredSessions: Array<SessionType>) => {
+
+    const filterByTypes = useCallback((filteredBeacons: Array<BeaconType>) => {
         if(typeFilters.length < 1){
-            return filteredSessions;
+            return filteredBeacons;
         }
 
         const searchTypes = getSearchTypes(typeFilters);
 
-        return filteredSessions.filter( (session) => {
-            let group = (session?.tags).find( (obj : any) => {
+        return filteredBeacons.filter( (beacon) => {
+            let group = (beacon?.tags).find( (obj : any) => {
                 return obj?.kind === "group"
             }) || null;
 
-            let service = (session?.tags).find( (obj : any) => {
+            let service = (beacon?.tags).find( (obj : any) => {
                 return obj?.kind === "service"
             }) || null;
 
             let match = true;
 
-            if(searchTypes.session.length > 0){
-                // If a session filter is applied ignore other filters to just match the session
-                if(searchTypes.session.indexOf(session.id) > -1){
+            if(searchTypes.beacon.length > 0){
+                // If a beacon filter is applied ignore other filters to just match the beacon
+                if(searchTypes.beacon.indexOf(beacon.id) > -1){
                     match = true;
-                } 
+                }
                 else{
                     return false;
-                }  
+                }
             }
 
             if(searchTypes.service.length > 0){
                 if(service && searchTypes.service.indexOf(service?.id) > -1){
                     match = true;
-                } 
+                }
                 else{
                     return false;
-                }   
+                }
             }
 
             if(searchTypes.group.length > 0){
                 if(group && searchTypes.group.indexOf(group?.id) > -1){
                     match = true;
-                } 
+                }
                 else{
                     return false;
-                }   
+                }
             }
 
             return match;
         });
     },[typeFilters]);
 
-    const filterBySelected = useCallback((sessions: Array<SessionType>, selectedSessions: any) => {
+    const filterBySelected = useCallback((beacons: Array<BeaconType>, selectedBeacons: any) => {
         if(viewOnlySelected){
-            return sessions.filter((session: SessionType)=> selectedSessions[session?.id]);
+            return beacons.filter((beacon: BeaconType)=> selectedBeacons[beacon?.id]);
         }
         else{
-            return sessions;
+            return beacons;
         }
     },[viewOnlySelected]);
 
     useEffect(()=> {
-       let filteredSessions = filterBySelected(sessions, selectedSessions);
-       filteredSessions = filterByTypes(filteredSessions);
-       setFilteredSessions(
-        filteredSessions
+       let filteredBeacons = filterBySelected(beacons, selectedBeacons);
+       filteredBeacons = filterByTypes(filteredBeacons);
+       setFilteredBeacons(
+        filteredBeacons
        );
-    },[sessions, selectedSessions, typeFilters, viewOnlySelected]);
+    },[beacons, selectedBeacons, typeFilters, viewOnlySelected]);
 
     return {
-        filteredSessions,
+        filteredBeacons,
         setTypeFilters,
         viewOnlySelected,
         setViewOnlySelected

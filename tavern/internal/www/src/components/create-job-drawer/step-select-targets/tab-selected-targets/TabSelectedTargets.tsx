@@ -5,25 +5,25 @@ import { MdDelete } from "react-icons/md";
 
 type TabSelectedTargetsParams = {
     targets: any;
-    sessions: Array<any>;
+    beacons: Array<any>;
     setFieldValue: (arg1: any, arg2: any) => void;
     targetCount: number;
 }
 export const TabSelectedTargets = (props: TabSelectedTargetsParams) => {
-    const {targets, sessions, setFieldValue, targetCount} = props;
+    const {targets, beacons, setFieldValue, targetCount} = props;
 
     const toggleCheck = (inputName :any) => {
         const newState = { ...targets };
         newState[inputName] = !targets[inputName];
-        setFieldValue('sessions', newState);
+        setFieldValue('beacons', newState);
     };
     
     const handleDeleteAll = () => {
         let newState = {...targets};
-        for(let session in targets){
-            newState[session] = false;
+        for(let beacon in targets){
+            newState[beacon] = false;
         }
-        setFieldValue('sessions', newState);
+        setFieldValue('beacons', newState);
     }
 
     return (
@@ -35,31 +35,31 @@ export const TabSelectedTargets = (props: TabSelectedTargetsParams) => {
                             <Button size={"sm"} onClick={()=> handleDeleteAll()}>Delete all options below</Button>
                         </StackItem>
                     )}
-                    {sessions.map((session: any, index: number) => {
-                        if(targets[session.id]){
-                            let group = (session?.tags).find( (obj : any) => {
+                    {beacons.map((beacon: any, index: number) => {
+                        if(targets[beacon.id]){
+                            let group = (beacon?.tags).find( (obj : any) => {
                                 return obj?.kind === "group"
                             });
-                            let service = (session?.tags).find( (obj : any) => {
+                            let service = (beacon?.tags).find( (obj : any) => {
                                 return obj?.kind === "service"
                             });
                             return (
-                                <StackItem key={session?.id} className="max-width">
+                                <StackItem key={beacon?.id} className="max-width">
                                     <Card className="max-width">
                                         <CardBody>
                                             <Stack direction="row" align="center">
                                                 <StackItem>
-                                                    <IconButton colorScheme="red" aria-label="delete-session" icon={<Icon as={MdDelete}/>} onClick={()=> toggleCheck(session.id)}/>
+                                                    <IconButton colorScheme="red" aria-label="delete-beacon" icon={<Icon as={MdDelete}/>} onClick={()=> toggleCheck(beacon.id)}/>
                                                 </StackItem>
                                                 <StackItem>
                                                     <Stack ml={4} direction={"column"}>
                                                     <StackItem>
-                                                            <Text fontSize={"md"}>{session.hostname}</Text> 
+                                                            <Text fontSize={"md"}>{beacon.hostname}</Text> 
                                                     </StackItem>
                                                     <StackItem>
                                                         <Flex direction="row" wrap={"wrap"}>
                                                             <Text fontSize={"sm"}>
-                                                                {group?.name} | {service?.name} | {session.principal}
+                                                                {group?.name} | {service?.name} | {beacon.principal}
                                                             </Text>
                                                         </Flex>
                                                     </StackItem>
@@ -73,7 +73,7 @@ export const TabSelectedTargets = (props: TabSelectedTargetsParams) => {
                         }
                     })}
                     {targetCount < 1 &&
-                        <Text fontSize={"sm"} p={2}>No sessions selected</Text>
+                        <Text fontSize={"sm"} p={2}>No beacons selected</Text>
                     }
                 </Stack>
             </Box>

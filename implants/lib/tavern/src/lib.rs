@@ -13,7 +13,7 @@ pub use mutations::claim_tasks::{
     ClaimTasksClaimTasksJobTome as Tome,
     ClaimTasksClaimTasksJobTomeFiles as File,
     ClaimTasksClaimTasksJobBundle as Bundle,
-    SessionHostPlatform as HostPlatform,
+    BeaconHostPlatform as HostPlatform,
     ResponseData as ClaimTasksResponseData,
 };
 pub use mutations::submit_task_result::{
@@ -158,7 +158,7 @@ mod tests {
             hostname: String::from("test"),
             host_platform: HostPlatform::Windows,
             host_primary_ip: Some(String::from("test")),
-            session_identifier: String::from("test"),
+            beacon_identifier: String::from("test"),
             host_identifier: String::from("test"),
             agent_identifier: String::from("test"),
         };

@@ -22,7 +22,7 @@ export const DrawerForm = (props: Props) => {
         params: {
           command: "",
         },
-        sessions: {},
+        beacons: {},
         },
         validationSchema: createJobSchema(),
         onSubmit: values => {
@@ -38,7 +38,7 @@ export const DrawerForm = (props: Props) => {
         <List spacing={3}>
           <StepSelectTome step={0} currStep={currStep} setCurrStep={setCurrStep} formik={formik}/>
           <StepCustomizeParameters step={1} currStep={currStep} setCurrStep={setCurrStep} formik={formik}/>                 
-          <StepSelectTargets step={2} currStep={currStep} setCurrStep={setCurrStep} targets={formik.values.sessions} setFieldValue={formik.setFieldValue} handleSubmit={formik.handleSubmit}/>
+          <StepSelectTargets step={2} currStep={currStep} setCurrStep={setCurrStep} targets={formik.values.beacons} setFieldValue={formik.setFieldValue} handleSubmit={formik.handleSubmit}/>
           <StepJobStatus step={3} currStep={currStep} setCurrStep={setCurrStep} onClose={onClose}/>
         </List>
       </form>

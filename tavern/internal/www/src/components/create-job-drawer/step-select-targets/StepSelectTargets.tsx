@@ -14,12 +14,12 @@ type StepSelectTargetsParams = {
 }
 export const StepSelectTargets = (props: StepSelectTargetsParams) => {
     const {step, currStep, setCurrStep, targets, setFieldValue, handleSubmit} = props;
-    
+
     const handleBack = () => {
         setCurrStep(step -1);
     }
 
-    const sessions = [
+    const beacons = [
         {
             id: "15b9ec70-b3db-11ed-afa1-0242ac120002",
             principal: "admin",
@@ -32,13 +32,13 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
                 id: "Relay",
                 name: "Relay",
                 kind: "service",
-                sessions: []
+                beacons: []
                 },
                 {
                     id: "Team 1",
                     name: "Team 1",
                     kind: "group",
-                    sessions: []
+                    beacons: []
                 }],
             tasks: [],
         },
@@ -54,13 +54,13 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
                 id: "Web",
                 name: "Web",
                 kind: "service",
-                sessions: []
+                beacons: []
                 },
                 {
                     id: "Team 1",
                     name: "Team 1",
                     kind: "group",
-                    sessions: []
+                    beacons: []
                 }],
             tasks: [],
         },
@@ -76,13 +76,13 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
                 id: "Relay",
                 name: "Relay",
                 kind: "service",
-                sessions: []
+                beacons: []
                 },
                 {
                     id: "Team 1",
                     name: "Team 1",
                     kind: "group",
-                    sessions: []
+                    beacons: []
                 }],
             tasks: [],
         },
@@ -98,13 +98,13 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
                 id: "Web",
                 name: "Web",
                 kind: "service",
-                sessions: []
+                beacons: []
                 },
                 {
                     id: "Team 3",
                     name: "Team 3",
                     kind: "group",
-                    sessions: []
+                    beacons: []
                 }],
             tasks: [],
         }
@@ -115,7 +115,7 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
         for (var key in targets) {
             if (targets[key] === true) {
                 targetCount = targetCount +1;
-            } 
+            }
         }
         return targetCount;
     }
@@ -124,19 +124,19 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
     return (
         <ListItem>
             <StepIcon step={step} currStep={currStep}/>
-            Select sessions to run the tome on
+            Select beacons to run the tome on
             {currStep === step &&
                 <Box px={8} pt={4}>
                     <Stack gap={4}>
                     <StackItem>
                     <Tabs size='md' variant='enclosed' colorScheme="purple">
                         <TabList>
-                            <Tab>Session options</Tab>
-                            <Tab>Sessions selected ({targetCount})</Tab>
+                            <Tab>Beacon options</Tab>
+                            <Tab>Beacons selected ({targetCount})</Tab>
                         </TabList>
                         <TabPanels>
-                            <TabFilterTargets sessions={sessions} targets={targets} setFieldValue={setFieldValue}/>
-                            <TabSelectedTargets sessions={sessions} targets={targets} setFieldValue={setFieldValue} targetCount={targetCount} />
+                            <TabFilterTargets beacons={beacons} targets={targets} setFieldValue={setFieldValue}/>
+                            <TabSelectedTargets beacons={beacons} targets={targets} setFieldValue={setFieldValue} targetCount={targetCount} />
                         </TabPanels>
                     </Tabs>
 
@@ -154,6 +154,6 @@ export const StepSelectTargets = (props: StepSelectTargetsParams) => {
                 </Stack>
                 </Box>
             }
-      </ListItem> 
+      </ListItem>
     );
 }

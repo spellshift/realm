@@ -6,27 +6,27 @@ import { useState } from "react";
 import { SearchFilter } from "./search-filter";
 
 type TabFilterTargetsParams = {
-    sessions: Array<any>;
+    beacons: Array<any>;
     targets: any;
     setFieldValue: (arg1: any, arg2: any) => void;
 }
 export const TabFilterTargets = (props: TabFilterTargetsParams) => {
-    const {sessions, targets, setFieldValue} = props;
+    const {beacons, targets, setFieldValue} = props;
 
-    const [filteredSessions, setFilteredSessions] = useState(sessions);
+    const [filteredBeacons, setFilteredBeacons] = useState(beacons);
 
     const toggleCheck = (inputName :any) => {
         const newState = {...targets};
         newState[inputName] = !targets[inputName];
-        setFieldValue('sessions', newState);
+        setFieldValue('beacons', newState);
     };
 
     const handleCheckAllFiltered = () => {
         const newState = { ...targets };
-        filteredSessions.map((session) => {
-            newState[session.id] = true;
+        filteredBeacons.map((beacon) => {
+            newState[beacon.id] = true;
         });
-        setFieldValue('sessions', newState);
+        setFieldValue('beacons', newState);
     }
 
     return (
@@ -34,7 +34,7 @@ export const TabFilterTargets = (props: TabFilterTargetsParams) => {
             <Stack direction="column" gap="2">
                 <StackItem>
                     <Heading size="sm" mb={2}> Use the dropdown to filter the list then select targets</Heading>
-                    <SearchFilter sessions={sessions} setFilteredSessions={setFilteredSessions} />
+                    <SearchFilter beacons={beacons} setFilteredBeacons={setFilteredBeacons} />
                 </StackItem>
                 <StackItem>
                     <Box p={2} className="md-scroll-container" borderRadius={"md"}>
@@ -42,28 +42,28 @@ export const TabFilterTargets = (props: TabFilterTargetsParams) => {
                             <StackItem>
                                 <Button size={"sm"} onClick={()=> handleCheckAllFiltered()}>Select all options below</Button>
                             </StackItem>
-                            {filteredSessions.map((session: any) => {
+                            {filteredBeacons.map((beacon: any) => {
                                 // TODO change to map to avoid extra loop
-                                let group = (session?.tags).find( (obj : any) => {
+                                let group = (beacon?.tags).find( (obj : any) => {
                                     return obj?.kind === "group"
                                 });
-                                let service = (session?.tags).find( (obj : any) => {
+                                let service = (beacon?.tags).find( (obj : any) => {
                                     return obj?.kind === "service"
                                 });
 
                                 return (
-                                    <StackItem key={session?.id}>
+                                    <StackItem key={beacon?.id}>
                                         <Card>
                                             <CardBody>
-                                                <Checkbox colorScheme={"purple"} size="lg" isChecked={targets[session.id]} onChange={()=> toggleCheck(session.id)}>
+                                                <Checkbox colorScheme={"purple"} size="lg" isChecked={targets[beacon.id]} onChange={()=> toggleCheck(beacon.id)}>
                                                     <Stack ml={4} w={"xl"}>
                                                         <StackItem>
-                                                                <Text fontSize={"md"}>{session.hostname}</Text> 
+                                                                <Text fontSize={"md"}>{beacon.hostname}</Text>
                                                         </StackItem>
                                                         <StackItem>
                                                             <Flex direction="row" wrap={"wrap"}>
                                                                 <Text fontSize={"sm"}>
-                                                                    {group?.name} | {service?.name} | {session.principal}
+                                                                    {group?.name} | {service?.name} | {beacon.principal}
                                                                 </Text>
                                                             </Flex>
                                                         </StackItem>
@@ -74,7 +74,7 @@ export const TabFilterTargets = (props: TabFilterTargetsParams) => {
                                     </StackItem>
                                 );
                             })}
-                            {filteredSessions.length === 0 &&
+                            {filteredBeacons.length === 0 &&
                                 <Text fontSize={"sm"} p={2}>Try adjusting filter. No results found.</Text>
                             }
                         </Stack>

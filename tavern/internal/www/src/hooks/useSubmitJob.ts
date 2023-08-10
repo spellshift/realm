@@ -12,7 +12,7 @@ export const useSubmitJob = () => {
     
     const CREATE_JOB_MUTATION = gql`
         mutation CreateJob ($IDs: [ID!]!, $input: CreateJobInput!) {
-            createJob(sessionIDs: $IDs, input: $input) {
+            createJob(beaconIDs: $IDs, input: $input) {
                 id
                 name
                 tasks{
@@ -49,7 +49,7 @@ export const useSubmitJob = () => {
     const submitJob = (props: JobProps) => {
         const formatVariables = {
             "variables": {
-                "IDs": props.sessions,
+                "IDs": props.beacons,
                 "input": {
                     "name": props?.name, 
                     "tomeID": props.tome?.id

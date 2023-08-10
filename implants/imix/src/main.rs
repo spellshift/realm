@@ -44,7 +44,7 @@ async fn handle_exec_tome(task: Task, print_channel_sender: Sender<String>) -> R
     //     Some(job) => job,
     //     None => return Ok(("".to_string(), format!("No job associated for task ID: {}", task.id))),
     // };
-    
+
     let task_job = task.job;
 
     let tome_filename = task_job.tome.name;
@@ -84,7 +84,7 @@ async fn handle_exec_timeout_and_response(task: Task, print_channel_sender: Send
 
     // let tome_result = tokio::task::spawn(exec_future).await??;
     // let tome_result = tokio::spawn(exec_future).await??;
-    
+
 
     print_channel_sender.clone().send(format!("---[RESULT]----\n{}\n---------",tome_result.0))?;
     print_channel_sender.clone().send(format!("---[ERROR]----\n{}\n--------",tome_result.1))?;
@@ -99,9 +99,9 @@ fn get_hostname() -> Result<String> {
     Ok(whoami::hostname())
 }
 
-fn get_session_id() -> Result<String> {
-    let session_id = Uuid::new_v4();
-    Ok(session_id.to_string())
+fn get_beacon_id() -> Result<String> {
+    let beacon_id = Uuid::new_v4();
+    Ok(beacon_id.to_string())
 }
 
 fn get_host_id(host_id_file_path: String) -> Result<String> {
@@ -200,11 +200,11 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         },
     };
 
-    let session_id = match get_session_id() {
-        Ok(tmp_session_id) => tmp_session_id,
+    let beacon_id = match get_beacon_id() {
+        Ok(tmp_beacon_id) => tmp_beacon_id,
         Err(error) => {
             if debug {
-                return Err(anyhow::anyhow!("Unable to get a random session id\n{}", error));
+                return Err(anyhow::anyhow!("Unable to get a random beacon id\n{}", error));
             }
             "DANGER-UNKNOWN".to_string()
         },
@@ -243,7 +243,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
     let claim_tasks_input = ClaimTasksInput {
         principal: principal,
         hostname: hostname,
-        session_identifier: session_id,
+        beacon_identifier: beacon_id,
         host_identifier: host_id,
         agent_identifier: format!("{}-{}","imix",version_string),
         host_platform,
@@ -280,9 +280,9 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
             let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
             if debug { println!("[{}]: Queueing task {}", (Utc::now().time() - start_time).num_milliseconds(), task.clone().id); }
             match all_exec_futures.insert(task.clone().id, ExecTask{
-                future_join_handle: task::spawn(exec_with_timeout), 
-                start_time: Utc::now(), 
-                graphql_task: task.clone(), 
+                future_join_handle: task::spawn(exec_with_timeout),
+                start_time: Utc::now(),
+                graphql_task: task.clone(),
                 print_reciever: receiver,
             }) {
                 Some(_old_task) => {
@@ -433,9 +433,9 @@ mod tests {
         };
         assert!((primary_ip_address != "DANGER-UNKNOWN".to_string()))
     }
-    
+
     #[test]
-    fn imix_test_get_os_pretty_name() { 
+    fn imix_test_get_os_pretty_name() {
         let res = get_os_pretty_name().unwrap();
         assert!(!res.contains("UNKNOWN"));
     }
@@ -474,7 +474,7 @@ sys.shell(input_params["cmd"])["stdout"]
         // Define a future for our execution task
         let exec_future = handle_exec_tome(test_tome_input, sender.clone());
         let result = runtime.block_on(exec_future).unwrap();
-    
+
         let stdout = receiver.recv_timeout(Duration::from_millis(500)).unwrap();
         assert_eq!(stdout, "custom_print_handler_test".to_string());
 
@@ -519,7 +519,7 @@ sys.shell(input_params["cmd"])["stdout"]
             .body(serde_json::to_string(&post_result_response)?))
         );
 
-        let test_task = Task { 
+        let test_task = Task {
             id: test_task_id,
             job: Job {
                 id:"4294967297".to_string(),
@@ -603,7 +603,7 @@ print("main_loop_test_success")"#.to_string(),
     #[test]
     fn imix_test_main_loop_run_once() -> Result<()> {
         let test_task_id = "17179869185".to_string();
-        
+
         // Response expectations are poped in reverse order.
         let server = Server::run();
 
@@ -627,7 +627,7 @@ print("main_loop_test_success")"#.to_string(),
         let claim_task_response = GraphQLResponse {
             data: Some(ClaimTasksResponseData {
                 claim_tasks: vec![
-                    Task { 
+                    Task {
                         id: test_task_id.clone(),
                         job: Job {
                             id:"4294967297".to_string(),

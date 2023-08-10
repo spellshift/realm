@@ -1,49 +1,49 @@
 import React, { useContext, useState } from "react";
 import { TagContext } from "../../../context/TagContext";
-import { SelectedSessions } from "../../../utils/consts";
-import { SessionView } from "./session-view";
+import { SelectedBeacons } from "../../../utils/consts";
+import { BeaconView } from "./beacon-view";
 
 type Props = {
     setCurrStep: (arg1: number) => void;
     formik: any;
 }
-export const SelectSessions = (props: Props) => {
+export const SelectBeacons = (props: Props) => {
     const {setCurrStep, formik} = props;
-    const [selectedSessions, setSelectedSessions] = useState<any>({});
+    const [selectedBeacons, setSelectedBeacons] = useState<any>({});
 
     const {data, isLoading, error } = useContext(TagContext);
 
-    function isSessionSelected(){
-        for (let key in selectedSessions) {
-            if (selectedSessions[key] === true) {
+    function isBeaconSelected(){
+        for (let key in selectedBeacons) {
+            if (selectedBeacons[key] === true) {
                 return true;
-            } 
+            }
         }
         return false;
     }
-    const hasSessionSelected = isSessionSelected();
+    const hasBeaconSelected = isBeaconSelected();
 
-    const handleClickContinue = (selectedSessions: SelectedSessions) => {
-        const sessionToSubmit = [] as Array<string>;
-        for (let key in selectedSessions) {
-            if (selectedSessions[key] === true) {
-               sessionToSubmit.push(key);
-            } 
+    const handleClickContinue = (selectedBeacons: SelectedBeacons) => {
+        const beaconToSubmit = [] as Array<string>;
+        for (let key in selectedBeacons) {
+            if (selectedBeacons[key] === true) {
+               beaconToSubmit.push(key);
+            }
         }
-        formik.setFieldValue('sessions', sessionToSubmit);
+        formik.setFieldValue('beacons', beaconToSubmit);
         formik.handleSubmit();
     }
 
     return (
         <div className="flex flex-col gap-6">
-            <h2 className="text-xl font-semibold text-gray-900">Select agent sessions</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Select agent beacons</h2>
             {isLoading || data === undefined ?
             (
                 <div>
                     Loading...
                 </div>
             ): (
-                <SessionView sessions={data?.sessions || []} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedSessions={selectedSessions} setSelectedSessions={setSelectedSessions} />
+                <BeaconView beacons={data?.beacons || []} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
             )}
              <div className="flex flex-row gap-2">
                 <button
@@ -56,9 +56,9 @@ export const SelectSessions = (props: Props) => {
                     className="btn-primary"
                     onClick={(event) => {
                         event.preventDefault();
-                        handleClickContinue(selectedSessions);
+                        handleClickContinue(selectedBeacons);
                     }}
-                    disabled={!hasSessionSelected}
+                    disabled={!hasBeaconSelected}
                     type="submit"
                 >
                     Submit

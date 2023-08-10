@@ -25,7 +25,7 @@ async fn main() {
     // Fetch new tasks
     let tasks: Vec<Task> = client.claim_tasks(ClaimTasksInput{
         agent_identifier: String::from("example"),
-        session_identifier: String::from("123456"),
+        beacon_identifier: String::from("123456"),
         host_identifier: String::from("ABCDEFG"),
         principal: String::from("root"),
         hostname: String::from("web"),

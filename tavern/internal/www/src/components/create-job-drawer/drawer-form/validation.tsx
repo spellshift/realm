@@ -6,9 +6,9 @@ export const createJobSchema = () => {
         params: yup.object().shape({
             command: yup.string().required()
         }),
-        sessions: yup.object().test('hasSessionSelected', 'At least one session required', (sessions : any)=> {
-            for(let sVal in sessions){
-                if(sessions[sVal]){
+        beacons: yup.object().test('hasBeaconSelected', 'At least one beacon required', (beacons : any)=> {
+            for(let sVal in beacons){
+                if(beacons[sVal]){
                     return true;
                 }
             }

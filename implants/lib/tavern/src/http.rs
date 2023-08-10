@@ -94,7 +94,7 @@ mod tests {
     #[tokio::test]
     async fn test_claim_tasks() {
         let input = ClaimTasksInput {
-            session_identifier: "bdf0b788-b32b-4faf-8719-93cd3955b043".to_string(),
+            beacon_identifier: "bdf0b788-b32b-4faf-8719-93cd3955b043".to_string(),
             host_identifier: "bdf0b788-b32b-4faf-8719-93cd3955b043".to_string(),
             agent_identifier: "imix".to_string(),
             principal: "root".to_string(),

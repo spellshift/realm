@@ -1,21 +1,21 @@
 import React from "react";
 import {Heading} from "@chakra-ui/react";
 import Select,  { createFilter } from "react-select"
-import { SessionType, TomeTag } from "../../utils/consts";
+import { BeaconType, TomeTag } from "../../utils/consts";
 
 type Props = {
     setFiltersSelected: (arg1: any) => void;
-    sessions: Array<SessionType>;
+    beacons: Array<BeaconType>;
     groups: Array<TomeTag>;
     services: Array<TomeTag>;
 }
-export const SessionFilterBar = (props: Props) => {
-    const {setFiltersSelected, sessions, groups, services} = props;
+export const BeaconFilterBar = (props: Props) => {
+    const {setFiltersSelected, beacons, groups, services} = props;
 
-    const getFormattedOptions = (sessions: Array<SessionType>, groups: Array<TomeTag>, services: Array<TomeTag>) => {
+    const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>) => {
         return [
-            { 
-                label: "Service", 
+            {
+                label: "Service",
                 options: services.map(function(service: TomeTag){
                     return {
                         ...service,
@@ -24,8 +24,8 @@ export const SessionFilterBar = (props: Props) => {
                         kind: service?.kind
                     }})
             },
-            { 
-                label: "Group", 
+            {
+                label: "Group",
                 options: groups.map(function(group: TomeTag){
                     return {
                         ...group,
@@ -35,14 +35,14 @@ export const SessionFilterBar = (props: Props) => {
                     };
                 })
             },
-            { 
-                label: "Session", 
-                options: sessions.map(function(session: SessionType){
+            {
+                label: "Beacon",
+                options: beacons.map(function(beacon: BeaconType){
                     return {
-                        ...session,
-                        value: session?.id,
-                        label: session?.name,
-                        kind: "session"
+                        ...beacon,
+                        value: beacon?.id,
+                        label: beacon?.name,
+                        kind: "beacon"
                     };
                 })
             },
@@ -51,17 +51,17 @@ export const SessionFilterBar = (props: Props) => {
 
     return (
         <div>
-            <Heading size="sm" mb={2}> Filter by service, group, and session</Heading>
+            <Heading size="sm" mb={2}> Filter by service, group, and beacon</Heading>
             <Select
                 isSearchable={true}
                 isMulti
-                options={getFormattedOptions(sessions, groups, services)}
+                options={getFormattedOptions(beacons, groups, services)}
                 onChange={setFiltersSelected}
                 filterOption={createFilter({
                     matchFrom: 'any',
                     stringify: option => `${option.label}`,
                   })}
-            />  
+            />
         </div>
     );
 }

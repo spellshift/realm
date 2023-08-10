@@ -131,10 +131,10 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 ![/assets/img/tavern/graphiql.png](/assets/img/tavern/graphiql.png)
 
 #### Some sample queries to get started
-**List all sessions**
+**List all beacons**
 ```graphql
-query get_sessions {
-	sessions {
+query get_beacons {
+	beacons {
     id
     identifier
     name
@@ -152,7 +152,7 @@ mutation CreateTome ($input: CreateTomeInput!) {
     id
     name
   }
-}	
+}
 ```
 ```json
 {
@@ -169,7 +169,7 @@ mutation CreateTome ($input: CreateTomeInput!) {
 **Create a job**
 ```graphql
 mutation createJob($input: CreateJobInput!, $sess:[ID!]!){
-  createJob(input: $input, sessionIDs: $sess) {
+  createJob(input: $input, beaconIDs: $sess) {
     id
   }
 }
@@ -241,7 +241,7 @@ query get_task_res {
 |-----|-----------|--------|
 |state| SQL queries that define the initial db state before the query is run.| no |
 |requestor| Holds information about the authenticated context making the query. | no |
-|requestor.session_token| Session token corresponding to the user for authentication. You may create a user with a predetermined session token using the `state` field. | no |
+|requestor.beacon_token| Session token corresponding to the user for authentication. You may create a user with a predetermined session token using the `state` field. | no |
 |query| GraphQL query or mutation to be executed | yes |
 |variables| A map of variables that will be passed with your GraphQL Query to the server | no |
 |expected| A map that defines the expected response that the server should return | no |
@@ -278,7 +278,7 @@ GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supp
       "hostname": "test",
       "hostIdentifier": "dodo",
       "agentIdentifier": "bleep",
-      "sessionIdentifier": "123"
+      "beaconIdentifier": "123"
     }
   },
   "operationName": "ClaimTasks"

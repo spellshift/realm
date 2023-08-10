@@ -23,18 +23,18 @@ export type TomeTag = {
     name: string;
     kind: string;
 }
-export type SessionType = {
+export type BeaconType = {
     hostname: string;
     id: string;
     name: string;
     principal: string;
     tags: Array<TomeTag>;
 }
-export type SelectedSessions = {
-    [sessionId: string]: boolean
+export type SelectedBeacons = {
+    [beaconId: string]: boolean
 };
 export type TagContextType = {
-    sessions: Array<SessionType>,
+    beacons: Array<BeaconType>,
     groupTags: Array<TomeTag>,
     serviceTags: Array<TomeTag>
 }
@@ -42,5 +42,5 @@ export type JobProps = {
     name: string,
     tome: Tome | null,
     params: any,
-    sessions: Array<string>,
+    beacons: Array<string>,
 };
