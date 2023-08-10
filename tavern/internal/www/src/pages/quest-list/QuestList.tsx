@@ -5,11 +5,11 @@ import { Link } from "react-router-dom";
 import { CreateQuestDrawer } from "../../components/create-quest-drawer/CreateQuestDrawer";
 import { FormSteps } from "../../components/form-steps";
 import { PageWrapper } from "../../components/page-wrapper";
-import { GET_JOB_QUERY } from "../../utils/queries";
+import { GET_QUEST_QUERY } from "../../utils/queries";
 
 export const QuestList = () => {
 
-    const { loading, error, data } = useQuery(GET_JOB_QUERY);
+    const { loading, error, data } = useQuery(GET_QUEST_QUERY);
 
 
     return (

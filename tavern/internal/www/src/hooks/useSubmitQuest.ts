@@ -4,13 +4,13 @@ import { GraphQLError } from "graphql";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuestProps, Tome } from "../utils/consts";
-import { GET_JOB_QUERY } from "../utils/queries";
+import { GET_QUEST_QUERY } from "../utils/queries";
 
 export const useSubmitQuest = () => {
     const [error, setError] = useState(false);
     const navigate = useNavigate();
-    
-    const CREATE_JOB_MUTATION = gql`
+
+    const CREATE_QUEST_MUTATION = gql`
         mutation CreateQuest ($IDs: [ID!]!, $input: CreateQuestInput!) {
             createQuest(beaconIDs: $IDs, input: $input) {
                 id
@@ -41,8 +41,8 @@ export const useSubmitQuest = () => {
         navigate("/quests");
     }
 
-    const [createQuestMutation, {loading, reset}] = useMutation(CREATE_JOB_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
-        GET_JOB_QUERY, // DocumentNode object parsed with gql
+    const [createQuestMutation, {loading, reset}] = useMutation(CREATE_QUEST_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
+        GET_QUEST_QUERY, // DocumentNode object parsed with gql
         'GetQuests' // Query name
       ]});
 
@@ -51,7 +51,7 @@ export const useSubmitQuest = () => {
             "variables": {
                 "IDs": props.beacons,
                 "input": {
-                    "name": props?.name, 
+                    "name": props?.name,
                     "tomeID": props.tome?.id
                 }
             }
