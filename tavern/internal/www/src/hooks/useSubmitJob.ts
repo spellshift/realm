@@ -1,9 +1,8 @@
 import { gql, useMutation } from "@apollo/client"
 import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
-import { GraphQLError } from "graphql";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { JobProps, Tome } from "../utils/consts";
+import { CreateJobProps } from "../utils/consts";
 import { GET_JOB_QUERY } from "../utils/queries";
 
 export const useSubmitJob = () => {
@@ -21,6 +20,7 @@ export const useSubmitJob = () => {
                     output
                     execStartedAt
                     execFinishedAt
+                    createdAt
                 }
                 tome{
                     id
@@ -37,8 +37,8 @@ export const useSubmitJob = () => {
         }
     }
 
-    const handleOnCompleted = () => {
-        navigate("/jobs");
+    const handleOnCompleted = (result: any) => {
+        navigate(`/jobs/${result?.createJob?.id}`);
     }
 
     const [createJobMutation, {loading, reset}] = useMutation(CREATE_JOB_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
@@ -46,7 +46,7 @@ export const useSubmitJob = () => {
         'GetJobs' // Query name
       ]});
 
-    const submitJob = (props: JobProps) => {
+    const submitJob = (props: CreateJobProps) => {
         const formatVariables = {
             "variables": {
                 "IDs": props.sessions,
@@ -54,6 +54,7 @@ export const useSubmitJob = () => {
                     "name": props?.name, 
                     "tomeID": props.tome?.id
                 }
+
             }
         };
         createJobMutation(formatVariables);

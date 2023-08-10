@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_JOB_QUERY = gql`
-    query GetJobs {
-        jobs{
+    query GetJobs($where: JobWhereInput) {
+        jobs(where: $where){
             id
             name
             tasks{
@@ -11,6 +11,16 @@ export const GET_JOB_QUERY = gql`
                 output
                 execStartedAt
                 execFinishedAt
+                createdAt
+                session {
+                    id
+                    name
+                    tags{
+                        name
+                        kind
+                        id   
+                    }
+                }
             }
             tome{
                 id

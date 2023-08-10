@@ -12,6 +12,7 @@ import { Home } from "./pages/home";
 import { CreateJob } from "./pages/create-job";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
+import { Job } from "./pages/job";
 
 const GET_TOMES = gql`
     query get_tomes{
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
   {
     path: "/jobs",
     element: <JobList />,
+  },
+  {
+    path: "/jobs/:jobId",
+    element: <Job />,
   },
   {
     path: "/createJob",

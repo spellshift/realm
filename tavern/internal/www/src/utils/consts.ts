@@ -38,9 +38,26 @@ export type TagContextType = {
     groupTags: Array<TomeTag>,
     serviceTags: Array<TomeTag>
 }
-export type JobProps = {
+export type CreateJobProps = {
     name: string,
     tome: Tome | null,
     params: any,
     sessions: Array<string>,
 };
+export type Task = {
+    id: string,
+    lastModifiedAt: string,
+    output: string,
+    execStartedAt: string,
+    execFinishedAt: string,
+    session: SessionType
+    createdAt: string,
+};
+export type JobProps = {
+    id: string,
+    name: string,
+    tasks: Array<Task>,
+    tome: Tome
+}
+
+

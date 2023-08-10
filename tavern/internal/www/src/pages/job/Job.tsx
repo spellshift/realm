@@ -1,21 +1,27 @@
-import { gql, useQuery } from "@apollo/client";
 import React from "react";
-import { Link } from "react-router-dom";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
-import { CreateJobDrawer } from "../../components/create-job-drawer/CreateJobDrawer";
-import { FormSteps } from "../../components/form-steps";
 import { PageWrapper } from "../../components/page-wrapper";
+import { Link, useParams } from "react-router-dom";
 import { GET_JOB_QUERY } from "../../utils/queries";
+import { useQuery } from "@apollo/client";
+import { TaskList } from "./task-list";
 
-export const JobList = () => {
+export const Job = () => {
+    let { jobId } = useParams();
 
-    const { loading, error, data } = useQuery(GET_JOB_QUERY);
-    
+    const PARAMS = {
+        variables: {
+            where: {id: jobId}
+        }
+    }
+    const { loading, error, data } = useQuery(GET_JOB_QUERY, PARAMS);
+    console.log(data);
 
     return (
         <PageWrapper>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Jobs</h3>
+                    <h3 className="text-2xl font-semibold leading-6 text-gray-900">Job details ({data?.jobs[0]?.name})</h3>
                 <div className="mt-3 sm:mt-0 sm:ml-4">
                     <Link to="/createJob">
                         <button
@@ -27,13 +33,7 @@ export const JobList = () => {
                     </Link>
                 </div>
             </div>
-            <div>
-                {data?.jobs?.map((item: any) =>{
-                    return <div key={item?.id}>
-                        <Link to={`/jobs/${item?.id}`}>{item?.name}
-                        </Link></div>
-                })}
-            </div>
+            {loading ? "loading..." : <TaskList tasks={data?.jobs[0]?.tasks} />}
         </PageWrapper>
     );
-}
+};
