@@ -34,7 +34,7 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"principal", "hostname", "hostPlatform", "hostPrimaryIP", "sessionIdentifier", "hostIdentifier", "agentIdentifier"}
+	fieldsInOrder := [...]string{"principal", "hostname", "hostPlatform", "hostPrimaryIP", "beaconIdentifier", "hostIdentifier", "agentIdentifier"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -61,7 +61,7 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatform"))
-			it.HostPlatform, err = ec.unmarshalNSessionHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋsessionᚐHostPlatform(ctx, v)
+			it.HostPlatform, err = ec.unmarshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -73,11 +73,11 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "sessionIdentifier":
+		case "beaconIdentifier":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sessionIdentifier"))
-			it.SessionIdentifier, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconIdentifier"))
+			it.BeaconIdentifier, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

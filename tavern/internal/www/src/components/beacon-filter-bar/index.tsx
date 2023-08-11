@@ -1,0 +1,1 @@
+export {BeaconFilterBar} from "./BeaconFilterBar";

@@ -5,10 +5,10 @@ package runtime
 import (
 	"time"
 
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/file"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/schema"
-	"github.com/kcarretto/realm/tavern/ent/session"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 	"github.com/kcarretto/realm/tavern/ent/task"
 	"github.com/kcarretto/realm/tavern/ent/tome"
@@ -19,6 +19,36 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	beaconFields := schema.Beacon{}.Fields()
+	_ = beaconFields
+	// beaconDescName is the schema descriptor for name field.
+	beaconDescName := beaconFields[0].Descriptor()
+	// beacon.DefaultName holds the default value on creation for the name field.
+	beacon.DefaultName = beaconDescName.Default.(func() string)
+	// beacon.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	beacon.NameValidator = beaconDescName.Validators[0].(func(string) error)
+	// beaconDescPrincipal is the schema descriptor for principal field.
+	beaconDescPrincipal := beaconFields[1].Descriptor()
+	// beacon.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
+	beacon.PrincipalValidator = beaconDescPrincipal.Validators[0].(func(string) error)
+	// beaconDescHostname is the schema descriptor for hostname field.
+	beaconDescHostname := beaconFields[2].Descriptor()
+	// beacon.HostnameValidator is a validator for the "hostname" field. It is called by the builders before save.
+	beacon.HostnameValidator = beaconDescHostname.Validators[0].(func(string) error)
+	// beaconDescIdentifier is the schema descriptor for identifier field.
+	beaconDescIdentifier := beaconFields[3].Descriptor()
+	// beacon.DefaultIdentifier holds the default value on creation for the identifier field.
+	beacon.DefaultIdentifier = beaconDescIdentifier.Default.(func() string)
+	// beacon.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
+	beacon.IdentifierValidator = beaconDescIdentifier.Validators[0].(func(string) error)
+	// beaconDescAgentIdentifier is the schema descriptor for agent_identifier field.
+	beaconDescAgentIdentifier := beaconFields[4].Descriptor()
+	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
+	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
+	// beaconDescHostIdentifier is the schema descriptor for host_identifier field.
+	beaconDescHostIdentifier := beaconFields[5].Descriptor()
+	// beacon.HostIdentifierValidator is a validator for the "host_identifier" field. It is called by the builders before save.
+	beacon.HostIdentifierValidator = beaconDescHostIdentifier.Validators[0].(func(string) error)
 	fileMixin := schema.File{}.Mixin()
 	fileHooks := schema.File{}.Hooks()
 	file.Hooks[0] = fileHooks[0]
@@ -50,55 +80,25 @@ func init() {
 	fileDescHash := fileFields[2].Descriptor()
 	// file.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	file.HashValidator = fileDescHash.Validators[0].(func(string) error)
-	jobMixin := schema.Job{}.Mixin()
-	jobMixinFields0 := jobMixin[0].Fields()
-	_ = jobMixinFields0
-	jobFields := schema.Job{}.Fields()
-	_ = jobFields
-	// jobDescCreatedAt is the schema descriptor for created_at field.
-	jobDescCreatedAt := jobMixinFields0[0].Descriptor()
-	// job.DefaultCreatedAt holds the default value on creation for the created_at field.
-	job.DefaultCreatedAt = jobDescCreatedAt.Default.(func() time.Time)
-	// jobDescLastModifiedAt is the schema descriptor for last_modified_at field.
-	jobDescLastModifiedAt := jobMixinFields0[1].Descriptor()
-	// job.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
-	job.DefaultLastModifiedAt = jobDescLastModifiedAt.Default.(func() time.Time)
-	// job.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
-	job.UpdateDefaultLastModifiedAt = jobDescLastModifiedAt.UpdateDefault.(func() time.Time)
-	// jobDescName is the schema descriptor for name field.
-	jobDescName := jobFields[0].Descriptor()
-	// job.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	job.NameValidator = jobDescName.Validators[0].(func(string) error)
-	sessionFields := schema.Session{}.Fields()
-	_ = sessionFields
-	// sessionDescName is the schema descriptor for name field.
-	sessionDescName := sessionFields[0].Descriptor()
-	// session.DefaultName holds the default value on creation for the name field.
-	session.DefaultName = sessionDescName.Default.(func() string)
-	// session.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	session.NameValidator = sessionDescName.Validators[0].(func(string) error)
-	// sessionDescPrincipal is the schema descriptor for principal field.
-	sessionDescPrincipal := sessionFields[1].Descriptor()
-	// session.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
-	session.PrincipalValidator = sessionDescPrincipal.Validators[0].(func(string) error)
-	// sessionDescHostname is the schema descriptor for hostname field.
-	sessionDescHostname := sessionFields[2].Descriptor()
-	// session.HostnameValidator is a validator for the "hostname" field. It is called by the builders before save.
-	session.HostnameValidator = sessionDescHostname.Validators[0].(func(string) error)
-	// sessionDescIdentifier is the schema descriptor for identifier field.
-	sessionDescIdentifier := sessionFields[3].Descriptor()
-	// session.DefaultIdentifier holds the default value on creation for the identifier field.
-	session.DefaultIdentifier = sessionDescIdentifier.Default.(func() string)
-	// session.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
-	session.IdentifierValidator = sessionDescIdentifier.Validators[0].(func(string) error)
-	// sessionDescAgentIdentifier is the schema descriptor for agent_identifier field.
-	sessionDescAgentIdentifier := sessionFields[4].Descriptor()
-	// session.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
-	session.AgentIdentifierValidator = sessionDescAgentIdentifier.Validators[0].(func(string) error)
-	// sessionDescHostIdentifier is the schema descriptor for host_identifier field.
-	sessionDescHostIdentifier := sessionFields[5].Descriptor()
-	// session.HostIdentifierValidator is a validator for the "host_identifier" field. It is called by the builders before save.
-	session.HostIdentifierValidator = sessionDescHostIdentifier.Validators[0].(func(string) error)
+	questMixin := schema.Quest{}.Mixin()
+	questMixinFields0 := questMixin[0].Fields()
+	_ = questMixinFields0
+	questFields := schema.Quest{}.Fields()
+	_ = questFields
+	// questDescCreatedAt is the schema descriptor for created_at field.
+	questDescCreatedAt := questMixinFields0[0].Descriptor()
+	// quest.DefaultCreatedAt holds the default value on creation for the created_at field.
+	quest.DefaultCreatedAt = questDescCreatedAt.Default.(func() time.Time)
+	// questDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	questDescLastModifiedAt := questMixinFields0[1].Descriptor()
+	// quest.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	quest.DefaultLastModifiedAt = questDescLastModifiedAt.Default.(func() time.Time)
+	// quest.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	quest.UpdateDefaultLastModifiedAt = questDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// questDescName is the schema descriptor for name field.
+	questDescName := questFields[0].Descriptor()
+	// quest.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	quest.NameValidator = questDescName.Validators[0].(func(string) error)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.

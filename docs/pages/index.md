@@ -7,11 +7,11 @@ permalink: /
 # Welcome to Realm!
 
 ## User Guide
-Realm is a cross platform Red Team engagement platform with a focus on automation and reliability. 
+Realm is a cross platform Red Team engagement platform with a focus on automation and reliability.
 
 Want to get hands on now?  <a href="{{ '/user-guide/getting-started' | prepend: site.baseurl }}">Follow this guide to setup a dev instance of realm.</a>
 
-![realm-logo](/assets/img/realm_create_job.png)
+![realm-logo](/assets/img/realm_create_quest.png)
 
 <h5><a href="{{ '/user-guide/tavern' | prepend: site.baseurl }}">Server (tavern)</a></h5>
 <ul>
@@ -25,7 +25,7 @@ Want to get hands on now?  <a href="{{ '/user-guide/getting-started' | prepend: 
 <h5><a href="{{ '/user-guide/imix' | prepend: site.baseurl }}">Agent (imix)</a></h5>
 <ul>
 <li>Written in rust with support for MacOS, Linux, and Windows.</li>
-<li>Supports long running jobs by reading output from jobs in real time.</li>
+<li>Supports long running tasks by reading output from tasks in real time.</li>
 <li>Interval callback times.</li>
 <li>Simple file based configuration.</li>
 <li>Embedded files.</li>
@@ -50,12 +50,12 @@ Want to get hands on now?  <a href="{{ '/user-guide/getting-started' | prepend: 
 
 <div class="section-index">
     <hr class="panel-line">
-    {% for post in site.docs  %}  
+    {% for post in site.docs  %}
     <!-- Skip unrelated pages -->
         {% if post.url contains 'dev-guide' %}
         {% else %}
             {% continue %}
-        {% endif %}         
+        {% endif %}
     <div class="entry">
     <h5><a href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a></h5>
     <p>{{ post.description }}</p>
