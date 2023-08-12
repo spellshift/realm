@@ -8,7 +8,7 @@ use std::sync::mpsc::{Sender};
 use serde_json::Map;
 use starlark::collections::SmallMap;
 use starlark::{starlark_module, PrintHandler};
-use starlark::environment::{GlobalsBuilder, Module, Globals};
+use starlark::environment::{GlobalsBuilder, Module, Globals, LibraryExtension};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
@@ -30,7 +30,25 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const assets: AssetsLibrary = AssetsLibrary();
     }
 
-    let globals = GlobalsBuilder::standard().with(eldritch).build();
+    // let extended_globals = Globals::extended_internal();
+    // let globals = GlobalsBuilder::new().with(eldritch).build();
+    let globals = GlobalsBuilder::extended_by(
+        &[
+            LibraryExtension::StructType,
+            LibraryExtension::RecordType,
+            LibraryExtension::EnumType,
+            LibraryExtension::Map,
+            LibraryExtension::Filter,
+            LibraryExtension::Partial,
+            LibraryExtension::ExperimentalRegex,
+            LibraryExtension::Debug,
+            LibraryExtension::Print,
+            LibraryExtension::Breakpoint,
+            LibraryExtension::Json,
+            LibraryExtension::Abs,
+            LibraryExtension::Typing,
+        ]
+    ).with(eldritch).build();
     return Ok(globals);
 }
 
@@ -64,7 +82,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
     let ast =  match AstModule::parse(
             &tome_filename,
             tome_contents.as_str().to_owned(),
-            &Dialect::Standard
+            &Dialect::Extended
         ) {
             Ok(res) => res,
             Err(err) => return Err(anyhow::anyhow!("[eldritch] Unable to parse eldritch tome: {}: {} {}", err.to_string(), tome_filename.as_str(), tome_contents.as_str())),

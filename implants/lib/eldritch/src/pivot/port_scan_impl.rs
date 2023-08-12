@@ -609,7 +609,7 @@ res
         match AstModule::parse(
                 "test.eldritch",
                 test_content.to_owned(),
-                &Dialect::Standard
+                &Dialect::Extended
             ) {
                 Ok(res) => ast = res,
                 Err(err) => return Err(err),
