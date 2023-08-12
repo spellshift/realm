@@ -30,6 +30,7 @@ pub struct Asset;
 pub struct AssetsLibrary();
 starlark_simple_value!(AssetsLibrary);
 
+#[allow(non_upper_case_globals)]
 #[starlark_value(type = "assets_library")]
 impl<'v> StarlarkValue<'v> for AssetsLibrary {
     fn get_methods() -> Option<&'static Methods> {

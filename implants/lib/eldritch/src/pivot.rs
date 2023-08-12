@@ -29,6 +29,7 @@ use serde::{Serialize,Serializer};
 pub struct PivotLibrary();
 starlark_simple_value!(PivotLibrary);
 
+#[allow(non_upper_case_globals)]
 #[starlark_value(type = "pivot_library")]
 impl<'v> StarlarkValue<'v> for PivotLibrary {
 

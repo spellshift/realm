@@ -18,6 +18,7 @@ use serde::{Serialize,Serializer};
 pub struct ProcessLibrary();
 starlark_simple_value!(ProcessLibrary);
 
+#[allow(non_upper_case_globals)]
 #[starlark_value(type = "process_library")]
 impl<'v> StarlarkValue<'v> for ProcessLibrary {
 

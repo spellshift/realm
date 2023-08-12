@@ -29,6 +29,7 @@ struct CommandOutput {
 pub struct SysLibrary();
 starlark_simple_value!(SysLibrary);
 
+#[allow(non_upper_case_globals)]
 #[starlark_value(type = "sys_library")]
 impl<'v> StarlarkValue<'v> for SysLibrary {
 

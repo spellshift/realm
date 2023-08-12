@@ -33,6 +33,7 @@ use serde::{Serialize,Serializer};
 pub struct FileLibrary();
 starlark_simple_value!(FileLibrary);
 
+#[allow(non_upper_case_globals)]
 #[starlark_value(type = "file_library")]
 impl<'v> StarlarkValue<'v> for FileLibrary {
 
