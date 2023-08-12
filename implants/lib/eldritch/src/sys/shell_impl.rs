@@ -1,9 +1,9 @@
 use anyhow::Result;
 use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
-use starlark::values::{Heap, Value};
+use starlark::values::Heap;
 use starlark::values::dict::Dict;
-use std::process::{Command};
+use std::process::Command;
 use std::str;
 
 use super::CommandOutput;

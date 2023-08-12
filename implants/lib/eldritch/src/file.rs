@@ -17,8 +17,6 @@ mod template_impl;
 mod timestomp_impl;
 mod write_impl;
 
-use std::fmt;
-
 use allocative::Allocative;
 use derive_more::Display;
 

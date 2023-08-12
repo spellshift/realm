@@ -23,7 +23,6 @@ use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesSta
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
-use tokio::net::ToSocketAddrs;
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "PivotLibrary")]

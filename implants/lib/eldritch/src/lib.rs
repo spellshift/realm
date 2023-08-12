@@ -4,7 +4,7 @@ pub mod sys;
 pub mod pivot;
 pub mod assets;
 
-use std::sync::mpsc::{Sender};
+use std::sync::mpsc::Sender;
 use serde_json::Map;
 use starlark::collections::SmallMap;
 use starlark::{starlark_module, PrintHandler};
@@ -12,7 +12,7 @@ use starlark::environment::{GlobalsBuilder, Module, Globals, LibraryExtension};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
-use starlark::values::{Value, AllocValue, FrozenValue};
+use starlark::values::{Value, AllocValue};
 
 use file::FileLibrary;
 use process::ProcessLibrary;

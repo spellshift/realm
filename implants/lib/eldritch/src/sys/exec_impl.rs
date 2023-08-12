@@ -1,5 +1,5 @@
 use anyhow::Result;
-use starlark::{values::{Heap, dict::Dict, Value}, collections::SmallMap, const_frozen_string};
+use starlark::{values::{Heap, dict::Dict}, collections::SmallMap, const_frozen_string};
 use std::process::Command;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use nix::{sys::wait::waitpid, unistd::{fork, ForkResult}};

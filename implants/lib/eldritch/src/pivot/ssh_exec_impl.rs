@@ -1,5 +1,5 @@
 use anyhow::Result;
-use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
+use starlark::{values::{dict::Dict, Heap}, collections::SmallMap, const_frozen_string};
 
 use super::Session;
 
