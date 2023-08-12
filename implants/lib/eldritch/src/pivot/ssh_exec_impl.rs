@@ -1,5 +1,5 @@
 use anyhow::Result;
-use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
+use starlark::{values::{dict::Dict, Heap}, collections::SmallMap, const_frozen_string};
 
 use super::Session;
 
@@ -47,7 +47,7 @@ pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, command: String
     let stdout_value = starlark_heap.alloc_str(&cmd_res.stdout);
     dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
 
-    let status_value = Value::new_int(cmd_res.status);
+    let status_value = starlark_heap.alloc(cmd_res.status);
     dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
 
     Ok(dict_res)
@@ -185,7 +185,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_pivot_ssh_exec() -> anyhow::Result<()> {
-        let ssh_port = allocate_localhost_unused_ports().await? as u16;;
+        let ssh_port = allocate_localhost_unused_ports().await? as u16;
         let ssh_host = "127.0.0.1".to_string();
         let ssh_command = r#"echo "hello world""#.to_string();
         let test_server_task = task::spawn(

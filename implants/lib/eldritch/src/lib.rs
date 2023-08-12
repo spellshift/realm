@@ -4,11 +4,11 @@ pub mod sys;
 pub mod pivot;
 pub mod assets;
 
-use std::sync::mpsc::{Sender};
+use std::sync::mpsc::Sender;
 use serde_json::Map;
 use starlark::collections::SmallMap;
 use starlark::{starlark_module, PrintHandler};
-use starlark::environment::{GlobalsBuilder, Module, Globals};
+use starlark::environment::{GlobalsBuilder, Module, Globals, LibraryExtension};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
@@ -30,7 +30,23 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const assets: AssetsLibrary = AssetsLibrary();
     }
 
-    let globals = GlobalsBuilder::extended().with(eldritch).build();
+    let globals = GlobalsBuilder::extended_by(
+        &[
+            LibraryExtension::StructType,
+            LibraryExtension::RecordType,
+            LibraryExtension::EnumType,
+            LibraryExtension::Map,
+            LibraryExtension::Filter,
+            LibraryExtension::Partial,
+            LibraryExtension::ExperimentalRegex,
+            LibraryExtension::Debug,
+            LibraryExtension::Print,
+            LibraryExtension::Breakpoint,
+            LibraryExtension::Json,
+            LibraryExtension::Abs,
+            LibraryExtension::Typing,
+        ]
+    ).with(eldritch).build();
     return Ok(globals);
 }
 
@@ -64,7 +80,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
     let ast =  match AstModule::parse(
             &tome_filename,
             tome_contents.as_str().to_owned(),
-            &Dialect::Standard
+            &Dialect::Extended
         ) {
             Ok(res) => res,
             Err(err) => return Err(anyhow::anyhow!("[eldritch] Unable to parse eldritch tome: {}: {} {}", err.to_string(), tome_filename.as_str(), tome_contents.as_str())),
@@ -132,7 +148,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
                 },
                 None => i32::MAX.into(),
             };
-            new_value = Value::new_int(tmp_value);
+            new_value = module.heap().alloc(tmp_value);
         }
         let hashed_key = match new_key.to_value().get_hashed() {
             Ok(local_hashed_key) => local_hashed_key,
