@@ -30,8 +30,6 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const assets: AssetsLibrary = AssetsLibrary();
     }
 
-    // let extended_globals = Globals::extended_internal();
-    // let globals = GlobalsBuilder::new().with(eldritch).build();
     let globals = GlobalsBuilder::extended_by(
         &[
             LibraryExtension::StructType,
