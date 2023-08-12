@@ -22,7 +22,7 @@ pub fn exec(starlark_heap: &Heap, path: String, args: Vec<String>, disown: Optio
     let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
     dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed().unwrap(), stderr_value.to_value());
 
-    let status_value = Value::new_int(cmd_res.status);
+    let status_value = starlark_heap.alloc(cmd_res.status);
     dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
 
     Ok(dict_res)

@@ -19,8 +19,8 @@ use russh_keys::{key, decode_secret_key};
 use starlark::values::dict::Dict;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
+use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 use tokio::net::ToSocketAddrs;
@@ -30,8 +30,8 @@ use tokio::net::ToSocketAddrs;
 pub struct PivotLibrary();
 starlark_simple_value!(PivotLibrary);
 
+#[starlark_value(type = "pivot_library")]
 impl<'v> StarlarkValue<'v> for PivotLibrary {
-    starlark_type!("pivot_library");
 
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();

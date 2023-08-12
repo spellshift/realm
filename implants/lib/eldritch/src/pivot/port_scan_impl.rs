@@ -362,7 +362,7 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
                 let tmp_value1 = starlark_heap.alloc_str(row.0.as_str());
                 tmp_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), tmp_value1.to_value());
 
-                tmp_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), Value::new_int(row.1));
+                tmp_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), starlark_heap.alloc(row.1));
 
                 let tmp_value2 = starlark_heap.alloc_str(row.2.as_str());
                 tmp_res.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed().unwrap(), tmp_value2.to_value());
@@ -623,7 +623,7 @@ res
             }
         }
 
-        let globals = GlobalsBuilder::extended().with(func_port_scan).build();
+        let globals = GlobalsBuilder::standard().with(func_port_scan).build();
         let module: Module = Module::new();
 
         let mut eval: Evaluator = Evaluator::new(&module);

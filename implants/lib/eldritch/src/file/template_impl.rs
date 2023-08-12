@@ -25,7 +25,7 @@ pub fn template(template_path: String, dst_path: String, args: SmallMap<String, 
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use starlark::{collections::SmallMap, values::FrozenHeap};
+    use starlark::{collections::SmallMap, values::{FrozenHeap, Heap}};
     use tempfile::NamedTempFile;
     use starlark::const_frozen_string;
 
@@ -33,9 +33,10 @@ mod tests {
 
     #[test]
     fn test_template_build_context() -> anyhow::Result<()>{
+        let heap = Heap::new();
         let mut map: SmallMap<String, Value> = SmallMap::new();
         map.insert("name".to_string(), const_frozen_string!("greg").to_value());
-        map.insert("age".to_string(), Value::new_int(29));
+        map.insert("age".to_string(), heap.alloc(29));
         map.insert("admin".to_string(), Value::new_bool(true));
 
         let res = build_context(map)?;
@@ -51,6 +52,8 @@ mod tests {
         let dst_path = String::from(tmp_file.path().to_str().unwrap());
         dst_tmp_file.close()?;
 
+        let heap = Heap::new();
+
         // Write out template
         fs::write(path.clone(),
 r#"Hello {{ name }},
@@ -61,7 +64,7 @@ Congratulations on making it that far.
         // Setup our args
         let mut dict_data: SmallMap<String, Value> = SmallMap::new();
         dict_data.insert("name".to_string(), const_frozen_string!("test123").to_value());
-        dict_data.insert("age".to_string(), Value::new_int(22));
+        dict_data.insert("age".to_string(), heap.alloc(22));
 
         // Run our code
         template(path, dst_path.clone(), dict_data, true)?;

@@ -12,7 +12,7 @@ use starlark::environment::{GlobalsBuilder, Module, Globals};
 use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
-use starlark::values::{Value, AllocValue};
+use starlark::values::{Value, AllocValue, FrozenValue};
 
 use file::FileLibrary;
 use process::ProcessLibrary;
@@ -30,7 +30,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const assets: AssetsLibrary = AssetsLibrary();
     }
 
-    let globals = GlobalsBuilder::extended().with(eldritch).build();
+    let globals = GlobalsBuilder::standard().with(eldritch).build();
     return Ok(globals);
 }
 
@@ -132,7 +132,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
                 },
                 None => i32::MAX.into(),
             };
-            new_value = Value::new_int(tmp_value);
+            new_value = module.heap().alloc(tmp_value);
         }
         let hashed_key = match new_key.to_value().get_hashed() {
             Ok(local_hashed_key) => local_hashed_key,
