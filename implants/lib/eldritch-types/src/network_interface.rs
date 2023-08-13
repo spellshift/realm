@@ -9,7 +9,7 @@ use starlark_derive::starlark_value;
 use starlark_derive::ProvidesStaticType;
 
 #[derive(Clone, Debug, PartialEq, Eq, Display, ProvidesStaticType, NoSerialize, Allocative)]
-#[display(fmt = "name: {}, mac: {}, ips: {:?}", name, mac, ips)]
+#[display(fmt = "(name: {}, mac: {}, ips: {:?})", name, mac, ips)]
 pub struct NetworkInterface {
     pub name: String,
     pub mac: String,
