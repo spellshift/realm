@@ -1,5 +1,4 @@
 use anyhow::Result;
-use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use sysinfo::{System, SystemExt, UserExt};
 use std::fs::DirEntry;
 #[cfg(unix)]
@@ -11,7 +10,7 @@ use std::os::linux::fs::MetadataExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
 use chrono::{Utc, DateTime, NaiveDateTime};
-use super::{File, FileType};
+use eldritch_types::file_metadata::{FileMetadata, FileType};
 
 const UNKNOWN: &str = "UNKNOWN";
 
@@ -23,7 +22,7 @@ fn windows_tick_to_unix_tick(windows_tick: u64) -> i64{
     return (windows_tick / WINDOWS_TICK - SEC_TO_UNIX_EPOCH) as i64;
 }
 
-fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
+fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<FileMetadata> {
     let mut sys = System::new();
     sys.refresh_users_list();
 
@@ -103,7 +102,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
     };
     let time_modified: DateTime<Utc> = DateTime::from_utc(naive_datetime, Utc);
     
-    Ok(File {
+    Ok(FileMetadata {
         name: file_name,
         file_type: file_type,
         size: file_size,
@@ -115,7 +114,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
 
 }
 
-fn handle_list(path: String) -> Result<Vec<File>> {
+fn handle_list(path: String) -> Result<Vec<FileMetadata>> {
     let paths = std::fs::read_dir(path)?;
     let mut final_res = Vec::new();
     for path in paths {
@@ -124,45 +123,12 @@ fn handle_list(path: String) -> Result<Vec<File>> {
     Ok(final_res)
 }
 
-fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict>{
-    let res: SmallMap<Value, Value> = SmallMap::new();
-    let mut tmp_res = Dict::new(res);
-
-    let tmp_value1 = starlark_heap.alloc_str(&file.name);
-    tmp_res.insert_hashed(const_frozen_string!("file_name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
-
-    let file_size = file.size as i32;
-    tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed().unwrap(), starlark_heap.alloc(file_size));
-
-    let tmp_value2 = starlark_heap.alloc_str(&file.owner);
-    tmp_res.insert_hashed(const_frozen_string!("owner").to_value().get_hashed().unwrap(), tmp_value2.to_value());
-
-    let tmp_value3 = starlark_heap.alloc_str(&file.group);
-    tmp_res.insert_hashed(const_frozen_string!("group").to_value().get_hashed().unwrap(), tmp_value3.to_value());
-
-    let tmp_value4 = starlark_heap.alloc_str(&file.permissions);
-    tmp_res.insert_hashed(const_frozen_string!("permissions").to_value().get_hashed().unwrap(), tmp_value4.to_value());
-
-    let tmp_value5 = starlark_heap.alloc_str(&file.time_modified);
-    tmp_res.insert_hashed(const_frozen_string!("modified").to_value().get_hashed().unwrap(), tmp_value5.to_value());
-
-    let tmp_value6 = starlark_heap.alloc_str(&file.file_type.to_string());
-    tmp_res.insert_hashed(const_frozen_string!("type").to_value().get_hashed().unwrap(), tmp_value6.to_value());
-
-    Ok(tmp_res)
-}
-
-pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
-    let mut final_res: Vec<Dict> = Vec::new();
-    let file_list = match handle_list(path) {
+pub fn list(path: String) -> Result<Vec<FileMetadata>> {
+    let file_list: Vec<FileMetadata> = match handle_list(path) {
         Ok(local_file_list) => local_file_list,
         Err(local_err) => return Err(anyhow::anyhow!("Failed to get file list: {}", local_err.to_string())),
     };
-    for file in file_list {
-        let tmp_res = create_dict_from_file(starlark_heap, file)?;
-        final_res.push(tmp_res);
-    }
-    Ok(final_res)
+    Ok(file_list)
 }
 
 #[cfg(test)]
@@ -186,8 +152,7 @@ mod tests {
             std::fs::File::create(test_dir_to_create)?;
         }
 
-        let binding = Heap::new();
-        let list_res = list(&binding, test_dir.path().to_str().unwrap().to_string())?;
+        let list_res = list(test_dir.path().to_str().unwrap().to_string())?;
         println!("{:?}", list_res);
         assert_eq!(list_res.len(), (expected_dirs.len()+expected_files.len()));
 

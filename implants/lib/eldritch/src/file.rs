@@ -20,11 +20,11 @@ mod write_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
-use starlark::values::dict::Dict;
+use eldritch_types::file_metadata::FileMetadata;
 use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, starlark_value};
 use starlark::{starlark_simple_value, starlark_module};
 use serde::{Serialize,Serializer};
 
@@ -61,27 +61,6 @@ impl<'v> UnpackValue<'v> for FileLibrary {
         Some(*value.downcast_ref::<FileLibrary>().unwrap())
     }
 }
-
-#[derive(Debug, Display)]
-enum FileType {
-    File,
-    Directory,
-    Link,
-    Unknown,
-}
-
-#[derive(Debug, Display)]
-#[display(fmt = "{} {} {} {} {} {} {}", name, file_type, size, owner, group, permissions, time_modified)]
-struct File {
-    name: String,
-    file_type: FileType,
-    size: u64,
-    owner: String,
-    group: String,
-    permissions: String,
-    time_modified: String,
-}
-
 
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
@@ -122,9 +101,9 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_file_impl::is_file(path)
     }
-    fn list<'v>(this: FileLibrary, starlark_heap: &'v Heap, path: String) ->  anyhow::Result<Vec<Dict<'v>>>  {
+    fn list<'v>(this: FileLibrary, path: String) ->  anyhow::Result<Vec<FileMetadata>>  {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        list_impl::list(starlark_heap, path)
+        list_impl::list(path)
     }
     fn mkdir(this: FileLibrary, path: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

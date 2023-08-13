@@ -2,6 +2,7 @@ use starlark::{values::starlark_value_as_type::StarlarkValueAsType, environment:
 use starlark_derive::starlark_module;
 
 pub mod command_output;
+pub mod file_metadata;
 
 #[starlark_module]
 pub fn eldritch_types(builder: &mut GlobalsBuilder) {
