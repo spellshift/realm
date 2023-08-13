@@ -18,7 +18,7 @@ mod tests {
     fn test_sys_get_os() -> anyhow::Result<()>{
         let res = get_os()?;
         println!("{}", res.to_string());
-        assert!(res.to_string().contains(r#""arch": "x86_64""#));
+        assert!(res.to_string().contains(r#"arch: x86_64"#));
         Ok(())
     }
 }
