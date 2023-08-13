@@ -15,12 +15,12 @@ use async_trait::async_trait;
 use derive_more::Display;
 
 use eldritch_types::command_output::CommandOutput;
+use eldritch_types::network_port_type::NetworkPortType;
 use russh::{client, Disconnect};
 use russh_keys::{key, decode_secret_key};
-use starlark::values::dict::Dict;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, starlark_value};
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
@@ -75,9 +75,9 @@ fn methods(builder: &mut MethodsBuilder) {
         smb_exec_impl::smb_exec(target, port, username, password, hash, command)
     }     
     // May want these too: PSRemoting, WMI, WinRM
-    fn port_scan<'v>(this:  PivotLibrary, starlark_heap: &'v Heap, target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict<'v>>> {
+    fn port_scan(this:  PivotLibrary, target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout:  i32) ->  anyhow::Result<Vec<NetworkPortType>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        port_scan_impl::port_scan(starlark_heap, target_cidrs, ports, protocol, timeout)
+        port_scan_impl::port_scan(target_cidrs, ports, protocol, timeout)
     }
     fn arp_scan(this:  PivotLibrary, target_cidrs: Vec<String>) ->  anyhow::Result<Vec<String>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

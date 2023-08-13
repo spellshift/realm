@@ -1,5 +1,6 @@
 use std::net::Ipv4Addr;
 use anyhow::Result;
+use eldritch_types::network_port_type::NetworkPortType;
 use starlark::const_frozen_string;
 use starlark::values::dict::Dict;
 use starlark::values::{Value, Heap};
@@ -336,7 +337,7 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
 // ]
 
 // Non-async wrapper for our async scan.
-pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout: i32) -> Result<Vec<Dict>> {
+pub fn port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout: i32) -> Result<Vec<NetworkPortType>> {
     if protocol != TCP && protocol != UDP {
         return Err(anyhow::anyhow!("Unsupported protocol. Use 'tcp' or 'udp'."))
     }
@@ -352,27 +353,19 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
 
     match response {
         Ok(results) => {
-            let mut final_res: Vec<Dict> = Vec::new();
+            let mut final_res: Vec<NetworkPortType> = Vec::new();
             for row in results {
                 // Define underlying datastructure.
-                let res: SmallMap<Value, Value> = SmallMap::new();
-                // Create Dict type.
-                let mut tmp_res = Dict::new(res);
 
-                let tmp_value1 = starlark_heap.alloc_str(row.0.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), tmp_value1.to_value());
-
-                tmp_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), starlark_heap.alloc(row.1));
-
-                let tmp_value2 = starlark_heap.alloc_str(row.2.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed().unwrap(), tmp_value2.to_value());
-
-                let tmp_value3 = starlark_heap.alloc_str(row.3.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), tmp_value3.to_value());
-                final_res.push(tmp_res);
+                final_res.push(NetworkPortType { 
+                    ip: row.0, 
+                    port: row.1, 
+                    protocol: row.2, 
+                    status: row.3,
+                });
             }
 
-            return Ok(final_res)
+            Ok(final_res)
 
 
         },
@@ -617,9 +610,9 @@ res
 
         #[starlark_module]
         fn func_port_scan(builder: &mut GlobalsBuilder) {
-            fn func_port_scan<'v>(ports: Vec<i32>, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
+            fn func_port_scan<'v>(ports: Vec<i32>) -> anyhow::Result<Vec<NetworkPortType>> {
                 let test_cidr =  vec!["127.0.0.1/32".to_string()];
-                port_scan(starlark_heap, test_cidr, ports, TCP.to_string(), 3)
+                port_scan(test_cidr, ports, TCP.to_string(), 3)
             }
         }
 
