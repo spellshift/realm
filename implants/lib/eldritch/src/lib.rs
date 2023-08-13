@@ -13,6 +13,7 @@ use starlark::syntax::{AstModule, Dialect};
 use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
 use starlark::values::{Value, AllocValue};
+use eldritch_types::eldritch_types;
 
 use file::FileLibrary;
 use process::ProcessLibrary;
@@ -46,7 +47,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
             LibraryExtension::Abs,
             LibraryExtension::Typing,
         ]
-    ).with(eldritch).build();
+    ).with(eldritch).with(eldritch_types).build();
     return Ok(globals);
 }
 
@@ -172,7 +173,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
 #[cfg(test)]
 mod tests {
-    use std::{thread, sync::mpsc::{channel}, time::Duration};
+    use std::{thread, sync::mpsc::channel, time::Duration};
 
     use super::*;
     use starlark::assert::Assert;
