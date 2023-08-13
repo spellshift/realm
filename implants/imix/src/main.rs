@@ -454,7 +454,7 @@ mod tests {
                     description: "Execute a command in the default system shell".to_string(),
                     eldritch: r#"
 print("custom_print_handler_test")
-sys.shell(input_params["cmd"])["stdout"]
+sys.shell(input_params["cmd"]).stdout
 "#.to_string(),
                     files: None,
                     param_defs: Some(r#"{"params":[{"name":"cmd","type":"string"}]}"#.to_string()),
@@ -480,6 +480,8 @@ sys.shell(input_params["cmd"])["stdout"]
 
         let mut bool_res = false;
 
+        println!("{}", result.0);
+        println!("{}", result.1);
         if cfg!(target_os = "linux") ||
         cfg!(target_os = "ios") ||
         cfg!(target_os = "android") ||
