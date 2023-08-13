@@ -15,6 +15,10 @@ pub fn eldritch_types(builder: &mut GlobalsBuilder) {
     fn file_metadata(name: String, file_type: file_metadata::FileType, size: u64, owner: String, group: String, permissions: String, time_modified: String) -> anyhow::Result<file_metadata::FileMetadata> {
         Ok(file_metadata::FileMetadata{ name, file_type, size, owner, group, permissions, time_modified })
     }
+    const Proc: StarlarkValueAsType<proc::Proc> = StarlarkValueAsType::new();
+    fn proc(pid: String, ppid: String, status: String, name: String, path: String, username: String, command: String, cwd: String, environ: String) -> anyhow::Result<proc::Proc> {
+        Ok(proc::Proc{ pid, ppid, status, name, path, username, command, cwd, environ })
+    }
 }
 
 #[cfg(test)]
