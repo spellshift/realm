@@ -5,6 +5,7 @@ pub mod command_output;
 pub mod file_metadata;
 pub mod process_type;
 pub mod network_interface;
+pub mod operating_system_type;
 
 #[starlark_module]
 pub fn eldritch_types(builder: &mut GlobalsBuilder) {

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use starlark::values::Heap;
 use std::process::Command;
 use std::str;
 

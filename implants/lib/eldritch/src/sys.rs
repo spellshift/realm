@@ -12,10 +12,11 @@ use derive_more::Display;
 
 use eldritch_types::command_output::CommandOutput;
 use eldritch_types::network_interface::NetworkInterface;
+use eldritch_types::operating_system_type::OperatingSystemType;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
 use starlark::values::starlark_value;
-use starlark::values::{StarlarkValue, Value, Heap, dict::Dict, UnpackValue, ValueLike, ProvidesStaticType};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
@@ -61,9 +62,9 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         exec_impl::exec(path, args, disown)
     }
-    fn get_os<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
+    fn get_os<'v>(this: SysLibrary) -> anyhow::Result<OperatingSystemType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        get_os_impl::get_os(starlark_heap)
+        get_os_impl::get_os()
     }
     fn dll_inject(this: SysLibrary, dll_path: String, pid: u32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
