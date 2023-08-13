@@ -56,9 +56,9 @@ impl<'v> UnpackValue<'v> for SysLibrary {
 // This is where all of the "sys.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<CommandOutput> {
+    fn exec(this: SysLibrary, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<CommandOutput> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        exec_impl::exec(starlark_heap, path, args, disown)
+        exec_impl::exec(path, args, disown)
     }
     fn get_os<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -84,8 +84,8 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_macos_impl::is_macos()
     }
-    fn shell<'v>(this:  SysLibrary, starlark_heap: &'v Heap, cmd: String) ->  anyhow::Result<CommandOutput> {
+    fn shell(this: SysLibrary, cmd: String) ->  anyhow::Result<CommandOutput> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        shell_impl::shell(starlark_heap, cmd)
+        shell_impl::shell(cmd)
     }
 }
