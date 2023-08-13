@@ -5,6 +5,7 @@ mod name_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
+use eldritch_types::proc::Proc;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
@@ -55,9 +56,9 @@ fn methods(builder: &mut MethodsBuilder) {
         kill_impl::kill(pid)?;
         Ok(NoneType{})
     }
-    fn list<'v>(this: ProcessLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
+    fn list(this: ProcessLibrary) -> anyhow::Result<Vec<Proc>> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        list_impl::list(starlark_heap)
+        list_impl::list()
     }
     fn name(this: ProcessLibrary, pid: i32) -> anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

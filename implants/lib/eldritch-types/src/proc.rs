@@ -11,8 +11,8 @@ use starlark_derive::ProvidesStaticType;
 #[derive(Clone, Debug, PartialEq, Eq, Display, ProvidesStaticType, NoSerialize, Allocative)]
 #[display(fmt = "pid:{},ppid:{},status:{},name:{},path:{},username:{},command:{},cwd:{},environ:{}", pid, ppid, status, name, path, username, command, cwd, environ)]
 pub struct Proc {
-    pub pid: String,
-    pub ppid: String,
+    pub pid: u32,
+    pub ppid: u32,
     pub status: String,
     pub name: String,
     pub path: String,
@@ -57,10 +57,10 @@ impl<'v> UnpackValue<'v> for Proc {
 
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn pid(this: Proc) -> anyhow::Result<String> {
+    fn pid(this: Proc) -> anyhow::Result<u32> {
         Ok(this.pid)
     }
-    fn ppid(this: Proc) -> anyhow::Result<String> {
+    fn ppid(this: Proc) -> anyhow::Result<u32> {
         Ok(this.ppid)
     }
     fn status(this: Proc) -> anyhow::Result<String> {
