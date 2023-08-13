@@ -3,6 +3,7 @@ members = [
     "imix",
     "golem",
     "lib/eldritch",
+    "lib/eldritch-types",
     "lib/tavern",
 ]
 

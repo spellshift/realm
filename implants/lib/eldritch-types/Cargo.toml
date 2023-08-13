@@ -1,0 +1,17 @@
+[package]
+name = "eldritch-types"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = { workspace = true }
+allocative = { workspace = true }
+allocative_derive = { workspace = true }
+derive_more = { workspace = true }
+starlark = { workspace = true }
+starlark_derive = { workspace = true }
+
+[dev-dependencies]
+eldritch = { workspace = true }
