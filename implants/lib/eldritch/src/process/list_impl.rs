@@ -1,9 +1,9 @@
 use anyhow::{Result};
-use eldritch_types::proc::Proc;
+use eldritch_types::process_type::ProcessType;
 use sysinfo::{ProcessExt,System,SystemExt,PidExt, Pid};
 use sysinfo::{UserExt};
 
-pub fn list() -> Result<Vec<Proc>> {
+pub fn list() -> Result<Vec<ProcessType>> {
     if !System::IS_SUPPORTED {
         return Err(anyhow::anyhow!("This OS isn't supported for process functions.
          Pleases see sysinfo docs for a full list of supported systems.
@@ -11,7 +11,7 @@ pub fn list() -> Result<Vec<Proc>> {
     }
     const UNKNOWN_USER: &str = "???";
 
-    let mut final_res: Vec<Proc> = Vec::new();
+    let mut final_res: Vec<ProcessType> = Vec::new();
     let mut sys = System::new();
     sys.refresh_processes();
     sys.refresh_users_list();
@@ -33,7 +33,7 @@ pub fn list() -> Result<Vec<Proc>> {
         let cwd = String::from(process.cwd().to_string_lossy());
         let environ = String::from(process.environ().join(" "));
 
-        final_res.push(Proc {
+        final_res.push(ProcessType {
             pid, 
             ppid,
             status, 

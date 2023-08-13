@@ -5,11 +5,10 @@ mod name_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
-use eldritch_types::proc::Proc;
+use eldritch_types::process_type::ProcessType;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
-use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, starlark_value};
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
@@ -56,7 +55,7 @@ fn methods(builder: &mut MethodsBuilder) {
         kill_impl::kill(pid)?;
         Ok(NoneType{})
     }
-    fn list(this: ProcessLibrary) -> anyhow::Result<Vec<Proc>> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
+    fn list(this: ProcessLibrary) -> anyhow::Result<Vec<ProcessType>> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         list_impl::list()
     }
