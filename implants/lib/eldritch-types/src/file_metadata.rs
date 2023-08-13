@@ -8,13 +8,30 @@ use starlark_derive::starlark_module;
 use starlark_derive::starlark_value;
 use starlark_derive::ProvidesStaticType;
 
-#[derive(Clone, PartialEq, Eq, Debug, Display, Allocative)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, ProvidesStaticType, NoSerialize, Allocative)]
 pub enum FileType {
     File,
     Directory,
     Link,
     Unknown,
 }
+
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "file_type")]
+impl<'v> StarlarkValue<'v> for FileType {
+}
+
+impl<'v> UnpackValue<'v> for FileType {
+    fn expected() -> String {
+        FileType::get_type_value_static().as_str().to_owned()
+    }
+
+    fn unpack_value(value: Value<'v>) -> Option<Self> {
+        let tmp = value.downcast_ref::<FileType>().unwrap();
+        Some(*tmp)
+    }
+}
+
 
 #[derive(Clone, Debug, PartialEq, Eq, Display, ProvidesStaticType, NoSerialize, Allocative)]
 #[display(fmt = "{} {} {} {} {} {} {}", name, file_type, size, owner, group, permissions, time_modified)]

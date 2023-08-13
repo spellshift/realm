@@ -3,12 +3,17 @@ use starlark_derive::starlark_module;
 
 pub mod command_output;
 pub mod file_metadata;
+pub mod proc;
 
 #[starlark_module]
 pub fn eldritch_types(builder: &mut GlobalsBuilder) {
     const CommandOutput: StarlarkValueAsType<command_output::CommandOutput> = StarlarkValueAsType::new();
     fn command_output( stdout: String, stderr: String, status: i32) -> anyhow::Result<command_output::CommandOutput> {
         Ok(command_output::CommandOutput{ stdout, stderr, status })
+    }
+    const FileMetadata: StarlarkValueAsType<file_metadata::FileMetadata> = StarlarkValueAsType::new();
+    fn file_metadata(name: String, file_type: file_metadata::FileType, size: u64, owner: String, group: String, permissions: String, time_modified: String) -> anyhow::Result<file_metadata::FileMetadata> {
+        Ok(file_metadata::FileMetadata{ name, file_type, size, owner, group, permissions, time_modified })
     }
 }
 
