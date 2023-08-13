@@ -8,22 +8,22 @@ use std::str;
 
 use super::CommandOutput;
 
-pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
+pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<CommandOutput> {
 
     let cmd_res = handle_shell(cmd)?;
+    Ok(cmd_res)
+    // let res = SmallMap::new();
+    // let mut dict_res = Dict::new(res);
+    // let stdout_value = starlark_heap.alloc_str(cmd_res.stdout.as_str());
+    // dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
 
-    let res = SmallMap::new();
-    let mut dict_res = Dict::new(res);
-    let stdout_value = starlark_heap.alloc_str(cmd_res.stdout.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
+    // let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
+    // dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed().unwrap(), stderr_value.to_value());
 
-    let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed().unwrap(), stderr_value.to_value());
+    // let status_value = starlark_heap.alloc(cmd_res.status);
+    // dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
 
-    let status_value = starlark_heap.alloc(cmd_res.status);
-    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
-
-    Ok(dict_res)
+    // Ok(dict_res)
 }
 
 fn handle_shell(cmd: String) -> Result<CommandOutput> {
@@ -112,7 +112,7 @@ func_shell("whoami")
 
         #[starlark_module]
         fn func_shell(builder: &mut GlobalsBuilder) {
-            fn func_shell<'v>(starlark_heap: &'v Heap, cmd: String) -> anyhow::Result<Dict<'v>> {
+            fn func_shell<'v>(starlark_heap: &'v Heap, cmd: String) -> anyhow::Result<CommandOutput> {
                 shell(starlark_heap, cmd)
             }
         }

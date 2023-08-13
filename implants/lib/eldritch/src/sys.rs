@@ -10,6 +10,7 @@ mod dll_inject_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
+use eldritch_types::command_output::CommandOutput;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
 use starlark::values::starlark_value;
@@ -17,12 +18,6 @@ use starlark::values::{StarlarkValue, Value, Heap, dict::Dict, UnpackValue, Valu
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
-
-struct CommandOutput {
-    stdout: String,
-    stderr: String,
-    status: i32,
-}
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "SysLibrary")]
@@ -61,7 +56,7 @@ impl<'v> UnpackValue<'v> for SysLibrary {
 // This is where all of the "sys.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
+    fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<CommandOutput> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         exec_impl::exec(starlark_heap, path, args, disown)
     }
@@ -89,7 +84,7 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_macos_impl::is_macos()
     }
-    fn shell<'v>(this:  SysLibrary, starlark_heap: &'v Heap, cmd: String) ->  anyhow::Result<Dict<'v>> {
+    fn shell<'v>(this:  SysLibrary, starlark_heap: &'v Heap, cmd: String) ->  anyhow::Result<CommandOutput> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         shell_impl::shell(starlark_heap, cmd)
     }

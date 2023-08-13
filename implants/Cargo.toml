@@ -19,6 +19,7 @@ clap = "3.2.23"
 default-net = "0.13.1"
 derive_more = "0.99.17"
 eldritch = { path = "./lib/eldritch" }
+eldritch-types = { path = "./lib/eldritch-types" }
 eval = "0.4.3"
 flate2 = "1.0.24"
 gazebo = "0.8.1"

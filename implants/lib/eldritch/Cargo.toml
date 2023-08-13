@@ -11,6 +11,7 @@ async-recursion = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true }
 derive_more = { workspace = true }
+eldritch-types = { workspace = true }
 eval = { workspace = true }
 flate2 = { workspace = true }
 gazebo = { workspace = true }

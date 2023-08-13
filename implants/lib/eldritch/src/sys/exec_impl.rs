@@ -6,26 +6,26 @@ use nix::{sys::wait::waitpid, unistd::{fork, ForkResult}};
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use std::process::exit;
 
-use super::CommandOutput;
+use eldritch_types::command_output::CommandOutput;
 
 // https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
 
-pub fn exec(starlark_heap: &Heap, path: String, args: Vec<String>, disown: Option<bool>) -> Result<Dict> {
+pub fn exec(starlark_heap: &Heap, path: String, args: Vec<String>, disown: Option<bool>) -> Result<CommandOutput> {
 
     let cmd_res = handle_exec(path, args, disown)?;
+    Ok(cmd_res)
+    // let res = SmallMap::new();
+    // let mut dict_res = Dict::new(res);
+    // let stdout_value = starlark_heap.alloc_str(cmd_res.stdout.as_str());
+    // dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
 
-    let res = SmallMap::new();
-    let mut dict_res = Dict::new(res);
-    let stdout_value = starlark_heap.alloc_str(cmd_res.stdout.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
+    // let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
+    // dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed().unwrap(), stderr_value.to_value());
 
-    let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed().unwrap(), stderr_value.to_value());
+    // let status_value = starlark_heap.alloc(cmd_res.status);
+    // dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
 
-    let status_value = starlark_heap.alloc(cmd_res.status);
-    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
-
-    Ok(dict_res)
+    // Ok(dict_res)
 }
 
 fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<CommandOutput> {
