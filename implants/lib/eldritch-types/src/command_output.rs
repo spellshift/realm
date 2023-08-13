@@ -16,5 +16,4 @@ starlark_simple_value!(CommandOutput);
 
 #[allow(non_upper_case_globals)]
 #[starlark_value(type = "command_output")]
-impl<'v> StarlarkValue<'v> for CommandOutput {
-}
+impl<'v> StarlarkValue<'v> for CommandOutput {}
