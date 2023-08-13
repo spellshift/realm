@@ -4,6 +4,7 @@ use starlark_derive::starlark_module;
 pub mod command_output;
 pub mod file_metadata;
 pub mod proc;
+pub mod network_interface;
 
 #[starlark_module]
 pub fn eldritch_types(builder: &mut GlobalsBuilder) {
@@ -18,6 +19,10 @@ pub fn eldritch_types(builder: &mut GlobalsBuilder) {
     const Proc: StarlarkValueAsType<proc::Proc> = StarlarkValueAsType::new();
     fn proc(pid: u32, ppid: u32, status: String, name: String, path: String, username: String, command: String, cwd: String, environ: String) -> anyhow::Result<proc::Proc> {
         Ok(proc::Proc{ pid, ppid, status, name, path, username, command, cwd, environ })
+    }
+    const NetworkInterface: StarlarkValueAsType<network_interface::NetworkInterface> = StarlarkValueAsType::new();
+    fn network_interface( name: String, mac: String, ips: Vec<String>) -> anyhow::Result<network_interface::NetworkInterface> {
+        Ok(network_interface::NetworkInterface{ name, mac, ips })
     }
 }
 
