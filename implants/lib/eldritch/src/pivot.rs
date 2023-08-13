@@ -14,6 +14,7 @@ use allocative::Allocative;
 use async_trait::async_trait;
 use derive_more::Display;
 
+use eldritch_types::command_output::CommandOutput;
 use russh::{client, Disconnect};
 use russh_keys::{key, decode_secret_key};
 use starlark::values::dict::Dict;
@@ -61,9 +62,9 @@ impl<'v> UnpackValue<'v> for PivotLibrary {
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn ssh_exec<'v>(this: PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<Dict<'v>> {
+    fn ssh_exec(this: PivotLibrary, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<CommandOutput> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        ssh_exec_impl::ssh_exec(starlark_heap, target, port, command, username, password, key, key_password, timeout)
+        ssh_exec_impl::ssh_exec(target, port, command, username, password, key, key_password, timeout)
     }
     fn ssh_password_spray(this:  PivotLibrary, targets: Vec<String>, port: i32, credentials: Vec<String>, keys: Vec<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

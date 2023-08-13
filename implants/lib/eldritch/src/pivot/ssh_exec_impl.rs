@@ -1,14 +1,10 @@
 use anyhow::Result;
-use starlark::{values::{dict::Dict, Heap}, collections::SmallMap, const_frozen_string};
+use eldritch_types::command_output::CommandOutput;
 
 use super::Session;
 
-struct SSHExecOutput {
-    stdout: String,
-    status: i32,
-}
 
-async fn handle_ssh_exec(target: String, port: u16, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<&str>, timeout: Option<u32>) -> Result<SSHExecOutput> {
+async fn handle_ssh_exec(target: String, port: u16, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<&str>, timeout: Option<u32>) -> Result<CommandOutput> {
     let mut ssh = tokio::time::timeout(
         std::time::Duration::from_secs(timeout.unwrap_or(3).into()),
         Session::connect(username, password, key, key_password, format!("{}:{}", target, port)),
@@ -18,14 +14,15 @@ async fn handle_ssh_exec(target: String, port: u16, command: String, username: S
     ssh.close().await?;
 
     Ok(
-        SSHExecOutput { 
+        CommandOutput { 
             stdout: r.output(),
+            stderr: "".to_string(),
             status: r.code.unwrap_or(0) as i32,
         }
     )
 }
 
-pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) -> Result<Dict> {
+pub fn ssh_exec(target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) -> Result<CommandOutput> {
     
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -42,15 +39,7 @@ pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, command: String
         Err(local_err) => return Err(anyhow::anyhow!("Failed to run handle_ssh_exec: {}", local_err.to_string())),
     };
 
-    let res = SmallMap::new();
-    let mut dict_res = Dict::new(res);
-    let stdout_value = starlark_heap.alloc_str(&cmd_res.stdout);
-    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
-
-    let status_value = starlark_heap.alloc(cmd_res.status);
-    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
-
-    Ok(dict_res)
+    Ok(cmd_res)
 }
 
 #[cfg(test)]
