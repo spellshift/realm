@@ -1,6 +1,5 @@
 use allocative_derive::Allocative;
 use derive_more::Display;
-use starlark::values::{AllocValue, Heap, Value};
 use starlark::{starlark_simple_value, values::StarlarkValue};
 use starlark_derive::NoSerialize;
 use starlark_derive::starlark_value;
