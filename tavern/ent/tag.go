@@ -26,24 +26,24 @@ type Tag struct {
 
 // TagEdges holds the relations/edges for other nodes in the graph.
 type TagEdges struct {
-	// Sessions holds the value of the sessions edge.
-	Sessions []*Session `json:"sessions,omitempty"`
+	// Beacons holds the value of the beacons edge.
+	Beacons []*Beacon `json:"beacons,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
 	totalCount [1]map[string]int
 
-	namedSessions map[string][]*Session
+	namedBeacons map[string][]*Beacon
 }
 
-// SessionsOrErr returns the Sessions value or an error if the edge
+// BeaconsOrErr returns the Beacons value or an error if the edge
 // was not loaded in eager-loading.
-func (e TagEdges) SessionsOrErr() ([]*Session, error) {
+func (e TagEdges) BeaconsOrErr() ([]*Beacon, error) {
 	if e.loadedTypes[0] {
-		return e.Sessions, nil
+		return e.Beacons, nil
 	}
-	return nil, &NotLoadedError{edge: "sessions"}
+	return nil, &NotLoadedError{edge: "beacons"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -93,9 +93,9 @@ func (t *Tag) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// QuerySessions queries the "sessions" edge of the Tag entity.
-func (t *Tag) QuerySessions() *SessionQuery {
-	return NewTagClient(t.config).QuerySessions(t)
+// QueryBeacons queries the "beacons" edge of the Tag entity.
+func (t *Tag) QueryBeacons() *BeaconQuery {
+	return NewTagClient(t.config).QueryBeacons(t)
 }
 
 // Update returns a builder for updating this Tag.
@@ -130,27 +130,27 @@ func (t *Tag) String() string {
 	return builder.String()
 }
 
-// NamedSessions returns the Sessions named value or an error if the edge was not
+// NamedBeacons returns the Beacons named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Tag) NamedSessions(name string) ([]*Session, error) {
-	if t.Edges.namedSessions == nil {
+func (t *Tag) NamedBeacons(name string) ([]*Beacon, error) {
+	if t.Edges.namedBeacons == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedSessions[name]
+	nodes, ok := t.Edges.namedBeacons[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Tag) appendNamedSessions(name string, edges ...*Session) {
-	if t.Edges.namedSessions == nil {
-		t.Edges.namedSessions = make(map[string][]*Session)
+func (t *Tag) appendNamedBeacons(name string, edges ...*Beacon) {
+	if t.Edges.namedBeacons == nil {
+		t.Edges.namedBeacons = make(map[string][]*Beacon)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedSessions[name] = []*Session{}
+		t.Edges.namedBeacons[name] = []*Beacon{}
 	} else {
-		t.Edges.namedSessions[name] = append(t.Edges.namedSessions[name], edges...)
+		t.Edges.namedBeacons[name] = append(t.Edges.namedBeacons[name], edges...)
 	}
 }
 

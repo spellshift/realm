@@ -8,90 +8,90 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (j *Job) Tome(ctx context.Context) (*Tome, error) {
-	result, err := j.Edges.TomeOrErr()
+func (b *Beacon) Tags(ctx context.Context) (result []*Tag, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = b.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = b.Edges.TagsOrErr()
+	}
 	if IsNotLoaded(err) {
-		result, err = j.QueryTome().Only(ctx)
+		result, err = b.QueryTags().All(ctx)
 	}
 	return result, err
 }
 
-func (j *Job) Bundle(ctx context.Context) (*File, error) {
-	result, err := j.Edges.BundleOrErr()
+func (b *Beacon) Tasks(ctx context.Context) (result []*Task, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = b.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = b.Edges.TasksOrErr()
+	}
 	if IsNotLoaded(err) {
-		result, err = j.QueryBundle().Only(ctx)
+		result, err = b.QueryTasks().All(ctx)
+	}
+	return result, err
+}
+
+func (q *Quest) Tome(ctx context.Context) (*Tome, error) {
+	result, err := q.Edges.TomeOrErr()
+	if IsNotLoaded(err) {
+		result, err = q.QueryTome().Only(ctx)
+	}
+	return result, err
+}
+
+func (q *Quest) Bundle(ctx context.Context) (*File, error) {
+	result, err := q.Edges.BundleOrErr()
+	if IsNotLoaded(err) {
+		result, err = q.QueryBundle().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (j *Job) Tasks(ctx context.Context) (result []*Task, err error) {
+func (q *Quest) Tasks(ctx context.Context) (result []*Task, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = j.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = q.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = j.Edges.TasksOrErr()
+		result, err = q.Edges.TasksOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = j.QueryTasks().All(ctx)
+		result, err = q.QueryTasks().All(ctx)
 	}
 	return result, err
 }
 
-func (j *Job) Creator(ctx context.Context) (*User, error) {
-	result, err := j.Edges.CreatorOrErr()
+func (q *Quest) Creator(ctx context.Context) (*User, error) {
+	result, err := q.Edges.CreatorOrErr()
 	if IsNotLoaded(err) {
-		result, err = j.QueryCreator().Only(ctx)
+		result, err = q.QueryCreator().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
 
-func (s *Session) Tags(ctx context.Context) (result []*Tag, err error) {
+func (t *Tag) Beacons(ctx context.Context) (result []*Beacon, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = t.NamedBeacons(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = s.Edges.TagsOrErr()
+		result, err = t.Edges.BeaconsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = s.QueryTags().All(ctx)
+		result, err = t.QueryBeacons().All(ctx)
 	}
 	return result, err
 }
 
-func (s *Session) Tasks(ctx context.Context) (result []*Task, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = s.Edges.TasksOrErr()
-	}
+func (t *Task) Quest(ctx context.Context) (*Quest, error) {
+	result, err := t.Edges.QuestOrErr()
 	if IsNotLoaded(err) {
-		result, err = s.QueryTasks().All(ctx)
+		result, err = t.QueryQuest().Only(ctx)
 	}
 	return result, err
 }
 
-func (t *Tag) Sessions(ctx context.Context) (result []*Session, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedSessions(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = t.Edges.SessionsOrErr()
-	}
+func (t *Task) Beacon(ctx context.Context) (*Beacon, error) {
+	result, err := t.Edges.BeaconOrErr()
 	if IsNotLoaded(err) {
-		result, err = t.QuerySessions().All(ctx)
-	}
-	return result, err
-}
-
-func (t *Task) Job(ctx context.Context) (*Job, error) {
-	result, err := t.Edges.JobOrErr()
-	if IsNotLoaded(err) {
-		result, err = t.QueryJob().Only(ctx)
-	}
-	return result, err
-}
-
-func (t *Task) Session(ctx context.Context) (*Session, error) {
-	result, err := t.Edges.SessionOrErr()
-	if IsNotLoaded(err) {
-		result, err = t.QuerySession().Only(ctx)
+		result, err = t.QueryBeacon().Only(ctx)
 	}
 	return result, err
 }

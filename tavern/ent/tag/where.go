@@ -143,24 +143,24 @@ func KindNotIn(vs ...Kind) predicate.Tag {
 	return predicate.Tag(sql.FieldNotIn(FieldKind, vs...))
 }
 
-// HasSessions applies the HasEdge predicate on the "sessions" edge.
-func HasSessions() predicate.Tag {
+// HasBeacons applies the HasEdge predicate on the "beacons" edge.
+func HasBeacons() predicate.Tag {
 	return predicate.Tag(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, SessionsTable, SessionsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, true, BeaconsTable, BeaconsPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSessionsWith applies the HasEdge predicate on the "sessions" edge with a given conditions (other predicates).
-func HasSessionsWith(preds ...predicate.Session) predicate.Tag {
+// HasBeaconsWith applies the HasEdge predicate on the "beacons" edge with a given conditions (other predicates).
+func HasBeaconsWith(preds ...predicate.Beacon) predicate.Tag {
 	return predicate.Tag(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SessionsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, SessionsTable, SessionsPrimaryKey...),
+			sqlgraph.To(BeaconsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, BeaconsTable, BeaconsPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

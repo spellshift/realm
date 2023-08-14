@@ -1,6 +1,6 @@
 ---
 title: Imix
-tags: 
+tags:
  - User Guide
 description: Imix User Guide
 permalink: user-guide/imix
@@ -49,10 +49,10 @@ The imix config is as follows:
         - `priority`: The index that a domain should have.
         - `uri`: The full URI of the callback endpoint.
 
-## Functionality 
+## Functionality
 Imix derives all it's functionality from the eldritch language.
 See the [Eldritch User Guide](/user-guide/eldritch) for more information.
 
 ## Task management
 Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
-Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running jobs will report their status as new data comes in.
+Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running tasks will report their status as new data comes in.

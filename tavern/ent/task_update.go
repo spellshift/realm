@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/ent/job"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/predicate"
-	"github.com/kcarretto/realm/tavern/ent/session"
+	"github.com/kcarretto/realm/tavern/ent/quest"
 	"github.com/kcarretto/realm/tavern/ent/task"
 )
 
@@ -136,26 +136,26 @@ func (tu *TaskUpdate) ClearError() *TaskUpdate {
 	return tu
 }
 
-// SetJobID sets the "job" edge to the Job entity by ID.
-func (tu *TaskUpdate) SetJobID(id int) *TaskUpdate {
-	tu.mutation.SetJobID(id)
+// SetQuestID sets the "quest" edge to the Quest entity by ID.
+func (tu *TaskUpdate) SetQuestID(id int) *TaskUpdate {
+	tu.mutation.SetQuestID(id)
 	return tu
 }
 
-// SetJob sets the "job" edge to the Job entity.
-func (tu *TaskUpdate) SetJob(j *Job) *TaskUpdate {
-	return tu.SetJobID(j.ID)
+// SetQuest sets the "quest" edge to the Quest entity.
+func (tu *TaskUpdate) SetQuest(q *Quest) *TaskUpdate {
+	return tu.SetQuestID(q.ID)
 }
 
-// SetSessionID sets the "session" edge to the Session entity by ID.
-func (tu *TaskUpdate) SetSessionID(id int) *TaskUpdate {
-	tu.mutation.SetSessionID(id)
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (tu *TaskUpdate) SetBeaconID(id int) *TaskUpdate {
+	tu.mutation.SetBeaconID(id)
 	return tu
 }
 
-// SetSession sets the "session" edge to the Session entity.
-func (tu *TaskUpdate) SetSession(s *Session) *TaskUpdate {
-	return tu.SetSessionID(s.ID)
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (tu *TaskUpdate) SetBeacon(b *Beacon) *TaskUpdate {
+	return tu.SetBeaconID(b.ID)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -163,15 +163,15 @@ func (tu *TaskUpdate) Mutation() *TaskMutation {
 	return tu.mutation
 }
 
-// ClearJob clears the "job" edge to the Job entity.
-func (tu *TaskUpdate) ClearJob() *TaskUpdate {
-	tu.mutation.ClearJob()
+// ClearQuest clears the "quest" edge to the Quest entity.
+func (tu *TaskUpdate) ClearQuest() *TaskUpdate {
+	tu.mutation.ClearQuest()
 	return tu
 }
 
-// ClearSession clears the "session" edge to the Session entity.
-func (tu *TaskUpdate) ClearSession() *TaskUpdate {
-	tu.mutation.ClearSession()
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (tu *TaskUpdate) ClearBeacon() *TaskUpdate {
+	tu.mutation.ClearBeacon()
 	return tu
 }
 
@@ -213,11 +213,11 @@ func (tu *TaskUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (tu *TaskUpdate) check() error {
-	if _, ok := tu.mutation.JobID(); tu.mutation.JobCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Task.job"`)
+	if _, ok := tu.mutation.QuestID(); tu.mutation.QuestCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.quest"`)
 	}
-	if _, ok := tu.mutation.SessionID(); tu.mutation.SessionCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Task.session"`)
+	if _, ok := tu.mutation.BeaconID(); tu.mutation.BeaconCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.beacon"`)
 	}
 	return nil
 }
@@ -267,33 +267,33 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if tu.mutation.ErrorCleared() {
 		_spec.ClearField(task.FieldError, field.TypeString)
 	}
-	if tu.mutation.JobCleared() {
+	if tu.mutation.QuestCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   task.JobTable,
-			Columns: []string{task.JobColumn},
+			Table:   task.QuestTable,
+			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: job.FieldID,
+					Column: quest.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.JobIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.QuestIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   task.JobTable,
-			Columns: []string{task.JobColumn},
+			Table:   task.QuestTable,
+			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: job.FieldID,
+					Column: quest.FieldID,
 				},
 			},
 		}
@@ -302,33 +302,33 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tu.mutation.SessionCleared() {
+	if tu.mutation.BeaconCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.SessionTable,
-			Columns: []string{task.SessionColumn},
+			Table:   task.BeaconTable,
+			Columns: []string{task.BeaconColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: session.FieldID,
+					Column: beacon.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.SessionIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.BeaconIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.SessionTable,
-			Columns: []string{task.SessionColumn},
+			Table:   task.BeaconTable,
+			Columns: []string{task.BeaconColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: session.FieldID,
+					Column: beacon.FieldID,
 				},
 			},
 		}
@@ -463,26 +463,26 @@ func (tuo *TaskUpdateOne) ClearError() *TaskUpdateOne {
 	return tuo
 }
 
-// SetJobID sets the "job" edge to the Job entity by ID.
-func (tuo *TaskUpdateOne) SetJobID(id int) *TaskUpdateOne {
-	tuo.mutation.SetJobID(id)
+// SetQuestID sets the "quest" edge to the Quest entity by ID.
+func (tuo *TaskUpdateOne) SetQuestID(id int) *TaskUpdateOne {
+	tuo.mutation.SetQuestID(id)
 	return tuo
 }
 
-// SetJob sets the "job" edge to the Job entity.
-func (tuo *TaskUpdateOne) SetJob(j *Job) *TaskUpdateOne {
-	return tuo.SetJobID(j.ID)
+// SetQuest sets the "quest" edge to the Quest entity.
+func (tuo *TaskUpdateOne) SetQuest(q *Quest) *TaskUpdateOne {
+	return tuo.SetQuestID(q.ID)
 }
 
-// SetSessionID sets the "session" edge to the Session entity by ID.
-func (tuo *TaskUpdateOne) SetSessionID(id int) *TaskUpdateOne {
-	tuo.mutation.SetSessionID(id)
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (tuo *TaskUpdateOne) SetBeaconID(id int) *TaskUpdateOne {
+	tuo.mutation.SetBeaconID(id)
 	return tuo
 }
 
-// SetSession sets the "session" edge to the Session entity.
-func (tuo *TaskUpdateOne) SetSession(s *Session) *TaskUpdateOne {
-	return tuo.SetSessionID(s.ID)
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (tuo *TaskUpdateOne) SetBeacon(b *Beacon) *TaskUpdateOne {
+	return tuo.SetBeaconID(b.ID)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -490,15 +490,15 @@ func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
 	return tuo.mutation
 }
 
-// ClearJob clears the "job" edge to the Job entity.
-func (tuo *TaskUpdateOne) ClearJob() *TaskUpdateOne {
-	tuo.mutation.ClearJob()
+// ClearQuest clears the "quest" edge to the Quest entity.
+func (tuo *TaskUpdateOne) ClearQuest() *TaskUpdateOne {
+	tuo.mutation.ClearQuest()
 	return tuo
 }
 
-// ClearSession clears the "session" edge to the Session entity.
-func (tuo *TaskUpdateOne) ClearSession() *TaskUpdateOne {
-	tuo.mutation.ClearSession()
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (tuo *TaskUpdateOne) ClearBeacon() *TaskUpdateOne {
+	tuo.mutation.ClearBeacon()
 	return tuo
 }
 
@@ -553,11 +553,11 @@ func (tuo *TaskUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TaskUpdateOne) check() error {
-	if _, ok := tuo.mutation.JobID(); tuo.mutation.JobCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Task.job"`)
+	if _, ok := tuo.mutation.QuestID(); tuo.mutation.QuestCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.quest"`)
 	}
-	if _, ok := tuo.mutation.SessionID(); tuo.mutation.SessionCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Task.session"`)
+	if _, ok := tuo.mutation.BeaconID(); tuo.mutation.BeaconCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.beacon"`)
 	}
 	return nil
 }
@@ -624,33 +624,33 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 	if tuo.mutation.ErrorCleared() {
 		_spec.ClearField(task.FieldError, field.TypeString)
 	}
-	if tuo.mutation.JobCleared() {
+	if tuo.mutation.QuestCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   task.JobTable,
-			Columns: []string{task.JobColumn},
+			Table:   task.QuestTable,
+			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: job.FieldID,
+					Column: quest.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.JobIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.QuestIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   task.JobTable,
-			Columns: []string{task.JobColumn},
+			Table:   task.QuestTable,
+			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: job.FieldID,
+					Column: quest.FieldID,
 				},
 			},
 		}
@@ -659,33 +659,33 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tuo.mutation.SessionCleared() {
+	if tuo.mutation.BeaconCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.SessionTable,
-			Columns: []string{task.SessionColumn},
+			Table:   task.BeaconTable,
+			Columns: []string{task.BeaconColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: session.FieldID,
+					Column: beacon.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.SessionIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.BeaconIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   task.SessionTable,
-			Columns: []string{task.SessionColumn},
+			Table:   task.BeaconTable,
+			Columns: []string{task.BeaconColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: session.FieldID,
+					Column: beacon.FieldID,
 				},
 			},
 		}
