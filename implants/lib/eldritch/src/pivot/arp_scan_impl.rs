@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use ipnetwork::{IpNetwork, Ipv4Network};
 #[cfg(not(target_os = "windows"))]
 use pnet::{
@@ -31,27 +31,22 @@ pub struct ArpResponse {
 fn start_listener(
     interface: NetworkInterface,
     data: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>>,
-) {
+) -> Result<()> {
     if interface.ips.iter().filter(|ip| ip.is_ipv4()).count() == 0 {
-        return;
+        return Err(anyhow!("Interface does not have a v4 address"));
     }
-    let mac = match interface.mac {
-        Some(mac) => mac,
-        None => return,
-    };
+    let mac = interface.mac.ok_or(anyhow!("Could not obtain MAC of interface"))?;
     let (mut tx, mut rx) = match channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
-        Ok(_) => panic!("Unhandled channel type"),
+        Ok(_) => return Err(anyhow!("Unhandled channel type")),
         Err(e) => {
-            println!("Error creating channel: {}", e);
-            return;
+            return Err(anyhow!("Error creating channel: {}", e));
         }
     };
     let ips = match data.lock() {
         Ok(lock) => lock.keys().cloned().collect::<Vec<Ipv4Addr>>(),
         Err(err) => {
-            println!("Failed to get lock on ips: {}", err);
-            return;
+            return Err(anyhow!("Failed to get lock on ips: {}", err));
         }
     };
     for ip in ips {
@@ -68,8 +63,7 @@ fn start_listener(
         let mut arp = match MutableArpPacket::new(&mut arp_packet) {
             Some(arp) => arp,
             None => {
-                println!("Failed to create MutableArpPacket to send.");
-                return;
+                return Err(anyhow!("Failed to create MutableArpPacket to send."));
             }
         };
         arp.set_hardware_type(pnet::packet::arp::ArpHardwareType(1));
@@ -85,8 +79,7 @@ fn start_listener(
         let mut eth = match MutableEthernetPacket::new(&mut eth_packet) {
             Some(eth) => eth,
             None => {
-                println!("Failed to create MutableEthernetPacket to send.");
-                return;
+                return Err(anyhow!("Failed to create MutableEthernetPacket to send."));
             }
         };
         eth.set_destination(MacAddr::broadcast());
@@ -96,12 +89,10 @@ fn start_listener(
         match tx.send_to(eth.packet(), None) {
             Some(Ok(_)) => {}
             Some(Err(err)) => {
-                println!("Failed to tx on {}: {}", interface.name, err);
-                return;
+                return Err(anyhow!("Failed to tx on {}: {}", interface.name, err));
             }
             None => {
-                println!("Failed to tx on {}: Returned None", interface.name);
-                return;
+                return Err(anyhow!("Failed to tx on {}: Returned None", interface.name));
             }
         };
         let now = SystemTime::now();
@@ -109,8 +100,7 @@ fn start_listener(
             let elapsed = match now.elapsed() {
                 Ok(elapsed) => elapsed,
                 Err(err) => {
-                    println!("Failed to get elapsed time on {}: {}", interface.name, err);
-                    return;
+                    return Err(anyhow!("Failed to get elapsed time on {}: {}", interface.name, err));
                 }
             };
             if elapsed > Duration::from_secs(5) {
@@ -142,12 +132,10 @@ fn start_listener(
                                     });
                                     break;
                                 }
-                                println!("Failed to find {} in HashMap", ip);
-                                return;
+                                return Err(anyhow!("Failed to find {} in HashMap", ip));
                             }
                             Err(err) => {
-                                println!("Failed to get lock on data: {}", err);
-                                return;
+                                return Err(anyhow!("Failed to get lock on data: {}", err));
                             }
                         }
                     }
@@ -156,12 +144,12 @@ fn start_listener(
                     if e.kind() == std::io::ErrorKind::TimedOut {
                         continue;
                     }
-                    println!("Error receiving packet: {}", e);
-                    return;
+                    return Err(anyhow!("Error receiving packet: {}", e));
                 }
             }
         }
     }
+    Ok(())
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -213,7 +201,7 @@ pub fn handle_arp_scan(
         let inner_out = listener_out.clone();
         let inner_interface = interface.clone();
         let thread = std::thread::spawn(move || {
-            start_listener(inner_interface, inner_out);
+            start_listener(inner_interface, inner_out).unwrap();
         });
         thread.join().map_err(|err| {
             anyhow::anyhow!(
@@ -267,9 +255,10 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
 #[cfg(not(target_os = "windows"))]
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, sync::{Mutex, Arc}, net::Ipv4Addr, thread, time::Duration};
+    use pnet::datalink::{interfaces, NetworkInterface};
 
-    use crate::pivot::arp_scan_impl::handle_arp_scan;
+    use crate::pivot::arp_scan_impl::{handle_arp_scan, ArpResponse, start_listener};
 
     #[test]
     fn test_positive() {
@@ -292,5 +281,23 @@ mod tests {
     #[test]
     fn test_invalid_cidr() {
         assert!(handle_arp_scan(Vec::from(["127.0.0.1/33".to_string()])).is_err());
+    }
+
+    #[test]
+    fn test_lock_failure() {
+        let data = Arc::from(Mutex::from(HashMap::<Ipv4Addr, Option<ArpResponse>>::from([(Ipv4Addr::LOCALHOST, None)])));
+        let data_clone = data.clone();
+        thread::spawn(move || {
+            let _x = data_clone.lock().unwrap();
+            panic!("Need to panic");
+        });
+        thread::sleep(Duration::from_secs(3));
+        let loopback = {
+            let interfaces = interfaces();
+            interfaces.iter().filter(|x| x.is_loopback()).next().unwrap().clone()
+        };
+        assert!(
+            start_listener(loopback, data).is_err()
+        );
     }
 }
