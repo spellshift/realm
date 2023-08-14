@@ -42,7 +42,7 @@ starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev 
 starlark_derive = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "1109aaf9b700d7cdd7ba48986aa650221b70a22f" }
 structopt = "0.3.23"
 sys-info = "0.9.1"
-sysinfo = "0.28.4"
+sysinfo = "0.29.7"
 tar = "0.4.38"
 tavern = { path = "./lib/tavern" }
 tempfile = "3.3.0"
