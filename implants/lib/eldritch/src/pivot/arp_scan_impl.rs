@@ -6,9 +6,9 @@ use pnet::{
     packet::{
         arp::{ArpOperations, ArpPacket, MutableArpPacket},
         ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
-        Packet
+        Packet,
     },
-    util::MacAddr
+    util::MacAddr,
 };
 use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
@@ -262,20 +262,6 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
 #[cfg(target_os = "windows")]
 pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
     Err(anyhow::anyhow!("ARP Scanning is not available on Windows."))
-}
-
-#[cfg(target_os = "windows")]
-#[cfg(test)]
-mod tests {
-    use super::arp_scan;
-
-    #[test]
-    fn test_windows_failure() {
-        assert_eq!(
-            arp_scan(starlark_heap, ["127.0.0.1/8".to_string()]),
-            Err(anyhow::anyhow!("ARP Scanning is not available on Windows."))
-        );
-    }
 }
 
 #[cfg(not(target_os = "windows"))]
