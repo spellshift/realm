@@ -148,3 +148,35 @@ pub fn get_user(starlark_heap: &Heap) -> Result<Dict> {
     }
     Err(anyhow::anyhow!("Failed to obtain process information"))
 }
+
+#[cfg(test)]
+mod tests {
+    use starlark::values::{UnpackValue, Value};
+    use super::*;
+
+    #[test]
+    fn test_sys_get_user() -> anyhow::Result<()>{
+        let test_heap = Heap::new();
+        let res = get_user(&test_heap)?;
+        let keys: Vec<&str> = res.keys().map(|key| key.unpack_str().unwrap()).collect();
+        assert!(keys.contains(&"euid"));
+        assert!(keys.contains(&"uid"));
+        assert!(keys.contains(&"egid"));
+        assert!(keys.contains(&"gid"));
+        let uid_data: Value<'_> = res.get(const_frozen_string!("uid").to_value())?.unwrap();
+        let uid_data_map: SmallMap<String, Value<'_>> = SmallMap::unpack_value(uid_data).unwrap();
+        let uid_data_keys: Vec<&str> = uid_data_map.keys().map(|key| &key[..]).collect();
+        assert!(uid_data_keys.contains(&"uid"));
+        assert!(uid_data_keys.contains(&"name"));
+        assert!(uid_data_keys.contains(&"gid"));
+        assert!(uid_data_keys.contains(&"groups"));
+        let euid_data: Value<'_> = res.get(const_frozen_string!("euid").to_value())?.unwrap();
+        let euid_data_map: SmallMap<String, Value<'_>> = SmallMap::unpack_value(euid_data).unwrap();
+        let euid_data_keys: Vec<&str> = euid_data_map.keys().map(|key| &key[..]).collect();
+        assert!(euid_data_keys.contains(&"uid"));
+        assert!(euid_data_keys.contains(&"name"));
+        assert!(euid_data_keys.contains(&"gid"));
+        assert!(euid_data_keys.contains(&"groups"));
+        Ok(())
+    }
+}
