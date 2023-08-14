@@ -20,7 +20,7 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
                 name
                 kind   
         },
-        sessions {
+        beacons {
             id
             name
             principal

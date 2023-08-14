@@ -13,8 +13,9 @@ use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
+use starlark::values::starlark_value;
 use starlark::values::{StarlarkValue, Value, Heap, dict::Dict, UnpackValue, ValueLike, ProvidesStaticType};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 
@@ -29,8 +30,9 @@ struct CommandOutput {
 pub struct SysLibrary();
 starlark_simple_value!(SysLibrary);
 
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "sys_library")]
 impl<'v> StarlarkValue<'v> for SysLibrary {
-    starlark_type!("sys_library");
 
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();

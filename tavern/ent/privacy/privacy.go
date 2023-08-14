@@ -149,6 +149,30 @@ func DenyMutationOperationRule(op ent.Op) MutationRule {
 	return OnMutationOperation(rule, op)
 }
 
+// The BeaconQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type BeaconQueryRuleFunc func(context.Context, *ent.BeaconQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f BeaconQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.BeaconQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.BeaconQuery", q)
+}
+
+// The BeaconMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type BeaconMutationRuleFunc func(context.Context, *ent.BeaconMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f BeaconMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.BeaconMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.BeaconMutation", m)
+}
+
 // The FileQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type FileQueryRuleFunc func(context.Context, *ent.FileQuery) error
@@ -173,52 +197,28 @@ func (f FileMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) 
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.FileMutation", m)
 }
 
-// The JobQueryRuleFunc type is an adapter to allow the use of ordinary
+// The QuestQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
-type JobQueryRuleFunc func(context.Context, *ent.JobQuery) error
+type QuestQueryRuleFunc func(context.Context, *ent.QuestQuery) error
 
 // EvalQuery return f(ctx, q).
-func (f JobQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
-	if q, ok := q.(*ent.JobQuery); ok {
+func (f QuestQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.QuestQuery); ok {
 		return f(ctx, q)
 	}
-	return Denyf("ent/privacy: unexpected query type %T, expect *ent.JobQuery", q)
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.QuestQuery", q)
 }
 
-// The JobMutationRuleFunc type is an adapter to allow the use of ordinary
+// The QuestMutationRuleFunc type is an adapter to allow the use of ordinary
 // functions as a mutation rule.
-type JobMutationRuleFunc func(context.Context, *ent.JobMutation) error
+type QuestMutationRuleFunc func(context.Context, *ent.QuestMutation) error
 
 // EvalMutation calls f(ctx, m).
-func (f JobMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
-	if m, ok := m.(*ent.JobMutation); ok {
+func (f QuestMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.QuestMutation); ok {
 		return f(ctx, m)
 	}
-	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.JobMutation", m)
-}
-
-// The SessionQueryRuleFunc type is an adapter to allow the use of ordinary
-// functions as a query rule.
-type SessionQueryRuleFunc func(context.Context, *ent.SessionQuery) error
-
-// EvalQuery return f(ctx, q).
-func (f SessionQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
-	if q, ok := q.(*ent.SessionQuery); ok {
-		return f(ctx, q)
-	}
-	return Denyf("ent/privacy: unexpected query type %T, expect *ent.SessionQuery", q)
-}
-
-// The SessionMutationRuleFunc type is an adapter to allow the use of ordinary
-// functions as a mutation rule.
-type SessionMutationRuleFunc func(context.Context, *ent.SessionMutation) error
-
-// EvalMutation calls f(ctx, m).
-func (f SessionMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
-	if m, ok := m.(*ent.SessionMutation); ok {
-		return f(ctx, m)
-	}
-	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.SessionMutation", m)
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.QuestMutation", m)
 }
 
 // The TagQueryRuleFunc type is an adapter to allow the use of ordinary

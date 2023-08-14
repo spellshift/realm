@@ -31,8 +31,8 @@ func TestTagMutations(t *testing.T) {
 			SetName("TestTag1").
 			SaveX(ctx),
 	}
-	testSessions := []*ent.Session{
-		graph.Session.Create().
+	testBeacons := []*ent.Beacon{
+		graph.Beacon.Create().
 			SetPrincipal("admin").
 			SetAgentIdentifier("TEST").
 			SetIdentifier("SOME_ID").
@@ -40,7 +40,7 @@ func TestTagMutations(t *testing.T) {
 			SetHostname("SOME_HOSTNAME").
 			SetLastSeenAt(time.Now().Add(-10 * time.Minute)).
 			SaveX(ctx),
-		graph.Session.Create().
+		graph.Beacon.Create().
 			SetIdentifier("ANOTHER_ID").
 			SetLastSeenAt(time.Now().Add(-10 * time.Minute)).
 			AddTags(testTags[0]).
@@ -66,9 +66,9 @@ mutation newCreateTagTest($input: CreateTagInput!) {
 			return convertID(resp.CreateTag.ID), nil
 		}
 
-		t.Run("WithoutSessions", func(t *testing.T) {
+		t.Run("WithoutBeacons", func(t *testing.T) {
 			expected := map[string]any{
-				"name": "TestTagWithoutSessions",
+				"name": "TestTagWithoutBeacons",
 				"kind": tag.KindGroup,
 			}
 			id, err := createTag(expected)
@@ -78,12 +78,12 @@ mutation newCreateTagTest($input: CreateTagInput!) {
 			assert.Equal(t, expected["name"], testTag.Name)
 			assert.Equal(t, expected["kind"], testTag.Kind)
 		})
-		t.Run("WithSessions", func(t *testing.T) {
-			expectedSessionIDs := []int{testSessions[0].ID}
+		t.Run("WithBeacons", func(t *testing.T) {
+			expectedBeaconIDs := []int{testBeacons[0].ID}
 			expected := map[string]any{
-				"name":       "TestTagWithSessions",
-				"kind":       tag.KindGroup,
-				"sessionIDs": expectedSessionIDs,
+				"name":      "TestTagWithBeacons",
+				"kind":      tag.KindGroup,
+				"beaconIDs": expectedBeaconIDs,
 			}
 			id, err := createTag(expected)
 			require.NoError(t, err)
@@ -91,10 +91,10 @@ mutation newCreateTagTest($input: CreateTagInput!) {
 			testTag := graph.Tag.GetX(ctx, id)
 			assert.Equal(t, expected["name"], testTag.Name)
 			assert.Equal(t, expected["kind"], testTag.Kind)
-			testTagSessions, err := testTag.Sessions(ctx)
+			testTagBeacons, err := testTag.Beacons(ctx)
 			require.NoError(t, err)
-			assert.Len(t, testTagSessions, 1)
-			assert.Equal(t, expectedSessionIDs[0], testTagSessions[0].ID)
+			assert.Len(t, testTagBeacons, 1)
+			assert.Equal(t, expectedBeaconIDs[0], testTagBeacons[0].ID)
 		})
 
 	})
@@ -123,20 +123,20 @@ mutation newUpdateTagTest($tagID: ID!, $input: UpdateTagInput!) {
 			return convertID(resp.UpdateTag.ID), nil
 		}
 
-		t.Run("ModifySessions", func(t *testing.T) {
-			expectedSessionIDs := []int{testSessions[0].ID}
+		t.Run("ModifyBeacons", func(t *testing.T) {
+			expectedBeaconIDs := []int{testBeacons[0].ID}
 			expected := map[string]any{
-				"addSessionIDs":    expectedSessionIDs,
-				"removeSessionIDs": testSessions[1].ID,
+				"addBeaconIDs":    expectedBeaconIDs,
+				"removeBeaconIDs": testBeacons[1].ID,
 			}
 			id, err := updateTag(testTags[0].ID, expected)
 			require.NoError(t, err)
 			assert.NotZero(t, id)
 			testTag := graph.Tag.GetX(ctx, id)
-			testTagSessions, err := testTag.Sessions(ctx)
+			testTagBeacons, err := testTag.Beacons(ctx)
 			require.NoError(t, err)
-			assert.Len(t, testTagSessions, 1)
-			assert.Equal(t, expectedSessionIDs[0], testTagSessions[0].ID)
+			assert.Len(t, testTagBeacons, 1)
+			assert.Equal(t, expectedBeaconIDs[0], testTagBeacons[0].ID)
 		})
 	})
 }
