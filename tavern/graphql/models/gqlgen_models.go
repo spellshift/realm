@@ -8,23 +8,23 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/ent/session"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 )
 
 type ClaimTasksInput struct {
-	// The identity the session is authenticated as (e.g. 'root')
+	// The identity the beacon is authenticated as (e.g. 'root')
 	Principal string `json:"principal"`
-	// The hostname of the system the session is running on.
+	// The hostname of the system the beacon is running on.
 	Hostname string `json:"hostname"`
 	// The platform the agent is operating on.
-	HostPlatform session.HostPlatform `json:"hostPlatform"`
+	HostPlatform beacon.HostPlatform `json:"hostPlatform"`
 	// The IP address of the hosts primary interface (if available).
 	HostPrimaryIP *string `json:"hostPrimaryIP"`
-	// Unique identifier of the session, each running instance will be different.
-	SessionIdentifier string `json:"sessionIdentifier"`
-	// Unique identifier of the underlying host system the session is running on.
+	// Unique identifier of the beacon, each running instance will be different.
+	BeaconIdentifier string `json:"beaconIdentifier"`
+	// Unique identifier of the underlying host system the beacon is running on.
 	HostIdentifier string `json:"hostIdentifier"`
-	// Name of the agent program the session is running as (e.g. 'imix')
+	// Name of the agent program the beacon is running as (e.g. 'imix')
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 

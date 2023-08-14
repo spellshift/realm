@@ -1,23 +1,23 @@
 input ClaimTasksInput {
-  """The identity the session is authenticated as (e.g. 'root')"""
+  """The identity the beacon is authenticated as (e.g. 'root')"""
   principal: String!
 
-  """The hostname of the system the session is running on."""
+  """The hostname of the system the beacon is running on."""
   hostname: String!
 
   """The platform the agent is operating on."""
-  hostPlatform: SessionHostPlatform!
+  hostPlatform: BeaconHostPlatform!
 
   """The IP address of the hosts primary interface (if available)."""
   hostPrimaryIP: String
 
-  """Unique identifier of the session, each running instance will be different."""
-  sessionIdentifier: String!
+  """Unique identifier of the beacon, each running instance will be different."""
+  beaconIdentifier: String!
 
-  """Unique identifier of the underlying host system the session is running on."""
+  """Unique identifier of the underlying host system the beacon is running on."""
   hostIdentifier: String!
 
-  """Name of the agent program the session is running as (e.g. 'imix')"""
+  """Name of the agent program the beacon is running as (e.g. 'imix')"""
   agentIdentifier: String!
 }
 

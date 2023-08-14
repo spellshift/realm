@@ -1,0 +1,1 @@
+export {BeaconView} from "./BeaconView";

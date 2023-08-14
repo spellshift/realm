@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/ent/session"
+	"github.com/kcarretto/realm/tavern/ent/beacon"
 	"github.com/kcarretto/realm/tavern/ent/tag"
 )
 
@@ -32,19 +32,19 @@ func (tc *TagCreate) SetKind(t tag.Kind) *TagCreate {
 	return tc
 }
 
-// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
-func (tc *TagCreate) AddSessionIDs(ids ...int) *TagCreate {
-	tc.mutation.AddSessionIDs(ids...)
+// AddBeaconIDs adds the "beacons" edge to the Beacon entity by IDs.
+func (tc *TagCreate) AddBeaconIDs(ids ...int) *TagCreate {
+	tc.mutation.AddBeaconIDs(ids...)
 	return tc
 }
 
-// AddSessions adds the "sessions" edges to the Session entity.
-func (tc *TagCreate) AddSessions(s ...*Session) *TagCreate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddBeacons adds the "beacons" edges to the Beacon entity.
+func (tc *TagCreate) AddBeacons(b ...*Beacon) *TagCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return tc.AddSessionIDs(ids...)
+	return tc.AddBeaconIDs(ids...)
 }
 
 // Mutation returns the TagMutation object of the builder.
@@ -131,17 +131,17 @@ func (tc *TagCreate) createSpec() (*Tag, *sqlgraph.CreateSpec) {
 		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
 	}
-	if nodes := tc.mutation.SessionsIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.BeaconsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.SessionsTable,
-			Columns: tag.SessionsPrimaryKey,
+			Table:   tag.BeaconsTable,
+			Columns: tag.BeaconsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: session.FieldID,
+					Column: beacon.FieldID,
 				},
 			},
 		}

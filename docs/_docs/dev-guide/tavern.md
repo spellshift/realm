@@ -131,10 +131,12 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 ![/assets/img/tavern/graphiql.png](/assets/img/tavern/graphiql.png)
 
 #### Some sample queries to get started
-**List all sessions**
+
+##### List all beacons
+
 ```graphql
-query get_sessions {
-	sessions {
+query get_beacons {
+  beacons {
     id
     identifier
     name
@@ -145,15 +147,17 @@ query get_sessions {
 }
 ```
 
-**Create a tome**
+##### Create a tome
+
 ```graphql
 mutation CreateTome ($input: CreateTomeInput!) {
   createTome(input: $input) {
     id
     name
   }
-}	
+}
 ```
+
 ```json
 {
   "input": {
@@ -161,19 +165,21 @@ mutation CreateTome ($input: CreateTomeInput!) {
     "description": "Just a sample",
     "eldritch": "print(input_params['print_string'])",
     "fileIDs": [],
-    "paramDefs": "{\"print_string\":\"str\"}"
+    "paramDefs": "[{\"name\":\"print_string\",\"label\":\"Print String\",\"type\":\"string\",\"placeholder\":\"A message to print\"}]"
   }
 }
 ```
 
-**Create a job**
+##### Create a task
+
 ```graphql
-mutation createJob($input: CreateJobInput!, $sess:[ID!]!){
-  createJob(input: $input, sessionIDs: $sess) {
+mutation createQuest($input: CreateQuestInput!, $beaconIDs:[ID!]!){
+  createQuest(input: $input, beaconIDs: $beaconIDs) {
     id
   }
 }
 ```
+
 ```json
 {
   "input": {
@@ -184,14 +190,16 @@ mutation createJob($input: CreateJobInput!, $sess:[ID!]!){
   "sess": ["8589934593"]
 }
 ```
-**Get all task and job output**
+
+##### Get all task and quest output
+
 ```graphql
 query get_task_res {
-  jobs {
+  quests {
     tasks {
       id
       output
-      job {
+      quest {
         tome {
           eldritch
         }
@@ -202,7 +210,6 @@ query get_task_res {
   }
 }
 ```
-
 
 ### Creating a New Model
 
@@ -241,7 +248,7 @@ query get_task_res {
 |-----|-----------|--------|
 |state| SQL queries that define the initial db state before the query is run.| no |
 |requestor| Holds information about the authenticated context making the query. | no |
-|requestor.session_token| Session token corresponding to the user for authentication. You may create a user with a predetermined session token using the `state` field. | no |
+|requestor.beacon_token| Session token corresponding to the user for authentication. You may create a user with a predetermined session token using the `state` field. | no |
 |query| GraphQL query or mutation to be executed | yes |
 |variables| A map of variables that will be passed with your GraphQL Query to the server | no |
 |expected| A map that defines the expected response that the server should return | no |
@@ -278,7 +285,7 @@ GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supp
       "hostname": "test",
       "hostIdentifier": "dodo",
       "agentIdentifier": "bleep",
-      "sessionIdentifier": "123"
+      "beaconIdentifier": "123"
     }
   },
   "operationName": "ClaimTasks"
@@ -289,13 +296,13 @@ In the above example, `$input` is used to pass variables from code to the GraphQ
 
 ### Claiming Tasks
 
-The first GraphQL mutation an agent should utilize is `claimTasks`. This mutation is used to fetch new tasks from Tavern that should be executed by the agent. In order to fetch execution information, the agent should perform a graph traversal to obtain information about the associated job. For example:
+The first GraphQL mutation an agent should utilize is `claimTasks`. This mutation is used to fetch new tasks from Tavern that should be executed by the agent. In order to fetch execution information, the agent should perform a graph traversal to obtain information about the associated quest. For example:
 
 ```graphql
 mutation ClaimTasks($input: ClaimTasksInput!) {
   claimTasks(input: $input) {
     id
-    job {
+    quest {
       tome {
         id
         eldritch

@@ -403,6 +403,33 @@ An example is below:
     "distro": "Debian GNU/Linux 10 (buster)",
     "platform": "Linux"
 }
+```
+
+### sys.get_user
+`sys.get_user() -> Dict`
+
+The <b>sys.get_user</b> method returns a dictionary that describes the current process's running user.
+On *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.
+For users, will return name and groups of user.
+
+```json
+{
+    "uid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "euid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "gid": 0,
+    "egid": 0
+}
+```
 
 ### sys.is_linux
 `sys.is_linux() -> bool`
