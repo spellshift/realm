@@ -201,7 +201,12 @@ pub fn handle_arp_scan(
         let inner_out = listener_out.clone();
         let inner_interface = interface.clone();
         let thread = std::thread::spawn(move || {
-            start_listener(inner_interface, inner_out).unwrap();
+            match start_listener(inner_interface.clone(), inner_out) {
+                Ok(_) => {},
+                Err(err) => {
+                    println!("Listener on {} failed: {}", inner_interface.name, err);
+                }
+            }
         });
         thread.join().map_err(|err| {
             anyhow::anyhow!(
@@ -256,7 +261,7 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
 #[cfg(test)]
 mod tests {
     use std::{collections::HashMap, sync::{Mutex, Arc}, net::Ipv4Addr, thread, time::Duration};
-    use pnet::datalink::{interfaces, NetworkInterface};
+    use pnet::datalink::interfaces;
 
     use crate::pivot::arp_scan_impl::{handle_arp_scan, ArpResponse, start_listener};
 
@@ -300,4 +305,6 @@ mod tests {
             start_listener(loopback, data).is_err()
         );
     }
+
+
 }
