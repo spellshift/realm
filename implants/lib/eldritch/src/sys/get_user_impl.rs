@@ -159,10 +159,12 @@ mod tests {
         let test_heap = Heap::new();
         let res = get_user(&test_heap)?;
         let keys: Vec<&str> = res.keys().map(|key| key.unpack_str().unwrap()).collect();
-        assert!(keys.contains(&"euid"));
         assert!(keys.contains(&"uid"));
-        assert!(keys.contains(&"egid"));
-        assert!(keys.contains(&"gid"));
+        if !cfg!(target_os="windows") {
+            assert!(keys.contains(&"euid"));
+            assert!(keys.contains(&"egid"));
+            assert!(keys.contains(&"gid"));
+        }
         let uid_data: Value<'_> = res.get(const_frozen_string!("uid").to_value())?.unwrap();
         let uid_data_map: SmallMap<String, Value<'_>> = SmallMap::unpack_value(uid_data).unwrap();
         let uid_data_keys: Vec<&str> = uid_data_map.keys().map(|key| &key[..]).collect();
@@ -170,13 +172,15 @@ mod tests {
         assert!(uid_data_keys.contains(&"name"));
         assert!(uid_data_keys.contains(&"gid"));
         assert!(uid_data_keys.contains(&"groups"));
-        let euid_data: Value<'_> = res.get(const_frozen_string!("euid").to_value())?.unwrap();
-        let euid_data_map: SmallMap<String, Value<'_>> = SmallMap::unpack_value(euid_data).unwrap();
-        let euid_data_keys: Vec<&str> = euid_data_map.keys().map(|key| &key[..]).collect();
-        assert!(euid_data_keys.contains(&"uid"));
-        assert!(euid_data_keys.contains(&"name"));
-        assert!(euid_data_keys.contains(&"gid"));
-        assert!(euid_data_keys.contains(&"groups"));
+        if !cfg!(target_os="windows") {
+            let euid_data: Value<'_> = res.get(const_frozen_string!("euid").to_value())?.unwrap();
+            let euid_data_map: SmallMap<String, Value<'_>> = SmallMap::unpack_value(euid_data).unwrap();
+            let euid_data_keys: Vec<&str> = euid_data_map.keys().map(|key| &key[..]).collect();
+            assert!(euid_data_keys.contains(&"uid"));
+            assert!(euid_data_keys.contains(&"name"));
+            assert!(euid_data_keys.contains(&"gid"));
+            assert!(euid_data_keys.contains(&"groups"));
+        }
         Ok(())
     }
 }
