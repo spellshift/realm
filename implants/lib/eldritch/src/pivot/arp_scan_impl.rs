@@ -204,6 +204,7 @@ pub fn handle_arp_scan(
             match start_listener(inner_interface.clone(), inner_out) {
                 Ok(_) => {},
                 Err(err) => {
+                    #[cfg(debug_assertions)]
                     println!("Listener on {} failed: {}", inner_interface.name, err);
                 }
             }
