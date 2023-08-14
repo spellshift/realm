@@ -14,8 +14,10 @@ derive_more = { workspace = true }
 eval = { workspace = true }
 flate2 = { workspace = true }
 gazebo = { workspace = true }
+ipnetwork = { workspace = true }
 network-interface = { workspace = true }
 nix = { workspace = true }
+pnet = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
 russh = { workspace = true }
@@ -40,8 +42,6 @@ windows-sys = { workspace = true, features = [
     "Win32_Security",
 ]}
 whoami = { workspace = true }
-pnet = "0.34.0"
-ipnetwork = "0.20.0"
 
 [dev-dependencies]
 httptest = { workspace = true }
