@@ -78,9 +78,13 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         port_scan_impl::port_scan(starlark_heap, target_cidrs, ports, protocol, timeout)
     }
-    fn arp_scan(this:  PivotLibrary, target_cidrs: Vec<String>) ->  anyhow::Result<Vec<String>> {
+    fn arp_scan<'v>(
+        this: PivotLibrary,
+        starlark_heap: &'v Heap,
+        target_cidrs: Vec<String>,
+    ) -> anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        arp_scan_impl::arp_scan(target_cidrs)
+        arp_scan_impl::arp_scan(starlark_heap, target_cidrs)
     }
     fn port_forward(this:  PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, protocol: String) ->  anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
