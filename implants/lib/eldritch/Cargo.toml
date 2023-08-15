@@ -20,6 +20,7 @@ regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
 russh = { workspace = true }
 russh-keys = { workspace = true }
+rust-crypto = { workspace = true }
 rust-embed = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { workspace = true }

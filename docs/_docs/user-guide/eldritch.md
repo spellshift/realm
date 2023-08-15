@@ -496,12 +496,19 @@ sys.shell("ls /nofile")
 ```
 
 ## Crypto
-### crypto.encrypt_file
-`crypto.encrypt_file(src: str, dst: str, key: str) -> None`
+### crypto.aes_encrypt_file
+`crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
 
-The <b>crypto.encrypt_file</b> method encrypts the given src file, encrypts it using the given key, and writes it to disk at the dst location.
+The <b>crypto.aes_encrypt_file</b> method encrypts and decrypts the given src file, encrypts it using the given key, and writes it to disk at the dst location.
 
-### crypto.decrypt_file
-`crypto.decrypt_file(src: str, dst: str, key: str) -> None`
+This uses the AES CTR algorithm, and the key parameter will be used for the key and IV.
 
-The <b>crypto.decrypt_file</b> method decrypts the given src file, decrypts it using the given key, and writes it to disk at the dst location.
+### crypto.hash_file
+`crypto.hash_file(file: str, algo: str) -> str`
+
+The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256
+- SHA512

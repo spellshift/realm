@@ -1,6 +1,5 @@
-mod encrypt_file_impl;
-mod decrypt_file_impl;
-
+mod aes_encrypt_file_impl;
+mod hash_file_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
@@ -11,12 +10,6 @@ use starlark::values::{StarlarkValue, Value, Heap, dict::Dict, UnpackValue, Valu
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
-
-struct CommandOutput {
-    stdout: String,
-    stderr: String,
-    status: i32,
-}
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "CryptoLibrary")]
@@ -55,14 +48,13 @@ impl<'v> UnpackValue<'v> for CryptoLibrary {
 // This is where all of the "crypto.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn encrypt_file<'v>(this: CryptoLibrary, src: String, dst: String, key: String) -> anyhow::Result<NoneType> {
+    fn aes_encrypt_file<'v>(this: CryptoLibrary, src: String, dst: String, key: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        encrypt_file_impl::encrypt_file(src, dst, key)?;
+        aes_encrypt_file_impl::encrypt_file(src, dst, key)?;
         Ok(NoneType{})
     }
-    fn decrypt_file<'v>(this: CryptoLibrary, src: String, dst: String, key: String) -> anyhow::Result<NoneType> {
+    fn hash_file<'v>(this: CryptoLibrary, file: String, algo: String) -> anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        decrypt_file_impl::decrypt_file(src, dst, key)?;
-        Ok(NoneType{})
+        hash_file_impl::hash_file(file, algo)
     }
 }
