@@ -1,9 +1,9 @@
 use anyhow::Result;
 use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
-use starlark::values::{Heap, Value};
+use starlark::values::Heap;
 use starlark::values::dict::Dict;
-use std::process::{Command};
+use std::process::Command;
 use std::str;
 
 use super::CommandOutput;
@@ -20,7 +20,7 @@ pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
     let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
     dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed().unwrap(), stderr_value.to_value());
 
-    let status_value = Value::new_int(cmd_res.status);
+    let status_value = starlark_heap.alloc(cmd_res.status);
     dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
 
     Ok(dict_res)
@@ -117,7 +117,7 @@ func_shell("whoami")
             }
         }
 
-        let globals = GlobalsBuilder::extended().with(func_shell).build();
+        let globals = GlobalsBuilder::standard().with(func_shell).build();
         let module: Module = Module::new();
 
         let mut eval: Evaluator = Evaluator::new(&module);

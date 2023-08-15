@@ -6,10 +6,10 @@ import {
 import './style.css';
 import { useQuery, gql } from '@apollo/client';
 
-import { JobList } from "./pages/job-list";
+import { QuestList } from "./pages/quest-list";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Home } from "./pages/home";
-import { CreateJob } from "./pages/create-job";
+import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 
@@ -28,15 +28,15 @@ const GET_TOMES = gql`
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <JobList />,
+    element: <QuestList />,
   },
   {
-    path: "/jobs",
-    element: <JobList />,
+    path: "/quests",
+    element: <QuestList />,
   },
   {
-    path: "/createJob",
-    element: <CreateJob />,
+    path: "/createQuest",
+    element: <CreateQuest />,
   },
 ]);
 

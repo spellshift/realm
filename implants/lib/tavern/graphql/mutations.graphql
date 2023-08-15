@@ -1,7 +1,7 @@
 mutation ClaimTasks($input: ClaimTasksInput!) {
     claimTasks(input: $input) {
         id,
-        job {
+        quest {
             id,
             name,
             parameters,

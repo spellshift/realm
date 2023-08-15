@@ -230,6 +230,23 @@ If a file or directory already exists at this path, the method will fail.
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
 
 The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate hosts on their network without using TCP connect or ping.
+- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
+- Must be running as `root` to use.
+- Not supported on Windows
+
+Results will be in the format:
+
+```JSON
+// Successful
+$> pivot.arp_scan(["192.168.1.1/32"])
+[
+    { "ip": "192.168.1.1", "mac": "ab:cd:ef:01:23:45", "interface": "eno0" }
+]
+
+// Failure
+$> pivot.arp_scan(["192.168.1.1/32"])
+[]
+```
 
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
@@ -403,6 +420,44 @@ An example is below:
     "distro": "Debian GNU/Linux 10 (buster)",
     "platform": "Linux"
 }
+```
+
+### sys.get_pid
+`sys.get_pid() -> int`
+
+The <b>sys.get_pid</b> method returns the process ID of the current process.
+An example is below:
+
+```json
+$> sys.get_pid()
+123456
+```
+
+### sys.get_user
+`sys.get_user() -> Dict`
+
+The <b>sys.get_user</b> method returns a dictionary that describes the current process's running user.
+On *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.
+For users, will return name and groups of user.
+
+```json
+{
+    "uid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "euid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "gid": 0,
+    "egid": 0
+}
+```
 
 ### sys.is_linux
 `sys.is_linux() -> bool`

@@ -34,11 +34,11 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
         // Create Dict type.
         let mut tmp_res = Dict::new(res);
 
-        tmp_res.insert_hashed(const_frozen_string!("pid").to_value().get_hashed().unwrap(), Value::new_int(match pid.as_u32().try_into() {
+        tmp_res.insert_hashed(const_frozen_string!("pid").to_value().get_hashed().unwrap(), starlark_heap.alloc(match pid.as_u32().try_into() {
             Ok(local_int) => local_int,
             Err(_) => -1,
         }));
-        tmp_res.insert_hashed(const_frozen_string!("ppid").to_value().get_hashed().unwrap(), Value::new_int(match tmp_ppid.try_into() {
+        tmp_res.insert_hashed(const_frozen_string!("ppid").to_value().get_hashed().unwrap(), starlark_heap.alloc(match tmp_ppid.try_into() {
             Ok(local_int) => local_int,
             Err(_) => -1,
         }));
@@ -58,6 +58,8 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Context;
+
     use super::*;
     use std::process::Command;
 
@@ -76,7 +78,7 @@ mod tests {
         let res = list(&binding)?;
         for proc in res{
             let cur_pid = match proc.get(const_frozen_string!("pid").to_value())? {
-                Some(local_cur_pid) => local_cur_pid.to_int()?,
+                Some(local_cur_pid) => local_cur_pid.unpack_i32().context("Failed to unpack starlark int to i32")?,
                 None => return Err(anyhow::anyhow!("pid couldn't be unwrapped")),
             };
             if cur_pid as u32 == child.id() {

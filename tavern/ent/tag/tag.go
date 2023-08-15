@@ -17,15 +17,15 @@ const (
 	FieldName = "name"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
-	// EdgeSessions holds the string denoting the sessions edge name in mutations.
-	EdgeSessions = "sessions"
+	// EdgeBeacons holds the string denoting the beacons edge name in mutations.
+	EdgeBeacons = "beacons"
 	// Table holds the table name of the tag in the database.
 	Table = "tags"
-	// SessionsTable is the table that holds the sessions relation/edge. The primary key declared below.
-	SessionsTable = "session_tags"
-	// SessionsInverseTable is the table name for the Session entity.
-	// It exists in this package in order to avoid circular dependency with the "session" package.
-	SessionsInverseTable = "sessions"
+	// BeaconsTable is the table that holds the beacons relation/edge. The primary key declared below.
+	BeaconsTable = "beacon_tags"
+	// BeaconsInverseTable is the table name for the Beacon entity.
+	// It exists in this package in order to avoid circular dependency with the "beacon" package.
+	BeaconsInverseTable = "beacons"
 )
 
 // Columns holds all SQL columns for tag fields.
@@ -36,9 +36,9 @@ var Columns = []string{
 }
 
 var (
-	// SessionsPrimaryKey and SessionsColumn2 are the table columns denoting the
-	// primary key for the sessions relation (M2M).
-	SessionsPrimaryKey = []string{"session_id", "tag_id"}
+	// BeaconsPrimaryKey and BeaconsColumn2 are the table columns denoting the
+	// primary key for the beacons relation (M2M).
+	BeaconsPrimaryKey = []string{"beacon_id", "tag_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

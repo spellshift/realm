@@ -69,7 +69,7 @@ func newUsersQueryTest(gqlClient *client.Client, checks ...func(t *testing.T, id
 	}
 }
 
-func TestJobsQuery(t *testing.T) {
+func TestQuestsQuery(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
@@ -83,12 +83,12 @@ func TestJobsQuery(t *testing.T) {
 		SetDescription("For testing!").
 		SetEldritch("Testing!").
 		SaveX(ctx)
-	testJobs := []*ent.Job{
-		graph.Job.Create().
+	testQuests := []*ent.Quest{
+		graph.Quest.Create().
 			SetName("Test 1").
 			SetTome(tome).
 			SaveX(ctx),
-		graph.Job.Create().
+		graph.Quest.Create().
 			SetName("Test 2").
 			SetTome(tome).
 			SaveX(ctx),
@@ -96,14 +96,14 @@ func TestJobsQuery(t *testing.T) {
 
 	t.Run("All", func(t *testing.T) {
 		query := `
-query AllJobs($where: JobWhereInput) {
-	jobs(where: $where) {
+query AllQuests($where: QuestWhereInput) {
+	quests(where: $where) {
 		id
 	}
 }`
-		queryJobs := func(where map[string]any) ([]int, error) {
+		queryQuests := func(where map[string]any) ([]int, error) {
 			var resp struct {
-				Jobs []struct{ ID string } `json:"jobs"`
+				Quests []struct{ ID string } `json:"quests"`
 			}
 			if where == nil {
 				where = make(map[string]any)
@@ -113,16 +113,16 @@ query AllJobs($where: JobWhereInput) {
 				return nil, err
 			}
 
-			ids := make([]int, 0, len(resp.Jobs))
-			for _, j := range resp.Jobs {
+			ids := make([]int, 0, len(resp.Quests))
+			for _, j := range resp.Quests {
 				ids = append(ids, convertID(j.ID))
 			}
 			return ids, nil
 		}
 
-		ids, err := queryJobs(nil)
+		ids, err := queryQuests(nil)
 		require.NoError(t, err)
-		assert.Contains(t, ids, testJobs[0].ID)
-		assert.Contains(t, ids, testJobs[1].ID)
+		assert.Contains(t, ids, testQuests[0].ID)
+		assert.Contains(t, ids, testQuests[1].ID)
 	})
 }
