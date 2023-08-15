@@ -1,6 +1,7 @@
 mod exec_impl;
 mod get_ip_impl;
 mod get_os_impl;
+mod get_pid_impl;
 mod get_user_impl;
 mod is_linux_impl;
 mod is_windows_impl;
@@ -77,6 +78,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn get_ip<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         get_ip_impl::get_ip(starlark_heap)
+    }
+    fn get_pid<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<u32> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        get_pid_impl::get_pid(starlark_heap)
     }
     fn get_user<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
         if false {
