@@ -3,6 +3,7 @@ pub mod process;
 pub mod sys;
 pub mod pivot;
 pub mod assets;
+pub mod crypto;
 
 use std::sync::mpsc::Sender;
 use serde_json::Map;
@@ -19,6 +20,7 @@ use process::ProcessLibrary;
 use sys::SysLibrary;
 use assets::AssetsLibrary;
 use pivot::PivotLibrary;
+use crypto::CryptoLibrary;
 
 pub fn get_eldritch() -> anyhow::Result<Globals> {
     #[starlark_module]
@@ -28,6 +30,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const sys: SysLibrary = SysLibrary();
         const pivot: PivotLibrary = PivotLibrary();
         const assets: AssetsLibrary = AssetsLibrary();
+        const crypto: CryptoLibrary = CryptoLibrary();
     }
 
     let globals = GlobalsBuilder::extended_by(
@@ -191,6 +194,7 @@ dir(process) == ["kill", "list", "name"]
 dir(sys) == ["dll_inject", "exec", "get_ip", "get_os", "get_pid", "get_user", "is_linux", "is_macos", "is_windows", "shell"]
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_exec", "ssh_password_spray"]
 dir(assets) == ["copy","list","read","read_binary"]
+dir(crypto) == ["encrypt_file", "decrypt_file"]
 "#,
         );
     }
