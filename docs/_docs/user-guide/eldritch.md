@@ -422,6 +422,17 @@ An example is below:
 }
 ```
 
+### sys.get_pid
+`sys.get_pid() -> int`
+
+The <b>sys.get_pid</b> method returns the process ID of the current process.
+An example is below:
+
+```json
+$> sys.get_pid()
+123456
+```
+
 ### sys.get_user
 `sys.get_user() -> Dict`
 
