@@ -16,7 +16,6 @@ pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
     for _ in 0..output.capacity() {
         output.push(0);
     }
-    println!("{} {}", buffer.len(), output.len());
     cipher.process(&buffer, &mut output[..]);
     let mut f = File::create(dst)?;
     f.write_all(output.as_slice())?;
@@ -66,4 +65,3 @@ mod tests {
         Ok(())
     }
 }
-
