@@ -56,6 +56,7 @@ It currently contains five modules:
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
+- `crypto` - Used to encrypt/decrypt or hash data.
 
 Functions fall into one of these five modules. This is done to improve clarity about function use.
 
@@ -494,3 +495,13 @@ sys.shell("ls /nofile")
 }
 ```
 
+## Crypto
+### crypto.encrypt_file
+`crypto.encrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.encrypt_file</b> method encrypts the given src file, encrypts it using the given key, and writes it to disk at the dst location.
+
+### crypto.decrypt_file
+`crypto.decrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.decrypt_file</b> method decrypts the given src file, decrypts it using the given key, and writes it to disk at the dst location.
