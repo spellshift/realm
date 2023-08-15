@@ -50,9 +50,9 @@ mod tests {
         encrypt_file(path_enc, path_dec.clone(), "TESTING".to_string())?;
 
         let mut dec_f = File::open(path_dec)?;
-        let mut dec_f_content = String::new();
-        dec_f.read_to_string(&mut dec_f_content)?;
-        assert_eq!(dec_f_content.as_str(), lorem);
+        let mut dec_f_content = Vec::new();
+        dec_f.read_to_end(&mut dec_f_content)?;
+        assert_eq!(String::from_utf8_lossy(&dec_f_content).to_string().as_str(), lorem);
         Ok(())
     }
 
