@@ -14,7 +14,38 @@ By embedding the interpreter into the agent conditional logic can be quickly eva
 Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
 ## Data types
-Eldritch currently only supports the [default starlark data types.](https://github.com/facebookexperimental/starlark-rust/blob/main/docs/types.md)
+Eldritch supports the [default starlark data types.](https://github.com/facebookexperimental/starlark-rust/blob/main/docs/types.md)
+
+As well as some custom types. The custom types can be constructed with `type(arg1, arg2)`. 
+```python
+let my_file = operating_system_type(
+    "x86_64",
+    "none",
+    "Ubuntu",
+    "Linux"
+)
+```
+
+The fields can be accessed through the getter methods `type_val.field()`.
+
+```python
+for proc in process.list():
+    print(proc.command())
+```
+
+### Command Output Type
+
+
+### File Metadata Type
+
+### Network Interface Type
+
+### Network Port Type
+
+### Operating System Type
+
+### Process Type
+
 
 ## Error handling
 Eldritch doesn't implement any form of error handling. If a function fails it will stop the tome from completing execution. There is no way to recover after a function has errored.
@@ -137,11 +168,11 @@ The <b>file.is_dir</b> method checks if a path exists and is a directory. If it 
 The <b>file.is_file</b> method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`.
 
 ### file.list
-`file.list(path: str) -> List<Dict>`
+`file.list(path: str) -> List<FileMetadata>`
 
 The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
-Each file is represented by a Dict type.
-Here is an example of the Dict layout:
+Each file is represented by a `file_metadata` type.
+Here is an example of the `file.list` output layout:
 
 ```JSON
 [

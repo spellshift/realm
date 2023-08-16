@@ -10,8 +10,8 @@ mod dll_inject_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
-use eldritch_types::command_output::CommandOutput;
-use eldritch_types::network_interface::NetworkInterface;
+use eldritch_types::command_output_type::CommandOutput;
+use eldritch_types::network_interface_type::NetworkInterface;
 use eldritch_types::operating_system_type::OperatingSystemType;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;

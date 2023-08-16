@@ -1,6 +1,6 @@
 use anyhow::Result;
 use network_interface::{NetworkInterfaceConfig, NetworkInterface};
-use eldritch_types::network_interface::NetworkInterface as NetInt;
+use eldritch_types::network_interface_type::NetworkInterface as NetInt;
 const UNKNOWN: &str = "UNKNOWN";
 
 fn handle_get_ip() -> Result<Vec<NetInt>> {

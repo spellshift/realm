@@ -17,7 +17,7 @@ pub enum FileType {
 }
 
 #[allow(non_upper_case_globals)]
-#[starlark_value(type = "file_type")]
+#[starlark_value(type = "file_metadata_type")]
 impl<'v> StarlarkValue<'v> for FileType {
 }
 

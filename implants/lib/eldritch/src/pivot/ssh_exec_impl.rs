@@ -1,5 +1,5 @@
 use anyhow::Result;
-use eldritch_types::command_output::CommandOutput;
+use eldritch_types::command_output_type::CommandOutput;
 
 use super::Session;
 

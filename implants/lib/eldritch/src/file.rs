@@ -20,7 +20,7 @@ mod write_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
-use eldritch_types::file_metadata::FileMetadata;
+use eldritch_types::file_metadata_type::FileMetadata;
 use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;

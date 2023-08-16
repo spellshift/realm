@@ -10,7 +10,7 @@ use std::os::linux::fs::MetadataExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
 use chrono::{Utc, DateTime, NaiveDateTime};
-use eldritch_types::file_metadata::{FileMetadata, FileType};
+use eldritch_types::file_metadata_type::{FileMetadata, FileType};
 
 const UNKNOWN: &str = "UNKNOWN";
 

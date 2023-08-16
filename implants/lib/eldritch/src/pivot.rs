@@ -14,7 +14,7 @@ use allocative::Allocative;
 use async_trait::async_trait;
 use derive_more::Display;
 
-use eldritch_types::command_output::CommandOutput;
+use eldritch_types::command_output_type::CommandOutput;
 use eldritch_types::network_port_type::NetworkPortType;
 use russh::{client, Disconnect};
 use russh_keys::{key, decode_secret_key};

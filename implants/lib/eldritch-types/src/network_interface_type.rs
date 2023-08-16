@@ -18,7 +18,7 @@ pub struct NetworkInterface {
 starlark_simple_value!(NetworkInterface);
 
 #[allow(non_upper_case_globals)]
-#[starlark_value(type = "network_interface")]
+#[starlark_value(type = "network_interface_type")]
 impl<'v> StarlarkValue<'v> for NetworkInterface {
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();

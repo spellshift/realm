@@ -5,7 +5,7 @@ use nix::{sys::wait::waitpid, unistd::{fork, ForkResult}};
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use std::process::exit;
 
-use eldritch_types::command_output::CommandOutput;
+use eldritch_types::command_output_type::CommandOutput;
 
 // https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
 pub fn exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<CommandOutput> {

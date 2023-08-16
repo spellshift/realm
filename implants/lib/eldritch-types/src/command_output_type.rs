@@ -18,7 +18,7 @@ pub struct CommandOutput {
 starlark_simple_value!(CommandOutput);
 
 #[allow(non_upper_case_globals)]
-#[starlark_value(type = "command_output")]
+#[starlark_value(type = "command_output_type")]
 impl<'v> StarlarkValue<'v> for CommandOutput {
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();

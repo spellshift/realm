@@ -2,7 +2,7 @@ use anyhow::Result;
 use std::process::Command;
 use std::str;
 
-use eldritch_types::command_output::CommandOutput;
+use eldritch_types::command_output_type::CommandOutput;
 
 pub fn shell(cmd: String) -> Result<CommandOutput> {
     let command_string: &str;

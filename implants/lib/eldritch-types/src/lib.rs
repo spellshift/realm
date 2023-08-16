@@ -1,30 +1,30 @@
 use starlark::{values::starlark_value_as_type::StarlarkValueAsType, environment::GlobalsBuilder};
 use starlark_derive::starlark_module;
 
-pub mod command_output;
-pub mod file_metadata;
+pub mod command_output_type;
+pub mod file_metadata_type;
 pub mod process_type;
-pub mod network_interface;
+pub mod network_interface_type;
 pub mod operating_system_type;
 pub mod network_port_type;
 
 #[starlark_module]
 pub fn eldritch_types(builder: &mut GlobalsBuilder) {
-    const CommandOutput: StarlarkValueAsType<command_output::CommandOutput> = StarlarkValueAsType::new();
-    fn command_output( stdout: String, stderr: String, status: i32) -> anyhow::Result<command_output::CommandOutput> {
-        Ok(command_output::CommandOutput{ stdout, stderr, status })
+    const CommandOutput: StarlarkValueAsType<command_output_type::CommandOutput> = StarlarkValueAsType::new();
+    fn command_output( stdout: String, stderr: String, status: i32) -> anyhow::Result<command_output_type::CommandOutput> {
+        Ok(command_output_type::CommandOutput{ stdout, stderr, status })
     }
-    const FileMetadata: StarlarkValueAsType<file_metadata::FileMetadata> = StarlarkValueAsType::new();
-    fn file_metadata(name: String, file_type: file_metadata::FileType, size: u64, owner: String, group: String, permissions: String, time_modified: String) -> anyhow::Result<file_metadata::FileMetadata> {
-        Ok(file_metadata::FileMetadata{ name, file_type, size, owner, group, permissions, time_modified })
+    const FileMetadata: StarlarkValueAsType<file_metadata_type::FileMetadata> = StarlarkValueAsType::new();
+    fn file_metadata(name: String, file_type: file_metadata_type::FileType, size: u64, owner: String, group: String, permissions: String, time_modified: String) -> anyhow::Result<file_metadata_type::FileMetadata> {
+        Ok(file_metadata_type::FileMetadata{ name, file_type, size, owner, group, permissions, time_modified })
     }
     const Proc: StarlarkValueAsType<process_type::ProcessType> = StarlarkValueAsType::new();
     fn proc(pid: u32, ppid: u32, status: String, name: String, path: String, username: String, command: String, cwd: String, environ: String) -> anyhow::Result<process_type::ProcessType> {
         Ok(process_type::ProcessType{ pid, ppid, status, name, path, username, command, cwd, environ })
     }
-    const NetworkInterface: StarlarkValueAsType<network_interface::NetworkInterface> = StarlarkValueAsType::new();
-    fn network_interface( name: String, mac: String, ips: Vec<String>) -> anyhow::Result<network_interface::NetworkInterface> {
-        Ok(network_interface::NetworkInterface{ name, mac, ips })
+    const NetworkInterface: StarlarkValueAsType<network_interface_type::NetworkInterface> = StarlarkValueAsType::new();
+    fn network_interface( name: String, mac: String, ips: Vec<String>) -> anyhow::Result<network_interface_type::NetworkInterface> {
+        Ok(network_interface_type::NetworkInterface{ name, mac, ips })
     }
 }
 
@@ -75,7 +75,7 @@ print(res)
         let module: Module = Module::new();
         module.set(
             "test_command", 
-            module.heap().alloc(command_output::CommandOutput{ 
+            module.heap().alloc(command_output_type::CommandOutput{ 
                 stdout: "Hello".to_string(), 
                 stderr: "World".to_string(), 
                 status: 0, 
