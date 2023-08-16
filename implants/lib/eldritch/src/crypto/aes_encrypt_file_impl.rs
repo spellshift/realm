@@ -42,6 +42,9 @@ mod tests {
 
         let tmp_file_dec = NamedTempFile::new()?;
         let path_dec = String::from(tmp_file_dec.path().to_str().unwrap()).clone();
+        println!("{}", path);
+        println!("{}", path_enc);
+        println!("{}", path_dec);
         {
             let mut f = File::create(path.clone())?;
             write!(f, "{}", lorem)?;
