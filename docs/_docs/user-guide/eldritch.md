@@ -383,6 +383,19 @@ sys.execute("/bin/bash",["-c", "ls /nofile"])
 }
 ```
 
+### sys.get_env
+`sys.get_env() -> Dict`
+
+The <b>sys.get_env</b> method returns a dictionary that describes the current process's environment variables.
+An example is below:
+
+```json
+{
+    "FOO": "BAR",
+    "CWD": "/"
+}
+```
+
 ### sys.get_ip
 `sys.get_ip() -> List<Dict>`
 
