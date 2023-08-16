@@ -33,6 +33,8 @@ for proc in process.list():
     print(proc.command())
 ```
 
+Eldritch types are simple starlark types which means that they are immutable and cannot contain nested data.
+
 ### Command Output Type
 
 
