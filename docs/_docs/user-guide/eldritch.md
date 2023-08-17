@@ -236,10 +236,11 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 
 Results will be in the format:
 
-```bash
+```python
 $> pivot.arp_scan(["192.168.1.1/32"])
 ```
 **Success**
+
 ```json
 [
     { "ip": "192.168.1.1", "mac": "ab:cd:ef:01:23:45", "interface": "eno0" }
@@ -247,6 +248,7 @@ $> pivot.arp_scan(["192.168.1.1/32"])
 ```
 
 **Failure**
+
 ```json
 []
 ```
@@ -444,8 +446,8 @@ An example is below:
 The <b>sys.get_pid</b> method returns the process ID of the current process.
 An example is below:
 
-```bash
-$> sys.get_pid()
+```python
+> sys.get_pid()
 123456
 ```
 
