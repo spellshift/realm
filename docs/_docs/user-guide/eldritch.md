@@ -447,7 +447,7 @@ The <b>sys.get_pid</b> method returns the process ID of the current process.
 An example is below:
 
 ```python
-> sys.get_pid()
+$> sys.get_pid()
 123456
 ```
 
