@@ -143,7 +143,7 @@ The <b>file.list</b> method returns a list of files at the specified path. The p
 Each file is represented by a Dict type.
 Here is an example of the Dict layout:
 
-```JSON
+```json
 [
     {
         "file_name": "implants",
@@ -236,15 +236,20 @@ The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate h
 
 Results will be in the format:
 
-```JSON
-// Successful
+```python
 $> pivot.arp_scan(["192.168.1.1/32"])
+```
+**Success**
+
+```json
 [
     { "ip": "192.168.1.1", "mac": "ab:cd:ef:01:23:45", "interface": "eno0" }
 ]
+```
 
-// Failure
-$> pivot.arp_scan(["192.168.1.1/32"])
+**Failure**
+
+```json
 []
 ```
 
@@ -272,7 +277,7 @@ Inputs:
 
 Results will be in the format:
 
-```JSON
+```json
 [
     { "ip": "127.0.0.1", "port": 22, "protocol": "tcp", "status": "open"},
     { "ip": "127.0.0.1", "port": 21, "protocol": "tcp", "status": "closed"},
@@ -401,7 +406,7 @@ An example is below:
 
 The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionary. An example is available below:
 
-```JSON
+```json
 [
     {
         "name": "eth0",
@@ -441,7 +446,7 @@ An example is below:
 The <b>sys.get_pid</b> method returns the process ID of the current process.
 An example is below:
 
-```json
+```python
 $> sys.get_pid()
 123456
 ```
