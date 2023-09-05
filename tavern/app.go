@@ -136,7 +136,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	router.Handle("/playground",
 		playground.Handler("Tavern", "/graphql"),
 	)
-	router.Handle("/", www.NewAppHandler(""))
+	router.Handle("/", www.NewAppHandler())
 	router.Handle("/graphql", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
