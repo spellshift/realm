@@ -21,6 +21,7 @@ import (
 	"github.com/kcarretto/realm/tavern/ent/migrate"
 	"github.com/kcarretto/realm/tavern/graphql"
 	"github.com/kcarretto/realm/tavern/internal/cdn"
+	"github.com/kcarretto/realm/tavern/internal/www"
 	"github.com/urfave/cli"
 )
 
@@ -129,12 +130,13 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		return next(ctx)
 	})
 
-	// Setup HTTP Handler
+	// Setup HTTP Handlers
 	router := http.NewServeMux()
 	router.Handle("/status", newStatusHandler())
-	router.Handle("/",
+	router.Handle("/playground",
 		playground.Handler("Tavern", "/graphql"),
 	)
+	router.Handle("/", www.NewAppHandler(""))
 	router.Handle("/graphql", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
