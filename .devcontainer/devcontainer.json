@@ -29,6 +29,7 @@
 				"files.trimFinalNewlines": true,
 
 				// Misc
+				"vsicons.dontShowNewVersionMessage": true,
 				"workbench.iconTheme": "vscode-icons",
 				"git.autofetch": true
 			},
