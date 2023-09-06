@@ -15,7 +15,6 @@ cmd/implants/Cargo.lock
 
 # Build artifacts
 dist/**
-build/**
 
 # Binaries for programs and plugins
 *.exe
