@@ -56,6 +56,7 @@ It currently contains five modules:
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
+- `crypto` - Used to encrypt/decrypt or hash data.
 
 Functions fall into one of these five modules. This is done to improve clarity about function use.
 
@@ -512,3 +513,27 @@ sys.shell("ls /nofile")
 }
 ```
 
+## Crypto
+### crypto.aes_encrypt_file
+`crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### crypto.aes_decrypt_file
+`crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### crypto.hash_file
+`crypto.hash_file(file: str, algo: str) -> str`
+
+The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256
+- SHA512
