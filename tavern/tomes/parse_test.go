@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kcarretto/realm/tavern/ent/enttest"
-	"github.com/kcarretto/realm/tavern/ent/tome"
+	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
+	"github.com/kcarretto/realm/tavern/internal/ent/tome"
 	"github.com/kcarretto/realm/tavern/tomes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

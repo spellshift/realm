@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
