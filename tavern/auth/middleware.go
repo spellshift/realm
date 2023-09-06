@@ -82,3 +82,15 @@ func Middleware(handler http.Handler, graph *ent.Client) http.HandlerFunc {
 		handler.ServeHTTP(w, r)
 	})
 }
+
+// WithLoginRedirect will redirect requests for the provided handler to the provided redirect URL if the request is unauthenticated.
+func WithLoginRedirect(redirect string, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if !IsAuthenticatedContext(req.Context()) {
+			http.Redirect(w, req, redirect, http.StatusFound)
+			return
+		}
+		handler.ServeHTTP(w, req)
+	})
+
+}
