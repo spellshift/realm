@@ -1,8 +1,8 @@
-use std::fs::File;
+use std::fs::{File, rename};
 use std::io::{Read, Write};
 
 use anyhow::{anyhow, Result};
-
+use tempfile::NamedTempFile;
 use aes::Aes128;
 use aes::cipher::{
     BlockEncrypt, KeyInit,
@@ -19,8 +19,8 @@ pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
     
     let mut block = GenericArray::from([0; 16]);
     let cipher = Aes128::new(&key);
-    let mut src_file = File::open(src)?;
-    let mut out_file = File::create(dst)?;
+    let mut src_file = File::open(src.clone())?;
+    let mut out_file = NamedTempFile::new()?;
     while let Ok(n) = src_file.read(&mut block[..]) {
         if n == 0 {
             break;
@@ -39,6 +39,8 @@ pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
         out_file.write(&block)?;
         block = GenericArray::from([0u8; 16]);
     }
+    drop(src_file);
+    rename(out_file.path(), dst)?;
     Ok(())
 }
 

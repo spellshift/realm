@@ -1,8 +1,9 @@
-use std::fs::File;
+use std::fs::{File, rename};
 use std::io::{Read, Write};
 
 use aes::cipher::BlockSizeUser;
 use anyhow::{anyhow, Result};
+use tempfile::NamedTempFile;
 
 use aes::Aes128;
 use aes::cipher::{
@@ -19,12 +20,12 @@ pub fn decrypt_file(src: String, dst: String, key: String) -> Result<()> {
     let key = GenericArray::from(key_bytes);
     let mut block = GenericArray::from([0u8; 16]);
     let cipher = Aes128::new(&key);
-    let mut src_file = File::open(src)?;
+    let mut src_file = File::open(src.clone())?;
     let mut src_len = src_file.metadata()?.len();
     if src_len % Aes128::block_size() as u64 != 0 {
         return Err(anyhow!("File size must be a multiple of 16 bytes"));
     }
-    let mut out_file = File::create(dst)?;
+    let mut out_file = NamedTempFile::new()?;
     while let Ok(_n) = src_file.read(&mut block[..]) {
         cipher.decrypt_block(&mut block);
         src_len -= 16;
@@ -48,6 +49,8 @@ pub fn decrypt_file(src: String, dst: String, key: String) -> Result<()> {
         out_file.write(&block)?;
         block = GenericArray::from([0u8; 16]);
     }
+    drop(src_file);
+    rename(out_file.path(), dst)?;
     Ok(())
 }
 
