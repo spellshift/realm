@@ -11,16 +11,16 @@ import (
 	"os"
 
 	"entgo.io/contrib/entgql"
-	"github.com/kcarretto/realm/tavern/graphql"
+	"github.com/kcarretto/realm/tavern/internal/graphql"
 	"github.com/kcarretto/realm/tavern/tomes"
 
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/kcarretto/realm/tavern/auth"
-	"github.com/kcarretto/realm/tavern/ent"
-	"github.com/kcarretto/realm/tavern/ent/migrate"
+	"github.com/kcarretto/realm/tavern/internal/auth"
 	"github.com/kcarretto/realm/tavern/internal/cdn"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/migrate"
 	"github.com/kcarretto/realm/tavern/internal/www"
 	"github.com/urfave/cli"
 )
