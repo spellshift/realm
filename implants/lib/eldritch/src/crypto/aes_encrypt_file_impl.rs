@@ -1,6 +1,6 @@
 use std::fs::{File, rename};
 use std::io::{Read, Write};
-
+use std::path::Path;
 use anyhow::{anyhow, Result};
 use tempfile::NamedTempFile;
 use aes::Aes128;
@@ -10,6 +10,9 @@ use aes::cipher::{
 };
 
 pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
+    if !Path::new(&dst).exists() {
+        return Err(anyhow!("File at path {} does not exist", dst));
+    }
     let key_bytes = key.as_bytes();
     if key_bytes.len() != 16 {
         return Err(anyhow!("Key size must be 16 bytes (characters)"));
