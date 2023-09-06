@@ -57,7 +57,7 @@ func (ec *executionContext) field_Query_beacons_args(ctx context.Context, rawArg
 	var arg0 *ent.BeaconWhereInput
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg0, err = ec.unmarshalOBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInput(ctx, tmp)
+		arg0, err = ec.unmarshalOBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +72,7 @@ func (ec *executionContext) field_Query_files_args(ctx context.Context, rawArgs 
 	var arg0 *ent.FileWhereInput
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg0, err = ec.unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInput(ctx, tmp)
+		arg0, err = ec.unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +117,7 @@ func (ec *executionContext) field_Query_quests_args(ctx context.Context, rawArgs
 	var arg0 *ent.QuestWhereInput
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg0, err = ec.unmarshalOQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInput(ctx, tmp)
+		arg0, err = ec.unmarshalOQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs m
 	var arg0 *ent.TagWhereInput
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg0, err = ec.unmarshalOTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInput(ctx, tmp)
+		arg0, err = ec.unmarshalOTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +147,7 @@ func (ec *executionContext) field_Query_tomes_args(ctx context.Context, rawArgs 
 	var arg0 *ent.TomeWhereInput
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg0, err = ec.unmarshalOTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInput(ctx, tmp)
+		arg0, err = ec.unmarshalOTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -162,7 +162,7 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 	var arg0 *ent.UserWhereInput
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg0, err = ec.unmarshalOUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInput(ctx, tmp)
+		arg0, err = ec.unmarshalOUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -544,7 +544,7 @@ func (ec *executionContext) _Beacon_hostPlatform(ctx context.Context, field grap
 	}
 	res := resTmp.(beacon.HostPlatform)
 	fc.Result = res
-	return ec.marshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx, field.Selections, res)
+	return ec.marshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Beacon_hostPlatform(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -626,7 +626,7 @@ func (ec *executionContext) _Beacon_tags(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*ent.Tag)
 	fc.Result = res
-	return ec.marshalOTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagᚄ(ctx, field.Selections, res)
+	return ec.marshalOTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Beacon_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -677,7 +677,7 @@ func (ec *executionContext) _Beacon_tasks(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.([]*ent.Task)
 	fc.Result = res
-	return ec.marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskᚄ(ctx, field.Selections, res)
+	return ec.marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Beacon_tasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1092,7 +1092,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	}
 	res := resTmp.(*ent.Cursor)
 	fc.Result = res
-	return ec.marshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCursor(ctx, field.Selections, res)
+	return ec.marshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_startCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1133,7 +1133,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	}
 	res := resTmp.(*ent.Cursor)
 	fc.Result = res
-	return ec.marshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCursor(ctx, field.Selections, res)
+	return ec.marshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_endCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1174,7 +1174,7 @@ func (ec *executionContext) _Query_node(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(ent.Noder)
 	fc.Result = res
-	return ec.marshalONode2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐNoder(ctx, field.Selections, res)
+	return ec.marshalONode2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐNoder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1229,7 +1229,7 @@ func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]ent.Noder)
 	fc.Result = res
-	return ec.marshalNNode2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐNoder(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐNoder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_nodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1284,7 +1284,7 @@ func (ec *executionContext) _Query_files(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*ent.File)
 	fc.Result = res
-	return ec.marshalNFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileᚄ(ctx, field.Selections, res)
+	return ec.marshalNFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1353,7 +1353,7 @@ func (ec *executionContext) _Query_quests(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.([]*ent.Quest)
 	fc.Result = res
-	return ec.marshalNQuest2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestᚄ(ctx, field.Selections, res)
+	return ec.marshalNQuest2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_quests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1428,7 +1428,7 @@ func (ec *executionContext) _Query_beacons(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]*ent.Beacon)
 	fc.Result = res
-	return ec.marshalNBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconᚄ(ctx, field.Selections, res)
+	return ec.marshalNBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_beacons(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1509,7 +1509,7 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.([]*ent.Tag)
 	fc.Result = res
-	return ec.marshalNTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagᚄ(ctx, field.Selections, res)
+	return ec.marshalNTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1574,7 +1574,7 @@ func (ec *executionContext) _Query_tomes(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*ent.Tome)
 	fc.Result = res
-	return ec.marshalNTome2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeᚄ(ctx, field.Selections, res)
+	return ec.marshalNTome2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_tomes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1647,7 +1647,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*ent.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2060,7 +2060,7 @@ func (ec *executionContext) _Quest_tome(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(*ent.Tome)
 	fc.Result = res
-	return ec.marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTome(ctx, field.Selections, res)
+	return ec.marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Quest_tome(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2119,7 +2119,7 @@ func (ec *executionContext) _Quest_bundle(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*ent.File)
 	fc.Result = res
-	return ec.marshalOFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFile(ctx, field.Selections, res)
+	return ec.marshalOFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFile(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Quest_bundle(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2174,7 +2174,7 @@ func (ec *executionContext) _Quest_tasks(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*ent.Task)
 	fc.Result = res
-	return ec.marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskᚄ(ctx, field.Selections, res)
+	return ec.marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Quest_tasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2237,7 +2237,7 @@ func (ec *executionContext) _Quest_creator(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Quest_creator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2381,7 +2381,7 @@ func (ec *executionContext) _Tag_kind(ctx context.Context, field graphql.Collect
 	}
 	res := resTmp.(tag.Kind)
 	fc.Result = res
-	return ec.marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, field.Selections, res)
+	return ec.marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tag_kind(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2422,7 +2422,7 @@ func (ec *executionContext) _Tag_beacons(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*ent.Beacon)
 	fc.Result = res
-	return ec.marshalOBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconᚄ(ctx, field.Selections, res)
+	return ec.marshalOBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tag_beacons(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2829,7 +2829,7 @@ func (ec *executionContext) _Task_quest(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(*ent.Quest)
 	fc.Result = res
-	return ec.marshalNQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuest(ctx, field.Selections, res)
+	return ec.marshalNQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuest(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Task_quest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2893,7 +2893,7 @@ func (ec *executionContext) _Task_beacon(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*ent.Beacon)
 	fc.Result = res
-	return ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeacon(ctx, field.Selections, res)
+	return ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeacon(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Task_beacon(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3265,7 +3265,7 @@ func (ec *executionContext) _Tome_files(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.([]*ent.File)
 	fc.Result = res
-	return ec.marshalOFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileᚄ(ctx, field.Selections, res)
+	return ec.marshalOFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tome_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3541,7 +3541,7 @@ func (ec *executionContext) unmarshalInputBeaconOrder(ctx context.Context, obj i
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐOrderDirection(ctx, v)
+			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐOrderDirection(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3549,7 +3549,7 @@ func (ec *executionContext) unmarshalInputBeaconOrder(ctx context.Context, obj i
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
-			it.Field, err = ec.unmarshalNBeaconOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconOrderField(ctx, v)
+			it.Field, err = ec.unmarshalNBeaconOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconOrderField(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3577,7 +3577,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3585,7 +3585,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3593,7 +3593,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4473,7 +4473,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatform"))
-			it.HostPlatform, err = ec.unmarshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx, v)
+			it.HostPlatform, err = ec.unmarshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4481,7 +4481,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatformNEQ"))
-			it.HostPlatformNEQ, err = ec.unmarshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx, v)
+			it.HostPlatformNEQ, err = ec.unmarshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4489,7 +4489,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatformIn"))
-			it.HostPlatformIn, err = ec.unmarshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatformᚄ(ctx, v)
+			it.HostPlatformIn, err = ec.unmarshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatformᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4497,7 +4497,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatformNotIn"))
-			it.HostPlatformNotIn, err = ec.unmarshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatformᚄ(ctx, v)
+			it.HostPlatformNotIn, err = ec.unmarshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatformᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4593,7 +4593,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTagsWith"))
-			it.HasTagsWith, err = ec.unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInputᚄ(ctx, v)
+			it.HasTagsWith, err = ec.unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4609,7 +4609,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTasksWith"))
-			it.HasTasksWith, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInputᚄ(ctx, v)
+			it.HasTasksWith, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4689,7 +4689,7 @@ func (ec *executionContext) unmarshalInputCreateTagInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-			it.Kind, err = ec.unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			it.Kind, err = ec.unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4789,7 +4789,7 @@ func (ec *executionContext) unmarshalInputFileOrder(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐOrderDirection(ctx, v)
+			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐOrderDirection(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4797,7 +4797,7 @@ func (ec *executionContext) unmarshalInputFileOrder(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
-			it.Field, err = ec.unmarshalNFileOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileOrderField(ctx, v)
+			it.Field, err = ec.unmarshalNFileOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileOrderField(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4825,7 +4825,7 @@ func (ec *executionContext) unmarshalInputFileWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4833,7 +4833,7 @@ func (ec *executionContext) unmarshalInputFileWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4841,7 +4841,7 @@ func (ec *executionContext) unmarshalInputFileWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5337,7 +5337,7 @@ func (ec *executionContext) unmarshalInputQuestOrder(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐOrderDirection(ctx, v)
+			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐOrderDirection(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5345,7 +5345,7 @@ func (ec *executionContext) unmarshalInputQuestOrder(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
-			it.Field, err = ec.unmarshalNQuestOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestOrderField(ctx, v)
+			it.Field, err = ec.unmarshalNQuestOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestOrderField(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5373,7 +5373,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5381,7 +5381,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5389,7 +5389,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5821,7 +5821,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTomeWith"))
-			it.HasTomeWith, err = ec.unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInputᚄ(ctx, v)
+			it.HasTomeWith, err = ec.unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5837,7 +5837,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBundleWith"))
-			it.HasBundleWith, err = ec.unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInputᚄ(ctx, v)
+			it.HasBundleWith, err = ec.unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5853,7 +5853,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTasksWith"))
-			it.HasTasksWith, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInputᚄ(ctx, v)
+			it.HasTasksWith, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5869,7 +5869,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatorWith"))
-			it.HasCreatorWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.HasCreatorWith, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5901,7 +5901,7 @@ func (ec *executionContext) unmarshalInputTagOrder(ctx context.Context, obj inte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐOrderDirection(ctx, v)
+			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐOrderDirection(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5909,7 +5909,7 @@ func (ec *executionContext) unmarshalInputTagOrder(ctx context.Context, obj inte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
-			it.Field, err = ec.unmarshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagOrderField(ctx, v)
+			it.Field, err = ec.unmarshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagOrderField(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5937,7 +5937,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5945,7 +5945,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5953,7 +5953,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6129,7 +6129,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-			it.Kind, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			it.Kind, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6137,7 +6137,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindNEQ"))
-			it.KindNEQ, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			it.KindNEQ, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6145,7 +6145,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindIn"))
-			it.KindIn, err = ec.unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx, v)
+			it.KindIn, err = ec.unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKindᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6153,7 +6153,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindNotIn"))
-			it.KindNotIn, err = ec.unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx, v)
+			it.KindNotIn, err = ec.unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKindᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6169,7 +6169,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBeaconsWith"))
-			it.HasBeaconsWith, err = ec.unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInputᚄ(ctx, v)
+			it.HasBeaconsWith, err = ec.unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6201,7 +6201,7 @@ func (ec *executionContext) unmarshalInputTaskOrder(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐOrderDirection(ctx, v)
+			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐOrderDirection(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6209,7 +6209,7 @@ func (ec *executionContext) unmarshalInputTaskOrder(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
-			it.Field, err = ec.unmarshalNTaskOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskOrderField(ctx, v)
+			it.Field, err = ec.unmarshalNTaskOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskOrderField(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6237,7 +6237,7 @@ func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6245,7 +6245,7 @@ func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6253,7 +6253,7 @@ func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6941,7 +6941,7 @@ func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasQuestWith"))
-			it.HasQuestWith, err = ec.unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInputᚄ(ctx, v)
+			it.HasQuestWith, err = ec.unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6957,7 +6957,7 @@ func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBeaconWith"))
-			it.HasBeaconWith, err = ec.unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInputᚄ(ctx, v)
+			it.HasBeaconWith, err = ec.unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6989,7 +6989,7 @@ func (ec *executionContext) unmarshalInputTomeOrder(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐOrderDirection(ctx, v)
+			it.Direction, err = ec.unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐOrderDirection(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6997,7 +6997,7 @@ func (ec *executionContext) unmarshalInputTomeOrder(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
-			it.Field, err = ec.unmarshalNTomeOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeOrderField(ctx, v)
+			it.Field, err = ec.unmarshalNTomeOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeOrderField(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7025,7 +7025,7 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7033,7 +7033,7 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7041,7 +7041,7 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7681,7 +7681,7 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasFilesWith"))
-			it.HasFilesWith, err = ec.unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInputᚄ(ctx, v)
+			it.HasFilesWith, err = ec.unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7785,7 +7785,7 @@ func (ec *executionContext) unmarshalInputUpdateTagInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-			it.Kind, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, v)
+			it.Kind, err = ec.unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7889,7 +7889,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			it.Not, err = ec.unmarshalOUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInput(ctx, v)
+			it.Not, err = ec.unmarshalOUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7897,7 +7897,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			it.And, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.And, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7905,7 +7905,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			it.Or, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.Or, err = ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9136,11 +9136,11 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNBeacon2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeacon(ctx context.Context, sel ast.SelectionSet, v ent.Beacon) graphql.Marshaler {
+func (ec *executionContext) marshalNBeacon2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeacon(ctx context.Context, sel ast.SelectionSet, v ent.Beacon) graphql.Marshaler {
 	return ec._Beacon(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Beacon) graphql.Marshaler {
+func (ec *executionContext) marshalNBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Beacon) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -9164,7 +9164,7 @@ func (ec *executionContext) marshalNBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋreal
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeacon(ctx, sel, v[i])
+			ret[i] = ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeacon(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9184,7 +9184,7 @@ func (ec *executionContext) marshalNBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋreal
 	return ret
 }
 
-func (ec *executionContext) marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeacon(ctx context.Context, sel ast.SelectionSet, v *ent.Beacon) graphql.Marshaler {
+func (ec *executionContext) marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeacon(ctx context.Context, sel ast.SelectionSet, v *ent.Beacon) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9194,23 +9194,23 @@ func (ec *executionContext) marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ec._Beacon(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx context.Context, v interface{}) (beacon.HostPlatform, error) {
+func (ec *executionContext) unmarshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx context.Context, v interface{}) (beacon.HostPlatform, error) {
 	var res beacon.HostPlatform
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v beacon.HostPlatform) graphql.Marshaler {
+func (ec *executionContext) marshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v beacon.HostPlatform) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNBeaconOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconOrderField(ctx context.Context, v interface{}) (*ent.BeaconOrderField, error) {
+func (ec *executionContext) unmarshalNBeaconOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconOrderField(ctx context.Context, v interface{}) (*ent.BeaconOrderField, error) {
 	var res = new(ent.BeaconOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNBeaconOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.BeaconOrderField) graphql.Marshaler {
+func (ec *executionContext) marshalNBeaconOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.BeaconOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9220,27 +9220,27 @@ func (ec *executionContext) marshalNBeaconOrderField2ᚖgithubᚗcomᚋkcarretto
 	return v
 }
 
-func (ec *executionContext) unmarshalNBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInput(ctx context.Context, v interface{}) (*ent.BeaconWhereInput, error) {
+func (ec *executionContext) unmarshalNBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInput(ctx context.Context, v interface{}) (*ent.BeaconWhereInput, error) {
 	res, err := ec.unmarshalInputBeaconWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCreateQuestInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateQuestInput(ctx context.Context, v interface{}) (ent.CreateQuestInput, error) {
+func (ec *executionContext) unmarshalNCreateQuestInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateQuestInput(ctx context.Context, v interface{}) (ent.CreateQuestInput, error) {
 	res, err := ec.unmarshalInputCreateQuestInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCreateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateTagInput(ctx context.Context, v interface{}) (ent.CreateTagInput, error) {
+func (ec *executionContext) unmarshalNCreateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateTagInput(ctx context.Context, v interface{}) (ent.CreateTagInput, error) {
 	res, err := ec.unmarshalInputCreateTagInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCreateTomeInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateTomeInput(ctx context.Context, v interface{}) (ent.CreateTomeInput, error) {
+func (ec *executionContext) unmarshalNCreateTomeInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateTomeInput(ctx context.Context, v interface{}) (ent.CreateTomeInput, error) {
 	res, err := ec.unmarshalInputCreateTomeInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.File) graphql.Marshaler {
+func (ec *executionContext) marshalNFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.File) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -9264,7 +9264,7 @@ func (ec *executionContext) marshalNFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFile(ctx, sel, v[i])
+			ret[i] = ec.marshalNFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFile(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9284,7 +9284,7 @@ func (ec *executionContext) marshalNFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) marshalNFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFile(ctx context.Context, sel ast.SelectionSet, v *ent.File) graphql.Marshaler {
+func (ec *executionContext) marshalNFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFile(ctx context.Context, sel ast.SelectionSet, v *ent.File) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9294,13 +9294,13 @@ func (ec *executionContext) marshalNFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋt
 	return ec._File(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNFileOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileOrderField(ctx context.Context, v interface{}) (*ent.FileOrderField, error) {
+func (ec *executionContext) unmarshalNFileOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileOrderField(ctx context.Context, v interface{}) (*ent.FileOrderField, error) {
 	var res = new(ent.FileOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNFileOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.FileOrderField) graphql.Marshaler {
+func (ec *executionContext) marshalNFileOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.FileOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9310,12 +9310,12 @@ func (ec *executionContext) marshalNFileOrderField2ᚖgithubᚗcomᚋkcarretto�
 	return v
 }
 
-func (ec *executionContext) unmarshalNFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInput(ctx context.Context, v interface{}) (*ent.FileWhereInput, error) {
+func (ec *executionContext) unmarshalNFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInput(ctx context.Context, v interface{}) (*ent.FileWhereInput, error) {
 	res, err := ec.unmarshalInputFileWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v []ent.Noder) graphql.Marshaler {
+func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v []ent.Noder) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -9339,7 +9339,7 @@ func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋt
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalONode2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐNoder(ctx, sel, v[i])
+			ret[i] = ec.marshalONode2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐNoder(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9353,17 +9353,17 @@ func (ec *executionContext) marshalNNode2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋt
 	return ret
 }
 
-func (ec *executionContext) unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐOrderDirection(ctx context.Context, v interface{}) (ent.OrderDirection, error) {
+func (ec *executionContext) unmarshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐOrderDirection(ctx context.Context, v interface{}) (ent.OrderDirection, error) {
 	var res ent.OrderDirection
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐOrderDirection(ctx context.Context, sel ast.SelectionSet, v ent.OrderDirection) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderDirection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐOrderDirection(ctx context.Context, sel ast.SelectionSet, v ent.OrderDirection) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNQuest2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Quest) graphql.Marshaler {
+func (ec *executionContext) marshalNQuest2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Quest) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -9387,7 +9387,7 @@ func (ec *executionContext) marshalNQuest2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuest(ctx, sel, v[i])
+			ret[i] = ec.marshalNQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuest(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9407,7 +9407,7 @@ func (ec *executionContext) marshalNQuest2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm
 	return ret
 }
 
-func (ec *executionContext) marshalNQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuest(ctx context.Context, sel ast.SelectionSet, v *ent.Quest) graphql.Marshaler {
+func (ec *executionContext) marshalNQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuest(ctx context.Context, sel ast.SelectionSet, v *ent.Quest) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9417,13 +9417,13 @@ func (ec *executionContext) marshalNQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋ
 	return ec._Quest(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNQuestOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestOrderField(ctx context.Context, v interface{}) (*ent.QuestOrderField, error) {
+func (ec *executionContext) unmarshalNQuestOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestOrderField(ctx context.Context, v interface{}) (*ent.QuestOrderField, error) {
 	var res = new(ent.QuestOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNQuestOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.QuestOrderField) graphql.Marshaler {
+func (ec *executionContext) marshalNQuestOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.QuestOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9433,16 +9433,16 @@ func (ec *executionContext) marshalNQuestOrderField2ᚖgithubᚗcomᚋkcarretto�
 	return v
 }
 
-func (ec *executionContext) unmarshalNQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInput(ctx context.Context, v interface{}) (*ent.QuestWhereInput, error) {
+func (ec *executionContext) unmarshalNQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInput(ctx context.Context, v interface{}) (*ent.QuestWhereInput, error) {
 	res, err := ec.unmarshalInputQuestWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTag2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTag(ctx context.Context, sel ast.SelectionSet, v ent.Tag) graphql.Marshaler {
+func (ec *executionContext) marshalNTag2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTag(ctx context.Context, sel ast.SelectionSet, v ent.Tag) graphql.Marshaler {
 	return ec._Tag(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tag) graphql.Marshaler {
+func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tag) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -9466,7 +9466,7 @@ func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTag(ctx, sel, v[i])
+			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTag(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9486,7 +9486,7 @@ func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTag(ctx context.Context, sel ast.SelectionSet, v *ent.Tag) graphql.Marshaler {
+func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTag(ctx context.Context, sel ast.SelectionSet, v *ent.Tag) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9496,23 +9496,23 @@ func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋta
 	return ec._Tag(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (tag.Kind, error) {
+func (ec *executionContext) unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (tag.Kind, error) {
 	var res tag.Kind
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v tag.Kind) graphql.Marshaler {
+func (ec *executionContext) marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v tag.Kind) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagOrderField(ctx context.Context, v interface{}) (*ent.TagOrderField, error) {
+func (ec *executionContext) unmarshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagOrderField(ctx context.Context, v interface{}) (*ent.TagOrderField, error) {
 	var res = new(ent.TagOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TagOrderField) graphql.Marshaler {
+func (ec *executionContext) marshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TagOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9522,12 +9522,12 @@ func (ec *executionContext) marshalNTagOrderField2ᚖgithubᚗcomᚋkcarrettoᚋ
 	return v
 }
 
-func (ec *executionContext) unmarshalNTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInput(ctx context.Context, v interface{}) (*ent.TagWhereInput, error) {
+func (ec *executionContext) unmarshalNTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInput(ctx context.Context, v interface{}) (*ent.TagWhereInput, error) {
 	res, err := ec.unmarshalInputTagWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Task) graphql.Marshaler {
+func (ec *executionContext) marshalNTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Task) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -9551,7 +9551,7 @@ func (ec *executionContext) marshalNTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTask(ctx, sel, v[i])
+			ret[i] = ec.marshalNTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTask(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9571,7 +9571,7 @@ func (ec *executionContext) marshalNTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) marshalNTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTask(ctx context.Context, sel ast.SelectionSet, v *ent.Task) graphql.Marshaler {
+func (ec *executionContext) marshalNTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTask(ctx context.Context, sel ast.SelectionSet, v *ent.Task) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9581,13 +9581,13 @@ func (ec *executionContext) marshalNTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋt
 	return ec._Task(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTaskOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskOrderField(ctx context.Context, v interface{}) (*ent.TaskOrderField, error) {
+func (ec *executionContext) unmarshalNTaskOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskOrderField(ctx context.Context, v interface{}) (*ent.TaskOrderField, error) {
 	var res = new(ent.TaskOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTaskOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TaskOrderField) graphql.Marshaler {
+func (ec *executionContext) marshalNTaskOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TaskOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9597,16 +9597,16 @@ func (ec *executionContext) marshalNTaskOrderField2ᚖgithubᚗcomᚋkcarretto�
 	return v
 }
 
-func (ec *executionContext) unmarshalNTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInput(ctx context.Context, v interface{}) (*ent.TaskWhereInput, error) {
+func (ec *executionContext) unmarshalNTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx context.Context, v interface{}) (*ent.TaskWhereInput, error) {
 	res, err := ec.unmarshalInputTaskWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTome2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTome(ctx context.Context, sel ast.SelectionSet, v ent.Tome) graphql.Marshaler {
+func (ec *executionContext) marshalNTome2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTome(ctx context.Context, sel ast.SelectionSet, v ent.Tome) graphql.Marshaler {
 	return ec._Tome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTome2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tome) graphql.Marshaler {
+func (ec *executionContext) marshalNTome2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tome) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -9630,7 +9630,7 @@ func (ec *executionContext) marshalNTome2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTome(ctx, sel, v[i])
+			ret[i] = ec.marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTome(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9650,7 +9650,7 @@ func (ec *executionContext) marshalNTome2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTome(ctx context.Context, sel ast.SelectionSet, v *ent.Tome) graphql.Marshaler {
+func (ec *executionContext) marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTome(ctx context.Context, sel ast.SelectionSet, v *ent.Tome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9660,13 +9660,13 @@ func (ec *executionContext) marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋt
 	return ec._Tome(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTomeOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeOrderField(ctx context.Context, v interface{}) (*ent.TomeOrderField, error) {
+func (ec *executionContext) unmarshalNTomeOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeOrderField(ctx context.Context, v interface{}) (*ent.TomeOrderField, error) {
 	var res = new(ent.TomeOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTomeOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TomeOrderField) graphql.Marshaler {
+func (ec *executionContext) marshalNTomeOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TomeOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9676,27 +9676,27 @@ func (ec *executionContext) marshalNTomeOrderField2ᚖgithubᚗcomᚋkcarretto�
 	return v
 }
 
-func (ec *executionContext) unmarshalNTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInput(ctx context.Context, v interface{}) (*ent.TomeWhereInput, error) {
+func (ec *executionContext) unmarshalNTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx context.Context, v interface{}) (*ent.TomeWhereInput, error) {
 	res, err := ec.unmarshalInputTomeWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUpdateBeaconInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUpdateBeaconInput(ctx context.Context, v interface{}) (ent.UpdateBeaconInput, error) {
+func (ec *executionContext) unmarshalNUpdateBeaconInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateBeaconInput(ctx context.Context, v interface{}) (ent.UpdateBeaconInput, error) {
 	res, err := ec.unmarshalInputUpdateBeaconInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUpdateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUpdateTagInput(ctx context.Context, v interface{}) (ent.UpdateTagInput, error) {
+func (ec *executionContext) unmarshalNUpdateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateTagInput(ctx context.Context, v interface{}) (ent.UpdateTagInput, error) {
 	res, err := ec.unmarshalInputUpdateTagInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUpdateUserInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUpdateUserInput(ctx context.Context, v interface{}) (ent.UpdateUserInput, error) {
+func (ec *executionContext) unmarshalNUpdateUserInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateUserInput(ctx context.Context, v interface{}) (ent.UpdateUserInput, error) {
 	res, err := ec.unmarshalInputUpdateUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.User) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -9720,7 +9720,7 @@ func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUser(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9740,7 +9740,7 @@ func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -9750,12 +9750,12 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋt
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
+func (ec *executionContext) unmarshalNUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
 	res, err := ec.unmarshalInputUserWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Beacon) graphql.Marshaler {
+func (ec *executionContext) marshalOBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Beacon) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -9782,7 +9782,7 @@ func (ec *executionContext) marshalOBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋreal
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeacon(ctx, sel, v[i])
+			ret[i] = ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeacon(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9802,7 +9802,7 @@ func (ec *executionContext) marshalOBeacon2ᚕᚖgithubᚗcomᚋkcarrettoᚋreal
 	return ret
 }
 
-func (ec *executionContext) unmarshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatformᚄ(ctx context.Context, v interface{}) ([]beacon.HostPlatform, error) {
+func (ec *executionContext) unmarshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatformᚄ(ctx context.Context, v interface{}) ([]beacon.HostPlatform, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -9814,7 +9814,7 @@ func (ec *executionContext) unmarshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarr
 	res := make([]beacon.HostPlatform, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -9822,7 +9822,7 @@ func (ec *executionContext) unmarshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarr
 	return res, nil
 }
 
-func (ec *executionContext) marshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatformᚄ(ctx context.Context, sel ast.SelectionSet, v []beacon.HostPlatform) graphql.Marshaler {
+func (ec *executionContext) marshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatformᚄ(ctx context.Context, sel ast.SelectionSet, v []beacon.HostPlatform) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -9849,7 +9849,7 @@ func (ec *executionContext) marshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarret
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx, sel, v[i])
+			ret[i] = ec.marshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9869,7 +9869,7 @@ func (ec *executionContext) marshalOBeaconHostPlatform2ᚕgithubᚗcomᚋkcarret
 	return ret
 }
 
-func (ec *executionContext) unmarshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx context.Context, v interface{}) (*beacon.HostPlatform, error) {
+func (ec *executionContext) unmarshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx context.Context, v interface{}) (*beacon.HostPlatform, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -9878,14 +9878,14 @@ func (ec *executionContext) unmarshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarr
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋbeaconᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v *beacon.HostPlatform) graphql.Marshaler {
+func (ec *executionContext) marshalOBeaconHostPlatform2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx context.Context, sel ast.SelectionSet, v *beacon.HostPlatform) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.BeaconWhereInput, error) {
+func (ec *executionContext) unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.BeaconWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -9897,7 +9897,7 @@ func (ec *executionContext) unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcar
 	res := make([]*ent.BeaconWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -9905,7 +9905,7 @@ func (ec *executionContext) unmarshalOBeaconWhereInput2ᚕᚖgithubᚗcomᚋkcar
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeaconWhereInput(ctx context.Context, v interface{}) (*ent.BeaconWhereInput, error) {
+func (ec *executionContext) unmarshalOBeaconWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeaconWhereInput(ctx context.Context, v interface{}) (*ent.BeaconWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -9913,7 +9913,7 @@ func (ec *executionContext) unmarshalOBeaconWhereInput2ᚖgithubᚗcomᚋkcarret
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCursor(ctx context.Context, v interface{}) (*ent.Cursor, error) {
+func (ec *executionContext) unmarshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCursor(ctx context.Context, v interface{}) (*ent.Cursor, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -9922,14 +9922,14 @@ func (ec *executionContext) unmarshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealm
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCursor(ctx context.Context, sel ast.SelectionSet, v *ent.Cursor) graphql.Marshaler {
+func (ec *executionContext) marshalOCursor2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCursor(ctx context.Context, sel ast.SelectionSet, v *ent.Cursor) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.File) graphql.Marshaler {
+func (ec *executionContext) marshalOFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.File) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -9956,7 +9956,7 @@ func (ec *executionContext) marshalOFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFile(ctx, sel, v[i])
+			ret[i] = ec.marshalNFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFile(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9976,14 +9976,14 @@ func (ec *executionContext) marshalOFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) marshalOFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFile(ctx context.Context, sel ast.SelectionSet, v *ent.File) graphql.Marshaler {
+func (ec *executionContext) marshalOFile2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFile(ctx context.Context, sel ast.SelectionSet, v *ent.File) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._File(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.FileWhereInput, error) {
+func (ec *executionContext) unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.FileWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -9995,7 +9995,7 @@ func (ec *executionContext) unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarre
 	res := make([]*ent.FileWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10003,7 +10003,7 @@ func (ec *executionContext) unmarshalOFileWhereInput2ᚕᚖgithubᚗcomᚋkcarre
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐFileWhereInput(ctx context.Context, v interface{}) (*ent.FileWhereInput, error) {
+func (ec *executionContext) unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInput(ctx context.Context, v interface{}) (*ent.FileWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10011,21 +10011,21 @@ func (ec *executionContext) unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarretto
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalONode2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v ent.Noder) graphql.Marshaler {
+func (ec *executionContext) marshalONode2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v ent.Noder) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuest(ctx context.Context, sel ast.SelectionSet, v *ent.Quest) graphql.Marshaler {
+func (ec *executionContext) marshalOQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuest(ctx context.Context, sel ast.SelectionSet, v *ent.Quest) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Quest(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.QuestWhereInput, error) {
+func (ec *executionContext) unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.QuestWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10037,7 +10037,7 @@ func (ec *executionContext) unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarr
 	res := make([]*ent.QuestWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10045,7 +10045,7 @@ func (ec *executionContext) unmarshalOQuestWhereInput2ᚕᚖgithubᚗcomᚋkcarr
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuestWhereInput(ctx context.Context, v interface{}) (*ent.QuestWhereInput, error) {
+func (ec *executionContext) unmarshalOQuestWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestWhereInput(ctx context.Context, v interface{}) (*ent.QuestWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10053,7 +10053,7 @@ func (ec *executionContext) unmarshalOQuestWhereInput2ᚖgithubᚗcomᚋkcarrett
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tag) graphql.Marshaler {
+func (ec *executionContext) marshalOTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tag) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -10080,7 +10080,7 @@ func (ec *executionContext) marshalOTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTag(ctx, sel, v[i])
+			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTag(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10100,7 +10100,7 @@ func (ec *executionContext) marshalOTag2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx context.Context, v interface{}) ([]tag.Kind, error) {
+func (ec *executionContext) unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKindᚄ(ctx context.Context, v interface{}) ([]tag.Kind, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10112,7 +10112,7 @@ func (ec *executionContext) unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋreal
 	res := make([]tag.Kind, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10120,7 +10120,7 @@ func (ec *executionContext) unmarshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋreal
 	return res, nil
 }
 
-func (ec *executionContext) marshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKindᚄ(ctx context.Context, sel ast.SelectionSet, v []tag.Kind) graphql.Marshaler {
+func (ec *executionContext) marshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKindᚄ(ctx context.Context, sel ast.SelectionSet, v []tag.Kind) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -10147,7 +10147,7 @@ func (ec *executionContext) marshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx, sel, v[i])
+			ret[i] = ec.marshalNTagKind2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10167,7 +10167,7 @@ func (ec *executionContext) marshalOTagKind2ᚕgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (*tag.Kind, error) {
+func (ec *executionContext) unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx context.Context, v interface{}) (*tag.Kind, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10176,14 +10176,14 @@ func (ec *executionContext) unmarshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋreal
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v *tag.Kind) graphql.Marshaler {
+func (ec *executionContext) marshalOTagKind2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx context.Context, sel ast.SelectionSet, v *tag.Kind) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TagWhereInput, error) {
+func (ec *executionContext) unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TagWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10195,7 +10195,7 @@ func (ec *executionContext) unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarret
 	res := make([]*ent.TagWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10203,7 +10203,7 @@ func (ec *executionContext) unmarshalOTagWhereInput2ᚕᚖgithubᚗcomᚋkcarret
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTagWhereInput(ctx context.Context, v interface{}) (*ent.TagWhereInput, error) {
+func (ec *executionContext) unmarshalOTagWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTagWhereInput(ctx context.Context, v interface{}) (*ent.TagWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10211,7 +10211,7 @@ func (ec *executionContext) unmarshalOTagWhereInput2ᚖgithubᚗcomᚋkcarretto�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Task) graphql.Marshaler {
+func (ec *executionContext) marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Task) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -10238,7 +10238,7 @@ func (ec *executionContext) marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTask(ctx, sel, v[i])
+			ret[i] = ec.marshalNTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTask(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10258,14 +10258,14 @@ func (ec *executionContext) marshalOTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealm�
 	return ret
 }
 
-func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTask(ctx context.Context, sel ast.SelectionSet, v *ent.Task) graphql.Marshaler {
+func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTask(ctx context.Context, sel ast.SelectionSet, v *ent.Task) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Task(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TaskWhereInput, error) {
+func (ec *executionContext) unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TaskWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10277,7 +10277,7 @@ func (ec *executionContext) unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarre
 	res := make([]*ent.TaskWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10285,7 +10285,7 @@ func (ec *executionContext) unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarre
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskWhereInput(ctx context.Context, v interface{}) (*ent.TaskWhereInput, error) {
+func (ec *executionContext) unmarshalOTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx context.Context, v interface{}) (*ent.TaskWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10293,7 +10293,7 @@ func (ec *executionContext) unmarshalOTaskWhereInput2ᚖgithubᚗcomᚋkcarretto
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TomeWhereInput, error) {
+func (ec *executionContext) unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TomeWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10305,7 +10305,7 @@ func (ec *executionContext) unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarre
 	res := make([]*ent.TomeWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10313,7 +10313,7 @@ func (ec *executionContext) unmarshalOTomeWhereInput2ᚕᚖgithubᚗcomᚋkcarre
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTomeWhereInput(ctx context.Context, v interface{}) (*ent.TomeWhereInput, error) {
+func (ec *executionContext) unmarshalOTomeWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx context.Context, v interface{}) (*ent.TomeWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10321,14 +10321,14 @@ func (ec *executionContext) unmarshalOTomeWhereInput2ᚖgithubᚗcomᚋkcarretto
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.UserWhereInput, error) {
+func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.UserWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -10340,7 +10340,7 @@ func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarre
 	res := make([]*ent.UserWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -10348,7 +10348,7 @@ func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋkcarre
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
+func (ec *executionContext) unmarshalOUserWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}

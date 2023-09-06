@@ -37,7 +37,7 @@ func (ec *executionContext) field_Mutation_claimTasks_args(ctx context.Context, 
 	var arg0 models.ClaimTasksInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNClaimTasksInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐClaimTasksInput(ctx, tmp)
+		arg0, err = ec.unmarshalNClaimTasksInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐClaimTasksInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func (ec *executionContext) field_Mutation_createQuest_args(ctx context.Context,
 	var arg1 ent.CreateQuestInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNCreateQuestInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateQuestInput(ctx, tmp)
+		arg1, err = ec.unmarshalNCreateQuestInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateQuestInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func (ec *executionContext) field_Mutation_createTag_args(ctx context.Context, r
 	var arg0 ent.CreateTagInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateTagInput(ctx, tmp)
+		arg0, err = ec.unmarshalNCreateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateTagInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +91,7 @@ func (ec *executionContext) field_Mutation_createTome_args(ctx context.Context, 
 	var arg0 ent.CreateTomeInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateTomeInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐCreateTomeInput(ctx, tmp)
+		arg0, err = ec.unmarshalNCreateTomeInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateTomeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +106,7 @@ func (ec *executionContext) field_Mutation_submitTaskResult_args(ctx context.Con
 	var arg0 models.SubmitTaskResultInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNSubmitTaskResultInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐSubmitTaskResultInput(ctx, tmp)
+		arg0, err = ec.unmarshalNSubmitTaskResultInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐSubmitTaskResultInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +130,7 @@ func (ec *executionContext) field_Mutation_updateBeacon_args(ctx context.Context
 	var arg1 ent.UpdateBeaconInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateBeaconInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUpdateBeaconInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateBeaconInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateBeaconInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (ec *executionContext) field_Mutation_updateTag_args(ctx context.Context, r
 	var arg1 ent.UpdateTagInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUpdateTagInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateTagInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -178,7 +178,7 @@ func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, 
 	var arg1 ent.UpdateUserInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateUserInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUpdateUserInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateUserInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateUserInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -213,7 +213,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 			return ec.resolvers.Mutation().CreateQuest(rctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -233,7 +233,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 		if data, ok := tmp.(*ent.Quest); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Quest`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Quest`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -244,7 +244,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 	}
 	res := resTmp.(*ent.Quest)
 	fc.Result = res
-	return ec.marshalOQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐQuest(ctx, field.Selections, res)
+	return ec.marshalOQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuest(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -309,7 +309,7 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 			return ec.resolvers.Mutation().UpdateBeacon(rctx, fc.Args["beaconID"].(int), fc.Args["input"].(ent.UpdateBeaconInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -329,7 +329,7 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 		if data, ok := tmp.(*ent.Beacon); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Beacon`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Beacon`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -343,7 +343,7 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 	}
 	res := resTmp.(*ent.Beacon)
 	fc.Result = res
-	return ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐBeacon(ctx, field.Selections, res)
+	return ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeacon(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -414,7 +414,7 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 			return ec.resolvers.Mutation().CreateTag(rctx, fc.Args["input"].(ent.CreateTagInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
 				return nil, err
 			}
@@ -434,7 +434,7 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 		if data, ok := tmp.(*ent.Tag); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Tag`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Tag`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -448,7 +448,7 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 	}
 	res := resTmp.(*ent.Tag)
 	fc.Result = res
-	return ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTag(ctx, field.Selections, res)
+	return ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTag(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createTag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -503,7 +503,7 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 			return ec.resolvers.Mutation().UpdateTag(rctx, fc.Args["tagID"].(int), fc.Args["input"].(ent.UpdateTagInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -523,7 +523,7 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 		if data, ok := tmp.(*ent.Tag); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Tag`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Tag`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -537,7 +537,7 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 	}
 	res := resTmp.(*ent.Tag)
 	fc.Result = res
-	return ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTag(ctx, field.Selections, res)
+	return ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTag(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateTag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -602,7 +602,7 @@ func (ec *executionContext) _Mutation_claimTasks(ctx context.Context, field grap
 	}
 	res := resTmp.([]*ent.Task)
 	fc.Result = res
-	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTaskᚄ(ctx, field.Selections, res)
+	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -676,7 +676,7 @@ func (ec *executionContext) _Mutation_submitTaskResult(ctx context.Context, fiel
 	}
 	res := resTmp.(*ent.Task)
 	fc.Result = res
-	return ec.marshalOTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTask(ctx, field.Selections, res)
+	return ec.marshalOTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_submitTaskResult(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -743,7 +743,7 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 			return ec.resolvers.Mutation().CreateTome(rctx, fc.Args["input"].(ent.CreateTomeInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -763,7 +763,7 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 		if data, ok := tmp.(*ent.Tome); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.Tome`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Tome`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -777,7 +777,7 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 	}
 	res := resTmp.(*ent.Tome)
 	fc.Result = res
-	return ec.marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐTome(ctx, field.Selections, res)
+	return ec.marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -840,7 +840,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 			return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["userID"].(int), fc.Args["input"].(ent.UpdateUserInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
 				return nil, err
 			}
@@ -860,7 +860,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 		if data, ok := tmp.(*ent.User); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/ent.User`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.User`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -871,7 +871,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {

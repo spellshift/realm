@@ -22,7 +22,7 @@ func (ec *executionContext) dir_requireRole_args(ctx context.Context, rawArgs ma
 	var arg0 models.Role
 	if tmp, ok := rawArgs["role"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
-		arg0, err = ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx, tmp)
+		arg0, err = ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -55,13 +55,13 @@ func (ec *executionContext) dir_requireRole_args(ctx context.Context, rawArgs ma
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx context.Context, v interface{}) (models.Role, error) {
+func (ec *executionContext) unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx context.Context, v interface{}) (models.Role, error) {
 	var res models.Role
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋgraphqlᚋmodelsᚐRole(ctx context.Context, sel ast.SelectionSet, v models.Role) graphql.Marshaler {
+func (ec *executionContext) marshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx context.Context, sel ast.SelectionSet, v models.Role) graphql.Marshaler {
 	return v
 }
 

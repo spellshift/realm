@@ -337,6 +337,47 @@ input FileWhereInput {
   hashEqualFold: String
   hashContainsFold: String
 }
+"""
+An object with an ID.
+Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
+"""
+interface Node @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent.Noder") {
+  """The id of the object."""
+  id: ID!
+}
+"""Possible directions in which to order a list of items when provided an `orderBy` argument."""
+enum OrderDirection {
+  """Specifies an ascending order for a given `orderBy` argument."""
+  ASC
+  """Specifies a descending order for a given `orderBy` argument."""
+  DESC
+}
+"""
+Information about pagination in a connection.
+https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
+"""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+  """When paginating backwards, the cursor to continue."""
+  startCursor: Cursor
+  """When paginating forwards, the cursor to continue."""
+  endCursor: Cursor
+}
+type Query {
+  """Fetches an object given its ID."""
+  node(
+    """ID of the object."""
+    id: ID!
+  ): Node
+  """Lookup nodes by a list of IDs."""
+  nodes(
+    """The list of node IDs."""
+    ids: [ID!]!
+  ): [Node]!
+}
 type Quest implements Node {
   id: ID!
   """Timestamp of when this ent was created"""
@@ -442,47 +483,6 @@ input QuestWhereInput {
   """creator edge predicates"""
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
-}
-"""
-An object with an ID.
-Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
-"""
-interface Node @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent.Noder") {
-  """The id of the object."""
-  id: ID!
-}
-"""Possible directions in which to order a list of items when provided an `orderBy` argument."""
-enum OrderDirection {
-  """Specifies an ascending order for a given `orderBy` argument."""
-  ASC
-  """Specifies a descending order for a given `orderBy` argument."""
-  DESC
-}
-"""
-Information about pagination in a connection.
-https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
-"""
-type PageInfo {
-  """When paginating forwards, are there more items?"""
-  hasNextPage: Boolean!
-  """When paginating backwards, are there more items?"""
-  hasPreviousPage: Boolean!
-  """When paginating backwards, the cursor to continue."""
-  startCursor: Cursor
-  """When paginating forwards, the cursor to continue."""
-  endCursor: Cursor
-}
-type Query {
-  """Fetches an object given its ID."""
-  node(
-    """ID of the object."""
-    id: ID!
-  ): Node
-  """Lookup nodes by a list of IDs."""
-  nodes(
-    """The list of node IDs."""
-    ids: [ID!]!
-  ): [Node]!
 }
 type Tag implements Node {
   id: ID!
