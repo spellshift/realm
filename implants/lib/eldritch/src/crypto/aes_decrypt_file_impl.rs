@@ -72,16 +72,13 @@ mod tests {
     #[test]
     fn test_decrypt() -> Result<()> {
         let lorem_encrypted = hex!("9c0a 9d0b bf63 8f19 e8bd f28f f742 9513 fdbb c517 4c9a 8e29 473d a80e 4c38 f052 386b 4bf4 b432 e270 3090 f4dd 4cf6 dfb5 1802 9c49 e5e7 32e3 ec6e fe2a 3ba9 1bba 78bd 6752 08ea 520d 5ee4 a116 b24d 889e 0d5a 6da2 6baf 5d55 6122 28f6 1741 4035 eeed 2fab 2597 5de6 80f6 cff4 5308 06c6 c2e1 30ba 88e6 0654 80f5 af9a 03bf 0af6 2940 7a2b e1a4 ab09 8551 98e5 f455 235b 6094 18aa a388 974f 9580 39fa eed1 20f8 2754 5666 cb25 4b24 9dd8 7cf7 9c8a 4161 f4ef dc44 3d2a 1b9a ab66 5b4d 8bfd 82aa 70a9 cbba ede3 af9a 2e78 04d5 ecb4 5387 6594 8662 dd7a 90ad b03d 9a57 c7a4 d17d 4373 29b1 d073 92b2 9ae5 6da9 af4d 9ba7 edd8 2e82 1846 1355 9cc0 9707 c946 b805 ca7f e9bb 6f0e 64fe bfda de74 f61d 9138 7b8b 48f0 4d48 78f0 1c35 6970 f7b7 22ed da6e dddb 0d1f 2e21 b952 a592 bcde 0823 7329 372a 8c0c e824 58d9 ad36 2282 dfa6 48b1 0e50 fc77 cbd9 3b02 f80c ca2d cf46 194d d1b7 0f36 f7e6 6abb fbd1 13e2 083a ab0f 2835 b7bd d820 052e f7cf f6cb c30f c22e be5b 7372 a8c1 f4e0 8a2a 1602 d43e de29 3282 ecd6 1aee 4bbb a2b8 9bbf 7693 5e21 3c02 4bc0 910d e01c 1228 d219 b7e1 895e 303e 0c85 c375 7de3 bd3f 4b5f da33 82bf 34db 298b 06d2 40a6 81c0 a70f 4e1f");
-        let tmp_file = NamedTempFile::new()?;
+        let mut tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
         
         let tmp_file_dec = NamedTempFile::new()?;
         let path_dec = String::from(tmp_file_dec.path().to_str().unwrap()).clone();
-
-        {
-            let mut f = File::create(path.clone())?;
-            f.write(&lorem_encrypted)?;
-        }
+        
+        tmp_file.write(&lorem_encrypted)?;
         decrypt_file(path, path_dec.clone(), "TESTINGPASSWORD!".to_string())?;
 
         let mut hasher = Sha1::new();

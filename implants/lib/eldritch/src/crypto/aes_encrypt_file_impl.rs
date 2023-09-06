@@ -62,16 +62,13 @@ mod tests {
     #[test]
     fn test_encrypt() -> Result<()> {
         let lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n";
-        let tmp_file = NamedTempFile::new()?;
+        let mut tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
         
         let tmp_file_enc = NamedTempFile::new()?;
         let path_enc = String::from(tmp_file_enc.path().to_str().unwrap()).clone();
-
-        {
-            let mut f = File::create(path.clone())?;
-            write!(f, "{}", lorem)?;
-        }
+        
+        write!(tmp_file, "{}", lorem)?;
         encrypt_file(path, path_enc.clone(), "TESTINGPASSWORD!".to_string())?;
 
         let mut hasher = Sha1::new();
