@@ -517,9 +517,16 @@ sys.shell("ls /nofile")
 ### crypto.aes_encrypt_file
 `crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
 
-The <b>crypto.aes_encrypt_file</b> method encrypts and decrypts the given src file, encrypts it using the given key, and writes it to disk at the dst location.
+The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
 
-This uses the AES CTR algorithm, and the key parameter will be used for the key and IV.
+Key must be 16 Bytes (Characters)
+
+### crypto.aes_decrypt_file
+`crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
 
 ### crypto.hash_file
 `crypto.hash_file(file: str, algo: str) -> str`

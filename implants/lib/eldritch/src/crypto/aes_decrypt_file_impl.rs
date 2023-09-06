@@ -111,4 +111,14 @@ mod tests {
         assert!(decrypt_file("/I/Dont/Exist".to_string(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!".to_string()).is_err());
         Ok(())
     }
+
+    #[test]
+    fn test_decrypt_bad_size() -> Result<()> {
+        let tmp_dir = TempDir::new()?;
+        let test_path = tmp_dir.path().join("test.txt");
+        let mut tmp_file = File::create(test_path.clone())?;
+        tmp_file.write(&[0u8; 15])?;
+        assert!(decrypt_file(test_path.to_str().unwrap().to_owned(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!".to_string()).is_err());
+        Ok(())
+    }
 }
