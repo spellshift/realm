@@ -13,23 +13,39 @@
 	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
 
 	// Set *default* container specific settings.json values on container create.
-	"settings": {
-		// GO
-		"go.toolsManagement.checkForUpdates": "local",
-		"go.useLanguageServer": true,
-		"go.gopath": "/go",
-		"go.goroot": "/usr/local/go",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				// GO
+				"go.toolsManagement.checkForUpdates": "local",
+				"go.useLanguageServer": true,
+				"go.gopath": "/go",
+				"go.goroot": "/usr/local/go",
 
-		// Misc
-		"trailing-spaces.trimOnSave": true
+				// Formatting
+				"editor.formatOnSave": true,
+				"files.trimTrailingWhitespace": true,
+
+				// Misc
+				"workbench.iconTheme": "vscode-icons",
+				"git.autofetch": true
+			},
+
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"DavidAnson.vscode-markdownlint",
+				"golang.Go",
+				"graphql.vscode-graphql",
+				"GraphQL.vscode-graphql-syntax",
+				"HashiCorp.terraform",
+				"rust-lang.rust-analyzer",
+				"sourcegraph.sourcegraph",
+				"vscode-icons-team.vscode-icons",
+				"xaver.clang-format",
+				"zxh404.vscode-proto3"
+			]
+		}
 	},
-
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"golang.Go",
-		"graphql.vscode-graphql",
-		"rust-lang.rust-analyzer"
-	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"appPort": [
