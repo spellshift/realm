@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+aes = { workspace = true }
 allocative = { workspace = true }
 allocative_derive = { workspace = true }
 anyhow = { workspace = true }
@@ -14,16 +15,19 @@ derive_more = { workspace = true }
 eval = { workspace = true }
 flate2 = { workspace = true }
 gazebo = { workspace = true }
+hex-literal = { workspace = true }
 ipnetwork = { workspace = true }
+md5 = { workspace = true }
 nix = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
 russh = { workspace = true }
 russh-keys = { workspace = true }
-rust-crypto = { workspace = true }
 rust-embed = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { workspace = true }
+sha1 = { workspace = true }
+sha2 = { workspace = true }
 sha256 = { workspace = true }
 starlark = { workspace = true }
 sysinfo = { workspace = true }

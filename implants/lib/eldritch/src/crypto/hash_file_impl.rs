@@ -1,49 +1,41 @@
 use std::fs::File;
-use std::io::{BufReader, Read, Write};
+use std::io::Read;
+
+use sha1::{Sha1, Digest};
+use sha2::{Sha256, Sha512};
 
 use anyhow::{anyhow, Result};
-use crypto::digest::Digest;
-use crypto::{
-    md5::Md5,
-    sha1::Sha1,
-    sha2::{
-        Sha256,
-        Sha512
-    }
-};
 
 pub fn hash_file(file: String, algo: String) -> Result<String> {
     let mut file_data = String::new();
     File::open(file)?.read_to_string(&mut file_data)?;
     match algo.to_lowercase().as_str() {
         "md5" => {
-            let mut hasher = Md5::new();
-            hasher.input_str(&file_data);
-            Ok(hasher.result_str())
+            Ok(format!("{:02x}", md5::compute(file_data.as_bytes())))
         },
         "sha1" => {
             let mut hasher = Sha1::new();
-            hasher.input_str(&file_data);
-            Ok(hasher.result_str())
+            hasher.update(&file_data);
+            Ok(format!("{:02x}", hasher.finalize()))
         },
         "sha256" => {
             let mut hasher = Sha256::new();
-            hasher.input_str(&file_data);
-            Ok(hasher.result_str())
+            hasher.update(&file_data);
+            Ok(format!("{:02x}", hasher.finalize()))
         },
         "sha512" => {
             let mut hasher = Sha512::new();
-            hasher.input_str(&file_data);
-            Ok(hasher.result_str())
+            hasher.update(&file_data);
+            Ok(format!("{:02x}", hasher.finalize()))
         },
         _ => Err(anyhow!("Unknown algorithm: {}", algo)) 
     }
 }
 
-#[cfg(tests)]
+#[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use std::{fs::File, io::{Write, Read}};
+    use std::{fs::File, io::Write};
 
     use tempfile::NamedTempFile;
 

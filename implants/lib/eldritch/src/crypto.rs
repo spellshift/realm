@@ -1,4 +1,5 @@
 mod aes_encrypt_file_impl;
+mod aes_decrypt_file_impl;
 mod hash_file_impl;
 
 use allocative::Allocative;
@@ -52,6 +53,11 @@ fn methods(builder: &mut MethodsBuilder) {
     fn aes_encrypt_file<'v>(this: CryptoLibrary, src: String, dst: String, key: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         aes_encrypt_file_impl::encrypt_file(src, dst, key)?;
+        Ok(NoneType{})
+    }
+    fn aes_decrypt_file<'v>(this: CryptoLibrary, src: String, dst: String, key: String) -> anyhow::Result<NoneType> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        aes_decrypt_file_impl::decrypt_file(src, dst, key)?;
         Ok(NoneType{})
     }
     fn hash_file<'v>(this: CryptoLibrary, file: String, algo: String) -> anyhow::Result<String> {

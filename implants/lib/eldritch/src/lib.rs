@@ -194,7 +194,7 @@ dir(process) == ["kill", "list", "name"]
 dir(sys) == ["dll_inject", "exec", "get_ip", "get_os", "get_pid", "get_user", "is_linux", "is_macos", "is_windows", "shell"]
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_exec", "ssh_password_spray"]
 dir(assets) == ["copy","list","read","read_binary"]
-dir(crypto) == ["aes_encrypt_file", "hash_file"]
+dir(crypto) == ["aes_decrypt_file", "aes_encrypt_file", "hash_file"]
 "#,
         );
     }
