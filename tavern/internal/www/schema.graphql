@@ -29,7 +29,7 @@ type Beacon implements Node {
   tasks: [Task!]
 }
 """BeaconHostPlatform is enum for the field host_platform"""
-enum BeaconHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/ent/beacon.HostPlatform") {
+enum BeaconHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/beacon.HostPlatform") {
   Windows
   Linux
   MacOS
@@ -341,7 +341,7 @@ input FileWhereInput {
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
 """
-interface Node @goModel(model: "github.com/kcarretto/realm/tavern/ent.Noder") {
+interface Node @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent.Noder") {
   """The id of the object."""
   id: ID!
 }
@@ -493,7 +493,7 @@ type Tag implements Node {
   beacons: [Beacon!]
 }
 """TagKind is enum for the field kind"""
-enum TagKind @goModel(model: "github.com/kcarretto/realm/tavern/ent/tag.Kind") {
+enum TagKind @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/tag.Kind") {
   group
   service
 }

@@ -9,8 +9,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/ent"
-	"github.com/kcarretto/realm/tavern/ent/tag"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 )
 
 // createTestData populates the DB with some test data :)
