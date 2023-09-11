@@ -7,8 +7,9 @@ members = [
 ]
 
 [workspace.dependencies]
-allocative = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }
-allocative_derive = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }
+aes = "0.8.3"
+allocative = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "1109aaf9b700d7cdd7ba48986aa650221b70a22f" }
+allocative_derive = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "1109aaf9b700d7cdd7ba48986aa650221b70a22f" }
 anyhow = "1.0.65"
 assert_cmd = "2.0.6"
 async-recursion = "1.0.0"
@@ -22,23 +23,33 @@ eval = "0.4.3"
 flate2 = "1.0.24"
 gazebo = "0.8.1"
 graphql_client = "0.12.0"
+hex-literal = "0.4.1"
 httptest = "0.15.4"
+ipnetwork = "0.20.0"
 itertools = "0.10"
 lsp-types = "0.93.0"
+md5 = "0.7.0"
+network-interface = "1.0.1"
 nix = "0.26.1"
-openssl = "0.10"
+openssl = "0.10.55"
+pnet = "0.34.0"
 predicates = "2.1"
 rand = "0.8.5"
 regex = "1.5.5"
-reqwest = "0.11.4"
+reqwest = "0.11.18"
+russh = "0.37.1"
+russh-keys = "0.37.1"
 rust-embed = "6.6.0"
 serde = "1.0"
 serde_json = "1.0.87"
+sha1 = "0.10.5"
+sha2 = "0.10.7"
 sha256 = "1.0.3"
-starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "acf638430a00ca3855862e8c669670e1adaa42aa" }
+starlark = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "1109aaf9b700d7cdd7ba48986aa650221b70a22f" }
+starlark_derive = { git = "https://github.com/facebookexperimental/starlark-rust", rev = "1109aaf9b700d7cdd7ba48986aa650221b70a22f" }
 structopt = "0.3.23"
 sys-info = "0.9.1"
-sysinfo = "0.28.4"
+sysinfo = "0.29.7"
 tar = "0.4.38"
 tavern = { path = "./lib/tavern" }
 tempfile = "3.3.0"

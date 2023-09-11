@@ -8,8 +8,8 @@ use derive_more::Display;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
+use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 
@@ -18,8 +18,9 @@ use serde::{Serialize,Serializer};
 pub struct ProcessLibrary();
 starlark_simple_value!(ProcessLibrary);
 
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "process_library")]
 impl<'v> StarlarkValue<'v> for ProcessLibrary {
-    starlark_type!("process_library");
 
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();

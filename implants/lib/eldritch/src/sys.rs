@@ -1,4 +1,9 @@
 mod exec_impl;
+mod get_env_impl;
+mod get_ip_impl;
+mod get_os_impl;
+mod get_pid_impl;
+mod get_user_impl;
 mod hostname_impl;
 mod is_linux_impl;
 mod is_windows_impl;
@@ -11,8 +16,9 @@ use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
+use starlark::values::starlark_value;
 use starlark::values::{StarlarkValue, Value, Heap, dict::Dict, UnpackValue, ValueLike, ProvidesStaticType};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 
@@ -27,8 +33,9 @@ struct CommandOutput {
 pub struct SysLibrary();
 starlark_simple_value!(SysLibrary);
 
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "sys_library")]
 impl<'v> StarlarkValue<'v> for SysLibrary {
-    starlark_type!("sys_library");
 
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
@@ -62,9 +69,34 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         exec_impl::exec(starlark_heap, path, args, disown)
     }
+    fn get_os<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        get_os_impl::get_os(starlark_heap)
+    }
     fn dll_inject(this: SysLibrary, dll_path: String, pid: u32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         dll_inject_impl::dll_inject(dll_path, pid)
+    }
+    fn get_env<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        get_env_impl::get_env(starlark_heap)
+    }
+    fn get_ip<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        get_ip_impl::get_ip(starlark_heap)
+    }
+    fn get_pid<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<u32> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        get_pid_impl::get_pid(starlark_heap)
+    }
+    fn get_user<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
+        if false {
+            println!(
+                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
+                this
+            );
+        }
+        get_user_impl::get_user(starlark_heap)
     }
     fn is_linux(this: SysLibrary) -> anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

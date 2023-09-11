@@ -27,7 +27,7 @@ client
           description
           eldritch
         }
-        sessions {
+        beacons {
           id
           name
           hostname

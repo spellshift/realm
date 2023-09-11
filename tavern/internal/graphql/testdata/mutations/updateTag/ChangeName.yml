@@ -1,0 +1,24 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
+  INSERT INTO `beacons` (id, name, identifier)
+    VALUES (1337,"delightful-lich","ABCDEFG-123456");
+  INSERT INTO `tags` (id, name, kind)
+    VALUES (4000,"boring-tag","group");
+requestor:
+  session_token: secretToken
+query: |
+  mutation ChangeName($tagID: ID! $input: UpdateTagInput!) {
+    updateTag(tagID: $tagID, input: $input) {
+      name
+      kind
+    }
+  }
+variables:
+  tagID: 4000
+  input:
+    name: "New-Name"
+expected:
+  updateTag:
+    name: "New-Name"
+    kind: "group"

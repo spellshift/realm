@@ -7,14 +7,20 @@ mod port_forward_impl;
 mod ncat_impl;
 mod bind_proxy_impl;
 
+use std::io::Write;
+use std::sync::Arc;
+
 use allocative::Allocative;
+use async_trait::async_trait;
 use derive_more::Display;
 
+use russh::{client, Disconnect};
+use russh_keys::{key, decode_secret_key};
 use starlark::values::dict::Dict;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
+use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 
@@ -23,8 +29,9 @@ use serde::{Serialize,Serializer};
 pub struct PivotLibrary();
 starlark_simple_value!(PivotLibrary);
 
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "pivot_library")]
 impl<'v> StarlarkValue<'v> for PivotLibrary {
-    starlark_type!("pivot_library");
 
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
@@ -54,9 +61,9 @@ impl<'v> UnpackValue<'v> for PivotLibrary {
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-    fn ssh_exec(this:  PivotLibrary, target: String, port: i32, username: String, password: String, key: String, command: String, shell_path: String) ->  anyhow::Result<String> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }        
-        ssh_exec_impl::ssh_exec(target, port, username, password, key, command, shell_path)
+    fn ssh_exec<'v>(this: PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<Dict<'v>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        ssh_exec_impl::ssh_exec(starlark_heap, target, port, command, username, password, key, key_password, timeout)
     }
     fn ssh_password_spray(this:  PivotLibrary, targets: Vec<String>, port: i32, credentials: Vec<String>, keys: Vec<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -71,9 +78,13 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         port_scan_impl::port_scan(starlark_heap, target_cidrs, ports, protocol, timeout)
     }
-    fn arp_scan(this:  PivotLibrary, target_cidrs: Vec<String>) ->  anyhow::Result<Vec<String>> {
+    fn arp_scan<'v>(
+        this: PivotLibrary,
+        starlark_heap: &'v Heap,
+        target_cidrs: Vec<String>,
+    ) -> anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        arp_scan_impl::arp_scan(target_cidrs)
+        arp_scan_impl::arp_scan(starlark_heap, target_cidrs)
     }
     fn port_forward(this:  PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, protocol: String) ->  anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -97,3 +108,104 @@ fn methods(builder: &mut MethodsBuilder) {
     //   Ok(NoneType{})
     // }
 }
+
+
+
+// SSH Client utils
+struct Client {}
+
+#[async_trait]
+impl client::Handler for Client {
+    type Error = russh::Error;
+
+    async fn check_server_key(
+        self,
+        _server_public_key: &key::PublicKey,
+    ) -> Result<(Self, bool), Self::Error> {
+        Ok((self, true))
+    }
+}
+
+pub struct Session {
+    session: client::Handle<Client>,
+}
+
+impl Session {
+    async fn connect(
+        user: String,
+        password: Option<String>,
+        key: Option<String>,
+        key_password: Option<&str>,
+        addrs: String,
+    ) -> anyhow::Result<Self> {
+        let config = client::Config {
+            ..<_>::default()
+        };
+        let config = Arc::new(config);
+        let sh = Client {};
+        let mut session = client::connect(config, addrs.clone(), sh).await?;
+
+        // Try key auth first
+        match key {
+            Some(local_key) => {
+                let key_pair = decode_secret_key(&local_key, key_password)?;
+                let _auth_res: bool = session
+                    .authenticate_publickey(user, Arc::new(key_pair))
+                    .await?;
+                return Ok(Self { session });
+            },
+            None => {},
+        }
+
+        // If key auth doesn't work try password auth
+        match password {
+            Some(local_pass) => {
+                let _auth_res: bool = session
+                    .authenticate_password(user, local_pass)
+                    .await?;
+                return Ok(Self { session });
+            },
+            None => {},
+        }
+        return Err(anyhow::anyhow!("Failed to authenticate to host {}@{}", user, addrs.clone()));
+    }
+
+    async fn call(&mut self, command: &str) -> anyhow::Result<CommandResult> {
+        let mut channel = self.session.channel_open_session().await?;
+        channel.exec(true, command).await?;
+        let mut output = Vec::new();
+        let mut code = None;
+        while let Some(msg) = channel.wait().await {
+            match msg {
+                russh::ChannelMsg::Data { ref data } => {
+                    output.write_all(data).unwrap();
+                }
+                russh::ChannelMsg::ExitStatus { exit_status } => {
+                    code = Some(exit_status);
+                }
+                _ => {
+                }
+            }
+        }
+        Ok(CommandResult { output, code })
+    }
+
+    async fn close(&mut self) -> anyhow::Result<()> {
+        self.session
+            .disconnect(Disconnect::ByApplication, "", "English")
+            .await?;
+        Ok(())
+    }
+}
+
+struct CommandResult {
+    output: Vec<u8>,
+    code: Option<u32>,
+}
+
+impl CommandResult {
+    fn output(&self) -> String {
+        String::from_utf8_lossy(&self.output).into()
+    }
+}
+

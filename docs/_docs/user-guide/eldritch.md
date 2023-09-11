@@ -56,6 +56,7 @@ It currently contains five modules:
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
+- `crypto` - Used to encrypt/decrypt or hash data.
 
 Functions fall into one of these five modules. This is done to improve clarity about function use.
 
@@ -82,6 +83,16 @@ deploy_agent()
 `assets.list() -> List<str>`
 
 The <b>assets.list</b> method returns a list of asset names that the agent is aware of.
+
+### assets.read_binary
+`assets.read_binary(src: str) -> List<int>`
+
+The <b>assets.read_binary</b> method returns a list of u32 numbers representing the asset files bytes.
+
+### assets.read
+`assets.read(src: str) -> str`
+
+The <b>assets.read</b> method returns a UTF-8 string representation of the asset file.
 
 ---
 
@@ -126,10 +137,49 @@ The <b>file.is_dir</b> method checks if a path exists and is a directory. If it 
 
 The <b>file.is_file</b> method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`.
 
+### file.list
+`file.list(path: str) -> List<Dict>`
+
+The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
+Each file is represented by a Dict type.
+Here is an example of the Dict layout:
+
+```json
+[
+    {
+        "file_name": "implants",
+        "size": 4096,
+        "owner": "root",
+        "group": "0",
+        "permissions": "40755",
+        "modified": "2023-07-09 01:35:40 UTC",
+        "type": "Directory"
+    },
+    {
+        "file_name": "README.md",
+        "size": 750,
+        "owner": "root",
+        "group": "0",
+        "permissions": "100644",
+        "modified": "2023-07-08 02:49:47 UTC",
+        "type": "File"
+    },
+    {
+        "file_name": ".git",
+        "size": 4096,
+        "owner": "root",
+        "group": "0",
+        "permissions": "40755",
+        "modified": "2023-07-10 21:14:06 UTC",
+        "type": "Directory"
+    }
+]
+```
+
 ### file.mkdir
 `file.mkdir(path: str) -> None`
 
-The <b>file.mkdir</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.mkdir</b> method is make a new dirctory at `path`. If the parent directory does not exist or the directory cannot be otherwise be created, it will creat an error.
 
 ### file.moveto
 `file.moveto(src: str, dst: str) -> None`
@@ -171,7 +221,8 @@ The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick
 ### file.write
 `file.write(path: str, content: str) -> None`
 
-The <b>file.write</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>file.write</b> method writes to a given file path with the given content.
+If a file or directory already exists at this path, the method will fail.
 
 ---
 
@@ -180,6 +231,28 @@ The <b>file.write</b> method is very cool, and will be even cooler when Nick doc
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
 
 The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate hosts on their network without using TCP connect or ping.
+- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
+- Must be running as `root` to use.
+- Not supported on Windows
+
+Results will be in the format:
+
+```python
+$> pivot.arp_scan(["192.168.1.1/32"])
+```
+**Success**
+
+```json
+[
+    { "ip": "192.168.1.1", "mac": "ab:cd:ef:01:23:45", "interface": "eno0" }
+]
+```
+
+**Failure**
+
+```json
+[]
+```
 
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
@@ -205,7 +278,7 @@ Inputs:
 
 Results will be in the format:
 
-```JSON
+```json
 [
     { "ip": "127.0.0.1", "port": 22, "protocol": "tcp", "status": "open"},
     { "ip": "127.0.0.1", "port": 21, "protocol": "tcp", "status": "closed"},
@@ -239,9 +312,19 @@ The <b>pivot.port_forward</b> method is being proposed to provide socat like fun
 The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb.
 
 ### pivot.ssh_exec
-`pivot.ssh_exec(target: str, port: int, username: str, password: str, key: str, command: str, shell_path: str) -> List<str>`
+`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
 
-The <b>pivot.ssh_exec</b> method is being proposed to allow users a way to move between hosts running ssh.
+The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell. If no password or key is specified the function will error out with:
+`Failed to run handle_ssh_exec: Failed to authenticate to host`
+If the connection is successful but the command fails no output will be returned but the status code will be set.
+Not returning stderr is a limitation of the way we're performing execution. Since it's not using the SSH shell directive we're limited on the return output we can capture. 
+
+```json
+{
+    "stdout": "uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\n",
+    "status": 0
+}
+```
 
 ### pivot.ssh_password_spray
 `pivot.ssh_password_spray(targets: List<str>, port: int, credentials: List<str>, keys: List<str>, command: str, shell_path: str) -> List<str>`
@@ -285,7 +368,7 @@ The <b>process.name</b> method is very cool, and will be even cooler when Nick d
 The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
 
 ### sys.exec
-`sys.exec(path: str, args: List<str>, disown: bool) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
@@ -310,6 +393,95 @@ sys.execute("/bin/bash",["-c", "ls /nofile"])
 `sys.get_hostname() -> String`
 
 The <b>sys.get_hostname</b> method returns a String containing the host's hostname.
+
+### sys.get_env
+`sys.get_env() -> Dict`
+
+The <b>sys.get_env</b> method returns a dictionary that describes the current process's environment variables.
+An example is below:
+
+```json
+{
+    "FOO": "BAR",
+    "CWD": "/"
+}
+```
+
+### sys.get_ip
+`sys.get_ip() -> List<Dict>`
+
+The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionary. An example is available below:
+
+```json
+[
+    {
+        "name": "eth0",
+        "ips": [
+            "172.17.0.2"
+        ],
+        "mac": "02:42:ac:11:00:02"
+    },
+    {
+        "name": "lo",
+        "ips": [
+            "127.0.0.1"
+        ],
+        "mac": "00:00:00:00:00:00"
+    }
+]
+```
+
+### sys.get_os
+`sys.get_os() -> Dict`
+
+The <b>sys.get_os</b> method returns a dictionary that describes the current systems OS.
+An example is below:
+
+```json
+{
+    "arch": "x86_64",
+    "desktop_env": "Unknown: Unknown",
+    "distro": "Debian GNU/Linux 10 (buster)",
+    "platform": "Linux"
+}
+```
+
+### sys.get_pid
+`sys.get_pid() -> int`
+
+The <b>sys.get_pid</b> method returns the process ID of the current process.
+An example is below:
+
+```python
+$> sys.get_pid()
+123456
+```
+
+### sys.get_user
+`sys.get_user() -> Dict`
+
+The <b>sys.get_user</b> method returns a dictionary that describes the current process's running user.
+On *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.
+For users, will return name and groups of user.
+
+```json
+{
+    "uid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "euid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "gid": 0,
+    "egid": 0
+}
+```
 
 ### sys.is_linux
 `sys.is_linux() -> bool`
@@ -346,3 +518,27 @@ sys.shell("ls /nofile")
 }
 ```
 
+## Crypto
+### crypto.aes_encrypt_file
+`crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### crypto.aes_decrypt_file
+`crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### crypto.hash_file
+`crypto.hash_file(file: str, algo: str) -> str`
+
+The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256
+- SHA512

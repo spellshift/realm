@@ -1,13 +1,15 @@
 mod copy_impl;
 mod list_impl;
+mod read_binary_impl;
+mod read_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, starlark_value};
+use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 use rust_embed::RustEmbed;
@@ -28,9 +30,9 @@ pub struct Asset;
 pub struct AssetsLibrary();
 starlark_simple_value!(AssetsLibrary);
 
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "assets_library")]
 impl<'v> StarlarkValue<'v> for AssetsLibrary {
-    starlark_type!("assets_library");
-
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
         RES.methods(methods)
@@ -68,4 +70,13 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         list_impl::list()
     }
+    fn read_binary(this: AssetsLibrary, src: String) -> anyhow::Result<Vec<u32>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        read_binary_impl::read_binary(src)
+    }
+    fn read(this: AssetsLibrary, src: String) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        read_impl::read(src)
+    }
+
 }

@@ -1,0 +1,29 @@
+state: |
+  INSERT INTO `beacons` (id, name, identifier)
+    VALUES (1337,"delightful-lich","EXISTING-BEACON");
+  INSERT INTO `tomes` (id, name, description, eldritch, hash, created_at, last_modified_at)
+    VALUES (2000,"Test Tome","Used in a unit test :D","print('Hello World!')","abcdefg","2023-03-04 14:51:13","2023-03-04 14:51:13");
+  INSERT INTO `quests` (id, quest_tome, name, created_at, last_modified_at)
+    VALUES (7000,2000,"Test Quest","2023-03-04 14:51:13","2023-03-04 14:51:13");
+  INSERT INTO `tasks` (id, task_beacon, quest_tasks, created_at, last_modified_at)
+    VALUES (8000,1337,7000,"2023-03-04 14:51:13","2023-03-04 14:51:13");
+  INSERT INTO `tasks` (id, task_beacon, quest_tasks, created_at, last_modified_at)
+    VALUES (8001,1337,7000,"2023-03-04 14:51:13","2023-03-04 14:51:13");
+query: |
+  mutation Complete($input: SubmitTaskResultInput!) {
+    submitTaskResult(input: $input) {
+      id
+      output
+    }
+  }
+variables:
+  input:
+    taskID: 8000
+    execStartedAt: 2023-03-04 14:51:13
+    execFinishedAt: 2023-03-04 14:51:13
+    output: I'm done
+
+expected:
+  submitTaskResult:
+    id: "8000"
+    output: I'm done

@@ -1,0 +1,8 @@
+extend type Query {
+  files(where: FileWhereInput): [File!]!
+  quests(where: QuestWhereInput): [Quest!]!
+  beacons(where: BeaconWhereInput): [Beacon!]!
+  tags(where: TagWhereInput): [Tag!]!
+  tomes(where: TomeWhereInput): [Tome!]!
+  users(where: UserWhereInput): [User!]!
+}

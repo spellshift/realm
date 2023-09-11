@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/kcarretto/realm/tavern/ent"
-	"github.com/kcarretto/realm/tavern/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
 	"github.com/kcarretto/realm/tavern/internal/errors"
 )
 
