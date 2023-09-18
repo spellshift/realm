@@ -62,6 +62,8 @@ jobs:
       with:
         tool: nextest,cargo-llvm-cov,cargo-mutants
     - name: 🔎 Run tests
-      run: cd ./implants/ && cargo llvm-cov nextest --lcov --output-path lcov.info && cargo mutants
+      run: cd ./implants/ && cargo llvm-cov nextest --lcov --output-path lcov.info
+    - name: Run cargo mutants
+      run: cargo mutants
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
