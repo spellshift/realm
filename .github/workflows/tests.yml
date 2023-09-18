@@ -57,11 +57,11 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/ -> ../target"
-    - name: Install latest nextest & cargo-llvm-cov release
+    - name: Install latest nextest, cargo-llvm-cov, mutants release
       uses: taiki-e/install-action@v2.17.7
       with:
-        tool: nextest,cargo-llvm-cov
+        tool: nextest,cargo-llvm-cov,cargo-mutants
     - name: 🔎 Run tests
-      run: cd ./implants/ && cargo llvm-cov nextest --lcov --output-path lcov.info
+      run: cd ./implants/ && cargo llvm-cov nextest --lcov --output-path lcov.info && cargo mutants
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
