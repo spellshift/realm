@@ -29,7 +29,9 @@ export const QuestList = () => {
             </div>
             <div>
                 {data?.quests?.map((item: any) =>{
-                    return <div key={item?.id}>{item?.name}</div>
+                    return <div key={item?.id}>
+                    <Link to={`/quests/${item?.id}`}>{item?.name}
+                    </Link></div>
                 })}
             </div>
         </PageWrapper>

@@ -12,6 +12,7 @@ import { Home } from "./pages/home";
 import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
+import { QuestDetails } from "./pages/quest-details";
 
 const GET_TOMES = gql`
     query get_tomes{
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
   {
     path: "/quests",
     element: <QuestList />,
+  },
+  {
+    path: "/quests/:questId",
+    element: <QuestDetails />,
   },
   {
     path: "/createQuest",
