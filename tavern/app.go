@@ -114,7 +114,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	router.Handle("/graphql", newGraphQLHandler(client))
 	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
 	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
-	router.Handle("/", auth.WithLoginRedirect("/oauth/login", www.NewAppHandler()))
+	// router.Handle("/", auth.WithLoginRedirect("/oauth/login", www.NewAppHandler()))
+	fallbackhandler := www.FallbackAppHandler{}
+	router.Handle("/", auth.WithLoginRedirect("/oauth/login", &fallbackhandler))
 	router.Handle("/playground", auth.WithLoginRedirect("/oauth/login", playground.Handler("Tavern", "/graphql")))
 
 	// Log Middleware
