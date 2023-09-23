@@ -36,7 +36,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && cp ./embed-template.go ./build/embed.go",
+    "build": "react-scripts build && cp ./embed-template.go.tmpl ./build/embed.go",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
