@@ -24,6 +24,15 @@ export const Table = ({
       getCoreRowModel: getCoreRowModel(),
     })
 
+    const tbodyRef = React.useRef<HTMLTableSectionElement>(null);
+    // Function to handle key press on a row
+    const handleKeyDown = ( event:any, row:any ) => {
+       event.stopPropagation();
+        if(event.key === "Enter"){
+          onRowClick(row);
+        }
+    };
+
     return (
       <div className="p-2">
         <div className="h-2" />
@@ -53,11 +62,11 @@ export const Table = ({
               </tr>
             ))}
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-gray-200" ref={tbodyRef}>
             {table.getRowModel().rows.map(row => {
               return (
                 <Fragment key={row.id}>
-                  <tr onClick={() =>onRowClick(row)}>
+                  <tr onClick={() =>onRowClick(row)} tabIndex={0} onKeyDown={(e) => handleKeyDown(e, row)}>
                     {/* first row is a normal row */}
                     {row.getVisibleCells().map(cell => {
                       return (

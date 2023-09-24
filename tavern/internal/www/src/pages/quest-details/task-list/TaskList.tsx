@@ -22,16 +22,11 @@ type StatusRow = {
 
 type Props = {
     tasks: Array<Task>;
-    onToggle: () => void;
+    onToggle: (e:any ) => void;
 };
 export const TaskList = (props: Props) => {
     const {tasks, onToggle} = props;
 
-    const handleRowClick = (e: any) => {
-        console.log(e);
-        console.log("Here");
-        onToggle();
-    }
 
     const currentDate = new Date();
 
@@ -61,7 +56,7 @@ export const TaskList = (props: Props) => {
             case TaskStatus.finished:
                 return (
                     <div className="flex flex-col gap-2">
-                        <div className="flex flex-row gap-2 items-center"><CheckCircleIcon className="w-4" color="green"/> Finished</div>
+                        <div className="flex flex-row gap-2 items-center"><CheckCircleIcon className="w-8" color="green"/> Finished</div>
                         <div className=" font-light pl-6">
                             {formatDistance(statusTime, currentDate)} ago since finished
                         </div>
@@ -71,7 +66,7 @@ export const TaskList = (props: Props) => {
                 return (
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-row gap-2 items-center">
-                            <RepeatClockIcon className="w-4" /> In-Progress
+                            <RepeatClockIcon className="w-8" /> In-Progress
                         </div>
                         <div className=" font-light pl-6">
                             {formatDistance(statusTime, currentDate)} ago since started
@@ -80,7 +75,7 @@ export const TaskList = (props: Props) => {
             case TaskStatus.queued:
                 return (
                 <div className="flex flex-col gap-2">
-                    <div className="flex flex-row gap-2 items-center"><TimeIcon className="w-4" />Queued</div>
+                    <div className="flex flex-row gap-2 items-center"><TimeIcon className="w-8" />Queued</div>
                     <div className=" font-light pl-6">
                     {formatDistance(statusTime, currentDate)} ago since created
                     </div>
@@ -123,8 +118,8 @@ export const TaskList = (props: Props) => {
             {
                 accessorKey: 'output',
                 header: 'output',
-                cell: (row: any) => {
-                    const output = row.getValue();
+                cell: (cellData: any) => {
+                    const output = cellData.getValue();
                     return (
                         <Tooltip label={output.length > 500 ? "Click to see output" : output} aria-label='Task output'>
                             <div>
@@ -138,6 +133,6 @@ export const TaskList = (props: Props) => {
     ];
 
     return (
-        <Table data={sortedTasks} columns={columns} onRowClick={handleRowClick} />
+        <Table data={sortedTasks} columns={columns} onRowClick={onToggle} />
     )
 }

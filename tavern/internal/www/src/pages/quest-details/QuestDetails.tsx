@@ -8,10 +8,12 @@ import { GET_QUEST_QUERY } from "../../utils/queries";
 import { useQuery } from "@apollo/client";
 import { TaskList } from "./task-list";
 import { TaskOutput } from "./task-output";
+import { Task } from "../../utils/consts";
 
 export const QuestDetails = () => {
     let { questId } = useParams();
-    const [isOpen, setOpen] = useState(true);
+    const [isOpen, setOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     const PARAMS = {
         variables: {
@@ -20,27 +22,30 @@ export const QuestDetails = () => {
     }
     const { loading, error, data } = useQuery(GET_QUEST_QUERY, PARAMS);
 
-    const handleClick =() => {
+    const handleClick =(e: any) => {
+        const selectedTaskData = e?.original as Task
+        setSelectedTask(selectedTaskData);
         setOpen((state)=> !state);
     }
 
     return (
         <PageWrapper>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
-                    <h3 className="text-2xl font-semibold leading-6 text-gray-900">Quest details ({data?.quests[0]?.name})</h3>
+                    <h3 className="text-2xl font-semibold leading-6 text-gray-900">Task details for {data?.quests[0]?.name}</h3>
                 <div className="mt-3 sm:mt-0 sm:ml-4">
-                    <Link to="/createQuest">
+                    <Link to="/">
                         <button
                             type="button"
-                            className="inline-flex items-center rounded-md bg-purple-700 px-6 py-4 text-sm font-semibold text-white shadow-sm hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-700"
+                            className="inline-flex items-center gap-2 rounded-md bg-white px-6 py-4 text-sm font-semibold shadow-sm ring-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
                         >
-                            Create new quest
+                            <ArrowLeftIcon className="-ml-0.5 h-5 w-5" aria-hidden="true" />
+                            Back
                         </button>
                     </Link>
                 </div>
             </div>
-            {loading ? "loading..." : <TaskList tasks={data?.quests[0]?.tasks} onToggle={handleClick}  />}
-            <TaskOutput isOpen={isOpen} setOpen={setOpen}/>
+            {loading ? "loading..." : <TaskList tasks={data?.quests[0]?.tasks} onToggle={handleClick} />}
+            <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask}/>
         </PageWrapper>
     );
 };
