@@ -128,7 +128,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			authName = id.String()
 		}
 
-		httpLogger.Printf("%s (%s) %s %s\n", r.RemoteAddr, authName, r.Method, r.URL)
+		httpLogger.Printf("%s (%s) %s %s\n%s\n", r.RemoteAddr, authName, r.Method, r.URL, r.Body)
 		router.ServeHTTP(w, r)
 	})
 
