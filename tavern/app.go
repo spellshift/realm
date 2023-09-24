@@ -6,9 +6,11 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"entgo.io/contrib/entgql"
 	"github.com/kcarretto/realm/tavern/internal/graphql"
@@ -128,7 +130,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			authName = id.String()
 		}
 
-		httpLogger.Printf("%s (%s) %s %s\n%s\n", r.RemoteAddr, authName, r.Method, r.URL, r.Body)
+		resp_body := new(strings.Builder)
+		io.Copy(resp_body, r.Response.Body)
+		httpLogger.Printf("%s (%s) %s %s\nresp_body: %s\n", r.RemoteAddr, authName, r.Method, r.URL, resp_body)
 		router.ServeHTTP(w, r)
 	})
 
