@@ -6,7 +6,7 @@ import { PageWrapper } from "../../components/page-wrapper";
 import { Link, useParams } from "react-router-dom";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { useQuery } from "@apollo/client";
-import { TaskList } from "./task-list";
+import { TaskTable } from "./task-table";
 import { TaskOutput } from "./task-output";
 import { Task } from "../../utils/consts";
 
@@ -44,7 +44,7 @@ export const QuestDetails = () => {
                     </Link>
                 </div>
             </div>
-            {loading ? "loading..." : <TaskList tasks={data?.quests[0]?.tasks} onToggle={handleClick} />}
+            {loading ? "loading..." : <TaskTable tasks={data?.quests[0]?.tasks} onToggle={handleClick} />}
             <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask}/>
         </PageWrapper>
     );

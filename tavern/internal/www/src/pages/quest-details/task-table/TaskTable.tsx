@@ -24,7 +24,7 @@ type Props = {
     tasks: Array<Task>;
     onToggle: (e:any ) => void;
 };
-export const TaskList = (props: Props) => {
+export const TaskTable = (props: Props) => {
     const {tasks, onToggle} = props;
 
 

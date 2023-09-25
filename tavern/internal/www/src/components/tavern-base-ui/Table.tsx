@@ -10,7 +10,7 @@ import {
 type TableProps<TData> = {
     data: TData[],
     columns: ColumnDef<TData>[],
-    onRowClick: (e: any) => void
+    onRowClick?: (e: any) => void
 }
 
 export const Table = ({
@@ -28,7 +28,7 @@ export const Table = ({
     // Function to handle key press on a row
     const handleKeyDown = ( event:any, row:any ) => {
        event.stopPropagation();
-        if(event.key === "Enter"){
+        if(onRowClick && event.key === "Enter"){
           onRowClick(row);
         }
     };
@@ -66,7 +66,7 @@ export const Table = ({
             {table.getRowModel().rows.map(row => {
               return (
                 <Fragment key={row.id}>
-                  <tr onClick={() =>onRowClick(row)} tabIndex={0} onKeyDown={(e) => handleKeyDown(e, row)}>
+                  <tr onClick={() => onRowClick && onRowClick(row)} tabIndex={0} onKeyDown={(e) => handleKeyDown(e, row)} className={onRowClick && `hover:cursor-pointer hover:bg-gray-100`}>
                     {/* first row is a normal row */}
                     {row.getVisibleCells().map(cell => {
                       return (
