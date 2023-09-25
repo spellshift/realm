@@ -7,13 +7,7 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/www/build"
 )
 
-// NewAppHandler returns a new handler to serve embedded UI files.
-func NewAppHandler() http.Handler {
-	handler := http.FileServer(http.FS(build.Content))
-	return handler
-}
-
-// FallbackAppHandler is a custom handler for the single page react app
+// FallbackAppHandler is a custom handler for the single page react app - if the path doesn't exist the react app is returned.
 type FallbackAppHandler struct{}
 
 func (h *FallbackAppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
