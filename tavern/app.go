@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -129,19 +128,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			authName = id.String()
 		}
 
-		if r.Body != nil {
-			var bodyBytes []byte
-			bodyBytes, err = ioutil.ReadAll(r.Body)
-			if err != nil {
-				fmt.Printf("Body reading error: %v", err)
-				return
-			}
-			defer r.Body.Close()
-			httpLogger.Printf("%s (%s) %s %s\nbody: %s\n", r.RemoteAddr, authName, r.Method, r.URL, bodyBytes)
-		} else {
-			httpLogger.Printf("%s (%s) %s %s\n", r.RemoteAddr, authName, r.Method, r.URL)
-		}
-
+		httpLogger.Printf("%s (%s) %s %s\n", r.RemoteAddr, authName, r.Method, r.URL)
 		router.ServeHTTP(w, r)
 	})
 
