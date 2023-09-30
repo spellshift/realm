@@ -17,8 +17,6 @@ mod template_impl;
 mod timestomp_impl;
 mod write_impl;
 
-use std::fmt;
-
 use allocative::Allocative;
 use derive_more::Display;
 
@@ -26,8 +24,8 @@ use starlark::values::dict::Dict;
 use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
+use starlark::{starlark_simple_value, starlark_module};
 use serde::{Serialize,Serializer};
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
@@ -35,8 +33,9 @@ use serde::{Serialize,Serializer};
 pub struct FileLibrary();
 starlark_simple_value!(FileLibrary);
 
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "file_library")]
 impl<'v> StarlarkValue<'v> for FileLibrary {
-    starlark_type!("file_library");
 
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();

@@ -8,8 +8,8 @@ use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, starlark_value};
+use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
 use rust_embed::RustEmbed;
@@ -30,9 +30,9 @@ pub struct Asset;
 pub struct AssetsLibrary();
 starlark_simple_value!(AssetsLibrary);
 
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "assets_library")]
 impl<'v> StarlarkValue<'v> for AssetsLibrary {
-    starlark_type!("assets_library");
-
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
         RES.methods(methods)

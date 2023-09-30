@@ -132,7 +132,7 @@ fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict>{
     tmp_res.insert_hashed(const_frozen_string!("file_name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
 
     let file_size = file.size as i32;
-    tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed().unwrap(), Value::new_int(file_size));
+    tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed().unwrap(), starlark_heap.alloc(file_size));
 
     let tmp_value2 = starlark_heap.alloc_str(&file.owner);
     tmp_res.insert_hashed(const_frozen_string!("owner").to_value().get_hashed().unwrap(), tmp_value2.to_value());
