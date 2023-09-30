@@ -19,19 +19,19 @@ use russh_keys::{key, decode_secret_key};
 use starlark::values::dict::Dict;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap};
-use starlark::{starlark_type, starlark_simple_value, starlark_module};
+use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
+use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
-use tokio::net::ToSocketAddrs;
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "PivotLibrary")]
 pub struct PivotLibrary();
 starlark_simple_value!(PivotLibrary);
 
+#[allow(non_upper_case_globals)]
+#[starlark_value(type = "pivot_library")]
 impl<'v> StarlarkValue<'v> for PivotLibrary {
-    starlark_type!("pivot_library");
 
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
@@ -78,9 +78,13 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         port_scan_impl::port_scan(starlark_heap, target_cidrs, ports, protocol, timeout)
     }
-    fn arp_scan(this:  PivotLibrary, target_cidrs: Vec<String>) ->  anyhow::Result<Vec<String>> {
+    fn arp_scan<'v>(
+        this: PivotLibrary,
+        starlark_heap: &'v Heap,
+        target_cidrs: Vec<String>,
+    ) -> anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        arp_scan_impl::arp_scan(target_cidrs)
+        arp_scan_impl::arp_scan(starlark_heap, target_cidrs)
     }
     fn port_forward(this:  PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, protocol: String) ->  anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

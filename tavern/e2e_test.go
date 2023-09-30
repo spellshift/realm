@@ -11,10 +11,10 @@ import (
 	"testing"
 
 	tavern "github.com/kcarretto/realm/tavern"
-	"github.com/kcarretto/realm/tavern/ent"
-	"github.com/kcarretto/realm/tavern/ent/beacon"
-	"github.com/kcarretto/realm/tavern/ent/enttest"
-	"github.com/kcarretto/realm/tavern/ent/quest"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
+	"github.com/kcarretto/realm/tavern/internal/ent/quest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

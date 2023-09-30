@@ -56,6 +56,7 @@ It currently contains five modules:
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
+- `crypto` - Used to encrypt/decrypt or hash data.
 
 Functions fall into one of these five modules. This is done to improve clarity about function use.
 
@@ -143,7 +144,7 @@ The <b>file.list</b> method returns a list of files at the specified path. The p
 Each file is represented by a Dict type.
 Here is an example of the Dict layout:
 
-```JSON
+```json
 [
     {
         "file_name": "implants",
@@ -230,6 +231,28 @@ If a file or directory already exists at this path, the method will fail.
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
 
 The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate hosts on their network without using TCP connect or ping.
+- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
+- Must be running as `root` to use.
+- Not supported on Windows
+
+Results will be in the format:
+
+```python
+$> pivot.arp_scan(["192.168.1.1/32"])
+```
+**Success**
+
+```json
+[
+    { "ip": "192.168.1.1", "mac": "ab:cd:ef:01:23:45", "interface": "eno0" }
+]
+```
+
+**Failure**
+
+```json
+[]
+```
 
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
@@ -255,7 +278,7 @@ Inputs:
 
 Results will be in the format:
 
-```JSON
+```json
 [
     { "ip": "127.0.0.1", "port": 22, "protocol": "tcp", "status": "open"},
     { "ip": "127.0.0.1", "port": 21, "protocol": "tcp", "status": "closed"},
@@ -366,12 +389,25 @@ sys.execute("/bin/bash",["-c", "ls /nofile"])
 }
 ```
 
+### sys.get_env
+`sys.get_env() -> Dict`
+
+The <b>sys.get_env</b> method returns a dictionary that describes the current process's environment variables.
+An example is below:
+
+```json
+{
+    "FOO": "BAR",
+    "CWD": "/"
+}
+```
+
 ### sys.get_ip
 `sys.get_ip() -> List<Dict>`
 
 The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionary. An example is available below:
 
-```JSON
+```json
 [
     {
         "name": "eth0",
@@ -403,6 +439,44 @@ An example is below:
     "distro": "Debian GNU/Linux 10 (buster)",
     "platform": "Linux"
 }
+```
+
+### sys.get_pid
+`sys.get_pid() -> int`
+
+The <b>sys.get_pid</b> method returns the process ID of the current process.
+An example is below:
+
+```python
+$> sys.get_pid()
+123456
+```
+
+### sys.get_user
+`sys.get_user() -> Dict`
+
+The <b>sys.get_user</b> method returns a dictionary that describes the current process's running user.
+On *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.
+For users, will return name and groups of user.
+
+```json
+{
+    "uid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "euid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "gid": 0,
+    "egid": 0
+}
+```
 
 ### sys.is_linux
 `sys.is_linux() -> bool`
@@ -439,3 +513,27 @@ sys.shell("ls /nofile")
 }
 ```
 
+## Crypto
+### crypto.aes_encrypt_file
+`crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### crypto.aes_decrypt_file
+`crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### crypto.hash_file
+`crypto.hash_file(file: str, algo: str) -> str`
+
+The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256
+- SHA512
