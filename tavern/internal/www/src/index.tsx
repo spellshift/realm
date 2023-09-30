@@ -12,7 +12,7 @@ if (!container) throw new Error('Failed to find the root element');
 const root = ReactDOM.createRoot(container);
 
 const client = new ApolloClient({
-  uri: "http://localhost:80/graphql",
+  uri: "/graphql",
   cache: new InMemoryCache(),
 });
 

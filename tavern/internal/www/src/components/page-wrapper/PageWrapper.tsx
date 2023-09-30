@@ -12,10 +12,10 @@ import {
 import logo from '../../assets/eldrich.png';
 
 const navigation = [
-  { name: 'Quests', href: '#', icon: ClipboardDocumentCheckIcon, current: true },
+  { name: 'Quests', href: '/quests', icon: ClipboardDocumentCheckIcon, current: true },
   { name: 'Beacons', href: '/beacons', icon: BugAntIcon, current: false },
   { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
-  { name: 'Documentation', href: '#', icon: DocumentDuplicateIcon, current: false },
+  { name: 'Documentation', href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, current: false, target: "__blank" },
 ]
 const teams = [
   { id: 1, name: 'Heroicons', href: '#', initial: 'H', current: false },
@@ -94,6 +94,7 @@ export const PageWrapper = (props: Props) => {
                               <li key={item.name}>
                                 <a
                                   href={item.href}
+                                  target={item?.target ? '__blank': undefined}
                                   className={classNames(
                                     item.current
                                       ? 'bg-gray-800 text-white'
@@ -139,6 +140,7 @@ export const PageWrapper = (props: Props) => {
                       <li key={item.name}>
                         <a
                           href={item.href}
+                          target={item?.target ? '__blank': undefined}
                           className={classNames(
                             item.current
                               ? 'bg-gray-800 text-white'
