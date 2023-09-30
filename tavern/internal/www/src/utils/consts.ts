@@ -38,9 +38,25 @@ export type TagContextType = {
     groupTags: Array<TomeTag>,
     serviceTags: Array<TomeTag>
 }
-export type QuestProps = {
+export type CreateQuestProps = {
     name: string,
     tome: Tome | null,
     params: any,
     beacons: Array<string>,
 };
+
+export type Task = {
+    id: string,
+    lastModifiedAt: string,
+    output: string,
+    execStartedAt: string,
+    execFinishedAt: string,
+    beacon: BeaconType
+    createdAt: string,
+};
+export type QuestProps = {
+    id: string,
+    name: string,
+    tasks: Array<Task>,
+    tome: Tome
+}
