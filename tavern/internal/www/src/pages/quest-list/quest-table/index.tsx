@@ -1,0 +1,1 @@
+export {QuestTable} from "./QuestTable";

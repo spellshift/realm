@@ -3,7 +3,7 @@ import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
 import { GraphQLError } from "graphql";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { QuestProps, Tome } from "../utils/consts";
+import { CreateQuestProps, Tome } from "../utils/consts";
 import { GET_QUEST_QUERY } from "../utils/queries";
 
 export const useSubmitQuest = () => {
@@ -37,8 +37,8 @@ export const useSubmitQuest = () => {
         }
     }
 
-    const handleOnCompleted = () => {
-        navigate("/quests");
+    const handleOnCompleted = (result: any) => {
+        navigate(`/quests/${result?.createQuest?.id}`);
     }
 
     const [createQuestMutation, {loading, reset}] = useMutation(CREATE_QUEST_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
@@ -46,7 +46,7 @@ export const useSubmitQuest = () => {
         'GetQuests' // Query name
       ]});
 
-    const submitQuest = (props: QuestProps) => {
+    const submitQuest = (props: CreateQuestProps) => {
         const formatVariables = {
             "variables": {
                 "IDs": props.beacons,

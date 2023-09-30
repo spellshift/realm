@@ -12,18 +12,8 @@ import { Home } from "./pages/home";
 import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
+import { QuestDetails } from "./pages/quest-details";
 
-const GET_TOMES = gql`
-    query get_tomes{
-      tomes {
-        id
-        name
-        paramDefs
-        description
-        eldritch
-      }
-    }
-`;
 
 const router = createBrowserRouter([
   {
@@ -35,14 +25,17 @@ const router = createBrowserRouter([
     element: <QuestList />,
   },
   {
+    path: "/quests/:questId",
+    element: <QuestDetails />,
+  },
+  {
     path: "/createQuest",
     element: <CreateQuest />,
   },
 ]);
 
 export const App = () => {
-  const { loading, error, data } = useQuery(GET_TOMES);
-
+  
   return (
     <ChakraProvider theme={theme}>
       <TagContextProvider>
