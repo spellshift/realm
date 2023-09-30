@@ -72,11 +72,9 @@ def persist_service(service_name, service_desc, executable_name):
     else:
         print("OS not supported")
 
-#print(assets.list())
-persist_service('test123', 'testing123', 'testmalware')
-#persist_service(
-#    input_params['service_name'],
-#    input_params['service_desc'],
-#    input_params['executable_name']
-#)
+persist_service(
+    input_params['service_name'],
+    input_params['service_desc'],
+    input_params['executable_name']
+)
 

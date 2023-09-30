@@ -1,0 +1,5 @@
+name: Process list
+description: Get a list of running processes
+parameter_definitions:
+  - name: cmd_substring
+    type: string
