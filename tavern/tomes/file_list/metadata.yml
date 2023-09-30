@@ -1,0 +1,5 @@
+name: List files
+description: List the files and directories found at the path
+parameter_definitions:
+  - name: path
+    type: string

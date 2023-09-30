@@ -1,0 +1,10 @@
+def process_list(cmd_substring):
+    if cmd_substring == '*':
+        cmd_substring = ''
+    procs = process.list()
+    print("PID,PPID,username,command")
+    for proc in procs:
+        if cmd_substring in proc['command']:
+            print(str(proc['pid'])+", "+str(proc['ppid'])+", "+proc['username']+", "+proc['command'])
+
+process_list(input_params['cmd_substring'])
