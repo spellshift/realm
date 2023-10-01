@@ -12,7 +12,9 @@ import (
 )
 
 type tomeMetadata struct {
+	Name        string
 	Description string
+	ParamDefs   string
 }
 
 // UploadTomes traverses the provided filesystem and creates tomes using the provided graph.
@@ -92,10 +94,14 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			return rollback(tx, fmt.Errorf("failed to parse and upload tome %q: %w", entry.Name(), err))
 		}
 
+		fmt.Println("metadata.ParamDefs: ", metadata.ParamDefs)
+		fmt.Println("metadata.Description: ", metadata.Description)
+		fmt.Println("metadata.Name: ", metadata.Name)
 		// Create the tome
 		if _, err := graph.Tome.Create().
-			SetName(entry.Name()).
+			SetName(metadata.Name).
 			SetDescription(metadata.Description).
+			SetParamDefs(metadata.ParamDefs).
 			SetEldritch(eldritch).
 			AddFiles(tomeFiles...).
 			Save(ctx); err != nil {
