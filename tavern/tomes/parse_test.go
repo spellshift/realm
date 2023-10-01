@@ -25,11 +25,11 @@ func TestUploadTomes(t *testing.T) {
 		Where(tome.Name("example")).
 		OnlyX(ctx)
 	require.NotNil(t, testTome)
-	assert.Equal(t, `print("Hello World")`, testTome.Eldritch)
+	assert.Equal(t, `print(input_params['msg'])`, testTome.Eldritch)
 	assert.Equal(t, `An example tome!`, testTome.Description)
 	testTomeFiles, err := testTome.Files(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, testTomeFiles, 1)
 	assert.Equal(t, "example/linux/test-implant", testTomeFiles[0].Name)
-	assert.Equal(t, []byte("meowware"), testTomeFiles[0].Content)
+	assert.Equal(t, []byte("This file exists "), testTomeFiles[0].Content)
 }
