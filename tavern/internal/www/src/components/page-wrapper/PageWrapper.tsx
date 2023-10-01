@@ -12,10 +12,10 @@ import {
 import logo from '../../assets/eldrich.png';
 
 const navigation = [
-  { name: 'Quests', href: '#', icon: ClipboardDocumentCheckIcon, current: true },
-  { name: 'Beacons', href: '#', icon: BugAntIcon, current: false },
+  { name: 'Quests', href: '/quests', icon: ClipboardDocumentCheckIcon, current: true },
+  { name: 'Beacons', href: '/beacons', icon: BugAntIcon, current: false },
   { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
-  { name: 'Documentation', href: '#', icon: DocumentDuplicateIcon, current: false },
+  { name: 'Documentation', href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, current: false, target: "__blank" },
 ]
 const teams = [
   { id: 1, name: 'Heroicons', href: '#', initial: 'H', current: false },
@@ -94,6 +94,7 @@ export const PageWrapper = (props: Props) => {
                               <li key={item.name}>
                                 <a
                                   href={item.href}
+                                  target={item?.target ? '__blank': undefined}
                                   className={classNames(
                                     item.current
                                       ? 'bg-gray-800 text-white'
@@ -121,14 +122,16 @@ export const PageWrapper = (props: Props) => {
         <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6">
-            <div className="flex h-32 shrink-0 items-center gap-4">
-              <img
-                className="h-12 w-auto"
-                src={logo}
-                alt="Your Company"
-                                  />
-                <div className="text-white text-2xl leading-6 font-semibold tracking-wide">Tavern</div>
-            </div>
+            <a href='/'>
+              <div className="flex h-32 shrink-0 items-center gap-4">
+                <img
+                  className="h-12 w-auto"
+                  src={logo}
+                  alt="Your Company"
+                                    />
+                  <div className="text-white text-2xl leading-6 font-semibold tracking-wide">Tavern</div>
+              </div>
+            </a>
             <nav className="flex flex-1 flex-col">
               <ul role="list" className="flex flex-1 flex-col gap-y-7">
                 <li>
@@ -137,6 +140,7 @@ export const PageWrapper = (props: Props) => {
                       <li key={item.name}>
                         <a
                           href={item.href}
+                          target={item?.target ? '__blank': undefined}
                           className={classNames(
                             item.current
                               ? 'bg-gray-800 text-white'
