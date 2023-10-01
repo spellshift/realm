@@ -94,9 +94,6 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			return rollback(tx, fmt.Errorf("failed to parse and upload tome %q: %w", entry.Name(), err))
 		}
 
-		fmt.Println("metadata.ParamDefs: ", metadata.ParamDefs)
-		fmt.Println("metadata.Description: ", metadata.Description)
-		fmt.Println("metadata.Name: ", metadata.Name)
 		// Create the tome
 		if _, err := graph.Tome.Create().
 			SetName(metadata.Name).
