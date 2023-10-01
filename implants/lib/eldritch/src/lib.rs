@@ -107,7 +107,6 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut input_params: Dict = Dict::new(res);
     
-    println!("{:?}", tome_params_str);
     let parsed: serde_json::Value = match serde_json::from_str(&tome_params_str){
         Ok(local_value) => local_value,
         Err(local_err) => return Err(anyhow::anyhow!("[eldritch] Error decoding tome_params to JSON: {}: {}", local_err.to_string(), tome_params_str)),
@@ -160,7 +159,6 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
         };
         input_params.insert_hashed(hashed_key, new_value);
     }
-    println!("{:?}", input_params);
     module.set("input_params", input_params.alloc_value(module.heap()));
 
     let mut eval: Evaluator = Evaluator::new(&module);
