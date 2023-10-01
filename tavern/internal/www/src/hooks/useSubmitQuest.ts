@@ -57,7 +57,6 @@ export const useSubmitQuest = () => {
                 ...param_obj,
             }
         }
-        console.log(param_obj)
         const formatVariables = {
             "variables": {
                 "IDs": props.beacons,
