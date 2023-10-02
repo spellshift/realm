@@ -2,6 +2,7 @@ package tomes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -14,7 +15,23 @@ import (
 type tomeMetadata struct {
 	Name        string
 	Description string
-	ParamDefs   string
+	ParamDefs   []interface{}
+}
+
+func convert_yaml_to_json(i interface{}) interface{} {
+	switch x := i.(type) {
+	case map[interface{}]interface{}:
+		m2 := map[string]interface{}{}
+		for k, v := range x {
+			m2[k.(string)] = convert_yaml_to_json(v)
+		}
+		return m2
+	case []interface{}:
+		for i, v := range x {
+			x[i] = convert_yaml_to_json(v)
+		}
+	}
+	return i
 }
 
 // UploadTomes traverses the provided filesystem and creates tomes using the provided graph.
@@ -94,11 +111,16 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			return rollback(tx, fmt.Errorf("failed to parse and upload tome %q: %w", entry.Name(), err))
 		}
 
+		jsonified_paramdefs, err := json.Marshal(convert_yaml_to_json(metadata.ParamDefs))
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to prase param defs for %q: %w", metadata.Name, err))
+		}
+
 		// Create the tome
 		if _, err := graph.Tome.Create().
 			SetName(metadata.Name).
 			SetDescription(metadata.Description).
-			SetParamDefs(metadata.ParamDefs).
+			SetParamDefs(string(jsonified_paramdefs)).
 			SetEldritch(eldritch).
 			AddFiles(tomeFiles...).
 			Save(ctx); err != nil {
