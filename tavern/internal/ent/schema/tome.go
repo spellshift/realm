@@ -33,6 +33,9 @@ func (Tome) Fields() []ent.Field {
 			Comment("Information about the tome"),
 		field.String("param_defs").
 			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Comment("JSON string describing what parameters are used with the tome"),
 		field.String("hash").
 			MaxLen(100).
