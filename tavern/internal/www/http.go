@@ -43,8 +43,3 @@ func (h *FallbackAppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(resp)
 	}
 }
-
-// func FallbackAppHandler() http.Handler {
-// 	// return http.FileServer(http.FS(build.Content))
-// 	return http.ServeFile()
-// }
