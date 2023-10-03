@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -23,6 +24,9 @@ func (Quest) Fields() []ent.Field {
 			).
 			Comment("Name of the quest"),
 		field.String("parameters").
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Optional().
 			Comment("Value of parameters that were specified for the quest (as a JSON string)."),
 	}
