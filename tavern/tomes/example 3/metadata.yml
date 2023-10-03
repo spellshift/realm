@@ -1,0 +1,23 @@
+name: example
+description: An example tome!
+paramdefs:
+- name: msg
+  label: Message
+  type: string
+  placeholder: Something to print
+- name: msg2
+  label: Message2
+  type: string
+  placeholder: Something to print
+- name: msg3
+  label: Message3
+  type: string
+  placeholder: Something to print
+- name: msg4
+  label: Message4
+  type: string
+  placeholder: Something to print
+- name: msg5
+  label: Message5
+  type: string
+  placeholder: Something to print
