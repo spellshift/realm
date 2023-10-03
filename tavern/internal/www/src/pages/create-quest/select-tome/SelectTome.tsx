@@ -44,7 +44,7 @@ export const SelectTome = (props: Props) => {
     // PARAMS SUBMITTED FOR CREATE QUEST FORMAT:  JSON STRING Dict<string, string>: '{"blah": "some value"}'
     //      * This is what is submitted for creating a quest
 
-    const hasAllParamsSet = formik?.values?.params?.filter((param: TomeParams) => {
+    const hasAllParamsSet = formik?.values?.params.filter((param: TomeParams) => {
         return param?.value && param?.value !== "";
     });
 
