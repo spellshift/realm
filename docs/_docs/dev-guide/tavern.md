@@ -109,6 +109,29 @@ Tavern hosts two endpoints to support OAuth:
 
 Tavern supports a Trust on First Use (TOFU) authentication model, meaning the first user to successfully authenticate will be granted admin permissions. Subsequent users that login will have accounts created, but will require activation before they can interact with any Tavern APIs. Only admin users may activate other users.
 
+## Build and publish tavern container
+If you want to deploy tavern without using the published version you'll have to build and publish your own container.
+
+**Build your container**
+```bash
+cd ./realm
+docker build --tag tavern:dev --file ./docker/tavern.Dockerfile .
+```
+
+**Publish your container to docker hub**
+If you haven't before [sign-up for a docker hub account](https://hub.docker.com/signup) and login with the CLI `docker login`
+
+```bash
+docker tag tavern:dev <YOUR_DOCKER_HUB_USERNAME>/tavern:dev
+docker push <YOUR_DOCKER_HUB_USERNAME>/tavern:dev
+```
+
+**Specify your container during terraform deploy**
+```bash
+terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=<YOUR_DOCKER_HUB_USERNAME>/tavern:dev"
+```
+
+
 ## User Interface
 
 ## CDN API

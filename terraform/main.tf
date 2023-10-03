@@ -17,6 +17,12 @@ resource "random_password" "defaultmysql" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+variable "tavern_container_image" {
+  type = string
+  description = "Docker container to deploy"
+  default = "kcarretto/tavern:latest"
+}
+
 variable "gcp_project" {
   type = string
   description = "GCP Project ID for deployment"
@@ -139,7 +145,7 @@ resource "google_cloud_run_service" "tavern" {
   template {
     spec {
       containers {
-        image = "kcarretto/tavern:latest"
+        image = var.tavern_container_image
         ports {
           container_port = 80
         }
