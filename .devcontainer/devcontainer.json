@@ -23,7 +23,6 @@
 				"go.goroot": "/usr/local/go",
 
 				// Formatting
-				"editor.formatOnSave": true,
 				"files.trimTrailingWhitespace": true,
 				"files.insertFinalNewline": true,
 				"files.trimFinalNewlines": true,
@@ -43,7 +42,6 @@
 				"HashiCorp.terraform",
 				"rust-lang.rust-analyzer",
 				"sourcegraph.sourcegraph",
-				"vscode-icons-team.vscode-icons",
 				"xaver.clang-format",
 				"zxh404.vscode-proto3"
 			]
