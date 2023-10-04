@@ -58,7 +58,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
-		{Name: "parameters", Type: field.TypeString, Nullable: true},
+		{Name: "parameters", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "quest_tome", Type: field.TypeInt},
 		{Name: "quest_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_creator", Type: field.TypeInt, Nullable: true},
@@ -141,7 +141,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString},
-		{Name: "param_defs", Type: field.TypeString, Nullable: true},
+		{Name: "param_defs", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 	}
