@@ -23,10 +23,10 @@
 				"go.goroot": "/usr/local/go",
 
 				// Formatting
-				"editor.formatOnSave": true,
-				"files.trimTrailingWhitespace": true,
-				"files.insertFinalNewline": true,
-				"files.trimFinalNewlines": true,
+				// "editor.formatOnSave": true,
+				// "files.trimTrailingWhitespace": true,
+				// "files.insertFinalNewline": true,
+				// "files.trimFinalNewlines": true,
 
 				// Misc
 				"vsicons.dontShowNewVersionMessage": true,
