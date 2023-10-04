@@ -171,7 +171,7 @@ fn get_os_pretty_name() -> Result<String> {
 
 // Async handler for port scanning.
 async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
-    let debug = false;
+    let debug = true;
     let version_string = "v0.1.0";
     let auth_token = "letmeinnn";
     let config_file = File::open(config_path)?;
@@ -294,12 +294,15 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
             }
             if debug { println!("[{}]: Queued task {}", (Utc::now().time() - start_time).num_milliseconds(), task.clone().id); }
         }
+
         // 3. Sleep till callback time
-        //                                  time_to_wait          -         time_elapsed
-        let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs();
+        let time_to_wait = imix_config.callback_config.interval as i64;
+        let time_elapsed = loop_start_time.elapsed().as_secs() as i64;
+        let mut time_to_sleep =  time_to_wait - time_elapsed;
+        if time_to_sleep < 0 { time_to_sleep = 0; } // Control for unsigned underflow
         if debug { println!("[{}]: Sleeping seconds {}", (Utc::now().time() - start_time).num_milliseconds(), time_to_sleep); }
         // tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await; // This seems to wait for other threads to finish.
-        std::thread::sleep(std::time::Duration::new(time_to_sleep, 24601)); // This just sleeps our thread.
+        std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601)); // This just sleeps our thread.
 
         // :clap: :clap: make new map!
         let mut running_exec_futures: HashMap<String, ExecTask> = HashMap::new();
