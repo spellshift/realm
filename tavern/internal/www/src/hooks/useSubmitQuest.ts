@@ -47,12 +47,23 @@ export const useSubmitQuest = () => {
       ]});
 
     const submitQuest = (props: CreateQuestProps) => {
+        var param_obj = {}
+        for (var param of props.params) {
+            var tmp_param = {
+                [param.name]: param.value
+            }
+            param_obj = {
+                ...tmp_param,
+                ...param_obj,
+            }
+        }
         const formatVariables = {
             "variables": {
                 "IDs": props.beacons,
                 "input": {
                     "name": props?.name,
-                    "tomeID": props.tome?.id
+                    "tomeID": props.tome?.id,
+                    "parameters": JSON.stringify(param_obj),
                 }
             }
         };

@@ -38,10 +38,17 @@ export type TagContextType = {
     groupTags: Array<TomeTag>,
     serviceTags: Array<TomeTag>
 }
+export type QuestParam = {
+    label: string,
+    name: string,
+    placeholder: string,
+    type: string,
+    value: string,
+}
 export type CreateQuestProps = {
     name: string,
     tome: Tome | null,
-    params: any,
+    params: Array<QuestParam>,
     beacons: Array<string>,
 };
 

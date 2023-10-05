@@ -274,6 +274,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         if debug { println!("[{}]: Starting {} new tasks", (Utc::now().time() - start_time).num_milliseconds(), new_tasks.len()); }
         // 2. Start new tasks
         for task in new_tasks {
+            if debug { println!("Parameters:\n{:?}", task.clone().quest.parameters); }
             if debug { println!("Launching:\n{:?}", task.clone().quest.tome.eldritch); }
 
             let (sender, receiver) = channel::<String>();
