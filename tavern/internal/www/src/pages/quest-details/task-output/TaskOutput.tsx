@@ -75,7 +75,7 @@ export const TaskOutput =(props: Props) => {
                       }
                       <div className="flex flex-col gap-1">
                         <h4 className="font-semibold text-gray-900">Output</h4>
-                        <p>{selectedTask?.output ? selectedTask?.output : "No output available"}</p>
+                        <p className="whitespace-pre-wrap">{selectedTask?.output ? selectedTask?.output : "No output available"}</p>
                       </div>
                     </div>
                   </div>
