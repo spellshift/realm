@@ -31,5 +31,5 @@ port_scan(
     tmp_input_cidrs,
     tmp_input_ports,
     input_params['protocol'],
-    input_params['timeout']
+    int(input_params['timeout'])
 )
