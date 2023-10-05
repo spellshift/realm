@@ -1,5 +1,5 @@
 name: Process list
 description: Get a list of running processes
-parameter_definitions:
+paramdefs:
   - name: cmd_substring
     type: string
