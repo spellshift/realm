@@ -118,7 +118,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 
 		// Create the tome
 		if _, err := graph.Tome.Create().
-			SetName(metadata.Name).
+			SetName(entry.Name()).
 			SetDescription(metadata.Description).
 			SetParamDefs(string(jsonified_paramdefs)).
 			SetEldritch(eldritch).
