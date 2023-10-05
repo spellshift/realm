@@ -13,9 +13,23 @@ def port_scan(target_cidrs, ports, protocol, timeout):
     for port_res in sorted(scan_res, key=sort_by_ip_then_port):
         print(port_res)
 
+def str_to_str_list(list_str):
+    list_str = list_str.removeprefix('[')
+    list_str = list_str.removesuffix(']')
+    return list_str.split(",")
+    
+def str_to_int_list(list_str):
+    list_str = list_str.removeprefix('[')
+    list_str = list_str.removesuffix(']')
+    return [int(x) for x in list_str.split(",")]
+
+
+tmp_input_cidrs = str_to_str_list(input_params['cidrs'])
+tmp_input_ports = str_to_int_list(input_params['ports'])
+
 port_scan(
-    input_params['cidrs'],
-    input_params['ports'],
+    tmp_input_cidrs,
+    tmp_input_ports,
     input_params['protocol'],
     input_params['timeout']
 )
