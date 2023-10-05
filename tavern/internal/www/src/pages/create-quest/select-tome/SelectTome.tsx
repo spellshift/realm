@@ -26,12 +26,12 @@ const GET_TOMES = gql`
 export const SelectTome = (props: Props) => {
     const { loading, error, data } = useQuery(GET_TOMES);
     const step = 0;
-    const {setCurrStep, formik} = props;
+    const { setCurrStep, formik } = props;
 
     const handleSelectTome = (tome: Tome) => {
         const { params } = safelyJsonParse(tome?.paramDefs);
         formik.setFieldValue('tome', tome);
-        formik.setFieldValue('params', params);
+        formik.setFieldValue('params', params ? params : []);
     }
 
     const handleNameQuest = (name: string) => {
@@ -44,7 +44,7 @@ export const SelectTome = (props: Props) => {
     // PARAMS SUBMITTED FOR CREATE QUEST FORMAT:  JSON STRING Dict<string, string>: '{"blah": "some value"}'
     //      * This is what is submitted for creating a quest
 
-    const hasAllParamsSet = formik?.values?.params.filter( (param: TomeParams) => {
+    const hasAllParamsSet = formik?.values?.params.filter((param: TomeParams) => {
         return param?.value && param?.value !== "";
     });
 
@@ -59,16 +59,16 @@ export const SelectTome = (props: Props) => {
                 label="Quest name"
                 placeholder={"Provide a recognizable name to this quest"}
                 value={formik?.values?.name}
-                onChange={(event)=> handleNameQuest(event?.target?.value)}
+                onChange={(event) => handleNameQuest(event?.target?.value)}
             />
 
-             <FormRadioGroup
+            <FormRadioGroup
                 label="Select a tome"
                 data={data?.tomes || []}
                 selected={formik?.values?.tome}
                 setSelected={handleSelectTome}
             />
-             {formik?.values?.params.length > 0 && formik?.values?.params.map((field: TomeParams, index: number) => {
+            {formik?.values?.params.length > 0 && formik?.values?.params.map((field: TomeParams, index: number) => {
                 return (
                     <FormTextArea
                         key={field.name}
@@ -77,17 +77,17 @@ export const SelectTome = (props: Props) => {
                         formik={formik}
                     />
                 );
-             })}
+            })}
 
-             <div className="flex flex-row gap-2">
+            <div className="flex flex-row gap-2">
                 <button
                     className="btn-primary"
-                    onClick={() => setCurrStep(step +1)}
+                    onClick={() => setCurrStep(step + 1)}
                     disabled={isContinueDisabled}
                 >
                     Continue
                 </button>
-             </div>
+            </div>
         </div>
     )
 }
