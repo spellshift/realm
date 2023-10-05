@@ -1,5 +1,5 @@
 name: Shell command
 description: Execute a shell command in the systems default shell.
-parameter_definitions:
+paramdefs:
   - name: cmd
     type: string

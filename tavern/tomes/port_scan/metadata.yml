@@ -1,6 +1,6 @@
 name: Port scan
 description: Scan a list of ports in a list of CIDRs.
-parameter_definitions:
+paramdefs:
   - name: cidrs
     type: list
   - name: ports
