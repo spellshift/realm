@@ -1,2 +1,7 @@
 name: example
 description: An example tome!
+paramdefs:
+- name: msg
+  label: Message
+  type: string
+  placeholder: Something to print

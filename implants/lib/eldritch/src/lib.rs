@@ -159,7 +159,6 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
         };
         input_params.insert_hashed(hashed_key, new_value);
     }
-
     module.set("input_params", input_params.alloc_value(module.heap()));
 
     let mut eval: Evaluator = Evaluator::new(&module);
