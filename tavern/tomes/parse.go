@@ -12,26 +12,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type tomeParamDef struct {
+	Name        string `yaml:"name" json:"name"`
+	Label       string `yaml:"label" json:"label"`
+	Type        string `yaml:"type" json:"type"`
+	Placeholder string `yaml:"placeholder" json:"placeholder"`
+}
+
 type tomeMetadata struct {
 	Name        string
 	Description string
-	ParamDefs   []interface{}
-}
-
-func convert_yaml_to_json(i interface{}) interface{} {
-	switch x := i.(type) {
-	case map[interface{}]interface{}:
-		m2 := map[string]interface{}{}
-		for k, v := range x {
-			m2[k.(string)] = convert_yaml_to_json(v)
-		}
-		return m2
-	case []interface{}:
-		for i, v := range x {
-			x[i] = convert_yaml_to_json(v)
-		}
-	}
-	return i
+	ParamDefs   []tomeParamDef
 }
 
 // UploadTomes traverses the provided filesystem and creates tomes using the provided graph.
@@ -111,16 +102,16 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			return rollback(tx, fmt.Errorf("failed to parse and upload tome %q: %w", entry.Name(), err))
 		}
 
-		jsonified_paramdefs, err := json.Marshal(convert_yaml_to_json(metadata.ParamDefs))
+		paramdefs, err := json.Marshal(metadata.ParamDefs)
 		if err != nil {
-			return rollback(tx, fmt.Errorf("failed to prase param defs for %q: %w", metadata.Name, err))
+			return rollback(tx, fmt.Errorf("failed to parse param defs for %q: %w", metadata.Name, err))
 		}
 
 		// Create the tome
 		if _, err := graph.Tome.Create().
 			SetName(entry.Name()).
 			SetDescription(metadata.Description).
-			SetParamDefs(string(jsonified_paramdefs)).
+			SetParamDefs(string(paramdefs)).
 			SetEldritch(eldritch).
 			AddFiles(tomeFiles...).
 			Save(ctx); err != nil {

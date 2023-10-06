@@ -27,7 +27,7 @@ func TestUploadTomes(t *testing.T) {
 	require.NotNil(t, testTome)
 	assert.Equal(t, `print(input_params['msg'])`, testTome.Eldritch)
 	assert.Equal(t, `An example tome!`, testTome.Description)
-	assert.Equal(t, `[{"label":"Message","name":"msg","placeholder":"Something to print","type":"string"}]`, testTome.ParamDefs)
+	assert.Equal(t, `[{"name":"msg","label":"Message","type":"string","placeholder":"Something to print"}]`, testTome.ParamDefs)
 	testTomeFiles, err := testTome.Files(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, testTomeFiles, 1)
