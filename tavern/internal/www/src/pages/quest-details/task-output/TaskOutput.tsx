@@ -1,10 +1,11 @@
 import React from "react";
-import { Box, Heading, Slide, } from "@chakra-ui/react";
+import { Box, Code, Heading, Slide, } from "@chakra-ui/react";
 import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { Task } from "../../../utils/consts";
 import { format } from 'date-fns'
+import { CopyBlock, tomorrow} from "react-code-blocks";
 
 type Props = {
     isOpen: boolean,
@@ -75,7 +76,15 @@ export const TaskOutput =(props: Props) => {
                       }
                       <div className="flex flex-col gap-1">
                         <h4 className="font-semibold text-gray-900">Output</h4>
-                        <p className="whitespace-pre-wrap">{selectedTask?.output ? selectedTask?.output : "No output available"}</p>
+                        <div className="bg-gray-200 rounded-md p-0.5">
+                          <CopyBlock
+                            text={selectedTask?.output ? `${selectedTask?.output} \n \t test` : "No output available"}
+                            language={""}
+                            showLineNumbers={false}
+                            theme={tomorrow}
+                            codeBlock
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
