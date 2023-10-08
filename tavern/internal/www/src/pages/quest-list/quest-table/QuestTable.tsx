@@ -44,21 +44,23 @@ export const QuestTable = (props: Props) => {
         {
             id: "finished",
             header: 'Finished Tasks',
-            accessorKey: "finished",
-            cell: (cellData: any) => {
-                const finished = cellData.getValue();
+            accessorFn: row => row,
+            cell: (row: any) => {
+                const rowData = row.row.original;
+                const finished = rowData.finished;
+                const allTasks = rowData.inprogress + rowData.queued + rowData.finished;
 
-                if(finished === 0 ){
+                if(finished < allTasks ){
                     return (
                         <Badge ml='1' px='4' colorScheme='alphaWhite' fontSize="font-base">
-                            {finished}
+                            {finished}/{allTasks}
                         </Badge>
                     );
                 }
 
                 return (
                     <Badge ml='1' px='4' colorScheme='green' fontSize="font-base">
-                        {finished}
+                        {finished}/{allTasks}
                     </Badge>
                 );
             },
