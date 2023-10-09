@@ -50,17 +50,17 @@ fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> 
     let mut tmp_res = Dict::new(res);
 
     let tmp_value1 = starlark_heap.alloc_str(&interface.name);
-    tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed()?, tmp_value1.to_value());
 
     let mut tmp_value2_arr = Vec::<Value>::new();
     for ip in interface.ips {
         tmp_value2_arr.push(starlark_heap.alloc_str(&ip.to_string()).to_value());
     }
     let tmp_value2 = starlark_heap.alloc(tmp_value2_arr);
-    tmp_res.insert_hashed(const_frozen_string!("ips").to_value().get_hashed().unwrap(), tmp_value2);
+    tmp_res.insert_hashed(const_frozen_string!("ips").to_value().get_hashed()?, tmp_value2);
 
     let tmp_value3 = starlark_heap.alloc_str(&interface.mac);
-    tmp_res.insert_hashed(const_frozen_string!("mac").to_value().get_hashed().unwrap(), tmp_value3.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("mac").to_value().get_hashed()?, tmp_value3.to_value());
 
 
     Ok(tmp_res)
@@ -72,17 +72,17 @@ fn create_dict_from_interface(starlark_heap: &Heap, interface: NetworkInterface)
     let mut tmp_res = Dict::new(res);
 
     let tmp_value1 = starlark_heap.alloc_str(&interface.name);
-    tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed()?, tmp_value1.to_value());
 
     let mut tmp_value2_arr = Vec::<Value>::new();
     for ip in interface.ips {
         tmp_value2_arr.push(starlark_heap.alloc_str(&ip.to_string()).to_value());
     }
     let tmp_value2 = starlark_heap.alloc(tmp_value2_arr);
-    tmp_res.insert_hashed(const_frozen_string!("ips").to_value().get_hashed().unwrap(), tmp_value2);
+    tmp_res.insert_hashed(const_frozen_string!("ips").to_value().get_hashed()?, tmp_value2);
 
     let tmp_value3 = starlark_heap.alloc_str(&interface.mac.map(|mac| mac.to_string()).unwrap_or(UNKNOWN.to_string()));
-    tmp_res.insert_hashed(const_frozen_string!("mac").to_value().get_hashed().unwrap(), tmp_value3.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("mac").to_value().get_hashed()?, tmp_value3.to_value());
 
 
     Ok(tmp_res)
