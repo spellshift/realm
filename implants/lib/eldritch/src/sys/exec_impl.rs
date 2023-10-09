@@ -37,8 +37,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
     if !should_disown {
         let res = Command::new(path)
             .args(args)
-            .output()
-            .expect("failed to execute process");
+            .output()?;
         
         let res = CommandOutput {
             stdout: String::from_utf8(res.stdout)?,
