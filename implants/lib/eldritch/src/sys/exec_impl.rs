@@ -42,7 +42,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         let res = CommandOutput {
             stdout: String::from_utf8(res.stdout)?,
             stderr: String::from_utf8(res.stderr)?,
-            status: res.status.code().expect("Failed to retrive status code"),
+            status: res.status.code().ok_or(anyhow::anyhow!("Failed to retrieve status code"))?,
         };
         return Ok(res);
     }else{
@@ -50,7 +50,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         return Err(anyhow::anyhow!("Windows is not supported for disowned processes."));
 
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        match unsafe{fork().expect("Failed to fork process")} {
+        match unsafe{fork()?} {
             ForkResult::Parent { child } => {    
                 // Wait for intermediate process to exit.
                 waitpid(Some(child), None).unwrap();
@@ -62,7 +62,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
             }
     
             ForkResult::Child => {
-                match unsafe{fork().expect("Failed to fork process")} {
+                match unsafe{fork()?} {
                     ForkResult::Parent { child } => {
                         if child.as_raw() < 0 { return Err(anyhow::anyhow!("Pid was negative. ERR".to_string())) }
                         exit(0)
@@ -71,8 +71,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
                     ForkResult::Child => {
                         let _res = Command::new(path)
                             .args(args)
-                            .output()
-                            .expect("failed to execute process");
+                            .output()?;
                         exit(0)
                     }
                 }

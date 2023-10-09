@@ -75,8 +75,7 @@ mod tests {
         download(url, path.clone())?;
 
         // Read the file
-        let contents = read_to_string(path.clone())
-            .expect("Something went wrong reading the file");
+        let contents = read_to_string(path.clone())?;
 
         // check file written correctly
         assert_eq!(contents, "test body");

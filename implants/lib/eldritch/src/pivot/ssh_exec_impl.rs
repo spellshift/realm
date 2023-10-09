@@ -123,8 +123,7 @@ mod tests {
             }
             let tmp_res = Command::new(command_string)
                 .args(command_args)
-                .output()
-                .expect("failed to execute process");
+                .output()?;
             session.data(channel, CryptoVec::from(tmp_res.stdout));
             session.close(channel); // Only gonna send one command.
             Ok((self, session))

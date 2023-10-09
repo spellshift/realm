@@ -46,13 +46,12 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
 
     let tmp_res = Command::new(command_string)
         .args(command_args)
-        .output()
-        .expect("failed to execute process");
+        .output()?;
 
     return Ok(CommandOutput{
         stdout: String::from_utf8(tmp_res.stdout)?,
         stderr: String::from_utf8(tmp_res.stderr)?,
-        status: tmp_res.status.code().expect("Failed to retrieve error code"),
+        status: tmp_res.status.code().ok_or(anyhow::anyhow!("Failed to retrieve status code"))?,
     });
 }
 
