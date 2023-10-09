@@ -1,6 +1,6 @@
 use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write}};
 
-use anyhow::Result;
+use anyhow::{Result, Context};
 use flate2::{Compression};
 use tar::{Builder, HeaderMode};
 use tempfile::NamedTempFile;
@@ -20,12 +20,12 @@ fn tar_dir(src: String, dst: String) -> Result<String> {
 
     let src_path_obj = src_path
         .file_name()
-        .ok_or(anyhow::anyhow!(
+        .context(
             format!("Failed to get path file_name {}", src_path.display())
-        ))?
-        .to_str().ok_or(anyhow::anyhow!(
+        )?
+        .to_str().context(
             format!("Failed to convert osStr to str {}", src_path.display())
-        ))?;
+        )?;
 
     // Add all files from source dir with the name of the dir.
     match tar_builder.append_dir_all(src_path_obj.clone(), src_path.clone() ) {
@@ -58,9 +58,9 @@ pub fn compress(src: String, dst: String) -> Result<()> {
         tmp_tar_file_src
         .path()
         .to_str()
-        .ok_or(anyhow::anyhow!(
+        .context(
             format!("Faild to get path str: {}", src)
-        ))?);
+        )?);
 
     // If our source is a dir create a tarball and update the src file to the tar ball.
     if src_path.clone().is_dir() {

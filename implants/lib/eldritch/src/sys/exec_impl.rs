@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, Context};
 use starlark::{values::{Heap, dict::Dict}, collections::SmallMap, const_frozen_string};
 use std::process::Command;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -42,7 +42,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         let res = CommandOutput {
             stdout: String::from_utf8(res.stdout)?,
             stderr: String::from_utf8(res.stderr)?,
-            status: res.status.code().ok_or(anyhow::anyhow!("Failed to retrieve status code"))?,
+            status: res.status.code().context("Failed to retrieve status code")?,
         };
         return Ok(res);
     }else{

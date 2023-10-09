@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, Context};
 use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
 use starlark::values::Heap;
@@ -51,7 +51,7 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
     return Ok(CommandOutput{
         stdout: String::from_utf8(tmp_res.stdout)?,
         stderr: String::from_utf8(tmp_res.stderr)?,
-        status: tmp_res.status.code().ok_or(anyhow::anyhow!("Failed to retrieve status code"))?,
+        status: tmp_res.status.code().context("Failed to retrieve status code")?,
     });
 }
 
