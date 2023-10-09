@@ -33,8 +33,7 @@ async fn handle_download(uri: String, dst: String) -> Result<()> {
 pub fn download(uri: String, dst: String) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
-        .build()
-        .unwrap();
+        .build()?;
 
     let response = runtime.block_on(
         handle_download(uri, dst)
