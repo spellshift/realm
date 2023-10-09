@@ -1,6 +1,6 @@
 use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write}};
 
-use anyhow::Result;
+use anyhow::{Result, Context};
 use flate2::{Compression};
 use tar::{Builder, HeaderMode};
 use tempfile::NamedTempFile;
@@ -18,7 +18,14 @@ fn tar_dir(src: String, dst: String) -> Result<String> {
         HeaderMode::Deterministic
     );
 
-    let src_path_obj = src_path.clone().file_name().unwrap().to_str().unwrap();
+    let src_path_obj = src_path
+        .file_name()
+        .context(
+            format!("Failed to get path file_name {}", src_path.display())
+        )?
+        .to_str().context(
+            format!("Failed to convert osStr to str {}", src_path.display())
+        )?;
 
     // Add all files from source dir with the name of the dir.
     match tar_builder.append_dir_all(src_path_obj.clone(), src_path.clone() ) {
@@ -47,7 +54,13 @@ pub fn compress(src: String, dst: String) -> Result<()> {
     let src_path = Path::new(&tmp_src);
 
     let tmp_tar_file_src = NamedTempFile::new()?;
-    let tmp_tar_file_src_path = String::from(tmp_tar_file_src.path().to_str().unwrap());
+    let tmp_tar_file_src_path = String::from(
+        tmp_tar_file_src
+        .path()
+        .to_str()
+        .context(
+            format!("Faild to get path str: {}", src)
+        )?);
 
     // If our source is a dir create a tarball and update the src file to the tar ball.
     if src_path.clone().is_dir() {
@@ -60,7 +73,8 @@ pub fn compress(src: String, dst: String) -> Result<()> {
     }
 
     // Setup buffered reader writer.
-    let f_src = std::io::BufReader::new(std::fs::File::open(tmp_src.clone()).unwrap());
+    let f_src = std::io::BufReader::new(
+        std::fs::File::open(tmp_src.clone())?);
     let mut f_dst = std::io::BufWriter::new(
             OpenOptions::new()
             .create(true)

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, Context};
 use starlark::{values::{Heap, dict::Dict}, collections::SmallMap, const_frozen_string};
 use std::process::Command;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -17,13 +17,13 @@ pub fn exec(starlark_heap: &Heap, path: String, args: Vec<String>, disown: Optio
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
     let stdout_value = starlark_heap.alloc_str(cmd_res.stdout.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
+    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed()?, stdout_value.to_value());
 
     let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed().unwrap(), stderr_value.to_value());
+    dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed()?, stderr_value.to_value());
 
     let status_value = starlark_heap.alloc(cmd_res.status);
-    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
+    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, status_value);
 
     Ok(dict_res)
 }
@@ -37,13 +37,12 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
     if !should_disown {
         let res = Command::new(path)
             .args(args)
-            .output()
-            .expect("failed to execute process");
+            .output()?;
         
         let res = CommandOutput {
             stdout: String::from_utf8(res.stdout)?,
             stderr: String::from_utf8(res.stderr)?,
-            status: res.status.code().expect("Failed to retrive status code"),
+            status: res.status.code().context("Failed to retrieve status code")?,
         };
         return Ok(res);
     }else{
@@ -51,10 +50,10 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         return Err(anyhow::anyhow!("Windows is not supported for disowned processes."));
 
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        match unsafe{fork().expect("Failed to fork process")} {
+        match unsafe{fork()?} {
             ForkResult::Parent { child } => {    
                 // Wait for intermediate process to exit.
-                waitpid(Some(child), None).unwrap();
+                waitpid(Some(child), None)?;
                 return Ok(CommandOutput{
                     stdout: "".to_string(),
                     stderr: "".to_string(),
@@ -63,7 +62,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
             }
     
             ForkResult::Child => {
-                match unsafe{fork().expect("Failed to fork process")} {
+                match unsafe{fork()?} {
                     ForkResult::Parent { child } => {
                         if child.as_raw() < 0 { return Err(anyhow::anyhow!("Pid was negative. ERR".to_string())) }
                         exit(0)
@@ -72,8 +71,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
                     ForkResult::Child => {
                         let _res = Command::new(path)
                             .args(args)
-                            .output()
-                            .expect("failed to execute process");
+                            .output()?;
                         exit(0)
                     }
                 }
