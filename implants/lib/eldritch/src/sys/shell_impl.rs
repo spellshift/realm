@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, Context};
 use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
 use starlark::values::Heap;
@@ -15,13 +15,13 @@ pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
     let stdout_value = starlark_heap.alloc_str(cmd_res.stdout.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
+    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed()?, stdout_value.to_value());
 
     let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed().unwrap(), stderr_value.to_value());
+    dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed()?, stderr_value.to_value());
 
     let status_value = starlark_heap.alloc(cmd_res.status);
-    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
+    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, status_value);
 
     Ok(dict_res)
 }
@@ -46,13 +46,12 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
 
     let tmp_res = Command::new(command_string)
         .args(command_args)
-        .output()
-        .expect("failed to execute process");
+        .output()?;
 
     return Ok(CommandOutput{
         stdout: String::from_utf8(tmp_res.stdout)?,
         stderr: String::from_utf8(tmp_res.stderr)?,
-        status: tmp_res.status.code().expect("Failed to retrieve error code"),
+        status: tmp_res.status.code().context("Failed to retrieve status code")?,
     });
 }
 

@@ -129,25 +129,25 @@ fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict>{
     let mut tmp_res = Dict::new(res);
 
     let tmp_value1 = starlark_heap.alloc_str(&file.name);
-    tmp_res.insert_hashed(const_frozen_string!("file_name").to_value().get_hashed().unwrap(), tmp_value1.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("file_name").to_value().get_hashed()?, tmp_value1.to_value());
 
     let file_size = file.size as i32;
-    tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed().unwrap(), starlark_heap.alloc(file_size));
+    tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed()?, starlark_heap.alloc(file_size));
 
     let tmp_value2 = starlark_heap.alloc_str(&file.owner);
-    tmp_res.insert_hashed(const_frozen_string!("owner").to_value().get_hashed().unwrap(), tmp_value2.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("owner").to_value().get_hashed()?, tmp_value2.to_value());
 
     let tmp_value3 = starlark_heap.alloc_str(&file.group);
-    tmp_res.insert_hashed(const_frozen_string!("group").to_value().get_hashed().unwrap(), tmp_value3.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("group").to_value().get_hashed()?, tmp_value3.to_value());
 
     let tmp_value4 = starlark_heap.alloc_str(&file.permissions);
-    tmp_res.insert_hashed(const_frozen_string!("permissions").to_value().get_hashed().unwrap(), tmp_value4.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("permissions").to_value().get_hashed()?, tmp_value4.to_value());
 
     let tmp_value5 = starlark_heap.alloc_str(&file.time_modified);
-    tmp_res.insert_hashed(const_frozen_string!("modified").to_value().get_hashed().unwrap(), tmp_value5.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("modified").to_value().get_hashed()?, tmp_value5.to_value());
 
     let tmp_value6 = starlark_heap.alloc_str(&file.file_type.to_string());
-    tmp_res.insert_hashed(const_frozen_string!("type").to_value().get_hashed().unwrap(), tmp_value6.to_value());
+    tmp_res.insert_hashed(const_frozen_string!("type").to_value().get_hashed()?, tmp_value6.to_value());
 
     Ok(tmp_res)
 }
