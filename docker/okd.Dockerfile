@@ -1,7 +1,7 @@
-FROM debian:buster as staging
+FROM debian:bullseye as staging
 WORKDIR /app
-RUN sh -c 'curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sh'
-RUN apt update && apt install -y git gis-lfs
+RUN apt update && apt install -y git
+RUN apt install -y git-lfs
 COPY . .
 RUN git lfs pull
 
