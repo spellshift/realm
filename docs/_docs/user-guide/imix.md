@@ -71,27 +71,7 @@ RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-
 ```
 
 ### MacOS
-```bash
-rustup target add x86_64-apple-darwin
+**MacOS does not support static compilation**
+https://developer.apple.com/forums/thread/706419
 
-apt update
-apt install llvm-dev libclang-dev clang libxml2-dev libz-dev
-export MACOSX_CROSS_COMPILER=$HOME/macosx-cross-compiler
-install -d $MACOSX_CROSS_COMPILER/osxcross
-install -d $MACOSX_CROSS_COMPILER/cross-compiler
-cd $MACOSX_CROSS_COMPILER
-git clone https://github.com/tpoechtrager/osxcross && cd osxcross
-git checkout 7c090bd8cd4ad28cf332f1d02267630d8f333c19
-
-mv MacOSX10.10.sdk.tar.xz $MACOSX_CROSS_COMPILER/osxcross/tarballs/
-UNATTENDED=yes OSX_VERSION_MIN=10.7 TARGET_DIR=$MACOSX_CROSS_COMPILER/cross-compiler ./build.sh
-
-echo "[target.x86_64-apple-darwin]" >> $HOME/.cargo/config
-find $MACOSX_CROSS_COMPILER -name x86_64-apple-darwin14-cc -printf 'linker = "%p"\n' >> $HOME/.cargo/config
-echo >> $HOME/.cargo/config
-
-C_INCLUDE_PATH=$MACOSX_CROSS_COMPILER/cross-compiler/SDK/MacOSX10.10.sdk/usr/include CC=$MACOSX_CROSS_COMPILER/cross-compiler/bin/x86_64-apple-darwin14-cc RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-apple-darwin
-```
-
-https://godot-rust.github.io/gdnative-book/export/macosx.html
-https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html/
+### Windows
