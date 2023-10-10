@@ -16,6 +16,9 @@ import (
 )
 
 var (
+	// Port to run on
+	EnvBind = EnvString{"TAVERN_BIND", "127.0.0.1:8080"}
+
 	// EnvEnableTestData if set will populate the database with test data.
 	EnvEnableTestData = EnvString{"ENABLE_TEST_DATA", ""}
 
@@ -99,6 +102,10 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
 }
 
+func GetBindAddress() string {
+	return EnvBind.String()
+}
+
 // IsTestDataEnabled returns true if a value for the "ENABLE_TEST_DATA" environment variable is set.
 func (cfg *Config) IsTestDataEnabled() bool {
 	return EnvEnableTestData.String() != ""
@@ -106,9 +113,9 @@ func (cfg *Config) IsTestDataEnabled() bool {
 
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be
 // overwritten with Tavern's HTTP handler when Tavern is run.
-func ConfigureHTTPServer(address string, options ...func(*http.Server)) func(*Config) {
+func ConfigureHTTPServer(options ...func(*http.Server)) func(*Config) {
 	srv := &http.Server{
-		Addr: address,
+		Addr: EnvBind.String(),
 	}
 	for _, opt := range options {
 		opt(srv)

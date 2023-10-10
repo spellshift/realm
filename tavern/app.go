@@ -141,7 +141,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Initialize HTTP Server
 	if cfg.srv == nil {
 		cfg.srv = &http.Server{
-			Addr:    "0.0.0.0:80",
+			Addr:    GetBindAddress(),
 			Handler: endpoint,
 		}
 	} else {

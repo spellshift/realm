@@ -1,0 +1,36 @@
+version: '3.3'
+
+services:
+  db:
+    image: mariadb
+    restart: always
+    environment:
+      - MARIADB_RANDOM_ROOT_PASSWORD=yes
+      - MARIADB_USER=tavern
+      - MARIADB_PASSWORD=plodder09*arouse
+      - MARIADB_DATABASE=tavern
+    networks:
+      - internal
+  tavern:
+    image: tavern
+    restart: always
+    depends_on:
+      - db
+    build:
+      context: ..
+      dockerfile: ./docker/tavern.Dockerfile
+    environment:
+      - TAVERN_BIND=0.0.0.0:8080
+      - OAUTH_CLIENT_ID=
+      - OAUTH_CLIENT_SECRET=
+      - OAUTH_DOMAIN=
+      - MYSQL_ADDR=db
+      - MYSQL_USER=tavern
+      - MYSQL_PASSWD=plodder09*arouse
+    ports:
+      - 8080:8080
+    networks:
+      - internal
+networks:
+  internal:
+

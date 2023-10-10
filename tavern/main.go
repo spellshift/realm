@@ -13,7 +13,7 @@ import (
 func main() {
 	ctx := context.Background()
 	app := newApp(ctx,
-		ConfigureHTTPServer("0.0.0.0:80"),
+		ConfigureHTTPServer(),
 		ConfigureMySQLFromEnv(),
 		ConfigureOAuthFromEnv("/oauth/authorize"),
 	)
