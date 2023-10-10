@@ -33,8 +33,7 @@ async fn handle_download(uri: String, dst: String) -> Result<()> {
 pub fn download(uri: String, dst: String) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
-        .build()
-        .unwrap();
+        .build()?;
 
     let response = runtime.block_on(
         handle_download(uri, dst)
@@ -75,8 +74,7 @@ mod tests {
         download(url, path.clone())?;
 
         // Read the file
-        let contents = read_to_string(path.clone())
-            .expect("Something went wrong reading the file");
+        let contents = read_to_string(path.clone())?;
 
         // check file written correctly
         assert_eq!(contents, "test body");
