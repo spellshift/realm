@@ -75,3 +75,12 @@ RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-
 https://developer.apple.com/forums/thread/706419
 
 ### Windows
+```bash
+rustup target add x86_64-pc-windows-gnu
+
+apt update
+sudo apt install gcc-mingw-w64
+
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-pc-windows-gnu
+```
+
