@@ -9,7 +9,6 @@ import (
 
 	"github.com/kcarretto/realm/tavern/internal/ent"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
@@ -28,7 +27,9 @@ var (
 	EnvOAuthClientID     = EnvString{"OAUTH_CLIENT_ID", ""}
 	EnvOAuthClientSecret = EnvString{"OAUTH_CLIENT_SECRET", ""}
 	EnvOAuthDomain       = EnvString{"OAUTH_DOMAIN", ""}
-
+    EnvOAuthAuthURL      = EnvString{"OAUTH_AUTHURL", ""}
+    EnvOAuthTokenURL     = EnvString{"OAUTH_TOKENURL", ""}
+    EnvOAuthScopes       = EnvString{"OAUTH_SCOPES", ""}
 	// EnvMySQLAddr defines the MySQL address to connect to, if unset SQLLite is used.
 	// EnvMySQLNet defines the network used to connect to MySQL (e.g. unix).
 	// EnvMySQLUser defines the MySQL user to authenticate as.
@@ -132,6 +133,9 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			clientID     = EnvOAuthClientID.String()
 			clientSecret = EnvOAuthClientSecret.String()
 			domain       = EnvOAuthDomain.String()
+            authURL      = EnvOAuthAuthURL.String()
+            tokenURL     = EnvOAuthTokenURL.String()
+            scopeString  = EnvOAuthScopes.String()
 		)
 
 		// If none are set, default to auth disabled
@@ -155,14 +159,16 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 
+        scopes := strings.Split(scopeString, ",")
 		cfg.oauth = oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			RedirectURL:  domain + redirectPath,
-			Scopes: []string{
-				"https://www.googleapis.com/auth/userinfo.profile",
-			},
-			Endpoint: google.Endpoint,
+			Scopes: scopes,
+			Endpoint: oauth2.Endpoint{
+                AuthURL:  authURL,
+                TokenURL: tokenURL,
+		    },
 		}
 	}
 }
