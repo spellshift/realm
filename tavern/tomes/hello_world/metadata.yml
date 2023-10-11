@@ -6,3 +6,5 @@ description: Simple tome to print hello world.
   placeholder: Something to print
   type: string
 
+name: Hello world
+description: Simp
