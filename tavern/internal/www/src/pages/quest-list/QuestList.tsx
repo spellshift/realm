@@ -7,7 +7,6 @@ import { QuestTable } from "./quest-table";
 
 export const QuestList = () => {
     const { loading, data } = useQuery(GET_QUEST_QUERY);
-    console.log(loading);
 
     return (
         <PageWrapper>

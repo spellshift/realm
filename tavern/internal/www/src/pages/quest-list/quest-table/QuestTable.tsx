@@ -122,7 +122,6 @@ export const QuestTable = (props: Props) => {
 
     function getInitialQuestsTableData(data:any ){ 
         const formattedData = data?.map( (quest: QuestProps) => {
-            console.log(quest);
             const taskDetails = quest.tasks.reduce( (map:any, task: Task)=> {
                 const modMap = {...map};
 

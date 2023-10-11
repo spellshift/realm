@@ -110,11 +110,8 @@ export const TaskTable = (props: Props) => {
                     rowB,
                     columnId
                   ) => {
-                    console.log(rowA.getValue(columnId));
                     const statusA = getStatusValue(rowA.getValue(columnId));
                     const statusB = getStatusValue(rowB.getValue(columnId));
-
-
                 
                     return statusA < statusB ? 1 : statusA > statusB ? -1 : 0;
                   }
