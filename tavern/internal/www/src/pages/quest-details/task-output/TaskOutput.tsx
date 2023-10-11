@@ -1,10 +1,8 @@
 import React from "react";
-import { Box, Code, Heading, Slide, } from "@chakra-ui/react";
-import { Fragment, useState } from 'react'
+import { Fragment} from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { Task } from "../../../utils/consts";
-import { format } from 'date-fns'
 import { CopyBlock, tomorrow} from "react-code-blocks";
 
 type Props = {
@@ -78,7 +76,7 @@ export const TaskOutput =(props: Props) => {
                         <h4 className="font-semibold text-gray-900">Output</h4>
                         <div className="bg-gray-200 rounded-md p-0.5">
                           <CopyBlock
-                            text={selectedTask?.output ? `${selectedTask?.output} \n \t test` : "No output available"}
+                            text={selectedTask?.output ? selectedTask?.output : "No output available"}
                             language={""}
                             showLineNumbers={false}
                             theme={tomorrow}

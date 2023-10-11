@@ -5,23 +5,31 @@ import {
   getCoreRowModel,
   ColumnDef,
   flexRender,
+  getSortedRowModel
 } from '@tanstack/react-table'
+import { TriangleDownIcon, TriangleUpIcon } from '@chakra-ui/icons'
+
+export type TableSorting = {
+  key: string,
+  ascending: boolean,
+}
 
 type TableProps<TData> = {
     data: TData[],
     columns: ColumnDef<TData>[],
-    onRowClick?: (e: any) => void
+    onRowClick?: (e: any) => void,
 }
 
 export const Table = ({
     data,
     columns,
-    onRowClick
+    onRowClick,
   }: TableProps<any>): JSX.Element => {
     const table = useReactTable<any>({
       data,
       columns,
       getCoreRowModel: getCoreRowModel(),
+      getSortedRowModel: getSortedRowModel(),
     })
 
     const tbodyRef = React.useRef<HTMLTableSectionElement>(null);
@@ -43,17 +51,29 @@ export const Table = ({
                 {headerGroup.headers.map(header => {
                   return (
                     <th 
-                    key={header.id} 
-                    colSpan={header.colSpan}
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      key={header.id} 
+                      colSpan={header.colSpan}
+                      scope="col"
+                      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${header.column.getCanSort() && "cursor-pointer"}`}
+                      onClick={header.column.getToggleSortingHandler()}
                     >
                       {header.isPlaceholder ? null : (
-                        <div>
+                        <div
+                          {...{
+                            className: header.column.getCanSort()
+                              ? 'cursor-pointer select-none'
+                              : '',
+                            onClick: header.column.getToggleSortingHandler(),
+                          }}
+                        >
                           {flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
+                          {{
+                            asc: <TriangleUpIcon w={4} />,
+                            desc: <TriangleDownIcon w={4} />
+                          }[header.column.getIsSorted() as string] ?? null}
                         </div>
                       )}
                     </th>
