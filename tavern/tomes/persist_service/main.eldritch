@@ -78,12 +78,6 @@ def persist_service(service_name, service_desc, executable_name, executable_url)
     else:
         print("OS not supported")
 
-input_params = {
-    'service_name':'Test service',
-    'service_desc':'This is a test service',
-    'executable_name':'test123',
-    'executable_url': 'http://download.aws-metadata.com/IbxYZIJV/imix-upx-x86_64-unknown-linux-musl'
-}
 persist_service(
     input_params['service_name'],
     input_params['service_desc'],
