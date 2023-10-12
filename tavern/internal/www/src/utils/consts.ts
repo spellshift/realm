@@ -1,3 +1,5 @@
+import { string } from "yup";
+
 export type FormStep = {
     name: string;
     description: string;
@@ -28,6 +30,7 @@ export type BeaconType = {
     id: string;
     name: string;
     principal: string;
+    hostPrimaryIP: string;
     tags: Array<TomeTag>;
 }
 export type SelectedBeacons = {
@@ -67,3 +70,13 @@ export type QuestProps = {
     tasks: Array<Task>,
     tome: Tome
 }
+export type OutputTableProps = {
+    quest: string,
+    tome: string,
+    beacon: string,
+    service: string | null,
+    group: string | null,
+    output: string,
+    taskDetails?: Task   
+}
+
