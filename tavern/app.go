@@ -141,7 +141,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Initialize HTTP Server
 	if cfg.srv == nil {
 		cfg.srv = &http.Server{
-			Addr:    GetBindAddress(),
+			Addr:    EnvHTTPListenAddr.String(),
 			Handler: endpoint,
 		}
 	} else {

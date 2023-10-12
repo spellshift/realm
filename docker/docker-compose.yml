@@ -7,7 +7,7 @@ services:
     environment:
       - MARIADB_RANDOM_ROOT_PASSWORD=yes
       - MARIADB_USER=tavern
-      - MARIADB_PASSWORD=plodder09*arouse
+      - MARIADB_PASSWORD=${DB_PASSWD}
       - MARIADB_DATABASE=tavern
     networks:
       - internal
@@ -20,15 +20,20 @@ services:
       context: ..
       dockerfile: ./docker/tavern.Dockerfile
     environment:
-      - TAVERN_BIND=0.0.0.0:8080
+      - HTTP_LISTEN_ADDR=0.0.0.0:80
       - OAUTH_CLIENT_ID=
       - OAUTH_CLIENT_SECRET=
       - OAUTH_DOMAIN=
+      - OAUTH_TYPE=GOOGLE
+      # Fill in the rest of not using GOOGLE
+      - OAUTH_AUTHURL=
+      - OAUTH_TOKENURL=
+      - OAUTH_USERINFOURL=
       - MYSQL_ADDR=db
       - MYSQL_USER=tavern
-      - MYSQL_PASSWD=plodder09*arouse
+      - MYSQL_PASSWD=${DB_PASSWD}
     ports:
-      - 8080:8080
+      - 80:80
     networks:
       - internal
 networks:
