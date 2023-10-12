@@ -74,6 +74,11 @@ RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-
 **MacOS does not support static compilation**
 https://developer.apple.com/forums/thread/706419
 
+**Cross compilation is more complicated than we'll support**
+Check out this blog a starting point for cross compiling.
+https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html/
+
+
 ### Windows
 ```bash
 rustup target add x86_64-pc-windows-gnu
