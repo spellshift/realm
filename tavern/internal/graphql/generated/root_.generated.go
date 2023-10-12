@@ -85,6 +85,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Beacons func(childComplexity int, where *ent.BeaconWhereInput) int
 		Files   func(childComplexity int, where *ent.FileWhereInput) int
+		Me      func(childComplexity int) int
 		Node    func(childComplexity int, id int) int
 		Nodes   func(childComplexity int, ids []int) int
 		Quests  func(childComplexity int, where *ent.QuestWhereInput) int
@@ -433,6 +434,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Files(childComplexity, args["where"].(*ent.FileWhereInput)), true
+
+	case "Query.me":
+		if e.complexity.Query.Me == nil {
+			break
+		}
+
+		return e.complexity.Query.Me(childComplexity), true
 
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
@@ -1778,6 +1786,7 @@ input UserWhereInput {
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+  me: User! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {

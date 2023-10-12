@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kcarretto/realm/tavern/internal/auth"
 	"github.com/kcarretto/realm/tavern/internal/ent"
 )
 
@@ -81,4 +82,12 @@ func (r *queryResolver) Users(ctx context.Context, where *ent.UserWhereInput) ([
 		return query.All(ctx)
 	}
 	return r.client.User.Query().All(ctx)
+}
+
+// Me is the resolver for the me field.
+func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
+	if authUser := auth.UserFromContext(ctx); authUser != nil {
+		return authUser, nil
+	}
+	return nil, fmt.Errorf("no authenticated user present in request context")
 }
