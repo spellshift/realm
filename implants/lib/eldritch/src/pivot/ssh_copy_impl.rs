@@ -42,11 +42,9 @@ mod tests {
     use std::fs;
     use std::io::Write;
     use std::net::SocketAddr;
-    use std::process::Command;
     use std::sync::{Mutex, Arc};
     use russh::*;
     use russh::server::{Auth, Session, Msg};
-    use russh_keys::*;
     use std::collections::HashMap;
     use super::*;
 
@@ -82,6 +80,7 @@ mod tests {
     }
     
     #[async_trait]
+    #[allow(unused_variables)]
     impl russh::server::Handler for SshSession {
         type Error = anyhow::Error;
     
@@ -142,6 +141,7 @@ mod tests {
         }
     }
     
+    #[allow(unused_variables)]
     #[async_trait]
     impl russh_sftp::server::Handler for SftpSession {
         type Error = StatusCode;
@@ -236,6 +236,7 @@ mod tests {
         }
     }
 
+    #[allow(unused_variables)]
     async fn test_ssh_server(address: String, port: u16) {
         let client_key = russh_keys::key::KeyPair::generate_ed25519().unwrap();
         let client_pubkey = Arc::new(client_key.clone_public_key().unwrap());

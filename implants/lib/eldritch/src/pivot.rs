@@ -8,8 +8,6 @@ mod port_forward_impl;
 mod ncat_impl;
 mod bind_proxy_impl;
 
-use std::fs::File;
-use std::io::{BufReader, Read, BufWriter};
 use std::sync::Arc;
 
 use allocative::Allocative;
@@ -26,7 +24,6 @@ use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesSta
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
-use tokio::io::AsyncWriteExt;
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "PivotLibrary")]
