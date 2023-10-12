@@ -30,6 +30,7 @@ export type BeaconType = {
     id: string;
     name: string;
     principal: string;
+    hostPrimaryIP: string;
     tags: Array<TomeTag>;
 }
 export type SelectedBeacons = {
