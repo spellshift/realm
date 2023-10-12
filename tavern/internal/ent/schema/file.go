@@ -9,7 +9,6 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
-	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -25,9 +24,6 @@ func (File) Fields() []ent.Field {
 		field.String("name").
 			NotEmpty().
 			Unique().
-			SchemaType(map[string]string{
-				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
-			}).
 			Annotations(
 				entgql.OrderField("NAME"),
 			).

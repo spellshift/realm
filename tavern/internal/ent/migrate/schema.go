@@ -32,7 +32,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "content", Type: field.TypeBytes},
