@@ -7,6 +7,7 @@ import { PageWrapper } from "../../components/page-wrapper";
 import { SelectBeacons } from "./select-beacons";
 import { SelectTome } from "./select-tome";
 import { useSubmitQuest } from "../../hooks/useSubmitQuest";
+import { PageNavItem } from "../../utils/enums";
 
 export const CreateQuest = () => {
     const [currStep, setCurrStep] = useState<number>(0);
@@ -39,7 +40,7 @@ export const CreateQuest = () => {
     }
 
     return (
-        <PageWrapper>
+        <PageWrapper currNavItem={PageNavItem.createQuest}>
             <div className="border-b border-gray-200 pb-6 sm:flex sm:items-center sm:justify-between">
                 <h3 className="text-2xl font-semibold leading-6 text-gray-900">Create new quest</h3>
                 <div className="mt-3 sm:mt-0 sm:ml-4">
