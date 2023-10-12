@@ -56,7 +56,7 @@ func NewOAuthLoginHandler(cfg oauth2.Config, privKey ed25519.PrivateKey) http.Ha
 
 // NewOAuthAuthorizationHandler returns an http endpoint that validates the request was
 // redirected from the identity provider after a consent flow and initializes a user session
-func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, graph *ent.Client, profileURL string) http.Handler {
+func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, graph *ent.Client, profileURL string, autoApprove bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// Determine state presented in redirect
 		presentedState := req.FormValue("state")
@@ -169,7 +169,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			SetOauthID(profile.OAuthID).
 			SetPhotoURL(profile.PhotoURL).
 			SetIsAdmin(isTOFU).
-			SetIsActivated(isTOFU).
+			SetIsActivated(isTOFU || autoApprove).
 			SaveX(req.Context())
 
 		http.SetCookie(w, &http.Cookie{

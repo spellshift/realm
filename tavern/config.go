@@ -27,10 +27,13 @@ var (
 	EnvOAuthClientID     = EnvString{"OAUTH_CLIENT_ID", ""}
 	EnvOAuthClientSecret = EnvString{"OAUTH_CLIENT_SECRET", ""}
 	EnvOAuthDomain       = EnvString{"OAUTH_DOMAIN", ""}
+    EnvOAuthType         = EnvString{"OAUTH_TYPE", ""}
     EnvOAuthAuthURL      = EnvString{"OAUTH_AUTHURL", ""}
     EnvOAuthTokenURL     = EnvString{"OAUTH_TOKENURL", ""}
     EnvOAuthUserinfoURL  = EnvString{"OAUTH_USERINFOURL", ""}
     EnvOAuthScopes       = EnvString{"OAUTH_SCOPES", ""}
+
+    EnvOAuthAutoApprove       = EnvBool{"OAUTH_AUTOAPPROVE", false}
 	// EnvMySQLAddr defines the MySQL address to connect to, if unset SQLLite is used.
 	// EnvMySQLNet defines the network used to connect to MySQL (e.g. unix).
 	// EnvMySQLUser defines the MySQL user to authenticate as.
@@ -59,6 +62,7 @@ type Config struct {
 	client *ent.Client
 	oauth  oauth2.Config
     oauthUserinfo string
+    oauthAutoApprove bool
 }
 
 // Connect to the database using configured drivers and uri
@@ -135,6 +139,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			clientID     = EnvOAuthClientID.String()
 			clientSecret = EnvOAuthClientSecret.String()
 			domain       = EnvOAuthDomain.String()
+            authType     = EnvOAuthType.String()
             authURL      = EnvOAuthAuthURL.String()
             tokenURL     = EnvOAuthTokenURL.String()
             scopeString  = EnvOAuthScopes.String()
@@ -161,18 +166,32 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 
-        scopes := strings.Split(scopeString, ",")
-		cfg.oauth = oauth2.Config{
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			RedirectURL:  domain + redirectPath,
-			Scopes: scopes,
-			Endpoint: oauth2.Endpoint{
-                AuthURL:  authURL,
-                TokenURL: tokenURL,
-		    },
-		}
-        cfg.oauthUserinfo = EnvOAuthUserinfoURL.String()
+        if authType == "GOOGLE" {
+            cfg.oauth = oauth2.Config{
+			    ClientID:     clientID,
+			    ClientSecret: clientSecret,
+			    RedirectURL:  domain + redirectPath,
+			    Scopes: []string{
+				    "https://www.googleapis.com/auth/userinfo.profile",
+			    },
+			    Endpoint: google.Endpoint,
+		    }
+            cfg.oauthUserinfo = "https://www.googleapis.com/oauth2/v3/userinfo"
+        } else {
+            scopes := strings.Split(scopeString, ",")
+		    cfg.oauth = oauth2.Config{
+			    ClientID:     clientID,
+			    ClientSecret: clientSecret,
+			    RedirectURL:  domain + redirectPath,
+			    Scopes: scopes,
+			    Endpoint: oauth2.Endpoint{
+                    AuthURL:  authURL,
+                    TokenURL: tokenURL,
+		        },
+		    }
+            cfg.oauthUserinfo = EnvOAuthUserinfoURL.String()
+        }
+        cfg.oauthAutoApprove = EnvOAuthAutoApprove.Bool()
 	}
 }
 

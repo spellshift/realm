@@ -42,3 +42,18 @@ func (env EnvInteger) Int() int {
 	}
 	return val
 }
+
+type EnvBool struct {
+    Key     string
+    Default bool
+}
+
+func (env EnvBool) Bool() bool {
+	envVar := os.Getenv(env.Key)
+	if envVar == "" {
+		log.Printf("[WARN] No value for '%s' provided, defaulting to %d", env.Key, env.Default)
+		return env.Default
+	}
+	return envVar == "true" || envVar == "TRUE"
+}
+
