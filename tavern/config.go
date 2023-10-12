@@ -28,7 +28,7 @@ var (
 	EnvOAuthClientID     = EnvString{"OAUTH_CLIENT_ID", ""}
 	EnvOAuthClientSecret = EnvString{"OAUTH_CLIENT_SECRET", ""}
 	EnvOAuthDomain       = EnvString{"OAUTH_DOMAIN", ""}
-    EnvOAuthType         = EnvString{"OAUTH_TYPE", ""}
+    EnvOAuthType         = EnvString{"OAUTH_TYPE", "GOOGLE"}
     EnvOAuthAuthURL      = EnvString{"OAUTH_AUTHURL", ""}
     EnvOAuthTokenURL     = EnvString{"OAUTH_TOKENURL", ""}
     EnvOAuthUserinfoURL  = EnvString{"OAUTH_USERINFOURL", ""}
