@@ -1,4 +1,5 @@
 mod ssh_exec_impl;
+mod ssh_copy_impl;
 mod ssh_password_spray_impl;
 mod smb_exec_impl;
 mod port_scan_impl;
@@ -7,7 +8,8 @@ mod port_forward_impl;
 mod ncat_impl;
 mod bind_proxy_impl;
 
-use std::io::Write;
+use std::fs::File;
+use std::io::{BufReader, Read, BufWriter};
 use std::sync::Arc;
 
 use allocative::Allocative;
@@ -15,6 +17,7 @@ use async_trait::async_trait;
 use derive_more::Display;
 
 use russh::{client, Disconnect};
+use russh_sftp::client::SftpSession;
 use russh_keys::{key, decode_secret_key};
 use starlark::values::dict::Dict;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
@@ -23,6 +26,7 @@ use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesSta
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
+use tokio::io::AsyncWriteExt;
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "PivotLibrary")]
@@ -64,6 +68,11 @@ fn methods(builder: &mut MethodsBuilder) {
     fn ssh_exec<'v>(this: PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         ssh_exec_impl::ssh_exec(starlark_heap, target, port, command, username, password, key, key_password, timeout)
+    }
+    fn ssh_copy<'v>(this: PivotLibrary, target: String, port: i32, src: String, dst: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<NoneType> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        ssh_copy_impl::ssh_copy(target, port, src, dst, username, password, key, key_password, timeout)?;
+        Ok(NoneType{})
     }
     fn ssh_password_spray(this:  PivotLibrary, targets: Vec<String>, port: i32, credentials: Vec<String>, keys: Vec<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -170,6 +179,18 @@ impl Session {
         return Err(anyhow::anyhow!("Failed to authenticate to host {}@{}", user, addrs.clone()));
     }
 
+    async fn copy(&mut self, src: &str, dst: &str) -> anyhow::Result<()> {
+        let mut channel = self.session.channel_open_session().await?;
+        channel.request_subsystem(true, "sftp").await.unwrap();
+        let sftp = SftpSession::new(channel.into_stream()).await.unwrap();
+
+        let mut dst_file = sftp.create(dst).await?;
+        let mut src_file = tokio::io::BufReader::new(tokio::fs::File::open(src).await?);
+        let _bytes_copied = tokio::io::copy_buf(&mut src_file, &mut dst_file).await?;
+
+        Ok(())
+    }
+
     async fn call(&mut self, command: &str) -> anyhow::Result<CommandResult> {
         let mut channel = self.session.channel_open_session().await?;
         channel.exec(true, command).await?;
@@ -178,7 +199,7 @@ impl Session {
         while let Some(msg) = channel.wait().await {
             match msg {
                 russh::ChannelMsg::Data { ref data } => {
-                    output.write_all(data).unwrap();
+                    std::io::Write::write_all(&mut output, data).unwrap();
                 }
                 russh::ChannelMsg::ExitStatus { exit_status } => {
                     code = Some(exit_status);
@@ -208,4 +229,3 @@ impl CommandResult {
         String::from_utf8_lossy(&self.output).into()
     }
 }
-
