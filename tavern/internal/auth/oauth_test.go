@@ -128,7 +128,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 	assert.Equal(t, 0, graph.User.Query().CountX(context.Background()))
 
 	// Serve first request
-	handler := auth.NewOAuthAuthorizationHandler(cfg, pubKey, graph, rsrv.URL)
+	handler := auth.NewOAuthAuthorizationHandler(cfg, pubKey, graph, rsrv.URL, false)
 	resp := httptest.NewRecorder()
 	req := getOAuthAuthorizationRequest(t, privKey, expectedCode)
 	handler.ServeHTTP(resp, req)
