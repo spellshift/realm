@@ -2,7 +2,7 @@ import React from "react";
 import { Fragment} from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { Task } from "../../../utils/consts";
+import { Task } from "../../utils/consts";
 import { CopyBlock, tomorrow} from "react-code-blocks";
 
 type Props = {

@@ -2,6 +2,7 @@ import { useQuery } from "@apollo/client";
 import { Link } from "react-router-dom";
 
 import { PageWrapper } from "../../components/page-wrapper";
+import { PageNavItem } from "../../utils/enums";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { QuestTable } from "./quest-table";
 
@@ -9,7 +10,7 @@ export const QuestList = () => {
     const { loading, data } = useQuery(GET_QUEST_QUERY);
 
     return (
-        <PageWrapper>
+        <PageWrapper currNavItem={PageNavItem.quests}>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                 <h3 className="text-xl font-semibold leading-6 text-gray-900">Quests</h3>
                 <div className="mt-3 sm:mt-0 sm:ml-4">
