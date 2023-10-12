@@ -1772,13 +1772,14 @@ input UserWhereInput {
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time`, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
-  files(where: FileWhereInput): [File!]!
-  quests(where: QuestWhereInput): [Quest!]!
-  beacons(where: BeaconWhereInput): [Beacon!]!
-  tags(where: TagWhereInput): [Tag!]!
-  tomes(where: TomeWhereInput): [Tome!]!
-  users(where: UserWhereInput): [User!]!
-}`, BuiltIn: false},
+  files(where: FileWhereInput): [File!]! @requireRole(role: USER)
+  quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
+  beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
+  tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
+  tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
+  users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+}
+`, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
     ###
     # Quest
