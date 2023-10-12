@@ -8,3 +8,9 @@ export enum TaskStatus {
     finished = "FINISHED",
     queued = "QUEUED",
 }
+export enum PageNavItem {
+    quests='Quests',
+    documentation='Documentation',
+    results='Results',
+    createQuest= 'Create new quest',
+}
