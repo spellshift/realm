@@ -29,6 +29,7 @@ var (
 	EnvOAuthDomain       = EnvString{"OAUTH_DOMAIN", ""}
     EnvOAuthAuthURL      = EnvString{"OAUTH_AUTHURL", ""}
     EnvOAuthTokenURL     = EnvString{"OAUTH_TOKENURL", ""}
+    EnvOAuthUserinfoURL  = EnvString{"OAUTH_USERINFOURL", ""}
     EnvOAuthScopes       = EnvString{"OAUTH_SCOPES", ""}
 	// EnvMySQLAddr defines the MySQL address to connect to, if unset SQLLite is used.
 	// EnvMySQLNet defines the network used to connect to MySQL (e.g. unix).
@@ -57,6 +58,7 @@ type Config struct {
 
 	client *ent.Client
 	oauth  oauth2.Config
+    oauthUserinfo string
 }
 
 // Connect to the database using configured drivers and uri
@@ -170,6 +172,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
                 TokenURL: tokenURL,
 		    },
 		}
+        cfg.oauthUserinfo = EnvOAuthUserinfoURL.String()
 	}
 }
 

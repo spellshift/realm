@@ -111,7 +111,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	router := http.NewServeMux()
 	router.Handle("/status", newStatusHandler())
 	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
-	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
+	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, cfg.oauthUserinfo))
 	router.Handle("/graphql", newGraphQLHandler(client))
 	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
 	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
