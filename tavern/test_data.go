@@ -43,39 +43,37 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			hostID := newRandomIdentifier()
 			hostIP := newRandomIP()
 
+			testHost := client.Host.Create().
+				SetName(hostName).
+				SetIdentifier(hostID).
+				SetPrimaryIP(hostIP).
+				AddTags(svcTag, gTag).
+				SaveX(ctx)
+
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
-					SetHostIdentifier(hostID).
-					SetHostPrimaryIP(hostIP).
 					SetAgentIdentifier("test-data").
-					AddTags(svcTag, gTag).
+					SetHost(testHost).
 					SaveX(ctx),
 			)
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-10*time.Minute)).
-					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
-					SetHostIdentifier(hostID).
-					SetHostPrimaryIP(hostIP).
 					SetAgentIdentifier("test-data").
-					AddTags(svcTag, gTag).
+					SetHost(testHost).
 					SaveX(ctx),
 			)
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Hour)).
-					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
-					SetHostIdentifier(hostID).
-					SetHostPrimaryIP(hostIP).
 					SetAgentIdentifier("test-data").
-					AddTags(svcTag, gTag).
+					SetHost(testHost).
 					SaveX(ctx),
 			)
 		}

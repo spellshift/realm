@@ -3,19 +3,25 @@ state: |
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
   INSERT INTO `hosts` (id, name, identifier)
     VALUES (1010,"db1","EXISTING-HOST");
+  INSERT INTO `hosts` (id, name, identifier)
+    VALUES (1011,"db2","EXISTING-HOST2");
   INSERT INTO `beacons` (id, name, identifier, beacon_host)
     VALUES (1337,"delightful-lich","ABCDEFG-123456",1010);
+  INSERT INTO `beacons` (id, name, identifier, beacon_host)
+    VALUES (420,"lovely-emu","ZYXWVUT-987654",1010);
+  INSERT INTO `beacons` (id, name, identifier, beacon_host)
+    VALUES (421,"ballin-emu","ZYXWVUT-1234",1011);
 requestor:
   session_token: secretToken
 query: |
-  mutation CreateServiceTag($input: CreateTagInput!) {
+  mutation CreateGroupTag($input: CreateTagInput!) {
     createTag(input: $input) {
       name
       kind
       hosts {
         id
         beacons {
-         id
+          id
         }
       }
     }
@@ -26,6 +32,7 @@ variables:
     kind: "service"
     hostIDs:
       - 1010
+      - 1011
 expected:
   createTag:
     name: "TestTag"
@@ -33,4 +40,8 @@ expected:
     hosts:
       - id: "1010"
         beacons:
+          - id: "420"
           - id: "1337"
+      - id: "1011"
+        beacons:
+          - id: "421"

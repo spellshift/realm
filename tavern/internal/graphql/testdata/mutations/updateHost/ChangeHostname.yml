@@ -8,29 +8,18 @@ state: |
 requestor:
   session_token: secretToken
 query: |
-  mutation CreateServiceTag($input: CreateTagInput!) {
-    createTag(input: $input) {
+  mutation ChangeHostname($hostID: ID!, $input: UpdateHostInput!) {
+    updateHost(hostID: $hostID, input: $input) {
+      id
       name
-      kind
-      hosts {
-        id
-        beacons {
-         id
-        }
-      }
     }
   }
 variables:
+  hostID: 1010
   input:
-    name: "TestTag"
-    kind: "service"
-    hostIDs:
-      - 1010
+    name: "CoolNewName"
+
 expected:
-  createTag:
-    name: "TestTag"
-    kind: "service"
-    hosts:
-      - id: "1010"
-        beacons:
-          - id: "1337"
+  updateHost:
+    id: "1010"
+    name: "CoolNewName"
