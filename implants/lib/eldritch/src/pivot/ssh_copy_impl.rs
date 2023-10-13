@@ -170,7 +170,17 @@ mod tests {
                 language_tag: "en-US".to_string(),
             })
         }
-    
+
+        async fn remove(&mut self, id: u32, handle: String) -> Result<Status, Self::Error> {
+            std::fs::remove_file(handle).unwrap();
+            Ok(Status {
+                id,
+                status_code: StatusCode::Ok,
+                error_message: "Ok".to_string(),
+                language_tag: "en-US".to_string(),
+            })
+        }
+        
         async fn opendir(&mut self, id: u32, path: String) -> Result<Handle, Self::Error> {
             self.root_dir_read_done = false;
             Ok(Handle { id, handle: path })
