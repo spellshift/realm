@@ -311,6 +311,16 @@ The <b>pivot.port_forward</b> method is being proposed to provide socat like fun
 
 The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb.
 
+### pivot.ssh_copy
+`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> None`
+
+The <b>pivot.ssh_copy</b> method copies a local file to a remote system. If no password or key is specified the function will error out with:
+`Failed to run handle_ssh_exec: Failed to authenticate to host`
+If the connection is successful but the copy writes a file error will be returend.
+
+ssh_copy will first delete the remote file and then write to it's location.
+The file directory the `dst` file exists in must exist in order for ssh_copy to work.
+
 ### pivot.ssh_exec
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
 
@@ -325,6 +335,7 @@ Not returning stderr is a limitation of the way we're performing execution. Sinc
     "status": 0
 }
 ```
+
 
 ### pivot.ssh_password_spray
 `pivot.ssh_password_spray(targets: List<str>, port: int, credentials: List<str>, keys: List<str>, command: str, shell_path: str) -> List<str>`
