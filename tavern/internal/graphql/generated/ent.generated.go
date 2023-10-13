@@ -28,6 +28,7 @@ type QueryResolver interface {
 	Files(ctx context.Context, where *ent.FileWhereInput) ([]*ent.File, error)
 	Quests(ctx context.Context, where *ent.QuestWhereInput) ([]*ent.Quest, error)
 	Beacons(ctx context.Context, where *ent.BeaconWhereInput) ([]*ent.Beacon, error)
+	Hosts(ctx context.Context, where *ent.HostWhereInput) ([]*ent.Host, error)
 	Tags(ctx context.Context, where *ent.TagWhereInput) ([]*ent.Tag, error)
 	Tomes(ctx context.Context, where *ent.TomeWhereInput) ([]*ent.Tome, error)
 	Users(ctx context.Context, where *ent.UserWhereInput) ([]*ent.User, error)
@@ -75,6 +76,21 @@ func (ec *executionContext) field_Query_files_args(ctx context.Context, rawArgs 
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
 		arg0, err = ec.unmarshalOFileWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_hosts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ent.HostWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg0, err = ec.unmarshalOHostWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐHostWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1750,6 +1766,103 @@ func (ec *executionContext) fieldContext_Query_beacons(ctx context.Context, fiel
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_beacons_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_hosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_hosts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Hosts(rctx, fc.Args["where"].(*ent.HostWhereInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.RequireRole == nil {
+				return nil, errors.New("directive requireRole is not implemented")
+			}
+			return ec.directives.RequireRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*ent.Host); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.Host`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Host)
+	fc.Result = res
+	return ec.marshalNHost2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐHostᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_hosts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Host_id(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Host_identifier(ctx, field)
+			case "name":
+				return ec.fieldContext_Host_name(ctx, field)
+			case "primaryIP":
+				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "platform":
+				return ec.fieldContext_Host_platform(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Host_lastSeenAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Host_tags(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Host_beacons(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_hosts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -10032,6 +10145,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "hosts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_hosts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "tags":
 			field := field
 
@@ -10888,6 +11023,50 @@ func (ec *executionContext) unmarshalNFileWhereInput2ᚖgithubᚗcomᚋkcarretto
 
 func (ec *executionContext) marshalNHost2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐHost(ctx context.Context, sel ast.SelectionSet, v ent.Host) graphql.Marshaler {
 	return ec._Host(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNHost2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐHostᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Host) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNHost2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐHost(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNHost2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐHost(ctx context.Context, sel ast.SelectionSet, v *ent.Host) graphql.Marshaler {

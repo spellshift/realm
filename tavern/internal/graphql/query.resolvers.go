@@ -48,6 +48,18 @@ func (r *queryResolver) Beacons(ctx context.Context, where *ent.BeaconWhereInput
 	return r.client.Beacon.Query().All(ctx)
 }
 
+// Hosts is the resolver for the hosts field.
+func (r *queryResolver) Hosts(ctx context.Context, where *ent.HostWhereInput) ([]*ent.Host, error) {
+	if where != nil {
+		query, err := where.Filter(r.client.Host.Query())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.All(ctx)
+	}
+	return r.client.Host.Query().All(ctx)
+}
+
 // Tags is the resolver for the tags field.
 func (r *queryResolver) Tags(ctx context.Context, where *ent.TagWhereInput) ([]*ent.Tag, error) {
 	if where != nil {

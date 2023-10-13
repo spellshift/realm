@@ -93,7 +93,7 @@ mod tests {
     use super::*;
 
     use chrono::Utc;
-    use serde::{Serialize};
+    use serde::Serialize;
     use crate::mutations::submit_task_result::SubmitTaskResultSubmitTaskResult;
 
     // Defines a MockTransport which simply returns the expected response.

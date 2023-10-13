@@ -96,6 +96,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Beacons func(childComplexity int, where *ent.BeaconWhereInput) int
 		Files   func(childComplexity int, where *ent.FileWhereInput) int
+		Hosts   func(childComplexity int, where *ent.HostWhereInput) int
 		Me      func(childComplexity int) int
 		Node    func(childComplexity int, id int) int
 		Nodes   func(childComplexity int, ids []int) int
@@ -489,6 +490,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Files(childComplexity, args["where"].(*ent.FileWhereInput)), true
+
+	case "Query.hosts":
+		if e.complexity.Query.Hosts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_hosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Hosts(childComplexity, args["where"].(*ent.HostWhereInput)), true
 
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
@@ -1948,6 +1961,7 @@ input UserWhereInput {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
   quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
+  hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
