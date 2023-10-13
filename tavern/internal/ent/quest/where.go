@@ -309,11 +309,7 @@ func HasTome() predicate.Quest {
 // HasTomeWith applies the HasEdge predicate on the "tome" edge with a given conditions (other predicates).
 func HasTomeWith(preds ...predicate.Tome) predicate.Quest {
 	return predicate.Quest(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TomeInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, TomeTable, TomeColumn),
-		)
+		step := newTomeStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -336,11 +332,7 @@ func HasBundle() predicate.Quest {
 // HasBundleWith applies the HasEdge predicate on the "bundle" edge with a given conditions (other predicates).
 func HasBundleWith(preds ...predicate.File) predicate.Quest {
 	return predicate.Quest(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(BundleInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, BundleTable, BundleColumn),
-		)
+		step := newBundleStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -363,11 +355,7 @@ func HasTasks() predicate.Quest {
 // HasTasksWith applies the HasEdge predicate on the "tasks" edge with a given conditions (other predicates).
 func HasTasksWith(preds ...predicate.Task) predicate.Quest {
 	return predicate.Quest(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TasksInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, TasksTable, TasksColumn),
-		)
+		step := newTasksStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -390,11 +378,7 @@ func HasCreator() predicate.Quest {
 // HasCreatorWith applies the HasEdge predicate on the "creator" edge with a given conditions (other predicates).
 func HasCreatorWith(preds ...predicate.User) predicate.Quest {
 	return predicate.Quest(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CreatorInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
-		)
+		step := newCreatorStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -405,32 +389,15 @@ func HasCreatorWith(preds ...predicate.User) predicate.Quest {
 
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Quest) predicate.Quest {
-	return predicate.Quest(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for _, p := range predicates {
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Quest(sql.AndPredicates(predicates...))
 }
 
 // Or groups predicates with the OR operator between them.
 func Or(predicates ...predicate.Quest) predicate.Quest {
-	return predicate.Quest(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for i, p := range predicates {
-			if i > 0 {
-				s1.Or()
-			}
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Quest(sql.OrPredicates(predicates...))
 }
 
 // Not applies the not operator on the given predicate.
 func Not(p predicate.Quest) predicate.Quest {
-	return predicate.Quest(func(s *sql.Selector) {
-		p(s.Not())
-	})
+	return predicate.Quest(sql.NotPredicates(p))
 }

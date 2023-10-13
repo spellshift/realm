@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 )
@@ -40,19 +40,19 @@ func (tu *TagUpdate) SetKind(t tag.Kind) *TagUpdate {
 	return tu
 }
 
-// AddBeaconIDs adds the "beacons" edge to the Beacon entity by IDs.
-func (tu *TagUpdate) AddBeaconIDs(ids ...int) *TagUpdate {
-	tu.mutation.AddBeaconIDs(ids...)
+// AddHostIDs adds the "hosts" edge to the Host entity by IDs.
+func (tu *TagUpdate) AddHostIDs(ids ...int) *TagUpdate {
+	tu.mutation.AddHostIDs(ids...)
 	return tu
 }
 
-// AddBeacons adds the "beacons" edges to the Beacon entity.
-func (tu *TagUpdate) AddBeacons(b ...*Beacon) *TagUpdate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// AddHosts adds the "hosts" edges to the Host entity.
+func (tu *TagUpdate) AddHosts(h ...*Host) *TagUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
-	return tu.AddBeaconIDs(ids...)
+	return tu.AddHostIDs(ids...)
 }
 
 // Mutation returns the TagMutation object of the builder.
@@ -60,30 +60,30 @@ func (tu *TagUpdate) Mutation() *TagMutation {
 	return tu.mutation
 }
 
-// ClearBeacons clears all "beacons" edges to the Beacon entity.
-func (tu *TagUpdate) ClearBeacons() *TagUpdate {
-	tu.mutation.ClearBeacons()
+// ClearHosts clears all "hosts" edges to the Host entity.
+func (tu *TagUpdate) ClearHosts() *TagUpdate {
+	tu.mutation.ClearHosts()
 	return tu
 }
 
-// RemoveBeaconIDs removes the "beacons" edge to Beacon entities by IDs.
-func (tu *TagUpdate) RemoveBeaconIDs(ids ...int) *TagUpdate {
-	tu.mutation.RemoveBeaconIDs(ids...)
+// RemoveHostIDs removes the "hosts" edge to Host entities by IDs.
+func (tu *TagUpdate) RemoveHostIDs(ids ...int) *TagUpdate {
+	tu.mutation.RemoveHostIDs(ids...)
 	return tu
 }
 
-// RemoveBeacons removes "beacons" edges to Beacon entities.
-func (tu *TagUpdate) RemoveBeacons(b ...*Beacon) *TagUpdate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// RemoveHosts removes "hosts" edges to Host entities.
+func (tu *TagUpdate) RemoveHosts(h ...*Host) *TagUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
-	return tu.RemoveBeaconIDs(ids...)
+	return tu.RemoveHostIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TagUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks[int, TagMutation](ctx, tu.sqlSave, tu.mutation, tu.hooks)
+	return withHooks(ctx, tu.sqlSave, tu.mutation, tu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -141,34 +141,28 @@ func (tu *TagUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Kind(); ok {
 		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
 	}
-	if tu.mutation.BeaconsCleared() {
+	if tu.mutation.HostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.BeaconsTable,
-			Columns: tag.BeaconsPrimaryKey,
+			Table:   tag.HostsTable,
+			Columns: tag.HostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.RemovedBeaconsIDs(); len(nodes) > 0 && !tu.mutation.BeaconsCleared() {
+	if nodes := tu.mutation.RemovedHostsIDs(); len(nodes) > 0 && !tu.mutation.HostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.BeaconsTable,
-			Columns: tag.BeaconsPrimaryKey,
+			Table:   tag.HostsTable,
+			Columns: tag.HostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -176,18 +170,15 @@ func (tu *TagUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.BeaconsIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.HostsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.BeaconsTable,
-			Columns: tag.BeaconsPrimaryKey,
+			Table:   tag.HostsTable,
+			Columns: tag.HostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -227,19 +218,19 @@ func (tuo *TagUpdateOne) SetKind(t tag.Kind) *TagUpdateOne {
 	return tuo
 }
 
-// AddBeaconIDs adds the "beacons" edge to the Beacon entity by IDs.
-func (tuo *TagUpdateOne) AddBeaconIDs(ids ...int) *TagUpdateOne {
-	tuo.mutation.AddBeaconIDs(ids...)
+// AddHostIDs adds the "hosts" edge to the Host entity by IDs.
+func (tuo *TagUpdateOne) AddHostIDs(ids ...int) *TagUpdateOne {
+	tuo.mutation.AddHostIDs(ids...)
 	return tuo
 }
 
-// AddBeacons adds the "beacons" edges to the Beacon entity.
-func (tuo *TagUpdateOne) AddBeacons(b ...*Beacon) *TagUpdateOne {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// AddHosts adds the "hosts" edges to the Host entity.
+func (tuo *TagUpdateOne) AddHosts(h ...*Host) *TagUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
-	return tuo.AddBeaconIDs(ids...)
+	return tuo.AddHostIDs(ids...)
 }
 
 // Mutation returns the TagMutation object of the builder.
@@ -247,25 +238,25 @@ func (tuo *TagUpdateOne) Mutation() *TagMutation {
 	return tuo.mutation
 }
 
-// ClearBeacons clears all "beacons" edges to the Beacon entity.
-func (tuo *TagUpdateOne) ClearBeacons() *TagUpdateOne {
-	tuo.mutation.ClearBeacons()
+// ClearHosts clears all "hosts" edges to the Host entity.
+func (tuo *TagUpdateOne) ClearHosts() *TagUpdateOne {
+	tuo.mutation.ClearHosts()
 	return tuo
 }
 
-// RemoveBeaconIDs removes the "beacons" edge to Beacon entities by IDs.
-func (tuo *TagUpdateOne) RemoveBeaconIDs(ids ...int) *TagUpdateOne {
-	tuo.mutation.RemoveBeaconIDs(ids...)
+// RemoveHostIDs removes the "hosts" edge to Host entities by IDs.
+func (tuo *TagUpdateOne) RemoveHostIDs(ids ...int) *TagUpdateOne {
+	tuo.mutation.RemoveHostIDs(ids...)
 	return tuo
 }
 
-// RemoveBeacons removes "beacons" edges to Beacon entities.
-func (tuo *TagUpdateOne) RemoveBeacons(b ...*Beacon) *TagUpdateOne {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+// RemoveHosts removes "hosts" edges to Host entities.
+func (tuo *TagUpdateOne) RemoveHosts(h ...*Host) *TagUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
-	return tuo.RemoveBeaconIDs(ids...)
+	return tuo.RemoveHostIDs(ids...)
 }
 
 // Where appends a list predicates to the TagUpdate builder.
@@ -283,7 +274,7 @@ func (tuo *TagUpdateOne) Select(field string, fields ...string) *TagUpdateOne {
 
 // Save executes the query and returns the updated Tag entity.
 func (tuo *TagUpdateOne) Save(ctx context.Context) (*Tag, error) {
-	return withHooks[*Tag, TagMutation](ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
+	return withHooks(ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -358,34 +349,28 @@ func (tuo *TagUpdateOne) sqlSave(ctx context.Context) (_node *Tag, err error) {
 	if value, ok := tuo.mutation.Kind(); ok {
 		_spec.SetField(tag.FieldKind, field.TypeEnum, value)
 	}
-	if tuo.mutation.BeaconsCleared() {
+	if tuo.mutation.HostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.BeaconsTable,
-			Columns: tag.BeaconsPrimaryKey,
+			Table:   tag.HostsTable,
+			Columns: tag.HostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.RemovedBeaconsIDs(); len(nodes) > 0 && !tuo.mutation.BeaconsCleared() {
+	if nodes := tuo.mutation.RemovedHostsIDs(); len(nodes) > 0 && !tuo.mutation.HostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.BeaconsTable,
-			Columns: tag.BeaconsPrimaryKey,
+			Table:   tag.HostsTable,
+			Columns: tag.HostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -393,18 +378,15 @@ func (tuo *TagUpdateOne) sqlSave(ctx context.Context) (_node *Tag, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.BeaconsIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.HostsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   tag.BeaconsTable,
-			Columns: tag.BeaconsPrimaryKey,
+			Table:   tag.HostsTable,
+			Columns: tag.HostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

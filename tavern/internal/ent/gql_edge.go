@@ -8,14 +8,10 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (b *Beacon) Tags(ctx context.Context) (result []*Tag, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = b.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = b.Edges.TagsOrErr()
-	}
+func (b *Beacon) Host(ctx context.Context) (*Host, error) {
+	result, err := b.Edges.HostOrErr()
 	if IsNotLoaded(err) {
-		result, err = b.QueryTags().All(ctx)
+		result, err = b.QueryHost().Only(ctx)
 	}
 	return result, err
 }
@@ -28,6 +24,30 @@ func (b *Beacon) Tasks(ctx context.Context) (result []*Task, err error) {
 	}
 	if IsNotLoaded(err) {
 		result, err = b.QueryTasks().All(ctx)
+	}
+	return result, err
+}
+
+func (h *Host) Tags(ctx context.Context) (result []*Tag, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = h.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = h.Edges.TagsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = h.QueryTags().All(ctx)
+	}
+	return result, err
+}
+
+func (h *Host) Beacons(ctx context.Context) (result []*Beacon, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = h.NamedBeacons(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = h.Edges.BeaconsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = h.QueryBeacons().All(ctx)
 	}
 	return result, err
 }
@@ -68,14 +88,14 @@ func (q *Quest) Creator(ctx context.Context) (*User, error) {
 	return result, MaskNotFound(err)
 }
 
-func (t *Tag) Beacons(ctx context.Context) (result []*Beacon, err error) {
+func (t *Tag) Hosts(ctx context.Context) (result []*Host, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedBeacons(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = t.NamedHosts(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = t.Edges.BeaconsOrErr()
+		result, err = t.Edges.HostsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = t.QueryBeacons().All(ctx)
+		result, err = t.QueryHosts().All(ctx)
 	}
 	return result, err
 }

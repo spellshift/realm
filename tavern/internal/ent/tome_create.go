@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/internal/ent/file"
@@ -19,6 +20,7 @@ type TomeCreate struct {
 	config
 	mutation *TomeMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -112,7 +114,7 @@ func (tc *TomeCreate) Save(ctx context.Context) (*Tome, error) {
 	if err := tc.defaults(); err != nil {
 		return nil, err
 	}
-	return withHooks[*Tome, TomeMutation](ctx, tc.sqlSave, tc.mutation, tc.hooks)
+	return withHooks(ctx, tc.sqlSave, tc.mutation, tc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -212,6 +214,7 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_node = &Tome{config: tc.config}
 		_spec = sqlgraph.NewCreateSpec(tome.Table, sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = tc.conflict
 	if value, ok := tc.mutation.CreatedAt(); ok {
 		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -248,10 +251,7 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 			Columns: []string{tome.FilesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: file.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -262,14 +262,315 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Tome.Create().
+//		SetCreatedAt(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TomeUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (tc *TomeCreate) OnConflict(opts ...sql.ConflictOption) *TomeUpsertOne {
+	tc.conflict = opts
+	return &TomeUpsertOne{
+		create: tc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Tome.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tc *TomeCreate) OnConflictColumns(columns ...string) *TomeUpsertOne {
+	tc.conflict = append(tc.conflict, sql.ConflictColumns(columns...))
+	return &TomeUpsertOne{
+		create: tc,
+	}
+}
+
+type (
+	// TomeUpsertOne is the builder for "upsert"-ing
+	//  one Tome node.
+	TomeUpsertOne struct {
+		create *TomeCreate
+	}
+
+	// TomeUpsert is the "OnConflict" setter.
+	TomeUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *TomeUpsert) SetLastModifiedAt(v time.Time) *TomeUpsert {
+	u.Set(tome.FieldLastModifiedAt, v)
+	return u
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateLastModifiedAt() *TomeUpsert {
+	u.SetExcluded(tome.FieldLastModifiedAt)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *TomeUpsert) SetName(v string) *TomeUpsert {
+	u.Set(tome.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateName() *TomeUpsert {
+	u.SetExcluded(tome.FieldName)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *TomeUpsert) SetDescription(v string) *TomeUpsert {
+	u.Set(tome.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateDescription() *TomeUpsert {
+	u.SetExcluded(tome.FieldDescription)
+	return u
+}
+
+// SetParamDefs sets the "param_defs" field.
+func (u *TomeUpsert) SetParamDefs(v string) *TomeUpsert {
+	u.Set(tome.FieldParamDefs, v)
+	return u
+}
+
+// UpdateParamDefs sets the "param_defs" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateParamDefs() *TomeUpsert {
+	u.SetExcluded(tome.FieldParamDefs)
+	return u
+}
+
+// ClearParamDefs clears the value of the "param_defs" field.
+func (u *TomeUpsert) ClearParamDefs() *TomeUpsert {
+	u.SetNull(tome.FieldParamDefs)
+	return u
+}
+
+// SetHash sets the "hash" field.
+func (u *TomeUpsert) SetHash(v string) *TomeUpsert {
+	u.Set(tome.FieldHash, v)
+	return u
+}
+
+// UpdateHash sets the "hash" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateHash() *TomeUpsert {
+	u.SetExcluded(tome.FieldHash)
+	return u
+}
+
+// SetEldritch sets the "eldritch" field.
+func (u *TomeUpsert) SetEldritch(v string) *TomeUpsert {
+	u.Set(tome.FieldEldritch, v)
+	return u
+}
+
+// UpdateEldritch sets the "eldritch" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateEldritch() *TomeUpsert {
+	u.SetExcluded(tome.FieldEldritch)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create.
+// Using this option is equivalent to using:
+//
+//	client.Tome.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *TomeUpsertOne) UpdateNewValues() *TomeUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(tome.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Tome.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *TomeUpsertOne) Ignore() *TomeUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TomeUpsertOne) DoNothing() *TomeUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TomeCreate.OnConflict
+// documentation for more info.
+func (u *TomeUpsertOne) Update(set func(*TomeUpsert)) *TomeUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TomeUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *TomeUpsertOne) SetLastModifiedAt(v time.Time) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateLastModifiedAt() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateLastModifiedAt()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *TomeUpsertOne) SetName(v string) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateName() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *TomeUpsertOne) SetDescription(v string) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateDescription() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// SetParamDefs sets the "param_defs" field.
+func (u *TomeUpsertOne) SetParamDefs(v string) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetParamDefs(v)
+	})
+}
+
+// UpdateParamDefs sets the "param_defs" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateParamDefs() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateParamDefs()
+	})
+}
+
+// ClearParamDefs clears the value of the "param_defs" field.
+func (u *TomeUpsertOne) ClearParamDefs() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.ClearParamDefs()
+	})
+}
+
+// SetHash sets the "hash" field.
+func (u *TomeUpsertOne) SetHash(v string) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetHash(v)
+	})
+}
+
+// UpdateHash sets the "hash" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateHash() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateHash()
+	})
+}
+
+// SetEldritch sets the "eldritch" field.
+func (u *TomeUpsertOne) SetEldritch(v string) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetEldritch(v)
+	})
+}
+
+// UpdateEldritch sets the "eldritch" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateEldritch() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateEldritch()
+	})
+}
+
+// Exec executes the query.
+func (u *TomeUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TomeCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TomeUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *TomeUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *TomeUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // TomeCreateBulk is the builder for creating many Tome entities in bulk.
 type TomeCreateBulk struct {
 	config
+	err      error
 	builders []*TomeCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Tome entities in the database.
 func (tcb *TomeCreateBulk) Save(ctx context.Context) ([]*Tome, error) {
+	if tcb.err != nil {
+		return nil, tcb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(tcb.builders))
 	nodes := make([]*Tome, len(tcb.builders))
 	mutators := make([]Mutator, len(tcb.builders))
@@ -286,12 +587,13 @@ func (tcb *TomeCreateBulk) Save(ctx context.Context) ([]*Tome, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, tcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = tcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, tcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -342,6 +644,208 @@ func (tcb *TomeCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (tcb *TomeCreateBulk) ExecX(ctx context.Context) {
 	if err := tcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Tome.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TomeUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (tcb *TomeCreateBulk) OnConflict(opts ...sql.ConflictOption) *TomeUpsertBulk {
+	tcb.conflict = opts
+	return &TomeUpsertBulk{
+		create: tcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Tome.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tcb *TomeCreateBulk) OnConflictColumns(columns ...string) *TomeUpsertBulk {
+	tcb.conflict = append(tcb.conflict, sql.ConflictColumns(columns...))
+	return &TomeUpsertBulk{
+		create: tcb,
+	}
+}
+
+// TomeUpsertBulk is the builder for "upsert"-ing
+// a bulk of Tome nodes.
+type TomeUpsertBulk struct {
+	create *TomeCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Tome.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *TomeUpsertBulk) UpdateNewValues() *TomeUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(tome.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Tome.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *TomeUpsertBulk) Ignore() *TomeUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TomeUpsertBulk) DoNothing() *TomeUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TomeCreateBulk.OnConflict
+// documentation for more info.
+func (u *TomeUpsertBulk) Update(set func(*TomeUpsert)) *TomeUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TomeUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *TomeUpsertBulk) SetLastModifiedAt(v time.Time) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateLastModifiedAt() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateLastModifiedAt()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *TomeUpsertBulk) SetName(v string) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateName() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *TomeUpsertBulk) SetDescription(v string) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateDescription() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// SetParamDefs sets the "param_defs" field.
+func (u *TomeUpsertBulk) SetParamDefs(v string) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetParamDefs(v)
+	})
+}
+
+// UpdateParamDefs sets the "param_defs" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateParamDefs() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateParamDefs()
+	})
+}
+
+// ClearParamDefs clears the value of the "param_defs" field.
+func (u *TomeUpsertBulk) ClearParamDefs() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.ClearParamDefs()
+	})
+}
+
+// SetHash sets the "hash" field.
+func (u *TomeUpsertBulk) SetHash(v string) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetHash(v)
+	})
+}
+
+// UpdateHash sets the "hash" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateHash() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateHash()
+	})
+}
+
+// SetEldritch sets the "eldritch" field.
+func (u *TomeUpsertBulk) SetEldritch(v string) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetEldritch(v)
+	})
+}
+
+// UpdateEldritch sets the "eldritch" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateEldritch() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateEldritch()
+	})
+}
+
+// Exec executes the query.
+func (u *TomeUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TomeCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TomeCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TomeUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

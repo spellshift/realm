@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -18,6 +19,7 @@ import (
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 	return &executableSchema{
+		schema:     cfg.Schema,
 		resolvers:  cfg.Resolvers,
 		directives: cfg.Directives,
 		complexity: cfg.Complexity,
@@ -25,6 +27,7 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 }
 
 type Config struct {
+	Schema     *ast.Schema
 	Resolvers  ResolverRoot
 	Directives DirectiveRoot
 	Complexity ComplexityRoot
@@ -42,16 +45,12 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Beacon struct {
 		AgentIdentifier func(childComplexity int) int
-		HostIdentifier  func(childComplexity int) int
-		HostPlatform    func(childComplexity int) int
-		HostPrimaryIP   func(childComplexity int) int
-		Hostname        func(childComplexity int) int
+		Host            func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Identifier      func(childComplexity int) int
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Principal       func(childComplexity int) int
-		Tags            func(childComplexity int) int
 		Tasks           func(childComplexity int) int
 	}
 
@@ -64,6 +63,17 @@ type ComplexityRoot struct {
 		Size           func(childComplexity int) int
 	}
 
+	Host struct {
+		Beacons    func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Identifier func(childComplexity int) int
+		LastSeenAt func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Platform   func(childComplexity int) int
+		PrimaryIP  func(childComplexity int) int
+		Tags       func(childComplexity int) int
+	}
+
 	Mutation struct {
 		ClaimTasks       func(childComplexity int, input models.ClaimTasksInput) int
 		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
@@ -71,6 +81,7 @@ type ComplexityRoot struct {
 		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
 		SubmitTaskResult func(childComplexity int, input models.SubmitTaskResultInput) int
 		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
 		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
@@ -107,10 +118,10 @@ type ComplexityRoot struct {
 	}
 
 	Tag struct {
-		Beacons func(childComplexity int) int
-		ID      func(childComplexity int) int
-		Kind    func(childComplexity int) int
-		Name    func(childComplexity int) int
+		Hosts func(childComplexity int) int
+		ID    func(childComplexity int) int
+		Kind  func(childComplexity int) int
+		Name  func(childComplexity int) int
 	}
 
 	Task struct {
@@ -147,17 +158,21 @@ type ComplexityRoot struct {
 }
 
 type executableSchema struct {
+	schema     *ast.Schema
 	resolvers  ResolverRoot
 	directives DirectiveRoot
 	complexity ComplexityRoot
 }
 
 func (e *executableSchema) Schema() *ast.Schema {
+	if e.schema != nil {
+		return e.schema
+	}
 	return parsedSchema
 }
 
 func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
-	ec := executionContext{nil, e}
+	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
 
@@ -168,33 +183,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Beacon.AgentIdentifier(childComplexity), true
 
-	case "Beacon.hostIdentifier":
-		if e.complexity.Beacon.HostIdentifier == nil {
+	case "Beacon.host":
+		if e.complexity.Beacon.Host == nil {
 			break
 		}
 
-		return e.complexity.Beacon.HostIdentifier(childComplexity), true
-
-	case "Beacon.hostPlatform":
-		if e.complexity.Beacon.HostPlatform == nil {
-			break
-		}
-
-		return e.complexity.Beacon.HostPlatform(childComplexity), true
-
-	case "Beacon.hostPrimaryIP":
-		if e.complexity.Beacon.HostPrimaryIP == nil {
-			break
-		}
-
-		return e.complexity.Beacon.HostPrimaryIP(childComplexity), true
-
-	case "Beacon.hostname":
-		if e.complexity.Beacon.Hostname == nil {
-			break
-		}
-
-		return e.complexity.Beacon.Hostname(childComplexity), true
+		return e.complexity.Beacon.Host(childComplexity), true
 
 	case "Beacon.id":
 		if e.complexity.Beacon.ID == nil {
@@ -230,13 +224,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Beacon.Principal(childComplexity), true
-
-	case "Beacon.tags":
-		if e.complexity.Beacon.Tags == nil {
-			break
-		}
-
-		return e.complexity.Beacon.Tags(childComplexity), true
 
 	case "Beacon.tasks":
 		if e.complexity.Beacon.Tasks == nil {
@@ -286,6 +273,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.File.Size(childComplexity), true
+
+	case "Host.beacons":
+		if e.complexity.Host.Beacons == nil {
+			break
+		}
+
+		return e.complexity.Host.Beacons(childComplexity), true
+
+	case "Host.id":
+		if e.complexity.Host.ID == nil {
+			break
+		}
+
+		return e.complexity.Host.ID(childComplexity), true
+
+	case "Host.identifier":
+		if e.complexity.Host.Identifier == nil {
+			break
+		}
+
+		return e.complexity.Host.Identifier(childComplexity), true
+
+	case "Host.lastSeenAt":
+		if e.complexity.Host.LastSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Host.LastSeenAt(childComplexity), true
+
+	case "Host.name":
+		if e.complexity.Host.Name == nil {
+			break
+		}
+
+		return e.complexity.Host.Name(childComplexity), true
+
+	case "Host.platform":
+		if e.complexity.Host.Platform == nil {
+			break
+		}
+
+		return e.complexity.Host.Platform(childComplexity), true
+
+	case "Host.primaryIP":
+		if e.complexity.Host.PrimaryIP == nil {
+			break
+		}
+
+		return e.complexity.Host.PrimaryIP(childComplexity), true
+
+	case "Host.tags":
+		if e.complexity.Host.Tags == nil {
+			break
+		}
+
+		return e.complexity.Host.Tags(childComplexity), true
 
 	case "Mutation.claimTasks":
 		if e.complexity.Mutation.ClaimTasks == nil {
@@ -358,6 +401,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateBeacon(childComplexity, args["beaconID"].(int), args["input"].(ent.UpdateBeaconInput)), true
+
+	case "Mutation.updateHost":
+		if e.complexity.Mutation.UpdateHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateHost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateHost(childComplexity, args["hostID"].(int), args["input"].(ent.UpdateHostInput)), true
 
 	case "Mutation.updateTag":
 		if e.complexity.Mutation.UpdateTag == nil {
@@ -577,12 +632,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Quest.Tome(childComplexity), true
 
-	case "Tag.beacons":
-		if e.complexity.Tag.Beacons == nil {
+	case "Tag.hosts":
+		if e.complexity.Tag.Hosts == nil {
 			break
 		}
 
-		return e.complexity.Tag.Beacons(childComplexity), true
+		return e.complexity.Tag.Hosts(childComplexity), true
 
 	case "Tag.id":
 		if e.complexity.Tag.ID == nil {
@@ -772,7 +827,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
-	ec := executionContext{rc, e}
+	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
@@ -782,6 +837,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
+		ec.unmarshalInputHostOrder,
+		ec.unmarshalInputHostWhereInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
@@ -792,6 +849,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTomeOrder,
 		ec.unmarshalInputTomeWhereInput,
 		ec.unmarshalInputUpdateBeaconInput,
+		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateUserInput,
 		ec.unmarshalInputUserWhereInput,
@@ -801,18 +859,33 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	switch rc.Operation.Operation {
 	case ast.Query:
 		return func(ctx context.Context) *graphql.Response {
-			if !first {
-				return nil
+			var response graphql.Response
+			var data graphql.Marshaler
+			if first {
+				first = false
+				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
+				data = ec._Query(ctx, rc.Operation.SelectionSet)
+			} else {
+				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
+					result := <-ec.deferredResults
+					atomic.AddInt32(&ec.pendingDeferred, -1)
+					data = result.Result
+					response.Path = result.Path
+					response.Label = result.Label
+					response.Errors = result.Errors
+				} else {
+					return nil
+				}
 			}
-			first = false
-			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
-			data := ec._Query(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
-
-			return &graphql.Response{
-				Data: buf.Bytes(),
+			response.Data = buf.Bytes()
+			if atomic.LoadInt32(&ec.deferred) > 0 {
+				hasNext := atomic.LoadInt32(&ec.pendingDeferred) > 0
+				response.HasNext = &hasNext
 			}
+
+			return &response
 		}
 	case ast.Mutation:
 		return func(ctx context.Context) *graphql.Response {
@@ -838,20 +911,42 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 type executionContext struct {
 	*graphql.OperationContext
 	*executableSchema
+	deferred        int32
+	pendingDeferred int32
+	deferredResults chan graphql.DeferredResult
+}
+
+func (ec *executionContext) processDeferredGroup(dg graphql.DeferredGroup) {
+	atomic.AddInt32(&ec.pendingDeferred, 1)
+	go func() {
+		ctx := graphql.WithFreshResponseContext(dg.Context)
+		dg.FieldSet.Dispatch(ctx)
+		ds := graphql.DeferredResult{
+			Path:   dg.Path,
+			Label:  dg.Label,
+			Result: dg.FieldSet,
+			Errors: graphql.GetErrors(ctx),
+		}
+		// null fields should bubble up
+		if dg.FieldSet.Invalids > 0 {
+			ds.Result = graphql.Null
+		}
+		ec.deferredResults <- ds
+	}()
 }
 
 func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapSchema(parsedSchema), nil
+	return introspection.WrapSchema(ec.Schema()), nil
 }
 
 func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
+	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
 var sources = []*ast.Source{
@@ -869,30 +964,16 @@ type Beacon implements Node {
   name: String!
   """The identity the beacon is authenticated as (e.g. 'root')"""
   principal: String
-  """The hostname of the system the beacon is running on."""
-  hostname: String
   """Unique identifier for the beacon. Unique to each instance of the beacon."""
   identifier: String!
   """Identifies the agent that the beacon is running as (e.g. 'imix')."""
   agentIdentifier: String
-  """Unique identifier for the host the beacon is running on."""
-  hostIdentifier: String
-  """Primary interface IP address reported by the agent."""
-  hostPrimaryIP: String
-  """Platform the agent is operating on."""
-  hostPlatform: BeaconHostPlatform!
   """Timestamp of when a task was last claimed or updated for the beacon."""
   lastSeenAt: Time
-  tags: [Tag!]
+  """Host this beacon is running on."""
+  host: Host!
+  """Tasks that have been assigned to the beacon."""
   tasks: [Task!]
-}
-"""BeaconHostPlatform is enum for the field host_platform"""
-enum BeaconHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/beacon.HostPlatform") {
-  Windows
-  Linux
-  MacOS
-  BSD
-  Unknown
 }
 """Ordering options for Beacon connections"""
 input BeaconOrder {
@@ -952,22 +1033,6 @@ input BeaconWhereInput {
   principalNotNil: Boolean
   principalEqualFold: String
   principalContainsFold: String
-  """hostname field predicates"""
-  hostname: String
-  hostnameNEQ: String
-  hostnameIn: [String!]
-  hostnameNotIn: [String!]
-  hostnameGT: String
-  hostnameGTE: String
-  hostnameLT: String
-  hostnameLTE: String
-  hostnameContains: String
-  hostnameHasPrefix: String
-  hostnameHasSuffix: String
-  hostnameIsNil: Boolean
-  hostnameNotNil: Boolean
-  hostnameEqualFold: String
-  hostnameContainsFold: String
   """identifier field predicates"""
   identifier: String
   identifierNEQ: String
@@ -998,43 +1063,6 @@ input BeaconWhereInput {
   agentIdentifierNotNil: Boolean
   agentIdentifierEqualFold: String
   agentIdentifierContainsFold: String
-  """host_identifier field predicates"""
-  hostIdentifier: String
-  hostIdentifierNEQ: String
-  hostIdentifierIn: [String!]
-  hostIdentifierNotIn: [String!]
-  hostIdentifierGT: String
-  hostIdentifierGTE: String
-  hostIdentifierLT: String
-  hostIdentifierLTE: String
-  hostIdentifierContains: String
-  hostIdentifierHasPrefix: String
-  hostIdentifierHasSuffix: String
-  hostIdentifierIsNil: Boolean
-  hostIdentifierNotNil: Boolean
-  hostIdentifierEqualFold: String
-  hostIdentifierContainsFold: String
-  """host_primary_ip field predicates"""
-  hostPrimaryIP: String
-  hostPrimaryIPNEQ: String
-  hostPrimaryIPIn: [String!]
-  hostPrimaryIPNotIn: [String!]
-  hostPrimaryIPGT: String
-  hostPrimaryIPGTE: String
-  hostPrimaryIPLT: String
-  hostPrimaryIPLTE: String
-  hostPrimaryIPContains: String
-  hostPrimaryIPHasPrefix: String
-  hostPrimaryIPHasSuffix: String
-  hostPrimaryIPIsNil: Boolean
-  hostPrimaryIPNotNil: Boolean
-  hostPrimaryIPEqualFold: String
-  hostPrimaryIPContainsFold: String
-  """host_platform field predicates"""
-  hostPlatform: BeaconHostPlatform
-  hostPlatformNEQ: BeaconHostPlatform
-  hostPlatformIn: [BeaconHostPlatform!]
-  hostPlatformNotIn: [BeaconHostPlatform!]
   """last_seen_at field predicates"""
   lastSeenAt: Time
   lastSeenAtNEQ: Time
@@ -1046,9 +1074,9 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
-  """tags edge predicates"""
-  hasTags: Boolean
-  hasTagsWith: [TagWhereInput!]
+  """host edge predicates"""
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
   """tasks edge predicates"""
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
@@ -1073,7 +1101,7 @@ input CreateTagInput {
   name: String!
   """Describes the type of tag this is"""
   kind: TagKind!
-  beaconIDs: [ID!]
+  hostIDs: [ID!]
 }
 """
 CreateTomeInput is used for create Tome object.
@@ -1195,6 +1223,128 @@ input FileWhereInput {
   hashEqualFold: String
   hashContainsFold: String
 }
+type Host implements Node {
+  id: ID!
+  """Unique identifier for the host. Unique to each host."""
+  identifier: String!
+  """A human readable identifier for the host."""
+  name: String
+  """Primary interface IP address reported by the agent."""
+  primaryIP: String
+  """Platform the agent is operating on."""
+  platform: HostPlatform!
+  """Timestamp of when a task was last claimed or updated for the host."""
+  lastSeenAt: Time
+  """Tags used to group this host with other hosts."""
+  tags: [Tag!]
+  """Beacons that are present on this host system."""
+  beacons: [Beacon!]
+}
+"""Ordering options for Host connections"""
+input HostOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Hosts."""
+  field: HostOrderField!
+}
+"""Properties by which Host connections can be ordered."""
+enum HostOrderField {
+  LAST_SEEN_AT
+}
+"""HostPlatform is enum for the field platform"""
+enum HostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/host.Platform") {
+  Windows
+  Linux
+  MacOS
+  BSD
+  Unknown
+}
+"""
+HostWhereInput is used for filtering Host objects.
+Input was generated by ent.
+"""
+input HostWhereInput {
+  not: HostWhereInput
+  and: [HostWhereInput!]
+  or: [HostWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """identifier field predicates"""
+  identifier: String
+  identifierNEQ: String
+  identifierIn: [String!]
+  identifierNotIn: [String!]
+  identifierGT: String
+  identifierGTE: String
+  identifierLT: String
+  identifierLTE: String
+  identifierContains: String
+  identifierHasPrefix: String
+  identifierHasSuffix: String
+  identifierEqualFold: String
+  identifierContainsFold: String
+  """name field predicates"""
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameIsNil: Boolean
+  nameNotNil: Boolean
+  nameEqualFold: String
+  nameContainsFold: String
+  """primary_ip field predicates"""
+  primaryIP: String
+  primaryIPNEQ: String
+  primaryIPIn: [String!]
+  primaryIPNotIn: [String!]
+  primaryIPGT: String
+  primaryIPGTE: String
+  primaryIPLT: String
+  primaryIPLTE: String
+  primaryIPContains: String
+  primaryIPHasPrefix: String
+  primaryIPHasSuffix: String
+  primaryIPIsNil: Boolean
+  primaryIPNotNil: Boolean
+  primaryIPEqualFold: String
+  primaryIPContainsFold: String
+  """platform field predicates"""
+  platform: HostPlatform
+  platformNEQ: HostPlatform
+  platformIn: [HostPlatform!]
+  platformNotIn: [HostPlatform!]
+  """last_seen_at field predicates"""
+  lastSeenAt: Time
+  lastSeenAtNEQ: Time
+  lastSeenAtIn: [Time!]
+  lastSeenAtNotIn: [Time!]
+  lastSeenAtGT: Time
+  lastSeenAtGTE: Time
+  lastSeenAtLT: Time
+  lastSeenAtLTE: Time
+  lastSeenAtIsNil: Boolean
+  lastSeenAtNotNil: Boolean
+  """tags edge predicates"""
+  hasTags: Boolean
+  hasTagsWith: [TagWhereInput!]
+  """beacons edge predicates"""
+  hasBeacons: Boolean
+  hasBeaconsWith: [BeaconWhereInput!]
+}
 """
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
@@ -1246,9 +1396,13 @@ type Quest implements Node {
   name: String!
   """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
+  """Tome that this quest will be executing"""
   tome: Tome!
+  """Bundle file that the executing tome depends on (if any)"""
   bundle: File
+  """Tasks tracking the status and output of individual tome execution on targets"""
   tasks: [Task!]
+  """User that created the quest if available."""
   creator: User
 }
 """Ordering options for Quest connections"""
@@ -1348,7 +1502,7 @@ type Tag implements Node {
   name: String!
   """Describes the type of tag this is"""
   kind: TagKind!
-  beacons: [Beacon!]
+  hosts: [Host!]
 }
 """TagKind is enum for the field kind"""
 enum TagKind @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/tag.Kind") {
@@ -1402,9 +1556,9 @@ input TagWhereInput {
   kindNEQ: TagKind
   kindIn: [TagKind!]
   kindNotIn: [TagKind!]
-  """beacons edge predicates"""
-  hasBeacons: Boolean
-  hasBeaconsWith: [BeaconWhereInput!]
+  """hosts edge predicates"""
+  hasHosts: Boolean
+  hasHostsWith: [HostWhereInput!]
 }
 type Task implements Node {
   id: ID!
@@ -1561,6 +1715,7 @@ type Tome implements Node {
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
+  """Any files required for tome execution that will be bundled and provided to the agent for download"""
   files: [File!]
 }
 """Ordering options for Tome connections"""
@@ -1680,12 +1835,22 @@ Input was generated by ent.
 input UpdateBeaconInput {
   """A human readable identifier for the beacon."""
   name: String
-  """The hostname of the system the beacon is running on."""
-  hostname: String
-  clearHostname: Boolean
+  hostID: ID
+}
+"""
+UpdateHostInput is used for update Host object.
+Input was generated by ent.
+"""
+input UpdateHostInput {
+  """A human readable identifier for the host."""
+  name: String
+  clearName: Boolean
   addTagIDs: [ID!]
   removeTagIDs: [ID!]
   clearTags: Boolean
+  addBeaconIDs: [ID!]
+  removeBeaconIDs: [ID!]
+  clearBeacons: Boolean
 }
 """
 UpdateTagInput is used for update Tag object.
@@ -1696,9 +1861,9 @@ input UpdateTagInput {
   name: String
   """Describes the type of tag this is"""
   kind: TagKind
-  addBeaconIDs: [ID!]
-  removeBeaconIDs: [ID!]
-  clearBeacons: Boolean
+  addHostIDs: [ID!]
+  removeHostIDs: [ID!]
+  clearHosts: Boolean
 }
 """
 UpdateUserInput is used for update User object.
@@ -1801,6 +1966,11 @@ input UserWhereInput {
     updateBeacon(beaconID: ID!, input: UpdateBeaconInput!): Beacon! @requireRole(role: USER)
 
     ###
+    # Host
+    ###
+    updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
+
+    ###
     # Tag
     ###
     createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
@@ -1821,7 +1991,8 @@ input UserWhereInput {
     # User
     ###
     updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
   """The identity the beacon is authenticated as (e.g. 'root')"""
   principal: String!
@@ -1830,7 +2001,7 @@ input UserWhereInput {
   hostname: String!
 
   """The platform the agent is operating on."""
-  hostPlatform: BeaconHostPlatform!
+  hostPlatform: HostPlatform!
 
   """The IP address of the hosts primary interface (if available)."""
   hostPrimaryIP: String
@@ -1863,6 +2034,7 @@ input SubmitTaskResultInput {
 
   """Error message captured as the result of task execution failure."""
   error: String
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)

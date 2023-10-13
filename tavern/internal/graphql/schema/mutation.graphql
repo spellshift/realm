@@ -10,6 +10,11 @@ type Mutation {
     updateBeacon(beaconID: ID!, input: UpdateBeaconInput!): Beacon! @requireRole(role: USER)
 
     ###
+    # Host
+    ###
+    updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
+
+    ###
     # Tag
     ###
     createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
