@@ -13,7 +13,7 @@ pub use mutations::claim_tasks::{
     ClaimTasksClaimTasksQuestTome as Tome,
     ClaimTasksClaimTasksQuestTomeFiles as File,
     ClaimTasksClaimTasksQuestBundle as Bundle,
-    BeaconHostPlatform as HostPlatform,
+    HostPlatform as HostPlatform,
     ResponseData as ClaimTasksResponseData,
 };
 pub use mutations::submit_task_result::{
@@ -22,9 +22,7 @@ pub use mutations::submit_task_result::{
     ResponseData as SubmitTaskResultResponseData,
 };
 
-pub use graphql_client::{
-    Response as GraphQLResponse,
-};
+pub use graphql_client::Response as GraphQLResponse;
 
 use async_trait::async_trait;
 use graphql_client::{GraphQLQuery, QueryBody, Response};
