@@ -1,18 +1,13 @@
-import React, { FC } from "react";
+import React from "react";
 import { formatDistance } from 'date-fns'
 import { Task, TomeTag } from "../../../utils/consts";
 
 import {
-    useReactTable,
-    getCoreRowModel,
-    getExpandedRowModel,
     ColumnDef,
-    flexRender,
-    Row,
   } from '@tanstack/react-table'
 import Table from "../../../components/tavern-base-ui/Table";
 import { TaskStatus } from "../../../utils/enums";
-import {  RepeatClockIcon, CheckCircleIcon, TimeIcon, WarningIcon, ViewIcon  } from "@chakra-ui/icons";
+import {  RepeatClockIcon, CheckCircleIcon, TimeIcon, WarningIcon } from "@chakra-ui/icons";
 import { Tooltip } from '@chakra-ui/react'
 
 type StatusRow = {
@@ -90,6 +85,19 @@ export const TaskTable = (props: Props) => {
 
     const sortedTasks = [...tasks].sort( (taskA, taskB) => sortingRow(taskA, taskB));
 
+    function getStatusValue(statusRow: StatusRow){
+        switch(statusRow.status){
+            case TaskStatus.queued:
+                return 1;
+            case TaskStatus.inprogress:
+                return 2;
+            case TaskStatus.finished:
+                return 3;
+            default:
+                return 0;
+        }
+    }
+
     const columns: ColumnDef<any>[] = [
             {
                 id: "status",
@@ -97,6 +105,16 @@ export const TaskTable = (props: Props) => {
                 accessorFn: row => getStatusDetails(row),
                 cell: (row: any) => getStatusRow(row.getValue(), currentDate),
                 footer: props => props.column.id,
+                sortingFn: (
+                    rowA,
+                    rowB,
+                    columnId
+                  ) => {
+                    const statusA = getStatusValue(rowA.getValue(columnId));
+                    const statusB = getStatusValue(rowB.getValue(columnId));
+                
+                    return statusA < statusB ? 1 : statusA > statusB ? -1 : 0;
+                  }
             },
             {
                 accessorKey: 'beacon.name',

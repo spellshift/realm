@@ -25,6 +25,7 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
             name
             principal
             hostname
+            hostPrimaryIP
             tags {
                 id
                 kind
