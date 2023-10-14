@@ -1,4 +1,5 @@
-name: An example tome!
+name: Example
+description: An example tome!
 paramdefs:
 - label: Message
   name: msg
