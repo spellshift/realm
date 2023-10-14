@@ -174,11 +174,11 @@ mod tests {
         ).await.unwrap_or(Ok(()));
     }
 
-        // Tests run concurrently so each test needs a unique port.
-        async fn allocate_localhost_unused_ports() -> anyhow::Result<i32> {
-            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-            Ok(listener.local_addr().unwrap().port().into())
-        }
+    // Tests run concurrently so each test needs a unique port.
+    async fn allocate_localhost_unused_ports() -> anyhow::Result<i32> {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        Ok(listener.local_addr().unwrap().port().into())
+    }
     
 
     #[tokio::test]
