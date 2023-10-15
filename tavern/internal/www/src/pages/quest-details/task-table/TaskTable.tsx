@@ -124,13 +124,13 @@ export const TaskTable = (props: Props) => {
             {
                 id: "Service",
                 header: 'Service',
-                accessorFn: row => row.beacon.tags.find((tag: TomeTag) => tag.kind === "service")?.name,
+                accessorFn: row => row.beacon?.host?.tags.find((tag: TomeTag) => tag.kind === "service")?.name,
                 footer: props => props.column.id,
             },
             {
                 id: "group",
                 header: 'group',
-                accessorFn: row => row.beacon.tags.find((tag: TomeTag) => tag.kind === "group")?.name,
+                accessorFn: row => row.beacon?.host?.tags.find((tag: TomeTag) => tag.kind === "group")?.name,
                 footer: props => props.column.id,
             },
             {

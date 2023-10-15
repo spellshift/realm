@@ -30,10 +30,10 @@ export const useOutputResult = () : {
                         quest: quest.name,
                         tome: quest.tome.name,
                         beacon: task.beacon.name,
-                        service: task.beacon?.tags.find( (obj : any) => {
+                        service: task.beacon?.host?.tags.find( (obj : any) => {
                             return obj?.kind === "service"
                         })?.name || null,
-                        group: task.beacon?.tags.find( (obj : any) => {
+                        group: task.beacon?.host?.tags.find( (obj : any) => {
                             return obj?.kind === "group"
                         })?.name || null,
                         output: task.output,
