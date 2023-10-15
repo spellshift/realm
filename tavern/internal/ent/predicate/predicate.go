@@ -12,6 +12,9 @@ type Beacon func(*sql.Selector)
 // File is the predicate function for file builders.
 type File func(*sql.Selector)
 
+// Host is the predicate function for host builders.
+type Host func(*sql.Selector)
+
 // Quest is the predicate function for quest builders.
 type Quest func(*sql.Selector)
 

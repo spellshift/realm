@@ -23,7 +23,7 @@ import (
 type QuestQuery struct {
 	config
 	ctx            *QueryContext
-	order          []OrderFunc
+	order          []quest.OrderOption
 	inters         []Interceptor
 	predicates     []predicate.Quest
 	withTome       *TomeQuery
@@ -65,7 +65,7 @@ func (qq *QuestQuery) Unique(unique bool) *QuestQuery {
 }
 
 // Order specifies how the records should be ordered.
-func (qq *QuestQuery) Order(o ...OrderFunc) *QuestQuery {
+func (qq *QuestQuery) Order(o ...quest.OrderOption) *QuestQuery {
 	qq.order = append(qq.order, o...)
 	return qq
 }
@@ -347,7 +347,7 @@ func (qq *QuestQuery) Clone() *QuestQuery {
 	return &QuestQuery{
 		config:      qq.config,
 		ctx:         qq.ctx.Clone(),
-		order:       append([]OrderFunc{}, qq.order...),
+		order:       append([]quest.OrderOption{}, qq.order...),
 		inters:      append([]Interceptor{}, qq.inters...),
 		predicates:  append([]predicate.Quest{}, qq.predicates...),
 		withTome:    qq.withTome.Clone(),
@@ -633,7 +633,7 @@ func (qq *QuestQuery) loadTasks(ctx context.Context, query *TaskQuery, nodes []*
 	}
 	query.withFKs = true
 	query.Where(predicate.Task(func(s *sql.Selector) {
-		s.Where(sql.InValues(quest.TasksColumn, fks...))
+		s.Where(sql.InValues(s.C(quest.TasksColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -646,7 +646,7 @@ func (qq *QuestQuery) loadTasks(ctx context.Context, query *TaskQuery, nodes []*
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "quest_tasks" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "quest_tasks" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

@@ -16,7 +16,7 @@ pub mod claim_tasks {
     #[allow(dead_code)]
     type ID = String;
     #[derive(Clone)]
-    pub enum BeaconHostPlatform {
+    pub enum HostPlatform {
         Windows,
         Linux,
         MacOS,
@@ -24,28 +24,28 @@ pub mod claim_tasks {
         Unknown,
         Other(String),
     }
-    impl ::serde::Serialize for BeaconHostPlatform {
+    impl ::serde::Serialize for HostPlatform {
         fn serialize<S: serde::Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
             ser.serialize_str(match *self {
-                BeaconHostPlatform::Windows => "Windows",
-                BeaconHostPlatform::Linux => "Linux",
-                BeaconHostPlatform::MacOS => "MacOS",
-                BeaconHostPlatform::BSD => "BSD",
-                BeaconHostPlatform::Unknown => "Unknown",
-                BeaconHostPlatform::Other(ref s) => &s,
+                HostPlatform::Windows => "Windows",
+                HostPlatform::Linux => "Linux",
+                HostPlatform::MacOS => "MacOS",
+                HostPlatform::BSD => "BSD",
+                HostPlatform::Unknown => "Unknown",
+                HostPlatform::Other(ref s) => &s,
             })
         }
     }
-    impl<'de> ::serde::Deserialize<'de> for BeaconHostPlatform {
+    impl<'de> ::serde::Deserialize<'de> for HostPlatform {
         fn deserialize<D: ::serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
             let s: String = ::serde::Deserialize::deserialize(deserializer)?;
             match s.as_str() {
-                "Windows" => Ok(BeaconHostPlatform::Windows),
-                "Linux" => Ok(BeaconHostPlatform::Linux),
-                "MacOS" => Ok(BeaconHostPlatform::MacOS),
-                "BSD" => Ok(BeaconHostPlatform::BSD),
-                "Unknown" => Ok(BeaconHostPlatform::Unknown),
-                _ => Ok(BeaconHostPlatform::Other(s)),
+                "Windows" => Ok(HostPlatform::Windows),
+                "Linux" => Ok(HostPlatform::Linux),
+                "MacOS" => Ok(HostPlatform::MacOS),
+                "BSD" => Ok(HostPlatform::BSD),
+                "Unknown" => Ok(HostPlatform::Unknown),
+                _ => Ok(HostPlatform::Other(s)),
             }
         }
     }
@@ -54,7 +54,7 @@ pub mod claim_tasks {
         pub principal: String,
         pub hostname: String,
         #[serde(rename = "hostPlatform")]
-        pub host_platform: BeaconHostPlatform,
+        pub host_platform: HostPlatform,
         #[serde(rename = "hostPrimaryIP")]
         pub host_primary_ip: Option<String>,
         #[serde(rename = "beaconIdentifier")]

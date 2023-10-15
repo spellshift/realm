@@ -6,7 +6,7 @@ input ClaimTasksInput {
   hostname: String!
 
   """The platform the agent is operating on."""
-  hostPlatform: BeaconHostPlatform!
+  hostPlatform: HostPlatform!
 
   """The IP address of the hosts primary interface (if available)."""
   hostPrimaryIP: String

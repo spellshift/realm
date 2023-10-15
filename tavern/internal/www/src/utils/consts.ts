@@ -25,13 +25,17 @@ export type TomeTag = {
     name: string;
     kind: string;
 }
+export type HostType = {
+    id: string;
+    name: string;
+    primaryIP: string;
+    tags: Array<TomeTag>;
+}
 export type BeaconType = {
-    hostname: string;
     id: string;
     name: string;
     principal: string;
-    hostPrimaryIP: string;
-    tags: Array<TomeTag>;
+    host: HostType;
 }
 export type SelectedBeacons = {
     [beaconId: string]: boolean

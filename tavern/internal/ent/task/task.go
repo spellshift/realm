@@ -4,6 +4,9 @@ package task
 
 import (
 	"time"
+
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -89,3 +92,74 @@ var (
 	// UpdateDefaultLastModifiedAt holds the default value on update for the "last_modified_at" field.
 	UpdateDefaultLastModifiedAt func() time.Time
 )
+
+// OrderOption defines the ordering options for the Task queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByLastModifiedAt orders the results by the last_modified_at field.
+func ByLastModifiedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastModifiedAt, opts...).ToFunc()
+}
+
+// ByClaimedAt orders the results by the claimed_at field.
+func ByClaimedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClaimedAt, opts...).ToFunc()
+}
+
+// ByExecStartedAt orders the results by the exec_started_at field.
+func ByExecStartedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExecStartedAt, opts...).ToFunc()
+}
+
+// ByExecFinishedAt orders the results by the exec_finished_at field.
+func ByExecFinishedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExecFinishedAt, opts...).ToFunc()
+}
+
+// ByOutput orders the results by the output field.
+func ByOutput(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOutput, opts...).ToFunc()
+}
+
+// ByError orders the results by the error field.
+func ByError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldError, opts...).ToFunc()
+}
+
+// ByQuestField orders the results by quest field.
+func ByQuestField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newQuestStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByBeaconField orders the results by beacon field.
+func ByBeaconField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBeaconStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newQuestStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(QuestInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, QuestTable, QuestColumn),
+	)
+}
+func newBeaconStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BeaconInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, BeaconTable, BeaconColumn),
+	)
+}
