@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::thread;
 use std::{collections::HashMap, fs};
@@ -7,7 +8,7 @@ use std::path::Path;
 use std::time::Instant;
 use chrono::{Utc, DateTime};
 use clap::{Command, arg};
-use anyhow::{Result, Error};
+use anyhow::{Result, Error, Context};
 use tokio::task::{self, JoinHandle};
 use tokio::time::Duration;
 use eldritch::{eldritch_run,EldritchPrintHandler};
@@ -250,6 +251,8 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         host_primary_ip: primary_ip,
     };
 
+    let mut task_res_map: HashMap<String, Vec<String>> = HashMap::new();
+
     loop {
         let start_time = Utc::now().time();
         // 0. Get loop start time
@@ -311,11 +314,19 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         if debug { println!("[{}]: Checking task status", (Utc::now().time() - start_time).num_milliseconds()); }
         // Check status & send response
         for exec_future in all_exec_futures.into_iter() {
-            if debug { println!("[{}]: Task # {} is_finished? {}", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0, exec_future.1.future_join_handle.is_finished()); }
-            let mut res: Vec<String> = vec![];
+            let task_id = exec_future.0;
+            if debug { println!("[{}]: Task # {} is_finished? {}", (Utc::now().time() - start_time).num_milliseconds(), task_id, exec_future.1.future_join_handle.is_finished()); }
+
+            // If the task doesn't exist in the map add a vector for it.
+            if !task_res_map.contains_key(&task_id) {
+                task_res_map.insert(task_id.clone(), vec![]);
+            }
+            // Grab the current contents of this tasks output
+            let mut cur_res: Vec<String> = task_res_map.get(&task_id).context("Error retrieving task ID")?.clone();
+
             // Loop over each line of output from the task.
             loop {
-                if debug { println!("[{}]: Task # {} recieving output", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0); }
+                if debug { println!("[{}]: Task # {} recieving output", (Utc::now().time() - start_time).num_milliseconds(), task_id); }
                 let new_res_line =  match exec_future.1.print_reciever.recv_timeout(Duration::from_millis(100)) {
                     Ok(local_res_string) => {
                         local_res_string
@@ -330,21 +341,25 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                     },
                 };
                 // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-                res.push(new_res_line);
+                cur_res.push(new_res_line)
+
                 // Send task response
             }
+            //  Overwrite and update the tasks output
+            task_res_map.insert(task_id.clone(), cur_res).context("Error retrieving task ID")?;
+            
             let task_is_finished = exec_future.1.future_join_handle.is_finished();
             let task_response_exec_finished_at = match task_is_finished {
                 true => Some(Utc::now()),
                 false => None,
             };
             // If the task is finished or there's new data send a task_result.
-            if task_is_finished || res.len() > 0 {
+            if task_is_finished ||  task_res_map.get(&task_id).context("Error retrieving task ID")?.len() > 0 {
                 let task_response = SubmitTaskResultInput {
                     task_id: exec_future.1.graphql_task.id.clone(),
                     exec_started_at: exec_future.1.start_time,
                     exec_finished_at: task_response_exec_finished_at,
-                    output: res.join("\n"),
+                    output:  task_res_map.get(&task_id).context("Error retrieving task ID")?.join("\n"),
                     error: None,
                 };
                 let res = tavern_client.submit_task_result(task_response).await;
@@ -356,7 +371,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
 
             // Only re-insert the runnine exec futures
             if !exec_future.1.future_join_handle.is_finished() {
-                running_exec_futures.insert(exec_future.0, exec_future.1);
+                running_exec_futures.insert(task_id, exec_future.1);
             }
         }
 
