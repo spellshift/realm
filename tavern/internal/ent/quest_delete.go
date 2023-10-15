@@ -27,7 +27,7 @@ func (qd *QuestDelete) Where(ps ...predicate.Quest) *QuestDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (qd *QuestDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks[int, QuestMutation](ctx, qd.sqlExec, qd.mutation, qd.hooks)
+	return withHooks(ctx, qd.sqlExec, qd.mutation, qd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.

@@ -23,7 +23,7 @@ func main() {
 	}
 	opts := []entc.Option{
 		entc.Extensions(extensions),
-		entc.FeatureNames("privacy"),
+		entc.FeatureNames("privacy", "sql/upsert"),
 	}
 
 	if err := entc.Generate(

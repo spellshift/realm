@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/kcarretto/realm/tavern/internal/ent/migrate"
 
@@ -16,6 +17,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/quest"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 	"github.com/kcarretto/realm/tavern/internal/ent/task"
@@ -32,6 +34,8 @@ type Client struct {
 	Beacon *BeaconClient
 	// File is the client for interacting with the File builders.
 	File *FileClient
+	// Host is the client for interacting with the Host builders.
+	Host *HostClient
 	// Quest is the client for interacting with the Quest builders.
 	Quest *QuestClient
 	// Tag is the client for interacting with the Tag builders.
@@ -59,6 +63,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Beacon = NewBeaconClient(c.config)
 	c.File = NewFileClient(c.config)
+	c.Host = NewHostClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Task = NewTaskClient(c.config)
@@ -131,11 +136,14 @@ func Open(driverName, dataSourceName string, options ...Option) (*Client, error)
 	}
 }
 
+// ErrTxStarted is returned when trying to start a new transaction from a transactional client.
+var ErrTxStarted = errors.New("ent: cannot start a transaction within a transaction")
+
 // Tx returns a new transactional client. The provided context
 // is used until the transaction is committed or rolled back.
 func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	if _, ok := c.driver.(*txDriver); ok {
-		return nil, errors.New("ent: cannot start a transaction within a transaction")
+		return nil, ErrTxStarted
 	}
 	tx, err := newTx(ctx, c.driver)
 	if err != nil {
@@ -148,6 +156,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config: cfg,
 		Beacon: NewBeaconClient(cfg),
 		File:   NewFileClient(cfg),
+		Host:   NewHostClient(cfg),
 		Quest:  NewQuestClient(cfg),
 		Tag:    NewTagClient(cfg),
 		Task:   NewTaskClient(cfg),
@@ -174,6 +183,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config: cfg,
 		Beacon: NewBeaconClient(cfg),
 		File:   NewFileClient(cfg),
+		Host:   NewHostClient(cfg),
 		Quest:  NewQuestClient(cfg),
 		Tag:    NewTagClient(cfg),
 		Task:   NewTaskClient(cfg),
@@ -208,7 +218,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Beacon, c.File, c.Quest, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Host, c.Quest, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -218,7 +228,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Beacon, c.File, c.Quest, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Host, c.Quest, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -231,6 +241,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Beacon.mutate(ctx, m)
 	case *FileMutation:
 		return c.File.mutate(ctx, m)
+	case *HostMutation:
+		return c.Host.mutate(ctx, m)
 	case *QuestMutation:
 		return c.Quest.mutate(ctx, m)
 	case *TagMutation:
@@ -276,6 +288,21 @@ func (c *BeaconClient) Create() *BeaconCreate {
 
 // CreateBulk returns a builder for creating a bulk of Beacon entities.
 func (c *BeaconClient) CreateBulk(builders ...*BeaconCreate) *BeaconCreateBulk {
+	return &BeaconCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BeaconClient) MapCreateBulk(slice any, setFunc func(*BeaconCreate, int)) *BeaconCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BeaconCreateBulk{err: fmt.Errorf("calling to BeaconClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BeaconCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &BeaconCreateBulk{config: c.config, builders: builders}
 }
 
@@ -339,15 +366,15 @@ func (c *BeaconClient) GetX(ctx context.Context, id int) *Beacon {
 	return obj
 }
 
-// QueryTags queries the tags edge of a Beacon.
-func (c *BeaconClient) QueryTags(b *Beacon) *TagQuery {
-	query := (&TagClient{config: c.config}).Query()
+// QueryHost queries the host edge of a Beacon.
+func (c *BeaconClient) QueryHost(b *Beacon) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := b.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(beacon.Table, beacon.FieldID, id),
-			sqlgraph.To(tag.Table, tag.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, beacon.TagsTable, beacon.TagsPrimaryKey...),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, beacon.HostTable, beacon.HostColumn),
 		)
 		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
 		return fromV, nil
@@ -426,6 +453,21 @@ func (c *FileClient) Create() *FileCreate {
 
 // CreateBulk returns a builder for creating a bulk of File entities.
 func (c *FileClient) CreateBulk(builders ...*FileCreate) *FileCreateBulk {
+	return &FileCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FileClient) MapCreateBulk(slice any, setFunc func(*FileCreate, int)) *FileCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FileCreateBulk{err: fmt.Errorf("calling to FileClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FileCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &FileCreateBulk{config: c.config, builders: builders}
 }
 
@@ -515,6 +557,171 @@ func (c *FileClient) mutate(ctx context.Context, m *FileMutation) (Value, error)
 	}
 }
 
+// HostClient is a client for the Host schema.
+type HostClient struct {
+	config
+}
+
+// NewHostClient returns a client for the Host from the given config.
+func NewHostClient(c config) *HostClient {
+	return &HostClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `host.Hooks(f(g(h())))`.
+func (c *HostClient) Use(hooks ...Hook) {
+	c.hooks.Host = append(c.hooks.Host, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `host.Intercept(f(g(h())))`.
+func (c *HostClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Host = append(c.inters.Host, interceptors...)
+}
+
+// Create returns a builder for creating a Host entity.
+func (c *HostClient) Create() *HostCreate {
+	mutation := newHostMutation(c.config, OpCreate)
+	return &HostCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Host entities.
+func (c *HostClient) CreateBulk(builders ...*HostCreate) *HostCreateBulk {
+	return &HostCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *HostClient) MapCreateBulk(slice any, setFunc func(*HostCreate, int)) *HostCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &HostCreateBulk{err: fmt.Errorf("calling to HostClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*HostCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &HostCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Host.
+func (c *HostClient) Update() *HostUpdate {
+	mutation := newHostMutation(c.config, OpUpdate)
+	return &HostUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *HostClient) UpdateOne(h *Host) *HostUpdateOne {
+	mutation := newHostMutation(c.config, OpUpdateOne, withHost(h))
+	return &HostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *HostClient) UpdateOneID(id int) *HostUpdateOne {
+	mutation := newHostMutation(c.config, OpUpdateOne, withHostID(id))
+	return &HostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Host.
+func (c *HostClient) Delete() *HostDelete {
+	mutation := newHostMutation(c.config, OpDelete)
+	return &HostDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *HostClient) DeleteOne(h *Host) *HostDeleteOne {
+	return c.DeleteOneID(h.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *HostClient) DeleteOneID(id int) *HostDeleteOne {
+	builder := c.Delete().Where(host.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &HostDeleteOne{builder}
+}
+
+// Query returns a query builder for Host.
+func (c *HostClient) Query() *HostQuery {
+	return &HostQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeHost},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Host entity by its id.
+func (c *HostClient) Get(ctx context.Context, id int) (*Host, error) {
+	return c.Query().Where(host.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *HostClient) GetX(ctx context.Context, id int) *Host {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTags queries the tags edge of a Host.
+func (c *HostClient) QueryTags(h *Host) *TagQuery {
+	query := (&TagClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, host.TagsTable, host.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBeacons queries the beacons edge of a Host.
+func (c *HostClient) QueryBeacons(h *Host) *BeaconQuery {
+	query := (&BeaconClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, host.BeaconsTable, host.BeaconsColumn),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *HostClient) Hooks() []Hook {
+	return c.hooks.Host
+}
+
+// Interceptors returns the client interceptors.
+func (c *HostClient) Interceptors() []Interceptor {
+	return c.inters.Host
+}
+
+func (c *HostClient) mutate(ctx context.Context, m *HostMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&HostCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&HostUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&HostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&HostDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Host mutation op: %q", m.Op())
+	}
+}
+
 // QuestClient is a client for the Quest schema.
 type QuestClient struct {
 	config
@@ -545,6 +752,21 @@ func (c *QuestClient) Create() *QuestCreate {
 
 // CreateBulk returns a builder for creating a bulk of Quest entities.
 func (c *QuestClient) CreateBulk(builders ...*QuestCreate) *QuestCreateBulk {
+	return &QuestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *QuestClient) MapCreateBulk(slice any, setFunc func(*QuestCreate, int)) *QuestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &QuestCreateBulk{err: fmt.Errorf("calling to QuestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*QuestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &QuestCreateBulk{config: c.config, builders: builders}
 }
 
@@ -730,6 +952,21 @@ func (c *TagClient) CreateBulk(builders ...*TagCreate) *TagCreateBulk {
 	return &TagCreateBulk{config: c.config, builders: builders}
 }
 
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TagClient) MapCreateBulk(slice any, setFunc func(*TagCreate, int)) *TagCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TagCreateBulk{err: fmt.Errorf("calling to TagClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TagCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TagCreateBulk{config: c.config, builders: builders}
+}
+
 // Update returns an update builder for Tag.
 func (c *TagClient) Update() *TagUpdate {
 	mutation := newTagMutation(c.config, OpUpdate)
@@ -790,15 +1027,15 @@ func (c *TagClient) GetX(ctx context.Context, id int) *Tag {
 	return obj
 }
 
-// QueryBeacons queries the beacons edge of a Tag.
-func (c *TagClient) QueryBeacons(t *Tag) *BeaconQuery {
-	query := (&BeaconClient{config: c.config}).Query()
+// QueryHosts queries the hosts edge of a Tag.
+func (c *TagClient) QueryHosts(t *Tag) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tag.Table, tag.FieldID, id),
-			sqlgraph.To(beacon.Table, beacon.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, tag.BeaconsTable, tag.BeaconsPrimaryKey...),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.HostsTable, tag.HostsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -861,6 +1098,21 @@ func (c *TaskClient) Create() *TaskCreate {
 
 // CreateBulk returns a builder for creating a bulk of Task entities.
 func (c *TaskClient) CreateBulk(builders ...*TaskCreate) *TaskCreateBulk {
+	return &TaskCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TaskClient) MapCreateBulk(slice any, setFunc func(*TaskCreate, int)) *TaskCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TaskCreateBulk{err: fmt.Errorf("calling to TaskClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TaskCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
 	return &TaskCreateBulk{config: c.config, builders: builders}
 }
 
@@ -1014,6 +1266,21 @@ func (c *TomeClient) CreateBulk(builders ...*TomeCreate) *TomeCreateBulk {
 	return &TomeCreateBulk{config: c.config, builders: builders}
 }
 
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TomeClient) MapCreateBulk(slice any, setFunc func(*TomeCreate, int)) *TomeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TomeCreateBulk{err: fmt.Errorf("calling to TomeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TomeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TomeCreateBulk{config: c.config, builders: builders}
+}
+
 // Update returns an update builder for Tome.
 func (c *TomeClient) Update() *TomeUpdate {
 	mutation := newTomeMutation(c.config, OpUpdate)
@@ -1149,6 +1416,21 @@ func (c *UserClient) CreateBulk(builders ...*UserCreate) *UserCreateBulk {
 	return &UserCreateBulk{config: c.config, builders: builders}
 }
 
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserClient) MapCreateBulk(slice any, setFunc func(*UserCreate, int)) *UserCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserCreateBulk{err: fmt.Errorf("calling to UserClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserCreateBulk{config: c.config, builders: builders}
+}
+
 // Update returns an update builder for User.
 func (c *UserClient) Update() *UserUpdate {
 	mutation := newUserMutation(c.config, OpUpdate)
@@ -1237,9 +1519,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Beacon, File, Quest, Tag, Task, Tome, User []ent.Hook
+		Beacon, File, Host, Quest, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Beacon, File, Quest, Tag, Task, Tome, User []ent.Interceptor
+		Beacon, File, Host, Quest, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

@@ -29,10 +29,13 @@ func TestCreateQuest(t *testing.T) {
 	gqlClient := client.New(srv)
 
 	// Initialize sample data
+	testHost := graph.Host.Create().SetIdentifier("ABCDEFG").SaveX(ctx)
 	testBeacons := []*ent.Beacon{
 		graph.Beacon.Create().
+			SetHost(testHost).
 			SaveX(ctx),
 		graph.Beacon.Create().
+			SetHost(testHost).
 			SaveX(ctx),
 	}
 	testTome := graph.Tome.Create().

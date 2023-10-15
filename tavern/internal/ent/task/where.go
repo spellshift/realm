@@ -484,11 +484,7 @@ func HasQuest() predicate.Task {
 // HasQuestWith applies the HasEdge predicate on the "quest" edge with a given conditions (other predicates).
 func HasQuestWith(preds ...predicate.Quest) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(QuestInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, QuestTable, QuestColumn),
-		)
+		step := newQuestStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -511,11 +507,7 @@ func HasBeacon() predicate.Task {
 // HasBeaconWith applies the HasEdge predicate on the "beacon" edge with a given conditions (other predicates).
 func HasBeaconWith(preds ...predicate.Beacon) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(BeaconInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, BeaconTable, BeaconColumn),
-		)
+		step := newBeaconStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -526,32 +518,15 @@ func HasBeaconWith(preds ...predicate.Beacon) predicate.Task {
 
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Task) predicate.Task {
-	return predicate.Task(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for _, p := range predicates {
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Task(sql.AndPredicates(predicates...))
 }
 
 // Or groups predicates with the OR operator between them.
 func Or(predicates ...predicate.Task) predicate.Task {
-	return predicate.Task(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for i, p := range predicates {
-			if i > 0 {
-				s1.Or()
-			}
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Task(sql.OrPredicates(predicates...))
 }
 
 // Not applies the not operator on the given predicate.
 func Not(p predicate.Task) predicate.Task {
-	return predicate.Task(func(s *sql.Selector) {
-		p(s.Not())
-	})
+	return predicate.Task(sql.NotPredicates(p))
 }
