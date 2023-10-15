@@ -364,7 +364,10 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 };
                 let res = tavern_client.submit_task_result(task_response).await;
                 let _submit_task_result = match res {
-                    Ok(local_val) => local_val,
+                    Ok(local_val) => {
+                        task_res_map.insert(task_id.clone(), [].to_vec()).context("Error updating task results")?;
+                        local_val
+                    },
                     Err(local_err) => if debug { println!("Failed to submit task resluts:\n{}", local_err.to_string()) },
                 };
             }
