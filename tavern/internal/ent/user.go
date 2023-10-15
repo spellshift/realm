@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/internal/ent/user"
 )
@@ -26,7 +27,8 @@ type User struct {
 	// True if the user is active and able to authenticate
 	IsActivated bool `json:"is_activated,omitempty"`
 	// True if the user is an Admin
-	IsAdmin bool `json:"is_admin,omitempty"`
+	IsAdmin      bool `json:"is_admin,omitempty"`
+	selectValues sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -41,7 +43,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		case user.FieldName, user.FieldOauthID, user.FieldPhotoURL, user.FieldSessionToken:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type User", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -97,9 +99,17 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.IsAdmin = value.Bool
 			}
+		default:
+			u.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
+}
+
+// Value returns the ent.Value that was dynamically selected and assigned to the User.
+// This includes values selected through modifiers, order, etc.
+func (u *User) Value(name string) (ent.Value, error) {
+	return u.selectValues.Get(name)
 }
 
 // Update returns a builder for updating this User.

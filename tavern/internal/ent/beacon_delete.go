@@ -27,7 +27,7 @@ func (bd *BeaconDelete) Where(ps ...predicate.Beacon) *BeaconDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (bd *BeaconDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks[int, BeaconMutation](ctx, bd.sqlExec, bd.mutation, bd.hooks)
+	return withHooks(ctx, bd.sqlExec, bd.mutation, bd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.

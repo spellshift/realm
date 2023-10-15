@@ -1,0 +1,25 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
+  INSERT INTO `hosts` (id, name, identifier)
+    VALUES (1010,"db1","EXISTING-HOST");
+  INSERT INTO `beacons` (id, name, identifier, beacon_host)
+    VALUES (1337,"delightful-lich","ABCDEFG-123456",1010);
+requestor:
+  session_token: secretToken
+query: |
+  mutation ChangeName($beaconID: ID!, $input: UpdateBeaconInput!) {
+    updateBeacon(beaconID: $beaconID, input: $input) {
+      id
+      name
+    }
+  }
+variables:
+  beaconID: 1337
+  input:
+    name: "CoolNewName"
+
+expected:
+  updateBeacon:
+    id: "1337"
+    name: "CoolNewName"

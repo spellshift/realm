@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.83d801d4.css",
-    "main.js": "/static/js/main.6f7ddb7d.js",
+    "main.js": "/static/js/main.00df6d22.js",
     "react-syntax-highlighter/refractor-core-import.js": "/static/js/react-syntax-highlighter/refractor-core-import.d0cd1e85.chunk.js",
     "react-syntax-highlighter_languages_refractor_abap.js": "/static/js/react-syntax-highlighter_languages_refractor_abap.a2bf84e3.chunk.js",
     "react-syntax-highlighter_languages_refractor_actionscript.js": "/static/js/react-syntax-highlighter_languages_refractor_actionscript.fff5a604.chunk.js",
@@ -158,7 +158,7 @@
     "static/media/eldrich.png": "/static/media/eldrich.a80c74e8249d2461e174.png",
     "index.html": "/index.html",
     "main.83d801d4.css.map": "/static/css/main.83d801d4.css.map",
-    "main.6f7ddb7d.js.map": "/static/js/main.6f7ddb7d.js.map",
+    "main.00df6d22.js.map": "/static/js/main.00df6d22.js.map",
     "refractor-core-import.d0cd1e85.chunk.js.map": "/static/js/react-syntax-highlighter/refractor-core-import.d0cd1e85.chunk.js.map",
     "react-syntax-highlighter_languages_refractor_abap.a2bf84e3.chunk.js.map": "/static/js/react-syntax-highlighter_languages_refractor_abap.a2bf84e3.chunk.js.map",
     "react-syntax-highlighter_languages_refractor_actionscript.fff5a604.chunk.js.map": "/static/js/react-syntax-highlighter_languages_refractor_actionscript.fff5a604.chunk.js.map",
@@ -315,6 +315,6 @@
   },
   "entrypoints": [
     "static/css/main.83d801d4.css",
-    "static/js/main.6f7ddb7d.js"
+    "static/js/main.00df6d22.js"
   ]
 }

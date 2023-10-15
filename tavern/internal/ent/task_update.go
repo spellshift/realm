@@ -178,7 +178,7 @@ func (tu *TaskUpdate) ClearBeacon() *TaskUpdate {
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TaskUpdate) Save(ctx context.Context) (int, error) {
 	tu.defaults()
-	return withHooks[int, TaskMutation](ctx, tu.sqlSave, tu.mutation, tu.hooks)
+	return withHooks(ctx, tu.sqlSave, tu.mutation, tu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -275,10 +275,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: quest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -291,10 +288,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: quest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -310,10 +304,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.BeaconColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -326,10 +317,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.BeaconColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -518,7 +506,7 @@ func (tuo *TaskUpdateOne) Select(field string, fields ...string) *TaskUpdateOne 
 // Save executes the query and returns the updated Task entity.
 func (tuo *TaskUpdateOne) Save(ctx context.Context) (*Task, error) {
 	tuo.defaults()
-	return withHooks[*Task, TaskMutation](ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
+	return withHooks(ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -632,10 +620,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: quest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -648,10 +633,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.QuestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: quest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -667,10 +649,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.BeaconColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -683,10 +662,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.BeaconColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: beacon.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

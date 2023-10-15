@@ -20,7 +20,7 @@ import (
 type TomeQuery struct {
 	config
 	ctx            *QueryContext
-	order          []OrderFunc
+	order          []tome.OrderOption
 	inters         []Interceptor
 	predicates     []predicate.Tome
 	withFiles      *FileQuery
@@ -58,7 +58,7 @@ func (tq *TomeQuery) Unique(unique bool) *TomeQuery {
 }
 
 // Order specifies how the records should be ordered.
-func (tq *TomeQuery) Order(o ...OrderFunc) *TomeQuery {
+func (tq *TomeQuery) Order(o ...tome.OrderOption) *TomeQuery {
 	tq.order = append(tq.order, o...)
 	return tq
 }
@@ -274,7 +274,7 @@ func (tq *TomeQuery) Clone() *TomeQuery {
 	return &TomeQuery{
 		config:     tq.config,
 		ctx:        tq.ctx.Clone(),
-		order:      append([]OrderFunc{}, tq.order...),
+		order:      append([]tome.OrderOption{}, tq.order...),
 		inters:     append([]Interceptor{}, tq.inters...),
 		predicates: append([]predicate.Tome{}, tq.predicates...),
 		withFiles:  tq.withFiles.Clone(),
@@ -432,7 +432,7 @@ func (tq *TomeQuery) loadFiles(ctx context.Context, query *FileQuery, nodes []*T
 	}
 	query.withFKs = true
 	query.Where(predicate.File(func(s *sql.Selector) {
-		s.Where(sql.InValues(tome.FilesColumn, fks...))
+		s.Where(sql.InValues(s.C(tome.FilesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -445,7 +445,7 @@ func (tq *TomeQuery) loadFiles(ctx context.Context, query *FileQuery, nodes []*T
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "tome_files" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "tome_files" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

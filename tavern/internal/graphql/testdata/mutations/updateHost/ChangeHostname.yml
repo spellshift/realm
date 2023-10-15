@@ -1,0 +1,25 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
+  INSERT INTO `hosts` (id, name, identifier)
+    VALUES (1010,"db1","EXISTING-HOST");
+  INSERT INTO `beacons` (id, name, identifier, beacon_host)
+    VALUES (1337,"delightful-lich","ABCDEFG-123456",1010);
+requestor:
+  session_token: secretToken
+query: |
+  mutation ChangeHostname($hostID: ID!, $input: UpdateHostInput!) {
+    updateHost(hostID: $hostID, input: $input) {
+      id
+      name
+    }
+  }
+variables:
+  hostID: 1010
+  input:
+    name: "CoolNewName"
+
+expected:
+  updateHost:
+    id: "1010"
+    name: "CoolNewName"

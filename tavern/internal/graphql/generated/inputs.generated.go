@@ -45,58 +45,65 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("principal"))
-			it.Principal, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Principal = data
 		case "hostname":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostname"))
-			it.Hostname, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Hostname = data
 		case "hostPlatform":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatform"))
-			it.HostPlatform, err = ec.unmarshalNBeaconHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋbeaconᚐHostPlatform(ctx, v)
+			data, err := ec.unmarshalNHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.HostPlatform = data
 		case "hostPrimaryIP":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPrimaryIP"))
-			it.HostPrimaryIP, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.HostPrimaryIP = data
 		case "beaconIdentifier":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconIdentifier"))
-			it.BeaconIdentifier, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.BeaconIdentifier = data
 		case "hostIdentifier":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostIdentifier"))
-			it.HostIdentifier, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.HostIdentifier = data
 		case "agentIdentifier":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentIdentifier"))
-			it.AgentIdentifier, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.AgentIdentifier = data
 		}
 	}
 
@@ -121,42 +128,47 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskID"))
-			it.TaskID, err = ec.unmarshalNID2int(ctx, v)
+			data, err := ec.unmarshalNID2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TaskID = data
 		case "execStartedAt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("execStartedAt"))
-			it.ExecStartedAt, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ExecStartedAt = data
 		case "execFinishedAt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("execFinishedAt"))
-			it.ExecFinishedAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ExecFinishedAt = data
 		case "output":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("output"))
-			it.Output, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Output = data
 		case "error":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("error"))
-			it.Error, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Error = data
 		}
 	}
 
