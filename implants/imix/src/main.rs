@@ -346,7 +346,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                 // Send task response
             }
             //  Overwrite and update the tasks output
-            task_res_map.insert(task_id.clone(), cur_res).context("Error retrieving task ID")?;
+            task_res_map.insert(task_id.clone(), cur_res).context("Error updating task results")?;
             
             let task_is_finished = exec_future.1.future_join_handle.is_finished();
             let task_response_exec_finished_at = match task_is_finished {
