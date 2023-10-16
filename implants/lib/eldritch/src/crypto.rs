@@ -68,11 +68,11 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         hash_file_impl::hash_file(file, algo)
     }
-    fn encode_b64<'v>(this: CryptoLibrary, content: String, encode_type: String) -> anyhow::Result<String> {
+    fn encode_b64<'v>(this: CryptoLibrary, content: String, encode_type: Option<String>) -> anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         encode_b64_impl::encode_b64(content, encode_type)
     }
-    fn decode_b64<'v>(this: CryptoLibrary, content: String, encode_type: String) -> anyhow::Result<String> {
+    fn decode_b64<'v>(this: CryptoLibrary, content: String, encode_type: Option<String>) -> anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         decode_b64_impl::decode_b64(content, encode_type)
     }
