@@ -172,12 +172,13 @@ fn get_os_pretty_name() -> Result<String> {
 
 // Async handler for port scanning.
 async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
-    let debug = true;
+    let debug = false;
     let mut loop_count: i32 = 0;
     let version_string = "v0.1.0";
     let auth_token = "letmeinnn";
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
+
 
     // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
     let mut all_exec_futures: HashMap<String,  ExecTask> = HashMap::new();
@@ -393,9 +394,11 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         all_task_res_map = running_task_res_map.clone();
 
         // Debug loop tracker
-        if loop_count_max.is_some() {
+        if let Some(count_max) = loop_count_max {
             loop_count += 1;
-            if (loop_count >= loop_count_max.context("loop_count_max shouldn't be None")?) { return Ok(()); };
+            if loop_count >= count_max { 
+                return Ok(()); 
+            }
         }
     }
 }
