@@ -550,21 +550,21 @@ The <b>crypto.hash_file</b> method will produce the hash of the given file's con
 - SHA512
 
 ### crypto.encode_b64
-`crypto.encode_b64(content: str, encode_type: str) -> str`
+`crypto.encode_b64(content: str, encode_type: Optional<str>) -> str`
 
 The <b>crypto.encode_b64</b> method encodes the given text using the given base64 encoding method. Valid methods include:
 
-- STANDARD
+- STANDARD (default)
 - STANDARD_NO_PAD
 - URL_SAFE
 - URL_SAFE_NO_PAD
 
 ### crypto.decode_b64
-`crypto.decode_b64(content: str, decode_type: str) -> str`
+`crypto.decode_b64(content: str, decode_type: Optional<str>) -> str`
 
 The <b>crypto.decode_b64</b> method encodes the given text using the given base64 decoding method. Valid methods include:
 
-- STANDARD
+- STANDARD (default)
 - STANDARD_NO_PAD
 - URL_SAFE
 - URL_SAFE_NO_PAD
