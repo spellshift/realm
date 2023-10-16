@@ -367,10 +367,15 @@ The <b>process.list</b> method returns a list of dictionaries that describe each
 }
 ```
 
-### process.name
-`process.name(pid: int) -> str`
+### process.info
+`process.info(pid: Optional<int>) -> Dict`
 
-The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>process.info</b> method returns all information on a given process ID. Default is the current process.
+
+### process.netstat
+`process.netstat() -> Vec<Dict>`
+
+The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
 ## Sys
 ### sys.dll_inject

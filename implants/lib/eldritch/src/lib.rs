@@ -189,7 +189,7 @@ mod tests {
         a.all_true(
             r#"
 dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "list", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
-dir(process) == ["kill", "list", "name"]
+dir(process) == ["info", "kill", "list", "netstat"]
 dir(sys) == ["dll_inject", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_user", "is_linux", "is_macos", "is_windows", "shell"]
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]
 dir(assets) == ["copy","list","read","read_binary"]

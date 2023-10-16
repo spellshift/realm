@@ -1,6 +1,7 @@
 mod kill_impl;
 mod list_impl;
-mod name_impl;
+mod info_impl;
+mod netstat_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -59,8 +60,12 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         list_impl::list(starlark_heap)
     }
-    fn name(this: ProcessLibrary, pid: i32) -> anyhow::Result<String> {
+    fn info<'v>(this: ProcessLibrary, starlark_heap: &'v Heap, pid: Option<i32>) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        name_impl::name(pid)
+        info_impl::info(starlark_heap, pid)
+    }
+    fn netstat<'v>(this: ProcessLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        netstat_impl::netstat(starlark_heap)
     }
 }

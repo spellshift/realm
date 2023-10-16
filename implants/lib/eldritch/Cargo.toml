@@ -20,6 +20,7 @@ hex-literal = { workspace = true }
 ipnetwork = { workspace = true }
 md5 = { workspace = true }
 nix = { workspace = true }
+procfs = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
 russh = { workspace = true }
