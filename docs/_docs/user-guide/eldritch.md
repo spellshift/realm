@@ -574,7 +574,19 @@ The <b>crypto.decode_b64</b> method encodes the given text using the given base6
 
 The <b>crypto.from_json</b> method converts JSON text to an object of correct type.
 
+```python
+crypto.from_json("{\"foo\":\"bar\"}")
+{
+    "foo": "bar"
+}
+```
+
 ### crypto.to_json
 `crypto.to_json(content: Value) -> str`
 
 The <b>crypto.to_json</b> method converts given type to JSON text.
+
+```python
+crypto.to_json({"foo": "bar"})
+"{\"foo\":\"bar\"}"
+```
