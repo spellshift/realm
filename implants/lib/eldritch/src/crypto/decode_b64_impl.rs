@@ -11,3 +11,34 @@ pub fn decode_b64(content: String, encode_type: String) -> Result<String> {
     };
     decode_type.decode(content.as_bytes()).map(|res| String::from_utf8_lossy(&res).to_string()).map_err(|e| anyhow!("Error decoding base64: {:?}", e))
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_decode_b64() -> anyhow::Result<()>{
+        let res = super::decode_b64("dGVzdA==".to_string(), "STANDARD".to_string())?;
+        assert_eq!(res, "test");
+        let res = super::decode_b64("dGVzdA".to_string(), "STANDARD_NO_PAD".to_string())?;
+        assert_eq!(res, "test");
+        let res = super::decode_b64("aHR0cHM6Ly9nb29nbGUuY29tLyY=".to_string(), "URL_SAFE".to_string())?;
+        assert_eq!(res, "https://google.com/&");
+        let res = super::decode_b64("aHR0cHM6Ly9nb29nbGUuY29tLyY".to_string(), "URL_SAFE_NO_PAD".to_string())?;
+        assert_eq!(res, "https://google.com/&");
+        Ok(())
+    }
+
+    #[test]
+    fn test_decode_b64_invalid_type() -> anyhow::Result<()>{
+        let res = super::decode_b64("test".to_string(), "INVALID".to_string());
+        assert!(res.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_decode_b64_invalid_content() -> anyhow::Result<()>{
+        let res = super::decode_b64("///".to_string(), "STANDARD".to_string());
+        assert!(res.is_err());
+        Ok(())
+    }
+
+}
