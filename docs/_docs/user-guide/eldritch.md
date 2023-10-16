@@ -577,4 +577,4 @@ The <b>crypto.from_json</b> method converts JSON text to an object of correct ty
 ### crypto.to_json
 `crypto.to_json(content: Value) -> str`
 
-The <b>crypto.from_json</b> method converts given type to JSON text.
+The <b>crypto.to_json</b> method converts given type to JSON text.
