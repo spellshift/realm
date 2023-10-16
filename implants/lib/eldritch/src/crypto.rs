@@ -1,6 +1,10 @@
 mod aes_encrypt_file_impl;
 mod aes_decrypt_file_impl;
 mod hash_file_impl;
+mod encode_b64_impl;
+mod decode_b64_impl;
+mod from_json_impl;
+mod to_json_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -63,5 +67,21 @@ fn methods(builder: &mut MethodsBuilder) {
     fn hash_file<'v>(this: CryptoLibrary, file: String, algo: String) -> anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         hash_file_impl::hash_file(file, algo)
+    }
+    fn encode_b64<'v>(this: CryptoLibrary, content: String, encode_type: Option<String>) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        encode_b64_impl::encode_b64(content, encode_type)
+    }
+    fn decode_b64<'v>(this: CryptoLibrary, content: String, encode_type: Option<String>) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        decode_b64_impl::decode_b64(content, encode_type)
+    }
+    fn from_json<'v>(this: CryptoLibrary, starlark_heap: &'v Heap, content: String) -> anyhow::Result<Value<'v>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        from_json_impl::from_json(starlark_heap, content)
+    }
+    fn to_json<'v>(this: CryptoLibrary, content: Value) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        to_json_impl::to_json(content)
     }
 }
