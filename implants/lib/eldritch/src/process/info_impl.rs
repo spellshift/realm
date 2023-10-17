@@ -8,7 +8,7 @@ pub fn info(starlark_heap: &Heap, pid: Option<i32>) -> Result<Dict> {
     // Create Dict type.
     let mut dict = Dict::new(map);
     dict.insert_hashed(const_frozen_string!("err").to_value().get_hashed()?, starlark_heap.alloc_str("Not implemented").to_value());
-    dict
+    Ok(dict)
 }
 
 #[cfg(target_os = "linux")]
