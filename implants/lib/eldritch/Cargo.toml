@@ -48,7 +48,7 @@ windows-sys = { workspace = true, features = [
 ]}
 whoami = { workspace = true }
 
-[target.'cfg(linux)'.dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 procfs = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]

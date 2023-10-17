@@ -7,6 +7,7 @@ use procfs::{
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use anyhow::Result;
 
+#[cfg(target_os = "linux")]
 #[derive(Debug)]
 enum SocketData {
     TCP(TcpNetEntry),
