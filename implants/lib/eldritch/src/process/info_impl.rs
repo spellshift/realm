@@ -2,6 +2,16 @@ use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_f
 use anyhow::Result;
 use std::process::id;
 
+#[cfg(not(target_os = "linux"))]
+pub fn info(starlark_heap: &Heap, pid: Option<i32>) -> Result<Dict> {
+    let map: SmallMap<Value, Value> = SmallMap::new();
+    // Create Dict type.
+    let mut dict = Dict::new(map);
+    dict.insert_hashed(const_frozen_string!("err").to_value().get_hashed()?, starlark_heap.alloc_str("Not implemented").to_value());
+    dict
+}
+
+#[cfg(target_os = "linux")]
 pub fn info(starlark_heap: &Heap, pid: Option<i32>) -> Result<Dict> {
     let map: SmallMap<Value, Value> = SmallMap::new();
     // Create Dict type.

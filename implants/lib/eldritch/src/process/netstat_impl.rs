@@ -1,6 +1,9 @@
 use std::collections::HashMap;
-use procfs::process::*;
-use procfs::net::*;
+#[cfg(target_os = "linux")]
+use procfs::{
+    process::*,
+    net::*
+};
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use anyhow::Result;
 
@@ -11,9 +14,18 @@ enum SocketData {
     Unix(UnixNetEntry)
 }
 
+#[cfg(not(target_os = "linux"))]
+pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
+    let map: SmallMap<Value, Value> = SmallMap::new();
+    // Create Dict type.
+    let mut dict = Dict::new(map);
+    dict.insert_hashed(const_frozen_string!("err").to_value().get_hashed()?, starlark_heap.alloc_str("Not implemented").to_value());
+    Ok(Vec::from([dict]))
+}
+
+#[cfg(target_os = "linux")]
 pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     let mut out: Vec<Dict> = Vec::new();
-
     let all_procs = procfs::process::all_processes().unwrap();
 
     // build up a map between socket inodes and process stat info:
@@ -74,8 +86,8 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
                 // Create Dict type.
                 let mut dict = Dict::new(map);
                 dict.insert_hashed(const_frozen_string!("ref_count").to_value().get_hashed()?, starlark_heap.alloc(unix.ref_count));
-                dict.insert_hashed(const_frozen_string!("ref_count").to_value().get_hashed()?, starlark_heap.alloc(unix.socket_type as u32));
-                dict.insert_hashed(const_frozen_string!("ref_count").to_value().get_hashed()?, starlark_heap.alloc_str(&format!("{:?}", unix.state)).to_value());
+                dict.insert_hashed(const_frozen_string!("socket_type").to_value().get_hashed()?, starlark_heap.alloc(unix.socket_type as u32));
+                dict.insert_hashed(const_frozen_string!("state").to_value().get_hashed()?, starlark_heap.alloc_str(&format!("{:?}", unix.state)).to_value());
                 dict.insert_hashed(const_frozen_string!("inode").to_value().get_hashed()?, starlark_heap.alloc(unix.inode));
                 dict.insert_hashed(const_frozen_string!("path").to_value().get_hashed()?, starlark_heap.alloc_str(&unix.path.map(|x| x.display().to_string()).unwrap_or("N/A".to_string())).to_value());
                 dict
