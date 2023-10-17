@@ -4,11 +4,7 @@ use std::process::id;
 
 #[cfg(not(target_os = "linux"))]
 pub fn info(starlark_heap: &Heap, pid: Option<i32>) -> Result<Dict> {
-    let map: SmallMap<Value, Value> = SmallMap::new();
-    // Create Dict type.
-    let mut dict = Dict::new(map);
-    dict.insert_hashed(const_frozen_string!("err").to_value().get_hashed()?, starlark_heap.alloc_str("Not implemented").to_value());
-    Ok(dict)
+    return Err(anyhow!("Not implemented for this platform"));
 }
 
 #[cfg(target_os = "linux")]
@@ -80,4 +76,38 @@ pub fn info(starlark_heap: &Heap, pid: Option<i32>) -> Result<Dict> {
     dict.insert_hashed(const_frozen_string!("exit_code").to_value().get_hashed()?, starlark_heap.alloc(stat.exit_code));
 
     Ok(dict)
+}
+
+#[cfg(test)]
+#[cfg(target_os = "linux")]
+mod tests {
+    use super::*;
+    use starlark::values::{Heap, Value};
+    use anyhow::{anyhow, Result};
+    use std::process::id;
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn test_info_linux() -> Result<()> {
+        let test_heap = Heap::new();
+        let res = info(&test_heap, None)?;
+        assert!(res.get(const_frozen_string!("pid").to_value())?.ok_or(anyhow!("Could not find PID"))?.unpack_i32().ok_or(anyhow!("PID is not an i32"))? as u32 == id());
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+#[cfg(not(target_os = "linux"))]
+mod tests {
+    use super::*;
+    use starlark::values::{Heap, Value};
+    use anyhow::{anyhow, Result};
+
+    #[test]
+    fn test_info_not_linux() -> Result<()> {
+        let test_heap = Heap::new();
+        let res = info(&test_heap, None);
+        assert!(res.is_err());
+        Ok(())
+    }
 }

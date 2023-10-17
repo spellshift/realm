@@ -17,11 +17,7 @@ enum SocketData {
 
 #[cfg(not(target_os = "linux"))]
 pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
-    let map: SmallMap<Value, Value> = SmallMap::new();
-    // Create Dict type.
-    let mut dict = Dict::new(map);
-    dict.insert_hashed(const_frozen_string!("err").to_value().get_hashed()?, starlark_heap.alloc_str("Not implemented").to_value());
-    Ok(Vec::from([dict]))
+    return Err(anyhow!("Not implemented for this platform"));
 }
 
 #[cfg(target_os = "linux")]
@@ -60,6 +56,7 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
                 let map: SmallMap<Value, Value> = SmallMap::new();
                 // Create Dict type.
                 let mut dict = Dict::new(map);
+                dict.insert_hashed(const_frozen_string!("socket_type").to_value().get_hashed()?, const_frozen_string!("TCP").to_value());
                 dict.insert_hashed(const_frozen_string!("local_address").to_value().get_hashed()?, starlark_heap.alloc_str(&tcp.local_address.to_string()).to_value());
                 dict.insert_hashed(const_frozen_string!("remote_address").to_value().get_hashed()?, starlark_heap.alloc_str(&tcp.remote_address.to_string()).to_value());
                 dict.insert_hashed(const_frozen_string!("state").to_value().get_hashed()?, starlark_heap.alloc_str(&format!("{:?}", tcp.state)).to_value());
@@ -73,6 +70,7 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
                 let map: SmallMap<Value, Value> = SmallMap::new();
                 // Create Dict type.
                 let mut dict = Dict::new(map);
+                dict.insert_hashed(const_frozen_string!("socket_type").to_value().get_hashed()?, const_frozen_string!("UDP").to_value());
                 dict.insert_hashed(const_frozen_string!("local_address").to_value().get_hashed()?, starlark_heap.alloc_str(&udp.local_address.to_string()).to_value());
                 dict.insert_hashed(const_frozen_string!("remote_address").to_value().get_hashed()?, starlark_heap.alloc_str(&udp.remote_address.to_string()).to_value());
                 dict.insert_hashed(const_frozen_string!("state").to_value().get_hashed()?, starlark_heap.alloc_str(&format!("{:?}", udp.state)).to_value());
@@ -86,6 +84,7 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
                 let map: SmallMap<Value, Value> = SmallMap::new();
                 // Create Dict type.
                 let mut dict = Dict::new(map);
+                dict.insert_hashed(const_frozen_string!("socket_type").to_value().get_hashed()?, const_frozen_string!("Unix").to_value());
                 dict.insert_hashed(const_frozen_string!("ref_count").to_value().get_hashed()?, starlark_heap.alloc(unix.ref_count));
                 dict.insert_hashed(const_frozen_string!("socket_type").to_value().get_hashed()?, starlark_heap.alloc(unix.socket_type as u32));
                 dict.insert_hashed(const_frozen_string!("state").to_value().get_hashed()?, starlark_heap.alloc_str(&format!("{:?}", unix.state)).to_value());
@@ -111,4 +110,68 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     }
 
     Ok(out)
+}
+
+#[cfg(test)]
+#[cfg(target_os = "linux")]
+mod tests {
+    use super::*;
+    use starlark::values::{Heap, Value};
+    use anyhow::Result;
+    use tokio::net::TcpListener;
+    use tokio::task;
+    use tokio::io::copy;
+
+    async fn local_bind_tcp() -> TcpListener {
+        // Try three times to bind to a port
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        return listener;
+    }
+
+    async fn local_accept_tcp(listener: TcpListener) -> Result<()> {
+        // Accept new connection
+        let (mut socket, _) = listener.accept().await?;
+        // Split reader and writer references
+        let (mut reader, mut writer) = socket.split();
+        // Copy from reader to writer to echo message back.
+        let bytes_copied = copy(&mut reader, &mut writer).await?;
+        // If message sent break loop
+        if bytes_copied > 1 {
+            return Ok(());
+        } else {
+            return Err(anyhow::anyhow!("Failed to copy any bytes"));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_netstat() -> Result<()>{
+        let heap = Heap::new();
+        let listener = local_bind_tcp().await;
+        let test_port: i32 = listener.local_addr()?.port().into();
+        let _listen_task = task::spawn(local_accept_tcp(listener));
+        let res = netstat(&heap)?;
+        for socket in res {
+            if Some(Some("TCP")) != socket.get(const_frozen_string!("socket_type").to_value()).unwrap().map(|val| val.unpack_str()) {
+                continue;
+            }
+            if Some(Some(format!("127.0.0.1:{}", test_port).as_str())) != socket.get(const_frozen_string!("local_address").to_value()).unwrap().map(|val| val.unpack_str()) {
+                continue;
+            }
+            if Some(Some("Listen")) != socket.get(const_frozen_string!("state").to_value()).unwrap().map(|val| val.unpack_str()) {
+                continue;
+            }
+            return Ok(())
+        }
+        Err(anyhow::anyhow!("Failed to find socket"))
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+mod tests {
+    #[test]
+    fn test_netstat_not_linux() -> Result<()> {
+        let heap = Heap::new();
+        assert!(netstat(&heap).is_err());
+        Ok(())
+    }
 }
