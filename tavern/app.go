@@ -10,17 +10,18 @@ import (
 	"net/http"
 	"os"
 
+	"entgo.io/contrib/entgql"
+	"github.com/kcarretto/realm/tavern/internal/graphql"
 	"github.com/kcarretto/realm/tavern/tomes"
 
-	"entgo.io/contrib/entgql"
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/kcarretto/realm/tavern/auth"
-	"github.com/kcarretto/realm/tavern/ent"
-	"github.com/kcarretto/realm/tavern/ent/migrate"
-	"github.com/kcarretto/realm/tavern/graphql"
+	"github.com/kcarretto/realm/tavern/internal/auth"
 	"github.com/kcarretto/realm/tavern/internal/cdn"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/migrate"
+	"github.com/kcarretto/realm/tavern/internal/www"
 	"github.com/urfave/cli"
 )
 
@@ -105,48 +106,19 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		createTestData(ctx, client)
 	}
 
-	// Create GraphQL Handler
-	srv := handler.NewDefaultServer(graphql.NewSchema(client))
-	srv.Use(entgql.Transactioner{TxOpener: client})
-
-	// GraphQL Logging
-	gqlLogger := log.New(os.Stderr, "[GraphQL] ", log.Flags())
-	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
-		oc := gqlgraphql.GetOperationContext(ctx)
-		reqVars, err := json.Marshal(oc.Variables)
-		if err != nil {
-			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v", err)
-			return next(ctx)
-		}
-
-		authName := "unknown"
-		id := auth.IdentityFromContext(ctx)
-		if id != nil {
-			authName = id.String()
-		}
-
-		gqlLogger.Printf("%s (%s): %s", oc.OperationName, authName, string(reqVars))
-		return next(ctx)
-	})
-
-	// Setup HTTP Handler
+	// Setup HTTP Handlers
+	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 	router := http.NewServeMux()
 	router.Handle("/status", newStatusHandler())
-	router.Handle("/",
-		playground.Handler("Tavern", "/graphql"),
-	)
-	router.Handle("/graphql", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		srv.ServeHTTP(w, req)
-	}))
 	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
 	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
+	router.Handle("/graphql", newGraphQLHandler(client))
 	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
 	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
+	router.Handle("/", auth.WithLoginRedirect("/oauth/login", www.NewHandler(httpLogger)))
+	router.Handle("/playground", auth.WithLoginRedirect("/oauth/login", playground.Handler("Tavern", "/graphql")))
 
 	// Log Middleware
-	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 	handlerWithLogging := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authName := "unknown"
 		id := auth.IdentityFromContext(r.Context())
@@ -180,4 +152,35 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		HTTP:   cfg.srv,
 		client: client,
 	}, nil
+}
+
+func newGraphQLHandler(client *ent.Client) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client))
+	srv.Use(entgql.Transactioner{TxOpener: client})
+
+	// GraphQL Logging
+	gqlLogger := log.New(os.Stderr, "[GraphQL] ", log.Flags())
+	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
+		oc := gqlgraphql.GetOperationContext(ctx)
+		reqVars, err := json.Marshal(oc.Variables)
+		if err != nil {
+			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v", err)
+			return next(ctx)
+		}
+
+		authName := "unknown"
+		id := auth.IdentityFromContext(ctx)
+		if id != nil {
+			authName = id.String()
+		}
+
+		gqlLogger.Printf("%s (%s): %s", oc.OperationName, authName, string(reqVars))
+		return next(ctx)
+	})
+
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		srv.ServeHTTP(w, req)
+	})
 }

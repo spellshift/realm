@@ -109,6 +109,29 @@ Tavern hosts two endpoints to support OAuth:
 
 Tavern supports a Trust on First Use (TOFU) authentication model, meaning the first user to successfully authenticate will be granted admin permissions. Subsequent users that login will have accounts created, but will require activation before they can interact with any Tavern APIs. Only admin users may activate other users.
 
+## Build and publish tavern container
+If you want to deploy tavern without using the published version you'll have to build and publish your own container.
+
+**Build your container**
+```bash
+cd ./realm
+docker build --tag tavern:dev --file ./docker/tavern.Dockerfile .
+```
+
+**Publish your container to docker hub**
+If you haven't before [sign-up for a docker hub account](https://hub.docker.com/signup) and login with the CLI `docker login`
+
+```bash
+docker tag tavern:dev <YOUR_DOCKER_HUB_USERNAME>/tavern:dev
+docker push <YOUR_DOCKER_HUB_USERNAME>/tavern:dev
+```
+
+**Specify your container during terraform deploy**
+```bash
+terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=<YOUR_DOCKER_HUB_USERNAME>/tavern:dev"
+```
+
+
 ## User Interface
 
 ## CDN API
@@ -130,13 +153,94 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 
 ![/assets/img/tavern/graphiql.png](/assets/img/tavern/graphiql.png)
 
+#### Some sample queries to get started
+
+##### List all beacons
+
+```graphql
+query get_beacons {
+  beacons {
+    id
+    identifier
+    name
+    hostPlatform
+    hostIdentifier
+    hostPrimaryIP
+  }
+}
+```
+
+##### Create a tome
+
+```graphql
+mutation CreateTome ($input: CreateTomeInput!) {
+  createTome(input: $input) {
+    id
+    name
+  }
+}
+```
+
+```json
+{
+  "input": {
+    "name": "Test tome",
+    "description": "Just a sample",
+    "eldritch": "print(input_params['print_string'])",
+    "fileIDs": [],
+    "paramDefs": "[{\"name\":\"print_string\",\"label\":\"Print String\",\"type\":\"string\",\"placeholder\":\"A message to print\"}]"
+  }
+}
+```
+
+##### Create a task
+
+```graphql
+mutation createQuest($input: CreateQuestInput!, $beaconIDs:[ID!]!){
+  createQuest(input: $input, beaconIDs: $beaconIDs) {
+    id
+  }
+}
+```
+
+```json
+{
+  "input": {
+    "name": "Run test tome",
+    "tomeID": "21474836488",
+    "parameters": "{\"print_string\":\"Hello World\"}"
+  },
+  "sess": ["8589934593"]
+}
+```
+
+##### Get all task and quest output
+
+```graphql
+query get_task_res {
+  quests {
+    tasks {
+      id
+      output
+      quest {
+        tome {
+          eldritch
+        }
+        parameters
+      }
+      execFinishedAt
+    }
+  }
+}
+```
+
 ### Creating a New Model
 
 1. Initialize the schema `cd tavern && go run entgo.io/ent/cmd/ent init <NAME>`
-2. Update the generated file in `tavern/ent/schema/<NAME>.go`
+2. Update the generated file in `tavern/internal/ent/schema/<NAME>.go`
 3. Ensure you include a `func (<NAME>) Annotations() []schema.Annotation` method which returns a `entgql.QueryField()` annotation to tell entgo to generate a GraphQL root query for this model (if you'd like it to be queryable from the root query)
-4. Update `tavern/graphql/gqlgen.yml` to include the ent types in the `autobind:` section (e.g.`- github.com/kcarretto/realm/tavern/ent/<NAME>`)
-5. **Optionally** update the `models:` section of `tavern/graphql/gqlgen.yml` to bind any GraphQL enum types to their respective `entgo` generated types (e.g. `github.com/kcarretto/realm/tavern/ent/<NAME>.<ENUM_FIELD>`)
+4. Update `tavern/internal/graphql/gqlgen.yml` to include the ent types in the `autobind:` section (e.g.`- github.com/kcarretto/realm/tavern/internal/ent/<NAME>`)
+5. **Optionally** update the `models:` section of `tavern/internal/graphql/gqlgen.yml` to bind any GraphQL enum types to their respective `entgo` generated types (e.g. `github.com/kcarretto/realm/tavern/internal/ent/<NAME>.<ENUM_FIELD>`)
 6. Run `go generate ./tavern/...` from the project root
 7. If you added an annotation for a root query field (see above), you will notice auto-generated the `query.resolvers.go` file has been updated with new methods to query your model (e.g. `func (r *queryResolver) <NAME>s ...`)
     * This must be implemented (e.g. `return r.client.<NAME>.Query().All(ctx)` where NAME is the name of your model)
@@ -144,22 +248,22 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 ### Adding Mutations
 
 1. Update the `mutation.graphql` schema file to include your new mutation and please include it in the section for the model it's mutating if applicable (e.g. createUser should be defined near all the related User mutations)
-    * **Note:** Input types such as `Create<NAME>Input` or `Update<NAME>Input` will already be generated if you [added the approproate annotations to your ent schema](https://entgo.io/docs/tutorial-todo-gql#install-and-configure-entgql). If you require custom input mutations (e.g. `ClaimTasksInput`) then add them to the `inputs.graphql` file (Golang code will be generated in tavern/graphql/models e.g. `models.ClaimTasksInput`).
+    * **Note:** Input types such as `Create<NAME>Input` or `Update<NAME>Input` will already be generated if you [added the appropriate annotations to your ent schema](https://entgo.io/docs/tutorial-todo-gql#install-and-configure-entgql). If you require custom input mutations (e.g. `ClaimTasksInput`) then add them to the `inputs.graphql` file (Golang code will be generated in tavern/internal/graphql/models e.g. `models.ClaimTasksInput`).
 2. Run `go generate ./...`
-3. Implement generated the generated mutation resolver method in `tavern/graphql/mutation.resolvers.go`
+3. Implement generated the generated mutation resolver method in `tavern/internal/graphql/mutation.resolvers.go`
     * Depending on the mutation you're trying to implement, a one liner such as `return r.client.<NAME>.Create().SetInput(input).Save(ctx)` might be sufficient
-4. Please write a unit test for your new mutation by defining YAML test cases in a new `testdata/mutations` subdirectory with your mutations name (e.g. `tavern/graphql/testdata/mutations/mymutation/SomeTest.yml`)
+4. Please write a unit test for your new mutation by defining YAML test cases in a new `testdata/mutations` subdirectory with your mutations name (e.g. `tavern/internal/graphql/testdata/mutations/mymutation/SomeTest.yml`)
 
 ### Code Generation Reference
 
 * After making a change, remember to run `go generate ./...` from the project root.
-* `tavern/ent/schema` is a directory which defines our graph using database models (ents) and the relations between them
+* `tavern/internal/ent/schema` is a directory which defines our graph using database models (ents) and the relations between them
 * `tavern/generate.go` is responsible for generating ents defined by the ent schema as well as updating the GraphQL schema and generating related code
-* `tavern/ent/entc.go` is responsible for generating code for the entgo <-> 99designs/gqlgen GraphQL integration
-* `tavern/graphql/schema/mutation.graphql` defines all mutations supported by our API
-* `tavern/graphql/schema/query.graphql` is a GraphQL schema automatically generated by ent, providing useful types derived from our ent schemas as well as root-level queries defined by entgo annotations
-* `tavern/graphql/schema/scalars.graphql` defines scalar GraphQL types that can be used to help with Go bindings (See [gqlgen docs](https://gqlgen.com/reference/scalars/) for more info)
-* `tavern/graphql/schema/inputs.graphql` defines custom GraphQL inputs that can be used with your mutations (e.g. outside of the default auto-generated CRUD inputs)
+* `tavern/internal/ent/entc.go` is responsible for generating code for the entgo <-> 99designs/gqlgen GraphQL integration
+* `tavern/internal/graphql/schema/mutation.graphql` defines all mutations supported by our API
+* `tavern/internal/graphql/schema/query.graphql` is a GraphQL schema automatically generated by ent, providing useful types derived from our ent schemas as well as root-level queries defined by entgo annotations
+* `tavern/internal/graphql/schema/scalars.graphql` defines scalar GraphQL types that can be used to help with Go bindings (See [gqlgen docs](https://gqlgen.com/reference/scalars/) for more info)
+* `tavern/internal/graphql/schema/inputs.graphql` defines custom GraphQL inputs that can be used with your mutations (e.g. outside of the default auto-generated CRUD inputs)
 
 ### YAML Test Reference
 
@@ -167,7 +271,7 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 |-----|-----------|--------|
 |state| SQL queries that define the initial db state before the query is run.| no |
 |requestor| Holds information about the authenticated context making the query. | no |
-|requestor.session_token| Session token corresponding to the user for authentication. You may create a user with a predetermined session token using the `state` field. | no |
+|requestor.beacon_token| Session token corresponding to the user for authentication. You may create a user with a predetermined session token using the `state` field. | no |
 |query| GraphQL query or mutation to be executed | yes |
 |variables| A map of variables that will be passed with your GraphQL Query to the server | no |
 |expected| A map that defines the expected response that the server should return | no |
@@ -193,7 +297,7 @@ This however restricts the available transport methods the agent may use to comm
 
 ### GraphQL Example
 
-GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supports a variety of different mutations for interacting with the graph ([see schema](https://github.com/KCarretto/realm/blob/main/tavern/graphql/schema/mutation.graphql)). The two mutations agents rely on are `claimTasks` and `submitTaskResult` (covered in more detail below). GraphQL requests are submitted as HTTP POST requests to Tavern, with a JSON body including the GraphQL mutation. Below is an example JSON body that may be sent to the Tavern GraphQL API:
+GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supports a variety of different mutations for interacting with the graph ([see schema](https://github.com/KCarretto/realm/blob/main/tavern/internal/graphql/schema/mutation.graphql)). The two mutations agents rely on are `claimTasks` and `submitTaskResult` (covered in more detail below). GraphQL requests are submitted as HTTP POST requests to Tavern, with a JSON body including the GraphQL mutation. Below is an example JSON body that may be sent to the Tavern GraphQL API:
 
 ```json
 {
@@ -204,7 +308,7 @@ GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supp
       "hostname": "test",
       "hostIdentifier": "dodo",
       "agentIdentifier": "bleep",
-      "sessionIdentifier": "123"
+      "beaconIdentifier": "123"
     }
   },
   "operationName": "ClaimTasks"
@@ -215,13 +319,13 @@ In the above example, `$input` is used to pass variables from code to the GraphQ
 
 ### Claiming Tasks
 
-The first GraphQL mutation an agent should utilize is `claimTasks`. This mutation is used to fetch new tasks from Tavern that should be executed by the agent. In order to fetch execution information, the agent should perform a graph traversal to obtain information about the associated job. For example:
+The first GraphQL mutation an agent should utilize is `claimTasks`. This mutation is used to fetch new tasks from Tavern that should be executed by the agent. In order to fetch execution information, the agent should perform a graph traversal to obtain information about the associated quest. For example:
 
 ```graphql
 mutation ClaimTasks($input: ClaimTasksInput!) {
   claimTasks(input: $input) {
     id
-    job {
+    quest {
       tome {
         id
         eldritch

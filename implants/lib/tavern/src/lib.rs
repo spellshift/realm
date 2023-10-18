@@ -9,11 +9,11 @@ pub mod http;
 pub use mutations::claim_tasks::{
     ClaimTasksInput,
     ClaimTasksClaimTasks as Task,
-    ClaimTasksClaimTasksJob as Job,
-    ClaimTasksClaimTasksJobTome as Tome,
-    ClaimTasksClaimTasksJobTomeFiles as File,
-    ClaimTasksClaimTasksJobBundle as Bundle,
-    SessionHostPlatform as HostPlatform,
+    ClaimTasksClaimTasksQuest as Quest,
+    ClaimTasksClaimTasksQuestTome as Tome,
+    ClaimTasksClaimTasksQuestTomeFiles as File,
+    ClaimTasksClaimTasksQuestBundle as Bundle,
+    HostPlatform as HostPlatform,
     ResponseData as ClaimTasksResponseData,
 };
 pub use mutations::submit_task_result::{
@@ -22,9 +22,7 @@ pub use mutations::submit_task_result::{
     ResponseData as SubmitTaskResultResponseData,
 };
 
-pub use graphql_client::{
-    Response as GraphQLResponse,
-};
+pub use graphql_client::Response as GraphQLResponse;
 
 use async_trait::async_trait;
 use graphql_client::{GraphQLQuery, QueryBody, Response};
@@ -95,7 +93,7 @@ mod tests {
     use super::*;
 
     use chrono::Utc;
-    use serde::{Serialize};
+    use serde::Serialize;
     use crate::mutations::submit_task_result::SubmitTaskResultSubmitTaskResult;
 
     // Defines a MockTransport which simply returns the expected response.
@@ -132,9 +130,9 @@ mod tests {
                 claim_tasks: vec![
                     Task{
                         id: String::from("5"),
-                        job: Job{
+                        quest: Quest{
                             id: String::from("10"),
-                            name: String::from("test_job"),
+                            name: String::from("test_quest"),
                             parameters: None,
                             tome: Tome{
                                 id: String::from("15"),
@@ -158,7 +156,7 @@ mod tests {
             hostname: String::from("test"),
             host_platform: HostPlatform::Windows,
             host_primary_ip: Some(String::from("test")),
-            session_identifier: String::from("test"),
+            beacon_identifier: String::from("test"),
             host_identifier: String::from("test"),
             agent_identifier: String::from("test"),
         };

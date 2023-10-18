@@ -11,10 +11,11 @@ import (
 	"testing"
 
 	tavern "github.com/kcarretto/realm/tavern"
-	"github.com/kcarretto/realm/tavern/ent"
-	"github.com/kcarretto/realm/tavern/ent/enttest"
-	"github.com/kcarretto/realm/tavern/ent/job"
-	"github.com/kcarretto/realm/tavern/ent/session"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
+	"github.com/kcarretto/realm/tavern/internal/ent/quest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,14 +42,14 @@ func TestEndToEnd(t *testing.T) {
 		assert.Equal(t, tavern.OKStatusText, string(body))
 	})
 
-	// Helper for performing session callbacks
-	sessionCallback := func(t *testing.T, identifier string) (*ent.Session, claimTasksResponse) {
+	// Helper for performing beacon callbacks
+	beaconCallback := func(t *testing.T, identifier string) (*ent.Beacon, claimTasksResponse) {
 		req := graphQLQuery{
 			OperationName: "ClaimTasks",
 			Query: `mutation ClaimTasks($input: ClaimTasksInput!) {
 				claimTasks(input: $input) {
 					id
-					job {
+					quest {
 						id
 						tome {
 							id
@@ -61,12 +62,12 @@ func TestEndToEnd(t *testing.T) {
 			}`,
 			Variables: map[string]any{
 				"input": map[string]any{
-					"principal":         "root",
-					"hostname":          "some_hostname",
-					"hostPlatform":      session.HostPlatformUnknown,
-					"sessionIdentifier": identifier,
-					"hostIdentifier":    "uniquely_identifies_host.For_example_a_serial_number",
-					"agentIdentifier":   "uniquely_identifies_this_agent",
+					"principal":        "root",
+					"hostname":         "some_hostname",
+					"hostPlatform":     host.PlatformUnknown,
+					"beaconIdentifier": identifier,
+					"hostIdentifier":   "uniquely_identifies_host.For_example_a_serial_number",
+					"agentIdentifier":  "uniquely_identifies_this_agent",
 				},
 			},
 		}
@@ -81,32 +82,32 @@ func TestEndToEnd(t *testing.T) {
 		err = json.Unmarshal(body, &graphQLResp)
 		require.NoError(t, err)
 
-		testSession, err := graph.Session.Query().
-			Where(session.Identifier(identifier)).
+		testBeacon, err := graph.Beacon.Query().
+			Where(beacon.Identifier(identifier)).
 			Only(ctx)
 		require.NoError(t, err)
-		assert.NotZero(t, testSession.LastSeenAt)
-		return testSession, graphQLResp
+		assert.NotZero(t, testBeacon.LastSeenAt)
+		return testBeacon, graphQLResp
 	}
 
 	var (
-		createdJobID    int
+		createdQuestID  int
 		createdTaskID   int
 		defaultTomeID   int
 		createdBundleID int
 	)
 
-	// Session First Callback
-	firstSessionIdentifier := "first_session"
-	t.Run("SessionFirstCallback", func(t *testing.T) {
-		_, resp := sessionCallback(t, firstSessionIdentifier)
+	// Beacon First Callback
+	firstBeaconIdentifier := "first_beacon"
+	t.Run("BeaconFirstCallback", func(t *testing.T) {
+		_, resp := beaconCallback(t, firstBeaconIdentifier)
 		assert.Len(t, resp.Data.ClaimTasks, 0)
 	})
 
-	// Create a Job (assumes a default tome has been properly configured)
-	t.Run("CreateJob", func(t *testing.T) {
-		testSession, err := graph.Session.Query().
-			Where(session.Identifier(firstSessionIdentifier)).
+	// Create a Quest (assumes a default tome has been properly configured)
+	t.Run("CreateQuest", func(t *testing.T) {
+		testBeacon, err := graph.Beacon.Query().
+			Where(beacon.Identifier(firstBeaconIdentifier)).
 			Only(ctx)
 		require.NoError(t, err)
 
@@ -116,10 +117,10 @@ func TestEndToEnd(t *testing.T) {
 		defaultTomeID = testTome.ID
 
 		req := graphQLQuery{
-			OperationName: "CreateJob",
-			Query:         "mutation CreateJob($sessionIDs: [ID!]!, $input: CreateJobInput!) { createJob(sessionIDs: $sessionIDs, input: $input) { id } }",
+			OperationName: "CreateQuest",
+			Query:         "mutation CreateQuest($beaconIDs: [ID!]!, $input: CreateQuestInput!) { createQuest(beaconIDs: $beaconIDs, input: $input) { id } }",
 			Variables: map[string]any{
-				"sessionIDs": []int{testSession.ID},
+				"beaconIDs": []int{testBeacon.ID},
 				"input": map[string]any{
 					"name":   "unit test",
 					"tomeID": testTome.ID,
@@ -131,44 +132,44 @@ func TestEndToEnd(t *testing.T) {
 		_, err = ts.Client().Post(testURL(ts, "graphql"), "application/json", bytes.NewBuffer(data))
 		require.NoError(t, err)
 
-		testJob, err := graph.Job.Query().
-			Where(job.Name("unit test")).
+		testQuest, err := graph.Quest.Query().
+			Where(quest.Name("unit test")).
 			Only(ctx)
 		require.NoError(t, err)
-		createdJobID = testJob.ID
+		createdQuestID = testQuest.ID
 
-		testBundle, err := testJob.Bundle(ctx)
+		testBundle, err := testQuest.Bundle(ctx)
 		require.NoError(t, err)
 		require.NotNil(t, testBundle)
 		createdBundleID = testBundle.ID
 
-		testTasks, err := testJob.Tasks(ctx)
+		testTasks, err := testQuest.Tasks(ctx)
 		require.NoError(t, err)
 		require.NotEmpty(t, testTasks)
 		assert.Len(t, testTasks, 1)
 		createdTaskID = testTasks[0].ID
 
-		testTaskSession, err := testTasks[0].Session(ctx)
+		testTaskBeacon, err := testTasks[0].Beacon(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, testSession.ID, testTaskSession.ID)
+		assert.Equal(t, testBeacon.ID, testTaskBeacon.ID)
 	})
 
-	// Session Second Callback
-	t.Run("SessionSecondCallback", func(t *testing.T) {
-		_, resp := sessionCallback(t, firstSessionIdentifier)
+	// Beacon Second Callback
+	t.Run("BeaconSecondCallback", func(t *testing.T) {
+		_, resp := beaconCallback(t, firstBeaconIdentifier)
 		require.NotEmpty(t, resp.Data.ClaimTasks)
 		assert.Len(t, resp.Data.ClaimTasks, 1)
 
-		jobID := convertID(resp.Data.ClaimTasks[0].Job.ID)
-		assert.Equal(t, createdJobID, jobID)
+		questID := convertID(resp.Data.ClaimTasks[0].Quest.ID)
+		assert.Equal(t, createdQuestID, questID)
 
 		taskID := convertID(resp.Data.ClaimTasks[0].ID)
 		assert.Equal(t, createdTaskID, taskID)
 
-		tomeID := convertID(resp.Data.ClaimTasks[0].Job.Tome.ID)
+		tomeID := convertID(resp.Data.ClaimTasks[0].Quest.Tome.ID)
 		assert.Equal(t, defaultTomeID, tomeID)
 
-		bundleID := convertID(resp.Data.ClaimTasks[0].Job.Bundle.ID)
+		bundleID := convertID(resp.Data.ClaimTasks[0].Quest.Bundle.ID)
 		assert.Equal(t, createdBundleID, bundleID)
 	})
 
@@ -183,8 +184,8 @@ type graphQLQuery struct {
 type claimTasksResponse struct {
 	Data struct {
 		ClaimTasks []struct {
-			ID  string `json:"id"`
-			Job struct {
+			ID    string `json:"id"`
+			Quest struct {
 				ID   string `json:"id"`
 				Tome struct {
 					ID string `json:"id"`
@@ -192,7 +193,7 @@ type claimTasksResponse struct {
 				Bundle struct {
 					ID string `json:"id"`
 				} `json:"bundle"`
-			} `json:"job"`
+			} `json:"quest"`
 		} `json:"claimTasks"`
 	} `json:"data"`
 }

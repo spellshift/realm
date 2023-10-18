@@ -4,21 +4,33 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+aes = { workspace = true }
 allocative = { workspace = true }
 allocative_derive = { workspace = true }
 anyhow = { workspace = true }
 async-recursion = { workspace = true }
+async-trait = { workspace = true }
+base64 = { workspace = true }
+chrono = { workspace = true }
 derive_more = { workspace = true }
 eval = { workspace = true }
 flate2 = { workspace = true }
 gazebo = { workspace = true }
+hex-literal = { workspace = true }
+ipnetwork = { workspace = true }
+md5 = { workspace = true }
 nix = { workspace = true }
 object = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
+russh = { workspace = true }
+russh-sftp = { workspace = true }
+russh-keys = { workspace = true }
 rust-embed = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+sha1 = { workspace = true }
+sha2 = { workspace = true }
 sha256 = { workspace = true }
 starlark = { workspace = true }
 sysinfo = { workspace = true }
@@ -37,6 +49,13 @@ windows-sys = { workspace = true, features = [
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices"
 ]}
+whoami = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+network-interface = { workspace = true }
+
+[target.'cfg(not(windows))'.dependencies]
+pnet = { workspace = true }
 
 [dev-dependencies]
 httptest = { workspace = true }

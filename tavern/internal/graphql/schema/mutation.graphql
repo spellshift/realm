@@ -1,0 +1,38 @@
+type Mutation {
+    ###
+    # Quest
+    ###
+    createQuest(beaconIDs: [ID!]!, input: CreateQuestInput!): Quest @requireRole(role: USER)
+
+    ###
+    # Beacon
+    ###
+    updateBeacon(beaconID: ID!, input: UpdateBeaconInput!): Beacon! @requireRole(role: USER)
+
+    ###
+    # Host
+    ###
+    updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
+
+    ###
+    # Tag
+    ###
+    createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
+    updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
+
+    ###
+    # Task
+    ###
+    claimTasks(input: ClaimTasksInput!,): [Task!]!
+    submitTaskResult(input: SubmitTaskResultInput!,): Task
+
+    ###
+    # Tome
+    ###
+    createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
+
+    ###
+    # User
+    ###
+    updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
+}

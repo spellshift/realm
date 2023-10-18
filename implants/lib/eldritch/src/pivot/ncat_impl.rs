@@ -25,7 +25,7 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
-        result_string = String::from(String::from_utf8((&response_buffer).to_vec()).unwrap().trim_matches(char::from(0)));
+        result_string = String::from(String::from_utf8((&response_buffer).to_vec())?.trim_matches(char::from(0)));
         Ok(result_string)
 
     } else if protocol == "udp" {
@@ -44,7 +44,7 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
-        result_string = String::from(String::from_utf8((&response_buffer).to_vec()).unwrap().trim_matches(char::from(0)));
+        result_string = String::from(String::from_utf8((&response_buffer).to_vec())?.trim_matches(char::from(0)));
         Ok(result_string)
 
     } else {
@@ -57,8 +57,7 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
 pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
-        .build()
-        .unwrap();
+        .build()?;
 
     let response = runtime.block_on(
         handle_ncat(address, port, data, protocol)

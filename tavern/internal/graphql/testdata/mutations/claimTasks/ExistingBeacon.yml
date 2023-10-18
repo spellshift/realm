@@ -1,0 +1,22 @@
+state: |
+  INSERT INTO `hosts` (id, name, identifier)
+    VALUES (1010,"db1","EXISTING-HOST");
+  INSERT INTO `beacons` (id, name, identifier, beacon_host)
+    VALUES (1337,"delightful-lich","EXISTING-BEACON",1010);
+query: |
+  mutation ExistingBeacon($input: ClaimTasksInput!) {
+    claimTasks(input: $input) {
+      id
+    }
+  }
+variables:
+  input:
+    principal: root
+    hostname: some-machine
+    hostPlatform: Linux
+    beaconIdentifier: EXISTING-BEACON
+    hostIdentifier: MY-HOST
+    agentIdentifier: COOL-TEST
+
+expected:
+  claimTasks: []

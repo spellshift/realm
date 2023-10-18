@@ -1,4 +1,4 @@
-use anyhow::{Result};
+use anyhow::{Result, Context};
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use sysinfo::{ProcessExt,System,SystemExt,PidExt};
 use sysinfo::{UserExt};
@@ -19,7 +19,7 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     for (pid, process) in sys.processes() {
         let mut tmp_ppid = 0;
         if  process.parent() != None {
-            tmp_ppid = process.parent().unwrap().as_u32();
+            tmp_ppid = process.parent().context(format!("Failed to get parent process for {}", pid))?.as_u32();
         }
         let tmp_username = match process.user_id() {
             Some(local_user_id) => match sys.get_user_by_id(local_user_id){
@@ -34,21 +34,21 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
         // Create Dict type.
         let mut tmp_res = Dict::new(res);
 
-        tmp_res.insert_hashed(const_frozen_string!("pid").to_value().get_hashed().unwrap(), Value::new_int(match pid.as_u32().try_into() {
+        tmp_res.insert_hashed(const_frozen_string!("pid").to_value().get_hashed()?, starlark_heap.alloc(match pid.as_u32().try_into() {
             Ok(local_int) => local_int,
             Err(_) => -1,
         }));
-        tmp_res.insert_hashed(const_frozen_string!("ppid").to_value().get_hashed().unwrap(), Value::new_int(match tmp_ppid.try_into() {
+        tmp_res.insert_hashed(const_frozen_string!("ppid").to_value().get_hashed()?, starlark_heap.alloc(match tmp_ppid.try_into() {
             Ok(local_int) => local_int,
             Err(_) => -1,
         }));
-        tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&process.status().to_string()).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("username").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&tmp_username).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("path").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.exe().to_str().unwrap())).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("command").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.cmd().join(" "))).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("cwd").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.cwd().to_str().unwrap())).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("environ").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.environ().join(" "))).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed().unwrap(), starlark_heap.alloc_str(&String::from(process.name())).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, starlark_heap.alloc_str(&process.status().to_string()).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("username").to_value().get_hashed()?, starlark_heap.alloc_str(&tmp_username).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("path").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.exe().to_str().context("Failed to cast process exe to str")?)).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("command").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.cmd().join(" "))).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("cwd").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.cwd().to_str().context("failde to cast cwd to str")?)).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("environ").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.environ().join(" "))).to_value());
+        tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.name())).to_value());
 
         final_res.push(tmp_res);
     }
@@ -58,6 +58,8 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Context;
+
     use super::*;
     use std::process::Command;
 
@@ -76,7 +78,7 @@ mod tests {
         let res = list(&binding)?;
         for proc in res{
             let cur_pid = match proc.get(const_frozen_string!("pid").to_value())? {
-                Some(local_cur_pid) => local_cur_pid.to_int()?,
+                Some(local_cur_pid) => local_cur_pid.unpack_i32().context("Failed to unpack starlark int to i32")?,
                 None => return Err(anyhow::anyhow!("pid couldn't be unwrapped")),
             };
             if cur_pid as u32 == child.id() {

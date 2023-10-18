@@ -1,5 +1,5 @@
 use std::net::Ipv4Addr;
-use anyhow::Result;
+use anyhow::{Result, Context};
 use starlark::const_frozen_string;
 use starlark::values::dict::Dict;
 use starlark::values::{Value, Heap};
@@ -59,8 +59,8 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
 
     // Split on / to get host and cidr bits.
     let tmpvec: Vec<&str> = target_cidr.split("/").collect();
-    let host = tmpvec[0].clone().to_string();
-    let bits: u32 = tmpvec[1].clone().parse::<u8>().unwrap().into();
+    let host = tmpvec[0].to_string();
+    let bits: u32 = tmpvec[1].parse::<u8>()?.into();
 
     // Define our vector representations.
     let mut addr: Vec<u64> = vec![0,0,0,0];
@@ -71,10 +71,10 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     let cidr: u64 = bits.into();
 
     let (octet_one, octet_two, octet_three, octet_four) = scanf!(host, ".", u64, u64, u64, u64);
-    addr[3] = octet_four.unwrap();
-    addr[2] = octet_three.unwrap();
-    addr[1] = octet_two.unwrap();
-    addr[0] = octet_one.unwrap();
+    addr[3] = octet_four.context(format!("Failed to extract fourth octet {}", host))?;
+    addr[2] = octet_three.context(format!("Failed to extract third octet {}", host))?;
+    addr[1] = octet_two.context(format!("Failed to extract second octet {}", host))?;
+    addr[0] = octet_one.context(format!("Failed to extract first octet {}", host))?;
 
     // Calculate netmask store as vector.
     let v: Vec<u64> = vec![24, 16, 8, 0];
@@ -108,20 +108,20 @@ fn parse_cidr(target_cidrs: Vec<String>) -> Result<Vec<String>> {
 
         // Handle /32 edge
         if host_u32 == broadcast_u32 {
-            result.push(int_to_string(host_u32).unwrap());
+            result.push(int_to_string(host_u32)?);
         }
 
         // Handle weird /31 cidr edge case
         if host_u32 == (broadcast_u32 - 1) {
             host_u32 = host_u32 + 1;
-            result.push(int_to_string(host_u32).unwrap());
+            result.push(int_to_string(host_u32)?);
         }
 
         // broadcast_u32-1 will not add the broadcast address for the net. Eg. 255.
         while host_u32 < (broadcast_u32-1) {
             // Skip network address Eg. 10.10.0.0
             host_u32 = host_u32 + 1;
-            let host_ip_address = int_to_string(host_u32).unwrap();
+            let host_ip_address = int_to_string(host_u32)?;
             if ! result.contains(&host_ip_address) {
                 result.push(host_ip_address);
             }
@@ -284,7 +284,7 @@ async fn handle_port_scan_timeout(target: String, port: i32, protocol: String, t
                     // If the OS is running out of resources wait and then try again.
                     "Low resources try again" => {
                         sleep(Duration::from_secs(3)).await;
-                        return Ok(handle_port_scan_timeout(target, port, protocol, timeout).await.unwrap());
+                        return Ok(handle_port_scan_timeout(target, port, protocol, timeout).await?);
                     },
                     _ => {
                         return Err(anyhow::Error::from(scan_err));
@@ -304,7 +304,7 @@ async fn handle_port_scan(target_cidrs: Vec<String>, ports: Vec<i32>, protocol: 
     // This vector will hold the handles to our futures so we can retrieve the results when they finish.
     let mut all_scan_futures: Vec<_> = vec![];
     // Iterate over all IP addresses in the CIDR range.
-    for target in parse_cidr(target_cidrs).unwrap() {
+    for target in parse_cidr(target_cidrs)? {
         // Iterate over all listed ports.
         for port in &ports {
             // Add scanning job to the queue.
@@ -343,8 +343,7 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
 
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
-        .build()
-        .unwrap();
+        .build()?;
 
     let response = runtime.block_on(
         handle_port_scan(target_cidrs, ports, protocol, timeout)
@@ -360,15 +359,15 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
                 let mut tmp_res = Dict::new(res);
 
                 let tmp_value1 = starlark_heap.alloc_str(row.0.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed().unwrap(), tmp_value1.to_value());
+                tmp_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed()?, tmp_value1.to_value());
 
-                tmp_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed().unwrap(), Value::new_int(row.1));
+                tmp_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed()?, starlark_heap.alloc(row.1));
 
                 let tmp_value2 = starlark_heap.alloc_str(row.2.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed().unwrap(), tmp_value2.to_value());
+                tmp_res.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed()?, tmp_value2.to_value());
 
                 let tmp_value3 = starlark_heap.alloc_str(row.3.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), tmp_value3.to_value());
+                tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, tmp_value3.to_value());
                 final_res.push(tmp_res);
             }
 
@@ -396,50 +395,50 @@ mod tests {
 
     #[tokio::test]
     async fn test_portscan_int_to_string() -> anyhow::Result<()> {
-        let mut res1 = int_to_string(4294967295u32);
-        assert_eq!(res1.unwrap(), "255.255.255.255");
-        res1 = int_to_string(168427647u32);
-        assert_eq!(res1.unwrap(), "10.10.0.127");
-        res1 = int_to_string(2130706433u32);
-        assert_eq!(res1.unwrap(), "127.0.0.1");
+        let mut res1 = int_to_string(4294967295u32)?;
+        assert_eq!(res1, "255.255.255.255");
+        res1 = int_to_string(168427647u32)?;
+        assert_eq!(res1, "10.10.0.127");
+        res1 = int_to_string(2130706433u32)?;
+        assert_eq!(res1, "127.0.0.1");
         Ok(())
     }
 
     #[tokio::test]
     async fn test_portscan_vec_to_int() -> anyhow::Result<()> {
-        let mut res1 = vec_to_int(vec![127u32,0u32,0u32,1u32]);
-        assert_eq!(res1.unwrap(), 2130706433u32);
-        res1 = vec_to_int(vec![10u32,10u32,0u32,127u32]);
-        assert_eq!(res1.unwrap(), 168427647u32);
-        res1 = vec_to_int(vec![255u32,255u32,255u32,255u32]);
-        assert_eq!(res1.unwrap(), 4294967295u32);
+        let mut res1 = vec_to_int(vec![127u32,0u32,0u32,1u32])?;
+        assert_eq!(res1, 2130706433u32);
+        res1 = vec_to_int(vec![10u32,10u32,0u32,127u32])?;
+        assert_eq!(res1, 168427647u32);
+        res1 = vec_to_int(vec![255u32,255u32,255u32,255u32])?;
+        assert_eq!(res1, 4294967295u32);
         Ok(())
     }
 
     #[tokio::test]
     async fn test_portscan_get_network_and_broadcast() -> anyhow::Result<()> {
-        let mut res1 = get_network_and_broadcast("127.0.0.1/32".to_string());
-        assert_eq!(res1.unwrap(), (vec![127u32,0u32,0u32,1u32], vec![127u32,0u32,0u32,1u32]));
-        res1 = get_network_and_broadcast("10.10.0.0/21".to_string());
-        assert_eq!(res1.unwrap(), (vec![10u32,10u32,0u32,0u32], vec![10u32,10u32,7u32,255u32]));
-        res1 = get_network_and_broadcast("10.10.0.120/28".to_string());
-        assert_eq!(res1.unwrap(), (vec![10u32,10u32,0u32,112u32], vec![10u32,10u32,0u32,127u32]));
+        let mut res1 = get_network_and_broadcast("127.0.0.1/32".to_string())?;
+        assert_eq!(res1, (vec![127u32,0u32,0u32,1u32], vec![127u32,0u32,0u32,1u32]));
+        res1 = get_network_and_broadcast("10.10.0.0/21".to_string())?;
+        assert_eq!(res1, (vec![10u32,10u32,0u32,0u32], vec![10u32,10u32,7u32,255u32]));
+        res1 = get_network_and_broadcast("10.10.0.120/28".to_string())?;
+        assert_eq!(res1, (vec![10u32,10u32,0u32,112u32], vec![10u32,10u32,0u32,127u32]));
         Ok(())
     }
 
     #[tokio::test]
     async fn test_portscan_cidrparse() -> anyhow::Result<()> {
         let mut res: Vec<String>;
-        res = parse_cidr(vec!["127.0.0.1/32".to_string()]).unwrap();
+        res = parse_cidr(vec!["127.0.0.1/32".to_string()])?;
         assert_eq!(res, vec!["127.0.0.1".to_string()]);
 
-        res = parse_cidr(vec!["127.0.0.5/31".to_string()]).unwrap();
+        res = parse_cidr(vec!["127.0.0.5/31".to_string()])?;
         assert_eq!(res, vec!["127.0.0.5".to_string()]);
 
-        res = parse_cidr(vec!["127.0.0.1/32".to_string(), "127.0.0.2/32".to_string(), "127.0.0.2/31".to_string()]).unwrap();
+        res = parse_cidr(vec!["127.0.0.1/32".to_string(), "127.0.0.2/32".to_string(), "127.0.0.2/31".to_string()])?;
         assert_eq!(res, vec!["127.0.0.1".to_string(), "127.0.0.2".to_string(), "127.0.0.3".to_string()]);
 
-        res = parse_cidr(vec!["10.10.0.102/29".to_string(), "192.168.0.1/30".to_string()]).unwrap();
+        res = parse_cidr(vec!["10.10.0.102/29".to_string(), "192.168.0.1/30".to_string()])?;
         assert_eq!(res, vec!["10.10.0.97".to_string(), "10.10.0.98".to_string(), "10.10.0.99".to_string(), "10.10.0.100".to_string(),
             "10.10.0.101".to_string(), "10.10.0.102".to_string(), "192.168.0.1".to_string(), "192.168.0.2".to_string()]);
         Ok(())
@@ -479,7 +478,7 @@ mod tests {
         // Iterate over append port number and start listen server
         let mut listen_tasks = vec![];
         for listener in bound_listeners_vec.into_iter(){
-            test_ports.push(listener.local_addr().unwrap().port().into());
+            test_ports.push(listener.local_addr()?.port().into());
             listen_tasks.push(task::spawn(local_accept_tcp(listener)));
         }
 
@@ -494,7 +493,12 @@ mod tests {
         
         // Run both
         let (_a, _b, _c, actual_response) =
-            tokio::join!(listen_task_iter.next().unwrap(),listen_task_iter.next().unwrap(),listen_task_iter.next().unwrap(),send_task);
+            tokio::join!(
+                listen_task_iter.next().context("Failed to start listen task 1")?,
+                listen_task_iter.next().context("Failed to start listen task 1")?,
+                listen_task_iter.next().context("Failed to start listen task 1")?,
+                send_task
+            );
 
         let unwrapped_response = match actual_response {
             Ok(res) => match res {
@@ -555,7 +559,7 @@ mod tests {
     //             (host.clone(),test_ports[3],proto.clone(),TIMEOUT.to_string())];
     //     }
 
-    //     assert_eq!(expected_response, actual_response.unwrap().unwrap());
+    //     assert_eq!(expected_response, actual_response??);
     //     Ok(())
     // }
 
@@ -609,7 +613,7 @@ res
         match AstModule::parse(
                 "test.eldritch",
                 test_content.to_owned(),
-                &Dialect::Standard
+                &Dialect::Extended
             ) {
                 Ok(res) => ast = res,
                 Err(err) => return Err(err),
@@ -623,11 +627,11 @@ res
             }
         }
 
-        let globals = GlobalsBuilder::extended().with(func_port_scan).build();
+        let globals = GlobalsBuilder::standard().with(func_port_scan).build();
         let module: Module = Module::new();
 
         let mut eval: Evaluator = Evaluator::new(&module);
-        let res: Value = eval.eval_module(ast, &globals).unwrap();
+        let res: Value = eval.eval_module(ast, &globals)?;
         let _res_string = res.to_string();
         // Didn't panic yay!
         assert!(true);
