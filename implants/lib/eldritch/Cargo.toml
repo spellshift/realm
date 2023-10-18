@@ -19,6 +19,7 @@ gazebo = { workspace = true }
 hex-literal = { workspace = true }
 ipnetwork = { workspace = true }
 md5 = { workspace = true }
+netstat2 = { workspace = true }
 nix = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
@@ -47,9 +48,6 @@ windows-sys = { workspace = true, features = [
     "Win32_Security",
 ]}
 whoami = { workspace = true }
-
-[target.'cfg(target_os = "linux")'.dependencies]
-procfs = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 network-interface = { workspace = true }

@@ -60,7 +60,7 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         list_impl::list(starlark_heap)
     }
-    fn info<'v>(this: ProcessLibrary, starlark_heap: &'v Heap, pid: Option<i32>) -> anyhow::Result<Dict<'v>> {
+    fn info<'v>(this: ProcessLibrary, starlark_heap: &'v Heap, pid: Option<usize>) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         info_impl::info(starlark_heap, pid)
     }
