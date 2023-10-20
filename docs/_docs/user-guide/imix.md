@@ -56,3 +56,36 @@ See the [Eldritch User Guide](/user-guide/eldritch) for more information.
 ## Task management
 Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
 Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running tasks will report their status as new data comes in.
+
+## Static cross compiliation
+
+### Linux
+
+```bash
+rustup target add x86_64-unknown-linux-musl
+
+apt update
+apt install musl-tools
+
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-unknown-linux-musl
+```
+
+### MacOS
+**MacOS does not support static compilation**
+https://developer.apple.com/forums/thread/706419
+
+**Cross compilation is more complicated than we'll support**
+Check out this blog a starting point for cross compiling.
+https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html/
+
+
+### Windows
+```bash
+rustup target add x86_64-pc-windows-gnu
+
+apt update
+sudo apt install gcc-mingw-w64
+
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-pc-windows-gnu
+```
+
