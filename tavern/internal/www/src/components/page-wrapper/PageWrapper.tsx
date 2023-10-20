@@ -6,16 +6,21 @@ import {
   XMarkIcon,
   BugAntIcon,
   ClipboardDocumentCheckIcon,
-  PresentationChartLineIcon
+  PresentationChartLineIcon,
+  TrophyIcon,
+  CommandLineIcon
 } from '@heroicons/react/24/outline'
 
 import logo from '../../assets/eldrich.png';
+import { PageNavItem } from '../../utils/enums';
 
 const navigation = [
-  { name: 'Quests', href: '/quests', icon: ClipboardDocumentCheckIcon, current: true },
-  { name: 'Beacons', href: '/beacons', icon: BugAntIcon, current: false },
-  { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
-  { name: 'Documentation', href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, current: false, target: "__blank" },
+  { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentCheckIcon},
+  { name: PageNavItem.createQuest, href:'/createQuest', icon:CommandLineIcon },
+  { name: PageNavItem.results, href: '/output-results', icon: TrophyIcon,},
+  // { name: 'Beacons', href: '/beacons', icon: BugAntIcon, current: false },
+  // { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
+  { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank" },
 ]
 const teams = [
   { id: 1, name: 'Heroicons', href: '#', initial: 'H', current: false },
@@ -29,9 +34,10 @@ function classNames(...classes: string[]) {
 
 type Props = {
   children: any;
+  currNavItem?: PageNavItem;
 }
 export const PageWrapper = (props: Props) => {
-  const {children} = props;
+  const {children, currNavItem} = props;
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -96,7 +102,7 @@ export const PageWrapper = (props: Props) => {
                                   href={item.href}
                                   target={item?.target ? '__blank': undefined}
                                   className={classNames(
-                                    item.current
+                                    item.name === currNavItem
                                       ? 'bg-gray-800 text-white'
                                       : 'text-gray-400 hover:text-white hover:bg-gray-800',
                                     'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
@@ -142,7 +148,7 @@ export const PageWrapper = (props: Props) => {
                           href={item.href}
                           target={item?.target ? '__blank': undefined}
                           className={classNames(
-                            item.current
+                            item.name === currNavItem
                               ? 'bg-gray-800 text-white'
                               : 'text-gray-400 hover:text-white hover:bg-gray-800',
                             'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'

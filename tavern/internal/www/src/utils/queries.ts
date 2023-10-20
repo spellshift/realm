@@ -15,10 +15,15 @@ export const GET_QUEST_QUERY = gql`
                 beacon {
                     id
                     name
-                    tags{
+					host{
+                      id
+                      name
+                      primaryIP
+                      tags {
+                        id
                         name
                         kind
-                        id   
+                      } 
                     }
                 }
             }

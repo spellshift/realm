@@ -65,11 +65,6 @@ func Principal(v string) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldPrincipal, v))
 }
 
-// Hostname applies equality check predicate on the "hostname" field. It's identical to HostnameEQ.
-func Hostname(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEQ(FieldHostname, v))
-}
-
 // Identifier applies equality check predicate on the "identifier" field. It's identical to IdentifierEQ.
 func Identifier(v string) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldIdentifier, v))
@@ -78,16 +73,6 @@ func Identifier(v string) predicate.Beacon {
 // AgentIdentifier applies equality check predicate on the "agent_identifier" field. It's identical to AgentIdentifierEQ.
 func AgentIdentifier(v string) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldAgentIdentifier, v))
-}
-
-// HostIdentifier applies equality check predicate on the "host_identifier" field. It's identical to HostIdentifierEQ.
-func HostIdentifier(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEQ(FieldHostIdentifier, v))
-}
-
-// HostPrimaryIP applies equality check predicate on the "host_primary_ip" field. It's identical to HostPrimaryIPEQ.
-func HostPrimaryIP(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEQ(FieldHostPrimaryIP, v))
 }
 
 // LastSeenAt applies equality check predicate on the "last_seen_at" field. It's identical to LastSeenAtEQ.
@@ -235,81 +220,6 @@ func PrincipalContainsFold(v string) predicate.Beacon {
 	return predicate.Beacon(sql.FieldContainsFold(FieldPrincipal, v))
 }
 
-// HostnameEQ applies the EQ predicate on the "hostname" field.
-func HostnameEQ(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEQ(FieldHostname, v))
-}
-
-// HostnameNEQ applies the NEQ predicate on the "hostname" field.
-func HostnameNEQ(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldNEQ(FieldHostname, v))
-}
-
-// HostnameIn applies the In predicate on the "hostname" field.
-func HostnameIn(vs ...string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldIn(FieldHostname, vs...))
-}
-
-// HostnameNotIn applies the NotIn predicate on the "hostname" field.
-func HostnameNotIn(vs ...string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldNotIn(FieldHostname, vs...))
-}
-
-// HostnameGT applies the GT predicate on the "hostname" field.
-func HostnameGT(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldGT(FieldHostname, v))
-}
-
-// HostnameGTE applies the GTE predicate on the "hostname" field.
-func HostnameGTE(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldGTE(FieldHostname, v))
-}
-
-// HostnameLT applies the LT predicate on the "hostname" field.
-func HostnameLT(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldLT(FieldHostname, v))
-}
-
-// HostnameLTE applies the LTE predicate on the "hostname" field.
-func HostnameLTE(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldLTE(FieldHostname, v))
-}
-
-// HostnameContains applies the Contains predicate on the "hostname" field.
-func HostnameContains(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldContains(FieldHostname, v))
-}
-
-// HostnameHasPrefix applies the HasPrefix predicate on the "hostname" field.
-func HostnameHasPrefix(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldHasPrefix(FieldHostname, v))
-}
-
-// HostnameHasSuffix applies the HasSuffix predicate on the "hostname" field.
-func HostnameHasSuffix(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldHasSuffix(FieldHostname, v))
-}
-
-// HostnameIsNil applies the IsNil predicate on the "hostname" field.
-func HostnameIsNil() predicate.Beacon {
-	return predicate.Beacon(sql.FieldIsNull(FieldHostname))
-}
-
-// HostnameNotNil applies the NotNil predicate on the "hostname" field.
-func HostnameNotNil() predicate.Beacon {
-	return predicate.Beacon(sql.FieldNotNull(FieldHostname))
-}
-
-// HostnameEqualFold applies the EqualFold predicate on the "hostname" field.
-func HostnameEqualFold(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEqualFold(FieldHostname, v))
-}
-
-// HostnameContainsFold applies the ContainsFold predicate on the "hostname" field.
-func HostnameContainsFold(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldContainsFold(FieldHostname, v))
-}
-
 // IdentifierEQ applies the EQ predicate on the "identifier" field.
 func IdentifierEQ(v string) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldIdentifier, v))
@@ -450,176 +360,6 @@ func AgentIdentifierContainsFold(v string) predicate.Beacon {
 	return predicate.Beacon(sql.FieldContainsFold(FieldAgentIdentifier, v))
 }
 
-// HostIdentifierEQ applies the EQ predicate on the "host_identifier" field.
-func HostIdentifierEQ(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEQ(FieldHostIdentifier, v))
-}
-
-// HostIdentifierNEQ applies the NEQ predicate on the "host_identifier" field.
-func HostIdentifierNEQ(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldNEQ(FieldHostIdentifier, v))
-}
-
-// HostIdentifierIn applies the In predicate on the "host_identifier" field.
-func HostIdentifierIn(vs ...string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldIn(FieldHostIdentifier, vs...))
-}
-
-// HostIdentifierNotIn applies the NotIn predicate on the "host_identifier" field.
-func HostIdentifierNotIn(vs ...string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldNotIn(FieldHostIdentifier, vs...))
-}
-
-// HostIdentifierGT applies the GT predicate on the "host_identifier" field.
-func HostIdentifierGT(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldGT(FieldHostIdentifier, v))
-}
-
-// HostIdentifierGTE applies the GTE predicate on the "host_identifier" field.
-func HostIdentifierGTE(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldGTE(FieldHostIdentifier, v))
-}
-
-// HostIdentifierLT applies the LT predicate on the "host_identifier" field.
-func HostIdentifierLT(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldLT(FieldHostIdentifier, v))
-}
-
-// HostIdentifierLTE applies the LTE predicate on the "host_identifier" field.
-func HostIdentifierLTE(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldLTE(FieldHostIdentifier, v))
-}
-
-// HostIdentifierContains applies the Contains predicate on the "host_identifier" field.
-func HostIdentifierContains(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldContains(FieldHostIdentifier, v))
-}
-
-// HostIdentifierHasPrefix applies the HasPrefix predicate on the "host_identifier" field.
-func HostIdentifierHasPrefix(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldHasPrefix(FieldHostIdentifier, v))
-}
-
-// HostIdentifierHasSuffix applies the HasSuffix predicate on the "host_identifier" field.
-func HostIdentifierHasSuffix(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldHasSuffix(FieldHostIdentifier, v))
-}
-
-// HostIdentifierIsNil applies the IsNil predicate on the "host_identifier" field.
-func HostIdentifierIsNil() predicate.Beacon {
-	return predicate.Beacon(sql.FieldIsNull(FieldHostIdentifier))
-}
-
-// HostIdentifierNotNil applies the NotNil predicate on the "host_identifier" field.
-func HostIdentifierNotNil() predicate.Beacon {
-	return predicate.Beacon(sql.FieldNotNull(FieldHostIdentifier))
-}
-
-// HostIdentifierEqualFold applies the EqualFold predicate on the "host_identifier" field.
-func HostIdentifierEqualFold(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEqualFold(FieldHostIdentifier, v))
-}
-
-// HostIdentifierContainsFold applies the ContainsFold predicate on the "host_identifier" field.
-func HostIdentifierContainsFold(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldContainsFold(FieldHostIdentifier, v))
-}
-
-// HostPrimaryIPEQ applies the EQ predicate on the "host_primary_ip" field.
-func HostPrimaryIPEQ(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEQ(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPNEQ applies the NEQ predicate on the "host_primary_ip" field.
-func HostPrimaryIPNEQ(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldNEQ(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPIn applies the In predicate on the "host_primary_ip" field.
-func HostPrimaryIPIn(vs ...string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldIn(FieldHostPrimaryIP, vs...))
-}
-
-// HostPrimaryIPNotIn applies the NotIn predicate on the "host_primary_ip" field.
-func HostPrimaryIPNotIn(vs ...string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldNotIn(FieldHostPrimaryIP, vs...))
-}
-
-// HostPrimaryIPGT applies the GT predicate on the "host_primary_ip" field.
-func HostPrimaryIPGT(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldGT(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPGTE applies the GTE predicate on the "host_primary_ip" field.
-func HostPrimaryIPGTE(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldGTE(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPLT applies the LT predicate on the "host_primary_ip" field.
-func HostPrimaryIPLT(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldLT(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPLTE applies the LTE predicate on the "host_primary_ip" field.
-func HostPrimaryIPLTE(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldLTE(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPContains applies the Contains predicate on the "host_primary_ip" field.
-func HostPrimaryIPContains(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldContains(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPHasPrefix applies the HasPrefix predicate on the "host_primary_ip" field.
-func HostPrimaryIPHasPrefix(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldHasPrefix(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPHasSuffix applies the HasSuffix predicate on the "host_primary_ip" field.
-func HostPrimaryIPHasSuffix(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldHasSuffix(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPIsNil applies the IsNil predicate on the "host_primary_ip" field.
-func HostPrimaryIPIsNil() predicate.Beacon {
-	return predicate.Beacon(sql.FieldIsNull(FieldHostPrimaryIP))
-}
-
-// HostPrimaryIPNotNil applies the NotNil predicate on the "host_primary_ip" field.
-func HostPrimaryIPNotNil() predicate.Beacon {
-	return predicate.Beacon(sql.FieldNotNull(FieldHostPrimaryIP))
-}
-
-// HostPrimaryIPEqualFold applies the EqualFold predicate on the "host_primary_ip" field.
-func HostPrimaryIPEqualFold(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEqualFold(FieldHostPrimaryIP, v))
-}
-
-// HostPrimaryIPContainsFold applies the ContainsFold predicate on the "host_primary_ip" field.
-func HostPrimaryIPContainsFold(v string) predicate.Beacon {
-	return predicate.Beacon(sql.FieldContainsFold(FieldHostPrimaryIP, v))
-}
-
-// HostPlatformEQ applies the EQ predicate on the "host_platform" field.
-func HostPlatformEQ(v HostPlatform) predicate.Beacon {
-	return predicate.Beacon(sql.FieldEQ(FieldHostPlatform, v))
-}
-
-// HostPlatformNEQ applies the NEQ predicate on the "host_platform" field.
-func HostPlatformNEQ(v HostPlatform) predicate.Beacon {
-	return predicate.Beacon(sql.FieldNEQ(FieldHostPlatform, v))
-}
-
-// HostPlatformIn applies the In predicate on the "host_platform" field.
-func HostPlatformIn(vs ...HostPlatform) predicate.Beacon {
-	return predicate.Beacon(sql.FieldIn(FieldHostPlatform, vs...))
-}
-
-// HostPlatformNotIn applies the NotIn predicate on the "host_platform" field.
-func HostPlatformNotIn(vs ...HostPlatform) predicate.Beacon {
-	return predicate.Beacon(sql.FieldNotIn(FieldHostPlatform, vs...))
-}
-
 // LastSeenAtEQ applies the EQ predicate on the "last_seen_at" field.
 func LastSeenAtEQ(v time.Time) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldLastSeenAt, v))
@@ -670,25 +410,21 @@ func LastSeenAtNotNil() predicate.Beacon {
 	return predicate.Beacon(sql.FieldNotNull(FieldLastSeenAt))
 }
 
-// HasTags applies the HasEdge predicate on the "tags" edge.
-func HasTags() predicate.Beacon {
+// HasHost applies the HasEdge predicate on the "host" edge.
+func HasHost() predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, TagsTable, TagsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, HostTable, HostColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasTagsWith applies the HasEdge predicate on the "tags" edge with a given conditions (other predicates).
-func HasTagsWith(preds ...predicate.Tag) predicate.Beacon {
+// HasHostWith applies the HasEdge predicate on the "host" edge with a given conditions (other predicates).
+func HasHostWith(preds ...predicate.Host) predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TagsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, TagsTable, TagsPrimaryKey...),
-		)
+		step := newHostStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -711,11 +447,7 @@ func HasTasks() predicate.Beacon {
 // HasTasksWith applies the HasEdge predicate on the "tasks" edge with a given conditions (other predicates).
 func HasTasksWith(preds ...predicate.Task) predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TasksInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, TasksTable, TasksColumn),
-		)
+		step := newTasksStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -726,32 +458,15 @@ func HasTasksWith(preds ...predicate.Task) predicate.Beacon {
 
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Beacon) predicate.Beacon {
-	return predicate.Beacon(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for _, p := range predicates {
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Beacon(sql.AndPredicates(predicates...))
 }
 
 // Or groups predicates with the OR operator between them.
 func Or(predicates ...predicate.Beacon) predicate.Beacon {
-	return predicate.Beacon(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for i, p := range predicates {
-			if i > 0 {
-				s1.Or()
-			}
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Beacon(sql.OrPredicates(predicates...))
 }
 
 // Not applies the not operator on the given predicate.
 func Not(p predicate.Beacon) predicate.Beacon {
-	return predicate.Beacon(func(s *sql.Selector) {
-		p(s.Not())
-	})
+	return predicate.Beacon(sql.NotPredicates(p))
 }

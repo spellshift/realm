@@ -175,7 +175,7 @@ func (qu *QuestUpdate) ClearCreator() *QuestUpdate {
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (qu *QuestUpdate) Save(ctx context.Context) (int, error) {
 	qu.defaults()
-	return withHooks[int, QuestMutation](ctx, qu.sqlSave, qu.mutation, qu.hooks)
+	return withHooks(ctx, qu.sqlSave, qu.mutation, qu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -253,10 +253,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.TomeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tome.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -269,10 +266,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.TomeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tome.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -288,10 +282,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: file.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -304,10 +295,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: file.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -323,10 +311,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -339,10 +324,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -358,10 +340,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -377,10 +356,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -393,10 +369,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -580,7 +553,7 @@ func (quo *QuestUpdateOne) Select(field string, fields ...string) *QuestUpdateOn
 // Save executes the query and returns the updated Quest entity.
 func (quo *QuestUpdateOne) Save(ctx context.Context) (*Quest, error) {
 	quo.defaults()
-	return withHooks[*Quest, QuestMutation](ctx, quo.sqlSave, quo.mutation, quo.hooks)
+	return withHooks(ctx, quo.sqlSave, quo.mutation, quo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -675,10 +648,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.TomeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tome.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -691,10 +661,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.TomeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tome.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -710,10 +677,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: file.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -726,10 +690,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: file.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -745,10 +706,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -761,10 +719,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -780,10 +735,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -799,10 +751,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -815,10 +764,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

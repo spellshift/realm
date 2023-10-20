@@ -10,6 +10,7 @@ allocative_derive = { workspace = true }
 anyhow = { workspace = true }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
+base64 = { workspace = true }
 chrono = { workspace = true }
 derive_more = { workspace = true }
 eval = { workspace = true }
@@ -22,6 +23,7 @@ nix = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
 russh = { workspace = true }
+russh-sftp = { workspace = true }
 russh-keys = { workspace = true }
 rust-embed = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }

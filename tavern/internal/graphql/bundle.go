@@ -79,7 +79,7 @@ func newBundleHashDigest(files ...*ent.File) string {
 		hashes = append(hashes, f.Hash)
 	}
 
-	return hex.EncodeToString(
-		sha3.New256().Sum([]byte(strings.Join(hashes, ""))),
-	)
+	data := []byte(strings.Join(hashes, ""))
+	hash := sha3.Sum256(data)
+	return hex.EncodeToString(hash[:])
 }

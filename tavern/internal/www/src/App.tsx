@@ -13,6 +13,7 @@ import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { QuestDetails } from "./pages/quest-details";
+import { OutputResults } from "./pages/output-results";
 
 
 const router = createBrowserRouter([
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
   {
     path: "/createQuest",
     element: <CreateQuest />,
+  },
+  {
+    path: "/output-results",
+    element: <OutputResults />,
   },
 ]);
 

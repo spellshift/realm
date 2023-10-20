@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 	"github.com/kcarretto/realm/tavern/internal/ent/task"
 )
 
@@ -64,26 +64,6 @@ func (bu *BeaconUpdate) ClearPrincipal() *BeaconUpdate {
 	return bu
 }
 
-// SetHostname sets the "hostname" field.
-func (bu *BeaconUpdate) SetHostname(s string) *BeaconUpdate {
-	bu.mutation.SetHostname(s)
-	return bu
-}
-
-// SetNillableHostname sets the "hostname" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableHostname(s *string) *BeaconUpdate {
-	if s != nil {
-		bu.SetHostname(*s)
-	}
-	return bu
-}
-
-// ClearHostname clears the value of the "hostname" field.
-func (bu *BeaconUpdate) ClearHostname() *BeaconUpdate {
-	bu.mutation.ClearHostname()
-	return bu
-}
-
 // SetIdentifier sets the "identifier" field.
 func (bu *BeaconUpdate) SetIdentifier(s string) *BeaconUpdate {
 	bu.mutation.SetIdentifier(s)
@@ -118,60 +98,6 @@ func (bu *BeaconUpdate) ClearAgentIdentifier() *BeaconUpdate {
 	return bu
 }
 
-// SetHostIdentifier sets the "host_identifier" field.
-func (bu *BeaconUpdate) SetHostIdentifier(s string) *BeaconUpdate {
-	bu.mutation.SetHostIdentifier(s)
-	return bu
-}
-
-// SetNillableHostIdentifier sets the "host_identifier" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableHostIdentifier(s *string) *BeaconUpdate {
-	if s != nil {
-		bu.SetHostIdentifier(*s)
-	}
-	return bu
-}
-
-// ClearHostIdentifier clears the value of the "host_identifier" field.
-func (bu *BeaconUpdate) ClearHostIdentifier() *BeaconUpdate {
-	bu.mutation.ClearHostIdentifier()
-	return bu
-}
-
-// SetHostPrimaryIP sets the "host_primary_ip" field.
-func (bu *BeaconUpdate) SetHostPrimaryIP(s string) *BeaconUpdate {
-	bu.mutation.SetHostPrimaryIP(s)
-	return bu
-}
-
-// SetNillableHostPrimaryIP sets the "host_primary_ip" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableHostPrimaryIP(s *string) *BeaconUpdate {
-	if s != nil {
-		bu.SetHostPrimaryIP(*s)
-	}
-	return bu
-}
-
-// ClearHostPrimaryIP clears the value of the "host_primary_ip" field.
-func (bu *BeaconUpdate) ClearHostPrimaryIP() *BeaconUpdate {
-	bu.mutation.ClearHostPrimaryIP()
-	return bu
-}
-
-// SetHostPlatform sets the "host_platform" field.
-func (bu *BeaconUpdate) SetHostPlatform(bp beacon.HostPlatform) *BeaconUpdate {
-	bu.mutation.SetHostPlatform(bp)
-	return bu
-}
-
-// SetNillableHostPlatform sets the "host_platform" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableHostPlatform(bp *beacon.HostPlatform) *BeaconUpdate {
-	if bp != nil {
-		bu.SetHostPlatform(*bp)
-	}
-	return bu
-}
-
 // SetLastSeenAt sets the "last_seen_at" field.
 func (bu *BeaconUpdate) SetLastSeenAt(t time.Time) *BeaconUpdate {
 	bu.mutation.SetLastSeenAt(t)
@@ -192,19 +118,15 @@ func (bu *BeaconUpdate) ClearLastSeenAt() *BeaconUpdate {
 	return bu
 }
 
-// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
-func (bu *BeaconUpdate) AddTagIDs(ids ...int) *BeaconUpdate {
-	bu.mutation.AddTagIDs(ids...)
+// SetHostID sets the "host" edge to the Host entity by ID.
+func (bu *BeaconUpdate) SetHostID(id int) *BeaconUpdate {
+	bu.mutation.SetHostID(id)
 	return bu
 }
 
-// AddTags adds the "tags" edges to the Tag entity.
-func (bu *BeaconUpdate) AddTags(t ...*Tag) *BeaconUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return bu.AddTagIDs(ids...)
+// SetHost sets the "host" edge to the Host entity.
+func (bu *BeaconUpdate) SetHost(h *Host) *BeaconUpdate {
+	return bu.SetHostID(h.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
@@ -227,25 +149,10 @@ func (bu *BeaconUpdate) Mutation() *BeaconMutation {
 	return bu.mutation
 }
 
-// ClearTags clears all "tags" edges to the Tag entity.
-func (bu *BeaconUpdate) ClearTags() *BeaconUpdate {
-	bu.mutation.ClearTags()
+// ClearHost clears the "host" edge to the Host entity.
+func (bu *BeaconUpdate) ClearHost() *BeaconUpdate {
+	bu.mutation.ClearHost()
 	return bu
-}
-
-// RemoveTagIDs removes the "tags" edge to Tag entities by IDs.
-func (bu *BeaconUpdate) RemoveTagIDs(ids ...int) *BeaconUpdate {
-	bu.mutation.RemoveTagIDs(ids...)
-	return bu
-}
-
-// RemoveTags removes "tags" edges to Tag entities.
-func (bu *BeaconUpdate) RemoveTags(t ...*Tag) *BeaconUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return bu.RemoveTagIDs(ids...)
 }
 
 // ClearTasks clears all "tasks" edges to the Task entity.
@@ -271,7 +178,7 @@ func (bu *BeaconUpdate) RemoveTasks(t ...*Task) *BeaconUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (bu *BeaconUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks[int, BeaconMutation](ctx, bu.sqlSave, bu.mutation, bu.hooks)
+	return withHooks(ctx, bu.sqlSave, bu.mutation, bu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -308,11 +215,6 @@ func (bu *BeaconUpdate) check() error {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Beacon.principal": %w`, err)}
 		}
 	}
-	if v, ok := bu.mutation.Hostname(); ok {
-		if err := beacon.HostnameValidator(v); err != nil {
-			return &ValidationError{Name: "hostname", err: fmt.Errorf(`ent: validator failed for field "Beacon.hostname": %w`, err)}
-		}
-	}
 	if v, ok := bu.mutation.Identifier(); ok {
 		if err := beacon.IdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.identifier": %w`, err)}
@@ -323,15 +225,8 @@ func (bu *BeaconUpdate) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if v, ok := bu.mutation.HostIdentifier(); ok {
-		if err := beacon.HostIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "host_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.host_identifier": %w`, err)}
-		}
-	}
-	if v, ok := bu.mutation.HostPlatform(); ok {
-		if err := beacon.HostPlatformValidator(v); err != nil {
-			return &ValidationError{Name: "host_platform", err: fmt.Errorf(`ent: validator failed for field "Beacon.host_platform": %w`, err)}
-		}
+	if _, ok := bu.mutation.HostID(); bu.mutation.HostCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
 	return nil
 }
@@ -357,12 +252,6 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if bu.mutation.PrincipalCleared() {
 		_spec.ClearField(beacon.FieldPrincipal, field.TypeString)
 	}
-	if value, ok := bu.mutation.Hostname(); ok {
-		_spec.SetField(beacon.FieldHostname, field.TypeString, value)
-	}
-	if bu.mutation.HostnameCleared() {
-		_spec.ClearField(beacon.FieldHostname, field.TypeString)
-	}
 	if value, ok := bu.mutation.Identifier(); ok {
 		_spec.SetField(beacon.FieldIdentifier, field.TypeString, value)
 	}
@@ -372,74 +261,34 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if bu.mutation.AgentIdentifierCleared() {
 		_spec.ClearField(beacon.FieldAgentIdentifier, field.TypeString)
 	}
-	if value, ok := bu.mutation.HostIdentifier(); ok {
-		_spec.SetField(beacon.FieldHostIdentifier, field.TypeString, value)
-	}
-	if bu.mutation.HostIdentifierCleared() {
-		_spec.ClearField(beacon.FieldHostIdentifier, field.TypeString)
-	}
-	if value, ok := bu.mutation.HostPrimaryIP(); ok {
-		_spec.SetField(beacon.FieldHostPrimaryIP, field.TypeString, value)
-	}
-	if bu.mutation.HostPrimaryIPCleared() {
-		_spec.ClearField(beacon.FieldHostPrimaryIP, field.TypeString)
-	}
-	if value, ok := bu.mutation.HostPlatform(); ok {
-		_spec.SetField(beacon.FieldHostPlatform, field.TypeEnum, value)
-	}
 	if value, ok := bu.mutation.LastSeenAt(); ok {
 		_spec.SetField(beacon.FieldLastSeenAt, field.TypeTime, value)
 	}
 	if bu.mutation.LastSeenAtCleared() {
 		_spec.ClearField(beacon.FieldLastSeenAt, field.TypeTime)
 	}
-	if bu.mutation.TagsCleared() {
+	if bu.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   beacon.TagsTable,
-			Columns: beacon.TagsPrimaryKey,
+			Table:   beacon.HostTable,
+			Columns: []string{beacon.HostColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tag.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.RemovedTagsIDs(); len(nodes) > 0 && !bu.mutation.TagsCleared() {
+	if nodes := bu.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   beacon.TagsTable,
-			Columns: beacon.TagsPrimaryKey,
+			Table:   beacon.HostTable,
+			Columns: []string{beacon.HostColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tag.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := bu.mutation.TagsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   beacon.TagsTable,
-			Columns: beacon.TagsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tag.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -455,10 +304,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{beacon.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -471,10 +317,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{beacon.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -490,10 +333,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{beacon.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -555,26 +395,6 @@ func (buo *BeaconUpdateOne) ClearPrincipal() *BeaconUpdateOne {
 	return buo
 }
 
-// SetHostname sets the "hostname" field.
-func (buo *BeaconUpdateOne) SetHostname(s string) *BeaconUpdateOne {
-	buo.mutation.SetHostname(s)
-	return buo
-}
-
-// SetNillableHostname sets the "hostname" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableHostname(s *string) *BeaconUpdateOne {
-	if s != nil {
-		buo.SetHostname(*s)
-	}
-	return buo
-}
-
-// ClearHostname clears the value of the "hostname" field.
-func (buo *BeaconUpdateOne) ClearHostname() *BeaconUpdateOne {
-	buo.mutation.ClearHostname()
-	return buo
-}
-
 // SetIdentifier sets the "identifier" field.
 func (buo *BeaconUpdateOne) SetIdentifier(s string) *BeaconUpdateOne {
 	buo.mutation.SetIdentifier(s)
@@ -609,60 +429,6 @@ func (buo *BeaconUpdateOne) ClearAgentIdentifier() *BeaconUpdateOne {
 	return buo
 }
 
-// SetHostIdentifier sets the "host_identifier" field.
-func (buo *BeaconUpdateOne) SetHostIdentifier(s string) *BeaconUpdateOne {
-	buo.mutation.SetHostIdentifier(s)
-	return buo
-}
-
-// SetNillableHostIdentifier sets the "host_identifier" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableHostIdentifier(s *string) *BeaconUpdateOne {
-	if s != nil {
-		buo.SetHostIdentifier(*s)
-	}
-	return buo
-}
-
-// ClearHostIdentifier clears the value of the "host_identifier" field.
-func (buo *BeaconUpdateOne) ClearHostIdentifier() *BeaconUpdateOne {
-	buo.mutation.ClearHostIdentifier()
-	return buo
-}
-
-// SetHostPrimaryIP sets the "host_primary_ip" field.
-func (buo *BeaconUpdateOne) SetHostPrimaryIP(s string) *BeaconUpdateOne {
-	buo.mutation.SetHostPrimaryIP(s)
-	return buo
-}
-
-// SetNillableHostPrimaryIP sets the "host_primary_ip" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableHostPrimaryIP(s *string) *BeaconUpdateOne {
-	if s != nil {
-		buo.SetHostPrimaryIP(*s)
-	}
-	return buo
-}
-
-// ClearHostPrimaryIP clears the value of the "host_primary_ip" field.
-func (buo *BeaconUpdateOne) ClearHostPrimaryIP() *BeaconUpdateOne {
-	buo.mutation.ClearHostPrimaryIP()
-	return buo
-}
-
-// SetHostPlatform sets the "host_platform" field.
-func (buo *BeaconUpdateOne) SetHostPlatform(bp beacon.HostPlatform) *BeaconUpdateOne {
-	buo.mutation.SetHostPlatform(bp)
-	return buo
-}
-
-// SetNillableHostPlatform sets the "host_platform" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableHostPlatform(bp *beacon.HostPlatform) *BeaconUpdateOne {
-	if bp != nil {
-		buo.SetHostPlatform(*bp)
-	}
-	return buo
-}
-
 // SetLastSeenAt sets the "last_seen_at" field.
 func (buo *BeaconUpdateOne) SetLastSeenAt(t time.Time) *BeaconUpdateOne {
 	buo.mutation.SetLastSeenAt(t)
@@ -683,19 +449,15 @@ func (buo *BeaconUpdateOne) ClearLastSeenAt() *BeaconUpdateOne {
 	return buo
 }
 
-// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
-func (buo *BeaconUpdateOne) AddTagIDs(ids ...int) *BeaconUpdateOne {
-	buo.mutation.AddTagIDs(ids...)
+// SetHostID sets the "host" edge to the Host entity by ID.
+func (buo *BeaconUpdateOne) SetHostID(id int) *BeaconUpdateOne {
+	buo.mutation.SetHostID(id)
 	return buo
 }
 
-// AddTags adds the "tags" edges to the Tag entity.
-func (buo *BeaconUpdateOne) AddTags(t ...*Tag) *BeaconUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return buo.AddTagIDs(ids...)
+// SetHost sets the "host" edge to the Host entity.
+func (buo *BeaconUpdateOne) SetHost(h *Host) *BeaconUpdateOne {
+	return buo.SetHostID(h.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
@@ -718,25 +480,10 @@ func (buo *BeaconUpdateOne) Mutation() *BeaconMutation {
 	return buo.mutation
 }
 
-// ClearTags clears all "tags" edges to the Tag entity.
-func (buo *BeaconUpdateOne) ClearTags() *BeaconUpdateOne {
-	buo.mutation.ClearTags()
+// ClearHost clears the "host" edge to the Host entity.
+func (buo *BeaconUpdateOne) ClearHost() *BeaconUpdateOne {
+	buo.mutation.ClearHost()
 	return buo
-}
-
-// RemoveTagIDs removes the "tags" edge to Tag entities by IDs.
-func (buo *BeaconUpdateOne) RemoveTagIDs(ids ...int) *BeaconUpdateOne {
-	buo.mutation.RemoveTagIDs(ids...)
-	return buo
-}
-
-// RemoveTags removes "tags" edges to Tag entities.
-func (buo *BeaconUpdateOne) RemoveTags(t ...*Tag) *BeaconUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return buo.RemoveTagIDs(ids...)
 }
 
 // ClearTasks clears all "tasks" edges to the Task entity.
@@ -775,7 +522,7 @@ func (buo *BeaconUpdateOne) Select(field string, fields ...string) *BeaconUpdate
 
 // Save executes the query and returns the updated Beacon entity.
 func (buo *BeaconUpdateOne) Save(ctx context.Context) (*Beacon, error) {
-	return withHooks[*Beacon, BeaconMutation](ctx, buo.sqlSave, buo.mutation, buo.hooks)
+	return withHooks(ctx, buo.sqlSave, buo.mutation, buo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -812,11 +559,6 @@ func (buo *BeaconUpdateOne) check() error {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Beacon.principal": %w`, err)}
 		}
 	}
-	if v, ok := buo.mutation.Hostname(); ok {
-		if err := beacon.HostnameValidator(v); err != nil {
-			return &ValidationError{Name: "hostname", err: fmt.Errorf(`ent: validator failed for field "Beacon.hostname": %w`, err)}
-		}
-	}
 	if v, ok := buo.mutation.Identifier(); ok {
 		if err := beacon.IdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.identifier": %w`, err)}
@@ -827,15 +569,8 @@ func (buo *BeaconUpdateOne) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if v, ok := buo.mutation.HostIdentifier(); ok {
-		if err := beacon.HostIdentifierValidator(v); err != nil {
-			return &ValidationError{Name: "host_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.host_identifier": %w`, err)}
-		}
-	}
-	if v, ok := buo.mutation.HostPlatform(); ok {
-		if err := beacon.HostPlatformValidator(v); err != nil {
-			return &ValidationError{Name: "host_platform", err: fmt.Errorf(`ent: validator failed for field "Beacon.host_platform": %w`, err)}
-		}
+	if _, ok := buo.mutation.HostID(); buo.mutation.HostCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
 	return nil
 }
@@ -878,12 +613,6 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 	if buo.mutation.PrincipalCleared() {
 		_spec.ClearField(beacon.FieldPrincipal, field.TypeString)
 	}
-	if value, ok := buo.mutation.Hostname(); ok {
-		_spec.SetField(beacon.FieldHostname, field.TypeString, value)
-	}
-	if buo.mutation.HostnameCleared() {
-		_spec.ClearField(beacon.FieldHostname, field.TypeString)
-	}
 	if value, ok := buo.mutation.Identifier(); ok {
 		_spec.SetField(beacon.FieldIdentifier, field.TypeString, value)
 	}
@@ -893,74 +622,34 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 	if buo.mutation.AgentIdentifierCleared() {
 		_spec.ClearField(beacon.FieldAgentIdentifier, field.TypeString)
 	}
-	if value, ok := buo.mutation.HostIdentifier(); ok {
-		_spec.SetField(beacon.FieldHostIdentifier, field.TypeString, value)
-	}
-	if buo.mutation.HostIdentifierCleared() {
-		_spec.ClearField(beacon.FieldHostIdentifier, field.TypeString)
-	}
-	if value, ok := buo.mutation.HostPrimaryIP(); ok {
-		_spec.SetField(beacon.FieldHostPrimaryIP, field.TypeString, value)
-	}
-	if buo.mutation.HostPrimaryIPCleared() {
-		_spec.ClearField(beacon.FieldHostPrimaryIP, field.TypeString)
-	}
-	if value, ok := buo.mutation.HostPlatform(); ok {
-		_spec.SetField(beacon.FieldHostPlatform, field.TypeEnum, value)
-	}
 	if value, ok := buo.mutation.LastSeenAt(); ok {
 		_spec.SetField(beacon.FieldLastSeenAt, field.TypeTime, value)
 	}
 	if buo.mutation.LastSeenAtCleared() {
 		_spec.ClearField(beacon.FieldLastSeenAt, field.TypeTime)
 	}
-	if buo.mutation.TagsCleared() {
+	if buo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   beacon.TagsTable,
-			Columns: beacon.TagsPrimaryKey,
+			Table:   beacon.HostTable,
+			Columns: []string{beacon.HostColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tag.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.RemovedTagsIDs(); len(nodes) > 0 && !buo.mutation.TagsCleared() {
+	if nodes := buo.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   beacon.TagsTable,
-			Columns: beacon.TagsPrimaryKey,
+			Table:   beacon.HostTable,
+			Columns: []string{beacon.HostColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tag.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := buo.mutation.TagsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   beacon.TagsTable,
-			Columns: beacon.TagsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tag.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -976,10 +665,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 			Columns: []string{beacon.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -992,10 +678,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 			Columns: []string{beacon.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1011,10 +694,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 			Columns: []string{beacon.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
