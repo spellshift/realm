@@ -58,7 +58,7 @@ export const TabFilterTargets = (props: TabFilterTargetsParams) => {
                                                 <Checkbox colorScheme={"purple"} size="lg" isChecked={targets[beacon.id]} onChange={()=> toggleCheck(beacon.id)}>
                                                     <Stack ml={4} w={"xl"}>
                                                         <StackItem>
-                                                                <Text fontSize={"md"}>{beacon.hostname}</Text>
+                                                                <Text fontSize={"md"}>{beacon.host?.name}</Text>
                                                         </StackItem>
                                                         <StackItem>
                                                             <Flex direction="row" wrap={"wrap"}>

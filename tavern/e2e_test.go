@@ -14,6 +14,7 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/ent"
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/quest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,7 +64,7 @@ func TestEndToEnd(t *testing.T) {
 				"input": map[string]any{
 					"principal":        "root",
 					"hostname":         "some_hostname",
-					"hostPlatform":     beacon.HostPlatformUnknown,
+					"hostPlatform":     host.PlatformUnknown,
 					"beaconIdentifier": identifier,
 					"hostIdentifier":   "uniquely_identifies_host.For_example_a_serial_number",
 					"agentIdentifier":  "uniquely_identifies_this_agent",

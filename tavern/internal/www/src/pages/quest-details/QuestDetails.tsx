@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import {useDisclosure, Drawer, DrawerOverlay, DrawerBody,DrawerContent, DrawerCloseButton,DrawerHeader} from "@chakra-ui/react";
 
 import { PageWrapper } from "../../components/page-wrapper";
 import { Link, useParams } from "react-router-dom";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { useQuery } from "@apollo/client";
 import { TaskTable } from "./task-table";
-import { TaskOutput } from "./task-output";
+import { TaskOutput } from "../../components/task-output";
 import { Task } from "../../utils/consts";
+import { PageNavItem } from "../../utils/enums";
 
 export const QuestDetails = () => {
     let { questId } = useParams();
@@ -29,7 +29,7 @@ export const QuestDetails = () => {
     }
 
     return (
-        <PageWrapper>
+        <PageWrapper currNavItem={PageNavItem.quests}>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                     <h3 className="text-2xl font-semibold leading-6 text-gray-900">Task details for {data?.quests[0]?.name}</h3>
                 <div className="mt-3 sm:mt-0 sm:ml-4">

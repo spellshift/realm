@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 )
@@ -19,14 +19,14 @@ import (
 // TagQuery is the builder for querying Tag entities.
 type TagQuery struct {
 	config
-	ctx              *QueryContext
-	order            []OrderFunc
-	inters           []Interceptor
-	predicates       []predicate.Tag
-	withBeacons      *BeaconQuery
-	modifiers        []func(*sql.Selector)
-	loadTotal        []func(context.Context, []*Tag) error
-	withNamedBeacons map[string]*BeaconQuery
+	ctx            *QueryContext
+	order          []tag.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Tag
+	withHosts      *HostQuery
+	modifiers      []func(*sql.Selector)
+	loadTotal      []func(context.Context, []*Tag) error
+	withNamedHosts map[string]*HostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,14 +58,14 @@ func (tq *TagQuery) Unique(unique bool) *TagQuery {
 }
 
 // Order specifies how the records should be ordered.
-func (tq *TagQuery) Order(o ...OrderFunc) *TagQuery {
+func (tq *TagQuery) Order(o ...tag.OrderOption) *TagQuery {
 	tq.order = append(tq.order, o...)
 	return tq
 }
 
-// QueryBeacons chains the current query on the "beacons" edge.
-func (tq *TagQuery) QueryBeacons() *BeaconQuery {
-	query := (&BeaconClient{config: tq.config}).Query()
+// QueryHosts chains the current query on the "hosts" edge.
+func (tq *TagQuery) QueryHosts() *HostQuery {
+	query := (&HostClient{config: tq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,8 +76,8 @@ func (tq *TagQuery) QueryBeacons() *BeaconQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tag.Table, tag.FieldID, selector),
-			sqlgraph.To(beacon.Table, beacon.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, tag.BeaconsTable, tag.BeaconsPrimaryKey...),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.HostsTable, tag.HostsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -272,26 +272,26 @@ func (tq *TagQuery) Clone() *TagQuery {
 		return nil
 	}
 	return &TagQuery{
-		config:      tq.config,
-		ctx:         tq.ctx.Clone(),
-		order:       append([]OrderFunc{}, tq.order...),
-		inters:      append([]Interceptor{}, tq.inters...),
-		predicates:  append([]predicate.Tag{}, tq.predicates...),
-		withBeacons: tq.withBeacons.Clone(),
+		config:     tq.config,
+		ctx:        tq.ctx.Clone(),
+		order:      append([]tag.OrderOption{}, tq.order...),
+		inters:     append([]Interceptor{}, tq.inters...),
+		predicates: append([]predicate.Tag{}, tq.predicates...),
+		withHosts:  tq.withHosts.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
 	}
 }
 
-// WithBeacons tells the query-builder to eager-load the nodes that are connected to
-// the "beacons" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TagQuery) WithBeacons(opts ...func(*BeaconQuery)) *TagQuery {
-	query := (&BeaconClient{config: tq.config}).Query()
+// WithHosts tells the query-builder to eager-load the nodes that are connected to
+// the "hosts" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TagQuery) WithHosts(opts ...func(*HostQuery)) *TagQuery {
+	query := (&HostClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	tq.withBeacons = query
+	tq.withHosts = query
 	return tq
 }
 
@@ -374,7 +374,7 @@ func (tq *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 		nodes       = []*Tag{}
 		_spec       = tq.querySpec()
 		loadedTypes = [1]bool{
-			tq.withBeacons != nil,
+			tq.withHosts != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -398,17 +398,17 @@ func (tq *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := tq.withBeacons; query != nil {
-		if err := tq.loadBeacons(ctx, query, nodes,
-			func(n *Tag) { n.Edges.Beacons = []*Beacon{} },
-			func(n *Tag, e *Beacon) { n.Edges.Beacons = append(n.Edges.Beacons, e) }); err != nil {
+	if query := tq.withHosts; query != nil {
+		if err := tq.loadHosts(ctx, query, nodes,
+			func(n *Tag) { n.Edges.Hosts = []*Host{} },
+			func(n *Tag, e *Host) { n.Edges.Hosts = append(n.Edges.Hosts, e) }); err != nil {
 			return nil, err
 		}
 	}
-	for name, query := range tq.withNamedBeacons {
-		if err := tq.loadBeacons(ctx, query, nodes,
-			func(n *Tag) { n.appendNamedBeacons(name) },
-			func(n *Tag, e *Beacon) { n.appendNamedBeacons(name, e) }); err != nil {
+	for name, query := range tq.withNamedHosts {
+		if err := tq.loadHosts(ctx, query, nodes,
+			func(n *Tag) { n.appendNamedHosts(name) },
+			func(n *Tag, e *Host) { n.appendNamedHosts(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -420,7 +420,7 @@ func (tq *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 	return nodes, nil
 }
 
-func (tq *TagQuery) loadBeacons(ctx context.Context, query *BeaconQuery, nodes []*Tag, init func(*Tag), assign func(*Tag, *Beacon)) error {
+func (tq *TagQuery) loadHosts(ctx context.Context, query *HostQuery, nodes []*Tag, init func(*Tag), assign func(*Tag, *Host)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[int]*Tag)
 	nids := make(map[int]map[*Tag]struct{})
@@ -432,11 +432,11 @@ func (tq *TagQuery) loadBeacons(ctx context.Context, query *BeaconQuery, nodes [
 		}
 	}
 	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(tag.BeaconsTable)
-		s.Join(joinT).On(s.C(beacon.FieldID), joinT.C(tag.BeaconsPrimaryKey[0]))
-		s.Where(sql.InValues(joinT.C(tag.BeaconsPrimaryKey[1]), edgeIDs...))
+		joinT := sql.Table(tag.HostsTable)
+		s.Join(joinT).On(s.C(host.FieldID), joinT.C(tag.HostsPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(tag.HostsPrimaryKey[1]), edgeIDs...))
 		columns := s.SelectedColumns()
-		s.Select(joinT.C(tag.BeaconsPrimaryKey[1]))
+		s.Select(joinT.C(tag.HostsPrimaryKey[1]))
 		s.AppendSelect(columns...)
 		s.SetDistinct(false)
 	})
@@ -466,14 +466,14 @@ func (tq *TagQuery) loadBeacons(ctx context.Context, query *BeaconQuery, nodes [
 			}
 		})
 	})
-	neighbors, err := withInterceptors[[]*Beacon](ctx, query, qr, query.inters)
+	neighbors, err := withInterceptors[[]*Host](ctx, query, qr, query.inters)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
 		nodes, ok := nids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "beacons" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected "hosts" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)
@@ -566,17 +566,17 @@ func (tq *TagQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// WithNamedBeacons tells the query-builder to eager-load the nodes that are connected to the "beacons"
+// WithNamedHosts tells the query-builder to eager-load the nodes that are connected to the "hosts"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (tq *TagQuery) WithNamedBeacons(name string, opts ...func(*BeaconQuery)) *TagQuery {
-	query := (&BeaconClient{config: tq.config}).Query()
+func (tq *TagQuery) WithNamedHosts(name string, opts ...func(*HostQuery)) *TagQuery {
+	query := (&HostClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	if tq.withNamedBeacons == nil {
-		tq.withNamedBeacons = make(map[string]*BeaconQuery)
+	if tq.withNamedHosts == nil {
+		tq.withNamedHosts = make(map[string]*HostQuery)
 	}
-	tq.withNamedBeacons[name] = query
+	tq.withNamedHosts[name] = query
 	return tq
 }
 

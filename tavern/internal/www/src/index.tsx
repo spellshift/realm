@@ -17,36 +17,6 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-client
-  .query({
-    query: gql`
-      query get_data{
-        tomes {
-          id
-          name
-          paramDefs
-          description
-          eldritch
-        }
-        beacons {
-          id
-          name
-          hostname
-          principal
-          tags {
-            id
-          }
-        }
-        tags {
-          name
-          id
-          kind
-        }
-      }
-    `,
-  })
-  .then((result) => console.log(result));
-
 root.render(
   <React.StrictMode>
     <ApolloProvider client={client}>

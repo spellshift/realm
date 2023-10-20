@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/kcarretto/realm/tavern/internal/ent/file"
@@ -22,6 +23,7 @@ type QuestCreate struct {
 	config
 	mutation *QuestMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -144,7 +146,7 @@ func (qc *QuestCreate) Mutation() *QuestMutation {
 // Save creates the Quest in the database.
 func (qc *QuestCreate) Save(ctx context.Context) (*Quest, error) {
 	qc.defaults()
-	return withHooks[*Quest, QuestMutation](ctx, qc.sqlSave, qc.mutation, qc.hooks)
+	return withHooks(ctx, qc.sqlSave, qc.mutation, qc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -226,6 +228,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 		_node = &Quest{config: qc.config}
 		_spec = sqlgraph.NewCreateSpec(quest.Table, sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = qc.conflict
 	if value, ok := qc.mutation.CreatedAt(); ok {
 		_spec.SetField(quest.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -250,10 +253,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 			Columns: []string{quest.TomeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: tome.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -270,10 +270,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: file.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -290,10 +287,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 			Columns: []string{quest.TasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: task.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -309,10 +303,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 			Columns: []string{quest.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -324,14 +315,237 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Quest.Create().
+//		SetCreatedAt(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QuestUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (qc *QuestCreate) OnConflict(opts ...sql.ConflictOption) *QuestUpsertOne {
+	qc.conflict = opts
+	return &QuestUpsertOne{
+		create: qc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Quest.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qc *QuestCreate) OnConflictColumns(columns ...string) *QuestUpsertOne {
+	qc.conflict = append(qc.conflict, sql.ConflictColumns(columns...))
+	return &QuestUpsertOne{
+		create: qc,
+	}
+}
+
+type (
+	// QuestUpsertOne is the builder for "upsert"-ing
+	//  one Quest node.
+	QuestUpsertOne struct {
+		create *QuestCreate
+	}
+
+	// QuestUpsert is the "OnConflict" setter.
+	QuestUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *QuestUpsert) SetLastModifiedAt(v time.Time) *QuestUpsert {
+	u.Set(quest.FieldLastModifiedAt, v)
+	return u
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *QuestUpsert) UpdateLastModifiedAt() *QuestUpsert {
+	u.SetExcluded(quest.FieldLastModifiedAt)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *QuestUpsert) SetName(v string) *QuestUpsert {
+	u.Set(quest.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QuestUpsert) UpdateName() *QuestUpsert {
+	u.SetExcluded(quest.FieldName)
+	return u
+}
+
+// SetParameters sets the "parameters" field.
+func (u *QuestUpsert) SetParameters(v string) *QuestUpsert {
+	u.Set(quest.FieldParameters, v)
+	return u
+}
+
+// UpdateParameters sets the "parameters" field to the value that was provided on create.
+func (u *QuestUpsert) UpdateParameters() *QuestUpsert {
+	u.SetExcluded(quest.FieldParameters)
+	return u
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (u *QuestUpsert) ClearParameters() *QuestUpsert {
+	u.SetNull(quest.FieldParameters)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create.
+// Using this option is equivalent to using:
+//
+//	client.Quest.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *QuestUpsertOne) UpdateNewValues() *QuestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(quest.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Quest.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *QuestUpsertOne) Ignore() *QuestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QuestUpsertOne) DoNothing() *QuestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QuestCreate.OnConflict
+// documentation for more info.
+func (u *QuestUpsertOne) Update(set func(*QuestUpsert)) *QuestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QuestUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *QuestUpsertOne) SetLastModifiedAt(v time.Time) *QuestUpsertOne {
+	return u.Update(func(s *QuestUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *QuestUpsertOne) UpdateLastModifiedAt() *QuestUpsertOne {
+	return u.Update(func(s *QuestUpsert) {
+		s.UpdateLastModifiedAt()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *QuestUpsertOne) SetName(v string) *QuestUpsertOne {
+	return u.Update(func(s *QuestUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QuestUpsertOne) UpdateName() *QuestUpsertOne {
+	return u.Update(func(s *QuestUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetParameters sets the "parameters" field.
+func (u *QuestUpsertOne) SetParameters(v string) *QuestUpsertOne {
+	return u.Update(func(s *QuestUpsert) {
+		s.SetParameters(v)
+	})
+}
+
+// UpdateParameters sets the "parameters" field to the value that was provided on create.
+func (u *QuestUpsertOne) UpdateParameters() *QuestUpsertOne {
+	return u.Update(func(s *QuestUpsert) {
+		s.UpdateParameters()
+	})
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (u *QuestUpsertOne) ClearParameters() *QuestUpsertOne {
+	return u.Update(func(s *QuestUpsert) {
+		s.ClearParameters()
+	})
+}
+
+// Exec executes the query.
+func (u *QuestUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QuestCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QuestUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *QuestUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *QuestUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // QuestCreateBulk is the builder for creating many Quest entities in bulk.
 type QuestCreateBulk struct {
 	config
+	err      error
 	builders []*QuestCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Quest entities in the database.
 func (qcb *QuestCreateBulk) Save(ctx context.Context) ([]*Quest, error) {
+	if qcb.err != nil {
+		return nil, qcb.err
+	}
 	specs := make([]*sqlgraph.CreateSpec, len(qcb.builders))
 	nodes := make([]*Quest, len(qcb.builders))
 	mutators := make([]Mutator, len(qcb.builders))
@@ -348,12 +562,13 @@ func (qcb *QuestCreateBulk) Save(ctx context.Context) ([]*Quest, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, qcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = qcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, qcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -404,6 +619,166 @@ func (qcb *QuestCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (qcb *QuestCreateBulk) ExecX(ctx context.Context) {
 	if err := qcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Quest.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QuestUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (qcb *QuestCreateBulk) OnConflict(opts ...sql.ConflictOption) *QuestUpsertBulk {
+	qcb.conflict = opts
+	return &QuestUpsertBulk{
+		create: qcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Quest.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qcb *QuestCreateBulk) OnConflictColumns(columns ...string) *QuestUpsertBulk {
+	qcb.conflict = append(qcb.conflict, sql.ConflictColumns(columns...))
+	return &QuestUpsertBulk{
+		create: qcb,
+	}
+}
+
+// QuestUpsertBulk is the builder for "upsert"-ing
+// a bulk of Quest nodes.
+type QuestUpsertBulk struct {
+	create *QuestCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Quest.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *QuestUpsertBulk) UpdateNewValues() *QuestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(quest.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Quest.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *QuestUpsertBulk) Ignore() *QuestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QuestUpsertBulk) DoNothing() *QuestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QuestCreateBulk.OnConflict
+// documentation for more info.
+func (u *QuestUpsertBulk) Update(set func(*QuestUpsert)) *QuestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QuestUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *QuestUpsertBulk) SetLastModifiedAt(v time.Time) *QuestUpsertBulk {
+	return u.Update(func(s *QuestUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *QuestUpsertBulk) UpdateLastModifiedAt() *QuestUpsertBulk {
+	return u.Update(func(s *QuestUpsert) {
+		s.UpdateLastModifiedAt()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *QuestUpsertBulk) SetName(v string) *QuestUpsertBulk {
+	return u.Update(func(s *QuestUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QuestUpsertBulk) UpdateName() *QuestUpsertBulk {
+	return u.Update(func(s *QuestUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetParameters sets the "parameters" field.
+func (u *QuestUpsertBulk) SetParameters(v string) *QuestUpsertBulk {
+	return u.Update(func(s *QuestUpsert) {
+		s.SetParameters(v)
+	})
+}
+
+// UpdateParameters sets the "parameters" field to the value that was provided on create.
+func (u *QuestUpsertBulk) UpdateParameters() *QuestUpsertBulk {
+	return u.Update(func(s *QuestUpsert) {
+		s.UpdateParameters()
+	})
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (u *QuestUpsertBulk) ClearParameters() *QuestUpsertBulk {
+	return u.Update(func(s *QuestUpsert) {
+		s.ClearParameters()
+	})
+}
+
+// Exec executes the query.
+func (u *QuestUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the QuestCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QuestCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QuestUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 )
 
 // Beacon is the model entity for the Beacon schema.
@@ -20,29 +22,23 @@ type Beacon struct {
 	Name string `json:"name,omitempty"`
 	// The identity the beacon is authenticated as (e.g. 'root')
 	Principal string `json:"principal,omitempty"`
-	// The hostname of the system the beacon is running on.
-	Hostname string `json:"hostname,omitempty"`
 	// Unique identifier for the beacon. Unique to each instance of the beacon.
 	Identifier string `json:"identifier,omitempty"`
 	// Identifies the agent that the beacon is running as (e.g. 'imix').
 	AgentIdentifier string `json:"agent_identifier,omitempty"`
-	// Unique identifier for the host the beacon is running on.
-	HostIdentifier string `json:"host_identifier,omitempty"`
-	// Primary interface IP address reported by the agent.
-	HostPrimaryIP string `json:"host_primary_ip,omitempty"`
-	// Platform the agent is operating on.
-	HostPlatform beacon.HostPlatform `json:"host_platform,omitempty"`
 	// Timestamp of when a task was last claimed or updated for the beacon.
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BeaconQuery when eager-loading is set.
-	Edges BeaconEdges `json:"edges"`
+	Edges        BeaconEdges `json:"edges"`
+	beacon_host  *int
+	selectValues sql.SelectValues
 }
 
 // BeaconEdges holds the relations/edges for other nodes in the graph.
 type BeaconEdges struct {
-	// Tags used to group this beacon with other beacons.
-	Tags []*Tag `json:"tags,omitempty"`
+	// Host this beacon is running on.
+	Host *Host `json:"host,omitempty"`
 	// Tasks that have been assigned to the beacon.
 	Tasks []*Task `json:"tasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -51,17 +47,20 @@ type BeaconEdges struct {
 	// totalCount holds the count of the edges above.
 	totalCount [2]map[string]int
 
-	namedTags  map[string][]*Tag
 	namedTasks map[string][]*Task
 }
 
-// TagsOrErr returns the Tags value or an error if the edge
-// was not loaded in eager-loading.
-func (e BeaconEdges) TagsOrErr() ([]*Tag, error) {
+// HostOrErr returns the Host value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BeaconEdges) HostOrErr() (*Host, error) {
 	if e.loadedTypes[0] {
-		return e.Tags, nil
+		if e.Host == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: host.Label}
+		}
+		return e.Host, nil
 	}
-	return nil, &NotLoadedError{edge: "tags"}
+	return nil, &NotLoadedError{edge: "host"}
 }
 
 // TasksOrErr returns the Tasks value or an error if the edge
@@ -80,12 +79,14 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case beacon.FieldID:
 			values[i] = new(sql.NullInt64)
-		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldHostname, beacon.FieldIdentifier, beacon.FieldAgentIdentifier, beacon.FieldHostIdentifier, beacon.FieldHostPrimaryIP, beacon.FieldHostPlatform:
+		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldIdentifier, beacon.FieldAgentIdentifier:
 			values[i] = new(sql.NullString)
 		case beacon.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
+		case beacon.ForeignKeys[0]: // beacon_host
+			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Beacon", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -117,12 +118,6 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				b.Principal = value.String
 			}
-		case beacon.FieldHostname:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field hostname", values[i])
-			} else if value.Valid {
-				b.Hostname = value.String
-			}
 		case beacon.FieldIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field identifier", values[i])
@@ -135,38 +130,35 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				b.AgentIdentifier = value.String
 			}
-		case beacon.FieldHostIdentifier:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field host_identifier", values[i])
-			} else if value.Valid {
-				b.HostIdentifier = value.String
-			}
-		case beacon.FieldHostPrimaryIP:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field host_primary_ip", values[i])
-			} else if value.Valid {
-				b.HostPrimaryIP = value.String
-			}
-		case beacon.FieldHostPlatform:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field host_platform", values[i])
-			} else if value.Valid {
-				b.HostPlatform = beacon.HostPlatform(value.String)
-			}
 		case beacon.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
 			} else if value.Valid {
 				b.LastSeenAt = value.Time
 			}
+		case beacon.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field beacon_host", value)
+			} else if value.Valid {
+				b.beacon_host = new(int)
+				*b.beacon_host = int(value.Int64)
+			}
+		default:
+			b.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
-// QueryTags queries the "tags" edge of the Beacon entity.
-func (b *Beacon) QueryTags() *TagQuery {
-	return NewBeaconClient(b.config).QueryTags(b)
+// Value returns the ent.Value that was dynamically selected and assigned to the Beacon.
+// This includes values selected through modifiers, order, etc.
+func (b *Beacon) Value(name string) (ent.Value, error) {
+	return b.selectValues.Get(name)
+}
+
+// QueryHost queries the "host" edge of the Beacon entity.
+func (b *Beacon) QueryHost() *HostQuery {
+	return NewBeaconClient(b.config).QueryHost(b)
 }
 
 // QueryTasks queries the "tasks" edge of the Beacon entity.
@@ -203,52 +195,16 @@ func (b *Beacon) String() string {
 	builder.WriteString("principal=")
 	builder.WriteString(b.Principal)
 	builder.WriteString(", ")
-	builder.WriteString("hostname=")
-	builder.WriteString(b.Hostname)
-	builder.WriteString(", ")
 	builder.WriteString("identifier=")
 	builder.WriteString(b.Identifier)
 	builder.WriteString(", ")
 	builder.WriteString("agent_identifier=")
 	builder.WriteString(b.AgentIdentifier)
 	builder.WriteString(", ")
-	builder.WriteString("host_identifier=")
-	builder.WriteString(b.HostIdentifier)
-	builder.WriteString(", ")
-	builder.WriteString("host_primary_ip=")
-	builder.WriteString(b.HostPrimaryIP)
-	builder.WriteString(", ")
-	builder.WriteString("host_platform=")
-	builder.WriteString(fmt.Sprintf("%v", b.HostPlatform))
-	builder.WriteString(", ")
 	builder.WriteString("last_seen_at=")
 	builder.WriteString(b.LastSeenAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
-}
-
-// NamedTags returns the Tags named value or an error if the edge was not
-// loaded in eager-loading with this name.
-func (b *Beacon) NamedTags(name string) ([]*Tag, error) {
-	if b.Edges.namedTags == nil {
-		return nil, &NotLoadedError{edge: name}
-	}
-	nodes, ok := b.Edges.namedTags[name]
-	if !ok {
-		return nil, &NotLoadedError{edge: name}
-	}
-	return nodes, nil
-}
-
-func (b *Beacon) appendNamedTags(name string, edges ...*Tag) {
-	if b.Edges.namedTags == nil {
-		b.Edges.namedTags = make(map[string][]*Tag)
-	}
-	if len(edges) == 0 {
-		b.Edges.namedTags[name] = []*Tag{}
-	} else {
-		b.Edges.namedTags[name] = append(b.Edges.namedTags[name], edges...)
-	}
 }
 
 // NamedTasks returns the Tasks named value or an error if the edge was not
