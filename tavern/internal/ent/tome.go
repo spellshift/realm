@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/internal/ent/tome"
 )
@@ -32,7 +33,8 @@ type Tome struct {
 	Eldritch string `json:"eldritch,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TomeQuery when eager-loading is set.
-	Edges TomeEdges `json:"edges"`
+	Edges        TomeEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // TomeEdges holds the relations/edges for other nodes in the graph.
@@ -69,7 +71,7 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Tome", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -131,9 +133,17 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Eldritch = value.String
 			}
+		default:
+			t.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
+}
+
+// Value returns the ent.Value that was dynamically selected and assigned to the Tome.
+// This includes values selected through modifiers, order, etc.
+func (t *Tome) Value(name string) (ent.Value, error) {
+	return t.selectValues.Get(name)
 }
 
 // QueryFiles queries the "files" edge of the Tome entity.

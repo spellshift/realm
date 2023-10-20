@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/kcarretto/realm/tavern/internal/ent"
@@ -19,6 +20,7 @@ import (
 type MutationResolver interface {
 	CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error)
 	UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error)
+	UpdateHost(ctx context.Context, hostID int, input ent.UpdateHostInput) (*ent.Host, error)
 	CreateTag(ctx context.Context, input ent.CreateTagInput) (*ent.Tag, error)
 	UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error)
 	ClaimTasks(ctx context.Context, input models.ClaimTasksInput) ([]*ent.Task, error)
@@ -131,6 +133,30 @@ func (ec *executionContext) field_Mutation_updateBeacon_args(ctx context.Context
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg1, err = ec.unmarshalNUpdateBeaconInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateBeaconInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateHost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["hostID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostID"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hostID"] = arg0
+	var arg1 ent.UpdateHostInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNUpdateHostInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateHostInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -286,7 +312,7 @@ func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Contex
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createQuest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -360,22 +386,14 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 				return ec.fieldContext_Beacon_name(ctx, field)
 			case "principal":
 				return ec.fieldContext_Beacon_principal(ctx, field)
-			case "hostname":
-				return ec.fieldContext_Beacon_hostname(ctx, field)
 			case "identifier":
 				return ec.fieldContext_Beacon_identifier(ctx, field)
 			case "agentIdentifier":
 				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
-			case "hostIdentifier":
-				return ec.fieldContext_Beacon_hostIdentifier(ctx, field)
-			case "hostPrimaryIP":
-				return ec.fieldContext_Beacon_hostPrimaryIP(ctx, field)
-			case "hostPlatform":
-				return ec.fieldContext_Beacon_hostPlatform(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
-			case "tags":
-				return ec.fieldContext_Beacon_tags(ctx, field)
+			case "host":
+				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			}
@@ -391,7 +409,104 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateBeacon_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateHost(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateHost(rctx, fc.Args["hostID"].(int), fc.Args["input"].(ent.UpdateHostInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.RequireRole == nil {
+				return nil, errors.New("directive requireRole is not implemented")
+			}
+			return ec.directives.RequireRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Host); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Host`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Host)
+	fc.Result = res
+	return ec.marshalNHost2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐHost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Host_id(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Host_identifier(ctx, field)
+			case "name":
+				return ec.fieldContext_Host_name(ctx, field)
+			case "primaryIP":
+				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "platform":
+				return ec.fieldContext_Host_platform(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Host_lastSeenAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Host_tags(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Host_beacons(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateHost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -465,8 +580,8 @@ func (ec *executionContext) fieldContext_Mutation_createTag(ctx context.Context,
 				return ec.fieldContext_Tag_name(ctx, field)
 			case "kind":
 				return ec.fieldContext_Tag_kind(ctx, field)
-			case "beacons":
-				return ec.fieldContext_Tag_beacons(ctx, field)
+			case "hosts":
+				return ec.fieldContext_Tag_hosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -480,7 +595,7 @@ func (ec *executionContext) fieldContext_Mutation_createTag(ctx context.Context,
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createTag_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -554,8 +669,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTag(ctx context.Context,
 				return ec.fieldContext_Tag_name(ctx, field)
 			case "kind":
 				return ec.fieldContext_Tag_kind(ctx, field)
-			case "beacons":
-				return ec.fieldContext_Tag_beacons(ctx, field)
+			case "hosts":
+				return ec.fieldContext_Tag_hosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -569,7 +684,7 @@ func (ec *executionContext) fieldContext_Mutation_updateTag(ctx context.Context,
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateTag_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -646,7 +761,7 @@ func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_claimTasks_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -720,7 +835,7 @@ func (ec *executionContext) fieldContext_Mutation_submitTaskResult(ctx context.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_submitTaskResult_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -817,7 +932,7 @@ func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createTome_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -905,7 +1020,7 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return
+		return fc, err
 	}
 	return fc, nil
 }
@@ -931,7 +1046,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	})
 
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
+	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
 			Object: field.Name,
@@ -942,76 +1057,79 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "createQuest":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createQuest(ctx, field)
 			})
-
 		case "updateBeacon":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateBeacon(ctx, field)
 			})
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
+			}
+		case "updateHost":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateHost(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		case "createTag":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createTag(ctx, field)
 			})
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "updateTag":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateTag(ctx, field)
 			})
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "claimTasks":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_claimTasks(ctx, field)
 			})
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "submitTaskResult":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_submitTaskResult(ctx, field)
 			})
-
 		case "createTome":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createTome(ctx, field)
 			})
-
 			if out.Values[i] == graphql.Null {
-				invalids++
+				out.Invalids++
 			}
 		case "updateUser":
-
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateUser(ctx, field)
 			})
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
-	out.Dispatch()
-	if invalids > 0 {
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
 		return graphql.Null
 	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
 	return out
 }
 

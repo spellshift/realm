@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
 	"github.com/kcarretto/realm/tavern/internal/ent/quest"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
@@ -32,6 +33,7 @@ const (
 	// Node types.
 	TypeBeacon = "Beacon"
 	TypeFile   = "File"
+	TypeHost   = "Host"
 	TypeQuest  = "Quest"
 	TypeTag    = "Tag"
 	TypeTask   = "Task"
@@ -47,17 +49,12 @@ type BeaconMutation struct {
 	id               *int
 	name             *string
 	principal        *string
-	hostname         *string
 	identifier       *string
 	agent_identifier *string
-	host_identifier  *string
-	host_primary_ip  *string
-	host_platform    *beacon.HostPlatform
 	last_seen_at     *time.Time
 	clearedFields    map[string]struct{}
-	tags             map[int]struct{}
-	removedtags      map[int]struct{}
-	clearedtags      bool
+	host             *int
+	clearedhost      bool
 	tasks            map[int]struct{}
 	removedtasks     map[int]struct{}
 	clearedtasks     bool
@@ -249,55 +246,6 @@ func (m *BeaconMutation) ResetPrincipal() {
 	delete(m.clearedFields, beacon.FieldPrincipal)
 }
 
-// SetHostname sets the "hostname" field.
-func (m *BeaconMutation) SetHostname(s string) {
-	m.hostname = &s
-}
-
-// Hostname returns the value of the "hostname" field in the mutation.
-func (m *BeaconMutation) Hostname() (r string, exists bool) {
-	v := m.hostname
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHostname returns the old "hostname" field's value of the Beacon entity.
-// If the Beacon object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BeaconMutation) OldHostname(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHostname is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHostname requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHostname: %w", err)
-	}
-	return oldValue.Hostname, nil
-}
-
-// ClearHostname clears the value of the "hostname" field.
-func (m *BeaconMutation) ClearHostname() {
-	m.hostname = nil
-	m.clearedFields[beacon.FieldHostname] = struct{}{}
-}
-
-// HostnameCleared returns if the "hostname" field was cleared in this mutation.
-func (m *BeaconMutation) HostnameCleared() bool {
-	_, ok := m.clearedFields[beacon.FieldHostname]
-	return ok
-}
-
-// ResetHostname resets all changes to the "hostname" field.
-func (m *BeaconMutation) ResetHostname() {
-	m.hostname = nil
-	delete(m.clearedFields, beacon.FieldHostname)
-}
-
 // SetIdentifier sets the "identifier" field.
 func (m *BeaconMutation) SetIdentifier(s string) {
 	m.identifier = &s
@@ -383,140 +331,6 @@ func (m *BeaconMutation) ResetAgentIdentifier() {
 	delete(m.clearedFields, beacon.FieldAgentIdentifier)
 }
 
-// SetHostIdentifier sets the "host_identifier" field.
-func (m *BeaconMutation) SetHostIdentifier(s string) {
-	m.host_identifier = &s
-}
-
-// HostIdentifier returns the value of the "host_identifier" field in the mutation.
-func (m *BeaconMutation) HostIdentifier() (r string, exists bool) {
-	v := m.host_identifier
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHostIdentifier returns the old "host_identifier" field's value of the Beacon entity.
-// If the Beacon object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BeaconMutation) OldHostIdentifier(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHostIdentifier is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHostIdentifier requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHostIdentifier: %w", err)
-	}
-	return oldValue.HostIdentifier, nil
-}
-
-// ClearHostIdentifier clears the value of the "host_identifier" field.
-func (m *BeaconMutation) ClearHostIdentifier() {
-	m.host_identifier = nil
-	m.clearedFields[beacon.FieldHostIdentifier] = struct{}{}
-}
-
-// HostIdentifierCleared returns if the "host_identifier" field was cleared in this mutation.
-func (m *BeaconMutation) HostIdentifierCleared() bool {
-	_, ok := m.clearedFields[beacon.FieldHostIdentifier]
-	return ok
-}
-
-// ResetHostIdentifier resets all changes to the "host_identifier" field.
-func (m *BeaconMutation) ResetHostIdentifier() {
-	m.host_identifier = nil
-	delete(m.clearedFields, beacon.FieldHostIdentifier)
-}
-
-// SetHostPrimaryIP sets the "host_primary_ip" field.
-func (m *BeaconMutation) SetHostPrimaryIP(s string) {
-	m.host_primary_ip = &s
-}
-
-// HostPrimaryIP returns the value of the "host_primary_ip" field in the mutation.
-func (m *BeaconMutation) HostPrimaryIP() (r string, exists bool) {
-	v := m.host_primary_ip
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHostPrimaryIP returns the old "host_primary_ip" field's value of the Beacon entity.
-// If the Beacon object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BeaconMutation) OldHostPrimaryIP(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHostPrimaryIP is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHostPrimaryIP requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHostPrimaryIP: %w", err)
-	}
-	return oldValue.HostPrimaryIP, nil
-}
-
-// ClearHostPrimaryIP clears the value of the "host_primary_ip" field.
-func (m *BeaconMutation) ClearHostPrimaryIP() {
-	m.host_primary_ip = nil
-	m.clearedFields[beacon.FieldHostPrimaryIP] = struct{}{}
-}
-
-// HostPrimaryIPCleared returns if the "host_primary_ip" field was cleared in this mutation.
-func (m *BeaconMutation) HostPrimaryIPCleared() bool {
-	_, ok := m.clearedFields[beacon.FieldHostPrimaryIP]
-	return ok
-}
-
-// ResetHostPrimaryIP resets all changes to the "host_primary_ip" field.
-func (m *BeaconMutation) ResetHostPrimaryIP() {
-	m.host_primary_ip = nil
-	delete(m.clearedFields, beacon.FieldHostPrimaryIP)
-}
-
-// SetHostPlatform sets the "host_platform" field.
-func (m *BeaconMutation) SetHostPlatform(bp beacon.HostPlatform) {
-	m.host_platform = &bp
-}
-
-// HostPlatform returns the value of the "host_platform" field in the mutation.
-func (m *BeaconMutation) HostPlatform() (r beacon.HostPlatform, exists bool) {
-	v := m.host_platform
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHostPlatform returns the old "host_platform" field's value of the Beacon entity.
-// If the Beacon object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BeaconMutation) OldHostPlatform(ctx context.Context) (v beacon.HostPlatform, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHostPlatform is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHostPlatform requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHostPlatform: %w", err)
-	}
-	return oldValue.HostPlatform, nil
-}
-
-// ResetHostPlatform resets all changes to the "host_platform" field.
-func (m *BeaconMutation) ResetHostPlatform() {
-	m.host_platform = nil
-}
-
 // SetLastSeenAt sets the "last_seen_at" field.
 func (m *BeaconMutation) SetLastSeenAt(t time.Time) {
 	m.last_seen_at = &t
@@ -566,58 +380,43 @@ func (m *BeaconMutation) ResetLastSeenAt() {
 	delete(m.clearedFields, beacon.FieldLastSeenAt)
 }
 
-// AddTagIDs adds the "tags" edge to the Tag entity by ids.
-func (m *BeaconMutation) AddTagIDs(ids ...int) {
-	if m.tags == nil {
-		m.tags = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.tags[ids[i]] = struct{}{}
-	}
+// SetHostID sets the "host" edge to the Host entity by id.
+func (m *BeaconMutation) SetHostID(id int) {
+	m.host = &id
 }
 
-// ClearTags clears the "tags" edge to the Tag entity.
-func (m *BeaconMutation) ClearTags() {
-	m.clearedtags = true
+// ClearHost clears the "host" edge to the Host entity.
+func (m *BeaconMutation) ClearHost() {
+	m.clearedhost = true
 }
 
-// TagsCleared reports if the "tags" edge to the Tag entity was cleared.
-func (m *BeaconMutation) TagsCleared() bool {
-	return m.clearedtags
+// HostCleared reports if the "host" edge to the Host entity was cleared.
+func (m *BeaconMutation) HostCleared() bool {
+	return m.clearedhost
 }
 
-// RemoveTagIDs removes the "tags" edge to the Tag entity by IDs.
-func (m *BeaconMutation) RemoveTagIDs(ids ...int) {
-	if m.removedtags == nil {
-		m.removedtags = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.tags, ids[i])
-		m.removedtags[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedTags returns the removed IDs of the "tags" edge to the Tag entity.
-func (m *BeaconMutation) RemovedTagsIDs() (ids []int) {
-	for id := range m.removedtags {
-		ids = append(ids, id)
+// HostID returns the "host" edge ID in the mutation.
+func (m *BeaconMutation) HostID() (id int, exists bool) {
+	if m.host != nil {
+		return *m.host, true
 	}
 	return
 }
 
-// TagsIDs returns the "tags" edge IDs in the mutation.
-func (m *BeaconMutation) TagsIDs() (ids []int) {
-	for id := range m.tags {
-		ids = append(ids, id)
+// HostIDs returns the "host" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HostID instead. It exists only for internal usage by the builders.
+func (m *BeaconMutation) HostIDs() (ids []int) {
+	if id := m.host; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetTags resets all changes to the "tags" edge.
-func (m *BeaconMutation) ResetTags() {
-	m.tags = nil
-	m.clearedtags = false
-	m.removedtags = nil
+// ResetHost resets all changes to the "host" edge.
+func (m *BeaconMutation) ResetHost() {
+	m.host = nil
+	m.clearedhost = false
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by ids.
@@ -708,30 +507,18 @@ func (m *BeaconMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BeaconMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 5)
 	if m.name != nil {
 		fields = append(fields, beacon.FieldName)
 	}
 	if m.principal != nil {
 		fields = append(fields, beacon.FieldPrincipal)
 	}
-	if m.hostname != nil {
-		fields = append(fields, beacon.FieldHostname)
-	}
 	if m.identifier != nil {
 		fields = append(fields, beacon.FieldIdentifier)
 	}
 	if m.agent_identifier != nil {
 		fields = append(fields, beacon.FieldAgentIdentifier)
-	}
-	if m.host_identifier != nil {
-		fields = append(fields, beacon.FieldHostIdentifier)
-	}
-	if m.host_primary_ip != nil {
-		fields = append(fields, beacon.FieldHostPrimaryIP)
-	}
-	if m.host_platform != nil {
-		fields = append(fields, beacon.FieldHostPlatform)
 	}
 	if m.last_seen_at != nil {
 		fields = append(fields, beacon.FieldLastSeenAt)
@@ -748,18 +535,10 @@ func (m *BeaconMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case beacon.FieldPrincipal:
 		return m.Principal()
-	case beacon.FieldHostname:
-		return m.Hostname()
 	case beacon.FieldIdentifier:
 		return m.Identifier()
 	case beacon.FieldAgentIdentifier:
 		return m.AgentIdentifier()
-	case beacon.FieldHostIdentifier:
-		return m.HostIdentifier()
-	case beacon.FieldHostPrimaryIP:
-		return m.HostPrimaryIP()
-	case beacon.FieldHostPlatform:
-		return m.HostPlatform()
 	case beacon.FieldLastSeenAt:
 		return m.LastSeenAt()
 	}
@@ -775,18 +554,10 @@ func (m *BeaconMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldName(ctx)
 	case beacon.FieldPrincipal:
 		return m.OldPrincipal(ctx)
-	case beacon.FieldHostname:
-		return m.OldHostname(ctx)
 	case beacon.FieldIdentifier:
 		return m.OldIdentifier(ctx)
 	case beacon.FieldAgentIdentifier:
 		return m.OldAgentIdentifier(ctx)
-	case beacon.FieldHostIdentifier:
-		return m.OldHostIdentifier(ctx)
-	case beacon.FieldHostPrimaryIP:
-		return m.OldHostPrimaryIP(ctx)
-	case beacon.FieldHostPlatform:
-		return m.OldHostPlatform(ctx)
 	case beacon.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
 	}
@@ -812,13 +583,6 @@ func (m *BeaconMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPrincipal(v)
 		return nil
-	case beacon.FieldHostname:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHostname(v)
-		return nil
 	case beacon.FieldIdentifier:
 		v, ok := value.(string)
 		if !ok {
@@ -832,27 +596,6 @@ func (m *BeaconMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAgentIdentifier(v)
-		return nil
-	case beacon.FieldHostIdentifier:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHostIdentifier(v)
-		return nil
-	case beacon.FieldHostPrimaryIP:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHostPrimaryIP(v)
-		return nil
-	case beacon.FieldHostPlatform:
-		v, ok := value.(beacon.HostPlatform)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHostPlatform(v)
 		return nil
 	case beacon.FieldLastSeenAt:
 		v, ok := value.(time.Time)
@@ -894,17 +637,8 @@ func (m *BeaconMutation) ClearedFields() []string {
 	if m.FieldCleared(beacon.FieldPrincipal) {
 		fields = append(fields, beacon.FieldPrincipal)
 	}
-	if m.FieldCleared(beacon.FieldHostname) {
-		fields = append(fields, beacon.FieldHostname)
-	}
 	if m.FieldCleared(beacon.FieldAgentIdentifier) {
 		fields = append(fields, beacon.FieldAgentIdentifier)
-	}
-	if m.FieldCleared(beacon.FieldHostIdentifier) {
-		fields = append(fields, beacon.FieldHostIdentifier)
-	}
-	if m.FieldCleared(beacon.FieldHostPrimaryIP) {
-		fields = append(fields, beacon.FieldHostPrimaryIP)
 	}
 	if m.FieldCleared(beacon.FieldLastSeenAt) {
 		fields = append(fields, beacon.FieldLastSeenAt)
@@ -926,17 +660,8 @@ func (m *BeaconMutation) ClearField(name string) error {
 	case beacon.FieldPrincipal:
 		m.ClearPrincipal()
 		return nil
-	case beacon.FieldHostname:
-		m.ClearHostname()
-		return nil
 	case beacon.FieldAgentIdentifier:
 		m.ClearAgentIdentifier()
-		return nil
-	case beacon.FieldHostIdentifier:
-		m.ClearHostIdentifier()
-		return nil
-	case beacon.FieldHostPrimaryIP:
-		m.ClearHostPrimaryIP()
 		return nil
 	case beacon.FieldLastSeenAt:
 		m.ClearLastSeenAt()
@@ -955,23 +680,11 @@ func (m *BeaconMutation) ResetField(name string) error {
 	case beacon.FieldPrincipal:
 		m.ResetPrincipal()
 		return nil
-	case beacon.FieldHostname:
-		m.ResetHostname()
-		return nil
 	case beacon.FieldIdentifier:
 		m.ResetIdentifier()
 		return nil
 	case beacon.FieldAgentIdentifier:
 		m.ResetAgentIdentifier()
-		return nil
-	case beacon.FieldHostIdentifier:
-		m.ResetHostIdentifier()
-		return nil
-	case beacon.FieldHostPrimaryIP:
-		m.ResetHostPrimaryIP()
-		return nil
-	case beacon.FieldHostPlatform:
-		m.ResetHostPlatform()
 		return nil
 	case beacon.FieldLastSeenAt:
 		m.ResetLastSeenAt()
@@ -983,8 +696,8 @@ func (m *BeaconMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BeaconMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.tags != nil {
-		edges = append(edges, beacon.EdgeTags)
+	if m.host != nil {
+		edges = append(edges, beacon.EdgeHost)
 	}
 	if m.tasks != nil {
 		edges = append(edges, beacon.EdgeTasks)
@@ -996,12 +709,10 @@ func (m *BeaconMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *BeaconMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case beacon.EdgeTags:
-		ids := make([]ent.Value, 0, len(m.tags))
-		for id := range m.tags {
-			ids = append(ids, id)
+	case beacon.EdgeHost:
+		if id := m.host; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case beacon.EdgeTasks:
 		ids := make([]ent.Value, 0, len(m.tasks))
 		for id := range m.tasks {
@@ -1015,9 +726,6 @@ func (m *BeaconMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BeaconMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.removedtags != nil {
-		edges = append(edges, beacon.EdgeTags)
-	}
 	if m.removedtasks != nil {
 		edges = append(edges, beacon.EdgeTasks)
 	}
@@ -1028,12 +736,6 @@ func (m *BeaconMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *BeaconMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case beacon.EdgeTags:
-		ids := make([]ent.Value, 0, len(m.removedtags))
-		for id := range m.removedtags {
-			ids = append(ids, id)
-		}
-		return ids
 	case beacon.EdgeTasks:
 		ids := make([]ent.Value, 0, len(m.removedtasks))
 		for id := range m.removedtasks {
@@ -1047,8 +749,8 @@ func (m *BeaconMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BeaconMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.clearedtags {
-		edges = append(edges, beacon.EdgeTags)
+	if m.clearedhost {
+		edges = append(edges, beacon.EdgeHost)
 	}
 	if m.clearedtasks {
 		edges = append(edges, beacon.EdgeTasks)
@@ -1060,8 +762,8 @@ func (m *BeaconMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *BeaconMutation) EdgeCleared(name string) bool {
 	switch name {
-	case beacon.EdgeTags:
-		return m.clearedtags
+	case beacon.EdgeHost:
+		return m.clearedhost
 	case beacon.EdgeTasks:
 		return m.clearedtasks
 	}
@@ -1072,6 +774,9 @@ func (m *BeaconMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *BeaconMutation) ClearEdge(name string) error {
 	switch name {
+	case beacon.EdgeHost:
+		m.ClearHost()
+		return nil
 	}
 	return fmt.Errorf("unknown Beacon unique edge %s", name)
 }
@@ -1080,8 +785,8 @@ func (m *BeaconMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *BeaconMutation) ResetEdge(name string) error {
 	switch name {
-	case beacon.EdgeTags:
-		m.ResetTags()
+	case beacon.EdgeHost:
+		m.ResetHost()
 		return nil
 	case beacon.EdgeTasks:
 		m.ResetTasks()
@@ -1720,6 +1425,784 @@ func (m *FileMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *FileMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown File edge %s", name)
+}
+
+// HostMutation represents an operation that mutates the Host nodes in the graph.
+type HostMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	identifier     *string
+	name           *string
+	primary_ip     *string
+	platform       *host.Platform
+	last_seen_at   *time.Time
+	clearedFields  map[string]struct{}
+	tags           map[int]struct{}
+	removedtags    map[int]struct{}
+	clearedtags    bool
+	beacons        map[int]struct{}
+	removedbeacons map[int]struct{}
+	clearedbeacons bool
+	done           bool
+	oldValue       func(context.Context) (*Host, error)
+	predicates     []predicate.Host
+}
+
+var _ ent.Mutation = (*HostMutation)(nil)
+
+// hostOption allows management of the mutation configuration using functional options.
+type hostOption func(*HostMutation)
+
+// newHostMutation creates new mutation for the Host entity.
+func newHostMutation(c config, op Op, opts ...hostOption) *HostMutation {
+	m := &HostMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeHost,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withHostID sets the ID field of the mutation.
+func withHostID(id int) hostOption {
+	return func(m *HostMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Host
+		)
+		m.oldValue = func(ctx context.Context) (*Host, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Host.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withHost sets the old Host of the mutation.
+func withHost(node *Host) hostOption {
+	return func(m *HostMutation) {
+		m.oldValue = func(context.Context) (*Host, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m HostMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m HostMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *HostMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *HostMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Host.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetIdentifier sets the "identifier" field.
+func (m *HostMutation) SetIdentifier(s string) {
+	m.identifier = &s
+}
+
+// Identifier returns the value of the "identifier" field in the mutation.
+func (m *HostMutation) Identifier() (r string, exists bool) {
+	v := m.identifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdentifier returns the old "identifier" field's value of the Host entity.
+// If the Host object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostMutation) OldIdentifier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdentifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdentifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdentifier: %w", err)
+	}
+	return oldValue.Identifier, nil
+}
+
+// ResetIdentifier resets all changes to the "identifier" field.
+func (m *HostMutation) ResetIdentifier() {
+	m.identifier = nil
+}
+
+// SetName sets the "name" field.
+func (m *HostMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *HostMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Host entity.
+// If the Host object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ClearName clears the value of the "name" field.
+func (m *HostMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[host.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *HostMutation) NameCleared() bool {
+	_, ok := m.clearedFields[host.FieldName]
+	return ok
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *HostMutation) ResetName() {
+	m.name = nil
+	delete(m.clearedFields, host.FieldName)
+}
+
+// SetPrimaryIP sets the "primary_ip" field.
+func (m *HostMutation) SetPrimaryIP(s string) {
+	m.primary_ip = &s
+}
+
+// PrimaryIP returns the value of the "primary_ip" field in the mutation.
+func (m *HostMutation) PrimaryIP() (r string, exists bool) {
+	v := m.primary_ip
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrimaryIP returns the old "primary_ip" field's value of the Host entity.
+// If the Host object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostMutation) OldPrimaryIP(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrimaryIP is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrimaryIP requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrimaryIP: %w", err)
+	}
+	return oldValue.PrimaryIP, nil
+}
+
+// ClearPrimaryIP clears the value of the "primary_ip" field.
+func (m *HostMutation) ClearPrimaryIP() {
+	m.primary_ip = nil
+	m.clearedFields[host.FieldPrimaryIP] = struct{}{}
+}
+
+// PrimaryIPCleared returns if the "primary_ip" field was cleared in this mutation.
+func (m *HostMutation) PrimaryIPCleared() bool {
+	_, ok := m.clearedFields[host.FieldPrimaryIP]
+	return ok
+}
+
+// ResetPrimaryIP resets all changes to the "primary_ip" field.
+func (m *HostMutation) ResetPrimaryIP() {
+	m.primary_ip = nil
+	delete(m.clearedFields, host.FieldPrimaryIP)
+}
+
+// SetPlatform sets the "platform" field.
+func (m *HostMutation) SetPlatform(h host.Platform) {
+	m.platform = &h
+}
+
+// Platform returns the value of the "platform" field in the mutation.
+func (m *HostMutation) Platform() (r host.Platform, exists bool) {
+	v := m.platform
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlatform returns the old "platform" field's value of the Host entity.
+// If the Host object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostMutation) OldPlatform(ctx context.Context) (v host.Platform, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlatform is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlatform requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlatform: %w", err)
+	}
+	return oldValue.Platform, nil
+}
+
+// ResetPlatform resets all changes to the "platform" field.
+func (m *HostMutation) ResetPlatform() {
+	m.platform = nil
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (m *HostMutation) SetLastSeenAt(t time.Time) {
+	m.last_seen_at = &t
+}
+
+// LastSeenAt returns the value of the "last_seen_at" field in the mutation.
+func (m *HostMutation) LastSeenAt() (r time.Time, exists bool) {
+	v := m.last_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSeenAt returns the old "last_seen_at" field's value of the Host entity.
+// If the Host object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostMutation) OldLastSeenAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSeenAt: %w", err)
+	}
+	return oldValue.LastSeenAt, nil
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (m *HostMutation) ClearLastSeenAt() {
+	m.last_seen_at = nil
+	m.clearedFields[host.FieldLastSeenAt] = struct{}{}
+}
+
+// LastSeenAtCleared returns if the "last_seen_at" field was cleared in this mutation.
+func (m *HostMutation) LastSeenAtCleared() bool {
+	_, ok := m.clearedFields[host.FieldLastSeenAt]
+	return ok
+}
+
+// ResetLastSeenAt resets all changes to the "last_seen_at" field.
+func (m *HostMutation) ResetLastSeenAt() {
+	m.last_seen_at = nil
+	delete(m.clearedFields, host.FieldLastSeenAt)
+}
+
+// AddTagIDs adds the "tags" edge to the Tag entity by ids.
+func (m *HostMutation) AddTagIDs(ids ...int) {
+	if m.tags == nil {
+		m.tags = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tags[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTags clears the "tags" edge to the Tag entity.
+func (m *HostMutation) ClearTags() {
+	m.clearedtags = true
+}
+
+// TagsCleared reports if the "tags" edge to the Tag entity was cleared.
+func (m *HostMutation) TagsCleared() bool {
+	return m.clearedtags
+}
+
+// RemoveTagIDs removes the "tags" edge to the Tag entity by IDs.
+func (m *HostMutation) RemoveTagIDs(ids ...int) {
+	if m.removedtags == nil {
+		m.removedtags = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.tags, ids[i])
+		m.removedtags[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTags returns the removed IDs of the "tags" edge to the Tag entity.
+func (m *HostMutation) RemovedTagsIDs() (ids []int) {
+	for id := range m.removedtags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TagsIDs returns the "tags" edge IDs in the mutation.
+func (m *HostMutation) TagsIDs() (ids []int) {
+	for id := range m.tags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTags resets all changes to the "tags" edge.
+func (m *HostMutation) ResetTags() {
+	m.tags = nil
+	m.clearedtags = false
+	m.removedtags = nil
+}
+
+// AddBeaconIDs adds the "beacons" edge to the Beacon entity by ids.
+func (m *HostMutation) AddBeaconIDs(ids ...int) {
+	if m.beacons == nil {
+		m.beacons = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.beacons[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBeacons clears the "beacons" edge to the Beacon entity.
+func (m *HostMutation) ClearBeacons() {
+	m.clearedbeacons = true
+}
+
+// BeaconsCleared reports if the "beacons" edge to the Beacon entity was cleared.
+func (m *HostMutation) BeaconsCleared() bool {
+	return m.clearedbeacons
+}
+
+// RemoveBeaconIDs removes the "beacons" edge to the Beacon entity by IDs.
+func (m *HostMutation) RemoveBeaconIDs(ids ...int) {
+	if m.removedbeacons == nil {
+		m.removedbeacons = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.beacons, ids[i])
+		m.removedbeacons[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBeacons returns the removed IDs of the "beacons" edge to the Beacon entity.
+func (m *HostMutation) RemovedBeaconsIDs() (ids []int) {
+	for id := range m.removedbeacons {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BeaconsIDs returns the "beacons" edge IDs in the mutation.
+func (m *HostMutation) BeaconsIDs() (ids []int) {
+	for id := range m.beacons {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBeacons resets all changes to the "beacons" edge.
+func (m *HostMutation) ResetBeacons() {
+	m.beacons = nil
+	m.clearedbeacons = false
+	m.removedbeacons = nil
+}
+
+// Where appends a list predicates to the HostMutation builder.
+func (m *HostMutation) Where(ps ...predicate.Host) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the HostMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *HostMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Host, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *HostMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *HostMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Host).
+func (m *HostMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *HostMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.identifier != nil {
+		fields = append(fields, host.FieldIdentifier)
+	}
+	if m.name != nil {
+		fields = append(fields, host.FieldName)
+	}
+	if m.primary_ip != nil {
+		fields = append(fields, host.FieldPrimaryIP)
+	}
+	if m.platform != nil {
+		fields = append(fields, host.FieldPlatform)
+	}
+	if m.last_seen_at != nil {
+		fields = append(fields, host.FieldLastSeenAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *HostMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case host.FieldIdentifier:
+		return m.Identifier()
+	case host.FieldName:
+		return m.Name()
+	case host.FieldPrimaryIP:
+		return m.PrimaryIP()
+	case host.FieldPlatform:
+		return m.Platform()
+	case host.FieldLastSeenAt:
+		return m.LastSeenAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *HostMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case host.FieldIdentifier:
+		return m.OldIdentifier(ctx)
+	case host.FieldName:
+		return m.OldName(ctx)
+	case host.FieldPrimaryIP:
+		return m.OldPrimaryIP(ctx)
+	case host.FieldPlatform:
+		return m.OldPlatform(ctx)
+	case host.FieldLastSeenAt:
+		return m.OldLastSeenAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Host field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case host.FieldIdentifier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdentifier(v)
+		return nil
+	case host.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case host.FieldPrimaryIP:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrimaryIP(v)
+		return nil
+	case host.FieldPlatform:
+		v, ok := value.(host.Platform)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlatform(v)
+		return nil
+	case host.FieldLastSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSeenAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Host field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *HostMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *HostMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Host numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *HostMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(host.FieldName) {
+		fields = append(fields, host.FieldName)
+	}
+	if m.FieldCleared(host.FieldPrimaryIP) {
+		fields = append(fields, host.FieldPrimaryIP)
+	}
+	if m.FieldCleared(host.FieldLastSeenAt) {
+		fields = append(fields, host.FieldLastSeenAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *HostMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *HostMutation) ClearField(name string) error {
+	switch name {
+	case host.FieldName:
+		m.ClearName()
+		return nil
+	case host.FieldPrimaryIP:
+		m.ClearPrimaryIP()
+		return nil
+	case host.FieldLastSeenAt:
+		m.ClearLastSeenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Host nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *HostMutation) ResetField(name string) error {
+	switch name {
+	case host.FieldIdentifier:
+		m.ResetIdentifier()
+		return nil
+	case host.FieldName:
+		m.ResetName()
+		return nil
+	case host.FieldPrimaryIP:
+		m.ResetPrimaryIP()
+		return nil
+	case host.FieldPlatform:
+		m.ResetPlatform()
+		return nil
+	case host.FieldLastSeenAt:
+		m.ResetLastSeenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Host field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *HostMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.tags != nil {
+		edges = append(edges, host.EdgeTags)
+	}
+	if m.beacons != nil {
+		edges = append(edges, host.EdgeBeacons)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *HostMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case host.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.tags))
+		for id := range m.tags {
+			ids = append(ids, id)
+		}
+		return ids
+	case host.EdgeBeacons:
+		ids := make([]ent.Value, 0, len(m.beacons))
+		for id := range m.beacons {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *HostMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedtags != nil {
+		edges = append(edges, host.EdgeTags)
+	}
+	if m.removedbeacons != nil {
+		edges = append(edges, host.EdgeBeacons)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *HostMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case host.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.removedtags))
+		for id := range m.removedtags {
+			ids = append(ids, id)
+		}
+		return ids
+	case host.EdgeBeacons:
+		ids := make([]ent.Value, 0, len(m.removedbeacons))
+		for id := range m.removedbeacons {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *HostMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedtags {
+		edges = append(edges, host.EdgeTags)
+	}
+	if m.clearedbeacons {
+		edges = append(edges, host.EdgeBeacons)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *HostMutation) EdgeCleared(name string) bool {
+	switch name {
+	case host.EdgeTags:
+		return m.clearedtags
+	case host.EdgeBeacons:
+		return m.clearedbeacons
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *HostMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Host unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *HostMutation) ResetEdge(name string) error {
+	switch name {
+	case host.EdgeTags:
+		m.ResetTags()
+		return nil
+	case host.EdgeBeacons:
+		m.ResetBeacons()
+		return nil
+	}
+	return fmt.Errorf("unknown Host edge %s", name)
 }
 
 // QuestMutation represents an operation that mutates the Quest nodes in the graph.
@@ -2505,18 +2988,18 @@ func (m *QuestMutation) ResetEdge(name string) error {
 // TagMutation represents an operation that mutates the Tag nodes in the graph.
 type TagMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	name           *string
-	kind           *tag.Kind
-	clearedFields  map[string]struct{}
-	beacons        map[int]struct{}
-	removedbeacons map[int]struct{}
-	clearedbeacons bool
-	done           bool
-	oldValue       func(context.Context) (*Tag, error)
-	predicates     []predicate.Tag
+	op            Op
+	typ           string
+	id            *int
+	name          *string
+	kind          *tag.Kind
+	clearedFields map[string]struct{}
+	hosts         map[int]struct{}
+	removedhosts  map[int]struct{}
+	clearedhosts  bool
+	done          bool
+	oldValue      func(context.Context) (*Tag, error)
+	predicates    []predicate.Tag
 }
 
 var _ ent.Mutation = (*TagMutation)(nil)
@@ -2689,58 +3172,58 @@ func (m *TagMutation) ResetKind() {
 	m.kind = nil
 }
 
-// AddBeaconIDs adds the "beacons" edge to the Beacon entity by ids.
-func (m *TagMutation) AddBeaconIDs(ids ...int) {
-	if m.beacons == nil {
-		m.beacons = make(map[int]struct{})
+// AddHostIDs adds the "hosts" edge to the Host entity by ids.
+func (m *TagMutation) AddHostIDs(ids ...int) {
+	if m.hosts == nil {
+		m.hosts = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.beacons[ids[i]] = struct{}{}
+		m.hosts[ids[i]] = struct{}{}
 	}
 }
 
-// ClearBeacons clears the "beacons" edge to the Beacon entity.
-func (m *TagMutation) ClearBeacons() {
-	m.clearedbeacons = true
+// ClearHosts clears the "hosts" edge to the Host entity.
+func (m *TagMutation) ClearHosts() {
+	m.clearedhosts = true
 }
 
-// BeaconsCleared reports if the "beacons" edge to the Beacon entity was cleared.
-func (m *TagMutation) BeaconsCleared() bool {
-	return m.clearedbeacons
+// HostsCleared reports if the "hosts" edge to the Host entity was cleared.
+func (m *TagMutation) HostsCleared() bool {
+	return m.clearedhosts
 }
 
-// RemoveBeaconIDs removes the "beacons" edge to the Beacon entity by IDs.
-func (m *TagMutation) RemoveBeaconIDs(ids ...int) {
-	if m.removedbeacons == nil {
-		m.removedbeacons = make(map[int]struct{})
+// RemoveHostIDs removes the "hosts" edge to the Host entity by IDs.
+func (m *TagMutation) RemoveHostIDs(ids ...int) {
+	if m.removedhosts == nil {
+		m.removedhosts = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.beacons, ids[i])
-		m.removedbeacons[ids[i]] = struct{}{}
+		delete(m.hosts, ids[i])
+		m.removedhosts[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedBeacons returns the removed IDs of the "beacons" edge to the Beacon entity.
-func (m *TagMutation) RemovedBeaconsIDs() (ids []int) {
-	for id := range m.removedbeacons {
+// RemovedHosts returns the removed IDs of the "hosts" edge to the Host entity.
+func (m *TagMutation) RemovedHostsIDs() (ids []int) {
+	for id := range m.removedhosts {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// BeaconsIDs returns the "beacons" edge IDs in the mutation.
-func (m *TagMutation) BeaconsIDs() (ids []int) {
-	for id := range m.beacons {
+// HostsIDs returns the "hosts" edge IDs in the mutation.
+func (m *TagMutation) HostsIDs() (ids []int) {
+	for id := range m.hosts {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetBeacons resets all changes to the "beacons" edge.
-func (m *TagMutation) ResetBeacons() {
-	m.beacons = nil
-	m.clearedbeacons = false
-	m.removedbeacons = nil
+// ResetHosts resets all changes to the "hosts" edge.
+func (m *TagMutation) ResetHosts() {
+	m.hosts = nil
+	m.clearedhosts = false
+	m.removedhosts = nil
 }
 
 // Where appends a list predicates to the TagMutation builder.
@@ -2894,8 +3377,8 @@ func (m *TagMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TagMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.beacons != nil {
-		edges = append(edges, tag.EdgeBeacons)
+	if m.hosts != nil {
+		edges = append(edges, tag.EdgeHosts)
 	}
 	return edges
 }
@@ -2904,9 +3387,9 @@ func (m *TagMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *TagMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case tag.EdgeBeacons:
-		ids := make([]ent.Value, 0, len(m.beacons))
-		for id := range m.beacons {
+	case tag.EdgeHosts:
+		ids := make([]ent.Value, 0, len(m.hosts))
+		for id := range m.hosts {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2917,8 +3400,8 @@ func (m *TagMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TagMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removedbeacons != nil {
-		edges = append(edges, tag.EdgeBeacons)
+	if m.removedhosts != nil {
+		edges = append(edges, tag.EdgeHosts)
 	}
 	return edges
 }
@@ -2927,9 +3410,9 @@ func (m *TagMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *TagMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case tag.EdgeBeacons:
-		ids := make([]ent.Value, 0, len(m.removedbeacons))
-		for id := range m.removedbeacons {
+	case tag.EdgeHosts:
+		ids := make([]ent.Value, 0, len(m.removedhosts))
+		for id := range m.removedhosts {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2940,8 +3423,8 @@ func (m *TagMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TagMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedbeacons {
-		edges = append(edges, tag.EdgeBeacons)
+	if m.clearedhosts {
+		edges = append(edges, tag.EdgeHosts)
 	}
 	return edges
 }
@@ -2950,8 +3433,8 @@ func (m *TagMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *TagMutation) EdgeCleared(name string) bool {
 	switch name {
-	case tag.EdgeBeacons:
-		return m.clearedbeacons
+	case tag.EdgeHosts:
+		return m.clearedhosts
 	}
 	return false
 }
@@ -2968,8 +3451,8 @@ func (m *TagMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *TagMutation) ResetEdge(name string) error {
 	switch name {
-	case tag.EdgeBeacons:
-		m.ResetBeacons()
+	case tag.EdgeHosts:
+		m.ResetHosts()
 		return nil
 	}
 	return fmt.Errorf("unknown Tag edge %s", name)

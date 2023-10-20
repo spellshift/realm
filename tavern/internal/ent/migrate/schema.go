@@ -13,19 +13,24 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "principal", Type: field.TypeString, Nullable: true},
-		{Name: "hostname", Type: field.TypeString, Nullable: true},
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
-		{Name: "host_identifier", Type: field.TypeString, Nullable: true},
-		{Name: "host_primary_ip", Type: field.TypeString, Nullable: true},
-		{Name: "host_platform", Type: field.TypeEnum, Enums: []string{"Windows", "Linux", "MacOS", "BSD", "Unknown"}, Default: "Unknown"},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+		{Name: "beacon_host", Type: field.TypeInt},
 	}
 	// BeaconsTable holds the schema information for the "beacons" table.
 	BeaconsTable = &schema.Table{
 		Name:       "beacons",
 		Columns:    BeaconsColumns,
 		PrimaryKey: []*schema.Column{BeaconsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "beacons_hosts_host",
+				Columns:    []*schema.Column{BeaconsColumns[6]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// FilesColumns holds the columns for the "files" table.
 	FilesColumns = []*schema.Column{
@@ -51,6 +56,21 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 		},
+	}
+	// HostsColumns holds the columns for the "hosts" table.
+	HostsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "identifier", Type: field.TypeString, Unique: true},
+		{Name: "name", Type: field.TypeString, Nullable: true},
+		{Name: "primary_ip", Type: field.TypeString, Nullable: true},
+		{Name: "platform", Type: field.TypeEnum, Enums: []string{"Windows", "Linux", "MacOS", "BSD", "Unknown"}, Default: "Unknown"},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+	}
+	// HostsTable holds the schema information for the "hosts" table.
+	HostsTable = &schema.Table{
+		Name:       "hosts",
+		Columns:    HostsColumns,
+		PrimaryKey: []*schema.Column{HostsColumns[0]},
 	}
 	// QuestsColumns holds the columns for the "quests" table.
 	QuestsColumns = []*schema.Column{
@@ -167,26 +187,26 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
-	// BeaconTagsColumns holds the columns for the "beacon_tags" table.
-	BeaconTagsColumns = []*schema.Column{
-		{Name: "beacon_id", Type: field.TypeInt},
+	// HostTagsColumns holds the columns for the "host_tags" table.
+	HostTagsColumns = []*schema.Column{
+		{Name: "host_id", Type: field.TypeInt},
 		{Name: "tag_id", Type: field.TypeInt},
 	}
-	// BeaconTagsTable holds the schema information for the "beacon_tags" table.
-	BeaconTagsTable = &schema.Table{
-		Name:       "beacon_tags",
-		Columns:    BeaconTagsColumns,
-		PrimaryKey: []*schema.Column{BeaconTagsColumns[0], BeaconTagsColumns[1]},
+	// HostTagsTable holds the schema information for the "host_tags" table.
+	HostTagsTable = &schema.Table{
+		Name:       "host_tags",
+		Columns:    HostTagsColumns,
+		PrimaryKey: []*schema.Column{HostTagsColumns[0], HostTagsColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "beacon_tags_beacon_id",
-				Columns:    []*schema.Column{BeaconTagsColumns[0]},
-				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				Symbol:     "host_tags_host_id",
+				Columns:    []*schema.Column{HostTagsColumns[0]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "beacon_tags_tag_id",
-				Columns:    []*schema.Column{BeaconTagsColumns[1]},
+				Symbol:     "host_tags_tag_id",
+				Columns:    []*schema.Column{HostTagsColumns[1]},
 				RefColumns: []*schema.Column{TagsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -196,22 +216,24 @@ var (
 	Tables = []*schema.Table{
 		BeaconsTable,
 		FilesTable,
+		HostsTable,
 		QuestsTable,
 		TagsTable,
 		TasksTable,
 		TomesTable,
 		UsersTable,
-		BeaconTagsTable,
+		HostTagsTable,
 	}
 )
 
 func init() {
+	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
 	FilesTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = FilesTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = QuestsTable
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
-	BeaconTagsTable.ForeignKeys[0].RefTable = BeaconsTable
-	BeaconTagsTable.ForeignKeys[1].RefTable = TagsTable
+	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
+	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
 }

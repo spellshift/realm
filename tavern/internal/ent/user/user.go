@@ -2,6 +2,10 @@
 
 package user
 
+import (
+	"entgo.io/ent/dialect/sql"
+)
+
 const (
 	// Label holds the string label denoting the user type in the database.
 	Label = "user"
@@ -56,3 +60,41 @@ var (
 	// DefaultIsAdmin holds the default value on creation for the "is_admin" field.
 	DefaultIsAdmin bool
 )
+
+// OrderOption defines the ordering options for the User queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByOauthID orders the results by the oauth_id field.
+func ByOauthID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOauthID, opts...).ToFunc()
+}
+
+// ByPhotoURL orders the results by the photo_url field.
+func ByPhotoURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPhotoURL, opts...).ToFunc()
+}
+
+// BySessionToken orders the results by the session_token field.
+func BySessionToken(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSessionToken, opts...).ToFunc()
+}
+
+// ByIsActivated orders the results by the is_activated field.
+func ByIsActivated(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsActivated, opts...).ToFunc()
+}
+
+// ByIsAdmin orders the results by the is_admin field.
+func ByIsAdmin(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsAdmin, opts...).ToFunc()
+}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 )
@@ -21,29 +22,30 @@ type Tag struct {
 	Kind tag.Kind `json:"kind,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TagQuery when eager-loading is set.
-	Edges TagEdges `json:"edges"`
+	Edges        TagEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // TagEdges holds the relations/edges for other nodes in the graph.
 type TagEdges struct {
-	// Beacons holds the value of the beacons edge.
-	Beacons []*Beacon `json:"beacons,omitempty"`
+	// Hosts holds the value of the hosts edge.
+	Hosts []*Host `json:"hosts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
 	totalCount [1]map[string]int
 
-	namedBeacons map[string][]*Beacon
+	namedHosts map[string][]*Host
 }
 
-// BeaconsOrErr returns the Beacons value or an error if the edge
+// HostsOrErr returns the Hosts value or an error if the edge
 // was not loaded in eager-loading.
-func (e TagEdges) BeaconsOrErr() ([]*Beacon, error) {
+func (e TagEdges) HostsOrErr() ([]*Host, error) {
 	if e.loadedTypes[0] {
-		return e.Beacons, nil
+		return e.Hosts, nil
 	}
-	return nil, &NotLoadedError{edge: "beacons"}
+	return nil, &NotLoadedError{edge: "hosts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -56,7 +58,7 @@ func (*Tag) scanValues(columns []string) ([]any, error) {
 		case tag.FieldName, tag.FieldKind:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Tag", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -88,14 +90,22 @@ func (t *Tag) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Kind = tag.Kind(value.String)
 			}
+		default:
+			t.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
-// QueryBeacons queries the "beacons" edge of the Tag entity.
-func (t *Tag) QueryBeacons() *BeaconQuery {
-	return NewTagClient(t.config).QueryBeacons(t)
+// Value returns the ent.Value that was dynamically selected and assigned to the Tag.
+// This includes values selected through modifiers, order, etc.
+func (t *Tag) Value(name string) (ent.Value, error) {
+	return t.selectValues.Get(name)
+}
+
+// QueryHosts queries the "hosts" edge of the Tag entity.
+func (t *Tag) QueryHosts() *HostQuery {
+	return NewTagClient(t.config).QueryHosts(t)
 }
 
 // Update returns a builder for updating this Tag.
@@ -130,27 +140,27 @@ func (t *Tag) String() string {
 	return builder.String()
 }
 
-// NamedBeacons returns the Beacons named value or an error if the edge was not
+// NamedHosts returns the Hosts named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Tag) NamedBeacons(name string) ([]*Beacon, error) {
-	if t.Edges.namedBeacons == nil {
+func (t *Tag) NamedHosts(name string) ([]*Host, error) {
+	if t.Edges.namedHosts == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedBeacons[name]
+	nodes, ok := t.Edges.namedHosts[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Tag) appendNamedBeacons(name string, edges ...*Beacon) {
-	if t.Edges.namedBeacons == nil {
-		t.Edges.namedBeacons = make(map[string][]*Beacon)
+func (t *Tag) appendNamedHosts(name string, edges ...*Host) {
+	if t.Edges.namedHosts == nil {
+		t.Edges.namedHosts = make(map[string][]*Host)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedBeacons[name] = []*Beacon{}
+		t.Edges.namedHosts[name] = []*Host{}
 	} else {
-		t.Edges.namedBeacons[name] = append(t.Edges.namedBeacons[name], edges...)
+		t.Edges.namedHosts[name] = append(t.Edges.namedHosts[name], edges...)
 	}
 }
 

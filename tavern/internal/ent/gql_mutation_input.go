@@ -8,12 +8,8 @@ import (
 
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
-	Name          *string
-	ClearHostname bool
-	Hostname      *string
-	ClearTags     bool
-	AddTagIDs     []int
-	RemoveTagIDs  []int
+	Name   *string
+	HostID *int
 }
 
 // Mutate applies the UpdateBeaconInput on the BeaconMutation builder.
@@ -21,20 +17,8 @@ func (i *UpdateBeaconInput) Mutate(m *BeaconMutation) {
 	if v := i.Name; v != nil {
 		m.SetName(*v)
 	}
-	if i.ClearHostname {
-		m.ClearHostname()
-	}
-	if v := i.Hostname; v != nil {
-		m.SetHostname(*v)
-	}
-	if i.ClearTags {
-		m.ClearTags()
-	}
-	if v := i.AddTagIDs; len(v) > 0 {
-		m.AddTagIDs(v...)
-	}
-	if v := i.RemoveTagIDs; len(v) > 0 {
-		m.RemoveTagIDs(v...)
+	if v := i.HostID; v != nil {
+		m.SetHostID(*v)
 	}
 }
 
@@ -46,6 +30,58 @@ func (c *BeaconUpdate) SetInput(i UpdateBeaconInput) *BeaconUpdate {
 
 // SetInput applies the change-set in the UpdateBeaconInput on the BeaconUpdateOne builder.
 func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateHostInput represents a mutation input for updating hosts.
+type UpdateHostInput struct {
+	ClearName       bool
+	Name            *string
+	ClearTags       bool
+	AddTagIDs       []int
+	RemoveTagIDs    []int
+	ClearBeacons    bool
+	AddBeaconIDs    []int
+	RemoveBeaconIDs []int
+}
+
+// Mutate applies the UpdateHostInput on the HostMutation builder.
+func (i *UpdateHostInput) Mutate(m *HostMutation) {
+	if i.ClearName {
+		m.ClearName()
+	}
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if i.ClearTags {
+		m.ClearTags()
+	}
+	if v := i.AddTagIDs; len(v) > 0 {
+		m.AddTagIDs(v...)
+	}
+	if v := i.RemoveTagIDs; len(v) > 0 {
+		m.RemoveTagIDs(v...)
+	}
+	if i.ClearBeacons {
+		m.ClearBeacons()
+	}
+	if v := i.AddBeaconIDs; len(v) > 0 {
+		m.AddBeaconIDs(v...)
+	}
+	if v := i.RemoveBeaconIDs; len(v) > 0 {
+		m.RemoveBeaconIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateHostInput on the HostUpdate builder.
+func (c *HostUpdate) SetInput(i UpdateHostInput) *HostUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateHostInput on the HostUpdateOne builder.
+func (c *HostUpdateOne) SetInput(i UpdateHostInput) *HostUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }
@@ -74,17 +110,17 @@ func (c *QuestCreate) SetInput(i CreateQuestInput) *QuestCreate {
 
 // CreateTagInput represents a mutation input for creating tags.
 type CreateTagInput struct {
-	Name      string
-	Kind      tag.Kind
-	BeaconIDs []int
+	Name    string
+	Kind    tag.Kind
+	HostIDs []int
 }
 
 // Mutate applies the CreateTagInput on the TagMutation builder.
 func (i *CreateTagInput) Mutate(m *TagMutation) {
 	m.SetName(i.Name)
 	m.SetKind(i.Kind)
-	if v := i.BeaconIDs; len(v) > 0 {
-		m.AddBeaconIDs(v...)
+	if v := i.HostIDs; len(v) > 0 {
+		m.AddHostIDs(v...)
 	}
 }
 
@@ -96,11 +132,11 @@ func (c *TagCreate) SetInput(i CreateTagInput) *TagCreate {
 
 // UpdateTagInput represents a mutation input for updating tags.
 type UpdateTagInput struct {
-	Name            *string
-	Kind            *tag.Kind
-	ClearBeacons    bool
-	AddBeaconIDs    []int
-	RemoveBeaconIDs []int
+	Name          *string
+	Kind          *tag.Kind
+	ClearHosts    bool
+	AddHostIDs    []int
+	RemoveHostIDs []int
 }
 
 // Mutate applies the UpdateTagInput on the TagMutation builder.
@@ -111,14 +147,14 @@ func (i *UpdateTagInput) Mutate(m *TagMutation) {
 	if v := i.Kind; v != nil {
 		m.SetKind(*v)
 	}
-	if i.ClearBeacons {
-		m.ClearBeacons()
+	if i.ClearHosts {
+		m.ClearHosts()
 	}
-	if v := i.AddBeaconIDs; len(v) > 0 {
-		m.AddBeaconIDs(v...)
+	if v := i.AddHostIDs; len(v) > 0 {
+		m.AddHostIDs(v...)
 	}
-	if v := i.RemoveBeaconIDs; len(v) > 0 {
-		m.RemoveBeaconIDs(v...)
+	if v := i.RemoveHostIDs; len(v) > 0 {
+		m.RemoveHostIDs(v...)
 	}
 }
 

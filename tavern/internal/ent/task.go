@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/quest"
@@ -34,9 +35,10 @@ type Task struct {
 	Error string `json:"error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
-	Edges       TaskEdges `json:"edges"`
-	quest_tasks *int
-	task_beacon *int
+	Edges        TaskEdges `json:"edges"`
+	quest_tasks  *int
+	task_beacon  *int
+	selectValues sql.SelectValues
 }
 
 // TaskEdges holds the relations/edges for other nodes in the graph.
@@ -94,7 +96,7 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 		case task.ForeignKeys[1]: // task_beacon
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Task", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -170,9 +172,17 @@ func (t *Task) assignValues(columns []string, values []any) error {
 				t.task_beacon = new(int)
 				*t.task_beacon = int(value.Int64)
 			}
+		default:
+			t.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
+}
+
+// Value returns the ent.Value that was dynamically selected and assigned to the Task.
+// This includes values selected through modifiers, order, etc.
+func (t *Task) Value(name string) (ent.Value, error) {
+	return t.selectValues.Get(name)
 }
 
 // QueryQuest queries the "quest" edge of the Task entity.
