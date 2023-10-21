@@ -6,11 +6,11 @@ use {std::{os::raw::c_void, ptr::null_mut},
     object::LittleEndian as LE,
     windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
     windows_sys::Win32::System::Threading::CreateRemoteThread,
-    windows_sys::Win32::{System::{SystemServices::{IMAGE_DOS_HEADER}, Diagnostics::Debug::{IMAGE_NT_HEADERS64, WriteProcessMemory}, Threading::{OpenProcess, PROCESS_ALL_ACCESS, PROCESS_ACCESS_RIGHTS}, Memory::{VirtualAllocEx, VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE}}, Foundation::{GetLastError, BOOL, HANDLE, FALSE}}};
+    windows_sys::Win32::{System::{SystemServices::IMAGE_DOS_HEADER, Diagnostics::Debug::{IMAGE_NT_HEADERS64, WriteProcessMemory}, Threading::{OpenProcess, PROCESS_ALL_ACCESS, PROCESS_ACCESS_RIGHTS}, Memory::{VirtualAllocEx, VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE}}, Foundation::{GetLastError, BOOL, HANDLE, FALSE}}};
 
 
 #[cfg(target_os = "windows")]
-const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll");
+const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\..\\bin\\reflective_loader\\target\\x86_64-pc-windows-msvc\\release\\reflective_loader.dll");
 
 #[cfg(target_os = "windows")]
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
@@ -131,9 +131,9 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -
         true)?;
     let user_data = UserData{function_offset: target_function as u64};
 
-    let dos_header = reflective_loader_dll.as_ptr() as *mut IMAGE_DOS_HEADER;
-    let nt_header = (reflective_loader_dll.as_ptr() as usize + (unsafe { *dos_header }).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
-    let image_size = (unsafe { *nt_header }).OptionalHeader.SizeOfImage;
+    // let dos_header = reflective_loader_dll.as_ptr() as *mut IMAGE_DOS_HEADER;
+    // let nt_header = (reflective_loader_dll.as_ptr() as usize + (unsafe { *dos_header }).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
+    let image_size =reflective_loader_dll.len();
 
     let process_handle = open_process(
         PROCESS_ALL_ACCESS,
@@ -374,19 +374,19 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_in
             }
         }
 
-        let globals = GlobalsBuilder::extended().with(func_dll_reflect).build();
+        let globals = GlobalsBuilder::standard().with(func_dll_reflect).build();
         let module: Module = Module::new();
 
         let res: SmallMap<Value, Value> = SmallMap::new();
         let mut input_params: Dict = Dict::new(res);
         let target_pid_key = module.heap().alloc_str("target_pid").to_value().get_hashed()?;
-        let target_pid_value = Value::new_int(target_pid);
+        let target_pid_value = module.heap().alloc(target_pid);
         input_params.insert_hashed(target_pid_key, target_pid_value);
 
         let dll_bytes_key = module.heap().alloc_str("dll_bytes").to_value().get_hashed()?;
         let mut tmp_list: Vec<Value> = Vec::new();
         for byte in test_dll_bytes {
-            tmp_list.push(Value::new_int(*byte as i32));
+            tmp_list.push(module.heap().alloc(*byte as i32));
         }
         let dll_bytes_value = module.heap().alloc(tmp_list);
         input_params.insert_hashed(dll_bytes_key, dll_bytes_value);

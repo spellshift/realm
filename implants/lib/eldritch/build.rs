@@ -59,7 +59,7 @@ fn build_bin_reflective_loader(){
         .filter_map(|line| line.ok())
         .for_each(|line| println!("cargo dll build: {}", line));    
     
-    let relative_path_to_test_dll_file = "..\\..\\..\\bin\\reflective_loader\\target\\release\\reflective_loader.dll";
+    let relative_path_to_test_dll_file = "..\\..\\..\\bin\\reflective_loader\\target\\x86_64-pc-windows-msvc\\release\\reflective_loader.dll";
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll_file);
     assert!(test_dll_path.is_file());
 }

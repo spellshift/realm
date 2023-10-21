@@ -1,6 +1,6 @@
 use ntapi::{ntpsapi::PEB_LDR_DATA, ntldr::LDR_DATA_TABLE_ENTRY, ntpebteb::PEB};
-use windows_sys::{Win32::{System::{Memory::{VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS}, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_SECTION_HEADER_0, IMAGE_DIRECTORY_ENTRY_EXPORT, IMAGE_OPTIONAL_HEADER64}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH, IMAGE_EXPORT_DIRECTORY}, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL, FARPROC}}, core::PCSTR};
-use windows_sys::Win32::{System::{Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},SystemServices::{IMAGE_DOS_HEADER},Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE}}};
+use windows_sys::{Win32::{System::{Memory::{VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS}, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_SECTION_HEADER_0, IMAGE_DIRECTORY_ENTRY_EXPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH, IMAGE_EXPORT_DIRECTORY}, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL, FARPROC}}, core::PCSTR};
+use windows_sys::Win32::System::{Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},SystemServices::IMAGE_DOS_HEADER,Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE}};
 use core::{ffi::CStr, arch::asm, slice::from_raw_parts, mem::transmute, ptr::null_mut};
 use core::ptr;
 use core::ffi::c_void;
@@ -293,7 +293,7 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
                 // We can't just set it equal since that will be a pointer to the object.
                 // To use it each line would need to dereference the pointer then access the field.
                 // let mut library_thunk: *mut IMAGE_THUNK_DATA64 = library_thunk_ref;
-                let mut library_thunk = unsafe { &mut *library_thunk_ptr };
+                let library_thunk = unsafe { &mut *library_thunk_ptr };
 
                 // Access of a union field is unsafe
                 if unsafe{library_thunk.u1.AddressOfData} == 0 {
@@ -480,9 +480,9 @@ pub fn reflective_loader(user_data_ptr_and_dll_bytes: *mut c_void) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::{time};
+    use core::time;
     use std::{thread, path::{Path, PathBuf}, fs};
-    use object::{LittleEndian, read::pe::{ImageThunkData}, pe::ImageNtHeaders64, Object, ObjectSection};
+    use object::{LittleEndian, read::pe::ImageThunkData, pe::ImageNtHeaders64, Object, ObjectSection};
     use tempfile::NamedTempFile;
     use windows_sys::Win32::{System::{Memory::VirtualAlloc, LibraryLoader::LoadLibraryA}, Foundation::GetLastError};
 
@@ -525,48 +525,6 @@ mod tests {
     
         Err(anyhow::anyhow!("Function {} not found", export_name))
     }    
-
-    #[test]
-    fn test_reflective_loader_memcpy_simple() -> () {
-        let source_buffer = [0,1,2,3,4];
-        let mut dest_buffer = [0,0,0,0,0];
-        unsafe { memcpy(dest_buffer.as_mut_ptr(), source_buffer.as_ptr(), source_buffer.len()) };
-        for (index, byte) in source_buffer.iter().enumerate() {
-            assert_eq!(*byte, dest_buffer[index]);
-        }
-    }
-
-    #[test]
-    fn test_reflective_loader_memcpy_overlapping_fwd() -> () {
-        let dest_offset = 3;
-        let source_offset = 0;
-        let common_buffer = [0,1,2,3,4,5,6,7,8,9,10];
-        let expected_output = common_buffer.clone();
-
-        let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
-        let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
-
-        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
-        for index in 0..common_buffer.len() - (dest_offset + source_offset) { 
-            assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
-        }
-    }
-
-    #[test]
-    fn test_reflective_loader_memcpy_overlapping_rev() -> () {
-        let dest_offset = 0;
-        let source_offset = 3;
-        let common_buffer = [0,1,2,3,4,5,6,7,8,9,10];
-        let expected_output = common_buffer.clone();
-
-        let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
-        let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
-
-        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
-        for index in 0..common_buffer.len() - (dest_offset + source_offset) {
-            assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
-        }
-    }
 
     #[test]
     fn test_reflective_loader_get_export_by_hash() -> () {

@@ -80,6 +80,7 @@ fn methods(builder: &mut MethodsBuilder) {
     fn dll_reflect(this: SysLibrary, dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         dll_reflect_impl::dll_reflect(dll_bytes, pid, function_name)
+    }
     fn get_env<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         get_env_impl::get_env(starlark_heap)
