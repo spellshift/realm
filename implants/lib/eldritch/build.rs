@@ -48,7 +48,7 @@ fn build_bin_reflective_loader(){
     assert!(test_dll_path.is_dir());
 
     println!("Starting cargo build lib");
-    let res_build = Command::new("cargo").args(&["build","--release"])
+    let res_build = Command::new("cargo").args(&["build","--release","-Z","build-std=core,compiler_builtins","-Z","build-std-features=compiler-builtins-mem"])
         .current_dir(test_dll_path.clone())
         .stderr(Stdio::piped())
         .spawn().unwrap().stderr.unwrap();
