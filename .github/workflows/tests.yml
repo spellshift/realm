@@ -63,8 +63,7 @@ jobs:
         tool: nextest,cargo-llvm-cov
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
-    - if: matrix.os == 'windows-latest'
-      name: 🔨 Build bin dependencies
+    - name: 🔨 Build bin dependencies
       run: cd ./bin/reflective_loader && cargo build --release
     - name: 🔎 Run tests
       run: cd ./implants/ && cargo llvm-cov nextest --lcov --output-path lcov.info
