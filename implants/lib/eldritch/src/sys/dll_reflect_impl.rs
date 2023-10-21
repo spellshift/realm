@@ -6,7 +6,7 @@ use {std::{os::raw::c_void, ptr::null_mut},
     object::LittleEndian as LE,
     windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
     windows_sys::Win32::System::Threading::CreateRemoteThread,
-    windows_sys::Win32::{System::{SystemServices::IMAGE_DOS_HEADER, Diagnostics::Debug::{IMAGE_NT_HEADERS64, WriteProcessMemory}, Threading::{OpenProcess, PROCESS_ALL_ACCESS, PROCESS_ACCESS_RIGHTS}, Memory::{VirtualAllocEx, VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE}}, Foundation::{GetLastError, BOOL, HANDLE, FALSE}}};
+    windows_sys::Win32::{System::{Diagnostics::Debug::WriteProcessMemory, Threading::{OpenProcess, PROCESS_ALL_ACCESS, PROCESS_ACCESS_RIGHTS}, Memory::{VirtualAllocEx, VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE}}, Foundation::{GetLastError, BOOL, HANDLE, FALSE}}};
 
 
 #[cfg(target_os = "windows")]
