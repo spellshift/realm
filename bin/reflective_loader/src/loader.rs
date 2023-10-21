@@ -24,13 +24,7 @@ const GET_LAST_ERROR_HASH: u32  = 0x8160BDC3;
 #[derive(Copy,Clone)]
 struct UserData {
     function_offset: u64,
-}
-
-enum Result<T, E> {
-    Ok(T),
-    Err(E),
- }
- 
+} 
 
 type FnDllMain = unsafe extern "system" fn(module: HINSTANCE, call_reason: u32, reserved: *mut c_void) -> BOOL;
 
@@ -165,14 +159,15 @@ impl PeFileHeaders64 {
 
 /// Copy each DLL section into the newly allocated memory.
 /// Each section is copied according to it's VirtualAddress.
-fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: &PeFileHeaders64) -> () {
+fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const c_void, pe_file_headers: &PeFileHeaders64) -> Result<(), &str> {
     for (section_index, section) in pe_file_headers.section_headers.iter().enumerate() {
-        if section_index >= pe_file_headers.nt_headers.FileHeader.NumberOfSections as usize { return; } 
+        if section_index >= pe_file_headers.nt_headers.FileHeader.NumberOfSections as usize { return Ok(()); } 
         let section_destination = new_dll_base as usize + section.VirtualAddress as usize;
         let section_bytes = old_dll_bytes as usize + section.PointerToRawData as usize;
         
         unsafe { copy_nonoverlapping(section_bytes as *const u8, section_destination as *mut u8, section.SizeOfRawData as usize) };
     }
+    Ok(())
 }
 
 // The relocation table in `.reloc` is used to help load a PE file when it's base address 
@@ -192,11 +187,11 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
 // of the newly loaded PE.
 // https://0xrick.github.io/win-internals/pe7/
 // http://research32.blogspot.com/2015/01/base-relocation-table.html
-fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, image_base_delta: isize) -> () {
+fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, image_base_delta: isize) -> Result<(), &str> {
     let relocation_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC as usize];	
     if relocation_directory.Size == 0 {
         // No relocations to process
-        return;
+        return Ok(());
     }
     let mut relocation_block_ref: *mut IMAGE_BASE_RELOCATION = 
         (new_dll_base as usize + relocation_directory.VirtualAddress as usize) as *mut IMAGE_BASE_RELOCATION;
@@ -204,7 +199,7 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeF
         let relocation_block = unsafe{*relocation_block_ref as IMAGE_BASE_RELOCATION};
         if relocation_block.SizeOfBlock == 0 ||
             relocation_block.VirtualAddress == 0 {
-            break;
+            return Ok(());
         }
 
         // This needs to be calculated since the relocation_block doesn't track it.
@@ -234,24 +229,24 @@ fn process_dll_image_relocation(new_dll_base: *mut c_void, pe_file_headers: &PeF
 /// Check if that most significant bit is 0 or 1. 
 /// If it's 1 then the function should be loaded by ordinal reference.   - return True
 /// If it's 0 then the function should be loaded by name.                - return False
-fn image_snap_by_ordinal(ordinal: usize) -> bool{
+fn image_snap_by_ordinal(ordinal: usize) -> Result<bool, &'static str>{
     #[cfg(target_arch = "x86_64")]
-    return (ordinal as u64 & IMAGE_ORDINAL_FLAG64) != 0;
+    Ok((ordinal as u64 & IMAGE_ORDINAL_FLAG64) != 0)
 }
 
 /// Extract the 0-15 bytes which represent the ordinal
 /// reference to import the function with.
 /// C variation: `def IMAGE_ORDINAL(Ordinal): return (Ordinal & 0xffff)`
-fn image_ordinal(ordinal: usize) -> u16 {
-    return (ordinal & 0xffff) as u16;
+fn image_ordinal(ordinal: usize) -> Result<u16, &'static str> {
+    Ok((ordinal & 0xffff) as u16)
 }
 
-fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, load_library_a_fn: FnLoadLibraryA, get_proc_address_fn: FnGetProcAddress, get_last_error_fn: FnGetLastError) -> () {
+fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &PeFileHeaders64, load_library_a_fn: FnLoadLibraryA, get_proc_address_fn: FnGetProcAddress, get_last_error_fn: FnGetLastError) -> Result<(), &str> {
     let import_directory: IMAGE_DATA_DIRECTORY = pe_file_headers.nt_headers.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
 	
     if import_directory.Size == 0 {
         // No relocations to process
-        return;
+        return Ok(());
     }
 
     let mut base_image_import_table: *mut IMAGE_IMPORT_DESCRIPTOR = (new_dll_base as usize + import_directory.VirtualAddress as usize) as *mut IMAGE_IMPORT_DESCRIPTOR;
@@ -280,9 +275,9 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
                 if unsafe{library_thunk.u1.AddressOfData} == 0 {
                     break;
                 }
-                if image_snap_by_ordinal(unsafe{library_thunk.u1.Ordinal as usize}) {
+                if image_snap_by_ordinal(unsafe{library_thunk.u1.Ordinal as usize})? {
                     // Calculate the ordinal reference to the function from the library_thunk entry.
-                    let function_ordinal_ptr = image_ordinal(unsafe{library_thunk.u1.Ordinal as usize}) as *const u8;
+                    let function_ordinal_ptr = image_ordinal(unsafe{library_thunk.u1.Ordinal as usize})? as *const u8;
                     // Get the address of the function using `GetProcAddress` and update the thunks reference.
                     library_thunk.u1.Function = get_proc_address(get_proc_address_fn, get_last_error_fn ,library_handle, function_ordinal_ptr) as _;
                 } else {
@@ -300,6 +295,8 @@ fn process_import_address_tables(new_dll_base: *mut c_void, pe_file_headers: &Pe
         base_image_import_table = (base_image_import_table as usize + core::mem::size_of::<IMAGE_IMPORT_DESCRIPTOR>() as usize) as *mut IMAGE_IMPORT_DESCRIPTOR;
     }
 
+    Ok(())
+
 }
 
 
@@ -312,7 +309,7 @@ pub unsafe fn get_peb() -> *mut PEB
 }
 
 /// Generate a unique hash
-pub fn dbj2_hash(buffer: &[u8]) -> u32 
+pub fn dbj2_hash(buffer: &[u8]) -> Result<u32, &str> 
 {
     let mut hsh: u32 = 5381;
     let mut iter: usize = 0;
@@ -337,7 +334,7 @@ pub fn dbj2_hash(buffer: &[u8]) -> u32
         iter += 1;
     }
 
-    return hsh;
+    Ok(hsh)
 }
 
 /// Get loaded module by hash
@@ -353,10 +350,14 @@ pub unsafe fn get_loaded_module_by_hash(module_hash: u32) -> Option<*mut u8>
         let dll_length = (*module_list).BaseDllName.Length as usize;
         let dll_name_slice = from_raw_parts(dll_buffer_ptr as *const u8, dll_length);
 
-        if module_hash == dbj2_hash(dll_name_slice) 
-        {
-            return Some((*module_list).DllBase as _);
-        }
+       match dbj2_hash(dll_name_slice){
+            Ok(local_module_hash) => {
+                if module_hash == local_module_hash {
+                    return Some((*module_list).DllBase as _);
+                }
+            },
+            Err(_) => {},
+        };
 
         module_list = (*module_list).InLoadOrderLinks.Flink as *mut LDR_DATA_TABLE_ENTRY;
     }
@@ -379,11 +380,15 @@ unsafe fn get_export_by_hash(module_base: *mut u8, export_name_hash: u32) -> Opt
         let name_addr = (module_base as usize + names[i as usize] as usize) as *const i8;
         let name_slice: &[u8] = core::ffi::CStr::from_ptr(name_addr).to_bytes();
 
-        if export_name_hash == dbj2_hash(name_slice) 
-        {
-            let ordinal = ordinals[i as usize] as usize;
-            return Some(module_base as usize + functions[ordinal] as usize);
-        }
+        match dbj2_hash(name_slice){
+            Ok(local_name_hash) => {
+                if export_name_hash == local_name_hash {
+                    let ordinal = ordinals[i as usize] as usize;
+                    return Some(module_base as usize + functions[ordinal] as usize);
+                }
+            },
+            Err(_) => {},
+        };
     }
 
     return None;
@@ -508,7 +513,7 @@ mod tests {
     }    
 
     #[test]
-    fn test_reflective_loader_get_export_by_hash() -> () {
+    fn test_reflective_loader_get_export_by_hash() -> Result<(), &'static str> {
         // Try getting the function pointer
         let kernel32_hash = KERNEL32_HASH;
         let virtual_alloc_hash = VIRTUAL_ALLOC_HASH;
@@ -521,17 +526,19 @@ mod tests {
         let virtual_alloc = unsafe { transmute::<_, fnVirtualAlloc>(virtualalloc_addy) };
         let res = unsafe{virtual_alloc(core::ptr::null(), 1024, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)};
         assert!(res as usize > 0 );
+        Ok(())
     }
 
     #[test]
-    fn test_reflective_loader_get_module_by_hash() -> () {
+    fn test_reflective_loader_get_module_by_hash() -> Result<(), &'static str> {
         let kernel32_hash = KERNEL32_HASH;
         let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
         assert!(kernel32_base as usize > 0);
+        Ok(())
     }
     
     #[test]
-    fn test_reflective_loader_dbj2_hash() -> () {
+    fn test_reflective_loader_dbj2_hash() -> Result<(), &'static str> {
         let test_names = [
             "kernel32.dll".as_bytes(),
             "ntdll.dll".as_bytes(),
@@ -550,9 +557,10 @@ mod tests {
         ];
         for (index, name) in test_names.iter().enumerate() {
             let expected = test_hashes[index];
-            let res = dbj2_hash(&name);
+            let res = dbj2_hash(&name)?;
             assert_eq!(res, expected);
         }
+        Ok(())
     }
 
     #[test]
