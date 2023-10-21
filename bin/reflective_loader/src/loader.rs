@@ -1,7 +1,7 @@
 use ntapi::{ntpsapi::PEB_LDR_DATA, ntldr::LDR_DATA_TABLE_ENTRY, ntpebteb::PEB};
 use windows_sys::{Win32::{System::{Memory::{VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS}, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_DIRECTORY_ENTRY_EXPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH, IMAGE_EXPORT_DIRECTORY}, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL, FARPROC}}, core::PCSTR};
 use windows_sys::Win32::System::{Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},SystemServices::IMAGE_DOS_HEADER,Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE}};
-use core::{ffi::CStr, arch::asm, slice::from_raw_parts, mem::transmute, ptr::{null_mut, copy_nonoverlapping}};
+use core::{ffi::CStr, arch::asm, slice::from_raw_parts, mem::transmute, ptr::{null_mut, copy_nonoverlapping}, fmt::Error};
 use core::ptr;
 use core::ffi::c_void;
 
@@ -40,15 +40,15 @@ type FnVirtualAlloc = unsafe extern "system" fn(lpaddress: *const c_void, dwsize
 type FnGetLastError = unsafe extern "system" fn() -> u32;
 
 // pub unsafe fn VirtualAlloc(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
-fn virtual_alloc(fn_ptr: FnVirtualAlloc, err_ptr: FnGetLastError, lp_address: *const c_void, dw_size: usize, fl_allocation_type: u32, fl_protect: u32) -> *mut c_void {
+fn virtual_alloc(fn_ptr: FnVirtualAlloc, err_ptr: FnGetLastError, lp_address: *const c_void, dw_size: usize, fl_allocation_type: u32, fl_protect: u32) -> Result<*mut c_void, &'static str> {
     let buffer_handle: *mut c_void = unsafe{ fn_ptr(lp_address, dw_size, fl_allocation_type, fl_protect) };
     if buffer_handle == null_mut() {
         let error_code = unsafe { err_ptr() };
         if error_code != 0 {
-            panic!("Failed to allocate memory. Last error returned: {}", error_code);
+            return Err("Failed to allocate memory");
         }
     }
-    buffer_handle
+    Ok(buffer_handle)
 }
 
 // pub unsafe fn GetProcAddress(hmodule: P0, lpprocname: P1) -> FARPROC
@@ -394,6 +394,9 @@ unsafe fn get_export_by_hash(module_base: *mut u8, export_name_hash: u32) -> Opt
     return None;
 }
 
+fn error_handle(msg: &str) {
+    panic!("{}", msg);
+}
 
 #[no_mangle]
 pub fn reflective_loader(user_data_ptr_and_dll_bytes: *mut c_void) -> usize {
@@ -404,49 +407,98 @@ pub fn reflective_loader(user_data_ptr_and_dll_bytes: *mut c_void) -> usize {
     let user_data_ptr_ptr = user_data_ptr_and_dll_bytes as *const *const UserData;
     let user_data_ptr = unsafe{ *user_data_ptr_ptr };
     let user_data = unsafe{*user_data_ptr}.clone();
-    if user_data.function_offset == 0 { panic!("Could not parse the user_data segment") }
+    if user_data.function_offset == 0 { error_handle("Could not parse the user_data segment") }
     
     // Increment dll_bytes ptr offset to after the user_data ptr.
     let dll_bytes = (user_data_ptr_and_dll_bytes as usize + core::mem::size_of::<usize>()) as *mut c_void;
 
     #[cfg(target_arch = "x86_64")]
     let pe_header = PeFileHeaders64::new(dll_bytes);
-    if pe_header.dos_headers.e_magic != PE_MAGIC { panic!("Target DLL does not appear to be a DLL.") }
+    if pe_header.dos_headers.e_magic != PE_MAGIC { error_handle("Target DLL does not appear to be a DLL.") }
 
     let kernel32_base = unsafe { get_loaded_module_by_hash(KERNEL32_HASH).unwrap() };
     let ntdll_base = unsafe { get_loaded_module_by_hash(NTDLL_HASH).unwrap() };
     if kernel32_base.is_null() || ntdll_base.is_null() 
     {
-        panic!("Could not find kernel32 and ntdll");
+        error_handle("Could not find kernel32 and ntdll");
     }
 
     // Create function pointers
     // Get exports
-    let loadlib_addy = unsafe { get_export_by_hash(kernel32_base, LOAD_LIBRARY_A_HASH).expect("Couldn't lookup LoadLibraryA export by hash") };
+    let loadlib_addy = match unsafe { get_export_by_hash(kernel32_base, LOAD_LIBRARY_A_HASH) } {
+        Some(local_loadlib_addy) => local_loadlib_addy,
+        None => {
+            error_handle("Couldn't lookup LoadLibraryA export by hash");
+            return 0;
+        },
+    };
     let load_library_a_fn = unsafe { transmute::<_, FnLoadLibraryA>(loadlib_addy) };
 
-    let getproc_addy = unsafe { get_export_by_hash(kernel32_base, GET_PROC_ADDRESS_HASH).expect("Couldn't lookup GetProcAddress export by hash") };
+    let getproc_addy = match unsafe { get_export_by_hash(kernel32_base, GET_PROC_ADDRESS_HASH) } {
+        Some(local_getproc_addy) => local_getproc_addy,
+        None => {
+            error_handle("Couldn't lookup GetProcAddress export by hash");
+            return 0;
+        },
+    };
     let get_proc_address_fn = unsafe { transmute::<_, FnGetProcAddress>(getproc_addy) };
 
-    let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, VIRTUAL_ALLOC_HASH).expect("Couldn't lookup VirtualAlloc export by hash") };
+    let virtualalloc_addy = match unsafe { get_export_by_hash(kernel32_base, VIRTUAL_ALLOC_HASH) } {
+        Some(local_virtualalloc_addy) => local_virtualalloc_addy,
+        None => {
+            error_handle("Couldn't lookup VirtualAlloc export by hash");
+            return 0;
+        },
+    };
     let virtual_alloc_fn = unsafe { transmute::<_, FnVirtualAlloc>(virtualalloc_addy) };
 
-    let getlasterror_addy = unsafe { get_export_by_hash(kernel32_base, GET_LAST_ERROR_HASH).expect("Couldn't lookup GetLastError export by hash") };
+    let getlasterror_addy = match unsafe { get_export_by_hash(kernel32_base, GET_LAST_ERROR_HASH) } {
+        Some(local_getlasterror_addy) => local_getlasterror_addy,
+        None => {
+            error_handle("Couldn't lookup GetLastError export by hash");
+            return 0;
+        },
+    };
     let get_last_error_fn = unsafe{ transmute::<_, FnGetLastError>(getlasterror_addy)};
 
     // Allocate memory for our DLL to be loaded into
-    let new_dll_base: *mut c_void = virtual_alloc(virtual_alloc_fn, get_last_error_fn, ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    let new_dll_base: *mut c_void = match virtual_alloc(virtual_alloc_fn, get_last_error_fn, ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) {
+        Ok(local_new_dll_base) => local_new_dll_base,
+        Err(local_err) => {
+            error_handle(local_err);
+            error_handle("Failed to allocate memory");
+            return 0;
+        },
+    };
 
     // // copy over DLL image sections to the newly allocated space for the DLL
-    relocate_dll_image_sections(new_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
+    match relocate_dll_image_sections(new_dll_base, dll_bytes as *const c_void, &pe_header) {
+        Ok(_) => {},
+        Err(local_err) => {
+            error_handle(local_err);
+            return 0;
+        },
+    }
 
     // Get distance between new dll memory and on disk image base.
     let image_base_delta = new_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
 
     // perform image base relocations
-    process_dll_image_relocation(new_dll_base, &pe_header, image_base_delta);
+    match process_dll_image_relocation(new_dll_base, &pe_header, image_base_delta) {
+        Ok(_) => {},
+        Err(local_err) => {
+            error_handle(local_err);
+            return 0;
+        }
+    }
     // resolve import address table
-    process_import_address_tables(new_dll_base, &pe_header, load_library_a_fn, get_proc_address_fn, get_last_error_fn);
+    match process_import_address_tables(new_dll_base, &pe_header, load_library_a_fn, get_proc_address_fn, get_last_error_fn) {
+        Ok(_) => {},
+        Err(local_err) => {
+            error_handle(local_err);
+            return 0;
+        }
+    }
 
     // Execute DllMain
     let entry_point = (new_dll_base as usize + pe_header.nt_headers.OptionalHeader.AddressOfEntryPoint as usize) as *const FnDllMain;
@@ -738,9 +790,9 @@ mod tests {
         // Allocate memory for our DLL to be loaded into
         let test_dll_base: *mut c_void = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
         // copy over DLL image sections to the newly allocated space for the DLL
-        relocate_dll_image_sections(test_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
+        let _ = relocate_dll_image_sections(test_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
         let image_base_delta = test_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
-        process_dll_image_relocation(test_dll_base, &pe_header, image_base_delta);
+        let _ = process_dll_image_relocation(test_dll_base, &pe_header, image_base_delta);
         let good_dll_base = unsafe{ LoadLibraryA(format!("{}\0", test_payload_path.as_path().to_str().unwrap()).as_ptr()) };
         if good_dll_base == 0 {
             let last_err = unsafe{GetLastError()};
