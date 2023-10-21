@@ -1,7 +1,7 @@
 use ntapi::{ntpsapi::PEB_LDR_DATA, ntldr::LDR_DATA_TABLE_ENTRY, ntpebteb::PEB};
-use windows_sys::{Win32::{System::{Memory::{VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS}, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_SECTION_HEADER_0, IMAGE_DIRECTORY_ENTRY_EXPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH, IMAGE_EXPORT_DIRECTORY}, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL, FARPROC}}, core::PCSTR};
+use windows_sys::{Win32::{System::{Memory::{VIRTUAL_ALLOCATION_TYPE, PAGE_PROTECTION_FLAGS}, Diagnostics::Debug::{IMAGE_DIRECTORY_ENTRY_BASERELOC, IMAGE_DATA_DIRECTORY, IMAGE_DIRECTORY_ENTRY_IMPORT, IMAGE_DIRECTORY_ENTRY_EXPORT}, SystemServices::{IMAGE_BASE_RELOCATION, IMAGE_IMPORT_DESCRIPTOR, IMAGE_ORDINAL_FLAG64, IMAGE_IMPORT_BY_NAME, IMAGE_REL_BASED_DIR64, IMAGE_REL_BASED_HIGHLOW, DLL_PROCESS_ATTACH, IMAGE_EXPORT_DIRECTORY}, WindowsProgramming::IMAGE_THUNK_DATA64}, Foundation::{HINSTANCE, BOOL, FARPROC}}, core::PCSTR};
 use windows_sys::Win32::System::{Diagnostics::Debug::{IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER},SystemServices::IMAGE_DOS_HEADER,Memory::{MEM_RESERVE,MEM_COMMIT,PAGE_EXECUTE_READWRITE}};
-use core::{ffi::CStr, arch::asm, slice::from_raw_parts, mem::transmute, ptr::null_mut};
+use core::{ffi::CStr, arch::asm, slice::from_raw_parts, mem::transmute, ptr::{null_mut, copy_nonoverlapping}};
 use core::ptr;
 use core::ffi::c_void;
 
@@ -25,6 +25,12 @@ const GET_LAST_ERROR_HASH: u32  = 0x8160BDC3;
 struct UserData {
     function_offset: u64,
 }
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+ }
+ 
 
 type FnDllMain = unsafe extern "system" fn(module: HINSTANCE, call_reason: u32, reserved: *mut c_void) -> BOOL;
 
@@ -127,20 +133,7 @@ impl PeFileHeaders64 {
         }
 
         // Section Headers - hopefully there isn't more than MAX_PE_SECTIONS sections.
-        let null_section = IMAGE_SECTION_HEADER {
-            Name: [0; 8], 
-            Misc: IMAGE_SECTION_HEADER_0 { 
-                PhysicalAddress: 0, 
-            },
-            VirtualAddress: 0, 
-            SizeOfRawData: 0, 
-            PointerToRawData: 0, 
-            PointerToRelocations: 0, 
-            PointerToLinenumbers: 0, 
-            NumberOfRelocations: 0, 
-            NumberOfLinenumbers: 0, 
-            Characteristics: 0
-        };
+        let null_section: IMAGE_SECTION_HEADER = unsafe { core::mem::zeroed() };
         let mut section_headers: [IMAGE_SECTION_HEADER; MAX_PE_SECTIONS] = [null_section; MAX_PE_SECTIONS];
         // let mut section_headers: [IMAGE_SECTION_HEADER; MAX_PE_SECTIONS] = unsafe{ core::mem::zeroed() };
         let optional_headers_start_ptr = unsafe{&(*(nt_headers_base_ptr as *mut IMAGE_NT_HEADERS64)).OptionalHeader as *const _ as usize};
@@ -163,18 +156,6 @@ impl PeFileHeaders64 {
     }
 }
 
-/// In order to keep the compiler from being upset about
-/// not being able to find memmove or memcpy we need to 
-/// implement our own copy function that doesn't call etiher.
-#[no_mangle]
-pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
-    for i in 0..n {
-        let local_src = unsafe { src.add(i) };
-        let local_dest = unsafe { dest.add(i) };
-        unsafe{*local_dest = *local_src};
-    }
-    dest
-}
 
 // #[no_mangle]
 // pub unsafe extern "C" fn memset(dest: *mut u8, val: u8, n: usize) -> () {
@@ -190,7 +171,7 @@ fn relocate_dll_image_sections(new_dll_base: *mut c_void, old_dll_bytes: *const 
         let section_destination = new_dll_base as usize + section.VirtualAddress as usize;
         let section_bytes = old_dll_bytes as usize + section.PointerToRawData as usize;
         
-        unsafe { memcpy(section_destination as *mut u8, section_bytes as *const u8, section.SizeOfRawData as usize) };
+        unsafe { copy_nonoverlapping(section_bytes as *const u8, section_destination as *mut u8, section.SizeOfRawData as usize) };
     }
 }
 
