@@ -16,16 +16,12 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
-
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.
 opt-level = "z"  # Optimize for size.
 lto = true
 codegen-units = 1
 panic = "abort"
-
-[profile.release.reflective_loader]
-rustflags = ["-Zshare-generics=n","-Zbuild-std=core,compiler_builtins","-Zbuild-std-features=compiler-builtins-mem"]
 
 [dependencies]
 ntapi = "0.4.1"

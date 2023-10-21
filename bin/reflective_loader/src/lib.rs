@@ -11,9 +11,9 @@ type LPVOID = *mut c_void;
 type BOOL = i32;
 const TRUE: i32 = 1;
 
-// #[allow(non_upper_case_globals)]
-// #[export_name = "_fltused"]
-// pub static _fltused: i32 = 0;
+#[allow(non_upper_case_globals)]
+#[export_name = "_fltused"]
+pub static _fltused: i32 = 0;
 
 #[cfg(not(test))]
 #[panic_handler]

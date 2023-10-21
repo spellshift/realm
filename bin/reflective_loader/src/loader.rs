@@ -396,8 +396,7 @@ unsafe fn get_export_by_hash(module_base: *mut u8, export_name_hash: u32) -> Opt
     for i in 0..(*export_directory).NumberOfNames 
     {
         let name_addr = (module_base as usize + names[i as usize] as usize) as *const i8;
-        let name_len = get_cstr_len(name_addr as _);
-        let name_slice: &[u8] = from_raw_parts(name_addr as _, name_len);
+        let name_slice: &[u8] = core::ffi::CStr::from_ptr(name_addr).to_bytes();
 
         if export_name_hash == dbj2_hash(name_slice) 
         {
@@ -409,18 +408,6 @@ unsafe fn get_export_by_hash(module_base: *mut u8, export_name_hash: u32) -> Opt
     return None;
 }
 
-/// Get the length of a C String
-pub unsafe fn get_cstr_len(pointer: *const char) -> usize 
-{
-    let mut tmp: u64 = pointer as u64;
-
-    while *(tmp as *const u8) != 0 
-    {
-        tmp += 1;
-    }
-
-    (tmp - pointer as u64) as _
-}
 
 #[no_mangle]
 pub fn reflective_loader(user_data_ptr_and_dll_bytes: *mut c_void) -> usize {
