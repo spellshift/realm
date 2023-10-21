@@ -489,348 +489,349 @@ pub fn reflective_loader(user_data_ptr_and_dll_bytes: *mut c_void) -> usize {
 }
 
 
-// #[cfg(target_os = "windows")]
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use core::{time};
-//     use std::{thread, path::{Path, PathBuf}, fs};
-//     use object::{LittleEndian, read::pe::{ImageThunkData}, pe::ImageNtHeaders64, Object, ObjectSection};
-//     use tempfile::NamedTempFile;
-//     use windows_sys::Win32::{System::{Memory::VirtualAlloc, LibraryLoader::LoadLibraryA}, Foundation::GetLastError};
+#[cfg(target_os = "windows")]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::{time};
+    use std::{thread, path::{Path, PathBuf}, fs};
+    use object::{LittleEndian, read::pe::{ImageThunkData}, pe::ImageNtHeaders64, Object, ObjectSection};
+    use tempfile::NamedTempFile;
+    use windows_sys::Win32::{System::{Memory::VirtualAlloc, LibraryLoader::LoadLibraryA}, Foundation::GetLastError};
 
-//     const TEST_PAYLOAD: &[u8] = include_bytes!("..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll");
-//     const TEST_PAYLOAD_RELATIVE_PATH: &str = "..\\create_file_dll\\target\\debug\\create_file_dll.dll";
+    const TEST_PAYLOAD: &[u8] = include_bytes!("..\\..\\create_file_dll\\target\\debug\\create_file_dll.dll");
+    const TEST_PAYLOAD_RELATIVE_PATH: &str = "..\\create_file_dll\\target\\debug\\create_file_dll.dll";
 
-//     fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str, in_memory: bool) -> anyhow::Result<usize> {
-//         let pe_file = object::read::pe::PeFile64::parse(pe_bytes)?;
+    fn get_export_address_by_name(pe_bytes: &[u8], export_name: &str, in_memory: bool) -> anyhow::Result<usize> {
+        let pe_file = object::read::pe::PeFile64::parse(pe_bytes)?;
     
-//         let section = match pe_file.section_by_name(".text") {
-//             Some(local_section) => local_section,
-//             None => return Err(anyhow::anyhow!(".text section not found")),
-//         };
+        let section = match pe_file.section_by_name(".text") {
+            Some(local_section) => local_section,
+            None => return Err(anyhow::anyhow!(".text section not found")),
+        };
     
-//         let mut section_raw_data_ptr = 0x0;
-//         for section in pe_file.section_table().iter() {
-//             let section_name = String::from_utf8(section.name.to_vec())?;
-//             if section_name.contains(".text") {
-//                 section_raw_data_ptr = section.pointer_to_raw_data.get(LittleEndian);
-//                 break;
-//             }
-//         }
-//         if section_raw_data_ptr == 0x0 {
-//             return Err(anyhow::anyhow!("Failed to find pointer to text section."))
-//         }
+        let mut section_raw_data_ptr = 0x0;
+        for section in pe_file.section_table().iter() {
+            let section_name = String::from_utf8(section.name.to_vec())?;
+            if section_name.contains(".text") {
+                section_raw_data_ptr = section.pointer_to_raw_data.get(LittleEndian);
+                break;
+            }
+        }
+        if section_raw_data_ptr == 0x0 {
+            return Err(anyhow::anyhow!("Failed to find pointer to text section."))
+        }
     
-//         // Section offset for .text.
-//         let rva_offset = section.address() as usize - section_raw_data_ptr as usize - pe_file.relative_address_base() as usize;
+        // Section offset for .text.
+        let rva_offset = section.address() as usize - section_raw_data_ptr as usize - pe_file.relative_address_base() as usize;
     
-//         let exported_functions = pe_file.exports()?;
-//         for export in exported_functions {
-//             if export_name == String::from_utf8(export.name().to_vec())?.as_str() {
-//                 if in_memory {
-//                     return Ok(export.address() as usize - pe_file.relative_address_base() as usize);
-//                 } else {
-//                     return Ok(export.address() as usize - rva_offset - pe_file.relative_address_base() as usize);
-//                 }
-//             }
-//         }
+        let exported_functions = pe_file.exports()?;
+        for export in exported_functions {
+            if export_name == String::from_utf8(export.name().to_vec())?.as_str() {
+                if in_memory {
+                    return Ok(export.address() as usize - pe_file.relative_address_base() as usize);
+                } else {
+                    return Ok(export.address() as usize - rva_offset - pe_file.relative_address_base() as usize);
+                }
+            }
+        }
     
-//         Err(anyhow::anyhow!("Function {} not found", export_name))
-//     }    
+        Err(anyhow::anyhow!("Function {} not found", export_name))
+    }    
 
-//     #[test]
-//     fn test_reflective_loader_memcpy_simple() -> () {
-//         let source_buffer = [0,1,2,3,4];
-//         let mut dest_buffer = [0,0,0,0,0];
-//         unsafe { memcpy(dest_buffer.as_mut_ptr(), source_buffer.as_ptr(), source_buffer.len()) };
-//         for (index, byte) in source_buffer.iter().enumerate() {
-//             assert_eq!(*byte, dest_buffer[index]);
-//         }
-//     }
+    #[test]
+    fn test_reflective_loader_memcpy_simple() -> () {
+        let source_buffer = [0,1,2,3,4];
+        let mut dest_buffer = [0,0,0,0,0];
+        unsafe { memcpy(dest_buffer.as_mut_ptr(), source_buffer.as_ptr(), source_buffer.len()) };
+        for (index, byte) in source_buffer.iter().enumerate() {
+            assert_eq!(*byte, dest_buffer[index]);
+        }
+    }
 
-//     #[test]
-//     fn test_reflective_loader_memcpy_overlapping_fwd() -> () {
-//         let dest_offset = 3;
-//         let source_offset = 0;
-//         let common_buffer = [0,1,2,3,4,5,6,7,8,9,10];
-//         let expected_output = common_buffer.clone();
+    #[test]
+    fn test_reflective_loader_memcpy_overlapping_fwd() -> () {
+        let dest_offset = 3;
+        let source_offset = 0;
+        let common_buffer = [0,1,2,3,4,5,6,7,8,9,10];
+        let expected_output = common_buffer.clone();
 
-//         let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
-//         let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
+        let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
+        let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
 
-//         unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
-//         for index in 0..common_buffer.len() - (dest_offset + source_offset) { 
-//             assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
-//         }
-//     }
+        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
+        for index in 0..common_buffer.len() - (dest_offset + source_offset) { 
+            assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
+        }
+    }
 
-//     #[test]
-//     fn test_reflective_loader_memcpy_overlapping_rev() -> () {
-//         let dest_offset = 0;
-//         let source_offset = 3;
-//         let common_buffer = [0,1,2,3,4,5,6,7,8,9,10];
-//         let expected_output = common_buffer.clone();
+    #[test]
+    fn test_reflective_loader_memcpy_overlapping_rev() -> () {
+        let dest_offset = 0;
+        let source_offset = 3;
+        let common_buffer = [0,1,2,3,4,5,6,7,8,9,10];
+        let expected_output = common_buffer.clone();
 
-//         let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
-//         let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
+        let source_buffer = (common_buffer.as_ptr() as usize + source_offset as usize) as *mut u8;
+        let dest_buffer = (common_buffer.as_ptr() as usize + dest_offset as usize) as *mut u8;
 
-//         unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
-//         for index in 0..common_buffer.len() - (dest_offset + source_offset) {
-//             assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
-//         }
-//     }
+        unsafe { memcpy(dest_buffer, source_buffer, common_buffer.len() - (dest_offset + source_offset)) };
+        for index in 0..common_buffer.len() - (dest_offset + source_offset) {
+            assert_eq!(unsafe{*dest_buffer.add(index)}, expected_output[index+source_offset])
+        }
+    }
 
-//     #[test]
-//     fn test_reflective_loader_get_export_by_hash() -> () {
-//         // Try getting the function pointer
-//         let kernel32_hash = KERNEL32_HASH;
-//         let virtual_alloc_hash = VIRTUAL_ALLOC_HASH;
-//         let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
-//         let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, virtual_alloc_hash).unwrap() };
-//         assert!(virtualalloc_addy > 0);
-//         // Try calling the function
-//         #[allow(non_camel_case_types)]
-//         type fnVirtualAlloc = unsafe extern "system" fn(lpaddress: *const c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut c_void;    
-//         let virtual_alloc = unsafe { transmute::<_, fnVirtualAlloc>(virtualalloc_addy) };
-//         let res = unsafe{virtual_alloc(core::ptr::null(), 1024, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)};
-//         assert!(res as usize > 0 );
-//     }
+    #[test]
+    fn test_reflective_loader_get_export_by_hash() -> () {
+        // Try getting the function pointer
+        let kernel32_hash = KERNEL32_HASH;
+        let virtual_alloc_hash = VIRTUAL_ALLOC_HASH;
+        let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
+        let virtualalloc_addy = unsafe { get_export_by_hash(kernel32_base, virtual_alloc_hash).unwrap() };
+        assert!(virtualalloc_addy > 0);
+        // Try calling the function
+        #[allow(non_camel_case_types)]
+        type fnVirtualAlloc = unsafe extern "system" fn(lpaddress: *const c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut c_void;    
+        let virtual_alloc = unsafe { transmute::<_, fnVirtualAlloc>(virtualalloc_addy) };
+        let res = unsafe{virtual_alloc(core::ptr::null(), 1024, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)};
+        assert!(res as usize > 0 );
+    }
 
-//     #[test]
-//     fn test_reflective_loader_get_module_by_hash() -> () {
-//         let kernel32_hash = KERNEL32_HASH;
-//         let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
-//         assert!(kernel32_base as usize > 0);
-//     }
+    #[test]
+    fn test_reflective_loader_get_module_by_hash() -> () {
+        let kernel32_hash = KERNEL32_HASH;
+        let kernel32_base = unsafe { get_loaded_module_by_hash(kernel32_hash).unwrap() };
+        assert!(kernel32_base as usize > 0);
+    }
     
-//     #[test]
-//     fn test_reflective_loader_dbj2_hash() -> () {
-//         let test_names = [
-//             "kernel32.dll".as_bytes(),
-//             "ntdll.dll".as_bytes(),
-//             "LoadLibraryA".as_bytes(),
-//             "GetProcAddress".as_bytes(),
-//             "VirtualAlloc".as_bytes(),
-//             "GetLastError".as_bytes(),
-//         ];
-//         let test_hashes = [
-//             KERNEL32_HASH,
-//             NTDLL_HASH,
-//             LOAD_LIBRARY_A_HASH,
-//             GET_PROC_ADDRESS_HASH,
-//             VIRTUAL_ALLOC_HASH,
-//             GET_LAST_ERROR_HASH,
-//         ];
-//         for (index, name) in test_names.iter().enumerate() {
-//             let expected = test_hashes[index];
-//             let res = dbj2_hash(&name);
-//             assert_eq!(res, expected);
-//         }
-//     }
+    #[test]
+    fn test_reflective_loader_dbj2_hash() -> () {
+        let test_names = [
+            "kernel32.dll".as_bytes(),
+            "ntdll.dll".as_bytes(),
+            "LoadLibraryA".as_bytes(),
+            "GetProcAddress".as_bytes(),
+            "VirtualAlloc".as_bytes(),
+            "GetLastError".as_bytes(),
+        ];
+        let test_hashes = [
+            KERNEL32_HASH,
+            NTDLL_HASH,
+            LOAD_LIBRARY_A_HASH,
+            GET_PROC_ADDRESS_HASH,
+            VIRTUAL_ALLOC_HASH,
+            GET_LAST_ERROR_HASH,
+        ];
+        for (index, name) in test_names.iter().enumerate() {
+            let expected = test_hashes[index];
+            let res = dbj2_hash(&name);
+            assert_eq!(res, expected);
+        }
+    }
 
-//     #[test]
-//     fn test_reflective_loader_new_base_relocation_entry_low() -> () {
-//         // Get the path to our test dll file.
-//         let test_entry: u16 = 0xA148;
-//         let base_reloc_entry = BaseRelocationEntry::new(test_entry);
-//         assert_eq!(base_reloc_entry.offset, 0x148);
-//         assert_eq!(base_reloc_entry.reloc_type, 0xa);
-//     }
+    #[test]
+    fn test_reflective_loader_new_base_relocation_entry_low() -> () {
+        // Get the path to our test dll file.
+        let test_entry: u16 = 0xA148;
+        let base_reloc_entry = BaseRelocationEntry::new(test_entry);
+        assert_eq!(base_reloc_entry.offset, 0x148);
+        assert_eq!(base_reloc_entry.reloc_type, 0xa);
+    }
 
-//     #[test]
-//     fn test_reflective_loader_new_base_relocation_entry_medium() -> () {
-//         // Get the path to our test dll file.
-//         let test_entry: u16 = 0xA928;
-//         let base_reloc_entry = BaseRelocationEntry::new(test_entry);
-//         assert_eq!(base_reloc_entry.offset, 0x928);
-//         assert_eq!(base_reloc_entry.reloc_type, 0xa);
-//     }
+    #[test]
+    fn test_reflective_loader_new_base_relocation_entry_medium() -> () {
+        // Get the path to our test dll file.
+        let test_entry: u16 = 0xA928;
+        let base_reloc_entry = BaseRelocationEntry::new(test_entry);
+        assert_eq!(base_reloc_entry.offset, 0x928);
+        assert_eq!(base_reloc_entry.reloc_type, 0xa);
+    }
 
-//     #[test]
-//     fn test_reflective_loader_new_base_relocation_entry_high() -> () {
-//         // Get the path to our test dll file.
-//         let test_entry: u16 = 0xAFA8;
-//         let base_reloc_entry = BaseRelocationEntry::new(test_entry);
-//         assert_eq!(base_reloc_entry.offset, 0xFA8);
-//         assert_eq!(base_reloc_entry.reloc_type, 0xa);
-//     }
+    #[test]
+    fn test_reflective_loader_new_base_relocation_entry_high() -> () {
+        // Get the path to our test dll file.
+        let test_entry: u16 = 0xAFA8;
+        let base_reloc_entry = BaseRelocationEntry::new(test_entry);
+        assert_eq!(base_reloc_entry.offset, 0xFA8);
+        assert_eq!(base_reloc_entry.reloc_type, 0xa);
+    }
 
-//     #[test]
-//     fn test_reflective_loader_parse_pe_headers() -> () {
+    // PE Headers change everytime create file dll is built
+    // #[test]
+    // fn test_reflective_loader_parse_pe_headers() -> () {
         
-//         // Get the path to our test dll file.
-//         let read_in_dll_bytes = TEST_PAYLOAD;
-//         let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
+    //     // Get the path to our test dll file.
+    //     let read_in_dll_bytes = TEST_PAYLOAD;
+    //     let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
 
-//         let pe_file_headers = PeFileHeaders64::new(dll_bytes);
-//         //get_dos_headers(dll_bytes.as_ptr() as usize)?;
-//         // 0x5A4D == a"ZM" == d23117 --- PE Magic number is static.
-//         assert_eq!(PE_MAGIC, pe_file_headers.dos_headers.e_magic);
-//         // 0x020B == d523
-//         assert_eq!(NT_SIGNATURE, pe_file_headers.nt_headers.Signature);
+    //     let pe_file_headers = PeFileHeaders64::new(dll_bytes);
+    //     //get_dos_headers(dll_bytes.as_ptr() as usize)?;
+    //     // 0x5A4D == a"ZM" == d23117 --- PE Magic number is static.
+    //     assert_eq!(PE_MAGIC, pe_file_headers.dos_headers.e_magic);
+    //     // 0x020B == d523
+    //     assert_eq!(NT_SIGNATURE, pe_file_headers.nt_headers.Signature);
 
-//         let expected_section_names = vec![
-//             ".text\0\0\0",
-//             ".rdata\0\0",
-//             ".data\0\0\0",
-//             ".pdata\0\0",
-//             ".reloc\0\0",
-//         ];
-//         let expected_virtual_addr = vec![
-//             0x1000,
-//             0x1d000,
-//             0x26000,
-//             0x27000,
-//             0x29000,
-//         ];
-//         let expected_characteristics = vec![
-//             0x60000020,
-//             0x40000040,
-//             0xc0000040,
-//             0x40000040,
-//             0x42000040,
-//         ];
-//         for (section_index, section) in pe_file_headers.section_headers.iter().enumerate() {
-//             if section_index >= pe_file_headers.nt_headers.FileHeader.NumberOfSections as usize { break; }
-//             assert_eq!(expected_section_names[section_index], String::from_utf8(section.Name.to_vec()).unwrap());
-//             assert_eq!(expected_virtual_addr[section_index], section.VirtualAddress);
-//             assert_eq!(expected_characteristics[section_index], section.Characteristics);
-//         }
-//     }
+    //     let expected_section_names = vec![
+    //         ".text\0\0\0",
+    //         ".rdata\0\0",
+    //         ".data\0\0\0",
+    //         ".pdata\0\0",
+    //         ".reloc\0\0",
+    //     ];
+    //     let expected_virtual_addr = vec![
+    //         0x1000,
+    //         0x1d000,
+    //         0x26000,
+    //         0x27000,
+    //         0x29000,
+    //     ];
+    //     let expected_characteristics = vec![
+    //         0x60000020,
+    //         0x40000040,
+    //         0xc0000040,
+    //         0x40000040,
+    //         0x42000040,
+    //     ];
+    //     for (section_index, section) in pe_file_headers.section_headers.iter().enumerate() {
+    //         if section_index >= pe_file_headers.nt_headers.FileHeader.NumberOfSections as usize { break; }
+    //         assert_eq!(expected_section_names[section_index], String::from_utf8(section.Name.to_vec()).unwrap());
+    //         assert_eq!(expected_virtual_addr[section_index], section.VirtualAddress);
+    //         assert_eq!(expected_characteristics[section_index], section.Characteristics);
+    //     }
+    // }
 
-//     #[test]
-//     fn test_reflective_loader_simple() -> () {
-//         const DLL_EXEC_WAIT_TIME: u64 = 3;
-//         // Get unique and unused temp file path
-//         let tmp_file = NamedTempFile::new().unwrap();
-//         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
-//         tmp_file.close().unwrap();
+    #[test]
+    fn test_reflective_loader_simple() -> () {
+        const DLL_EXEC_WAIT_TIME: u64 = 3;
+        // Get unique and unused temp file path
+        let tmp_file = NamedTempFile::new().unwrap();
+        let path = String::from(tmp_file.path().to_str().unwrap()).clone();
+        tmp_file.close().unwrap();
 
-//         // Get the path to our test dll file.
-//         let read_in_dll_bytes = TEST_PAYLOAD;
+        // Get the path to our test dll file.
+        let read_in_dll_bytes = TEST_PAYLOAD;
 
-//         // Create user_data struct and ptr bytes
-//         let user_data = UserData{
-//             function_offset: get_export_address_by_name(read_in_dll_bytes, "demo_init", true).unwrap() as u64,
-//         };
-//         let user_data_ptr = (&user_data as *const _) as usize;
-//         let user_data_ptr_bytes = user_data_ptr.to_le_bytes();
-//         let user_data_ptr_as_slice = user_data_ptr_bytes.as_slice();
+        // Create user_data struct and ptr bytes
+        let user_data = UserData{
+            function_offset: get_export_address_by_name(read_in_dll_bytes, "demo_init", true).unwrap() as u64,
+        };
+        let user_data_ptr = (&user_data as *const _) as usize;
+        let user_data_ptr_bytes = user_data_ptr.to_le_bytes();
+        let user_data_ptr_as_slice = user_data_ptr_bytes.as_slice();
         
 
-//         // let dll_bytes_and_user_data = [user_data_ptr_slice, read_in_dll_bytes.try_into().unwrap()].concat().as_slice();
-//         let user_data_ptr_and_dll_bytes_vec = [user_data_ptr_as_slice,read_in_dll_bytes].concat();
-//         let user_data_ptr_and_dll_bytes = user_data_ptr_and_dll_bytes_vec.as_slice().as_ptr() as *mut c_void;
+        // let dll_bytes_and_user_data = [user_data_ptr_slice, read_in_dll_bytes.try_into().unwrap()].concat().as_slice();
+        let user_data_ptr_and_dll_bytes_vec = [user_data_ptr_as_slice,read_in_dll_bytes].concat();
+        let user_data_ptr_and_dll_bytes = user_data_ptr_and_dll_bytes_vec.as_slice().as_ptr() as *mut c_void;
 
-//         // Set env var in our process.
-//         std::env::set_var("LIBTESTFILE", path.clone());
-//         // Run our code.
-//         let _res = reflective_loader(user_data_ptr_and_dll_bytes);
+        // Set env var in our process.
+        std::env::set_var("LIBTESTFILE", path.clone());
+        // Run our code.
+        let _res = reflective_loader(user_data_ptr_and_dll_bytes);
 
-//         let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
-//         thread::sleep(delay);
+        let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
+        thread::sleep(delay);
 
-//         // Test that the test file was created
-//         let test_path = Path::new(path.as_str());
-//         assert!(test_path.is_file());
+        // Test that the test file was created
+        let test_path = Path::new(path.as_str());
+        assert!(test_path.is_file());
 
-//         // Delete test file
-//         let _ = fs::remove_file(test_path);
-//     }
+        // Delete test file
+        let _ = fs::remove_file(test_path);
+    }
 
-//     // Compare the relocated bytes from our reflective_loader and
-//     // LoadLibraryA function. Using object library to parse the PE
-//     // to remove our parsing as a potential error.
-//     #[test]
-//     fn test_reflective_loader_process_dll_image_relocation() -> anyhow::Result<()> {
-//         let mut test_payload_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-//         test_payload_path.push(TEST_PAYLOAD_RELATIVE_PATH);
+    // Compare the relocated bytes from our reflective_loader and
+    // LoadLibraryA function. Using object library to parse the PE
+    // to remove our parsing as a potential error.
+    #[test]
+    fn test_reflective_loader_process_dll_image_relocation() -> anyhow::Result<()> {
+        let mut test_payload_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        test_payload_path.push(TEST_PAYLOAD_RELATIVE_PATH);
 
-//         // Get the path to our test dll file.
-//         let read_in_dll_bytes = TEST_PAYLOAD;
-//         let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
+        // Get the path to our test dll file.
+        let read_in_dll_bytes = TEST_PAYLOAD;
+        let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
 
-//         let pe_header = PeFileHeaders64::new(dll_bytes);
-//         // Allocate memory for our DLL to be loaded into
-//         let test_dll_base: *mut c_void = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
-//         // copy over DLL image sections to the newly allocated space for the DLL
-//         relocate_dll_image_sections(test_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
-//         let image_base_delta = test_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
-//         process_dll_image_relocation(test_dll_base, &pe_header, image_base_delta);
+        let pe_header = PeFileHeaders64::new(dll_bytes);
+        // Allocate memory for our DLL to be loaded into
+        let test_dll_base: *mut c_void = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
+        // copy over DLL image sections to the newly allocated space for the DLL
+        relocate_dll_image_sections(test_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
+        let image_base_delta = test_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
+        process_dll_image_relocation(test_dll_base, &pe_header, image_base_delta);
 
-//         let good_dll_base = unsafe{ LoadLibraryA(format!("{}\0", test_payload_path.as_path().to_str().unwrap()).as_ptr()) };
-//         if good_dll_base == 0 {
-//             let last_err = unsafe{GetLastError()};
-//             return Err(anyhow::anyhow!("Failed to load test DLL with `LoadLibraryA` check that the file exists. Last error: {}", last_err));
-//         }
-//         // Parse bytes from disk.
-//         let pe_file = object::read::pe::PeFile64::parse(read_in_dll_bytes)?;
-//         let section_table = pe_file.section_table();
-//         let good_image_base_delta = good_dll_base - pe_file.nt_headers().optional_header.image_base.get(LittleEndian) as isize;
+        let good_dll_base = unsafe{ LoadLibraryA(format!("{}\0", test_payload_path.as_path().to_str().unwrap()).as_ptr()) };
+        if good_dll_base == 0 {
+            let last_err = unsafe{GetLastError()};
+            return Err(anyhow::anyhow!("Failed to load test DLL with `LoadLibraryA` check that the file exists. Last error: {}", last_err));
+        }
+        // Parse bytes from disk.
+        let pe_file = object::read::pe::PeFile64::parse(read_in_dll_bytes)?;
+        let section_table = pe_file.section_table();
+        let good_image_base_delta = good_dll_base - pe_file.nt_headers().optional_header.image_base.get(LittleEndian) as isize;
 
-//         // Loop over the relocations and check against the updated dll bytes.
-//         let mut blocks = pe_file.data_directories().relocation_blocks(read_in_dll_bytes, &section_table)?.unwrap();
-//         while let Some(block) = blocks.next()? {
-//             for reloc in block {
-//                 let test_addr = (test_dll_base as usize + reloc.virtual_address as usize) as *mut usize;
-//                 if test_addr as usize > test_dll_base as usize + pe_header.nt_headers.OptionalHeader.SizeOfImage as usize { panic!("About to read out of bounds in test") }
+        // Loop over the relocations and check against the updated dll bytes.
+        let mut blocks = pe_file.data_directories().relocation_blocks(read_in_dll_bytes, &section_table)?.unwrap();
+        while let Some(block) = blocks.next()? {
+            for reloc in block {
+                let test_addr = (test_dll_base as usize + reloc.virtual_address as usize) as *mut usize;
+                if test_addr as usize > test_dll_base as usize + pe_header.nt_headers.OptionalHeader.SizeOfImage as usize { panic!("About to read out of bounds in test") }
 
-//                 let known_good_addr = (good_dll_base as usize + reloc.virtual_address as usize) as *mut usize;
-//                 if known_good_addr as usize > good_dll_base as usize + pe_header.nt_headers.OptionalHeader.SizeOfImage as usize { panic!("About to read out of bounds in known good") }
+                let known_good_addr = (good_dll_base as usize + reloc.virtual_address as usize) as *mut usize;
+                if known_good_addr as usize > good_dll_base as usize + pe_header.nt_headers.OptionalHeader.SizeOfImage as usize { panic!("About to read out of bounds in known good") }
 
-//                 assert_eq!((unsafe{*test_addr} as usize - image_base_delta as usize), (unsafe{*known_good_addr} as usize - good_image_base_delta as usize));
-//             }
-//         }
-//         Ok(())
-//     }
+                assert_eq!((unsafe{*test_addr} as usize - image_base_delta as usize), (unsafe{*known_good_addr} as usize - good_image_base_delta as usize));
+            }
+        }
+        Ok(())
+    }
 
-//     // Compare the import bytes from our reflective_loader and
-//     // LoadLibraryA function. Using object library to parse the PE
-//     // to remove our parsing as a potential error. Checks that the
-//     // imports reference points to the same function that LoadLibrary
-//     // would set it to.
-//     #[test]
-//     fn test_reflective_loader_process_import_address_tables() -> anyhow::Result<()> {
-//         let mut test_payload_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-//         test_payload_path.push(TEST_PAYLOAD_RELATIVE_PATH);
+    // Compare the import bytes from our reflective_loader and
+    // LoadLibraryA function. Using object library to parse the PE
+    // to remove our parsing as a potential error. Checks that the
+    // imports reference points to the same function that LoadLibrary
+    // would set it to.
+    #[test]
+    fn test_reflective_loader_process_import_address_tables() -> anyhow::Result<()> {
+        let mut test_payload_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        test_payload_path.push(TEST_PAYLOAD_RELATIVE_PATH);
 
-//         // Get the path to our test dll file.
-//         let read_in_dll_bytes = TEST_PAYLOAD;
-//         let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
+        // Get the path to our test dll file.
+        let read_in_dll_bytes = TEST_PAYLOAD;
+        let dll_bytes = read_in_dll_bytes.as_ptr() as *mut c_void;
 
-//         let pe_header = PeFileHeaders64::new(dll_bytes);
-//         // Allocate memory for our DLL to be loaded into
-//         let test_dll_base: *mut c_void = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
-//         // copy over DLL image sections to the newly allocated space for the DLL
-//         relocate_dll_image_sections(test_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
-//         let image_base_delta = test_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
-//         process_dll_image_relocation(test_dll_base, &pe_header, image_base_delta);
-//         let good_dll_base = unsafe{ LoadLibraryA(format!("{}\0", test_payload_path.as_path().to_str().unwrap()).as_ptr()) };
-//         if good_dll_base == 0 {
-//             let last_err = unsafe{GetLastError()};
-//             return Err(anyhow::anyhow!("Failed to load test DLL with `LoadLibraryA` check that the file exists. Last error: {}", last_err));
-//         }
-//         // Parse bytes from disk.
-//         let pe_file = object::read::pe::PeFile64::parse(read_in_dll_bytes)?;
-//         let section_table = pe_file.section_table();
+        let pe_header = PeFileHeaders64::new(dll_bytes);
+        // Allocate memory for our DLL to be loaded into
+        let test_dll_base: *mut c_void = unsafe { VirtualAlloc(ptr::null(), pe_header.nt_headers.OptionalHeader.SizeOfImage as usize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE) };
+        // copy over DLL image sections to the newly allocated space for the DLL
+        relocate_dll_image_sections(test_dll_base, dll_bytes as *const c_void, &pe_header); // This uses memcpy which is unresolved
+        let image_base_delta = test_dll_base as isize - pe_header.nt_headers.OptionalHeader.ImageBase as isize;
+        process_dll_image_relocation(test_dll_base, &pe_header, image_base_delta);
+        let good_dll_base = unsafe{ LoadLibraryA(format!("{}\0", test_payload_path.as_path().to_str().unwrap()).as_ptr()) };
+        if good_dll_base == 0 {
+            let last_err = unsafe{GetLastError()};
+            return Err(anyhow::anyhow!("Failed to load test DLL with `LoadLibraryA` check that the file exists. Last error: {}", last_err));
+        }
+        // Parse bytes from disk.
+        let pe_file = object::read::pe::PeFile64::parse(read_in_dll_bytes)?;
+        let section_table = pe_file.section_table();
 
-//         if let Some(import_table) = pe_file.data_directories().import_table(read_in_dll_bytes, &section_table)? {
-//             let mut import_descs = import_table.descriptors()?;
-//             while let Some(import_desc) = import_descs.next()? {    
-//                 let lookup_thunks = import_table.thunks(import_desc.original_first_thunk.get(LittleEndian))?;
+        if let Some(import_table) = pe_file.data_directories().import_table(read_in_dll_bytes, &section_table)? {
+            let mut import_descs = import_table.descriptors()?;
+            while let Some(import_desc) = import_descs.next()? {    
+                let lookup_thunks = import_table.thunks(import_desc.original_first_thunk.get(LittleEndian))?;
 
-//                 let mut thunks = lookup_thunks.clone();
-//                 while let Some(thunk) = thunks.next::<ImageNtHeaders64>()? {
-//                     let good_first_few_fn_bytes = unsafe{*((thunk.address() as usize + good_dll_base as usize) as *const usize)};
-//                     let test_first_few_fn_bytes = unsafe{*((thunk.address() as usize + test_dll_base as usize) as *const usize)};
-//                     assert_eq!(test_first_few_fn_bytes, good_first_few_fn_bytes);
-//                 }
-//             }
-//         }
+                let mut thunks = lookup_thunks.clone();
+                while let Some(thunk) = thunks.next::<ImageNtHeaders64>()? {
+                    let good_first_few_fn_bytes = unsafe{*((thunk.address() as usize + good_dll_base as usize) as *const usize)};
+                    let test_first_few_fn_bytes = unsafe{*((thunk.address() as usize + test_dll_base as usize) as *const usize)};
+                    assert_eq!(test_first_few_fn_bytes, good_first_few_fn_bytes);
+                }
+            }
+        }
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
-// }
+}
 
