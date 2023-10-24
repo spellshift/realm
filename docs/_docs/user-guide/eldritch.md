@@ -433,6 +433,23 @@ The <b>process.info</b> method returns all information on a given process ID. De
 
 The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
+```json
+[
+    {
+        "socket_type": "TCP",
+        "local_address": "127.0.0.1",
+        "local_port": 46341,
+        "remote_address": "0.0.0.0",
+        "remote_port": 0,
+        "state": "LISTEN",
+        "pids": [
+            2359037
+        ]
+    },
+    ...
+]
+```
+
 ## Sys
 ### sys.dll_inject
 `sys.dll_inject(dll_path: str, pid: int) -> None`
