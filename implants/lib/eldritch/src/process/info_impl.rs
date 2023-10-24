@@ -24,11 +24,20 @@ pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict> {
         dict.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, starlark_heap.alloc_str(process.status().to_string().as_str()).to_value());
         dict.insert_hashed(const_frozen_string!("start_time").to_value().get_hashed()?, starlark_heap.alloc(process.start_time()));
         dict.insert_hashed(const_frozen_string!("run_time").to_value().get_hashed()?, starlark_heap.alloc(process.run_time()));
-        dict.insert_hashed(const_frozen_string!("uid").to_value().get_hashed()?, process.user_id().map_or(Value::new_none(), |uid| starlark_heap.alloc(**uid)));
-        dict.insert_hashed(const_frozen_string!("euid").to_value().get_hashed()?, process.effective_user_id().map_or(Value::new_none(), |euid| starlark_heap.alloc(**euid)));
         dict.insert_hashed(const_frozen_string!("gid").to_value().get_hashed()?, process.group_id().map_or(Value::new_none(), |gid| starlark_heap.alloc(*gid)));
         dict.insert_hashed(const_frozen_string!("egid").to_value().get_hashed()?, process.effective_group_id().map_or(Value::new_none(), |egid| starlark_heap.alloc(*egid)));
-        dict.insert_hashed(const_frozen_string!("sid").to_value().get_hashed()?, process.session_id().map_or(Value::new_none(), |sid| starlark_heap.alloc(sid.as_u32())));
+        #[cfg(not(windows))]
+        {
+            dict.insert_hashed(const_frozen_string!("sid").to_value().get_hashed()?, process.session_id().map_or(Value::new_none(), |sid| starlark_heap.alloc(sid.as_u32())));
+            dict.insert_hashed(const_frozen_string!("uid").to_value().get_hashed()?, process.user_id().map_or(Value::new_none(), |uid| starlark_heap.alloc(**uid)));
+            dict.insert_hashed(const_frozen_string!("euid").to_value().get_hashed()?, process.effective_user_id().map_or(Value::new_none(), |euid| starlark_heap.alloc(**euid)));
+        }
+        #[cfg(windows)]
+        {
+            dict.insert_hashed(const_frozen_string!("sid").to_value().get_hashed()?, process.session_id().map_or(Value::new_none(), |sid| starlark_heap.alloc_str(sid.to_string().as_str()).to_value()));
+            dict.insert_hashed(const_frozen_string!("uid").to_value().get_hashed()?, process.user_id().map_or(Value::new_none(), |uid| starlark_heap.alloc_str(uid.to_string().as_str()).to_value()));
+            dict.insert_hashed(const_frozen_string!("euid").to_value().get_hashed()?, process.effective_user_id().map_or(Value::new_none(), |euid| starlark_heap.alloc_str(euid.to_string().as_str()).to_value()));
+        }
     }
     Ok(dict)
 }
