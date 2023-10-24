@@ -8,7 +8,39 @@ permalink: user-guide/tavern
 
 ## Overview
 
-![/assets/img/coming-soon.gif](/assets/img/coming-soon.gif)
+Welcome to Tavern!
+
+This section outlines some basic usage and gotchas.
+
+### Creating quests
+
+Quests are how you interact with beacons think actions/tasks in other c2s.
+
+Quests by default are group actions so scaling your activity is easy and built-in.
+
+Each quest is made up of three main parts:
+- Beacons - What you'll be executing on
+- Tomes - What you'll be executing
+- Input parametrs - arguments passed to the tome and eldritch interperet as `input_params{}`
+
+To start click "Create new quest"
+
+Give your quest a descriptive name so you can reference back to it later if you need to lookup the information again. (We recommend this so you can avoid duplicating work and exposrue on the system).
+
+Select the tome you want to run.
+
+If the tome has parameters you'll be prompted. Consult the placeholder text if you're unsure how to format the input.
+
+Click next to start selecting beacons.
+
+Beacons can be searched by name, group tag, and service tag.
+
+Just start typing what you're looking for and Tavern will search across all three fields.
+
+Now you can select individual beacons or use the "Select all" button to add everything that matches your search criteria.
+
+*Note: `Service + group` searches are and'd while `service + service` or `group + group` searches are or'd.*
+
 
 ## Deployment
 
