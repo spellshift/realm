@@ -37,7 +37,7 @@ mod tests {
                 cfg!(target_os = "netbsd") {
             commandstring = "sleep";
         } else if cfg!(target_os = "windows") {
-            commandstring = "timeout";
+            commandstring = "timeout.exe";
         } else {
             return Err(anyhow::anyhow!("OS Not supported please re run on Linux, Windows, or MacOS"));
         }
@@ -54,6 +54,7 @@ mod tests {
                     let pname = name(i32_pid)?;
                     assert_eq!(process.name().to_string(), pname)
             }
+
         }
         return Ok(())
     }
