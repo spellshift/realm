@@ -46,27 +46,21 @@ mod tests {
             .arg("5")
             .spawn()?;
 
-        let mut sys = System::new();
-        sys.refresh_processes();
-        for (pid, process) in sys.processes() {
-            if pid.as_u32() == child.id() {
-                let pname = name(pid.as_u32() as i32)?;
-                if cfg!(target_os = "linux") || 
-                cfg!(target_os = "ios") || 
-                cfg!(target_os = "macos") || 
-                cfg!(target_os = "android") || 
-                cfg!(target_os = "freebsd") || 
-                cfg!(target_os = "openbsd") ||
-                cfg!(target_os = "netbsd") {
-                    //If linux or Mac, Process Name should be 'sleep'
-                    assert_eq!(pname, "sleep")
-                }else if cfg!(target_os = "windows") {
-                    //If windows,Pprocess Name should be 'timeout.exe'
-                    assert_eq!(pname, "timeout.exe")
-                }
-            }
-
+        let pname = name(child.id() as i32)?;
+        if cfg!(target_os = "linux") || 
+            cfg!(target_os = "ios") || 
+            cfg!(target_os = "macos") || 
+            cfg!(target_os = "android") || 
+            cfg!(target_os = "freebsd") || 
+            cfg!(target_os = "openbsd") ||
+            cfg!(target_os = "netbsd") {
+                //If linux or Mac, Process Name should be 'sleep'
+                assert_eq!(pname, "sleep")
+        }else if cfg!(target_os = "windows") {
+            //If windows,Pprocess Name should be 'timeout.exe'
+            assert_eq!(pname, "timeout.exe")
         }
+            
         return Ok(())
     }
 }
