@@ -12,15 +12,6 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     for si in sockets_info {
         match si.protocol_socket_info {
             ProtocolSocketInfo::Tcp(tcp_si) => {
-                println!(
-                    "TCP {}:{} -> {}:{} {:?} - {}",
-                    tcp_si.local_addr,
-                    tcp_si.local_port,
-                    tcp_si.remote_addr,
-                    tcp_si.remote_port,
-                    si.associated_pids,
-                    tcp_si.state
-                );
                 let map: SmallMap<Value, Value> = SmallMap::new();
                 // Create Dict type.
                 let mut dict = Dict::new(map);
@@ -34,10 +25,6 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
                 out.push(dict);
             },
             ProtocolSocketInfo::Udp(udp_si) => {
-                println!(
-                    "UDP {}:{} -> *:* {:?}",
-                    udp_si.local_addr, udp_si.local_port, si.associated_pids
-                );
                 let map: SmallMap<Value, Value> = SmallMap::new();
                 // Create Dict type.
                 let mut dict = Dict::new(map);
