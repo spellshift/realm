@@ -43,7 +43,7 @@ mod tests {
         }
         
         let child = Command::new(commandstring)
-            .arg("4")
+            .arg("10")
             .spawn()?;
 
         let mut sys = System::new();
