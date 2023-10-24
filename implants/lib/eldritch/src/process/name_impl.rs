@@ -37,25 +37,28 @@ mod tests {
                 cfg!(target_os = "netbsd") {
             commandstring = "sleep";
         } else if cfg!(target_os = "windows") {
-            commandstring = "timeout.exe";
+            commandstring = "timeout";
         } else {
             return Err(anyhow::anyhow!("OS Not supported please re run on Linux, Windows, or MacOS"));
         }
         
         let child = Command::new(commandstring)
-            .arg("10")
+            .arg("5")
             .spawn()?;
 
         let mut sys = System::new();
-        sys.refresh_processes();    
+        sys.refresh_processes();
         for (pid, process) in sys.processes() {
             if pid.as_u32() == child.id() {
-                let i32_pid = pid.as_u32() as i32;
-                    let pname = name(i32_pid)?;
-                    assert_eq!(process.name().to_string(), pname)
+                let pname = name(child.id() as i32)?;
+                if process.name().to_string() == pname {
+                    assert_eq!(true, true);
+                    return Ok(())
+                }
             }
 
         }
+        assert_eq!(true, false);
         return Ok(())
     }
 }
