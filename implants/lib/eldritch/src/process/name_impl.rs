@@ -4,7 +4,7 @@ use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 pub fn name(pid: i32) -> Result<String> {
     if !System::IS_SUPPORTED {
         return Err(anyhow::anyhow!("This OS isn't supported for process functions.
-         Pleases see sysinfo docs for a full list of supported systems.
+         Please see sysinfo docs for a full list of supported systems.
          https://docs.rs/sysinfo/0.23.5/sysinfo/index.html#supported-oses\n\n"));
     }
 
