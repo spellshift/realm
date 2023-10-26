@@ -53,6 +53,12 @@ jobs:
         toolchain: nightly-2023-09-04
         default: true
         profile: minimal
+    - name: Install rust target for loader
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly-2023-09-04-x86_64-pc-windows-msvc
+        default: true
+        profile: minimal
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
