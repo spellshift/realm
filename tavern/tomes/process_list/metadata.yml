@@ -4,4 +4,4 @@ paramdefs:
 - name: cmd_substring
   label: Process search string
   type: string
-  placeholder: cron
+  placeholder: process name substring eg. sh match bash and sh or * for all
