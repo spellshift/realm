@@ -68,7 +68,7 @@ Functions fall into one of these five modules. This is done to improve clarity a
 **🚨 DANGER 🚨: Name shadowing**
 
 Do not use the standard library names as local variables as it will prevent you from accessing library functions.
-For example if you do:
+For example, if you do:
 
 ```rust
 for file in file.list("/home/"):
