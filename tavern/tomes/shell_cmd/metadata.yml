@@ -1,0 +1,7 @@
+name: Shell command
+description: Execute a shell command in the systems default shell.
+paramdefs:
+- name: cmd
+  label: Command
+  type: string
+  placeholder: whoami

@@ -1,0 +1,6 @@
+def ifconfig():
+    ip_res = sys.get_ip()
+    for interface in ip_res:
+        for ip in interface['ips']:
+            print(interface['name']+"\t"+ip+"\t"+interface['mac'])
+ifconfig()

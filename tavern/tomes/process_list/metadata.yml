@@ -1,0 +1,7 @@
+name: Process list
+description: Get a list of running processes
+paramdefs:
+- name: cmd_substring
+  label: Process search string
+  type: string
+  placeholder: process name substring eg. sh match bash and sh or * for all

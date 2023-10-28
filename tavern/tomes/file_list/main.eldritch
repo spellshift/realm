@@ -1,0 +1,11 @@
+def file_list(path):
+    files = file.list(path)
+    for f in files:
+        type_str = ""
+        if f['type'] == "Directory":
+            type_str = "Dir"
+        if f['type'] == "File":
+            type_str = "File"
+        print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name'])
+
+file_list(input_params['path'])
