@@ -1,6 +1,7 @@
 mod kill_impl;
 mod list_impl;
 mod info_impl;
+mod name_impl;
 mod netstat_impl;
 
 use allocative::Allocative;
@@ -63,6 +64,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn info<'v>(this: ProcessLibrary, starlark_heap: &'v Heap, pid: Option<usize>) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         info_impl::info(starlark_heap, pid)
+    }
+    fn name(this: ProcessLibrary, pid: i32) -> anyhow::Result<String> {
+         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+         name_impl::name(pid)
     }
     fn netstat<'v>(this: ProcessLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
