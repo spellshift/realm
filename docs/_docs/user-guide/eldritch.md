@@ -370,7 +370,7 @@ The <b>process.list</b> method returns a list of dictionaries that describe each
 ### process.name
 `process.name(pid: int) -> str`
 
-The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>process.name</b> method returns the name of the process from it's given process id.
 
 ### process.info
 `process.info(pid: Optional<int>) -> Dict`
@@ -466,6 +466,11 @@ sys.execute("/bin/bash",["-c", "ls /nofile"])
     "status":2,
 }
 ```
+
+### sys.get_hostname
+`sys.get_hostname() -> String`
+
+The <b>sys.get_hostname</b> method returns a String containing the host's hostname.
 
 ### sys.get_env
 `sys.get_env() -> Dict`
