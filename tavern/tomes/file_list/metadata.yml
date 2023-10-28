@@ -1,0 +1,7 @@
+name: List files
+description: List the files and directories found at the path
+paramdefs:
+- name: path
+  type: string
+  label: File path
+  placeholder: "/etc/"
