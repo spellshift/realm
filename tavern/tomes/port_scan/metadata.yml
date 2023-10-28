@@ -1,0 +1,19 @@
+name: Port scan
+description: Scan a list of ports in a list of CIDRs.
+paramdefs:
+- name: cidrs
+  type: list
+  label: List of CIDRs
+  placeholder: "[10.10.0.0/24, 192.168.1.8/32]"
+- name: ports
+  type: list
+  label: List of ports
+  placeholder: "[22, 80, 443]"
+- name: protocol
+  type: string
+  label: Protocol
+  placeholder: tcp
+- name: timeout
+  type: int
+  label: Timeout
+  placeholder: "2"

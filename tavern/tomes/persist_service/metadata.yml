@@ -1,0 +1,15 @@
+name: Create Service
+description: Create a service for a specific binary
+paramdefs:
+- name: service_name
+  type: string
+  label: Service name
+  placeholder: cpu-tempd
+- name: service_desc
+  type: string
+  label: Service description
+  placeholder: CPU Temperature monitoring service
+- name: executable_name
+  type: string
+  label: Executable name
+  placeholder: cpud
