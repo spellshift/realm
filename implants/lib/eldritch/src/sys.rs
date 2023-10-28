@@ -4,6 +4,7 @@ mod get_ip_impl;
 mod get_os_impl;
 mod get_pid_impl;
 mod get_user_impl;
+mod hostname_impl;
 mod is_linux_impl;
 mod is_windows_impl;
 mod is_macos_impl;
