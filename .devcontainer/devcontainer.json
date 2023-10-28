@@ -23,13 +23,16 @@
 				"go.goroot": "/usr/local/go",
 
 				// Formatting
+				"editor.formatOnSave": true,
+				"[rust]": {
+					"editor.formatOnSave": false
+				},
+
 				"files.trimTrailingWhitespace": true,
 				"files.insertFinalNewline": true,
 				"files.trimFinalNewlines": true,
 
 				// Misc
-				"vsicons.dontShowNewVersionMessage": true,
-				"workbench.iconTheme": "vscode-icons",
 				"git.autofetch": true
 			},
 
