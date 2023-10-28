@@ -23,9 +23,9 @@
 				"go.goroot": "/usr/local/go",
 
 				// Formatting
-				"editor.formatOnSave": true,
-				"[rust]": {
-					"editor.formatOnSave": false
+				"editor.formatOnSave": false,
+				"[go]": {
+					"editor.formatOnSave": true
 				},
 
 				"files.trimTrailingWhitespace": true,
