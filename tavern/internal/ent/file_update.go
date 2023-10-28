@@ -83,7 +83,7 @@ func (fu *FileUpdate) Save(ctx context.Context) (int, error) {
 	if err := fu.defaults(); err != nil {
 		return 0, err
 	}
-	return withHooks[int, FileMutation](ctx, fu.sqlSave, fu.mutation, fu.hooks)
+	return withHooks(ctx, fu.sqlSave, fu.mutation, fu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -258,7 +258,7 @@ func (fuo *FileUpdateOne) Save(ctx context.Context) (*File, error) {
 	if err := fuo.defaults(); err != nil {
 		return nil, err
 	}
-	return withHooks[*File, FileMutation](ctx, fuo.sqlSave, fuo.mutation, fuo.hooks)
+	return withHooks(ctx, fuo.sqlSave, fuo.mutation, fuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.

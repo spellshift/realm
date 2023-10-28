@@ -6,30 +6,16 @@ type Beacon implements Node {
   name: String!
   """The identity the beacon is authenticated as (e.g. 'root')"""
   principal: String
-  """The hostname of the system the beacon is running on."""
-  hostname: String
   """Unique identifier for the beacon. Unique to each instance of the beacon."""
   identifier: String!
   """Identifies the agent that the beacon is running as (e.g. 'imix')."""
   agentIdentifier: String
-  """Unique identifier for the host the beacon is running on."""
-  hostIdentifier: String
-  """Primary interface IP address reported by the agent."""
-  hostPrimaryIP: String
-  """Platform the agent is operating on."""
-  hostPlatform: BeaconHostPlatform!
   """Timestamp of when a task was last claimed or updated for the beacon."""
   lastSeenAt: Time
-  tags: [Tag!]
+  """Host this beacon is running on."""
+  host: Host!
+  """Tasks that have been assigned to the beacon."""
   tasks: [Task!]
-}
-"""BeaconHostPlatform is enum for the field host_platform"""
-enum BeaconHostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/beacon.HostPlatform") {
-  Windows
-  Linux
-  MacOS
-  BSD
-  Unknown
 }
 """Ordering options for Beacon connections"""
 input BeaconOrder {
@@ -89,22 +75,6 @@ input BeaconWhereInput {
   principalNotNil: Boolean
   principalEqualFold: String
   principalContainsFold: String
-  """hostname field predicates"""
-  hostname: String
-  hostnameNEQ: String
-  hostnameIn: [String!]
-  hostnameNotIn: [String!]
-  hostnameGT: String
-  hostnameGTE: String
-  hostnameLT: String
-  hostnameLTE: String
-  hostnameContains: String
-  hostnameHasPrefix: String
-  hostnameHasSuffix: String
-  hostnameIsNil: Boolean
-  hostnameNotNil: Boolean
-  hostnameEqualFold: String
-  hostnameContainsFold: String
   """identifier field predicates"""
   identifier: String
   identifierNEQ: String
@@ -135,43 +105,6 @@ input BeaconWhereInput {
   agentIdentifierNotNil: Boolean
   agentIdentifierEqualFold: String
   agentIdentifierContainsFold: String
-  """host_identifier field predicates"""
-  hostIdentifier: String
-  hostIdentifierNEQ: String
-  hostIdentifierIn: [String!]
-  hostIdentifierNotIn: [String!]
-  hostIdentifierGT: String
-  hostIdentifierGTE: String
-  hostIdentifierLT: String
-  hostIdentifierLTE: String
-  hostIdentifierContains: String
-  hostIdentifierHasPrefix: String
-  hostIdentifierHasSuffix: String
-  hostIdentifierIsNil: Boolean
-  hostIdentifierNotNil: Boolean
-  hostIdentifierEqualFold: String
-  hostIdentifierContainsFold: String
-  """host_primary_ip field predicates"""
-  hostPrimaryIP: String
-  hostPrimaryIPNEQ: String
-  hostPrimaryIPIn: [String!]
-  hostPrimaryIPNotIn: [String!]
-  hostPrimaryIPGT: String
-  hostPrimaryIPGTE: String
-  hostPrimaryIPLT: String
-  hostPrimaryIPLTE: String
-  hostPrimaryIPContains: String
-  hostPrimaryIPHasPrefix: String
-  hostPrimaryIPHasSuffix: String
-  hostPrimaryIPIsNil: Boolean
-  hostPrimaryIPNotNil: Boolean
-  hostPrimaryIPEqualFold: String
-  hostPrimaryIPContainsFold: String
-  """host_platform field predicates"""
-  hostPlatform: BeaconHostPlatform
-  hostPlatformNEQ: BeaconHostPlatform
-  hostPlatformIn: [BeaconHostPlatform!]
-  hostPlatformNotIn: [BeaconHostPlatform!]
   """last_seen_at field predicates"""
   lastSeenAt: Time
   lastSeenAtNEQ: Time
@@ -183,9 +116,9 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
-  """tags edge predicates"""
-  hasTags: Boolean
-  hasTagsWith: [TagWhereInput!]
+  """host edge predicates"""
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
   """tasks edge predicates"""
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
@@ -210,7 +143,7 @@ input CreateTagInput {
   name: String!
   """Describes the type of tag this is"""
   kind: TagKind!
-  beaconIDs: [ID!]
+  hostIDs: [ID!]
 }
 """
 CreateTomeInput is used for create Tome object.
@@ -332,6 +265,128 @@ input FileWhereInput {
   hashEqualFold: String
   hashContainsFold: String
 }
+type Host implements Node {
+  id: ID!
+  """Unique identifier for the host. Unique to each host."""
+  identifier: String!
+  """A human readable identifier for the host."""
+  name: String
+  """Primary interface IP address reported by the agent."""
+  primaryIP: String
+  """Platform the agent is operating on."""
+  platform: HostPlatform!
+  """Timestamp of when a task was last claimed or updated for the host."""
+  lastSeenAt: Time
+  """Tags used to group this host with other hosts."""
+  tags: [Tag!]
+  """Beacons that are present on this host system."""
+  beacons: [Beacon!]
+}
+"""Ordering options for Host connections"""
+input HostOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Hosts."""
+  field: HostOrderField!
+}
+"""Properties by which Host connections can be ordered."""
+enum HostOrderField {
+  LAST_SEEN_AT
+}
+"""HostPlatform is enum for the field platform"""
+enum HostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/host.Platform") {
+  Windows
+  Linux
+  MacOS
+  BSD
+  Unknown
+}
+"""
+HostWhereInput is used for filtering Host objects.
+Input was generated by ent.
+"""
+input HostWhereInput {
+  not: HostWhereInput
+  and: [HostWhereInput!]
+  or: [HostWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """identifier field predicates"""
+  identifier: String
+  identifierNEQ: String
+  identifierIn: [String!]
+  identifierNotIn: [String!]
+  identifierGT: String
+  identifierGTE: String
+  identifierLT: String
+  identifierLTE: String
+  identifierContains: String
+  identifierHasPrefix: String
+  identifierHasSuffix: String
+  identifierEqualFold: String
+  identifierContainsFold: String
+  """name field predicates"""
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameIsNil: Boolean
+  nameNotNil: Boolean
+  nameEqualFold: String
+  nameContainsFold: String
+  """primary_ip field predicates"""
+  primaryIP: String
+  primaryIPNEQ: String
+  primaryIPIn: [String!]
+  primaryIPNotIn: [String!]
+  primaryIPGT: String
+  primaryIPGTE: String
+  primaryIPLT: String
+  primaryIPLTE: String
+  primaryIPContains: String
+  primaryIPHasPrefix: String
+  primaryIPHasSuffix: String
+  primaryIPIsNil: Boolean
+  primaryIPNotNil: Boolean
+  primaryIPEqualFold: String
+  primaryIPContainsFold: String
+  """platform field predicates"""
+  platform: HostPlatform
+  platformNEQ: HostPlatform
+  platformIn: [HostPlatform!]
+  platformNotIn: [HostPlatform!]
+  """last_seen_at field predicates"""
+  lastSeenAt: Time
+  lastSeenAtNEQ: Time
+  lastSeenAtIn: [Time!]
+  lastSeenAtNotIn: [Time!]
+  lastSeenAtGT: Time
+  lastSeenAtGTE: Time
+  lastSeenAtLT: Time
+  lastSeenAtLTE: Time
+  lastSeenAtIsNil: Boolean
+  lastSeenAtNotNil: Boolean
+  """tags edge predicates"""
+  hasTags: Boolean
+  hasTagsWith: [TagWhereInput!]
+  """beacons edge predicates"""
+  hasBeacons: Boolean
+  hasBeaconsWith: [BeaconWhereInput!]
+}
 """
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
@@ -383,9 +438,13 @@ type Quest implements Node {
   name: String!
   """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
+  """Tome that this quest will be executing"""
   tome: Tome!
+  """Bundle file that the executing tome depends on (if any)"""
   bundle: File
+  """Tasks tracking the status and output of individual tome execution on targets"""
   tasks: [Task!]
+  """User that created the quest if available."""
   creator: User
 }
 """Ordering options for Quest connections"""
@@ -485,7 +544,7 @@ type Tag implements Node {
   name: String!
   """Describes the type of tag this is"""
   kind: TagKind!
-  beacons: [Beacon!]
+  hosts: [Host!]
 }
 """TagKind is enum for the field kind"""
 enum TagKind @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/tag.Kind") {
@@ -539,9 +598,9 @@ input TagWhereInput {
   kindNEQ: TagKind
   kindIn: [TagKind!]
   kindNotIn: [TagKind!]
-  """beacons edge predicates"""
-  hasBeacons: Boolean
-  hasBeaconsWith: [BeaconWhereInput!]
+  """hosts edge predicates"""
+  hasHosts: Boolean
+  hasHostsWith: [HostWhereInput!]
 }
 type Task implements Node {
   id: ID!
@@ -698,6 +757,7 @@ type Tome implements Node {
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
+  """Any files required for tome execution that will be bundled and provided to the agent for download"""
   files: [File!]
 }
 """Ordering options for Tome connections"""
@@ -817,12 +877,22 @@ Input was generated by ent.
 input UpdateBeaconInput {
   """A human readable identifier for the beacon."""
   name: String
-  """The hostname of the system the beacon is running on."""
-  hostname: String
-  clearHostname: Boolean
+  hostID: ID
+}
+"""
+UpdateHostInput is used for update Host object.
+Input was generated by ent.
+"""
+input UpdateHostInput {
+  """A human readable identifier for the host."""
+  name: String
+  clearName: Boolean
   addTagIDs: [ID!]
   removeTagIDs: [ID!]
   clearTags: Boolean
+  addBeaconIDs: [ID!]
+  removeBeaconIDs: [ID!]
+  clearBeacons: Boolean
 }
 """
 UpdateTagInput is used for update Tag object.
@@ -833,9 +903,9 @@ input UpdateTagInput {
   name: String
   """Describes the type of tag this is"""
   kind: TagKind
-  addBeaconIDs: [ID!]
-  removeBeaconIDs: [ID!]
-  clearBeacons: Boolean
+  addHostIDs: [ID!]
+  removeHostIDs: [ID!]
+  clearHosts: Boolean
 }
 """
 UpdateUserInput is used for update User object.

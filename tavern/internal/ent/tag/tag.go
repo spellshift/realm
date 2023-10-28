@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -17,15 +20,15 @@ const (
 	FieldName = "name"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
-	// EdgeBeacons holds the string denoting the beacons edge name in mutations.
-	EdgeBeacons = "beacons"
+	// EdgeHosts holds the string denoting the hosts edge name in mutations.
+	EdgeHosts = "hosts"
 	// Table holds the table name of the tag in the database.
 	Table = "tags"
-	// BeaconsTable is the table that holds the beacons relation/edge. The primary key declared below.
-	BeaconsTable = "beacon_tags"
-	// BeaconsInverseTable is the table name for the Beacon entity.
-	// It exists in this package in order to avoid circular dependency with the "beacon" package.
-	BeaconsInverseTable = "beacons"
+	// HostsTable is the table that holds the hosts relation/edge. The primary key declared below.
+	HostsTable = "host_tags"
+	// HostsInverseTable is the table name for the Host entity.
+	// It exists in this package in order to avoid circular dependency with the "host" package.
+	HostsInverseTable = "hosts"
 )
 
 // Columns holds all SQL columns for tag fields.
@@ -36,9 +39,9 @@ var Columns = []string{
 }
 
 var (
-	// BeaconsPrimaryKey and BeaconsColumn2 are the table columns denoting the
-	// primary key for the beacons relation (M2M).
-	BeaconsPrimaryKey = []string{"beacon_id", "tag_id"}
+	// HostsPrimaryKey and HostsColumn2 are the table columns denoting the
+	// primary key for the hosts relation (M2M).
+	HostsPrimaryKey = []string{"host_id", "tag_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -77,6 +80,45 @@ func KindValidator(k Kind) error {
 	default:
 		return fmt.Errorf("tag: invalid enum value for kind field: %q", k)
 	}
+}
+
+// OrderOption defines the ordering options for the Tag queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByKind orders the results by the kind field.
+func ByKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKind, opts...).ToFunc()
+}
+
+// ByHostsCount orders the results by hosts count.
+func ByHostsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newHostsStep(), opts...)
+	}
+}
+
+// ByHosts orders the results by hosts terms.
+func ByHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newHostsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HostsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, HostsTable, HostsPrimaryKey...),
+	)
 }
 
 // MarshalGQL implements graphql.Marshaler interface.

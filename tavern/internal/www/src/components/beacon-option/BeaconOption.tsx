@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, Stack, StackItem, Card, CardBody, Checkbox, Flex } from "@chakra-ui/react";
+import { Text, Stack, StackItem, Card, CardBody, Checkbox, Flex, Badge } from "@chakra-ui/react";
 
 export function areEqual(prevProps: any, nextProps: any) {
     const beacon = prevProps.beaconsToDisplay[prevProps.index];
@@ -19,10 +19,10 @@ export const BeaconOption = (props: Props) => {
     const {index, style, beaconsToDisplay, toggleCheck, beaconsSelected } = props;
     // Your card component goes here
     const beacon = beaconsToDisplay[index];
-    const group = (beacon?.tags).find( (obj : any) => {
+    const group = (beacon?.host?.tags).find( (obj : any) => {
         return obj?.kind === "group"
     });
-    const service = (beacon?.tags).find( (obj : any) => {
+    const service = (beacon?.host?.tags).find( (obj : any) => {
         return obj?.kind === "service"
     });
     const isChecked = beaconsSelected[beacon.id];
@@ -37,10 +37,11 @@ export const BeaconOption = (props: Props) => {
                                     <Text fontSize={"md"}>{beacon.name}</Text>
                             </StackItem>
                             <StackItem>
-                                <Flex direction="row" wrap={"wrap"}>
-                                    <Text fontSize={"sm"}>
-                                        {group?.name} | {service?.name} {beacon.principal && `| ${beacon.principal}`}
-                                    </Text>
+                                <Flex direction="row" wrap={"wrap"} gap={2}>
+                                    {group?.name && <Badge>{group?.name}</Badge>}
+                                    {service?.name && <Badge>{service?.name}</Badge>}
+                                    {beacon?.host?.primaryIP && <Badge>{beacon?.host?.primaryIP}</Badge>}
+                                    {beacon?.principal && <Badge>{beacon?.principal}</Badge>}
                                 </Flex>
                             </StackItem>
                         </Stack>

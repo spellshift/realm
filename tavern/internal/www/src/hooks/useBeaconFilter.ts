@@ -37,11 +37,11 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
         const searchTypes = getSearchTypes(typeFilters);
 
         return filteredBeacons.filter( (beacon) => {
-            let group = (beacon?.tags).find( (obj : any) => {
+            let group = (beacon.host?.tags).find( (obj : any) => {
                 return obj?.kind === "group"
             }) || null;
 
-            let service = (beacon?.tags).find( (obj : any) => {
+            let service = (beacon.host?.tags).find( (obj : any) => {
                 return obj?.kind === "service"
             }) || null;
 

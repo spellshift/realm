@@ -4,9 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
+	mrand "math/rand"
+	"net"
 	"time"
 
 	"github.com/kcarretto/realm/tavern/internal/ent"
@@ -38,37 +41,39 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		for _, svcTag := range svcTags {
 			hostName := fmt.Sprintf("Group %d - %s", groupNum, svcTag.Name)
 			hostID := newRandomIdentifier()
+			hostIP := newRandomIP()
+
+			testHost := client.Host.Create().
+				SetName(hostName).
+				SetIdentifier(hostID).
+				SetPrimaryIP(hostIP).
+				AddTags(svcTag, gTag).
+				SaveX(ctx)
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
-					SetHostIdentifier(hostID).
 					SetAgentIdentifier("test-data").
-					AddTags(svcTag, gTag).
+					SetHost(testHost).
 					SaveX(ctx),
 			)
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-10*time.Minute)).
-					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
-					SetHostIdentifier(hostID).
 					SetAgentIdentifier("test-data").
-					AddTags(svcTag, gTag).
+					SetHost(testHost).
 					SaveX(ctx),
 			)
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Hour)).
-					SetHostname(hostName).
 					SetIdentifier(newRandomIdentifier()).
-					SetHostIdentifier(hostID).
 					SetAgentIdentifier("test-data").
-					AddTags(svcTag, gTag).
+					SetHost(testHost).
 					SaveX(ctx),
 			)
 		}
@@ -188,29 +193,149 @@ func newRandomIdentifier() string {
 	return base64.StdEncoding.EncodeToString(buf)
 }
 
+func newRandomIP() string {
+	buf := make([]byte, 4)
+	ip := mrand.Uint32()
+	binary.LittleEndian.PutUint32(buf, ip)
+	return net.IP(buf).String()
+}
+
 // timeAgo returns the current time minus the provided duration (e.g. 5 seconds ago)
 func timeAgo(duration time.Duration) time.Time {
 	return time.Now().Add(-1 * duration)
 }
 
 const loremIpsum = `
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Eu tincidunt tortor aliquam nulla facilisi cras fermentum odio eu. In fermentum posuere urna nec tincidunt praesent. Elementum nisi quis eleifend quam adipiscing. Eu sem integer vitae justo. Congue quisque egestas diam in arcu cursus euismod. Posuere urna nec tincidunt praesent semper feugiat nibh sed pulvinar. Iaculis urna id volutpat lacus laoreet. Morbi enim nunc faucibus a pellentesque sit amet porttitor. Quisque id diam vel quam elementum. Nulla malesuada pellentesque elit eget gravida cum. Volutpat odio facilisis mauris sit amet massa. Neque egestas congue quisque egestas diam. Risus feugiat in ante metus. Sem et tortor consequat id porta nibh. Congue eu consequat ac felis. Nibh sit amet commodo nulla facilisi nullam vehicula ipsum a. Eget felis eget nunc lobortis. Faucibus a pellentesque sit amet porttitor eget dolor. Morbi enim nunc faucibus a pellentesque sit.
+100644	root	0	2996	2022-03-04 02:54:17 UTC	File	locale.alias
+100644	root	0	887	2013-04-01 16:41:40 UTC	File	rpc
+100644	root	0	5217	2022-03-17 19:03:00 UTC	File	manpath.config
+40755	root	0	4096	2023-05-16 02:08:52 UTC	Dir	ubuntu-advantage
+40700	root	0	4096	2023-10-05 00:15:43 UTC	Dir	multipath
+120777	root	0	23	2023-05-16 02:08:36 UTC		vtrgb
+40755	root	0	4096	2023-05-16 02:09:12 UTC	Dir	logcheck
+120777	root	0	19	2023-05-16 02:08:21 UTC		mtab
+100644	root	0	12813	2021-03-27 22:32:57 UTC	File	services
+100644	root	0	552	2020-08-12 00:15:04 UTC	File	pam.conf
+40755	root	0	4096	2023-10-05 20:42:48 UTC	Dir	alternatives
+100644	root	0	13	2021-08-22 17:00:00 UTC	File	debian_version
+40755	root	0	4096	2023-05-16 02:07:49 UTC	Dir	systemd
+40755	root	0	4096	2023-05-16 02:09:28 UTC	Dir	sos
+40755	root	0	4096	2023-05-16 02:09:04 UTC	Dir	X11
+40755	root	0	4096	2023-05-16 02:09:24 UTC	Dir	byobu
+40755	root	0	4096	2023-05-16 02:09:06 UTC	Dir	pm
+100644	root	0	1948	2023-10-05 00:16:04 UTC	File	passwd
+40755	root	0	4096	2023-05-16 02:08:25 UTC	Dir	dbus-1
+100644	root	0	106	2023-05-16 02:08:19 UTC	File	environment
+100644	root	0	8	2023-05-16 02:08:49 UTC	File	timezone
+40755	root	0	4096	2023-10-06 06:35:56 UTC	Dir	init.d
+40755	root	0	4096	2023-05-16 02:08:28 UTC	Dir	cron.monthly
+100644	root	0	11204	2022-02-09 11:30:26 UTC	File	nanorc
+40755	root	0	4096	2023-05-16 02:12:37 UTC	Dir	rc6.d
+40755	root	0	4096	2023-05-16 02:09:36 UTC	Dir	rsyslog.d
+40755	root	0	4096	2023-05-16 02:12:36 UTC	Dir	network
+100440	root	0	1704	2023-10-05 00:16:04 UTC	File	sudoers
+100644	root	0	19	2023-02-16 16:02:32 UTC	File	issue.net
+40755	root	0	4096	2023-05-16 02:09:22 UTC	Dir	libnl-3
+100644	root	0	3663	2016-06-20 00:31:45 UTC	File	screenrc
+40755	root	0	4096	2022-02-21 20:05:20 UTC	Dir	gss
+100644	root	0	10734	2021-11-11 15:42:38 UTC	File	login.defs
+40755	root	0	4096	2023-10-06 06:36:49 UTC	Dir	apparmor.d
+100644	root	0	9390	2022-02-14 11:48:05 UTC	File	sudo_logsrvd.conf
+100644	root	0	891	2023-10-05 00:16:04 UTC	File	group
+100644	root	0	865	2023-10-05 00:15:51 UTC	File	group-
+100444	root	0	33	2023-10-05 00:15:45 UTC	File	machine-id
+40755	root	0	4096	2022-04-07 19:28:15 UTC	Dir	binfmt.d
+100644	root	0	54	2023-05-16 02:09:03 UTC	File	crypttab
+40755	root	0	4096	2023-05-16 02:12:37 UTC	Dir	chrony
+100644	root	0	4436	2020-12-15 22:01:56 UTC	File	hdparm.conf
+100640	root	42	1024	2023-10-05 00:16:04 UTC	File	shadow
+100644	root	0	158	2023-05-16 02:09:26 UTC	File	shells
+100644	root	0	2319	2022-01-06 16:23:33 UTC	File	bash.bashrc
+40755	root	0	4096	2023-05-16 02:08:48 UTC	Dir	dhcp
+40755	root	0	4096	2023-05-16 02:09:39 UTC	Dir	apport
+40755	root	0	4096	2023-05-16 02:12:37 UTC	Dir	rc3.d
+100644	root	0	112	2023-05-16 02:09:48 UTC	File	overlayroot.local.conf
+100644	root	0	20	2023-10-05 00:15:51 UTC	File	subgid-
+100644	root	0	4942	2022-01-24 11:59:00 UTC	File	wgetrc
+100644	root	0	22023	2023-10-06 06:37:21 UTC	File	ld.so.cache
+40755	root	0	4096	2023-05-16 02:12:37 UTC	Dir	rc0.d
+40775	root	116	4096	2022-03-30 10:32:38 UTC	Dir	landscape
+40755	root	0	4096	2023-05-16 02:12:37 UTC	Dir	rc1.d
+100644	root	0	4573	2022-02-14 11:48:05 UTC	File	sudo.conf
+100644	root	0	191	2022-03-17 17:50:40 UTC	File	libaudit.conf
+100644	root	0	1523	2022-03-25 09:53:05 UTC	File	usb_modeswitch.conf
+40755	root	0	4096	2023-05-16 02:12:31 UTC	Dir	grub.d
+40755	root	0	4096	2023-05-16 02:09:41 UTC	Dir	rcS.d
+100644	root	0	685	2022-01-08 20:02:36 UTC	File	e2scrub.conf
+40755	root	0	4096	2023-05-16 02:08:27 UTC	Dir	networkd-dispatcher
+40755	root	0	4096	2023-02-28 02:15:02 UTC	Dir	update-notifier
+100644	root	0	767	2022-03-24 16:13:48 UTC	File	netconfig
+40755	root	0	4096	2023-05-16 02:09:41 UTC	Dir	update-manager
+100644	root	0	1900	2023-10-05 00:16:00 UTC	File	passwd-
+40755	root	0	4096	2023-05-16 02:09:36 UTC	Dir	cryptsetup-initramfs
+40755	root	0	4096	2023-05-16 02:08:43 UTC	Dir	modules-load.d
+40755	root	0	4096	2023-05-16 02:09:29 UTC	Dir	groff
+40755	root	0	4096	2023-05-16 02:12:36 UTC	Dir	logrotate.d
+40755	root	0	4096	2023-10-11 06:42:54 UTC	Dir	vim
+100644	root	0	195	2023-05-16 02:08:28 UTC	File	modules
+100640	root	42	748	2023-10-05 00:16:04 UTC	File	gshadow
+100755	root	0	228	2022-03-23 11:28:58 UTC	File	nftables.conf
+40755	root	0	4096	2023-05-16 02:08:28 UTC	Dir	cron.hourly
+40755	root	0	4096	2023-05-16 02:08:28 UTC	Dir	depmod.d
+100644	root	0	694	2022-03-23 13:53:14 UTC	File	fuse.conf
+100644	root	0	1748	2022-01-06 16:26:54 UTC	File	inputrc
+100644	root	0	3028	2023-05-16 02:08:21 UTC	File	adduser.conf
+40755	root	0	4096	2023-05-16 02:09:30 UTC	Dir	initramfs-tools
+40755	root	0	4096	2023-05-16 02:08:25 UTC	Dir	ca-certificates
+40755	root	0	4096	2023-05-16 02:09:15 UTC	Dir	NetworkManager
+100644	root	0	6920	2020-08-17 16:00:58 UTC	File	overlayroot.conf
+100644	root	0	743	2018-11-12 21:16:03 UTC	File	hibinit-config.cfg
+100640	root	42	994	2023-10-05 00:16:00 UTC	File	shadow-
+100644	root	0	2969	2022-02-20 14:42:49 UTC	File	debconf.conf
+40755	root	0	4096	2023-05-16 02:08:49 UTC	Dir	cron.d
+40755	root	0	4096	2023-05-16 02:12:37 UTC	Dir	rc5.d
+100644	root	0	1136	2022-03-23 13:49:13 UTC	File	crontab
+100644	root	0	2355	2022-02-25 11:32:20 UTC	File	sysctl.conf
+40755	root	0	4096	2023-05-16 02:09:45 UTC	Dir	console-setup
+40755	root	0	4096	2023-10-06 06:35:56 UTC	Dir	pam.d
+40755	root	0	4096	2023-10-05 20:42:47 UTC	Dir	fonts
+100644	root	0	101	2023-05-16 02:12:14 UTC	File	fstab
+100644	root	0	604	2018-09-15 22:14:19 UTC	File	deluser.conf
+100644	root	0	72029	2022-03-21 09:12:23 UTC	File	mime.types
+100644	root	0	582	2021-10-15 10:06:05 UTC	File	profile
+100644	root	0	42	2023-10-05 00:16:04 UTC	File	subuid
+100644	root	0	681	2022-03-23 09:41:49 UTC	File	xattr.conf
+100644	root	0	42	2023-10-05 00:16:04 UTC	File	subgid
+40755	root	0	4096	2021-09-06 10:51:02 UTC	Dir	usb_modeswitch.d
+40755	root	0	4096	2023-05-16 02:08:14 UTC	Dir	opt
+40755	root	0	4096	2023-10-06 06:36:24 UTC	Dir	ssl
+100640	root	42	726	2023-10-05 00:15:51 UTC	File	gshadow-
+100600	root	0	0	2023-05-16 02:08:20 UTC	File	.pwd.lock
+100644	root	0	1382	2021-12-23 23:34:59 UTC	File	rsyslog.conf
+100644	root	0	34	2020-12-16 11:04:55 UTC	File	ld.so.conf
+40755	root	0	4096	2023-05-16 02:09:49 UTC	Dir	update-motd.d
+100644	root	0	9456	2023-10-06 06:37:28 UTC	File	locale.gen
+100644	root	0	104	2023-02-16 16:02:32 UTC	File	lsb-release
+40755	root	0	4096	2023-10-06 06:34:14 UTC	Dir	ld.so.conf.d
+100644	root	0	41	2022-10-28 18:43:41 UTC	File	multipath.conf
+100644	root	0	92	2021-10-15 10:06:05 UTC	File	host.conf
+40755	root	0	4096	2023-05-16 02:09:40 UTC	Dir	lvm
+100644	root	0	592	2022-01-24 15:37:01 UTC	File	logrotate.conf
+100644	root	0	5532	2023-05-16 02:08:50 UTC	File	ca-certificates.conf.dpkg-old
+40755	root	0	4096	2023-05-16 02:09:26 UTC	Dir	tmpfiles.d
+100644	root	0	1260	2020-06-16 05:37:53 UTC	File	ucf.conf
+40755	root	0	4096	2023-05-16 02:14:23 UTC	Dir	apt
+40755	root	0	4096	2023-10-06 06:34:33 UTC	Dir	python3.10
+100644	root	0	111	2022-03-24 17:07:09 UTC	File	magic
+40755	root	0	4096	2023-05-16 02:09:36 UTC	Dir	needrestart
+100644	root	0	367	2020-12-16 11:04:55 UTC	File	bindresvport.blacklist
+40755	root	0	4096	2023-05-16 02:12:36 UTC	Dir	ppp
+100644	root	0	1816	2019-12-27 00:42:11 UTC	File	ethertypes
+---[RESULT]----
+None
+---------
+---[ERROR]----
 
-Quam nulla porttitor massa id. A arcu cursus vitae congue mauris rhoncus aenean vel elit. Amet nisl suscipit adipiscing bibendum est ultricies. Lacus luctus accumsan tortor posuere ac ut consequat. Sodales ut eu sem integer vitae justo eget magna. Odio morbi quis commodo odio aenean sed adipiscing diam. Pellentesque eu tincidunt tortor aliquam nulla facilisi cras. Diam vel quam elementum pulvinar etiam non quam lacus suspendisse. Massa id neque aliquam vestibulum morbi blandit. Justo eget magna fermentum iaculis eu non diam phasellus vestibulum. Ultricies leo integer malesuada nunc vel risus commodo viverra. Habitant morbi tristique senectus et netus et malesuada. Morbi tincidunt augue interdum velit. Convallis posuere morbi leo urna molestie. Sit amet risus nullam eget. Sit amet facilisis magna etiam tempor orci eu lobortis.
+--------
 
-Sem viverra aliquet eget sit amet tellus cras. Mauris sit amet massa vitae tortor condimentum lacinia. Neque aliquam vestibulum morbi blandit. Sed lectus vestibulum mattis ullamcorper velit sed ullamcorper. Cras sed felis eget velit aliquet sagittis id. Tortor pretium viverra suspendisse potenti nullam ac. In ante metus dictum at tempor. Egestas integer eget aliquet nibh praesent. Sollicitudin nibh sit amet commodo nulla facilisi nullam vehicula ipsum. Morbi blandit cursus risus at. Et tortor consequat id porta nibh venenatis. Augue ut lectus arcu bibendum. Ornare arcu odio ut sem nulla pharetra diam. Eu consequat ac felis donec et odio pellentesque diam volutpat. Amet est placerat in egestas erat imperdiet sed euismod nisi. Fermentum posuere urna nec tincidunt praesent. Adipiscing elit pellentesque habitant morbi tristique senectus et. Ut eu sem integer vitae.
-
-Vivamus arcu felis bibendum ut tristique et egestas quis ipsum. Nisi quis eleifend quam adipiscing vitae proin. Lobortis scelerisque fermentum dui faucibus in ornare. Orci eu lobortis elementum nibh tellus molestie nunc. Ac feugiat sed lectus vestibulum mattis ullamcorper velit sed ullamcorper. Sodales ut eu sem integer vitae justo eget magna. Habitasse platea dictumst vestibulum rhoncus est pellentesque. Massa id neque aliquam vestibulum morbi blandit. Aliquet risus feugiat in ante metus dictum at tempor commodo. In ante metus dictum at tempor commodo ullamcorper. In ornare quam viverra orci. Lorem ipsum dolor sit amet consectetur adipiscing elit duis. Nec dui nunc mattis enim. Ornare aenean euismod elementum nisi quis eleifend. Justo donec enim diam vulputate ut pharetra sit amet aliquam. Tempor id eu nisl nunc mi ipsum faucibus. Ipsum dolor sit amet consectetur adipiscing elit.
-
-Blandit volutpat maecenas volutpat blandit. Donec ultrices tincidunt arcu non sodales. Phasellus egestas tellus rutrum tellus pellentesque eu. Fringilla ut morbi tincidunt augue interdum velit euismod in. Arcu odio ut sem nulla. Luctus accumsan tortor posuere ac ut consequat. Et malesuada fames ac turpis egestas integer. Volutpat consequat mauris nunc congue nisi vitae suscipit tellus. Porttitor leo a diam sollicitudin tempor id eu nisl nunc. Vitae proin sagittis nisl rhoncus mattis rhoncus urna neque viverra. Dui sapien eget mi proin sed libero. Quisque id diam vel quam elementum pulvinar. Massa id neque aliquam vestibulum morbi blandit. Tincidunt lobortis feugiat vivamus at augue eget arcu dictum varius.
-
-Ullamcorper velit sed ullamcorper morbi tincidunt ornare massa eget. Turpis massa sed elementum tempus egestas sed sed. Commodo odio aenean sed adipiscing. Nunc sed augue lacus viverra vitae. Diam quam nulla porttitor massa id neque aliquam vestibulum. Elit sed vulputate mi sit amet mauris commodo quis. Morbi blandit cursus risus at ultrices mi tempus. Ut placerat orci nulla pellentesque dignissim enim sit amet venenatis. In egestas erat imperdiet sed euismod. Non enim praesent elementum facilisis.
-
-Nec ultrices dui sapien eget mi proin sed libero. Ut faucibus pulvinar elementum integer enim neque volutpat ac. Amet luctus venenatis lectus magna fringilla urna porttitor. Donec adipiscing tristique risus nec. Pellentesque eu tincidunt tortor aliquam nulla facilisi cras. Dictum non consectetur a erat nam at. Erat imperdiet sed euismod nisi porta lorem mollis aliquam. Nisl rhoncus mattis rhoncus urna neque viverra justo nec. Nam libero justo laoreet sit amet. Sed pulvinar proin gravida hendrerit. Vel pretium lectus quam id. Molestie a iaculis at erat. Neque gravida in fermentum et sollicitudin ac orci. Turpis tincidunt id aliquet risus feugiat in. Est pellentesque elit ullamcorper dignissim cras tincidunt lobortis feugiat vivamus. Eget sit amet tellus cras adipiscing enim. Varius morbi enim nunc faucibus a pellentesque sit amet. Nunc sed id semper risus in hendrerit gravida.
-
-Amet consectetur adipiscing elit ut aliquam purus sit. Gravida in fermentum et sollicitudin ac orci phasellus. Porttitor lacus luctus accumsan tortor posuere ac ut consequat semper. Odio morbi quis commodo odio. Purus sit amet volutpat consequat mauris nunc congue nisi. Tempus quam pellentesque nec nam aliquam sem et tortor consequat. A diam maecenas sed enim ut sem viverra aliquet. Nec feugiat nisl pretium fusce id. Id neque aliquam vestibulum morbi blandit cursus. Tincidunt tortor aliquam nulla facilisi cras fermentum. Eget velit aliquet sagittis id consectetur purus. Nunc faucibus a pellentesque sit amet porttitor eget dolor morbi.
-
-Libero volutpat sed cras ornare arcu dui vivamus arcu. Non enim praesent elementum facilisis leo. Morbi tristique senectus et netus et malesuada fames ac turpis. Adipiscing commodo elit at imperdiet dui accumsan sit. Sociis natoque penatibus et magnis dis parturient montes nascetur ridiculus. Euismod quis viverra nibh cras pulvinar mattis. Nunc congue nisi vitae suscipit tellus. Morbi quis commodo odio aenean sed adipiscing. Sit amet porttitor eget dolor morbi non arcu. Integer eget aliquet nibh praesent tristique magna. Et tortor consequat id porta. Non pulvinar neque laoreet suspendisse. Nec tincidunt praesent semper feugiat. Enim diam vulputate ut pharetra sit amet aliquam. Quis lectus nulla at volutpat diam ut venenatis tellus. Et netus et malesuada fames ac turpis egestas maecenas. Vitae ultricies leo integer malesuada nunc. Habitant morbi tristique senectus et netus et malesuada fames ac.
-
-Ut tristique et egestas quis. Viverra nibh cras pulvinar mattis nunc sed blandit libero. Urna duis convallis convallis tellus id interdum velit laoreet. Lectus magna fringilla urna porttitor rhoncus dolor purus. Elit sed vulputate mi sit amet mauris. Semper eget duis at tellus at urna condimentum. Dolor sit amet consectetur adipiscing. Ut tellus elementum sagittis vitae et leo duis. Nibh tellus molestie nunc non blandit massa enim. Dictum sit amet justo donec enim diam vulputate. In fermentum posuere urna nec. Placerat duis ultricies lacus sed turpis tincidunt id aliquet. Est lorem ipsum dolor sit amet consectetur. Sed enim ut sem viverra aliquet eget sit amet tellus. Scelerisque in dictum non consectetur a erat nam. Sit amet commodo nulla facilisi nullam vehicula. Commodo odio aenean sed adipiscing. Pulvinar mattis nunc sed blandit libero volutpat sed. Luctus accumsan tortor posuere ac ut consequat semper viverra. Arcu bibendum at varius vel pharetra vel turpis nunc.
 `

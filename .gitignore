@@ -37,3 +37,4 @@ dist/**
 implants/imix/imix-test-config.json
 
 implants/golem/embed_files_golem_prod/*
+!implants/golem/embed_files_golem_prod/.gitkeep

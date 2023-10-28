@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/quest"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 	"github.com/kcarretto/realm/tavern/internal/ent/task"
@@ -34,6 +35,9 @@ func (n *Beacon) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *File) IsNode() {}
+
+// IsNode implements the Node interface check for GQLGen.
+func (n *Host) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Quest) IsNode() {}
@@ -124,6 +128,18 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		query := c.File.Query().
 			Where(file.ID(id))
 		query, err := query.CollectFields(ctx, "File")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case host.Table:
+		query := c.Host.Query().
+			Where(host.ID(id))
+		query, err := query.CollectFields(ctx, "Host")
 		if err != nil {
 			return nil, err
 		}
@@ -285,6 +301,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.File.Query().
 			Where(file.IDIn(ids...))
 		query, err := query.CollectFields(ctx, "File")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case host.Table:
+		query := c.Host.Query().
+			Where(host.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Host")
 		if err != nil {
 			return nil, err
 		}
