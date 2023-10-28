@@ -370,7 +370,7 @@ The <b>process.list</b> method returns a list of dictionaries that describe each
 ### process.name
 `process.name(pid: int) -> str`
 
-The <b>process.name</b> method is very cool, and will be even cooler when Nick documents it.
+The <b>process.name</b> method returns the name of the process from it's given process id.
 
 ## Sys
 ### sys.dll_inject
