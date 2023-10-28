@@ -10,41 +10,12 @@ import { ApolloClient, InMemoryCache, ApolloProvider, gql } from '@apollo/client
 const container = document.getElementById("root")
 if (!container) throw new Error('Failed to find the root element');
 const root = ReactDOM.createRoot(container);
+const REACT_APP_API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ;
 
 const client = new ApolloClient({
-  uri: "/graphql",
+  uri: `${REACT_APP_API_ENDPOINT}/graphql`,
   cache: new InMemoryCache(),
 });
-
-client
-  .query({
-    query: gql`
-      query get_data{
-        tomes {
-          id
-          name
-          paramDefs
-          description
-          eldritch
-        }
-        beacons {
-          id
-          name
-          hostname
-          principal
-          tags {
-            id
-          }
-        }
-        tags {
-          name
-          id
-          kind
-        }
-      }
-    `,
-  })
-  .then((result) => console.log(result));
 
 root.render(
   <React.StrictMode>

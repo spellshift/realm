@@ -1,3 +1,5 @@
+import { string } from "yup";
+
 export type FormStep = {
     name: string;
     description: string;
@@ -23,12 +25,17 @@ export type TomeTag = {
     name: string;
     kind: string;
 }
+export type HostType = {
+    id: string;
+    name: string;
+    primaryIP: string;
+    tags: Array<TomeTag>;
+}
 export type BeaconType = {
-    hostname: string;
     id: string;
     name: string;
     principal: string;
-    tags: Array<TomeTag>;
+    host: HostType;
 }
 export type SelectedBeacons = {
     [beaconId: string]: boolean
@@ -38,10 +45,17 @@ export type TagContextType = {
     groupTags: Array<TomeTag>,
     serviceTags: Array<TomeTag>
 }
+export type QuestParam = {
+    label: string,
+    name: string,
+    placeholder: string,
+    type: string,
+    value: string,
+}
 export type CreateQuestProps = {
     name: string,
     tome: Tome | null,
-    params: any,
+    params: Array<QuestParam>,
     beacons: Array<string>,
 };
 
@@ -60,3 +74,13 @@ export type QuestProps = {
     tasks: Array<Task>,
     tome: Tome
 }
+export type OutputTableProps = {
+    quest: string,
+    tome: string,
+    beacon: string,
+    service: string | null,
+    group: string | null,
+    output: string,
+    taskDetails?: Task   
+}
+

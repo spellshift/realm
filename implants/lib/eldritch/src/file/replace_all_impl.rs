@@ -3,8 +3,8 @@ use std::fs::{write,read_to_string};
 use regex::{Regex,NoExpand};
 
 pub fn replace_all(path: String, pattern: String, value: String) -> Result<()> {
-    let file_contents = read_to_string(path.clone()).unwrap();
-    let re = Regex::new(&pattern).unwrap();
+    let file_contents = read_to_string(path.clone())?;
+    let re = Regex::new(&pattern)?;
     let result = re.replace_all(&file_contents, NoExpand(&value));
     write(path, String::from(result))?;
     Ok(())

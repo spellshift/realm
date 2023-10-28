@@ -2,6 +2,7 @@ package tomes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -11,8 +12,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type tomeParamDef struct {
+	Name        string `yaml:"name" json:"name"`
+	Label       string `yaml:"label" json:"label"`
+	Type        string `yaml:"type" json:"type"`
+	Placeholder string `yaml:"placeholder" json:"placeholder"`
+}
+
 type tomeMetadata struct {
+	Name        string
 	Description string
+	ParamDefs   []tomeParamDef
 }
 
 // UploadTomes traverses the provided filesystem and creates tomes using the provided graph.
@@ -92,10 +102,16 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			return rollback(tx, fmt.Errorf("failed to parse and upload tome %q: %w", entry.Name(), err))
 		}
 
+		paramdefs, err := json.Marshal(metadata.ParamDefs)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to parse param defs for %q: %w", metadata.Name, err))
+		}
+
 		// Create the tome
 		if _, err := graph.Tome.Create().
 			SetName(entry.Name()).
 			SetDescription(metadata.Description).
+			SetParamDefs(string(paramdefs)).
 			SetEldritch(eldritch).
 			AddFiles(tomeFiles...).
 			Save(ctx); err != nil {

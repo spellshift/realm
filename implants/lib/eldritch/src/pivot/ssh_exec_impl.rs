@@ -29,8 +29,7 @@ pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, command: String
     
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
-        .build()
-        .unwrap();
+        .build()?;
 
     let key_password_ref = key_password.as_deref();
     let local_port: u16 = port.try_into()?;
@@ -45,10 +44,10 @@ pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, command: String
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
     let stdout_value = starlark_heap.alloc_str(&cmd_res.stdout);
-    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed().unwrap(), stdout_value.to_value());
+    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed()?, stdout_value.to_value());
 
     let status_value = starlark_heap.alloc(cmd_res.status);
-    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed().unwrap(), status_value);
+    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, status_value);
 
     Ok(dict_res)
 }
@@ -123,8 +122,7 @@ mod tests {
             }
             let tmp_res = Command::new(command_string)
                 .args(command_args)
-                .output()
-                .expect("failed to execute process");
+                .output()?;
             session.data(channel, CryptoVec::from(tmp_res.stdout));
             session.close(channel); // Only gonna send one command.
             Ok((self, session))
@@ -176,11 +174,11 @@ mod tests {
         ).await.unwrap_or(Ok(()));
     }
 
-        // Tests run concurrently so each test needs a unique port.
-        async fn allocate_localhost_unused_ports() -> anyhow::Result<i32> {
-            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-            Ok(listener.local_addr().unwrap().port().into())
-        }
+    // Tests run concurrently so each test needs a unique port.
+    async fn allocate_localhost_unused_ports() -> anyhow::Result<i32> {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        Ok(listener.local_addr().unwrap().port().into())
+    }
     
 
     #[tokio::test]

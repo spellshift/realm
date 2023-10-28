@@ -3,9 +3,8 @@
 package beacon
 
 import (
-	"fmt"
-	"io"
-	"strconv"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -17,31 +16,25 @@ const (
 	FieldName = "name"
 	// FieldPrincipal holds the string denoting the principal field in the database.
 	FieldPrincipal = "principal"
-	// FieldHostname holds the string denoting the hostname field in the database.
-	FieldHostname = "hostname"
 	// FieldIdentifier holds the string denoting the identifier field in the database.
 	FieldIdentifier = "identifier"
 	// FieldAgentIdentifier holds the string denoting the agent_identifier field in the database.
 	FieldAgentIdentifier = "agent_identifier"
-	// FieldHostIdentifier holds the string denoting the host_identifier field in the database.
-	FieldHostIdentifier = "host_identifier"
-	// FieldHostPrimaryIP holds the string denoting the host_primary_ip field in the database.
-	FieldHostPrimaryIP = "host_primary_ip"
-	// FieldHostPlatform holds the string denoting the host_platform field in the database.
-	FieldHostPlatform = "host_platform"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
-	// EdgeTags holds the string denoting the tags edge name in mutations.
-	EdgeTags = "tags"
+	// EdgeHost holds the string denoting the host edge name in mutations.
+	EdgeHost = "host"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
 	EdgeTasks = "tasks"
 	// Table holds the table name of the beacon in the database.
 	Table = "beacons"
-	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
-	TagsTable = "beacon_tags"
-	// TagsInverseTable is the table name for the Tag entity.
-	// It exists in this package in order to avoid circular dependency with the "tag" package.
-	TagsInverseTable = "tags"
+	// HostTable is the table that holds the host relation/edge.
+	HostTable = "beacons"
+	// HostInverseTable is the table name for the Host entity.
+	// It exists in this package in order to avoid circular dependency with the "host" package.
+	HostInverseTable = "hosts"
+	// HostColumn is the table column denoting the host relation/edge.
+	HostColumn = "beacon_host"
 	// TasksTable is the table that holds the tasks relation/edge.
 	TasksTable = "tasks"
 	// TasksInverseTable is the table name for the Task entity.
@@ -56,25 +49,26 @@ var Columns = []string{
 	FieldID,
 	FieldName,
 	FieldPrincipal,
-	FieldHostname,
 	FieldIdentifier,
 	FieldAgentIdentifier,
-	FieldHostIdentifier,
-	FieldHostPrimaryIP,
-	FieldHostPlatform,
 	FieldLastSeenAt,
 }
 
-var (
-	// TagsPrimaryKey and TagsColumn2 are the table columns denoting the
-	// primary key for the tags relation (M2M).
-	TagsPrimaryKey = []string{"beacon_id", "tag_id"}
-)
+// ForeignKeys holds the SQL foreign-keys that are owned by the "beacons"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"beacon_host",
+}
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -88,61 +82,78 @@ var (
 	NameValidator func(string) error
 	// PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
 	PrincipalValidator func(string) error
-	// HostnameValidator is a validator for the "hostname" field. It is called by the builders before save.
-	HostnameValidator func(string) error
 	// DefaultIdentifier holds the default value on creation for the "identifier" field.
 	DefaultIdentifier func() string
 	// IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	IdentifierValidator func(string) error
 	// AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	AgentIdentifierValidator func(string) error
-	// HostIdentifierValidator is a validator for the "host_identifier" field. It is called by the builders before save.
-	HostIdentifierValidator func(string) error
 )
 
-// HostPlatform defines the type for the "host_platform" enum field.
-type HostPlatform string
+// OrderOption defines the ordering options for the Beacon queries.
+type OrderOption func(*sql.Selector)
 
-// HostPlatformUnknown is the default value of the HostPlatform enum.
-const DefaultHostPlatform = HostPlatformUnknown
-
-// HostPlatform values.
-const (
-	HostPlatformWindows HostPlatform = "Windows"
-	HostPlatformLinux   HostPlatform = "Linux"
-	HostPlatformMacOS   HostPlatform = "MacOS"
-	HostPlatformBSD     HostPlatform = "BSD"
-	HostPlatformUnknown HostPlatform = "Unknown"
-)
-
-func (hp HostPlatform) String() string {
-	return string(hp)
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// HostPlatformValidator is a validator for the "host_platform" field enum values. It is called by the builders before save.
-func HostPlatformValidator(hp HostPlatform) error {
-	switch hp {
-	case HostPlatformWindows, HostPlatformLinux, HostPlatformMacOS, HostPlatformBSD, HostPlatformUnknown:
-		return nil
-	default:
-		return fmt.Errorf("beacon: invalid enum value for host_platform field: %q", hp)
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByPrincipal orders the results by the principal field.
+func ByPrincipal(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrincipal, opts...).ToFunc()
+}
+
+// ByIdentifier orders the results by the identifier field.
+func ByIdentifier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIdentifier, opts...).ToFunc()
+}
+
+// ByAgentIdentifier orders the results by the agent_identifier field.
+func ByAgentIdentifier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAgentIdentifier, opts...).ToFunc()
+}
+
+// ByLastSeenAt orders the results by the last_seen_at field.
+func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
+}
+
+// ByHostField orders the results by host field.
+func ByHostField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHostStep(), sql.OrderByField(field, opts...))
 	}
 }
 
-// MarshalGQL implements graphql.Marshaler interface.
-func (e HostPlatform) MarshalGQL(w io.Writer) {
-	io.WriteString(w, strconv.Quote(e.String()))
+// ByTasksCount orders the results by tasks count.
+func ByTasksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTasksStep(), opts...)
+	}
 }
 
-// UnmarshalGQL implements graphql.Unmarshaler interface.
-func (e *HostPlatform) UnmarshalGQL(val interface{}) error {
-	str, ok := val.(string)
-	if !ok {
-		return fmt.Errorf("enum %T must be a string", val)
+// ByTasks orders the results by tasks terms.
+func ByTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTasksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
-	*e = HostPlatform(str)
-	if err := HostPlatformValidator(*e); err != nil {
-		return fmt.Errorf("%s is not a valid HostPlatform", str)
-	}
-	return nil
+}
+func newHostStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HostInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, HostTable, HostColumn),
+	)
+}
+func newTasksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TasksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, TasksTable, TasksColumn),
+	)
 }

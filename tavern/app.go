@@ -107,6 +107,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	// Setup HTTP Handlers
+	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 	router := http.NewServeMux()
 	router.Handle("/status", newStatusHandler())
 	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
@@ -114,11 +115,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	router.Handle("/graphql", newGraphQLHandler(client))
 	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
 	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
-	router.Handle("/", auth.WithLoginRedirect("/oauth/login", www.NewAppHandler()))
+	router.Handle("/", auth.WithLoginRedirect("/oauth/login", www.NewHandler(httpLogger)))
 	router.Handle("/playground", auth.WithLoginRedirect("/oauth/login", playground.Handler("Tavern", "/graphql")))
 
 	// Log Middleware
-	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 	handlerWithLogging := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authName := "unknown"
 		id := auth.IdentityFromContext(r.Context())

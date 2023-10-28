@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/kcarretto/realm/tavern/internal/ent/file"
 	"github.com/kcarretto/realm/tavern/internal/ent/quest"
@@ -33,6 +34,7 @@ type Quest struct {
 	quest_tome    *int
 	quest_bundle  *int
 	quest_creator *int
+	selectValues  sql.SelectValues
 }
 
 // QuestEdges holds the relations/edges for other nodes in the graph.
@@ -120,7 +122,7 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 		case quest.ForeignKeys[2]: // quest_creator
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Quest", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -185,9 +187,17 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 				q.quest_creator = new(int)
 				*q.quest_creator = int(value.Int64)
 			}
+		default:
+			q.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
+}
+
+// Value returns the ent.Value that was dynamically selected and assigned to the Quest.
+// This includes values selected through modifiers, order, etc.
+func (q *Quest) Value(name string) (ent.Value, error) {
+	return q.selectValues.Get(name)
 }
 
 // QueryTome queries the "tome" edge of the Quest entity.

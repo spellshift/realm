@@ -7,6 +7,7 @@ import (
 
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/quest"
 	"github.com/kcarretto/realm/tavern/internal/ent/schema"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
@@ -31,24 +32,16 @@ func init() {
 	beaconDescPrincipal := beaconFields[1].Descriptor()
 	// beacon.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
 	beacon.PrincipalValidator = beaconDescPrincipal.Validators[0].(func(string) error)
-	// beaconDescHostname is the schema descriptor for hostname field.
-	beaconDescHostname := beaconFields[2].Descriptor()
-	// beacon.HostnameValidator is a validator for the "hostname" field. It is called by the builders before save.
-	beacon.HostnameValidator = beaconDescHostname.Validators[0].(func(string) error)
 	// beaconDescIdentifier is the schema descriptor for identifier field.
-	beaconDescIdentifier := beaconFields[3].Descriptor()
+	beaconDescIdentifier := beaconFields[2].Descriptor()
 	// beacon.DefaultIdentifier holds the default value on creation for the identifier field.
 	beacon.DefaultIdentifier = beaconDescIdentifier.Default.(func() string)
 	// beacon.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	beacon.IdentifierValidator = beaconDescIdentifier.Validators[0].(func(string) error)
 	// beaconDescAgentIdentifier is the schema descriptor for agent_identifier field.
-	beaconDescAgentIdentifier := beaconFields[4].Descriptor()
+	beaconDescAgentIdentifier := beaconFields[3].Descriptor()
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
-	// beaconDescHostIdentifier is the schema descriptor for host_identifier field.
-	beaconDescHostIdentifier := beaconFields[5].Descriptor()
-	// beacon.HostIdentifierValidator is a validator for the "host_identifier" field. It is called by the builders before save.
-	beacon.HostIdentifierValidator = beaconDescHostIdentifier.Validators[0].(func(string) error)
 	fileMixin := schema.File{}.Mixin()
 	fileHooks := schema.File{}.Hooks()
 	file.Hooks[0] = fileHooks[0]
@@ -80,6 +73,16 @@ func init() {
 	fileDescHash := fileFields[2].Descriptor()
 	// file.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	file.HashValidator = fileDescHash.Validators[0].(func(string) error)
+	hostFields := schema.Host{}.Fields()
+	_ = hostFields
+	// hostDescIdentifier is the schema descriptor for identifier field.
+	hostDescIdentifier := hostFields[0].Descriptor()
+	// host.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
+	host.IdentifierValidator = hostDescIdentifier.Validators[0].(func(string) error)
+	// hostDescName is the schema descriptor for name field.
+	hostDescName := hostFields[1].Descriptor()
+	// host.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	host.NameValidator = hostDescName.Validators[0].(func(string) error)
 	questMixin := schema.Quest{}.Mixin()
 	questMixinFields0 := questMixin[0].Fields()
 	_ = questMixinFields0
@@ -182,6 +185,6 @@ func init() {
 }
 
 const (
-	Version = "v0.11.9"                                         // Version of ent codegen.
-	Sum     = "h1:dbbCkAiPVTRBIJwoZctiSYjB7zxQIBOzVSU5H9VYIQI=" // Sum of ent codegen.
+	Version = "v0.12.4"                                         // Version of ent codegen.
+	Sum     = "h1:LddPnAyxls/O7DTXZvUGDj0NZIdGSu317+aoNLJWbD8=" // Sum of ent codegen.
 )

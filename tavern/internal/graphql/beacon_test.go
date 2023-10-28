@@ -12,6 +12,7 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/ent"
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 	"github.com/kcarretto/realm/tavern/internal/graphql"
 	"github.com/stretchr/testify/assert"
@@ -37,20 +38,24 @@ func TestBeaconMutations(t *testing.T) {
 			SetName("TestTag2").
 			SaveX(ctx),
 	}
+	testHost := graph.Host.Create().
+		SetIdentifier("SOME_HOST_ID").
+		SetName("SOME_HOSTNAME").
+		AddTags(testTags[1]).
+		SaveX(ctx)
+
 	testBeacons := []*ent.Beacon{
 		graph.Beacon.Create().
 			SetPrincipal("admin").
 			SetAgentIdentifier("TEST").
 			SetIdentifier("SOME_ID").
-			SetHostIdentifier("SOME_HOST_ID").
-			SetHostname("SOME_HOSTNAME").
+			SetHost(testHost).
 			SetLastSeenAt(time.Now().Add(-10 * time.Minute)).
 			SaveX(ctx),
 		graph.Beacon.Create().
 			SetIdentifier("ANOTHER_ID").
-			SetHostname("BAD_HOSTNAME").
+			SetHost(testHost).
 			SetLastSeenAt(time.Now().Add(-10 * time.Minute)).
-			AddTags(testTags[1]).
 			SaveX(ctx),
 	}
 	testTome := graph.Tome.Create().
@@ -114,7 +119,7 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			expected := map[string]any{
 				"principal":        "newuser",
 				"hostname":         "NEW_HOSTNAME",
-				"hostPlatform":     beacon.HostPlatformWindows,
+				"hostPlatform":     host.PlatformWindows,
 				"beaconIdentifier": expectedIdentifier,
 				"hostIdentifier":   "NEW_HOST_ID",
 				"agentIdentifier":  "NEW_AGENT_ID",
@@ -129,10 +134,15 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			assert.NotNil(t, testBeacon)
 			assert.NotZero(t, testBeacon.LastSeenAt)
 			assert.Equal(t, expected["principal"], testBeacon.Principal)
-			assert.Equal(t, expected["hostname"], testBeacon.Hostname)
 			assert.Equal(t, expected["beaconIdentifier"], testBeacon.Identifier)
-			assert.Equal(t, expected["hostIdentifier"], testBeacon.HostIdentifier)
 			assert.Equal(t, expected["agentIdentifier"], testBeacon.AgentIdentifier)
+
+			testHost, err := testBeacon.Host(ctx)
+			require.NoError(t, err)
+			require.NotNil(t, testHost)
+			assert.Equal(t, expected["hostIdentifier"], testHost.Identifier)
+			assert.Equal(t, expected["hostname"], testHost.Name)
+
 		})
 
 		/*
@@ -144,7 +154,7 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			expected := map[string]any{
 				"principal":        "admin",
 				"hostname":         "SOME_HOSTNAME",
-				"hostPlatform":     beacon.HostPlatformMacOS,
+				"hostPlatform":     host.PlatformMacOS,
 				"hostPrimaryIP":    "10.0.0.1",
 				"beaconIdentifier": "SOME_ID",
 				"hostIdentifier":   "SOME_HOST_ID",
@@ -162,12 +172,16 @@ mutation newClaimTasksTest($input: ClaimTasksInput!) {
 			assert.Equal(t, testBeacons[0].ID, testBeacon.ID)
 			assert.NotZero(t, testBeacon.LastSeenAt)
 			assert.Equal(t, expected["principal"], testBeacon.Principal)
-			assert.Equal(t, expected["hostname"], testBeacon.Hostname)
 			assert.Equal(t, expected["beaconIdentifier"], testBeacon.Identifier)
-			assert.Equal(t, expected["hostIdentifier"], testBeacon.HostIdentifier)
 			assert.Equal(t, expected["agentIdentifier"], testBeacon.AgentIdentifier)
-			assert.Equal(t, expected["hostPlatform"], testBeacon.HostPlatform)
-			assert.Equal(t, expected["hostPrimaryIP"], testBeacon.HostPrimaryIP)
+
+			testHost, err := testBeacon.Host(ctx)
+			require.NoError(t, err)
+			require.NotNil(t, testHost)
+			assert.Equal(t, expected["hostIdentifier"], testHost.Identifier)
+			assert.Equal(t, expected["hostname"], testHost.Name)
+			assert.Equal(t, expected["hostPlatform"], testHost.Platform)
+			assert.Equal(t, expected["hostPrimaryIP"], testHost.PrimaryIP)
 		})
 	})
 
@@ -246,57 +260,6 @@ mutation newSubmitTaskResultTest($input: SubmitTaskResultInput!) {
 			assert.Equal(t, "one_two_three", testTask.Output)
 			assert.Equal(t, expectedExecFinishedAt.UnixNano(), testTask.ExecFinishedAt.UnixNano())
 			assert.Equal(t, expected["error"], testTask.Error)
-		})
-	})
-
-	t.Run("UpdateBeacon", func(t *testing.T) {
-		// Define the UpdateBeacon mutation
-		mut := `
-mutation newUpdateBeaconTest($beaconID: ID!, $input: UpdateBeaconInput!) {
-	updateBeacon(beaconID: $beaconID, input: $input) {
-		id
-	}
-}`
-		// Create a closure to execute the mutation
-		updateBeacon := func(beaconID int, input map[string]any) (int, error) {
-			// Make our request to the GraphQL API
-			var resp struct {
-				UpdateBeacon struct{ ID string }
-			}
-			err := gqlClient.Post(
-				mut,
-				&resp,
-				client.Var("beaconID", beaconID),
-				client.Var("input", input),
-			)
-			if err != nil {
-				return 0, err
-			}
-
-			return convertID(resp.UpdateBeacon.ID), nil
-		}
-
-		/*
-		* Test updating tags and changing hostname for an existing beacon.
-		*
-		* Expected that the beacon is updated with the new set of tags and a better hostname.
-		 */
-		t.Run("UpdateBeacon", func(t *testing.T) {
-			expected := map[string]any{
-				"hostname":     "BETTER_HOSTNAME",
-				"addTagIDs":    testTags[0].ID,
-				"removeTagIDs": testTags[1].ID,
-			}
-			id, err := updateBeacon(testBeacons[1].ID, expected)
-			require.NoError(t, err)
-			require.NotZero(t, id)
-			assert.Equal(t, testBeacons[1].ID, id)
-			testBeacon := graph.Beacon.GetX(ctx, id)
-			assert.Equal(t, expected["hostname"], testBeacon.Hostname)
-			testBeaconTags, err := testBeacon.Tags(ctx)
-			require.NoError(t, err)
-			assert.Len(t, testBeaconTags, 1)
-			assert.Equal(t, testTags[0].ID, testBeaconTags[0].ID)
 		})
 	})
 }

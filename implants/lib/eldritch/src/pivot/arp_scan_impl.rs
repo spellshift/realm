@@ -32,10 +32,12 @@ fn start_listener(
     interface: NetworkInterface,
     data: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>>,
 ) -> Result<()> {
+    use anyhow::Context;
+
     if interface.ips.iter().filter(|ip| ip.is_ipv4()).count() == 0 {
         return Err(anyhow!("Interface does not have a v4 address"));
     }
-    let mac = interface.mac.ok_or(anyhow!("Could not obtain MAC of interface"))?;
+    let mac = interface.mac.context("Could not obtain MAC of interface")?;
     let (mut tx, mut rx) = match channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => return Err(anyhow!("Unhandled channel type")),
@@ -156,6 +158,8 @@ fn start_listener(
 pub fn handle_arp_scan(
     target_cidrs: Vec<String>,
 ) -> Result<HashMap<Ipv4Addr, Option<ArpResponse>>> {
+    use anyhow::Context;
+
     let listener_out: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>> =
         Arc::new(Mutex::new(HashMap::new()));
     let target_cidrs = target_cidrs
@@ -163,7 +167,7 @@ pub fn handle_arp_scan(
         .map(|cidr| {
             let (addr, prefix) = cidr.split_at(
                 cidr.find('/')
-                    .ok_or(anyhow::anyhow!("Failed to find / in Network {}", cidr))?,
+                    .context(format!("Failed to find / in Network {}", cidr))?,
             );
             let addr = match Ipv4Addr::from_str(addr) {
                 Ok(addr) => addr,
