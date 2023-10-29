@@ -9,8 +9,8 @@ export enum TaskStatus {
     queued = "QUEUED",
 }
 export enum PageNavItem {
-    quests='Quests',
+    quests='Quest list',
     documentation='Documentation',
-    results='Results',
+    results='Quest outputs',
     createQuest= 'Create new quest',
 }

@@ -8,16 +8,17 @@ import {
   ClipboardDocumentCheckIcon,
   PresentationChartLineIcon,
   TrophyIcon,
-  CommandLineIcon
+  CommandLineIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline'
 
 import logo from '../../assets/eldrich.png';
 import { PageNavItem } from '../../utils/enums';
 
 const navigation = [
-  { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentCheckIcon},
   { name: PageNavItem.createQuest, href:'/createQuest', icon:CommandLineIcon },
-  { name: PageNavItem.results, href: '/output-results', icon: TrophyIcon,},
+  { name: PageNavItem.results, href: '/output-results', icon: ClipboardDocumentCheckIcon,},
+  { name: PageNavItem.quests, href: '/quests', icon: BookOpenIcon},
   // { name: 'Beacons', href: '/beacons', icon: BugAntIcon, current: false },
   // { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
   { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank" },
