@@ -68,14 +68,23 @@ export type Task = {
     beacon: BeaconType
     createdAt: string,
 };
+export type UserType = {
+    id: string;
+    name: string;
+    photoURL: string;
+    isActivated: boolean;
+    isAdmin: boolean;
+}
 export type QuestProps = {
     id: string,
     name: string,
     tasks: Array<Task>,
-    tome: Tome
+    tome: Tome,
+    creator: UserType
 }
 export type OutputTableProps = {
     quest: string,
+    creator: UserType,
     tome: string,
     beacon: string,
     service: string | null,

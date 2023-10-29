@@ -32,6 +32,13 @@ export const GET_QUEST_QUERY = gql`
                 name
                 paramDefs
             }
+            creator {
+                    id
+                    name
+                    photoURL
+                    isActivated
+                    isAdmin
+            }
         }
     }
 `;
