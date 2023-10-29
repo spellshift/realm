@@ -1,10 +1,8 @@
 import { useQuery } from "@apollo/client";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { QuestProps, Task, OutputTableProps } from "../../utils/consts";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { debounce } from "lodash"
+import { useCallback, useEffect, useState } from "react";
 import { getFilterBarSearchTypes } from "../../components/utils/utils";
-import { type } from "os";
 
 export const useOutputResult = () : {
     loading:boolean, 
