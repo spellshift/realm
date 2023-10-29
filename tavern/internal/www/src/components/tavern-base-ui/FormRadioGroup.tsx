@@ -20,7 +20,7 @@ export const FormRadioGroup = (props: Props) => {
         <RadioGroup.Label> 
             <Heading size="sm" >{label}</Heading>
         </RadioGroup.Label>
-        <div className="-space-y-px rounded-md bg-white mt-4 flex flex-col gap-2">
+        <div className="-space-y-px rounded-md bg-white mt-4 flex flex-col gap-2 max-h-72 overflow-y-scroll">
             {data.length === 0 && (
                 <EmptyState type={EmptyStateType.noData} label="No data found"/>
             )}
