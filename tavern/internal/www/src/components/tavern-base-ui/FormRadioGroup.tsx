@@ -14,8 +14,7 @@ type Props = {
     setSelected: (arg: any) => void;
  }
 export const FormRadioGroup = (props: Props) => {
-    const { label, selected, setSelected } = props;
-    const data = [] as Array<any>;
+    const { label, data, selected, setSelected } = props;
     return (
         <RadioGroup value={selected} onChange={setSelected}>
         <RadioGroup.Label> 
