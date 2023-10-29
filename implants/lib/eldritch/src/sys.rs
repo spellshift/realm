@@ -98,6 +98,11 @@ fn methods(builder: &mut MethodsBuilder) {
         }
         get_user_impl::get_user(starlark_heap)
     }
+    fn hostname(this: SysLibrary) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        hostname_impl::hostname()
+    }
+
     fn is_linux(this: SysLibrary) -> anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         is_linux_impl::is_linux()
