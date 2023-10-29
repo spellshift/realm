@@ -1,10 +1,9 @@
 import { useQuery } from "@apollo/client";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { QuestProps, Task, OutputTableProps } from "../../utils/consts";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { debounce } from "lodash"
+import { useCallback, useContext, useEffect, useState } from "react";
 import { getFilterBarSearchTypes } from "../../components/utils/utils";
-import { type } from "os";
+import { AuthorizationContext } from "../../context/AuthorizationContext";
 
 export const useOutputResult = () : {
     loading:boolean, 
@@ -12,12 +11,15 @@ export const useOutputResult = () : {
     filteredData: Array<OutputTableProps>, 
     setSearch: (arg:string) => void,
     setTypeFilters: (arg:any) => void,
+    setShowOnlyMyQuests: (arg:any) => void
 } => {
+    const {data: userData} = useContext(AuthorizationContext);
     const { loading, data } = useQuery(GET_QUEST_QUERY);
     const [tableData, setTableData] = useState<Array<OutputTableProps>>([])
     const [filteredData, setFilteredData] = useState<Array<OutputTableProps>>([]);
     const [search, setSearch] = useState("");
     const [typeFilters, setTypeFilters] = useState([]);
+    const [showOnlyMyQuests, setShowOnlyMyQuests] = useState(false); 
 
     const getAllOutputs = useCallback((questData: Array<QuestProps>) => {
         const output = [] as Array<OutputTableProps>;
@@ -28,6 +30,7 @@ export const useOutputResult = () : {
                 if(task.output && task.output !== ""){
                     output.push({
                         quest: quest.name,
+                        creator: quest.creator,
                         tome: quest.tome.name,
                         beacon: task.beacon.name,
                         service: task.beacon?.host?.tags.find( (obj : any) => {
@@ -99,10 +102,15 @@ export const useOutputResult = () : {
             return
         };
 
-        let result = tableData.filter(item => item?.output?.toLowerCase().includes(search.toLowerCase()))
+        let result = tableData.filter(item => item?.output?.toLowerCase().includes(search.toLowerCase()));
+        
+        if(showOnlyMyQuests){
+            result = result.filter(item => item?.creator?.id === userData?.me?.id);
+        }
+
         result = filterByTypes(result, typeFilters);
         setFilteredData(result);
-    },[tableData, search, typeFilters, setFilteredData]);
+    },[tableData, search, typeFilters, setFilteredData, showOnlyMyQuests, userData]);
 
 
     return {
@@ -110,6 +118,7 @@ export const useOutputResult = () : {
         tableData,
         filteredData,
         setSearch,
-        setTypeFilters
+        setTypeFilters,
+        setShowOnlyMyQuests
     };
 }

@@ -1,7 +1,7 @@
-import react, { useState } from 'react'
+import React from "react";
 import { RadioGroup } from '@headlessui/react'
-import { Tome } from '../../utils/consts'
 import { Heading } from '@chakra-ui/react'
+import { EmptyState, EmptyStateType } from './EmptyState'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -15,14 +15,16 @@ type Props = {
  }
 export const FormRadioGroup = (props: Props) => {
     const { label, data, selected, setSelected } = props;
-
     return (
         <RadioGroup value={selected} onChange={setSelected}>
         <RadioGroup.Label> 
             <Heading size="sm" >{label}</Heading>
         </RadioGroup.Label>
-        <div className="-space-y-px rounded-md bg-white mt-4 flex flex-col gap-2">
-            {data.map((item, tomeIdx) => (
+        <div className="-space-y-px rounded-md bg-white mt-4 flex flex-col gap-2 max-h-72 overflow-y-scroll">
+            {data.length === 0 && (
+                <EmptyState type={EmptyStateType.noData} label="No data found"/>
+            )}
+            {data?.map((item, tomeIdx) => (
             <RadioGroup.Option
                 key={item.name}
                 value={item}

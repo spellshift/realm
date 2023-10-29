@@ -1,5 +1,4 @@
 use anyhow::Result;
-use std::println;
 use whoami::hostname as whoHostname;
 
 pub fn hostname() -> Result<String> {
