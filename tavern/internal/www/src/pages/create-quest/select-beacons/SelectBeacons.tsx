@@ -1,4 +1,5 @@
 import React, { useContext, useState } from "react";
+import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { TagContext } from "../../../context/TagContext";
 import { SelectedBeacons } from "../../../utils/consts";
 import { BeaconView } from "./beacon-view";
@@ -39,9 +40,7 @@ export const SelectBeacons = (props: Props) => {
             <h2 className="text-xl font-semibold text-gray-900">Select agent beacons</h2>
             {isLoading || data === undefined ?
             (
-                <div>
-                    Loading...
-                </div>
+                <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />
             ): (
                 <BeaconView beacons={data?.beacons || []} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
             )}

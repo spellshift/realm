@@ -400,6 +400,11 @@ sys.execute("/bin/bash",["-c", "ls /nofile"])
 }
 ```
 
+### sys.get_hostname
+`sys.get_hostname() -> String`
+
+The <b>sys.get_hostname</b> method returns a String containing the host's hostname.
+
 ### sys.get_env
 `sys.get_env() -> Dict`
 

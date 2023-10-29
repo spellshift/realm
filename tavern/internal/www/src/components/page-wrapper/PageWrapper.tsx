@@ -4,23 +4,23 @@ import {
   Bars3Icon,
   DocumentDuplicateIcon,
   XMarkIcon,
-  BugAntIcon,
   ClipboardDocumentCheckIcon,
-  PresentationChartLineIcon,
-  TrophyIcon,
-  CommandLineIcon
+  CommandLineIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline'
 
 import logo from '../../assets/eldrich.png';
 import { PageNavItem } from '../../utils/enums';
+import { Link } from 'react-router-dom';
+import { AccessGate } from '../access-gate';
 
 const navigation = [
-  { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentCheckIcon},
-  { name: PageNavItem.createQuest, href:'/createQuest', icon:CommandLineIcon },
-  { name: PageNavItem.results, href: '/output-results', icon: TrophyIcon,},
+  { name: PageNavItem.createQuest, href:'/createQuest', icon:CommandLineIcon, internal: true },
+  { name: PageNavItem.results, href: '/output-results', icon: ClipboardDocumentCheckIcon, internal: true},
+  { name: PageNavItem.quests, href: '/quests', icon: BookOpenIcon, internal: true},
   // { name: 'Beacons', href: '/beacons', icon: BugAntIcon, current: false },
   // { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
-  { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank" },
+  { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
 ]
 const teams = [
   { id: 1, name: 'Heroicons', href: '#', initial: 'H', current: false },
@@ -41,6 +41,7 @@ export const PageWrapper = (props: Props) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
+    <AccessGate>
       <div>
         <Transition.Root show={sidebarOpen} as={Fragment}>
           <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
@@ -98,19 +99,34 @@ export const PageWrapper = (props: Props) => {
                           <ul role="list" className="-mx-2 space-y-1">
                             {navigation.map((item) => (
                               <li key={item.name}>
-                                <a
-                                  href={item.href}
-                                  target={item?.target ? '__blank': undefined}
-                                  className={classNames(
-                                    item.name === currNavItem
-                                      ? 'bg-gray-800 text-white'
-                                      : 'text-gray-400 hover:text-white hover:bg-gray-800',
-                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
-                                  )}
-                                >
-                                  <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
-                                  {item.name}
-                                </a>
+                                {item.internal ? (
+                                  <Link 
+                                    to={item.href}
+                                    className={classNames(
+                                      item.name === currNavItem
+                                        ? 'bg-gray-800 text-white'
+                                        : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                                      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                                    )}
+                                  >
+                                    <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                                    {item.name}
+                                  </Link>
+                                ): (
+                                  <a
+                                    href={item.href}
+                                    target={item?.target ? '__blank': undefined}
+                                    className={classNames(
+                                      item.name === currNavItem
+                                        ? 'bg-gray-800 text-white'
+                                        : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                                      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                                    )}
+                                  >
+                                    <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                                    {item.name}
+                                  </a>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -144,7 +160,21 @@ export const PageWrapper = (props: Props) => {
                   <ul role="list" className="-mx-2 space-y-1">
                     {navigation.map((item) => (
                       <li key={item.name}>
-                        <a
+                        {item.internal ? (
+                          <Link 
+                          to={item.href}
+                          className={classNames(
+                            item.name === currNavItem
+                              ? 'bg-gray-800 text-white'
+                              : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                          )}
+                        >
+                          <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                          {item.name}
+                        </Link>
+                        ): (
+                          <a
                           href={item.href}
                           target={item?.target ? '__blank': undefined}
                           className={classNames(
@@ -157,6 +187,7 @@ export const PageWrapper = (props: Props) => {
                           <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
                           {item.name}
                         </a>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -179,5 +210,6 @@ export const PageWrapper = (props: Props) => {
           <div className="px-4 sm:px-6 lg:px-8">{children}</div>
         </main>
       </div>
+    </AccessGate>
   )
 }
