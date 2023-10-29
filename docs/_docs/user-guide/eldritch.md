@@ -438,6 +438,73 @@ The <b>process.list</b> method returns a list of dictionaries that describe each
 
 The <b>process.name</b> method returns the name of the process from it's given process id.
 
+### process.info
+`process.info(pid: Optional<int>) -> Dict`
+
+The <b>process.info</b> method returns all information on a given process ID. Default is the current process.
+
+```json
+{
+  "pid": 1286574,
+  "name": "golem",
+  "cmd": [
+    "./target/debug/golem",
+    "-i"
+  ],
+  "exe": "/home/user/realm/implants/target/debug/golem",
+  "environ": [
+    "USER=user",
+    "HOME=/home/user",
+    "PATH=/home/user/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/snap/bin:/home/user/.dotnet/tools",
+    "SHELL=/bin/zsh",
+    "TERM=xterm-256color",
+    "SSH_TTY=/dev/pts/0",
+    "SHLVL=1",
+    "PWD=/home/user",
+    "OLDPWD=/home/user",
+    "XDG_DATA_DIRS=/usr/local/share:/usr/share:/var/lib/snapd/desktop",
+    "P9K_TTY=old",
+    "_P9K_TTY=/dev/pts/0",
+    "ZSH=/home/user/.oh-my-zsh",
+  ],
+  "cwd": "/home/user/realm/implants",
+  "root": "/",
+  "memory_usage": 32317440,
+  "virtual_memory_usage": 1712074752,
+  "ppid": 1180405,
+  "status": "Sleeping",
+  "start_time": 1698106833,
+  "run_time": 2,
+  "uid": 1000,
+  "euid": 1000,
+  "gid": 1000,
+  "egid": 1000,
+  "sid": 1180405
+}
+```
+
+### process.netstat
+`process.netstat() -> Vec<Dict>`
+
+The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
+
+```json
+[
+    {
+        "socket_type": "TCP",
+        "local_address": "127.0.0.1",
+        "local_port": 46341,
+        "remote_address": "0.0.0.0",
+        "remote_port": 0,
+        "state": "LISTEN",
+        "pids": [
+            2359037
+        ]
+    },
+    ...
+]
+```
+
 ## Sys
 
 ### sys.dll_inject
