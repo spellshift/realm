@@ -468,11 +468,12 @@ sys.execute("/bin/bash",["-c", "ls /nofile"])
 }
 ```
 
-### sys.get_hostname
 
-`sys.get_hostname() -> String`
+### sys.hostname
 
-The <b>sys.get_hostname</b> method returns a String containing the host's hostname.
+`sys.hostname() -> String`
+
+The <b>sys.hostname</b> method returns a String containing the host's hostname.
 
 ### sys.get_env
 
