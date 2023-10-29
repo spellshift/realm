@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -30,7 +31,10 @@ func (User) Fields() []ent.Field {
 			Immutable().
 			Comment("OAuth Subject ID of the user"),
 		field.String("photo_url").
-			Comment("URL to the user's profile photo."),
+			Comment("URL to the user's profile photo.").
+			SchemaType(map[string]string{
+				dialect.MySQL: "MEDIUMTEXT", // Override MySQL, improve length maximum
+			}),
 		field.String("session_token").
 			DefaultFunc(newSessionToken).
 			Sensitive().
