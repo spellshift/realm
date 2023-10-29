@@ -327,7 +327,7 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell. If no password or key is specified the function will error out with:
 `Failed to run handle_ssh_exec: Failed to authenticate to host`
 If the connection is successful but the command fails no output will be returned but the status code will be set.
-Not returning stderr is a limitation of the way we're performing execution. Since it's not using the SSH shell directive we're limited on the return output we can capture. 
+Not returning stderr is a limitation of the way we're performing execution. Since it's not using the SSH shell directive we're limited on the return output we can capture.
 
 ```json
 {
@@ -386,13 +386,13 @@ Disown will run the process in the background disowned from the agent. This is d
 
 
 ```python
-sys.execute("/bin/bash",["-c", "whoami"])
+sys.exec("/bin/bash",["-c", "whoami"])
 {
     "stdout":"root\n",
     "stderr":"",
     "status":0,
 }
-sys.execute("/bin/bash",["-c", "ls /nofile"])
+sys.exec("/bin/bash",["-c", "ls /nofile"])
 {
     "stdout":"",
     "stderr":"ls: cannot access '/nofile': No such file or directory\n",
