@@ -1,0 +1,7 @@
+name: Download and execute
+description: Download a file and execute it
+paramdefs:
+- name: url
+  type: string
+  label: Download url
+  placeholder: "https://example.com/executable_file"

