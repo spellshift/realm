@@ -14,6 +14,7 @@ import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { QuestDetails } from "./pages/quest-details";
 import { OutputResults } from "./pages/output-results";
+import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 
 
 const router = createBrowserRouter([
@@ -43,8 +44,10 @@ export const App = () => {
   
   return (
     <ChakraProvider theme={theme}>
-      <TagContextProvider>
-        <RouterProvider router={router} />
-      </TagContextProvider>
+      <AuthorizationContextProvider>
+        <TagContextProvider>
+          <RouterProvider router={router} />
+        </TagContextProvider>
+      </AuthorizationContextProvider>
     </ChakraProvider>
 )}
