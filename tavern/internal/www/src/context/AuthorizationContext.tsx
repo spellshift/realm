@@ -1,13 +1,7 @@
 import React, { createContext } from "react";
 import { gql, useQuery } from "@apollo/client";
+import { UserType } from "../utils/consts";
 
-export type UserType = {
-    id: string;
-    name: string;
-    photoURL: string;
-    isActivated: boolean;
-    isAdmin: boolean;
-}
 export type AuthorizationContextType = {
     me: UserType;
 }
