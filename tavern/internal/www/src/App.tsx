@@ -20,7 +20,7 @@ import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <QuestList />,
+    element: <CreateQuest />,
   },
   {
     path: "/quests",
