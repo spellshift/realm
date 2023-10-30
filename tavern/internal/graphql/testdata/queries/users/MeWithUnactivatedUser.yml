@@ -1,0 +1,18 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",false,false);
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (6,"test_oauth_id2","https://photos.com","admin","otherToken",true,true);
+requestor:
+  session_token: secretToken
+query: |
+  query MeWithUnactivatedUser {
+    me {
+      id
+      isActivated
+    }
+  }
+expected:
+  me:
+    id: "5"
+    isActivated: false

@@ -6,5 +6,5 @@ extend type Query {
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
-  me: User! @requireRole(role: USER)
+  me: User!
 }

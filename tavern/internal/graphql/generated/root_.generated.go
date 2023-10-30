@@ -1965,7 +1965,7 @@ input UserWhereInput {
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
-  me: User! @requireRole(role: USER)
+  me: User!
 }
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
