@@ -65,6 +65,27 @@ It currently contains five modules:
 
 Functions fall into one of these five modules. This is done to improve clarity about function use.
 
+**🚨 DANGER 🚨: Name shadowing**
+
+Do not use the standard library names as local variables as it will prevent you from accessing library functions.
+For example, if you do:
+
+```rust
+for file in file.list("/home/"):
+    print(file["file_name"])
+```
+
+The file library will become inaccessible.
+
+It may even raise an error: `error: Local variable 'file' referenced before assignment`
+
+Instead we recommend using more descriptive names like:
+
+```rust
+for user_home_dir in file.list("/home/"):
+    print(user_home_dir["file_name"])
+```
+
 ---
 
 ## Assets
@@ -513,6 +534,7 @@ sys.execute("/bin/bash",["-c", "ls /nofile"])
     "status":2,
 }
 ```
+
 
 ### sys.hostname
 
