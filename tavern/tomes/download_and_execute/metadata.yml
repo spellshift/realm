@@ -1,0 +1,7 @@
+name: Download and execute
+description: Download a file and execute it. If possible background and disown the process.
+paramdefs:
+- name: url
+  type: string
+  label: Executable file's URL
+  placeholder: "https://example.com/executable_file"

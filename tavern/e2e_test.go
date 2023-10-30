@@ -16,6 +16,7 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
 	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/quest"
+	"github.com/kcarretto/realm/tavern/internal/ent/tome"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -111,7 +112,7 @@ func TestEndToEnd(t *testing.T) {
 			Only(ctx)
 		require.NoError(t, err)
 
-		testTome, err := graph.Tome.Query().First(ctx)
+		testTome, err := graph.Tome.Query().Where(tome.NameEQ("example")).First(ctx)
 		require.NoError(t, err)
 		require.NotNil(t, testTome)
 		defaultTomeID = testTome.ID
