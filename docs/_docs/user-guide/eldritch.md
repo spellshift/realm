@@ -521,13 +521,13 @@ The <b>sys.exec</b> method executes a program specified with `path` and passes t
 Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
 
 ```python
-sys.execute("/bin/bash",["-c", "whoami"])
+sys.exec("/bin/bash",["-c", "whoami"])
 {
     "stdout":"root\n",
     "stderr":"",
     "status":0,
 }
-sys.execute("/bin/bash",["-c", "ls /nofile"])
+sys.exec("/bin/bash",["-c", "ls /nofile"])
 {
     "stdout":"",
     "stderr":"ls: cannot access '/nofile': No such file or directory\n",

