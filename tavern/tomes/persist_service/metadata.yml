@@ -1,6 +1,10 @@
 name: Create Service
 description: Create a service for a specific binary
 paramdefs:
+- name: executable_url
+  type: string
+  label: Executable URL
+  placeholder: https://example.com/executable_path
 - name: service_name
   type: string
   label: Service name
