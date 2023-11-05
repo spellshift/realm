@@ -309,9 +309,11 @@ apt install -y graphviz
 1. Start Tavern with profiling enabled: `ENABLE_PPROF=1 go run ./tavern`.
 2. Collect a Profile in desired format (e.g. png): `go tool pprof -png -seconds=10 http://127.0.0.1:80/debug/pprof/allocs?seconds=10 > .pprof/allocs.png`
     a. Replace "allocs" with the [name of the profile](https://pkg.go.dev/runtime/pprof#Profile) to collect.
-    b. Read more about the available profiling parameters [here](https://pkg.go.dev/net/http/pprof#hdr-Parameters).
-    c. `go tool pprof` does not need to run on the same host as Tavern, just ensure you provide the correct HTTP url in the command. Note that Graphviz must be installed on the system you're running `pprof` from.
+    b. Replace the value of seconds with the amount of time you need to reproduce performance issues.
+    c. Read more about the available profiling URL parameters [here](https://pkg.go.dev/net/http/pprof#hdr-Parameters).
+    d. `go tool pprof` does not need to run on the same host as Tavern, just ensure you provide the correct HTTP url in the command. Note that Graphviz must be installed on the system you're running `pprof` from.
 3. Reproduce any interactions with Tavern that you'd like to collect profiling information for.
+4. A graph visualization of the requested performance profile should now be saved locally, take a look and see what's going on 🕵️.
 
 ## Agent Development
 
