@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	pprof "net/http/pprof"
 	"os"
 
 	"entgo.io/contrib/entgql"
@@ -118,6 +119,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	router.Handle("/", auth.WithLoginRedirect("/oauth/login", www.NewHandler(httpLogger)))
 	router.Handle("/playground", auth.WithLoginRedirect("/oauth/login", playground.Handler("Tavern", "/graphql")))
 
+	// Setup Profiling
+	if cfg.IsPProfEnabled() {
+		log.Printf("[WARN] Performance profiling is enabled, do not use in production as this may leak sensitive information")
+		registerProfiler(router)
+	}
+
 	// Log Middleware
 	handlerWithLogging := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authName := "unknown"
@@ -183,4 +190,17 @@ func newGraphQLHandler(client *ent.Client) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		srv.ServeHTTP(w, req)
 	})
+}
+
+func registerProfiler(router *http.ServeMux) {
+	router.HandleFunc("/debug/pprof/", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+
+	// Manually add support for paths linked to by index page at /debug/pprof/
+	router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	router.Handle("/debug/pprof/block", pprof.Handler("block"))
 }
