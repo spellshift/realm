@@ -32,6 +32,11 @@ RUN bash /tmp/library-scripts/go-debian.sh "none" "/usr/local/go" "${GOPATH}" "$
 RUN bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "${USERNAME}" "true" "true" \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
+# Install gRPC tools
+RUN apt install -y protobuf-compiler \
+    && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 \
+    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
 ARG NODE_VERSION="lts/*"
 ENV NVM_DIR=/usr/local/share/nvm
