@@ -3,7 +3,6 @@ package namegen
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/99designs/gqlgen/graphql"
 	"log"
 	"math/big"
 	"time"
@@ -890,7 +889,7 @@ var (
 // GetRandomName generates a random name from the list of adjectives and surnames in this package
 // formatted as "adjective-surname". For example 'focused-turing'.
 func GetRandomName() string {
-	if time.Now().Month() == time.October && graphql.Now().Day() == 31 {
+	if time.Now().Month() == time.October && time.Now().Day() == 31 {
 		adj1IndexHalloween := newRandInt(int64(len(adjectives_halloween)))
 		adj2IndexHalloween := newRandInt(int64(len(adjectives_halloween)))
 		nounIndex := newRandInt(int64(len(noun_halloween)))
