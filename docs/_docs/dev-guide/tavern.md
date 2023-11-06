@@ -95,6 +95,10 @@ ENABLE_TEST_DATA=1 go run ./tavern
 2023/02/24 01:02:37 Starting HTTP server on 0.0.0.0:80
 ```
 
+### PPROF
+
+Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern under the [Performance Profiling](#performance-profiling) section of this guide.
+
 #### How it Works
 
 Tavern hosts two endpoints to support OAuth:
@@ -110,15 +114,18 @@ Tavern hosts two endpoints to support OAuth:
 Tavern supports a Trust on First Use (TOFU) authentication model, meaning the first user to successfully authenticate will be granted admin permissions. Subsequent users that login will have accounts created, but will require activation before they can interact with any Tavern APIs. Only admin users may activate other users.
 
 ## Build and publish tavern container
+
 If you want to deploy tavern without using the published version you'll have to build and publish your own container.
 
-**Build your container**
+### Build your container
+
 ```bash
 cd ./realm
 docker build --tag tavern:dev --file ./docker/tavern.Dockerfile .
 ```
 
-**Publish your container to docker hub**
+### Publish your container to docker hub
+
 If you haven't before [sign-up for a docker hub account](https://hub.docker.com/signup) and login with the CLI `docker login`
 
 ```bash
@@ -126,11 +133,11 @@ docker tag tavern:dev <YOUR_DOCKER_HUB_USERNAME>/tavern:dev
 docker push <YOUR_DOCKER_HUB_USERNAME>/tavern:dev
 ```
 
-**Specify your container during terraform deploy**
+### Specify your container during terraform deploy
+
 ```bash
 terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=<YOUR_DOCKER_HUB_USERNAME>/tavern:dev"
 ```
-
 
 ## User Interface
 
@@ -284,6 +291,29 @@ query get_task_res {
 * [Ent + GraphQL Tutorial](https://entgo.io/docs/tutorial-todo-gql)
 * [Example Ent + GraphQL project](https://github.com/ent/contrib/tree/master/entgql/internal/todo)
 * [GQLGen Repo](https://github.com/99designs/gqlgen)
+
+## Performance Profiling
+
+Tavern supports built in performance monitoring and debugging via the Golang [pprof tool](https://go.dev/blog/pprof) developed by Google. To run tavern with profiling enabled, ensure the `ENABLE_PPROF=1` environment variable is set.
+
+### Install Graphviz
+
+Ensure you have an updated version of [Graphviz](https://graphviz.org/about/) installed for visualizing profile outputs.
+
+```bash
+apt install -y graphviz
+```
+
+### Collect a Profile
+
+1. Start Tavern with profiling enabled: `ENABLE_PPROF=1 go run ./tavern`.
+2. Collect a Profile in desired format (e.g. png): `go tool pprof -png -seconds=10 http://127.0.0.1:80/debug/pprof/allocs?seconds=10 > .pprof/allocs.png`
+    a. Replace "allocs" with the [name of the profile](https://pkg.go.dev/runtime/pprof#Profile) to collect.
+    b. Replace the value of seconds with the amount of time you need to reproduce performance issues.
+    c. Read more about the available profiling URL parameters [here](https://pkg.go.dev/net/http/pprof#hdr-Parameters).
+    d. `go tool pprof` does not need to run on the same host as Tavern, just ensure you provide the correct HTTP url in the command. Note that Graphviz must be installed on the system you're running `pprof` from.
+3. Reproduce any interactions with Tavern that you'd like to collect profiling information for.
+4. A graph visualization of the requested performance profile should now be saved locally, take a look and see what's going on 🕵️.
 
 ## Agent Development
 

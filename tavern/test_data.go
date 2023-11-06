@@ -182,6 +182,10 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		SetOutput(loremIpsum).
 		SetQuest(printQuest).
 		SaveX(ctx)
+
+	for i := 0; i < 50; i++ {
+		createQuest(ctx, client, testBeacons...)
+	}
 }
 
 func newRandomIdentifier() string {
@@ -339,3 +343,30 @@ None
 --------
 
 `
+
+func createQuest(ctx context.Context, client *ent.Client, beacons ...*ent.Beacon) {
+	// Mid-Execution
+	testTome := client.Tome.Create().
+		SetName(newRandomIdentifier()).
+		SetDescription("Print a message for fun!").
+		SetEldritch(`print(input_params['msg'])`).
+		SetParamDefs(`[{"name":"msg","label":"Message","type":"string","placeholder":"something to print"}]`).
+		SaveX(ctx)
+
+	q := client.Quest.Create().
+		SetName(newRandomIdentifier()).
+		SetParameters(`{"msg":"Hello World!"}`).
+		SetTome(testTome).
+		SaveX(ctx)
+
+	for _, b := range beacons {
+		client.Task.Create().
+			SetBeacon(b).
+			SetCreatedAt(timeAgo(5 * time.Minute)).
+			SetClaimedAt(timeAgo(1 * time.Minute)).
+			SetExecStartedAt(timeAgo(5 * time.Second)).
+			SetOutput("Hello").
+			SetQuest(q).
+			SaveX(ctx)
+	}
+}
