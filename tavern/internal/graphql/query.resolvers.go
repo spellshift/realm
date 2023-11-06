@@ -14,86 +14,114 @@ import (
 
 // Files is the resolver for the files field.
 func (r *queryResolver) Files(ctx context.Context, where *ent.FileWhereInput) ([]*ent.File, error) {
+	query, err := r.client.File.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
 	if where != nil {
-		query, err := where.Filter(r.client.File.Query())
+		query, err := where.Filter(query)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
 		return query.All(ctx)
 	}
-	return r.client.File.Query().All(ctx)
+	return query.All(ctx)
 }
 
 // Quests is the resolver for the quests field.
 func (r *queryResolver) Quests(ctx context.Context, where *ent.QuestWhereInput) ([]*ent.Quest, error) {
+	query, err := r.client.Quest.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
 	if where != nil {
-		query, err := where.Filter(r.client.Quest.Query())
+		query, err := where.Filter(query)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
 		return query.All(ctx)
 	}
-	return r.client.Quest.Query().All(ctx)
+	return query.All(ctx)
 }
 
 // Beacons is the resolver for the beacons field.
 func (r *queryResolver) Beacons(ctx context.Context, where *ent.BeaconWhereInput) ([]*ent.Beacon, error) {
+	query, err := r.client.Beacon.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
 	if where != nil {
-		query, err := where.Filter(r.client.Beacon.Query())
+		query, err := where.Filter(query)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
 		return query.All(ctx)
 	}
-	return r.client.Beacon.Query().All(ctx)
+	return query.All(ctx)
 }
 
 // Hosts is the resolver for the hosts field.
 func (r *queryResolver) Hosts(ctx context.Context, where *ent.HostWhereInput) ([]*ent.Host, error) {
+	query, err := r.client.Host.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
 	if where != nil {
-		query, err := where.Filter(r.client.Host.Query())
+		query, err := where.Filter(query)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
 		return query.All(ctx)
 	}
-	return r.client.Host.Query().All(ctx)
+	return query.All(ctx)
 }
 
 // Tags is the resolver for the tags field.
 func (r *queryResolver) Tags(ctx context.Context, where *ent.TagWhereInput) ([]*ent.Tag, error) {
+	query, err := r.client.Tag.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
 	if where != nil {
-		query, err := where.Filter(r.client.Tag.Query())
+		query, err := where.Filter(query)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
 		return query.All(ctx)
 	}
-	return r.client.Tag.Query().All(ctx)
+	return query.All(ctx)
 }
 
 // Tomes is the resolver for the tomes field.
 func (r *queryResolver) Tomes(ctx context.Context, where *ent.TomeWhereInput) ([]*ent.Tome, error) {
+	query, err := r.client.Tome.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
 	if where != nil {
-		query, err := where.Filter(r.client.Tome.Query())
+		query, err := where.Filter(query)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
 		return query.All(ctx)
 	}
-	return r.client.Tome.Query().All(ctx)
+	return query.All(ctx)
 }
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, where *ent.UserWhereInput) ([]*ent.User, error) {
+	query, err := r.client.User.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
 	if where != nil {
-		query, err := where.Filter(r.client.User.Query())
+		query, err := where.Filter(query)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
 		return query.All(ctx)
 	}
-	return r.client.User.Query().All(ctx)
+	return query.All(ctx)
 }
 
 // Me is the resolver for the me field.
