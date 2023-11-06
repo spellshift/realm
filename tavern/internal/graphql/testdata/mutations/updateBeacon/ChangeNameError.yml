@@ -19,7 +19,5 @@ variables:
   input:
     name: "CoolNewName"
 
-expected:
-  updateBeacon:
-    id: "1337"
-    name: "CoolNewName"
+expected_error: |-
+  "message":"unknown field","path":["variable","input","name"]

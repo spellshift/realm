@@ -26,6 +26,7 @@ func (Beacon) Fields() []ent.Field {
 		field.String("name").
 			NotEmpty().
 			Unique().
+			Immutable().
 			DefaultFunc(namegen.GetRandomName).
 			Comment("A human readable identifier for the beacon."),
 		field.String("principal").
