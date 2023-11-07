@@ -30,20 +30,6 @@ func (bu *BeaconUpdate) Where(ps ...predicate.Beacon) *BeaconUpdate {
 	return bu
 }
 
-// SetName sets the "name" field.
-func (bu *BeaconUpdate) SetName(s string) *BeaconUpdate {
-	bu.mutation.SetName(s)
-	return bu
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableName(s *string) *BeaconUpdate {
-	if s != nil {
-		bu.SetName(*s)
-	}
-	return bu
-}
-
 // SetPrincipal sets the "principal" field.
 func (bu *BeaconUpdate) SetPrincipal(s string) *BeaconUpdate {
 	bu.mutation.SetPrincipal(s)
@@ -205,11 +191,6 @@ func (bu *BeaconUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (bu *BeaconUpdate) check() error {
-	if v, ok := bu.mutation.Name(); ok {
-		if err := beacon.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Beacon.name": %w`, err)}
-		}
-	}
 	if v, ok := bu.mutation.Principal(); ok {
 		if err := beacon.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Beacon.principal": %w`, err)}
@@ -242,9 +223,6 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := bu.mutation.Name(); ok {
-		_spec.SetField(beacon.FieldName, field.TypeString, value)
 	}
 	if value, ok := bu.mutation.Principal(); ok {
 		_spec.SetField(beacon.FieldPrincipal, field.TypeString, value)
@@ -359,20 +337,6 @@ type BeaconUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *BeaconMutation
-}
-
-// SetName sets the "name" field.
-func (buo *BeaconUpdateOne) SetName(s string) *BeaconUpdateOne {
-	buo.mutation.SetName(s)
-	return buo
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableName(s *string) *BeaconUpdateOne {
-	if s != nil {
-		buo.SetName(*s)
-	}
-	return buo
 }
 
 // SetPrincipal sets the "principal" field.
@@ -549,11 +513,6 @@ func (buo *BeaconUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (buo *BeaconUpdateOne) check() error {
-	if v, ok := buo.mutation.Name(); ok {
-		if err := beacon.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Beacon.name": %w`, err)}
-		}
-	}
 	if v, ok := buo.mutation.Principal(); ok {
 		if err := beacon.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Beacon.principal": %w`, err)}
@@ -603,9 +562,6 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := buo.mutation.Name(); ok {
-		_spec.SetField(beacon.FieldName, field.TypeString, value)
 	}
 	if value, ok := buo.mutation.Principal(); ok {
 		_spec.SetField(beacon.FieldPrincipal, field.TypeString, value)

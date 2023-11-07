@@ -8,15 +8,11 @@ import (
 
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
-	Name   *string
 	HostID *int
 }
 
 // Mutate applies the UpdateBeaconInput on the BeaconMutation builder.
 func (i *UpdateBeaconInput) Mutate(m *BeaconMutation) {
-	if v := i.Name; v != nil {
-		m.SetName(*v)
-	}
 	if v := i.HostID; v != nil {
 		m.SetHostID(*v)
 	}

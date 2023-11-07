@@ -328,18 +328,6 @@ type (
 	}
 )
 
-// SetName sets the "name" field.
-func (u *BeaconUpsert) SetName(v string) *BeaconUpsert {
-	u.Set(beacon.FieldName, v)
-	return u
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *BeaconUpsert) UpdateName() *BeaconUpsert {
-	u.SetExcluded(beacon.FieldName)
-	return u
-}
-
 // SetPrincipal sets the "principal" field.
 func (u *BeaconUpsert) SetPrincipal(v string) *BeaconUpsert {
 	u.Set(beacon.FieldPrincipal, v)
@@ -416,6 +404,11 @@ func (u *BeaconUpsert) ClearLastSeenAt() *BeaconUpsert {
 //		Exec(ctx)
 func (u *BeaconUpsertOne) UpdateNewValues() *BeaconUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.Name(); exists {
+			s.SetIgnore(beacon.FieldName)
+		}
+	}))
 	return u
 }
 
@@ -444,20 +437,6 @@ func (u *BeaconUpsertOne) Update(set func(*BeaconUpsert)) *BeaconUpsertOne {
 		set(&BeaconUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetName sets the "name" field.
-func (u *BeaconUpsertOne) SetName(v string) *BeaconUpsertOne {
-	return u.Update(func(s *BeaconUpsert) {
-		s.SetName(v)
-	})
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *BeaconUpsertOne) UpdateName() *BeaconUpsertOne {
-	return u.Update(func(s *BeaconUpsert) {
-		s.UpdateName()
-	})
 }
 
 // SetPrincipal sets the "principal" field.
@@ -711,6 +690,13 @@ type BeaconUpsertBulk struct {
 //		Exec(ctx)
 func (u *BeaconUpsertBulk) UpdateNewValues() *BeaconUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.Name(); exists {
+				s.SetIgnore(beacon.FieldName)
+			}
+		}
+	}))
 	return u
 }
 
@@ -739,20 +725,6 @@ func (u *BeaconUpsertBulk) Update(set func(*BeaconUpsert)) *BeaconUpsertBulk {
 		set(&BeaconUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetName sets the "name" field.
-func (u *BeaconUpsertBulk) SetName(v string) *BeaconUpsertBulk {
-	return u.Update(func(s *BeaconUpsert) {
-		s.SetName(v)
-	})
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *BeaconUpsertBulk) UpdateName() *BeaconUpsertBulk {
-	return u.Update(func(s *BeaconUpsert) {
-		s.UpdateName()
-	})
 }
 
 // SetPrincipal sets the "principal" field.
