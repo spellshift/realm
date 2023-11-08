@@ -27,9 +27,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-// Version of Tavern being run
-const Version = "v0.0.1"
-
 func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "tavern"

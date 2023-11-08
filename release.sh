@@ -18,6 +18,7 @@ sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/i
 sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/golem/Cargo.toml
 sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/lib/eldritch/Cargo.toml
 sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/lib/tavern/Cargo.toml
+sed -i -E "s/Version = \"v[0-9].[0-9].[0-9]\"/Version = \"v$VERSION\"/" tavern/version.go
 
 
 ###
