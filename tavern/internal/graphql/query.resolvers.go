@@ -44,6 +44,22 @@ func (r *queryResolver) Quests(ctx context.Context, where *ent.QuestWhereInput) 
 	return query.All(ctx)
 }
 
+// Tasks is the resolver for the tasks field.
+func (r *queryResolver) Tasks(ctx context.Context, where *ent.TaskWhereInput) ([]*ent.Task, error) {
+	query, err := r.client.Task.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.All(ctx)
+	}
+	return query.All(ctx)
+}
+
 // Beacons is the resolver for the beacons field.
 func (r *queryResolver) Beacons(ctx context.Context, where *ent.BeaconWhereInput) ([]*ent.Beacon, error) {
 	query, err := r.client.Beacon.Query().CollectFields(ctx)
