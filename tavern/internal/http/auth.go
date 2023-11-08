@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,9 +11,12 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/ent"
 )
 
-// An authenticator associates an HTTP request with an authenticated identity.
-type authenticator interface {
-	Authenticate(req *http.Request) (*http.Request, *Error)
+// An Authenticator returns an authenticated context based on the given http request.
+// If no authenticated identity is associated with the request, the authenticator should
+// just return the request context, and it should not error in this case. This is to allow
+// unauthenticated endpoints to function as expected, authorization will occur later in the stack.
+type Authenticator interface {
+	Authenticate(r *http.Request) (context.Context, error)
 }
 
 type bypassAuthenticator struct {
@@ -25,9 +29,9 @@ type bypassAuthenticator struct {
 // The created user will automatically be set to activated and promoted to administrator.
 // Returns an *http.Request associated with the authenticated identity.
 // Any issues with this authenticator will cause a panic.
-func (authenticator *bypassAuthenticator) Authenticate(req *http.Request) (*http.Request, *Error) {
+func (authenticator *bypassAuthenticator) Authenticate(r *http.Request) (context.Context, error) {
 	// Authenticate as the first available user, create one if none exist
-	authUser, err := authenticator.graph.User.Query().First(req.Context())
+	authUser, err := authenticator.graph.User.Query().First(r.Context())
 	if err != nil || authUser == nil {
 		if !ent.IsNotFound(err) {
 			panic(fmt.Errorf("bypass authenticator: failed to lookup users: %w", err))
@@ -39,14 +43,10 @@ func (authenticator *bypassAuthenticator) Authenticate(req *http.Request) (*http
 			SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
 			SetIsActivated(true).
 			SetIsAdmin(true).
-			SaveX(req.Context())
+			SaveX(r.Context())
 	}
 
-	ctx, err := auth.ContextFromSessionToken(req.Context(), authenticator.graph, authUser.SessionToken)
-	if err != nil {
-		panic(fmt.Errorf("bypass authenticator: failed to create authenticated session for user: %w", err))
-	}
-	return req.WithContext(ctx), nil
+	return auth.ContextFromSessionToken(r.Context(), authenticator.graph, authUser.SessionToken)
 }
 
 type cookieAuthenticator struct {
@@ -57,23 +57,29 @@ type cookieAuthenticator struct {
 // Returns an *http.Request associated with the authenticated identity.
 // Returns nil if there was an authentication error, and writes error
 // messages to the provided writer.
-func (authenticator *cookieAuthenticator) Authenticate(req *http.Request) (*http.Request, *Error) {
-	/*
-	 * User Authentication
-	 */
-	authCookie, err := req.Cookie(auth.SessionCookieName)
-	if err != nil && err != http.ErrNoCookie || authCookie == nil {
-		log.Printf("failed to obtain auth cookie: %v", err)
-		return nil, &Error{"failed to obtain auth cookie", http.StatusBadRequest}
+// If no authenticated identity is associated with the request, no error is returned.
+// Instead, the context will not be associated with an authenticated identity.
+func (authenticator *cookieAuthenticator) Authenticate(r *http.Request) (context.Context, error) {
+	// Read SessionToken from auth cookie
+	authCookie, err := r.Cookie(auth.SessionCookieName)
+	if err != nil && err != http.ErrNoCookie {
+		log.Printf("[ERROR] failed to read auth cookie: %v", err)
+		return nil, ErrReadingAuthCookie
 	}
 
-	authCtx, err := auth.ContextFromSessionToken(req.Context(), authenticator.graph, authCookie.Value)
+	// If no auth cookie provided, do not authenticate the context
+	if authCookie == nil {
+		return r.Context(), nil
+	}
+
+	// Create an authenticated context (if provided cookie is valid)
+	authCtx, err := auth.ContextFromSessionToken(r.Context(), authenticator.graph, authCookie.Value)
 	if err != nil {
 		log.Printf("failed to create session from auth cookie: %v", err)
-		return nil, &Error{"invalid auth cookie", http.StatusUnauthorized}
+		return nil, ErrInvalidAuthCookie
 	}
 
-	return req.WithContext(authCtx), nil
+	return authCtx, nil
 }
 
 func resetAuthCookie(w http.ResponseWriter) {

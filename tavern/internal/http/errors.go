@@ -1,12 +1,10 @@
 package http
 
-// An Error for an HTTP request.
-type Error struct {
-	Message string
-	Code    int
-}
+import "fmt"
 
-// Error message associated with the error.
-func (err *Error) Error() string {
-	return err.Message
-}
+// ErrReadingAuthCookie occurs when tavern is unable to read the auth cookie of the request.
+// ErrInvalidAuthCookie occurs when the auth cookie provided by the request is invalid.
+var (
+	ErrReadingAuthCookie = fmt.Errorf("failed to read auth cookie")
+	ErrInvalidAuthCookie = fmt.Errorf("invalid auth cookie")
+)

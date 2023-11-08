@@ -22,6 +22,7 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/cdn"
 	"github.com/kcarretto/realm/tavern/internal/ent"
 	"github.com/kcarretto/realm/tavern/internal/ent/migrate"
+	tavernhttp "github.com/kcarretto/realm/tavern/internal/http"
 	"github.com/kcarretto/realm/tavern/internal/www"
 	"github.com/urfave/cli"
 )
@@ -107,52 +108,61 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		createTestData(ctx, client)
 	}
 
-	// Setup HTTP Handlers
+	// Configure Authentication
+	var withAuthentication tavernhttp.Option
+	if cfg.oauth.ClientID != "" {
+		withAuthentication = tavernhttp.WithAuthenticationCookie(client)
+	} else {
+		withAuthentication = tavernhttp.WithAuthenticationBypass(client)
+	}
+
+	// Configure Request Logging
 	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
-	router := http.NewServeMux()
-	router.Handle("/status", newStatusHandler())
-	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
-	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
-	router.Handle("/graphql", newGraphQLHandler(client))
-	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
-	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
-	router.Handle("/", auth.WithLoginRedirect("/oauth/login", www.NewHandler(httpLogger)))
-	router.Handle("/playground", auth.WithLoginRedirect("/oauth/login", playground.Handler("Tavern", "/graphql")))
+
+	// Route Map
+	routes := tavernhttp.RouteMap{
+		"/status":      tavernhttp.Endpoint{Handler: newStatusHandler()},
+		"/oauth/login": tavernhttp.Endpoint{Handler: auth.NewOAuthLoginHandler(cfg.oauth, privKey)},
+		"/oauth/authorize": tavernhttp.Endpoint{Handler: auth.NewOAuthAuthorizationHandler(
+			cfg.oauth,
+			pubKey,
+			client,
+			"https://www.googleapis.com/oauth2/v3/userinfo",
+		)},
+		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client)},
+		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
+		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
+		"/": tavernhttp.Endpoint{
+			Handler:          www.NewHandler(httpLogger),
+			LoginRedirectURI: "/oauth/login",
+		},
+		"/playground": tavernhttp.Endpoint{
+			Handler:          playground.Handler("Tavern", "/graphql"),
+			LoginRedirectURI: "/oauth/login",
+		},
+	}
 
 	// Setup Profiling
 	if cfg.IsPProfEnabled() {
 		log.Printf("[WARN] Performance profiling is enabled, do not use in production as this may leak sensitive information")
-		registerProfiler(router)
+		registerProfiler(routes)
 	}
 
-	// Log Middleware
-	handlerWithLogging := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authName := "unknown"
-		id := auth.IdentityFromContext(r.Context())
-		if id != nil {
-			authName = id.String()
-		}
-
-		httpLogger.Printf("%s (%s) %s %s\n", r.RemoteAddr, authName, r.Method, r.URL)
-		router.ServeHTTP(w, r)
-	})
-
-	// Auth Middleware
-	var endpoint http.Handler
-	if cfg.oauth.ClientID != "" {
-		endpoint = auth.Middleware(handlerWithLogging, client)
-	} else {
-		endpoint = auth.AuthDisabledMiddleware(handlerWithLogging, client)
-	}
+	// Create Tavern HTTP Server
+	srv := tavernhttp.NewServer(
+		routes,
+		withAuthentication,
+		tavernhttp.WithRequestLogging(httpLogger),
+	)
 
 	// Initialize HTTP Server
 	if cfg.srv == nil {
 		cfg.srv = &http.Server{
 			Addr:    "0.0.0.0:80",
-			Handler: endpoint,
+			Handler: srv,
 		}
 	} else {
-		cfg.srv.Handler = endpoint
+		cfg.srv.Handler = srv
 	}
 
 	return &Server{
@@ -192,7 +202,7 @@ func newGraphQLHandler(client *ent.Client) http.Handler {
 	})
 }
 
-func registerProfiler(router *http.ServeMux) {
+func registerProfiler(router tavernhttp.RouteMap) {
 	router.HandleFunc("/debug/pprof/", pprof.Index)
 	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 	router.HandleFunc("/debug/pprof/profile", pprof.Profile)

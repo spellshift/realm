@@ -7,12 +7,16 @@ type ServeMux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-// A RouteMap contains a mapping of route patterns to Endpoints.
-type RouteMap map[string]*Endpoint
+// A RouteMap contains a mapping of route patterns to http handlers.
+type RouteMap map[string]http.Handler
 
-// Register all endpoints with the configured patterns on the provided router.
-func (routes RouteMap) Register(router ServeMux) {
-	for route, handler := range routes {
-		router.Handle(route, handler)
-	}
+// HandleFunc registers the handler function for the given pattern.
+func (routes RouteMap) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+	routes[pattern] = http.HandlerFunc(handler)
+}
+
+// Handle registers the handler for the given pattern.
+// If a handler already exists for pattern, Handle panics.
+func (routes RouteMap) Handle(pattern string, handler http.Handler) {
+	routes[pattern] = handler
 }

@@ -1,32 +1,27 @@
 package http
 
-import "net/http"
+import (
+	"net/http"
 
+	"github.com/kcarretto/realm/tavern/internal/auth"
+)
+
+// An Endpoint wraps an HTTP handler with configuration options.
 type Endpoint struct {
-	authenticator
+	// LoginRedirectURI defines the path to redirect unauthenticated requests to.
+	// If unset, no redirect will be performed.
+	LoginRedirectURI string
 
-	Logger  http.Handler
-	Handler http.Handler
+	http.Handler
 }
 
-// ServeHTTP by wrapping the configured handler with middleware.
-func (endpoint *Endpoint) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// // Authenticate requests (if configured)
-	// if endpoint.authenticator != nil {
-	req, err := endpoint.Authenticate(req)
-	if err != nil {
-		if err.Code == http.StatusUnauthorized {
-			resetAuthCookie(w)
-		}
-		http.Error(w, err.Message, err.Code)
+// ServeHTTP traffic based on the configured handler.
+func (endpoint Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Redirect request to login (if configured)
+	if endpoint.LoginRedirectURI != "" && !auth.IsAuthenticatedContext(r.Context()) {
+		http.Redirect(w, r, endpoint.LoginRedirectURI, http.StatusFound)
 		return
 	}
 
-	// Log requests (if configured)
-	if endpoint.Logger != nil {
-		endpoint.Logger.ServeHTTP(w, req)
-	}
-
-	// Handle the request
-	endpoint.Handler.ServeHTTP(w, req)
+	endpoint.Handler.ServeHTTP(w, r)
 }
