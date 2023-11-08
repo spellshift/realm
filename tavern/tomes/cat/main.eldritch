@@ -4,7 +4,7 @@ def cat(path):
         res = file.read(path)
         print(res)
     else:
-        print("Error: Invalid Path")
+        print("Error: Invalid Path ("+path+")")
     
     return
 
