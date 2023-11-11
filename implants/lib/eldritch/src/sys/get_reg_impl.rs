@@ -81,6 +81,7 @@ mod tests {
     fn test_get_reg() -> anyhow::Result<()> {
 
         #[cfg(target_os = "windows")]{
+            use winreg::{{enums::*}, RegKey};
             let binding = Heap::new();
             //Write something into temp regkey...
             let hkcu = RegKey::predef(HKEY_CURRENT_USER);
