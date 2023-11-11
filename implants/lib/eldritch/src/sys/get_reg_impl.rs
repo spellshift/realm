@@ -62,7 +62,7 @@ pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result
                 match key_value.to_value().get_hashed() {
                     Ok(val) => val,
                     Err(e) => return Err(anyhow::anyhow!("Failed to alloc name information: {}", e)),
-                }
+                },
                 val_value.to_value(),
             );
     	}
