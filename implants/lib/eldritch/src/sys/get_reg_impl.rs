@@ -1,6 +1,6 @@
 use anyhow::Result;
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap};
-use winreg::{{enums::*}, RegKey};
+
 
 pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result<Dict>  {
     
@@ -9,9 +9,10 @@ pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result
     
 
     #[cfg(not(target_os = "windows"))]
-        return Err(anyhow::anyhow!("This OS isn't supported by the get_reg function.\nOnly windows systems are supported"));
+        return Err(anyhow::anyhow!("This OS isn't supported by the get_reg function. Only windows systems are supported"));
 
-    #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]{
+        use winreg::{{enums::*}, RegKey};
         //Accepted values for reghive :
         //HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS
         let mut ihive : isize = 0;
@@ -66,7 +67,7 @@ pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result
                 val_value.to_value(),
             );
     	}
-
+    }
     Ok(tmp_res)
 }
 
@@ -78,10 +79,8 @@ mod tests {
 
     #[test]
     fn test_get_reg() -> anyhow::Result<()> {
-        #[cfg(not(target_os = "windows"))]
-           return Err(anyhow::anyhow!("OS Not supported please re run on Windows"));
 
-        #[cfg(target_os = "windows")]
+        #[cfg(target_os = "windows")]{
             let binding = Heap::new();
             //Write something into temp regkey...
             let hkcu = RegKey::predef(HKEY_CURRENT_USER);
@@ -94,8 +93,8 @@ mod tests {
             nkey.delete_value("Foo")?;
 
             assert_eq!(val2.unpack_str().unwrap(), "BAR");
-
-            
+    
+        }
 
         Ok(())
     }
