@@ -39,7 +39,7 @@ pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result
         for (key, val) in subkey.enum_values().map(|x| x.unwrap()) {
             let key_value = starlark_heap.alloc_str(&key.to_string());
             let val_value = starlark_heap.alloc_str(&val.to_string());
-        	tmp_res.insert_hashed(
+            tmp_res.insert_hashed(
                 match key_value.to_value().get_hashed() {
                     Ok(val) => val,
                     Err(e) => return Err(anyhow::anyhow!("Failed to alloc name information: {}", e)),
