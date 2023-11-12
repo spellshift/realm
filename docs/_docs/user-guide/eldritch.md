@@ -613,7 +613,7 @@ $> sys.get_pid()
 
 `sys.get_reg(reghive: str, regpath: str) -> Dict`
 
-The <b>sys.get_reg</b> method returns the registy values at requested reqgistry path.
+The <b>sys.get_reg</b> method returns the registry values at the requested registry path.
 An example is below:
 
 ```python
