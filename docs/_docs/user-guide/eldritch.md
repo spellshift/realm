@@ -609,6 +609,30 @@ $> sys.get_pid()
 123456
 ```
 
+### sys.get_reg
+
+`sys.get_reg(reghive: str, regpath: str) -> Dict`
+
+The <b>sys.get_reg</b> method returns the registry values at the requested registry path.
+An example is below:
+
+```python
+$> sys.get_reg("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
+{
+    "ProgramFilesDir": "C:\\Program Files", 
+    "CommonFilesDir": "C:\\Program Files\\Common Files", 
+    "ProgramFilesDir (x86)": "C:\\Program Files (x86)", 
+    "CommonFilesDir (x86)": "C:\\Program Files (x86)\\Common Files", 
+    "CommonW6432Dir": "C:\\Program Files\\Common Files", 
+    "DevicePath": "%SystemRoot%\\inf", 
+    "MediaPathUnexpanded": "%SystemRoot%\\Media", 
+    "ProgramFilesPath": "%ProgramFiles%", 
+    "ProgramW6432Dir": "C:\\Program Files", 
+    "SM_ConfigureProgramsName": "Set Program Access and Defaults", 
+    "SM_GamesName": "Games"
+}
+```
+
 ### sys.get_user
 
 `sys.get_user() -> Dict`
