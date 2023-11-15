@@ -11,6 +11,7 @@ mod is_macos_impl;
 mod shell_impl;
 mod dll_inject_impl;
 mod get_reg_impl;
+mod write_reg_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -123,5 +124,9 @@ fn methods(builder: &mut MethodsBuilder) {
     fn get_reg<'v>(this:  SysLibrary, starlark_heap: &'v Heap, reghiv: String, regpth: String) ->  anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         get_reg_impl::get_reg(starlark_heap, reghiv, regpth)
+    }
+    fn write_reg(this:  SysLibrary, starlark_heap: &'v Heap, reghiv: String, regpth: String, regname: String, regvalue: String) ->  anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        write_reg_impl::write_reg(starlark_heap, reghiv, regpth, regname, regvalue)
     }
 }
