@@ -773,3 +773,11 @@ The <b>crypto.to_json</b> method converts given type to JSON text.
 crypto.to_json({"foo": "bar"})
 "{\"foo\":\"bar\"}"
 ```
+
+## Time
+
+### time.sleep
+
+`time.sleep(secs: float)`
+
+The <b>time.sleep</b> method sleeps the task for the given number of seconds.
