@@ -10,6 +10,7 @@ mod is_windows_impl;
 mod is_macos_impl;
 mod shell_impl;
 mod dll_inject_impl;
+mod get_reg_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -118,5 +119,9 @@ fn methods(builder: &mut MethodsBuilder) {
     fn shell<'v>(this:  SysLibrary, starlark_heap: &'v Heap, cmd: String) ->  anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         shell_impl::shell(starlark_heap, cmd)
+    }
+    fn get_reg<'v>(this:  SysLibrary, starlark_heap: &'v Heap, reghiv: String, regpth: String) ->  anyhow::Result<Dict<'v>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        get_reg_impl::get_reg(starlark_heap, reghiv, regpth)
     }
 }
