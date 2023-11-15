@@ -33,7 +33,8 @@ RUN bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "$
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install gRPC tools
-RUN apt install -y protobuf-compiler \
+RUN apt update -y \
+    && apt install -y protobuf-compiler \
     && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 \
     && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 
