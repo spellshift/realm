@@ -699,6 +699,21 @@ sys.shell("ls /nofile")
 }
 ```
 
+### sys.write_reg
+
+`sys.get_reg(reghive: str, regpath: str, regname: str, regvalue: str) -> String`
+
+The <b>sys.get_reg</b> method writes registry values to the requested registry path.
+An example is below:
+
+```python
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","BAR1")
+"A new key has been created"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","BAR2")
+"An existing key has been modified"
+```
+
+
 ## Crypto
 
 ### crypto.aes_encrypt_file

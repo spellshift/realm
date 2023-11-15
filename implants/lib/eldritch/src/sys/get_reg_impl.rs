@@ -72,7 +72,7 @@ mod tests {
             let ares = get_reg(&binding, "HKEY_CURRENT_USER".to_string(), "SOFTWARE\\TEST1".to_string());
             let val2 : Value<'_> = ares?.get(const_frozen_string!("FOO").to_value())?.unwrap();
             //delete temp regkey
-            nkey.delete_value("Foo")?;
+            hkcu.delete_subkey("SOFTWARE\\TEST1")?;
 
             assert_eq!(val2.unpack_str().unwrap(), "BAR");
     
