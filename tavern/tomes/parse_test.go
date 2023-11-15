@@ -32,5 +32,5 @@ func TestUploadTomes(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, testTomeFiles, 1)
 	assert.Equal(t, "example/linux/test-file", testTomeFiles[0].Name)
-	assert.Equal(t, []byte("This file exists "), testTomeFiles[0].Content)
+	assert.Equal(t, []byte("This file exists"), testTomeFiles[0].Content)
 }

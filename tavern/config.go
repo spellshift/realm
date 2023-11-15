@@ -43,6 +43,9 @@ var (
 	EnvDBMaxIdleConns    = EnvInteger{"DB_MAX_IDLE_CONNS", 10}
 	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
+
+	// EnvEnablePProf enables performance profiling and should not be enabled in production.
+	EnvEnablePProf = EnvString{"ENABLE_PPROF", ""}
 )
 
 // Config holds information that controls the behaviour of Tavern
@@ -97,6 +100,11 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+}
+
+// IsPProfEnabled returns true if performance profiling has been enabled.
+func (cfg *Config) IsPProfEnabled() bool {
+	return EnvEnablePProf.String() != ""
 }
 
 // IsTestDataEnabled returns true if a value for the "ENABLE_TEST_DATA" environment variable is set.

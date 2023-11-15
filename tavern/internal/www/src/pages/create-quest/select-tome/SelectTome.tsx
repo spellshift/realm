@@ -61,7 +61,6 @@ export const SelectTome = (props: Props) => {
                 value={formik?.values?.name}
                 onChange={(event) => handleNameQuest(event?.target?.value)}
             />
-
             <FormRadioGroup
                 label="Select a tome"
                 data={data?.tomes || []}

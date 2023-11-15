@@ -106,7 +106,7 @@ pub fn eldritch_run(tome_filename: String, tome_contents: String, tome_parameter
 
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut input_params: Dict = Dict::new(res);
-    
+
     let parsed: serde_json::Value = match serde_json::from_str(&tome_params_str){
         Ok(local_value) => local_value,
         Err(local_err) => return Err(anyhow::anyhow!("[eldritch] Error decoding tome_params to JSON: {}: {}", local_err.to_string(), tome_params_str)),
@@ -189,14 +189,15 @@ mod tests {
         a.all_true(
             r#"
 dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "list", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
-dir(process) == ["kill", "list", "name"]
+dir(process) == ["info", "kill", "list", "name", "netstat"]
+dir(sys) == ["dll_inject", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell"]
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]
 dir(assets) == ["copy","list","read","read_binary"]
 dir(crypto) == ["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]
 "#,
         );
     }
-    
+
     #[test]
     fn test_library_parameter_input_string() -> anyhow::Result<()>{
         // Create test script
@@ -270,7 +271,7 @@ print("World")
 print("123")
 "#);
         let (sender, receiver) = channel::<String>();
-        
+
         let test_res = thread::spawn(|| { eldritch_run("test.tome".to_string(), test_content, None, &EldritchPrintHandler{ sender }) });
         let _test_val = test_res.join();
         let expected_output = vec!["Hello", "World", "123"];
