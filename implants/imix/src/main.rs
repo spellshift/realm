@@ -235,8 +235,14 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             None
         },
     };
+    
+    let host_id_file = if cfg!(target_os="windows") {
+        "C:\\ProgramData\\system-id"
+    } else {
+        "/etc/system-id"
+    }.to_string();
 
-    let host_id = match get_host_id("/etc/system-id".to_string()) {
+    let host_id = match get_host_id(host_id_file) {
         Ok(tmp_host_id) => tmp_host_id,
         Err(error) => {
             if debug {

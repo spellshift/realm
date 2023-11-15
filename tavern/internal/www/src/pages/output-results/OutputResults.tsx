@@ -1,3 +1,4 @@
+import { FormLabel, Heading, Switch } from "@chakra-ui/react";
 import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import { BeaconFilterBar } from "../../components/beacon-filter-bar";
@@ -13,7 +14,7 @@ import { useOutputResult } from "./useOutputResult";
 
 export const OutputResults = () => {
     const {data: tagData, isLoading: tagDataIsLoading,} = useContext(TagContext);
-    const {loading: formattedOutputLoading, tableData, filteredData, setSearch, setTypeFilters} = useOutputResult();
+    const {loading: formattedOutputLoading, tableData, filteredData, setSearch, setTypeFilters, setShowOnlyMyQuests} = useOutputResult();
     const [isOpen, setOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -38,6 +39,12 @@ export const OutputResults = () => {
                             <SearchOutput setSearch={setSearch} />
                             <div className="flex-1">
                                 <BeaconFilterBar setFiltersSelected={setTypeFilters}  beacons={tagData?.beacons || []} groups={tagData?.groupTags || []} services={tagData?.serviceTags || []}  />
+                            </div>
+                            <div className="gap-1">
+                                <FormLabel htmlFor="onlyMyQuestst">
+                                    <Heading size="sm" >Only my quests</Heading>
+                                </FormLabel>
+                                <Switch id='onlyMyQuests' onChange={()=> setShowOnlyMyQuests((status: boolean)=> !status)} />
                             </div>
                         </div>
                         {filteredData?.length > 0 ?
