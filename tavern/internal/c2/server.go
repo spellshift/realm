@@ -137,38 +137,57 @@ func (srv *Server) ClaimTasks(ctx context.Context, input *c2pb.ClaimTasksRequest
 	return &resp, nil
 }
 func (srv *Server) ReportTaskOutputs(ctx context.Context, input *c2pb.ReportTaskOutputsRequest, opts ...grpc.CallOption) (*c2pb.ReportTaskOutputsResponse, error) {
+	// 1. Prepare Transaction
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
 	}
 	client := tx.Client()
 
-	for _, output := range input.Outputs {
-		t, err := srv.graph.Task.Get(ctx, int(output.Id))
-		if err != nil {
-			return nil, fmt.Errorf("failed to submit task result (id=%d): %w", output.Id, err)
+	// 2. Rollback transaction if we panic
+	defer func() {
+		if v := recover(); v != nil {
+			tx.Rollback()
+			panic(v)
 		}
-		srv.graph.Task.UpdateOneID(int(output.Id)).
-			SetExecStartedAt(output.ExecStartedAt.AsTime())
-			SetOutput(fmt.Sprintf("%s%s", t.Output, input.Output))
+	}()
+
+	for _, output := range input.Outputs {
+		var (
+			execStartedAt  *time.Time
+			execFinishedAt *time.Time
+			taskErr        *string
+		)
+		if output.ExecStartedAt != nil {
+			timestamp := output.ExecStartedAt.AsTime()
+			execStartedAt = &timestamp
+		}
+		if output.ExecFinishedAt != nil {
+			timestamp := output.ExecFinishedAt.AsTime()
+			execFinishedAt = &timestamp
+		}
+		if output.Error != nil {
+			taskErr = &output.Error.Msg
+		}
+
+		t, err := client.Task.Get(ctx, int(output.Id))
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to load task (id=%d): %w", output.Id, err))
+		}
+		if _, err := t.Update().
+			SetOutput(fmt.Sprintf("%s%s", t.Output, output.Output)).
+			SetExecStartedAt(*execStartedAt).
+			SetNillableExecFinishedAt(execFinishedAt).
+			SetNillableError(taskErr).
+			Save(ctx); err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to update task (id=%d): %w", output.Id, err))
+		}
 	}
 
-
-	// 1. Load the task
-	t, err := srv.graph.Task.Get(ctx, input.)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit task result: %w", err)
+	// 3. Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
-	t, err = t.Update().
-		SetExecStartedAt(input.ExecStartedAt).
-		SetOutput(fmt.Sprintf("%s%s", t.Output, input.Output)).
-		SetNillableExecFinishedAt(input.ExecFinishedAt).
-		SetNillableError(input.Error).
-		Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save submitted task result: %w", err)
-	}
-
-	return t, nil
+	return &c2pb.ReportTaskOutputsResponse{}, nil
 }
