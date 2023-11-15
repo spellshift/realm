@@ -1,9 +1,9 @@
 syntax = "proto3";
 // edition = "2023";
 
-package beacon;
+package c2;
 
-option go_package = "github.com/kcarretto/tavern/internal/beacon/beaconpb";
+option go_package = "github.com/kcarretto/tavern/internal/c2/c2pb";
 
 import "google/protobuf/timestamp.proto";
 
@@ -15,7 +15,8 @@ import "google/protobuf/timestamp.proto";
 message Host {
     string identifier = 1;
     string name = 2;
-    string primary_ip = 3;
+    string platform = 3;
+    string primary_ip = 4;
 }
 
 // Agent information to identify the type of beacon.
@@ -78,7 +79,7 @@ message ReportTaskOutputsResponse {}
  * Service
  */
 
-service BeaconService {
+service C2 {
     rpc ClaimTasks(ClaimTasksRequest) returns (ClaimTasksResponse) {}
     rpc ReportTaskOutputs(ReportTaskOutputsRequest) returns (ReportTaskOutputsResponse) {}
 }
