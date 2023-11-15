@@ -1,0 +1,7 @@
+name: cat
+description: Display contents of a file
+paramdefs:
+- name: path
+  type: string
+  label: Absolute file path
+  placeholder: "/etc/passwd"
