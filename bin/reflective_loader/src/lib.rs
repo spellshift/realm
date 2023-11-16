@@ -1,5 +1,5 @@
-#![no_std]
-#![no_main]
+#![cfg_attr(not(test), no_std)]
+#![cfg_attr(not(test), no_main)]
 
 use core::ffi::c_void;
 use windows_sys::Win32::Foundation::HINSTANCE;
@@ -15,6 +15,7 @@ const TRUE: i32 = 1;
 #[export_name = "_fltused"]
 pub static _fltused: i32 = 0;
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! { loop {} }
 
