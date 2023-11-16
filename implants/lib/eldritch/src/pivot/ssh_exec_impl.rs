@@ -2,6 +2,7 @@ use anyhow::Result;
 use starlark::{values::{dict::Dict, Heap}, collections::SmallMap, const_frozen_string};
 
 use super::Session;
+use super::super::insert_dict_kv;
 
 struct SSHExecOutput {
     stdout: String,
@@ -18,7 +19,7 @@ async fn handle_ssh_exec(target: String, port: u16, command: String, username: S
     ssh.close().await?;
 
     Ok(
-        SSHExecOutput { 
+        SSHExecOutput {
             stdout: r.output(),
             status: r.code.unwrap_or(0) as i32,
         }
@@ -26,7 +27,7 @@ async fn handle_ssh_exec(target: String, port: u16, command: String, username: S
 }
 
 pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) -> Result<Dict> {
-    
+
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
@@ -43,11 +44,8 @@ pub fn ssh_exec(starlark_heap: &Heap, target: String, port: i32, command: String
 
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
-    let stdout_value = starlark_heap.alloc_str(&cmd_res.stdout);
-    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed()?, stdout_value.to_value());
-
-    let status_value = starlark_heap.alloc(cmd_res.status);
-    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, status_value);
+    insert_dict_kv!(dict_res, starlark_heap, "stdout", &cmd_res.stdout, String);
+    insert_dict_kv!(dict_res, starlark_heap, "status", cmd_res.status, i32);
 
     Ok(dict_res)
 }
@@ -106,7 +104,7 @@ mod tests {
 
             let command_string: &str;
             let command_args: Vec<&str>;
-        
+
             if cfg!(target_os = "macos") {
                 command_string = "bash";
                 command_args = ["-c", cmd].to_vec();
@@ -136,7 +134,7 @@ mod tests {
         #[allow(unused_variables)]
         async fn auth_password(self, user: &str, password: &str) -> Result<(Self, Auth), Self::Error> {
             Ok((self, Auth::Accept))
-        }    
+        }
 
         async fn data(
             self,
@@ -179,7 +177,7 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         Ok(listener.local_addr().unwrap().port().into())
     }
-    
+
 
     #[tokio::test]
     async fn test_pivot_ssh_exec() -> anyhow::Result<()> {

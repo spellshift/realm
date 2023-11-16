@@ -2,6 +2,7 @@ use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_f
 use anyhow::Result;
 use sysinfo::{System, Pid, SystemExt, ProcessExt, PidExt};
 use std::process::id;
+use super::super::insert_dict_kv;
 
 
 pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict> {
@@ -11,32 +12,102 @@ pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict> {
     let pid = pid.unwrap_or(id() as usize);
     let s = System::new_all();
     if let Some(process) = s.process(Pid::from(pid)) {
-        dict.insert_hashed(const_frozen_string!("pid").to_value().get_hashed()?, starlark_heap.alloc(pid));
-        dict.insert_hashed(const_frozen_string!("name").to_value().get_hashed()?, starlark_heap.alloc_str(process.name()).to_value());
-        dict.insert_hashed(const_frozen_string!("cmd").to_value().get_hashed()?, starlark_heap.alloc(process.cmd()));
-        dict.insert_hashed(const_frozen_string!("exe").to_value().get_hashed()?, starlark_heap.alloc_str(process.exe().display().to_string().as_str()).to_value());
-        dict.insert_hashed(const_frozen_string!("environ").to_value().get_hashed()?, starlark_heap.alloc(process.environ()));
-        dict.insert_hashed(const_frozen_string!("cwd").to_value().get_hashed()?, starlark_heap.alloc_str(process.cwd().display().to_string().as_str()).to_value());
-        dict.insert_hashed(const_frozen_string!("root").to_value().get_hashed()?, starlark_heap.alloc_str(process.root().display().to_string().as_str()).to_value());
-        dict.insert_hashed(const_frozen_string!("memory_usage").to_value().get_hashed()?, starlark_heap.alloc(process.memory()));
-        dict.insert_hashed(const_frozen_string!("virtual_memory_usage").to_value().get_hashed()?, starlark_heap.alloc(process.virtual_memory()));
-        dict.insert_hashed(const_frozen_string!("ppid").to_value().get_hashed()?, process.parent().map_or(Value::new_none(), |pid| starlark_heap.alloc(pid.as_u32())));
-        dict.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, starlark_heap.alloc_str(process.status().to_string().as_str()).to_value());
-        dict.insert_hashed(const_frozen_string!("start_time").to_value().get_hashed()?, starlark_heap.alloc(process.start_time()));
-        dict.insert_hashed(const_frozen_string!("run_time").to_value().get_hashed()?, starlark_heap.alloc(process.run_time()));
-        dict.insert_hashed(const_frozen_string!("gid").to_value().get_hashed()?, process.group_id().map_or(Value::new_none(), |gid| starlark_heap.alloc(*gid)));
-        dict.insert_hashed(const_frozen_string!("egid").to_value().get_hashed()?, process.effective_group_id().map_or(Value::new_none(), |egid| starlark_heap.alloc(*egid)));
+
+        insert_dict_kv!(dict, starlark_heap, "pid", pid, i32);
+        insert_dict_kv!(dict, starlark_heap, "name", process.name(), String);
+        insert_dict_kv!(dict, starlark_heap, "cmd", process.cmd().join(" "), String);
+        insert_dict_kv!(dict, starlark_heap, "exe", process.exe().display().to_string(), String);
+        insert_dict_kv!(dict, starlark_heap, "environ", process.environ().join(","), String);
+        insert_dict_kv!(dict, starlark_heap, "cwd", process.cwd().display().to_string(), String);
+        insert_dict_kv!(dict, starlark_heap, "root", process.root().display().to_string(), String);
+        insert_dict_kv!(dict, starlark_heap, "memory_usage", process.memory(), u64);
+        insert_dict_kv!(dict, starlark_heap, "virtual_memory_usage", process.virtual_memory(), u64);
+        match process.parent() {
+            Some(pid) => {
+                insert_dict_kv!(dict, starlark_heap, "ppid", pid.as_u32(), u32);
+            }
+            None => {
+                insert_dict_kv!(dict, starlark_heap, "ppid", None);
+            }
+        }
+        insert_dict_kv!(dict, starlark_heap, "status", process.status().to_string(), String);
+        insert_dict_kv!(dict, starlark_heap, "start_time", process.start_time(), u64);
+        insert_dict_kv!(dict, starlark_heap, "run_time", process.run_time(), u64);
+        match process.group_id() {
+            Some(gid) => {
+                insert_dict_kv!(dict, starlark_heap, "gid", *gid, u32);
+            }
+            None => {
+                insert_dict_kv!(dict, starlark_heap, "gid", None);
+            }
+        }
+
+        match process.effective_group_id() {
+            Some(egid) => {
+                insert_dict_kv!(dict, starlark_heap, "egid", *egid, u32);
+            }
+            None => {
+                insert_dict_kv!(dict, starlark_heap, "egid", None);
+            }
+        }
+
         #[cfg(not(windows))]
         {
-            dict.insert_hashed(const_frozen_string!("sid").to_value().get_hashed()?, process.session_id().map_or(Value::new_none(), |sid| starlark_heap.alloc(sid.as_u32())));
-            dict.insert_hashed(const_frozen_string!("uid").to_value().get_hashed()?, process.user_id().map_or(Value::new_none(), |uid| starlark_heap.alloc(**uid)));
-            dict.insert_hashed(const_frozen_string!("euid").to_value().get_hashed()?, process.effective_user_id().map_or(Value::new_none(), |euid| starlark_heap.alloc(**euid)));
+            match process.session_id() {
+                Some(sid) => {
+                    insert_dict_kv!(dict, starlark_heap, "sid", sid.as_u32(), u32);
+                }
+                None => {
+                    insert_dict_kv!(dict, starlark_heap, "sid", None);
+                }
+            }
+
+            match process.user_id() {
+                Some(uid) => {
+                    insert_dict_kv!(dict, starlark_heap, "uid", **uid, u32);
+                }
+                None => {
+                    insert_dict_kv!(dict, starlark_heap, "uid", None);
+                }
+            }
+
+            match process.effective_user_id() {
+                Some(euid) => {
+                    insert_dict_kv!(dict, starlark_heap, "euid", **euid, u32);
+                }
+                None => {
+                    insert_dict_kv!(dict, starlark_heap, "euid", None);
+                }
+            }
         }
         #[cfg(windows)]
         {
-            dict.insert_hashed(const_frozen_string!("sid").to_value().get_hashed()?, process.session_id().map_or(Value::new_none(), |sid| starlark_heap.alloc_str(sid.to_string().as_str()).to_value()));
-            dict.insert_hashed(const_frozen_string!("uid").to_value().get_hashed()?, process.user_id().map_or(Value::new_none(), |uid| starlark_heap.alloc_str(uid.to_string().as_str()).to_value()));
-            dict.insert_hashed(const_frozen_string!("euid").to_value().get_hashed()?, process.effective_user_id().map_or(Value::new_none(), |euid| starlark_heap.alloc_str(euid.to_string().as_str()).to_value()));
+            match process.session_id() {
+                Some(sid) => {
+                    insert_dict_kv!(dict, starlark_heap, "sid", sid.to_string(), String);
+                }
+                None => {
+                    insert_dict_kv!(dict, starlark_heap, "sid", None);
+                }
+            }
+
+            match process.user_id() {
+                Some(uid) => {
+                    insert_dict_kv!(dict, starlark_heap, "uid", uid.to_string(), String);
+                }
+                None => {
+                    insert_dict_kv!(dict, starlark_heap, "uid", None);
+                }
+            }
+
+            match process.effective_user_id() {
+                Some(euid) => {
+                    insert_dict_kv!(dict, starlark_heap, "euid", euid.to_string(), String);
+                }
+                None => {
+                    insert_dict_kv!(dict, starlark_heap, "euid", None);
+                }
+            }
         }
     }
     Ok(dict)
@@ -45,7 +116,7 @@ pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starlark::values::{Heap, Value};
+    use starlark::values::Heap;
     use anyhow::{anyhow, Result};
     use std::process::id;
 

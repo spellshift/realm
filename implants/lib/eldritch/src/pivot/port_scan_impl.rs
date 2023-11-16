@@ -9,6 +9,7 @@ use tokio::task;
 use tokio::time::{Duration,sleep};
 use tokio::net::{TcpStream, UdpSocket};
 use async_recursion::async_recursion;
+use super::super::insert_dict_kv;
 
 macro_rules! scanf {
     ( $string:expr, $sep:expr, $( $x:ty ),+ ) => {{
@@ -358,16 +359,11 @@ pub fn port_scan(starlark_heap: &Heap, target_cidrs: Vec<String>, ports: Vec<i32
                 // Create Dict type.
                 let mut tmp_res = Dict::new(res);
 
-                let tmp_value1 = starlark_heap.alloc_str(row.0.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("ip").to_value().get_hashed()?, tmp_value1.to_value());
+                insert_dict_kv!(tmp_res, starlark_heap, "ip", row.0.as_str(), String);
+                insert_dict_kv!(tmp_res, starlark_heap, "port", row.1, i32);
+                insert_dict_kv!(tmp_res, starlark_heap, "protocol", row.2.as_str(), String);
+                insert_dict_kv!(tmp_res, starlark_heap, "status", row.3.as_str(), String);
 
-                tmp_res.insert_hashed(const_frozen_string!("port").to_value().get_hashed()?, starlark_heap.alloc(row.1));
-
-                let tmp_value2 = starlark_heap.alloc_str(row.2.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("protocol").to_value().get_hashed()?, tmp_value2.to_value());
-
-                let tmp_value3 = starlark_heap.alloc_str(row.3.as_str());
-                tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, tmp_value3.to_value());
                 final_res.push(tmp_res);
             }
 
@@ -490,7 +486,7 @@ mod tests {
         );
 
         let mut listen_task_iter = listen_tasks.into_iter();
-        
+
         // Run both
         let (_a, _b, _c, actual_response) =
             tokio::join!(
@@ -639,4 +635,3 @@ res
     }
 
 }
-

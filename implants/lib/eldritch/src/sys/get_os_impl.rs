@@ -3,6 +3,7 @@ use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
 use starlark::values::Heap;
 use starlark::values::dict::Dict;
+use super::super::insert_dict_kv;
 
 #[derive(Debug)]
 struct OsInfo {
@@ -18,23 +19,16 @@ pub fn get_os(starlark_heap: &Heap) -> Result<Dict> {
 
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
-    let arch_value = starlark_heap.alloc_str(&cmd_res.arch);
-    dict_res.insert_hashed(const_frozen_string!("arch").to_value().get_hashed()?, arch_value.to_value());
-
-    let desktop_env_value = starlark_heap.alloc_str(&cmd_res.desktop_env);
-    dict_res.insert_hashed(const_frozen_string!("desktop_env").to_value().get_hashed()?, desktop_env_value.to_value());
-
-    let distro = starlark_heap.alloc_str(&cmd_res.distro);
-    dict_res.insert_hashed(const_frozen_string!("distro").to_value().get_hashed()?, distro.to_value());
-
-    let platform = starlark_heap.alloc_str(&cmd_res.platform);
-    dict_res.insert_hashed(const_frozen_string!("platform").to_value().get_hashed()?, platform.to_value());
+    insert_dict_kv!(dict_res, starlark_heap, "arch", &cmd_res.arch, String);
+    insert_dict_kv!(dict_res, starlark_heap, "desktop_env", &cmd_res.desktop_env, String);
+    insert_dict_kv!(dict_res, starlark_heap, "distro", &cmd_res.distro, String);
+    insert_dict_kv!(dict_res, starlark_heap, "platform", &cmd_res.platform, String);
 
     Ok(dict_res)
 }
 
 fn handle_get_os() -> Result<OsInfo> {
-    return Ok(OsInfo { 
+    return Ok(OsInfo {
         arch:           whoami::arch().to_string(),
         desktop_env:    whoami::desktop_env().to_string(),
         distro:         whoami::distro().to_string(),

@@ -18,6 +18,7 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
+use super::super::insert_dict_kv;
 
 #[cfg(not(target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq)]
@@ -236,21 +237,10 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
         if let Some(res) = res {
             let hit_small_map = SmallMap::new();
             let mut hit_dict = Dict::new(hit_small_map);
-            let ipaddr_value = starlark_heap.alloc_str(&ipaddr.to_string());
-            let source_mac_value = starlark_heap.alloc_str(&res.source_mac.to_string());
-            let interface_value = starlark_heap.alloc_str(&res.interface.to_string());
-            hit_dict.insert_hashed(
-                const_frozen_string!("ip").to_value().get_hashed()?,
-                ipaddr_value.to_value(),
-            );
-            hit_dict.insert_hashed(
-                const_frozen_string!("mac").to_value().get_hashed()?,
-                source_mac_value.to_value(),
-            );
-            hit_dict.insert_hashed(
-                const_frozen_string!("interface").to_value().get_hashed()?,
-                interface_value.to_value(),
-            );
+
+            insert_dict_kv!(hit_dict, starlark_heap, "ip", &ipaddr.to_string(), String);
+            insert_dict_kv!(hit_dict, starlark_heap, "mac", &res.source_mac.to_string(), String);
+            insert_dict_kv!(hit_dict, starlark_heap, "interface", &res.interface.to_string(), String);
             out.push(hit_dict);
         }
     }

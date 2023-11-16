@@ -12,6 +12,8 @@ use std::os::linux::fs::MetadataExt;
 use std::os::windows::fs::MetadataExt;
 use chrono::{Utc, DateTime, NaiveDateTime};
 use super::{File, FileType};
+use super::super::insert_dict_kv;
+
 
 const UNKNOWN: &str = "UNKNOWN";
 
@@ -102,7 +104,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
         None => return Err(anyhow::anyhow!("Failed to get time from timestamp for file {}", file_name)),
     };
     let time_modified: DateTime<Utc> = DateTime::from_utc(naive_datetime, Utc);
-    
+
     Ok(File {
         name: file_name,
         file_type: file_type,
@@ -126,30 +128,17 @@ fn handle_list(path: String) -> Result<Vec<File>> {
 
 fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict>{
     let res: SmallMap<Value, Value> = SmallMap::new();
-    let mut tmp_res = Dict::new(res);
+    let mut dict_res = Dict::new(res);
 
-    let tmp_value1 = starlark_heap.alloc_str(&file.name);
-    tmp_res.insert_hashed(const_frozen_string!("file_name").to_value().get_hashed()?, tmp_value1.to_value());
+    insert_dict_kv!(dict_res, starlark_heap, "file_name", &file.name, String);
+    insert_dict_kv!(dict_res, starlark_heap, "size", file.size, u64);
+    insert_dict_kv!(dict_res, starlark_heap, "owner", &file.owner, String);
+    insert_dict_kv!(dict_res, starlark_heap, "group", &file.group, String);
+    insert_dict_kv!(dict_res, starlark_heap, "permissions", &file.permissions, String);
+    insert_dict_kv!(dict_res, starlark_heap, "modified", &file.time_modified, String);
+    insert_dict_kv!(dict_res, starlark_heap, "type", &file.file_type.to_string(), String);
 
-    let file_size = file.size as i32;
-    tmp_res.insert_hashed(const_frozen_string!("size").to_value().get_hashed()?, starlark_heap.alloc(file_size));
-
-    let tmp_value2 = starlark_heap.alloc_str(&file.owner);
-    tmp_res.insert_hashed(const_frozen_string!("owner").to_value().get_hashed()?, tmp_value2.to_value());
-
-    let tmp_value3 = starlark_heap.alloc_str(&file.group);
-    tmp_res.insert_hashed(const_frozen_string!("group").to_value().get_hashed()?, tmp_value3.to_value());
-
-    let tmp_value4 = starlark_heap.alloc_str(&file.permissions);
-    tmp_res.insert_hashed(const_frozen_string!("permissions").to_value().get_hashed()?, tmp_value4.to_value());
-
-    let tmp_value5 = starlark_heap.alloc_str(&file.time_modified);
-    tmp_res.insert_hashed(const_frozen_string!("modified").to_value().get_hashed()?, tmp_value5.to_value());
-
-    let tmp_value6 = starlark_heap.alloc_str(&file.file_type.to_string());
-    tmp_res.insert_hashed(const_frozen_string!("type").to_value().get_hashed()?, tmp_value6.to_value());
-
-    Ok(tmp_res)
+    Ok(dict_res)
 }
 
 pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
