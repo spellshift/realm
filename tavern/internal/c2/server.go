@@ -11,7 +11,6 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/task"
-	"google.golang.org/grpc"
 )
 
 type Server struct {
@@ -19,25 +18,47 @@ type Server struct {
 	c2pb.UnimplementedC2Server
 }
 
-func (srv *Server) ClaimTasks(ctx context.Context, input *c2pb.ClaimTasksRequest, opts ...grpc.CallOption) (*c2pb.ClaimTasksResponse, error) {
+func New(graph *ent.Client) *Server {
+	return &Server{
+		graph: graph,
+	}
+}
+
+func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) (*c2pb.ClaimTasksResponse, error) {
 	now := time.Now()
 
-	if input.Beacon == nil {
+	// Validate input
+	if req.Beacon == nil {
 		return nil, fmt.Errorf("must provide beacon info")
 	}
-	if input.Beacon.Host == nil {
+	if req.Beacon.Principal == "" {
+		return nil, fmt.Errorf("must provide beacon principal")
+	}
+	if req.Beacon.Host == nil {
 		return nil, fmt.Errorf("must provide beacon host info")
 	}
-	if input.Beacon.Agent == nil {
+	if req.Beacon.Host.Identifier == "" {
+		return nil, fmt.Errorf("must provide host identifier")
+	}
+	if req.Beacon.Host.Name == "" {
+		return nil, fmt.Errorf("must provide host name")
+	}
+	if req.Beacon.Host.Platform == "" {
+		return nil, fmt.Errorf("must provide host platform")
+	}
+	if req.Beacon.Agent == nil {
 		return nil, fmt.Errorf("must provide beacon agent info")
+	}
+	if req.Beacon.Agent.Identifier == "" {
+		return nil, fmt.Errorf("must provide agent identifier")
 	}
 
 	// 1. Upsert the host
 	hostID, err := srv.graph.Host.Create().
-		SetIdentifier(input.Beacon.Host.Identifier).
-		SetName(input.Beacon.Host.Name).
-		SetPlatform(host.Platform(input.Beacon.Host.Platform)).
-		SetPrimaryIP(input.Beacon.Host.PrimaryIp).
+		SetIdentifier(req.Beacon.Host.Identifier).
+		SetName(req.Beacon.Host.Name).
+		SetPlatform(host.Platform(req.Beacon.Host.Platform)).
+		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
 		SetLastSeenAt(now).
 		OnConflict().
 		UpdateNewValues().
@@ -48,9 +69,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, input *c2pb.ClaimTasksRequest
 
 	// 2. Upsert the beacon
 	beaconID, err := srv.graph.Beacon.Create().
-		SetPrincipal(input.Beacon.Principal).
-		SetIdentifier(input.Beacon.Identifier).
-		SetAgentIdentifier(input.Beacon.Agent.Identifier).
+		SetPrincipal(req.Beacon.Principal).
+		SetIdentifier(req.Beacon.Identifier).
+		SetAgentIdentifier(req.Beacon.Agent.Identifier).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
 		OnConflict().
@@ -110,20 +131,20 @@ func (srv *Server) ClaimTasks(ctx context.Context, input *c2pb.ClaimTasksRequest
 	for _, taskID := range taskIDs {
 		claimedTask, err := srv.graph.Task.Get(ctx, taskID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load claimed task (but it was still claimed) %d: %w", taskID, err)
+			return nil, rollback(tx, fmt.Errorf("failed to load claimed task (but it was still claimed) %d: %w", taskID, err))
 		}
 		claimedQuest, err := claimedTask.QueryQuest().Only(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load tome information for claimed task (id=%d): %w", taskID, err)
+			return nil, rollback(tx, fmt.Errorf("failed to load tome information for claimed task (id=%d): %w", taskID, err))
 		}
 		claimedTome, err := claimedQuest.QueryTome().Only(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load tome information for claimed task (id=%d): %w", taskID, err)
+			return nil, rollback(tx, fmt.Errorf("failed to load tome information for claimed task (id=%d): %w", taskID, err))
 		}
 		var params map[string]string
 		if claimedQuest.Parameters != "" {
 			if err := json.Unmarshal([]byte(claimedQuest.Parameters), &params); err != nil {
-				return nil, fmt.Errorf("failed to parse task parameters (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err)
+				return nil, rollback(tx, fmt.Errorf("failed to parse task parameters (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err))
 			}
 		}
 		resp.Tasks = append(resp.Tasks, &c2pb.Task{
@@ -136,7 +157,8 @@ func (srv *Server) ClaimTasks(ctx context.Context, input *c2pb.ClaimTasksRequest
 	// 9. Return claimed tasks
 	return &resp, nil
 }
-func (srv *Server) ReportTaskOutputs(ctx context.Context, input *c2pb.ReportTaskOutputsRequest, opts ...grpc.CallOption) (*c2pb.ReportTaskOutputsResponse, error) {
+
+func (srv *Server) ReportTaskOutputs(ctx context.Context, req *c2pb.ReportTaskOutputsRequest) (*c2pb.ReportTaskOutputsResponse, error) {
 	// 1. Prepare Transaction
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
@@ -152,7 +174,7 @@ func (srv *Server) ReportTaskOutputs(ctx context.Context, input *c2pb.ReportTask
 		}
 	}()
 
-	for _, output := range input.Outputs {
+	for _, output := range req.Outputs {
 		var (
 			execStartedAt  *time.Time
 			execFinishedAt *time.Time

@@ -10,10 +10,14 @@ import (
 	"net/http"
 	pprof "net/http/pprof"
 	"os"
+	"strings"
 
 	"entgo.io/contrib/entgql"
+	"github.com/kcarretto/realm/tavern/internal/c2"
+	"github.com/kcarretto/realm/tavern/internal/c2/c2pb"
 	"github.com/kcarretto/realm/tavern/internal/graphql"
 	"github.com/kcarretto/realm/tavern/tomes"
+	"google.golang.org/grpc"
 
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -127,6 +131,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			"https://www.googleapis.com/oauth2/v3/userinfo",
 		)},
 		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client)},
+		"/grpc":       tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
 		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
 		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
 		"/": tavernhttp.Endpoint{
@@ -196,6 +201,23 @@ func newGraphQLHandler(client *ent.Client) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		srv.ServeHTTP(w, req)
+	})
+}
+
+func newGRPCHandler(client *ent.Client) http.HandlerFunc {
+	c2srv := c2.New(client)
+	grpcSrv := grpc.NewServer()
+	c2pb.RegisterC2Server(grpcSrv, c2srv)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor != 2 {
+			http.Error(w, "must use HTTP/2", http.StatusBadRequest)
+		}
+
+		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
+			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
+		}
+
+		grpcSrv.ServeHTTP(w, r)
 	})
 }
 

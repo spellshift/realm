@@ -1,0 +1,52 @@
+requests:
+  - method: ClaimTasks
+    expected_error: must provide beacon info
+    request:
+  - method: "ClaimTasks"
+    expected_error: must provide beacon principal
+    request:
+      beacon:
+        agent:
+          identifier: test-case
+  - method: "ClaimTasks"
+    expected_error: must provide beacon host info
+    request:
+      beacon:
+        principal: root
+        agent:
+          identifier: test-case
+  - method: "ClaimTasks"
+    expected_error: must provide host name
+    request:
+      beacon:
+        principal: root
+        host:
+          identifier: test-host
+  - method: "ClaimTasks"
+    expected_error: must provide host platform
+    request:
+      beacon:
+        principal: root
+        host:
+          identifier: "0123456789"
+          name: test-host
+  - method: "ClaimTasks"
+    expected_error: must provide beacon agent info
+    request:
+      beacon:
+        principal: root
+        host:
+          identifier: "0123456789"
+          name: test-host
+          platform: Linux
+  - method: "ClaimTasks"
+    expected_error: must provide agent identifier
+    request:
+      beacon:
+        principal: root
+        host:
+          identifier: "0123456789"
+          name: test-host
+          platform: Linux
+        agent:
+          non: sense

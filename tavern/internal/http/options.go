@@ -47,38 +47,3 @@ func WithRequestLogging(logger *log.Logger) Option {
 		server.Logger = defaultRequestLogger{logger}
 	})
 }
-
-/*
-
-endpoints := tavernhttp.RouteMap{
-	"/": tavernhttp.NewEndpoint(
-			NewUIHandler(),
-			tavernhttp.WithLogging("[HTTP][UI]"),
-			tavernhttp.WithAuthenticationCookie(graph),
-			tavernhttp.WithLoginRedirect(),
-		),
-	"/graphql": tavernhttp.NewEndpoint(
-			NewGraphQLHandler(),
-			tavernhttp.WithLogging("[HTTP][GraphQL]"),
-			tavernhttp.WithAuthenticationCookie(graph),
-		),
-	"/grpc": tavernhttp.NewEndpoint(
-			NewGRPCHandler(),
-			tavernhttp.WithLogging("[HTTP][gRPC]"),
-		),
-	"/oauth/login": tavernhttp.NewEndpoint(
-			auth.NewOAuthLoginHandler(cfg.oauth, privKey),
-		),
-	"/oauth/authorize": tavernhttp.NewEndpoint(
-			auth.NewOAuthAuthorizationHandler(
-				cfg.oauth,
-				pubKey,
-				client,
-				"https://www.googleapis.com/oauth2/v3/userinfo",
-			),
-		),
-	),
-}
-endpoints.Register(router)
-
-*/
