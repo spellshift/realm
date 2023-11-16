@@ -210,11 +210,13 @@ func newGRPCHandler(client *ent.Client) http.HandlerFunc {
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor != 2 {
-			http.Error(w, "must use HTTP/2", http.StatusBadRequest)
+			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
+			return
 		}
 
 		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
 			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
+			return
 		}
 
 		grpcSrv.ServeHTTP(w, r)
