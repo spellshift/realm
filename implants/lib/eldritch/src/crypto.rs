@@ -53,6 +53,7 @@ impl<'v> UnpackValue<'v> for CryptoLibrary {
 
 // This is where all of the "crypto.X" impl methods are bound
 #[starlark_module]
+#[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
     fn aes_encrypt_file<'v>(this: CryptoLibrary, src: String, dst: String, key: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

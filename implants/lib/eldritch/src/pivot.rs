@@ -61,6 +61,7 @@ impl<'v> UnpackValue<'v> for PivotLibrary {
 
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
+#[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
     fn ssh_exec<'v>(this: PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -78,7 +79,7 @@ fn methods(builder: &mut MethodsBuilder) {
     fn smb_exec(this:  PivotLibrary, target: String, port: i32, username: String, password: String, hash: String, command: String) ->  anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         smb_exec_impl::smb_exec(target, port, username, password, hash, command)
-    }     
+    }
     // May want these too: PSRemoting, WMI, WinRM
     fn port_scan<'v>(this:  PivotLibrary, starlark_heap: &'v Heap, target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

@@ -51,6 +51,7 @@ impl<'v> UnpackValue<'v> for ProcessLibrary {
 
 // This is where all of the "process.X" impl methods are bound
 #[starlark_module]
+#[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
     fn kill(this: ProcessLibrary, pid: i32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

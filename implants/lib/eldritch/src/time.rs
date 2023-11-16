@@ -47,6 +47,7 @@ impl<'v> UnpackValue<'v> for TimeLibrary {
 
 // This is where all of the "Time.X" impl methods are bound
 #[starlark_module]
+#[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
     fn sleep<'v>(this: TimeLibrary, secs: f64) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

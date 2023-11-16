@@ -85,6 +85,7 @@ struct File {
 
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
+#[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
     fn append(this: FileLibrary, path: String, content: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

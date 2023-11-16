@@ -66,6 +66,7 @@ impl<'v> UnpackValue<'v> for SysLibrary {
 
 // This is where all of the "sys.X" impl methods are bound
 #[starlark_module]
+#[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
     fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -96,12 +97,7 @@ fn methods(builder: &mut MethodsBuilder) {
         get_pid_impl::get_pid(starlark_heap)
     }
     fn get_user<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
-        if false {
-            println!(
-                "Ignore unused this var. _this isn't allowed by starlark. {:?}",
-                this
-            );
-        }
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         get_user_impl::get_user(starlark_heap)
     }
     fn hostname(this: SysLibrary) -> anyhow::Result<String> {
