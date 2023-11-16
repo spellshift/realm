@@ -10,6 +10,7 @@ mod is_windows_impl;
 mod is_macos_impl;
 mod shell_impl;
 mod dll_inject_impl;
+mod dll_reflect_impl;
 mod get_reg_impl;
 
 use allocative::Allocative;
@@ -77,6 +78,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn dll_inject(this: SysLibrary, dll_path: String, pid: u32) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         dll_inject_impl::dll_inject(dll_path, pid)
+    }
+    fn dll_reflect(this: SysLibrary, dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        dll_reflect_impl::dll_reflect(dll_bytes, pid, function_name)
     }
     fn get_env<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
