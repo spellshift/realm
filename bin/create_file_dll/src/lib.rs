@@ -24,6 +24,7 @@ extern "system" fn DllMain(
     minwindef::TRUE
 }
 
+#[no_mangle]
 pub fn demo_init() {
     unsafe { consoleapi::AllocConsole() };
     for (key, value) in env::vars_os() {

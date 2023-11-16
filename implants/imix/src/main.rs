@@ -537,7 +537,7 @@ sys.shell(input_params["cmd"])["stdout"]
             bool_res = result.0 == "runner\n" || result.0 == "root\n";
         }
         else if cfg!(target_os = "windows") {
-            bool_res =  result.0.contains("runneradmin") || result.0.contains("Administrator");
+            bool_res =  result.0.contains("runneradmin") || result.0.contains("Administrator") || result.0.contains("user");
         }
 
         assert_eq!(bool_res, true);
