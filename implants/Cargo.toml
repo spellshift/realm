@@ -5,6 +5,7 @@ members = [
     "lib/eldritch",
     "lib/c2",
 ]
+resolver = "2"
 
 [workspace.dependencies]
 aes = "0.8.3"
