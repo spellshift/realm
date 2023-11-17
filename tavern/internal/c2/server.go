@@ -43,21 +43,19 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if req.Beacon.Host.Name == "" {
 		return nil, fmt.Errorf("must provide host name")
 	}
-	if req.Beacon.Host.Platform == "" {
-		return nil, fmt.Errorf("must provide host platform")
-	}
 	if req.Beacon.Agent == nil {
 		return nil, fmt.Errorf("must provide beacon agent info")
 	}
 	if req.Beacon.Agent.Identifier == "" {
 		return nil, fmt.Errorf("must provide agent identifier")
 	}
+	hostPlaform := convertHostPlatform(req.Beacon.Host.Platform)
 
 	// 1. Upsert the host
 	hostID, err := srv.graph.Host.Create().
 		SetIdentifier(req.Beacon.Host.Identifier).
 		SetName(req.Beacon.Host.Name).
-		SetPlatform(host.Platform(req.Beacon.Host.Platform)).
+		SetPlatform(hostPlaform).
 		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
 		SetLastSeenAt(now).
 		OnConflict().
@@ -158,58 +156,56 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	return &resp, nil
 }
 
-func (srv *Server) ReportTaskOutputs(ctx context.Context, req *c2pb.ReportTaskOutputsRequest) (*c2pb.ReportTaskOutputsResponse, error) {
-	// 1. Prepare Transaction
-	tx, err := srv.graph.Tx(ctx)
+func (srv *Server) ReportTaskOutput(ctx context.Context, req *c2pb.ReportTaskOutputRequest) (*c2pb.ReportTaskOutputResponse, error) {
+	// 1. Parse Input
+	var (
+		execStartedAt  *time.Time
+		execFinishedAt *time.Time
+		taskErr        *string
+	)
+	if req.Output.ExecStartedAt != nil {
+		timestamp := req.Output.ExecStartedAt.AsTime()
+		execStartedAt = &timestamp
+	}
+	if req.Output.ExecFinishedAt != nil {
+		timestamp := req.Output.ExecFinishedAt.AsTime()
+		execFinishedAt = &timestamp
+	}
+	if req.Output.Error != nil {
+		taskErr = &req.Output.Error.Msg
+	}
+
+	// 2. Load the task
+	t, err := srv.graph.Task.Get(ctx, int(req.Output.Id))
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
-	}
-	client := tx.Client()
-
-	// 2. Rollback transaction if we panic
-	defer func() {
-		if v := recover(); v != nil {
-			tx.Rollback()
-			panic(v)
-		}
-	}()
-
-	for _, output := range req.Outputs {
-		var (
-			execStartedAt  *time.Time
-			execFinishedAt *time.Time
-			taskErr        *string
-		)
-		if output.ExecStartedAt != nil {
-			timestamp := output.ExecStartedAt.AsTime()
-			execStartedAt = &timestamp
-		}
-		if output.ExecFinishedAt != nil {
-			timestamp := output.ExecFinishedAt.AsTime()
-			execFinishedAt = &timestamp
-		}
-		if output.Error != nil {
-			taskErr = &output.Error.Msg
-		}
-
-		t, err := client.Task.Get(ctx, int(output.Id))
-		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to load task (id=%d): %w", output.Id, err))
-		}
-		if _, err := t.Update().
-			SetOutput(fmt.Sprintf("%s%s", t.Output, output.Output)).
-			SetExecStartedAt(*execStartedAt).
-			SetNillableExecFinishedAt(execFinishedAt).
-			SetNillableError(taskErr).
-			Save(ctx); err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to update task (id=%d): %w", output.Id, err))
-		}
+		return nil, fmt.Errorf("failed to submit task result (id=%d): %w", req.Output.Id, err)
 	}
 
-	// 3. Commit the transaction
-	if err := tx.Commit(); err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+	// 3. Update task info
+	_, err = t.Update().
+		SetNillableExecStartedAt(execStartedAt).
+		SetOutput(fmt.Sprintf("%s%s", t.Output, req.Output.Output)).
+		SetNillableExecFinishedAt(execFinishedAt).
+		SetNillableError(taskErr).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save submitted task result (id=%d): %w", t.ID, err)
 	}
 
-	return &c2pb.ReportTaskOutputsResponse{}, nil
+	return &c2pb.ReportTaskOutputResponse{}, nil
+}
+
+func convertHostPlatform(platform c2pb.Host_Platform) host.Platform {
+	switch platform {
+	case c2pb.Host_PLATFORM_WINDOWS:
+		return host.PlatformWindows
+	case c2pb.Host_PLATFORM_LINUX:
+		return host.PlatformLinux
+	case c2pb.Host_PLATFORM_MACOS:
+		return host.PlatformMacOS
+	case c2pb.Host_PLATFORM_BSD:
+		return host.PlatformBSD
+	}
+
+	return host.PlatformUnknown
 }

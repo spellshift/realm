@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type C2Client interface {
 	ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts ...grpc.CallOption) (*ClaimTasksResponse, error)
-	ReportTaskOutputs(ctx context.Context, in *ReportTaskOutputsRequest, opts ...grpc.CallOption) (*ReportTaskOutputsResponse, error)
+	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
 }
 
 type c2Client struct {
@@ -43,9 +43,9 @@ func (c *c2Client) ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts .
 	return out, nil
 }
 
-func (c *c2Client) ReportTaskOutputs(ctx context.Context, in *ReportTaskOutputsRequest, opts ...grpc.CallOption) (*ReportTaskOutputsResponse, error) {
-	out := new(ReportTaskOutputsResponse)
-	err := c.cc.Invoke(ctx, "/c2.C2/ReportTaskOutputs", in, out, opts...)
+func (c *c2Client) ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error) {
+	out := new(ReportTaskOutputResponse)
+	err := c.cc.Invoke(ctx, "/c2.C2/ReportTaskOutput", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (c *c2Client) ReportTaskOutputs(ctx context.Context, in *ReportTaskOutputsR
 // for forward compatibility
 type C2Server interface {
 	ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error)
-	ReportTaskOutputs(context.Context, *ReportTaskOutputsRequest) (*ReportTaskOutputsResponse, error)
+	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
 	mustEmbedUnimplementedC2Server()
 }
 
@@ -68,8 +68,8 @@ type UnimplementedC2Server struct {
 func (UnimplementedC2Server) ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimTasks not implemented")
 }
-func (UnimplementedC2Server) ReportTaskOutputs(context.Context, *ReportTaskOutputsRequest) (*ReportTaskOutputsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutputs not implemented")
+func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutput not implemented")
 }
 func (UnimplementedC2Server) mustEmbedUnimplementedC2Server() {}
 
@@ -102,20 +102,20 @@ func _C2_ClaimTasks_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _C2_ReportTaskOutputs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportTaskOutputsRequest)
+func _C2_ReportTaskOutput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportTaskOutputRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(C2Server).ReportTaskOutputs(ctx, in)
+		return srv.(C2Server).ReportTaskOutput(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/c2.C2/ReportTaskOutputs",
+		FullMethod: "/c2.C2/ReportTaskOutput",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(C2Server).ReportTaskOutputs(ctx, req.(*ReportTaskOutputsRequest))
+		return srv.(C2Server).ReportTaskOutput(ctx, req.(*ReportTaskOutputRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -132,8 +132,8 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _C2_ClaimTasks_Handler,
 		},
 		{
-			MethodName: "ReportTaskOutputs",
-			Handler:    _C2_ReportTaskOutputs_Handler,
+			MethodName: "ReportTaskOutput",
+			Handler:    _C2_ReportTaskOutput_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

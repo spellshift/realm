@@ -10,12 +10,15 @@ clap = { workspace = true }
 default-net = { workspace = true }
 eldritch = { workspace = true }
 openssl = { workspace = true, features = ["vendored"] }
+prost-types = { workspace = true }
 rand = {workspace = true}
 reqwest = { workspace = true, features = ["blocking", "stream", "json"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = {workspace = true}
 sys-info = { workspace = true }
 tavern = { workspace = true }
+c2 = { workspace = true }
+tonic = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["v4","fast-rng"] }
 whoami = { workspace = true }

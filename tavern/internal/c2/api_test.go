@@ -92,10 +92,10 @@ func runTestCase(t *testing.T, path string) {
 				resultJSON, err := json.Marshal(result)
 				require.NoError(t, err, "failed to marshal result to json")
 				assert.Equal(t, string(expectedJSON), string(resultJSON), "response does not match expected result")
-			case "ReportTaskOutputs":
-				req := c2pb.ReportTaskOutputsRequest{}
+			case "ReportTaskOutput":
+				req := c2pb.ReportTaskOutputRequest{}
 				require.NoError(t, json.Unmarshal(requestJSON, &req))
-				_, resultErr := srv.ReportTaskOutputs(context.Background(), &req)
+				_, resultErr := srv.ReportTaskOutput(context.Background(), &req)
 				if tr.ExpectedError != "" {
 					assert.ErrorContains(t, resultErr, tr.ExpectedError)
 					return

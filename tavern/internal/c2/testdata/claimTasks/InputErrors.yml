@@ -23,14 +23,6 @@ requests:
         host:
           identifier: test-host
   - method: "ClaimTasks"
-    expected_error: must provide host platform
-    request:
-      beacon:
-        principal: root
-        host:
-          identifier: "0123456789"
-          name: test-host
-  - method: "ClaimTasks"
     expected_error: must provide beacon agent info
     request:
       beacon:
@@ -38,7 +30,7 @@ requests:
         host:
           identifier: "0123456789"
           name: test-host
-          platform: Linux
+          platform: 1
   - method: "ClaimTasks"
     expected_error: must provide agent identifier
     request:
@@ -47,6 +39,6 @@ requests:
         host:
           identifier: "0123456789"
           name: test-host
-          platform: Linux
+          platform: 1
         agent:
           non: sense

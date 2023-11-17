@@ -4,6 +4,7 @@ members = [
     "golem",
     "lib/eldritch",
     "lib/tavern",
+    "lib/c2",
 ]
 
 [workspace.dependencies]
@@ -36,6 +37,7 @@ nix = "0.26.1"
 openssl = "0.10.55"
 pnet = "0.34.0"
 predicates = "2.1"
+prost-types = "0.12"
 rand = "0.8.5"
 regex = "1.5.5"
 reqwest = "0.11.18"
@@ -55,12 +57,14 @@ sys-info = "0.9.1"
 sysinfo = "0.29.7"
 tar = "0.4.38"
 tavern = { path = "./lib/tavern" }
+c2 = { path = "./lib/c2" }
 tempfile = "3.3.0"
 tera = "1.17.1"
 thiserror = "1.0.30"
 tokio = "1.19.1"
 tokio-stream = "0.1.9"
 tokio-test = "*"
+tonic = "0.10"
 uuid = "1.3.0"
 whoami = "1.3.0"
 windows-sys = "0.45.0"

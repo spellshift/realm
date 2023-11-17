@@ -7,7 +7,7 @@ requests:
         host:
           identifier: "01234567"
           name: test-host
-          platform: Linux
+          platform: 1
         agent:
           identifier: test-case
     expected: {}
