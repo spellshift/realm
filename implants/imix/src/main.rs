@@ -15,6 +15,7 @@ use std::time::Instant;
 use std::{collections::HashMap, fs};
 use sys_info::{linux_os_release, os_release};
 // use tavern::{ClaimTasksInput, HostPlatform, SubmitTaskResultInput, Task};
+use hyper::client;
 use tokio::task::{self, JoinHandle};
 use tokio::time::Duration;
 use uuid::Uuid;
@@ -194,7 +195,7 @@ fn get_os_pretty_name() -> Result<String> {
 
 // Async handler for port scanning.
 async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
-    let debug = false;
+    let debug = true;
     let mut loop_count: i32 = 0;
     let version_string = "v0.1.0";
     let auth_token = "letmeinnn";
@@ -302,9 +303,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         // 1a) calculate callback uri
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
 
-        // let tavern_client = C2Client::connect(&cur_callback_uri).await?;
-        // let tavern_client = tavern::http::new_client(&cur_callback_uri, auth_token)?;
-        let mut tavern_client = C2Client::connect(cur_callback_uri).await?;
+        let mut tavern_client = C2Client::connect(cur_callback_uri.clone()).await?;
 
         if debug {
             println!(

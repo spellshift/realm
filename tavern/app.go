@@ -29,6 +29,8 @@ import (
 	tavernhttp "github.com/kcarretto/realm/tavern/internal/http"
 	"github.com/kcarretto/realm/tavern/internal/www"
 	"github.com/urfave/cli"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
@@ -131,7 +133,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			"https://www.googleapis.com/oauth2/v3/userinfo",
 		)},
 		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client)},
-		"/grpc":       tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
+		"/c2.C2/":     tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
+		"/grpc/":      tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
 		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
 		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
 		"/": tavernhttp.Endpoint{
@@ -157,15 +160,23 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		tavernhttp.WithRequestLogging(httpLogger),
 	)
 
+	// Configure HTTP/2 (support for without TLS)
+	handler := h2c.NewHandler(srv, &http2.Server{})
+
 	// Initialize HTTP Server
 	if cfg.srv == nil {
 		cfg.srv = &http.Server{
 			Addr:    "0.0.0.0:80",
-			Handler: srv,
+			Handler: handler,
 		}
 	} else {
-		cfg.srv.Handler = srv
+		cfg.srv.Handler = handler
 	}
+
+	// Enable HTTP/2
+	// if err := http2.ConfigureServer(cfg.srv, &http2.Server{}); err != nil {
+	// 	return nil, fmt.Errorf("failed to configure http/2: %w", err)
+	// }
 
 	return &Server{
 		HTTP:   cfg.srv,

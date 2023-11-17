@@ -195,12 +195,15 @@ dir(crypto) == ["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b6
 sys.shell(input_params['cmd2'])
 "#
         );
-        let param_string =
-            r#"{"cmd":"id","cmd2":"echo hello_world","cmd3":"ls -lah /tmp/"}"#.to_string();
+        let params = HashMap::from([
+            ("cmd".to_string(), "id".to_string()),
+            ("cmd2".to_string(), "echo hello_world".to_string()),
+            ("cmd3".to_string(), "ls -lah /tmp/".to_string()),
+        ]);
         let test_res = eldritch_run(
             "test.tome".to_string(),
             test_content,
-            Some(param_string),
+            Some(params),
             &StdPrintHandler {},
         );
         assert!(test_res?.contains("hello_world"));
@@ -215,56 +218,14 @@ sys.shell(input_params['cmd2'])
 input_params["number"]
 "#
         );
-        let param_string = r#"{"number":1}"#.to_string();
+        let params = HashMap::from([("number".to_string(), "1".to_string())]);
         let test_res = eldritch_run(
             "test.tome".to_string(),
             test_content,
-            Some(param_string),
+            Some(params),
             &StdPrintHandler {},
         );
         assert_eq!(test_res.unwrap(), "1".to_string());
-        Ok(())
-    }
-
-    #[test]
-    fn test_library_parameter_input_max_u64() -> anyhow::Result<()> {
-        // Create test script
-        let test_content = format!(
-            r#"
-x = input_params["number"] - 1
-x
-"#
-        );
-        let param_string = format!("{{\"number\":{}}}", u64::MAX);
-        let test_res = eldritch_run(
-            "test.tome".to_string(),
-            test_content,
-            Some(param_string),
-            &StdPrintHandler {},
-        );
-        assert_eq!(test_res.unwrap(), "2147483646".to_string()); // i32::MAX-1
-        Ok(())
-    }
-
-    #[test]
-    fn test_library_parameter_input_str_array() -> anyhow::Result<()> {
-        // Create test script
-        let test_content = format!(
-            r#"
-input_params
-"#
-        );
-        let param_string = r#"{"list_key":["item1","item2","item3"]}"#.to_string();
-        let test_res = eldritch_run(
-            "test.tome".to_string(),
-            test_content,
-            Some(param_string),
-            &StdPrintHandler {},
-        );
-        assert_eq!(
-            test_res.unwrap(),
-            r#"{"list_key": ["item1", "item2", "item3"]}"#
-        );
         Ok(())
     }
 
