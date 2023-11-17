@@ -1,8 +1,9 @@
 use anyhow::Result;
-use starlark::{values::{dict::Dict, Heap}, collections::SmallMap, const_frozen_string};
+use starlark::{values::{dict::Dict, Heap}, collections::SmallMap};
 
 use super::Session;
 use super::super::insert_dict_kv;
+use starlark::const_frozen_string;
 
 struct SSHExecOutput {
     stdout: String,

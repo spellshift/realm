@@ -11,7 +11,7 @@ pub fn get_user(starlark_heap: &Heap) -> Result<Dict> {
     let mut dict_res = Dict::new(res);
     let user = SmallMap::new();
     let mut dict_user = Dict::new(user);
-    
+
 
     let sys = System::new_all();
     let pid = process::id() as usize;

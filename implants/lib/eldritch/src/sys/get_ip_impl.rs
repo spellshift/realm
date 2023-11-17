@@ -4,6 +4,7 @@ use network_interface::{NetworkInterfaceConfig, NetworkInterface};
 #[cfg(not(target_os = "windows"))]
 use pnet::datalink::{interfaces, NetworkInterface};
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
+use super::super::insert_dict_kv;
 
 const UNKNOWN: &str = "UNKNOWN";
 
@@ -29,7 +30,7 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
         for ip in network_interface.addr {
             ips.push(ip.ip());
         }
-        
+
         res.push(NetInterface{
             name: network_interface.name,
             ips: ips,
@@ -51,6 +52,8 @@ fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> 
 
     let tmp_value1 = starlark_heap.alloc_str(&interface.name);
     tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed()?, tmp_value1.to_value());
+    insert_dict_kv!(dict_res, starlark_heap, "stdout", cmd_res.stdout, String);
+
 
     let mut tmp_value2_arr = Vec::<Value>::new();
     for ip in interface.ips {

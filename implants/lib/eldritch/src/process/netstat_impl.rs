@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use anyhow::Result;
 use netstat2::*;
+use super::super::insert_dict_kv;
 
 pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     let mut out: Vec<Dict> = Vec::new();
@@ -15,23 +16,23 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
                 let map: SmallMap<Value, Value> = SmallMap::new();
                 // Create Dict type.
                 let mut dict = Dict::new(map);
-                dict.insert_hashed(const_frozen_string!("socket_type").to_value().get_hashed()?, starlark_heap.alloc("TCP"));
-                dict.insert_hashed(const_frozen_string!("local_address").to_value().get_hashed()?, starlark_heap.alloc(format!("{}", tcp_si.local_addr)));
-                dict.insert_hashed(const_frozen_string!("local_port").to_value().get_hashed()?, starlark_heap.alloc(tcp_si.local_port as u32));
-                dict.insert_hashed(const_frozen_string!("remote_address").to_value().get_hashed()?, starlark_heap.alloc(format!("{}", tcp_si.remote_addr)));
-                dict.insert_hashed(const_frozen_string!("remote_port").to_value().get_hashed()?, starlark_heap.alloc(tcp_si.remote_port as u32));
-                dict.insert_hashed(const_frozen_string!("state").to_value().get_hashed()?, starlark_heap.alloc(format!("{}", tcp_si.state)));
-                dict.insert_hashed(const_frozen_string!("pids").to_value().get_hashed()?, starlark_heap.alloc(si.associated_pids));
+                insert_dict_kv!(dict, starlark_heap, "socket_type", "TCP", String);
+                insert_dict_kv!(dict, starlark_heap, "local_address", tcp_si.local_addr.to_string(), String);
+                insert_dict_kv!(dict, starlark_heap, "local_port", tcp_si.local_port as u32, u32);
+                insert_dict_kv!(dict, starlark_heap, "remote_address", tcp_si.remote_addr.to_string(), String);
+                insert_dict_kv!(dict, starlark_heap, "remote_port", tcp_si.remote_port as u32, u32);
+                insert_dict_kv!(dict, starlark_heap, "state", tcp_si.state.to_string(), String);
+                insert_dict_kv!(dict, starlark_heap, "pids", si.associated_pids, Vec<_>);
                 out.push(dict);
             },
             ProtocolSocketInfo::Udp(udp_si) => {
                 let map: SmallMap<Value, Value> = SmallMap::new();
                 // Create Dict type.
                 let mut dict = Dict::new(map);
-                dict.insert_hashed(const_frozen_string!("socket_type").to_value().get_hashed()?, starlark_heap.alloc("UDP"));
-                dict.insert_hashed(const_frozen_string!("local_address").to_value().get_hashed()?, starlark_heap.alloc(format!("{}", udp_si.local_addr)));
-                dict.insert_hashed(const_frozen_string!("local_port").to_value().get_hashed()?, starlark_heap.alloc(udp_si.local_port as u32));
-                dict.insert_hashed(const_frozen_string!("pids").to_value().get_hashed()?, starlark_heap.alloc(si.associated_pids));
+                insert_dict_kv!(dict, starlark_heap, "socket_type", "UDP", String);
+                insert_dict_kv!(dict, starlark_heap, "local_address", udp_si.local_addr.to_string(), String);
+                insert_dict_kv!(dict, starlark_heap, "local_port", udp_si.local_port as u32, u32);
+                insert_dict_kv!(dict, starlark_heap, "pids", si.associated_pids, Vec<_>);
                 out.push(dict);
             },
         }

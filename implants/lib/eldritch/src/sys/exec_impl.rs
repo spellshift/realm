@@ -5,9 +5,8 @@ use std::process::Command;
 use nix::{sys::wait::waitpid, unistd::{fork, ForkResult}};
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use std::process::exit;
-
 use super::CommandOutput;
-
+use super::super::insert_dict_kv;
 // https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
 
 pub fn exec(starlark_heap: &Heap, path: String, args: Vec<String>, disown: Option<bool>) -> Result<Dict> {
@@ -16,14 +15,9 @@ pub fn exec(starlark_heap: &Heap, path: String, args: Vec<String>, disown: Optio
 
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
-    let stdout_value = starlark_heap.alloc_str(cmd_res.stdout.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stdout").to_value().get_hashed()?, stdout_value.to_value());
-
-    let stderr_value = starlark_heap.alloc_str(cmd_res.stderr.as_str());
-    dict_res.insert_hashed(const_frozen_string!("stderr").to_value().get_hashed()?, stderr_value.to_value());
-
-    let status_value = starlark_heap.alloc(cmd_res.status);
-    dict_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, status_value);
+    insert_dict_kv!(dict_res, starlark_heap, "stdout", cmd_res.stdout, String);
+    insert_dict_kv!(dict_res, starlark_heap, "stderr", cmd_res.stderr, String);
+    insert_dict_kv!(dict_res, starlark_heap, "stauts", cmd_res.status, i32);
 
     Ok(dict_res)
 }
@@ -33,12 +27,12 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         Some(disown_option) => disown_option,
         None => false,
     };
-    
+
     if !should_disown {
         let res = Command::new(path)
             .args(args)
             .output()?;
-        
+
         let res = CommandOutput {
             stdout: String::from_utf8(res.stdout)?,
             stderr: String::from_utf8(res.stderr)?,
@@ -51,7 +45,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
 
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         match unsafe{fork()?} {
-            ForkResult::Parent { child } => {    
+            ForkResult::Parent { child } => {
                 // Wait for intermediate process to exit.
                 waitpid(Some(child), None)?;
                 return Ok(CommandOutput{
@@ -60,14 +54,14 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
                     status: 0,
                 });
             }
-    
+
             ForkResult::Child => {
                 match unsafe{fork()?} {
                     ForkResult::Parent { child } => {
                         if child.as_raw() < 0 { return Err(anyhow::anyhow!("Pid was negative. ERR".to_string())) }
                         exit(0)
                     }
-            
+
                     ForkResult::Child => {
                         let _res = Command::new(path)
                             .args(args)
@@ -89,14 +83,14 @@ mod tests {
     use super::*;
     #[test]
     fn test_sys_exec_current_user() -> anyhow::Result<()>{
-        if cfg!(target_os = "linux") || 
-        cfg!(target_os = "ios") || 
-        cfg!(target_os = "android") || 
-        cfg!(target_os = "freebsd") || 
+        if cfg!(target_os = "linux") ||
+        cfg!(target_os = "ios") ||
+        cfg!(target_os = "android") ||
+        cfg!(target_os = "freebsd") ||
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
             let res = handle_exec(String::from("/bin/sh"),vec![String::from("-c"), String::from("id -u")], Some(false))?.stdout;
-            let mut bool_res = false; 
+            let mut bool_res = false;
             if res == "1001\n" || res == "0\n" {
                 bool_res = true;
             }
@@ -118,11 +112,11 @@ mod tests {
     }
     #[test]
     fn test_sys_exec_complex_linux() -> anyhow::Result<()>{
-        if cfg!(target_os = "linux") || 
-        cfg!(target_os = "ios") || 
-        cfg!(target_os = "macos") || 
-        cfg!(target_os = "android") || 
-        cfg!(target_os = "freebsd") || 
+        if cfg!(target_os = "linux") ||
+        cfg!(target_os = "ios") ||
+        cfg!(target_os = "macos") ||
+        cfg!(target_os = "android") ||
+        cfg!(target_os = "freebsd") ||
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
             let res = handle_exec(String::from("/bin/sh"), vec![String::from("-c"), String::from("cat /etc/passwd | awk '{print $1}' | grep -E '^root:' | awk -F \":\" '{print $3}'")], Some(false))?.stdout;
@@ -138,17 +132,17 @@ mod tests {
     // 42286 pts/0    S      0:00      \_ sleep 600
     #[test]
     fn test_sys_exec_disown_linux() -> anyhow::Result<()>{
-        if cfg!(target_os = "linux") || 
-        cfg!(target_os = "ios") || 
-        cfg!(target_os = "macos") || 
-        cfg!(target_os = "android") || 
-        cfg!(target_os = "freebsd") || 
+        if cfg!(target_os = "linux") ||
+        cfg!(target_os = "ios") ||
+        cfg!(target_os = "macos") ||
+        cfg!(target_os = "android") ||
+        cfg!(target_os = "freebsd") ||
         cfg!(target_os = "openbsd") ||
         cfg!(target_os = "netbsd") {
             let tmp_file = NamedTempFile::new()?;
             let path = String::from(tmp_file.path().to_str().unwrap());
             tmp_file.close()?;
-    
+
             let _res = handle_exec(String::from("/bin/sh"), vec![String::from("-c"), String::from(format!("touch {}", path.clone()))], Some(true))?;
             thread::sleep(time::Duration::from_secs(2));
 

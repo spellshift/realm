@@ -1,24 +1,22 @@
 use anyhow::Result;
 use starlark::values::Value;
-
 pub fn to_json(json: Value) -> Result<String> {
     json.to_json()
 }
 
 #[cfg(test)]
 mod tests {
-    use starlark::{values::{dict::Dict, Heap, Value}, const_frozen_string, collections::SmallMap};
+    use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap};
     use anyhow::Result;
+    use super::super::super::insert_dict_kv;
+    use starlark::const_frozen_string;
 
     #[test]
     fn to_json_object() -> Result<()> {
         let test_heap = Heap::new();
         let res = SmallMap::new();
         let mut dict_res = Dict::new(res);
-        dict_res.insert_hashed(
-            const_frozen_string!("test").to_value().get_hashed()?,
-            test_heap.alloc_str("test").to_value(),
-        );
+        insert_dict_kv!(dict_res, test_heap, "test", "test".to_string(), String);
         let res = super::to_json(test_heap.alloc(dict_res))?;
         assert_eq!(res, r#"{"test":"test"}"#);
         Ok(())

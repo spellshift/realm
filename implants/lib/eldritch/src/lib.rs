@@ -16,6 +16,7 @@ use starlark::values::{AllocValue, Value};
 use starlark::{starlark_module, PrintHandler};
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
+use starlark::const_frozen_string;
 
 use crate::crypto::CryptoLibrary;
 use assets::AssetsLibrary;
@@ -28,23 +29,44 @@ use time::TimeLibrary;
 macro_rules! insert_dict_kv {
     ($dict:expr, $heap:expr, $key:expr, $val:expr, String) => {
         let val_val = $heap.alloc_str(&$val);
-        $dict.insert_hashed(const_frozen_string!($key).to_value().get_hashed()?, val_val.to_value());
+        $dict.insert_hashed(
+            const_frozen_string!($key).to_value().get_hashed()?,
+            val_val.to_value(),
+        );
     };
     ($dict:expr, $heap:expr, $key:expr, $val:expr, i32) => {
-        $dict.insert_hashed(const_frozen_string!($key).to_value().get_hashed()?, $heap.alloc($val));
+        $dict.insert_hashed(
+            const_frozen_string!($key).to_value().get_hashed()?,
+            $heap.alloc($val),
+        );
     };
     ($dict:expr, $heap:expr, $key:expr, $val:expr, u32) => {
-        $dict.insert_hashed(const_frozen_string!($key).to_value().get_hashed()?, $heap.alloc($val));
+        $dict.insert_hashed(
+            const_frozen_string!($key).to_value().get_hashed()?,
+            $heap.alloc($val),
+        );
     };
     ($dict:expr, $heap:expr, $key:expr, $val:expr, u64) => {
-        $dict.insert_hashed(const_frozen_string!($key).to_value().get_hashed()?, $heap.alloc($val));
+        $dict.insert_hashed(
+            const_frozen_string!($key).to_value().get_hashed()?,
+            $heap.alloc($val),
+        );
     };
     ($dict:expr, $heap:expr, $key:expr, None) => {
-        $dict.insert_hashed(const_frozen_string!($key).to_value().get_hashed()?, Value::new_none());
+        $dict.insert_hashed(
+            const_frozen_string!($key).to_value().get_hashed()?,
+            Value::new_none(),
+        );
     };
+    ($dict:expr, $heap:expr, $key:expr, $val:expr, Vec<_>) => {
+        $dict.insert_hashed(
+            const_frozen_string!($key).to_value().get_hashed()?,
+            $heap.alloc($val),
+        );
+    };
+
 }
 pub(crate) use insert_dict_kv;
-
 
 pub fn get_eldritch() -> anyhow::Result<Globals> {
     #[starlark_module]

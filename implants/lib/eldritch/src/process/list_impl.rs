@@ -1,7 +1,7 @@
 use anyhow::{Result, Context};
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
-use sysinfo::{ProcessExt,System,SystemExt,PidExt};
-use sysinfo::{UserExt};
+use sysinfo::{ProcessExt,System,SystemExt,PidExt, UserExt};
+use super::super::insert_dict_kv;
 
 pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     if !System::IS_SUPPORTED {
@@ -28,27 +28,21 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
             },
             None => String::from(UNKNOWN_USER),
         };
-    
+
 
         let res: SmallMap<Value, Value> = SmallMap::new();
         // Create Dict type.
         let mut tmp_res = Dict::new(res);
 
-        tmp_res.insert_hashed(const_frozen_string!("pid").to_value().get_hashed()?, starlark_heap.alloc(match pid.as_u32().try_into() {
-            Ok(local_int) => local_int,
-            Err(_) => -1,
-        }));
-        tmp_res.insert_hashed(const_frozen_string!("ppid").to_value().get_hashed()?, starlark_heap.alloc(match tmp_ppid.try_into() {
-            Ok(local_int) => local_int,
-            Err(_) => -1,
-        }));
-        tmp_res.insert_hashed(const_frozen_string!("status").to_value().get_hashed()?, starlark_heap.alloc_str(&process.status().to_string()).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("username").to_value().get_hashed()?, starlark_heap.alloc_str(&tmp_username).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("path").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.exe().to_str().context("Failed to cast process exe to str")?)).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("command").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.cmd().join(" "))).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("cwd").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.cwd().to_str().context("failde to cast cwd to str")?)).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("environ").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.environ().join(" "))).to_value());
-        tmp_res.insert_hashed(const_frozen_string!("name").to_value().get_hashed()?, starlark_heap.alloc_str(&String::from(process.name())).to_value());
+        insert_dict_kv!(tmp_res, starlark_heap, "pid", pid.as_u32(), u32);
+        insert_dict_kv!(tmp_res, starlark_heap, "ppid", tmp_ppid, u32);
+        insert_dict_kv!(tmp_res, starlark_heap, "status", &process.status().to_string(), String);
+        insert_dict_kv!(tmp_res, starlark_heap, "username", &tmp_username, String);
+        insert_dict_kv!(tmp_res, starlark_heap, "path", process.exe().to_str().context("Failed to cast process exe to str")?, String);
+        insert_dict_kv!(tmp_res, starlark_heap, "command", process.cmd().join(" "), String);
+        insert_dict_kv!(tmp_res, starlark_heap, "cwd", process.cwd().to_str().context("Failed to cast cwd to str")?, String);
+        insert_dict_kv!(tmp_res, starlark_heap, "environ", process.environ().join(" "), String);
+        insert_dict_kv!(tmp_res, starlark_heap, "name", process.name(), String);
 
         final_res.push(tmp_res);
     }
@@ -73,10 +67,11 @@ mod tests {
         let child = Command::new(sleep_str)
             .arg("5")
             .spawn()?;
-    
+
         let binding = Heap::new();
         let res = list(&binding)?;
         for proc in res{
+            println!("{}", format!("{:?}", proc.get(const_frozen_string!("pid").to_value())?.context("Fail")?));
             let cur_pid = match proc.get(const_frozen_string!("pid").to_value())? {
                 Some(local_cur_pid) => local_cur_pid.unpack_i32().context("Failed to unpack starlark int to i32")?,
                 None => return Err(anyhow::anyhow!("pid couldn't be unwrapped")),
@@ -86,6 +81,7 @@ mod tests {
                 return Ok(())
             }
         }
+        println!("PID: {}", child.id());
         assert_eq!(true, false);
         return Ok(())
     }

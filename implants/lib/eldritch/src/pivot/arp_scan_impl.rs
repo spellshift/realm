@@ -11,7 +11,6 @@ use pnet::{
     util::MacAddr,
 };
 use starlark::collections::SmallMap;
-use starlark::const_frozen_string;
 use starlark::values::{dict::Dict, Heap};
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr};
@@ -19,6 +18,7 @@ use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use super::super::insert_dict_kv;
+use starlark::const_frozen_string;
 
 #[cfg(not(target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq)]
