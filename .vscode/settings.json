@@ -1,0 +1,6 @@
+{
+    "rust-analyzer.cargo.extraArgs": [
+        "--profile",
+        "rust-analyzer"
+    ]  
+}

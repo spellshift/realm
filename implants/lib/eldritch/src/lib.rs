@@ -4,6 +4,9 @@ pub mod file;
 pub mod pivot;
 pub mod process;
 pub mod sys;
+pub mod assets;
+pub mod crypto;
+pub mod time;
 
 use serde_json::Map;
 use starlark::collections::SmallMap;
@@ -22,6 +25,10 @@ use file::FileLibrary;
 use pivot::PivotLibrary;
 use process::ProcessLibrary;
 use sys::SysLibrary;
+use assets::AssetsLibrary;
+use pivot::PivotLibrary;
+use crate::crypto::CryptoLibrary;
+use time::TimeLibrary;
 
 pub fn get_eldritch() -> anyhow::Result<Globals> {
     #[starlark_module]
@@ -32,6 +39,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const pivot: PivotLibrary = PivotLibrary();
         const assets: AssetsLibrary = AssetsLibrary();
         const crypto: CryptoLibrary = CryptoLibrary();
+        const time: TimeLibrary = TimeLibrary();
     }
 
     let globals = GlobalsBuilder::extended_by(&[
@@ -179,10 +187,11 @@ mod tests {
             r#"
 dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "list", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
 dir(process) == ["info", "kill", "list", "name", "netstat"]
-dir(sys) == ["dll_inject", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell"]
+dir(sys) == ["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell"]
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]
 dir(assets) == ["copy","list","read","read_binary"]
 dir(crypto) == ["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]
+dir(time) == ["sleep"]
 "#,
         );
     }
