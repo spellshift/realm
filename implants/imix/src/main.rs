@@ -58,8 +58,8 @@ async fn handle_exec_tome(
     // Execute a tome script
     let res = match thread::spawn(move || {
         eldritch_run(
-            "TODO".to_string(),
-            task.eldritch,
+            task.id.to_string(),
+            task.eldritch.clone(),
             Some(task.parameters.clone()),
             &print_handler,
         )
