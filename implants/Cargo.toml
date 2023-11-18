@@ -3,7 +3,6 @@ members = [
     "imix",
     "golem",
     "lib/eldritch",
-    "lib/tavern",
     "lib/c2",
 ]
 
@@ -38,6 +37,7 @@ nix = "0.26.1"
 openssl = "0.10.55"
 pnet = "0.34.0"
 predicates = "2.1"
+prost = "0.12"
 prost-types = "0.12"
 rand = "0.8.5"
 regex = "1.5.5"
@@ -57,7 +57,6 @@ structopt = "0.3.23"
 sys-info = "0.9.1"
 sysinfo = "0.29.7"
 tar = "0.4.38"
-tavern = { path = "./lib/tavern" }
 c2 = { path = "./lib/c2" }
 tempfile = "3.3.0"
 tera = "1.17.1"

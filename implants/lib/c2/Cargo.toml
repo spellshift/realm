@@ -1,15 +1,15 @@
 [package]
 name = "c2"
-version = "0.1.0"
+version = "0.0.3"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 tonic = { workspace = true }
-prost = "0.12"
+prost = { workspace = true}
 prost-types = { workspace = true }
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
 tonic-build = "0.10"

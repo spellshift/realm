@@ -39,7 +39,7 @@ Realm is a cross platform Red Team engagement platform with a focus on automatio
 - Reflective DLL Loader.
 - Port scanning.
 - Remote execution over SSH.
-- And much much more: https://docs.realm.pub/user-guide/eldritch
+- And much much more: <https://docs.realm.pub/user-guide/eldritch>
 
 ## Quickstart guide
 
@@ -75,7 +75,7 @@ cat <<EOF > /tmp/imix-config.json
         "c2_configs": [
         {
             "priority": 1,
-            "uri": "http://127.0.0.1/graphql"
+            "uri": "http://127.0.0.1/grpc/"
         }
         ]
     }

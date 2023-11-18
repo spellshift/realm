@@ -17,7 +17,6 @@ reqwest = { workspace = true, features = ["blocking", "stream", "json"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = {workspace = true}
 sys-info = { workspace = true }
-tavern = { workspace = true }
 c2 = { workspace = true }
 tonic = { workspace = true }
 tokio = { workspace = true, features = ["full"] }

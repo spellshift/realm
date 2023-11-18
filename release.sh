@@ -17,7 +17,8 @@ echo "[v$VERSION] Updating build versions"
 sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/imix/Cargo.toml
 sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/golem/Cargo.toml
 sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/lib/eldritch/Cargo.toml
-sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/lib/tavern/Cargo.toml
+sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/lib/c2/Cargo.toml
+sed -i -E "s/version_string = \"v[0-9].[0-9].[0-9]\"/version_string = \"v$VERSION\"/" implants/imix/src/main.rs
 sed -i -E "s/Version = \"v[0-9].[0-9].[0-9]\"/Version = \"v$VERSION\"/" tavern/version.go
 
 
