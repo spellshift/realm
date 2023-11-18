@@ -278,16 +278,6 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         }
     };
 
-    // let claim_tasks_input = ClaimTasksInput {
-    //     principal: principal,
-    //     hostname: hostname,
-    //     beacon_identifier: beacon_id,
-    //     host_identifier: host_id,
-    //     agent_identifier: format!("{}-{}", "imix", version_string),
-    //     host_platform,
-    //     host_primary_ip: primary_ip,
-    // };
-
     loop {
         let start_time = Utc::now().time();
         // 0. Get loop start time
