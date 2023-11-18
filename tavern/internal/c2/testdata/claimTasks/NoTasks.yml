@@ -1,0 +1,13 @@
+requests:
+  - method: ClaimTasks
+    request:
+      beacon:
+        principal: root
+        identifier: ABCDEFG
+        host:
+          identifier: "01234567"
+          name: test-host
+          platform: 1
+        agent:
+          identifier: test-case
+    expected: {}
