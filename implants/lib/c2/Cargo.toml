@@ -13,3 +13,4 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
 tonic-build = "0.10"
+which = "4"
