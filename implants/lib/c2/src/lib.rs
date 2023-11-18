@@ -1,3 +1,3 @@
 pub mod pb {
-    tonic::include_proto!("c2");
+    include!("c2.rs");
 }

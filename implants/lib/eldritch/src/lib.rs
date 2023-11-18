@@ -4,8 +4,6 @@ pub mod file;
 pub mod pivot;
 pub mod process;
 pub mod sys;
-pub mod assets;
-pub mod crypto;
 pub mod time;
 
 use serde_json::Map;
@@ -25,9 +23,6 @@ use file::FileLibrary;
 use pivot::PivotLibrary;
 use process::ProcessLibrary;
 use sys::SysLibrary;
-use assets::AssetsLibrary;
-use pivot::PivotLibrary;
-use crate::crypto::CryptoLibrary;
 use time::TimeLibrary;
 
 pub fn get_eldritch() -> anyhow::Result<Globals> {
