@@ -100,9 +100,6 @@ async fn handle_exec_timeout_and_response(
         ),
     };
 
-    // let tome_result = tokio::task::spawn(exec_future).await??;
-    // let tome_result = tokio::spawn(exec_future).await??;
-
     print_channel_sender
         .clone()
         .send(format!("---[RESULT]----\n{}\n---------", tome_result.0))?;
