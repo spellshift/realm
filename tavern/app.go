@@ -175,9 +175,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	// Enable HTTP/2
-	// if err := http2.ConfigureServer(cfg.srv, &http2.Server{}); err != nil {
-	// 	return nil, fmt.Errorf("failed to configure http/2: %w", err)
-	// }
+	if err := http2.ConfigureServer(cfg.srv, &http2.Server{}); err != nil {
+		return nil, fmt.Errorf("failed to configure http/2: %w", err)
+	}
 
 	return &Server{
 		HTTP:   cfg.srv,
