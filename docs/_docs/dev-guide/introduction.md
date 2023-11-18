@@ -65,7 +65,7 @@ An Agent is a type of implant which retrieves execution instructions by connecti
 A Beacon is a running instance of an Agent. A Host may have multiple active Beacons that use the same underlying Agent.
 
 ### Task
-A Task represents a set of instructions for an Agent to perform. For example, listing files could be a Task. When listing files across various Hosts, one Task per Beacon will be created for tracking the individual execution output.
+A Task represents a set of instructions for an Agent to perform. For example, listing files could be a Task. When listing files across various Beacons, one Task per Beacon will be created for tracking the individual execution output.
 
 ### Eldritch
 Eldritch is our Pythonic Domain Specific Language (DSL), which can be used to progammatically define red team operations. Many of the language's built-in features do not rely on system binaries. For more information, please see the [Eldritch section](/user-guide/eldritch) of the documentation.
