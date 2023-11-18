@@ -12,5 +12,5 @@ prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
-tonic-build = "0.10"
-which = "4.4.2"
+tonic-build = { workspace = true }
+which =  { workspace = true }
