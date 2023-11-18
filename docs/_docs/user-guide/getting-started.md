@@ -37,7 +37,7 @@ cat <<EOF > /tmp/imix-config.json
         "c2_configs": [
         {
             "priority": 1,
-            "uri": "http://127.0.0.1/graphql"
+            "uri": "http://127.0.0.1/grpc/"
         }
         ]
     }
