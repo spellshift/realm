@@ -272,7 +272,7 @@ query get_task_res {
 * `tavern/internal/graphql/schema/scalars.graphql` defines scalar GraphQL types that can be used to help with Go bindings (See [gqlgen docs](https://gqlgen.com/reference/scalars/) for more info)
 * `tavern/internal/graphql/schema/inputs.graphql` defines custom GraphQL inputs that can be used with your mutations (e.g. outside of the default auto-generated CRUD inputs)
 
-### YAML Test Reference
+### YAML Test Reference (GraphQL)
 
 |Field|Description|Required|
 |-----|-----------|--------|
@@ -291,6 +291,14 @@ query get_task_res {
 * [Ent + GraphQL Tutorial](https://entgo.io/docs/tutorial-todo-gql)
 * [Example Ent + GraphQL project](https://github.com/ent/contrib/tree/master/entgql/internal/todo)
 * [GQLGen Repo](https://github.com/99designs/gqlgen)
+
+## GRPC API
+
+Tavern also supports a gRPC API for agents to claim tasks and report execution output. This API is defined by our c2.proto spec and is still under active development.
+
+### YAML Test Reference (gRPC)
+
+Still under development.
 
 ## Performance Profiling
 

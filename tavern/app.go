@@ -10,10 +10,14 @@ import (
 	"net/http"
 	pprof "net/http/pprof"
 	"os"
+	"strings"
 
 	"entgo.io/contrib/entgql"
+	"github.com/kcarretto/realm/tavern/internal/c2"
+	"github.com/kcarretto/realm/tavern/internal/c2/c2pb"
 	"github.com/kcarretto/realm/tavern/internal/graphql"
 	"github.com/kcarretto/realm/tavern/tomes"
+	"google.golang.org/grpc"
 
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -22,12 +26,12 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/cdn"
 	"github.com/kcarretto/realm/tavern/internal/ent"
 	"github.com/kcarretto/realm/tavern/internal/ent/migrate"
+	tavernhttp "github.com/kcarretto/realm/tavern/internal/http"
 	"github.com/kcarretto/realm/tavern/internal/www"
 	"github.com/urfave/cli"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
-
-// Version of Tavern being run
-const Version = "v0.0.1"
 
 func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	app = cli.NewApp()
@@ -107,52 +111,72 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		createTestData(ctx, client)
 	}
 
-	// Setup HTTP Handlers
+	// Configure Authentication
+	var withAuthentication tavernhttp.Option
+	if cfg.oauth.ClientID != "" {
+		withAuthentication = tavernhttp.WithAuthenticationCookie(client)
+	} else {
+		withAuthentication = tavernhttp.WithAuthenticationBypass(client)
+	}
+
+	// Configure Request Logging
 	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
-	router := http.NewServeMux()
-	router.Handle("/status", newStatusHandler())
-	router.Handle("/oauth/login", auth.NewOAuthLoginHandler(cfg.oauth, privKey))
-	router.Handle("/oauth/authorize", auth.NewOAuthAuthorizationHandler(cfg.oauth, pubKey, client, "https://www.googleapis.com/oauth2/v3/userinfo"))
-	router.Handle("/graphql", newGraphQLHandler(client))
-	router.Handle("/cdn/", cdn.NewDownloadHandler(client))
-	router.Handle("/cdn/upload", cdn.NewUploadHandler(client))
-	router.Handle("/", auth.WithLoginRedirect("/oauth/login", www.NewHandler(httpLogger)))
-	router.Handle("/playground", auth.WithLoginRedirect("/oauth/login", playground.Handler("Tavern", "/graphql")))
+
+	// Route Map
+	grpcHandler := newGRPCHandler(client)
+	routes := tavernhttp.RouteMap{
+		"/status":      tavernhttp.Endpoint{Handler: newStatusHandler()},
+		"/oauth/login": tavernhttp.Endpoint{Handler: auth.NewOAuthLoginHandler(cfg.oauth, privKey)},
+		"/oauth/authorize": tavernhttp.Endpoint{Handler: auth.NewOAuthAuthorizationHandler(
+			cfg.oauth,
+			pubKey,
+			client,
+			"https://www.googleapis.com/oauth2/v3/userinfo",
+		)},
+		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client)},
+		"/c2.C2/":     tavernhttp.Endpoint{Handler: grpcHandler},
+		"/grpc/":      tavernhttp.Endpoint{Handler: grpcHandler},
+		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
+		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
+		"/": tavernhttp.Endpoint{
+			Handler:          www.NewHandler(httpLogger),
+			LoginRedirectURI: "/oauth/login",
+		},
+		"/playground": tavernhttp.Endpoint{
+			Handler:          playground.Handler("Tavern", "/graphql"),
+			LoginRedirectURI: "/oauth/login",
+		},
+	}
 
 	// Setup Profiling
 	if cfg.IsPProfEnabled() {
 		log.Printf("[WARN] Performance profiling is enabled, do not use in production as this may leak sensitive information")
-		registerProfiler(router)
+		registerProfiler(routes)
 	}
 
-	// Log Middleware
-	handlerWithLogging := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authName := "unknown"
-		id := auth.IdentityFromContext(r.Context())
-		if id != nil {
-			authName = id.String()
-		}
+	// Create Tavern HTTP Server
+	srv := tavernhttp.NewServer(
+		routes,
+		withAuthentication,
+		tavernhttp.WithRequestLogging(httpLogger),
+	)
 
-		httpLogger.Printf("%s (%s) %s %s\n", r.RemoteAddr, authName, r.Method, r.URL)
-		router.ServeHTTP(w, r)
-	})
-
-	// Auth Middleware
-	var endpoint http.Handler
-	if cfg.oauth.ClientID != "" {
-		endpoint = auth.Middleware(handlerWithLogging, client)
-	} else {
-		endpoint = auth.AuthDisabledMiddleware(handlerWithLogging, client)
-	}
+	// Configure HTTP/2 (support for without TLS)
+	handler := h2c.NewHandler(srv, &http2.Server{})
 
 	// Initialize HTTP Server
 	if cfg.srv == nil {
 		cfg.srv = &http.Server{
 			Addr:    "0.0.0.0:80",
-			Handler: endpoint,
+			Handler: handler,
 		}
 	} else {
-		cfg.srv.Handler = endpoint
+		cfg.srv.Handler = handler
+	}
+
+	// Enable HTTP/2
+	if err := http2.ConfigureServer(cfg.srv, &http2.Server{}); err != nil {
+		return nil, fmt.Errorf("failed to configure http/2: %w", err)
 	}
 
 	return &Server{
@@ -192,7 +216,26 @@ func newGraphQLHandler(client *ent.Client) http.Handler {
 	})
 }
 
-func registerProfiler(router *http.ServeMux) {
+func newGRPCHandler(client *ent.Client) http.HandlerFunc {
+	c2srv := c2.New(client)
+	grpcSrv := grpc.NewServer()
+	c2pb.RegisterC2Server(grpcSrv, c2srv)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor != 2 {
+			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
+			return
+		}
+
+		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
+			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
+			return
+		}
+
+		grpcSrv.ServeHTTP(w, r)
+	})
+}
+
+func registerProfiler(router tavernhttp.RouteMap) {
 	router.HandleFunc("/debug/pprof/", pprof.Index)
 	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
