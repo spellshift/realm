@@ -14,6 +14,7 @@ import (
 
 	"github.com/kcarretto/realm/tavern/internal/ent"
 	"github.com/kcarretto/realm/tavern/internal/ent/tag"
+	"github.com/kcarretto/realm/tavern/internal/namegen"
 )
 
 // createTestData populates the DB with some test data :)
@@ -183,7 +184,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		SetQuest(printQuest).
 		SaveX(ctx)
 
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 5; i++ {
 		createQuest(ctx, client, testBeacons...)
 	}
 }
@@ -347,14 +348,14 @@ None
 func createQuest(ctx context.Context, client *ent.Client, beacons ...*ent.Beacon) {
 	// Mid-Execution
 	testTome := client.Tome.Create().
-		SetName(newRandomIdentifier()).
+		SetName(namegen.GetRandomName()).
 		SetDescription("Print a message for fun!").
 		SetEldritch(`print(input_params['msg'])`).
 		SetParamDefs(`[{"name":"msg","label":"Message","type":"string","placeholder":"something to print"}]`).
 		SaveX(ctx)
 
 	q := client.Quest.Create().
-		SetName(newRandomIdentifier()).
+		SetName(namegen.GetRandomName()).
 		SetParameters(`{"msg":"Hello World!"}`).
 		SetTome(testTome).
 		SaveX(ctx)
