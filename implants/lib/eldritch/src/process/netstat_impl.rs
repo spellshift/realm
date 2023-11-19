@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use anyhow::Result;
 use netstat2::*;
@@ -43,7 +42,7 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starlark::values::{Heap, Value, UnpackValue};
+    use starlark::values::{Heap, UnpackValue};
     use anyhow::Result;
     use tokio::net::TcpListener;
     use tokio::task;

@@ -16,23 +16,23 @@ pub fn name(pid: i32) -> Result<String> {
     if let Some(process) = sys.process(Pid::from_u32(pid as u32)) {
         res = process.name()
     }
-    
+
     Ok(res.to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{process::Command};
+    use std::process::Command;
 
     #[test]
     fn test_process_name() -> anyhow::Result<()>{
-        let mut commandstring = "";
-        if cfg!(target_os = "linux") || 
-                cfg!(target_os = "ios") || 
-                cfg!(target_os = "macos") || 
-                cfg!(target_os = "android") || 
-                cfg!(target_os = "freebsd") || 
+        let commandstring;
+        if cfg!(target_os = "linux") ||
+                cfg!(target_os = "ios") ||
+                cfg!(target_os = "macos") ||
+                cfg!(target_os = "android") ||
+                cfg!(target_os = "freebsd") ||
                 cfg!(target_os = "openbsd") ||
                 cfg!(target_os = "netbsd") {
             commandstring = "sleep";
@@ -41,17 +41,17 @@ mod tests {
         } else {
             return Err(anyhow::anyhow!("OS Not supported please re run on Linux, Windows, or MacOS"));
         }
-        
+
         let child = Command::new(commandstring)
             .arg("5")
             .spawn()?;
 
         let pname = name(child.id() as i32)?;
-        if cfg!(target_os = "linux") || 
-            cfg!(target_os = "ios") || 
-            cfg!(target_os = "macos") || 
-            cfg!(target_os = "android") || 
-            cfg!(target_os = "freebsd") || 
+        if cfg!(target_os = "linux") ||
+            cfg!(target_os = "ios") ||
+            cfg!(target_os = "macos") ||
+            cfg!(target_os = "android") ||
+            cfg!(target_os = "freebsd") ||
             cfg!(target_os = "openbsd") ||
             cfg!(target_os = "netbsd") {
                 //If linux or Mac, Process Name should be 'sleep'
@@ -60,7 +60,7 @@ mod tests {
             //If windows,Pprocess Name should be 'timeout.exe'
             assert_eq!(pname, "timeout.exe")
         }
-            
+
         return Ok(())
     }
 }

@@ -15,7 +15,7 @@ const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\..\\bin\\reflective_
 #[cfg(target_os = "windows")]
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     let mut should_err = false;
-    let res_u8_vec: Vec<u8> = 
+    let res_u8_vec: Vec<u8> =
         u32_vec.iter().map(|x| if *x <= u8::MAX as u32 { *x as u8 }else{ should_err = true; u8::MAX }).collect();
     if should_err { return Err(anyhow::anyhow!("Error casting eldritch number to u8. Number was too big."))}
     Ok(res_u8_vec)
@@ -186,7 +186,7 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -
         user_data_ptr_in_remote_buffer as _,
         user_data_ptr_as_bytes.as_slice().as_ptr() as *const _,
         user_data_ptr_size)?;
-    
+
     // Write dll_bytes at buffer + size of pointer to user data (should be usize)
     let payload_ptr_in_remote_buffer = remote_buffer_target_dll as usize + user_data_ptr_size;
     let _payload_bytes_written = write_process_memory(
@@ -210,19 +210,20 @@ fn handle_dll_reflect(target_dll_bytes: Vec<u8>, pid:u32, function_name: &str) -
         remote_buffer_target_dll,
         0,
         null_mut())?;
-    
+
     Ok(())
 }
 
-pub fn dll_reflect(dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
-    #[cfg(not(target_os = "windows"))]
+#[cfg(not(target_os = "windows"))]
+pub fn dll_reflect(_dll_bytes: Vec<u32>, _pid: u32, _function_name: String) -> anyhow::Result<NoneType> {
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"));
-    #[cfg(target_os = "windows")]
-    {
-        let local_dll_bytes = get_u8_vec_form_u32_vec(dll_bytes)?;
-        handle_dll_reflect(local_dll_bytes, pid, function_name.as_str())?;
-        Ok(NoneType)    
-    }
+}
+
+#[cfg(target_os = "windows")]
+pub fn dll_reflect(dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
+    let local_dll_bytes = get_u8_vec_form_u32_vec(dll_bytes)?;
+    handle_dll_reflect(local_dll_bytes, pid, function_name.as_str())?;
+    Ok(NoneType)
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -300,10 +301,10 @@ mod tests {
     }
 
     #[test]
-    fn test_dll_reflect_simple() -> anyhow::Result<()> {        
+    fn test_dll_reflect_simple() -> anyhow::Result<()> {
         let test_dll_bytes = TEST_DLL_BYTES;
         const DLL_EXEC_WAIT_TIME: u64 = 5;
-        
+
         // Get unique and unused temp file path
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
@@ -326,7 +327,7 @@ mod tests {
 
         // Delete test file
         let _ = fs::remove_file(test_path);
-        
+
         // kill the target process notepad
         let mut sys = System::new();
         sys.refresh_processes();
@@ -347,7 +348,7 @@ mod tests {
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
         tmp_file.close()?;
-        
+
         let test_dll_bytes = TEST_DLL_BYTES;
 
         let expected_process = Command::new("C:\\Windows\\System32\\notepad.exe").env("LIBTESTFILE", path.clone()).spawn();

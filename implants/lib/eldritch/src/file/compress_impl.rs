@@ -1,7 +1,7 @@
 use std::{path::Path, fs::{OpenOptions, File}, io::{Read, Write}};
 
 use anyhow::{Result, Context};
-use flate2::{Compression};
+use flate2::Compression;
 use tar::{Builder, HeaderMode};
 use tempfile::NamedTempFile;
 
@@ -28,12 +28,12 @@ fn tar_dir(src: String, dst: String) -> Result<String> {
         )?;
 
     // Add all files from source dir with the name of the dir.
-    match tar_builder.append_dir_all(src_path_obj.clone(), src_path.clone() ) {
+    match tar_builder.append_dir_all(src_path_obj, src_path ) {
         Ok(_) => {},
         Err(error) => {
             return Err(
-                anyhow::anyhow!("Appending dir {} failed.\n{:?}", 
-                    src_path_obj.clone(),
+                anyhow::anyhow!("Appending dir {} failed.\n{:?}",
+                    src_path_obj,
                     error
                 )
             )
@@ -63,7 +63,7 @@ pub fn compress(src: String, dst: String) -> Result<()> {
         )?);
 
     // If our source is a dir create a tarball and update the src file to the tar ball.
-    if src_path.clone().is_dir() {
+    if src_path.is_dir() {
         tmp_src = match tar_dir(tmp_src, tmp_tar_file_src_path) {
             Ok(new_file_path) => new_file_path,
             Err(err) => return Err(err),
@@ -78,14 +78,14 @@ pub fn compress(src: String, dst: String) -> Result<()> {
     let mut f_dst = std::io::BufWriter::new(
             OpenOptions::new()
             .create(true)
-            .write(true)    
+            .write(true)
             .open(dst.clone())?
     );
 
-    
+
     let mut deflater = flate2::bufread::GzEncoder::new(f_src, Compression::fast());
 
-    // Write 
+    // Write
     let read_buffer_size = 1024*50;
     let mut bytes_read = read_buffer_size;
     while bytes_read != 0 {
@@ -103,7 +103,7 @@ mod tests {
     use std::{io::{prelude::*, BufReader}, fs};
     use sha256::try_digest;
     use tempfile::{tempdir, NamedTempFile};
-    
+
     #[test]
     fn test_compress_basic() -> anyhow::Result<()>{
         // Create files
@@ -140,7 +140,7 @@ mod tests {
         let tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
 
-        // Run our code 
+        // Run our code
         // Test with trailing slash.
         tar_dir(format!("{}/", path_src.clone()), path_dst.clone())?;
 
@@ -149,7 +149,7 @@ mod tests {
         let searchstrings = ["Hello", "World", "Goodbye", "/0.txt", "/1.txt", "/2.txt", "ustar"];
         for cur_string in searchstrings {
             let tar_file = File::open(path_dst.clone())?;
-            let reader = BufReader::new(tar_file);    
+            let reader = BufReader::new(tar_file);
             for line in reader.lines(){
                 let line = line.unwrap();
                 if line.contains(cur_string){
@@ -157,7 +157,7 @@ mod tests {
                 }
             }
         }
-        
+
         assert_eq!(res, searchstrings.len());
         Ok(())
     }

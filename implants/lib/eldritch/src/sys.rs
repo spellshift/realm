@@ -92,9 +92,9 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         get_ip_impl::get_ip(starlark_heap)
     }
-    fn get_pid<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<u32> {
+    fn get_pid<'v>(this: SysLibrary) -> anyhow::Result<u32> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        get_pid_impl::get_pid(starlark_heap)
+        get_pid_impl::get_pid()
     }
     fn get_user<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

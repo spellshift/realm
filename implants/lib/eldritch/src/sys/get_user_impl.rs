@@ -2,7 +2,7 @@ use anyhow::Result;
 use starlark::collections::SmallMap;
 use starlark::values::dict::Dict;
 use starlark::values::Heap;
-use starlark::{const_frozen_string, values::ValueLike};
+use starlark::const_frozen_string;
 use std::process;
 use sysinfo::{Pid, ProcessExt, System, SystemExt, UserExt};
 use super::super::insert_dict_kv;
@@ -65,12 +65,12 @@ pub fn get_user(starlark_heap: &Heap) -> Result<Dict> {
                 Some(gid) => gid,
                 None => return Err(anyhow::anyhow!("Failed to get gid")),
             };
-            let gid_value = starlark_heap.alloc(*gid);
+            insert_dict_kv!(dict_res, starlark_heap, "gid", *gid, u32);
+
             let egid = match process.effective_group_id() {
                 Some(egid) => egid,
                 None => return Err(anyhow::anyhow!("Failed to get egid")),
             };
-            insert_dict_kv!(dict_res, starlark_heap, "gid", egid, u32);
             insert_dict_kv!(dict_res, starlark_heap, "egid", *egid, u32);
         }
         let dict_user_value = starlark_heap.alloc(dict_user);

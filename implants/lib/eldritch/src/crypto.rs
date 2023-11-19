@@ -12,7 +12,7 @@ use derive_more::Display;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
 use starlark::values::starlark_value;
-use starlark::values::{StarlarkValue, Value, Heap, dict::Dict, UnpackValue, ValueLike, ProvidesStaticType};
+use starlark::values::{StarlarkValue, Value, Heap, UnpackValue, ValueLike, ProvidesStaticType};
 use starlark::{starlark_simple_value, starlark_module};
 
 use serde::{Serialize,Serializer};
