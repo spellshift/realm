@@ -22,7 +22,7 @@
  use std::iter;
  use std::path::Path;
  use std::path::PathBuf;
- 
+
  use gazebo::prelude::*;
  use itertools::Either;
  use lsp_types::Diagnostic;
@@ -43,13 +43,14 @@
  use starlark::lsp::server::StringLiteralResult;
  use starlark::syntax::AstModule;
  use starlark::syntax::Dialect;
- 
+
+ #[allow(dead_code)]
  #[derive(Debug)]
  pub(crate) enum ContextMode {
      Check,
      Run,
  }
- 
+
  #[derive(Debug, thiserror::Error)]
  enum ContextError {
      /// The provided Url was not absolute and it needs to be.
@@ -59,7 +60,7 @@
      #[error("Url `{}` was expected to be of type `{}`", .1, .0)]
      WrongScheme(String, LspUrl),
  }
- 
+
  #[derive(Debug)]
  pub(crate) struct Context {
      pub(crate) mode: ContextMode,
@@ -69,7 +70,7 @@
      pub(crate) builtin_docs: HashMap<LspUrl, String>,
      pub(crate) builtin_symbols: HashMap<String, LspUrl>,
  }
- 
+
  /// The outcome of evaluating (checking, parsing or running) given starlark code.
  pub(crate) struct EvalResult<T: Iterator<Item = EvalMessage>> {
      /// The diagnostic and error messages from evaluating a given piece of starlark code.
@@ -78,7 +79,7 @@
      /// the parsed module. Otherwise, it will be `None`
      pub ast: Option<AstModule>,
  }
- 
+
  /// Errors when [`LspContext::resolve_load()`] cannot resolve a given path.
  #[derive(thiserror::Error, Debug)]
  enum ResolveLoadError {
@@ -90,7 +91,7 @@
      #[error("Url `{}` was expected to be of type `{}`", .1, .0)]
      WrongScheme(String, LspUrl),
  }
- 
+
  impl Context {
      pub(crate) fn new(
          mode: ContextMode,
@@ -108,7 +109,7 @@
              }
              env.freeze()
          })?;
- 
+
          let module = if module {
              Some(Self::new_module(&prelude))
          } else {
@@ -125,7 +126,7 @@
              .into_iter()
              .map(|(u, ds)| (u, render_docs_as_code(&ds)))
              .collect();
- 
+
          Ok(Self {
              mode,
              print_non_none,
@@ -135,7 +136,7 @@
              builtin_symbols,
          })
      }
- 
+
      fn url_for_doc(doc: &Doc) -> LspUrl {
         let url = match &doc.item {
             DocItem::Module(_) => Url::parse("starlark:/native/builtins.bzl").unwrap(),
@@ -148,7 +149,7 @@
         };
         LspUrl::try_from(url).unwrap()
     }
- 
+
      fn new_module(prelude: &[FrozenModule]) -> Module {
          let module = Module::new();
          for p in prelude {
@@ -156,7 +157,7 @@
          }
          module
      }
- 
+
      fn go(&self, file: &str, ast: AstModule) -> EvalResult<impl Iterator<Item = EvalMessage>> {
          let mut warnings = Either::Left(iter::empty());
          let mut errors = Either::Left(iter::empty());
@@ -175,7 +176,7 @@
              ast: final_ast,
          }
      }
- 
+
      // Convert an anyhow over iterator of EvalMessage, into an iterator of EvalMessage
      fn err(
          file: &str,
@@ -192,7 +193,7 @@
              },
          }
      }
- 
+
      pub(crate) fn expression(
          &self,
          content: String,
@@ -203,7 +204,8 @@
              AstModule::parse(file, content, &dialect()).map(|module| self.go(file, module)),
          )
      }
- 
+
+     #[allow(dead_code)]
      pub(crate) fn file(&self, file: &Path) -> EvalResult<impl Iterator<Item = EvalMessage>> {
          let filename = &file.to_string_lossy();
          Self::err(
@@ -213,7 +215,7 @@
                  .map_err(|e| e.into()),
          )
      }
- 
+
      pub(crate) fn file_with_contents(
          &self,
          filename: &str,
@@ -224,7 +226,7 @@
              AstModule::parse(filename, content, &dialect()).map(|module| self.go(filename, module)),
          )
      }
- 
+
      fn run(&self, file: &str, ast: AstModule) -> EvalResult<impl Iterator<Item = EvalMessage>> {
          let new_module;
          let module = match self.module.as_ref() {
@@ -250,7 +252,7 @@
              }),
          )
      }
- 
+
      fn check(&self, module: &AstModule) -> impl Iterator<Item = EvalMessage> {
          let globals = if self.prelude.is_empty() {
              None
@@ -261,21 +263,21 @@
                      globals.insert(name.as_str().to_owned());
                  }
              }
- 
+
              for global_symbol in self.builtin_symbols.keys() {
                  globals.insert(global_symbol.to_owned());
              }
- 
+
              Some(globals)
          };
- 
+
          module
              .lint(globals.as_ref())
              .into_iter()
              .map(EvalMessage::from)
      }
  }
- 
+
 impl LspContext for Context {
     fn parse_file_with_contents(&self, uri: &LspUrl, content: String) -> LspEvalResult {
         match uri {
@@ -290,7 +292,7 @@ impl LspContext for Context {
             _ => LspEvalResult::default(),
         }
     }
- 
+
      fn resolve_load(
         &self,
         path: &str,
@@ -313,7 +315,7 @@ impl LspContext for Context {
             ),
         }
     }
- 
+
      fn resolve_string_literal(
         &self,
         literal: &str,
@@ -328,7 +330,7 @@ impl LspContext for Context {
                 })
             })
     }
- 
+
      fn get_load_contents(&self, uri: &LspUrl) -> anyhow::Result<Option<String>> {
          match uri {
              LspUrl::File(path) => match path.is_absolute() {
@@ -343,7 +345,7 @@ impl LspContext for Context {
              _ => Err(ContextError::WrongScheme("file://".to_owned(), uri.clone()).into()),
          }
      }
- 
+
      fn get_url_for_global_symbol(
          &self,
          _current_file: &LspUrl,
@@ -365,7 +367,7 @@ impl LspContext for Context {
         DocModule::default()
     }
  }
- 
+
  pub(crate) fn globals() -> Globals {
     eldritch::get_eldritch().unwrap()
 }
