@@ -1,0 +1,35 @@
+[tasks.fail_macos]
+command = "echo"
+args = ["MacOS needs to be compiled on macos"]
+
+[tasks.release_macos]
+command = "cargo"
+args = ["build", "-Z", "build-std=std,panic_abort", "-Z", "build-std-features=panic_immediate_abort", "--release", "--target", "x86_64-apple-darwin"]
+
+[tasks.release_linux]
+command = "cargo"
+args = ["build", "-Z", "build-std=std,panic_abort", "-Z", "build-std-features=panic_immediate_abort", "--release", "--target", "x86_64-unknown-linux-musl"]
+
+[tasks.release_windows]
+command = "cargo"
+args = ["build", "-Z", "build-std=std,panic_abort", "-Z", "build-std-features=panic_immediate_abort", "--release", "--target", "x86_64-apple-darwin"]
+
+[tasks.platform_macos]
+run_task = [
+    { name = "release_macos" },
+    { name = "release_linux" },
+    { name = "release_windows" },
+]
+
+[tasks.platform_not_macos]
+run_task = [
+    { name = "fail_macos" },
+    { name = "release_linux" },
+    { name = "release_windows" },
+]
+
+[tasks.A]
+run_task = [
+    { name = "platform_not_macos", condition = { platforms = ["windows", "linux"] } },
+    { name = "platform_macos", condition = { platforms = ["macos"] } },
+]
