@@ -32,6 +32,8 @@ RUN bash /tmp/library-scripts/go-debian.sh "none" "/usr/local/go" "${GOPATH}" "$
 RUN bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "${USERNAME}" "true" "true" \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
+RUN cargo install --force cargo-make
+
 # Install gRPC tools
 RUN apt update -y \
     && apt install -y protobuf-compiler libprotobuf-dev \
