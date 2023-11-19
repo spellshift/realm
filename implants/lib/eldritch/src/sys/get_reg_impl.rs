@@ -1,7 +1,7 @@
 use anyhow::Result;
 #[cfg(target_os = "windows")]
-use starlark::{values::{dict::Dict, Value}, collections::SmallMap};
-use starlark::values::{Heap,dict::Dict};
+use starlark::{values::Value, collections::SmallMap};
+use starlark::values::{Heap, dict::Dict};
 
 
 #[cfg(not(target_os = "windows"))]
