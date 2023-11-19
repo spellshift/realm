@@ -3,6 +3,7 @@ use anyhow::Result;
 use network_interface::{NetworkInterfaceConfig, NetworkInterface};
 #[cfg(not(target_os = "windows"))]
 use pnet::datalink::{interfaces, NetworkInterface};
+
 use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use super::super::insert_dict_kv;
 
@@ -50,14 +51,14 @@ fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> 
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 
-    insert_dict_kv!(dict_res, starlark_heap, "name", &interface.name, String);
+    insert_dict_kv!(tmp_res, starlark_heap, "name", &interface.name, String);
 
     let mut tmp_value2_arr = Vec::<Value>::new();
     for ip in interface.ips {
         tmp_value2_arr.push(starlark_heap.alloc_str(&ip.to_string()).to_value());
     }
-    insert_dict_kv!(dict_res, starlark_heap, "ips", tmp_value2_arr, Vec<_>);
-    insert_dict_kv!(dict_res, starlark_heap, "mac", &interface.mac, String);
+    insert_dict_kv!(tmp_res, starlark_heap, "ips", tmp_value2_arr, Vec<_>);
+    insert_dict_kv!(tmp_res, starlark_heap, "mac", &interface.mac, String);
 
     Ok(tmp_res)
 }
