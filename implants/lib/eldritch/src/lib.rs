@@ -6,7 +6,6 @@ pub mod process;
 pub mod sys;
 pub mod time;
 
-use serde_json::Map;
 use starlark::collections::SmallMap;
 use starlark::environment::{Globals, GlobalsBuilder, LibraryExtension, Module};
 use starlark::eval::Evaluator;
