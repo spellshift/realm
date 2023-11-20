@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 
-use sha1::{Sha1, Digest};
+use sha1::{Digest, Sha1};
 use sha2::{Sha256, Sha512};
 
 use anyhow::{anyhow, Result};
@@ -10,25 +10,23 @@ pub fn hash_file(file: String, algo: String) -> Result<String> {
     let mut file_data = String::new();
     File::open(file)?.read_to_string(&mut file_data)?;
     match algo.to_lowercase().as_str() {
-        "md5" => {
-            Ok(format!("{:02x}", md5::compute(file_data.as_bytes())))
-        },
+        "md5" => Ok(format!("{:02x}", md5::compute(file_data.as_bytes()))),
         "sha1" => {
             let mut hasher = Sha1::new();
             hasher.update(&file_data);
             Ok(format!("{:02x}", hasher.finalize()))
-        },
+        }
         "sha256" => {
             let mut hasher = Sha256::new();
             hasher.update(&file_data);
             Ok(format!("{:02x}", hasher.finalize()))
-        },
+        }
         "sha512" => {
             let mut hasher = Sha512::new();
             hasher.update(&file_data);
             Ok(format!("{:02x}", hasher.finalize()))
-        },
-        _ => Err(anyhow!("Unknown algorithm: {}", algo)) 
+        }
+        _ => Err(anyhow!("Unknown algorithm: {}", algo)),
     }
 }
 
@@ -56,12 +54,21 @@ mod tests {
         }
 
         assert_eq!(hash_file(path.clone(), "md5".to_string())?, lorem_hash_md5);
-        assert_eq!(hash_file(path.clone(), "sha1".to_string())?, lorem_hash_sha1);
-        assert_eq!(hash_file(path.clone(), "sha256".to_string())?, lorem_hash_sha256);
-        assert_eq!(hash_file(path.clone(), "sha512".to_string())?, lorem_hash_sha512);
+        assert_eq!(
+            hash_file(path.clone(), "sha1".to_string())?,
+            lorem_hash_sha1
+        );
+        assert_eq!(
+            hash_file(path.clone(), "sha256".to_string())?,
+            lorem_hash_sha256
+        );
+        assert_eq!(
+            hash_file(path.clone(), "sha512".to_string())?,
+            lorem_hash_sha512
+        );
         Ok(())
     }
-    
+
     #[test]
     fn test_hash_invalid() -> Result<()> {
         let lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";

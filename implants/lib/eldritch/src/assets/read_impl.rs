@@ -12,13 +12,12 @@ pub fn read(src: String) -> Result<String> {
     Ok(result)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
-    fn test_assets_read() -> anyhow::Result<()>{
+    fn test_assets_read() -> anyhow::Result<()> {
         let res = read("print/main.eld".to_string())?;
         assert_eq!(res, r#"print("This script just prints")"#);
         Ok(())

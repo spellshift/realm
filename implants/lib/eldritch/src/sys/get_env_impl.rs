@@ -19,16 +19,16 @@ pub fn get_env(starlark_heap: &Heap) -> Result<Dict> {
             val_value.to_value(),
         );
     }
-    
+
     Ok(dict_res)
 }
 
 #[cfg(test)]
 mod tests {
-    use starlark::{values::Value, const_frozen_string};
-    use anyhow::Result;
-    use std::env;
     use super::*;
+    use anyhow::Result;
+    use starlark::{const_frozen_string, values::Value};
+    use std::env;
 
     #[test]
     fn test_get_env() -> Result<()> {
