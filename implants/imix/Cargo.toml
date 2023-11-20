@@ -3,13 +3,6 @@ name = "imix"
 version = "0.0.3"
 edition = "2021"
 
-[profile.release]
-strip = true  # Automatically strip symbols from the binary.
-opt-level = "z"  # Optimize for size.
-lto = true
-codegen-units = 1
-panic = "abort"
-
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true , features = ["serde"] }
