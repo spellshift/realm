@@ -1,15 +1,12 @@
-use std::fs::{File, rename};
-use std::io::{Read, Write};
-use std::path::Path;
 use aes::cipher::BlockSizeUser;
 use anyhow::{anyhow, Result};
+use std::fs::{rename, File};
+use std::io::{Read, Write};
+use std::path::Path;
 use tempfile::NamedTempFile;
 
+use aes::cipher::{generic_array::GenericArray, BlockDecrypt, KeyInit};
 use aes::Aes128;
-use aes::cipher::{
-    BlockDecrypt, KeyInit,
-    generic_array::GenericArray,
-};
 
 pub fn decrypt_file(src: String, dst: String, key: String) -> Result<()> {
     if !Path::new(&dst).exists() {
@@ -38,7 +35,7 @@ pub fn decrypt_file(src: String, dst: String, key: String) -> Result<()> {
         if src_len == 0 {
             let last_byte = block[15];
             if last_byte < 16 && last_byte > 0 {
-                let suspected_padding = &block[(16 - last_byte) as usize ..=15];
+                let suspected_padding = &block[(16 - last_byte) as usize..=15];
                 let mut invalid = false;
                 for byte in suspected_padding {
                     if byte != &last_byte {
@@ -62,15 +59,18 @@ pub fn decrypt_file(src: String, dst: String, key: String) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::{Write, Read}};
+    use std::{
+        fs::File,
+        io::{Read, Write},
+    };
 
-    use tempfile::TempDir;
     use anyhow::Result;
+    use tempfile::TempDir;
 
     use super::decrypt_file;
 
-    use sha1::{Sha1, Digest};
     use hex_literal::hex;
+    use sha1::{Digest, Sha1};
 
     #[test]
     fn test_decrypt() -> Result<()> {
@@ -79,10 +79,14 @@ mod tests {
         let test_path = tmp_dir.path().join("test.txt");
         let test_dec_path = tmp_dir.path().join("test.txt.dec");
         {
-            let mut tmp_file = File::create(test_path.clone())?;      
+            let mut tmp_file = File::create(test_path.clone())?;
             tmp_file.write(&lorem_encrypted)?;
         }
-        decrypt_file(test_path.to_str().unwrap().to_owned(), test_dec_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!".to_string())?;
+        decrypt_file(
+            test_path.to_str().unwrap().to_owned(),
+            test_dec_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD!".to_string(),
+        )?;
 
         let mut hasher = Sha1::new();
         let mut dec_f = File::open(test_dec_path)?;
@@ -99,8 +103,18 @@ mod tests {
     fn test_decrypt_bad_password() -> Result<()> {
         let tmp_dir = TempDir::new()?;
         let test_path = tmp_dir.path().join("test.txt");
-        assert!(decrypt_file(test_path.to_str().unwrap().to_owned(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!!".to_string()).is_err());
-        assert!(decrypt_file(test_path.to_str().unwrap().to_owned(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD".to_string()).is_err());
+        assert!(decrypt_file(
+            test_path.to_str().unwrap().to_owned(),
+            test_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD!!".to_string()
+        )
+        .is_err());
+        assert!(decrypt_file(
+            test_path.to_str().unwrap().to_owned(),
+            test_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD".to_string()
+        )
+        .is_err());
         Ok(())
     }
 
@@ -108,7 +122,12 @@ mod tests {
     fn test_decrypt_no_file() -> Result<()> {
         let tmp_dir = TempDir::new()?;
         let test_path = tmp_dir.path().join("test.txt");
-        assert!(decrypt_file("/I/Dont/Exist".to_string(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!".to_string()).is_err());
+        assert!(decrypt_file(
+            "/I/Dont/Exist".to_string(),
+            test_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD!".to_string()
+        )
+        .is_err());
         Ok(())
     }
 
@@ -120,7 +139,12 @@ mod tests {
             let mut tmp_file = File::create(test_path.clone())?;
             tmp_file.write(&[0u8; 15])?;
         }
-        assert!(decrypt_file(test_path.to_str().unwrap().to_owned(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!".to_string()).is_err());
+        assert!(decrypt_file(
+            test_path.to_str().unwrap().to_owned(),
+            test_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD!".to_string()
+        )
+        .is_err());
         Ok(())
     }
 }

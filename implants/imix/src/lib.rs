@@ -1,9 +1,9 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub enum Error {
     Io(std::io::Error),
-    SerdeJson(serde_json::Error)
+    SerdeJson(serde_json::Error),
 }
 
 impl From<std::io::Error> for Error {
@@ -28,7 +28,7 @@ pub struct C2Config {
 pub struct ServiceConfig {
     name: String,
     description: String,
-    executable_path: String
+    executable_path: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -47,5 +47,5 @@ pub struct Config {
     pub service_configs: Vec<ServiceConfig>,
 }
 
-pub mod windows;
 pub mod linux;
+pub mod windows;

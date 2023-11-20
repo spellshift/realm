@@ -1,8 +1,7 @@
 use anyhow::Result;
 use std::process;
-use starlark::values::Heap;
 
-pub fn get_pid(starlark_heap: &Heap) -> Result<u32> {
+pub fn get_pid() -> Result<u32> {
     Ok(process::id())
 }
 
@@ -12,8 +11,7 @@ mod tests {
 
     #[test]
     fn test_sys_get_pid() {
-        let starlark_heap = Heap::new();
-        let res = get_pid(&starlark_heap).unwrap();
+        let res = get_pid().unwrap();
         assert_eq!(res, process::id());
     }
 }

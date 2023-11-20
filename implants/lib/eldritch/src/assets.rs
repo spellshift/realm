@@ -8,11 +8,13 @@ use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, starlark_value};
-use starlark::{starlark_simple_value, starlark_module};
+use starlark::values::{
+    starlark_value, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+};
+use starlark::{starlark_module, starlark_simple_value};
 
-use serde::{Serialize,Serializer};
 use rust_embed::RustEmbed;
+use serde::{Serialize, Serializer};
 
 #[cfg(debug_assertions)]
 #[derive(RustEmbed)]
@@ -23,7 +25,6 @@ pub struct Asset;
 #[derive(RustEmbed)]
 #[folder = "../../../implants/golem/embed_files_golem_prod"]
 pub struct Asset;
-
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "AssetsLibrary")]
@@ -60,6 +61,7 @@ impl<'v> UnpackValue<'v> for AssetsLibrary {
 
 // This is where all of the "assets.X" impl methods are bound
 #[starlark_module]
+#[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
     fn copy(this: AssetsLibrary, src: String, dest: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
