@@ -23,10 +23,7 @@
 				"go.goroot": "/usr/local/go",
 
 				// Formatting
-				"editor.formatOnSave": false,
-				"[go]": {
-					"editor.formatOnSave": true
-				},
+				"editor.formatOnSave": true,
 
 				"files.trimTrailingWhitespace": true,
 				"files.insertFinalNewline": true,
