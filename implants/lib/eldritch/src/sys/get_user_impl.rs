@@ -22,7 +22,8 @@ pub fn get_user(starlark_heap: &Heap) -> Result<Dict> {
             None => return Err(anyhow::anyhow!("Failed to get uid")),
         };
         #[cfg(target_os="windows")]
-        let uid_value = starlark_heap.alloc(uid.to_string());
+        insert_dict_kv!(dict_user, starlark_heap, "uid", uid.to_string(), String);
+
         #[cfg(not(target_os="windows"))]
         insert_dict_kv!(dict_user, starlark_heap, "uid", **uid, u32);
 
