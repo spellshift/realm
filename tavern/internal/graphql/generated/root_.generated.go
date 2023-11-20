@@ -102,6 +102,7 @@ type ComplexityRoot struct {
 		Nodes   func(childComplexity int, ids []int) int
 		Quests  func(childComplexity int, where *ent.QuestWhereInput) int
 		Tags    func(childComplexity int, where *ent.TagWhereInput) int
+		Tasks   func(childComplexity int, where *ent.TaskWhereInput) int
 		Tomes   func(childComplexity int, where *ent.TomeWhereInput) int
 		Users   func(childComplexity int, where *ent.UserWhereInput) int
 	}
@@ -557,6 +558,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Tags(childComplexity, args["where"].(*ent.TagWhereInput)), true
+
+	case "Query.tasks":
+		if e.complexity.Query.Tasks == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tasks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tasks(childComplexity, args["where"].(*ent.TaskWhereInput)), true
 
 	case "Query.tomes":
 		if e.complexity.Query.Tomes == nil {
@@ -1958,6 +1971,7 @@ input UserWhereInput {
 	{Name: "../schema/query.graphql", Input: `extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
   quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
+  tasks(where: TaskWhereInput): [Task!]! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
   hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)

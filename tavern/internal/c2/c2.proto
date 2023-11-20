@@ -1,0 +1,94 @@
+syntax = "proto3";
+// edition = "2023";
+
+package c2;
+
+option go_package = "github.com/kcarretto/tavern/internal/c2/c2pb";
+
+import "google/protobuf/timestamp.proto";
+
+/*
+ * Messages
+ */
+
+ // Host information for the system a beacon is running on.
+message Host {
+    string identifier = 1;
+    string name = 2;
+
+    enum Platform {
+        PLATFORM_UNSPECIFIED = 0;
+        PLATFORM_WINDOWS = 1;
+        PLATFORM_LINUX = 2;
+        PLATFORM_MACOS = 3;
+        PLATFORM_BSD = 4;
+    }
+
+    Platform platform = 3;
+    string primary_ip = 4;
+}
+
+// Agent information to identify the type of beacon.
+message Agent {
+    string identifier = 1;
+}
+
+// Beacon information that is unique to the current running beacon.
+message Beacon {
+    string identifier = 1;
+    string principal = 2;
+    Host host = 3;
+    Agent agent = 4;
+    uint64 interval = 5; // Duration until next callback, in seconds.
+}
+
+// Task instructions for the beacon to execute.
+message Task {
+    int32 id = 1;
+    string eldritch = 2;
+    map<string, string> parameters = 3;
+}
+
+// TaskError provides information when task execution fails.
+message TaskError {
+    string msg = 1;
+}
+
+// TaskOutput provides information about a running task.
+message TaskOutput {
+    int32 id = 1;
+    string output = 2;
+    TaskError error = 3;
+
+    // Indicates the UTC timestamp task execution began, set only in the first message for reporting.
+    google.protobuf.Timestamp exec_started_at = 4;
+
+    // Indicates the UTC timestamp task execution completed, set only in last message for reporting.
+    google.protobuf.Timestamp exec_finished_at = 5;
+}
+
+/*
+ * RPC Messages
+ */
+message ClaimTasksRequest {
+    Beacon beacon = 1;
+}
+
+message ClaimTasksResponse {
+    repeated Task tasks = 1;
+}
+
+message ReportTaskOutputRequest {
+    TaskOutput output = 1;
+}
+
+message ReportTaskOutputResponse {}
+
+/*
+ * Service
+ */
+
+service C2 {
+    rpc ClaimTasks(ClaimTasksRequest) returns (ClaimTasksResponse) {}
+    rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
+}

@@ -1,6 +1,6 @@
 use anyhow::Result;
-use std::path::Path;
 use std::fs;
+use std::path::Path;
 
 pub fn remove(path: String) -> Result<()> {
     let res = Path::new(&path);
@@ -12,11 +12,10 @@ pub fn remove(path: String) -> Result<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::{NamedTempFile,tempdir};
+    use tempfile::{tempdir, NamedTempFile};
 
     #[test]
     fn remove_file() -> anyhow::Result<()> {
@@ -29,9 +28,9 @@ mod tests {
 
         // Verify that file has been removed
         let res = Path::new(&path).exists();
-        assert_eq!(res, false); 
+        assert_eq!(res, false);
         Ok(())
-    }    
+    }
     #[test]
     fn remove_dir() -> anyhow::Result<()> {
         // Create dir
@@ -43,7 +42,7 @@ mod tests {
 
         // Verify that file has been removed
         let res = Path::new(&path).exists();
-        assert_eq!(res, false); 
+        assert_eq!(res, false);
         Ok(())
-    }    
+    }
 }

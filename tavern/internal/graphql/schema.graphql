@@ -1070,6 +1070,7 @@ type Mutation {
 extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
   quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
+  tasks(where: TaskWhereInput): [Task!]! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
   hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)

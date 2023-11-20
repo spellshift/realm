@@ -6,7 +6,7 @@ use super::Config;
 
 pub const SYSTEMD_DIR: &str = "/lib/systemd/system/";
 
-pub async fn install(config: Config)-> Result<(), super::Error> {
+pub async fn install(config: Config) -> Result<(), super::Error> {
     // go through each service config consuming the structs
     for service_config in config.service_configs.into_iter() {
         let service_name = service_config.name;
@@ -53,9 +53,18 @@ WantedBy=multi-user.target
 
         // daemon reload/enable service/start service
         Command::new("systemctl").arg("daemon-reload").output()?;
-        Command::new("systemctl").arg("restart").arg(&service_name).output()?;
-        Command::new("systemctl").arg("enable").arg(&service_name).output()?;
-        Command::new("systemctl").arg("start").arg(&service_name).output()?;
+        Command::new("systemctl")
+            .arg("restart")
+            .arg(&service_name)
+            .output()?;
+        Command::new("systemctl")
+            .arg("enable")
+            .arg(&service_name)
+            .output()?;
+        Command::new("systemctl")
+            .arg("start")
+            .arg(&service_name)
+            .output()?;
     }
     Ok(())
 }
