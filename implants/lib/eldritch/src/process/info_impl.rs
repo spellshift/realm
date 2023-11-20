@@ -1,9 +1,12 @@
-use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
-use anyhow::Result;
-use sysinfo::{System, Pid, SystemExt, ProcessExt, PidExt};
-use std::process::id;
 use super::super::insert_dict_kv;
-
+use anyhow::Result;
+use starlark::{
+    collections::SmallMap,
+    const_frozen_string,
+    values::{dict::Dict, Heap, Value},
+};
+use std::process::id;
+use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 
 pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict> {
     let map: SmallMap<Value, Value> = SmallMap::new();
@@ -12,16 +15,45 @@ pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict> {
     let pid = pid.unwrap_or(id() as usize);
     let s = System::new_all();
     if let Some(process) = s.process(Pid::from(pid)) {
-
         insert_dict_kv!(dict, starlark_heap, "pid", pid, i32);
         insert_dict_kv!(dict, starlark_heap, "name", process.name(), String);
         insert_dict_kv!(dict, starlark_heap, "cmd", process.cmd().join(" "), String);
-        insert_dict_kv!(dict, starlark_heap, "exe", process.exe().display().to_string(), String);
-        insert_dict_kv!(dict, starlark_heap, "environ", process.environ().join(","), String);
-        insert_dict_kv!(dict, starlark_heap, "cwd", process.cwd().display().to_string(), String);
-        insert_dict_kv!(dict, starlark_heap, "root", process.root().display().to_string(), String);
+        insert_dict_kv!(
+            dict,
+            starlark_heap,
+            "exe",
+            process.exe().display().to_string(),
+            String
+        );
+        insert_dict_kv!(
+            dict,
+            starlark_heap,
+            "environ",
+            process.environ().join(","),
+            String
+        );
+        insert_dict_kv!(
+            dict,
+            starlark_heap,
+            "cwd",
+            process.cwd().display().to_string(),
+            String
+        );
+        insert_dict_kv!(
+            dict,
+            starlark_heap,
+            "root",
+            process.root().display().to_string(),
+            String
+        );
         insert_dict_kv!(dict, starlark_heap, "memory_usage", process.memory(), u64);
-        insert_dict_kv!(dict, starlark_heap, "virtual_memory_usage", process.virtual_memory(), u64);
+        insert_dict_kv!(
+            dict,
+            starlark_heap,
+            "virtual_memory_usage",
+            process.virtual_memory(),
+            u64
+        );
         match process.parent() {
             Some(pid) => {
                 insert_dict_kv!(dict, starlark_heap, "ppid", pid.as_u32(), u32);
@@ -30,7 +62,13 @@ pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict> {
                 insert_dict_kv!(dict, starlark_heap, "ppid", None);
             }
         }
-        insert_dict_kv!(dict, starlark_heap, "status", process.status().to_string(), String);
+        insert_dict_kv!(
+            dict,
+            starlark_heap,
+            "status",
+            process.status().to_string(),
+            String
+        );
         insert_dict_kv!(dict, starlark_heap, "start_time", process.start_time(), u64);
         insert_dict_kv!(dict, starlark_heap, "run_time", process.run_time(), u64);
         match process.group_id() {
@@ -116,15 +154,21 @@ pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starlark::values::Heap;
     use anyhow::{anyhow, Result};
+    use starlark::values::Heap;
     use std::process::id;
 
     #[test]
     fn test_info_default() -> Result<()> {
         let test_heap = Heap::new();
         let res = info(&test_heap, None)?;
-        assert!(res.get(const_frozen_string!("pid").to_value())?.ok_or(anyhow!("Could not find PID"))?.unpack_i32().ok_or(anyhow!("PID is not an i32"))? as u32 == id());
+        assert!(
+            res.get(const_frozen_string!("pid").to_value())?
+                .ok_or(anyhow!("Could not find PID"))?
+                .unpack_i32()
+                .ok_or(anyhow!("PID is not an i32"))? as u32
+                == id()
+        );
         Ok(())
     }
 }

@@ -1,6 +1,6 @@
+mod info_impl;
 mod kill_impl;
 mod list_impl;
-mod info_impl;
 mod name_impl;
 mod netstat_impl;
 
@@ -10,10 +10,12 @@ use derive_more::Display;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
-use starlark::{starlark_simple_value, starlark_module};
+use starlark::values::{
+    starlark_value, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+};
+use starlark::{starlark_module, starlark_simple_value};
 
-use serde::{Serialize,Serializer};
+use serde::{Serialize, Serializer};
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "ProcessLibrary")]
@@ -23,7 +25,6 @@ starlark_simple_value!(ProcessLibrary);
 #[allow(non_upper_case_globals)]
 #[starlark_value(type = "process_library")]
 impl<'v> StarlarkValue<'v> for ProcessLibrary {
-
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
         RES.methods(methods)

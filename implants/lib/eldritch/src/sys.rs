@@ -1,17 +1,17 @@
+mod dll_inject_impl;
+mod dll_reflect_impl;
 mod exec_impl;
 mod get_env_impl;
 mod get_ip_impl;
 mod get_os_impl;
 mod get_pid_impl;
+mod get_reg_impl;
 mod get_user_impl;
 mod hostname_impl;
 mod is_linux_impl;
-mod is_windows_impl;
 mod is_macos_impl;
+mod is_windows_impl;
 mod shell_impl;
-mod dll_inject_impl;
-mod dll_reflect_impl;
-mod get_reg_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -19,10 +19,12 @@ use derive_more::Display;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
 use starlark::values::starlark_value;
-use starlark::values::{StarlarkValue, Value, Heap, dict::Dict, UnpackValue, ValueLike, ProvidesStaticType};
-use starlark::{starlark_simple_value, starlark_module};
+use starlark::values::{
+    dict::Dict, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+};
+use starlark::{starlark_module, starlark_simple_value};
 
-use serde::{Serialize,Serializer};
+use serde::{Serialize, Serializer};
 
 struct CommandOutput {
     stdout: String,
@@ -38,7 +40,6 @@ starlark_simple_value!(SysLibrary);
 #[allow(non_upper_case_globals)]
 #[starlark_value(type = "sys_library")]
 impl<'v> StarlarkValue<'v> for SysLibrary {
-
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
         RES.methods(methods)

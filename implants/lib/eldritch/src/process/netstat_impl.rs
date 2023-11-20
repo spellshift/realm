@@ -1,7 +1,11 @@
-use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
+use super::super::insert_dict_kv;
 use anyhow::Result;
 use netstat2::*;
-use super::super::insert_dict_kv;
+use starlark::{
+    collections::SmallMap,
+    const_frozen_string,
+    values::{dict::Dict, Heap, Value},
+};
 
 pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     let mut out: Vec<Dict> = Vec::new();
@@ -16,24 +20,66 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
                 // Create Dict type.
                 let mut dict = Dict::new(map);
                 insert_dict_kv!(dict, starlark_heap, "socket_type", "TCP", String);
-                insert_dict_kv!(dict, starlark_heap, "local_address", tcp_si.local_addr.to_string(), String);
-                insert_dict_kv!(dict, starlark_heap, "local_port", tcp_si.local_port as u32, u32);
-                insert_dict_kv!(dict, starlark_heap, "remote_address", tcp_si.remote_addr.to_string(), String);
-                insert_dict_kv!(dict, starlark_heap, "remote_port", tcp_si.remote_port as u32, u32);
-                insert_dict_kv!(dict, starlark_heap, "state", tcp_si.state.to_string(), String);
+                insert_dict_kv!(
+                    dict,
+                    starlark_heap,
+                    "local_address",
+                    tcp_si.local_addr.to_string(),
+                    String
+                );
+                insert_dict_kv!(
+                    dict,
+                    starlark_heap,
+                    "local_port",
+                    tcp_si.local_port as u32,
+                    u32
+                );
+                insert_dict_kv!(
+                    dict,
+                    starlark_heap,
+                    "remote_address",
+                    tcp_si.remote_addr.to_string(),
+                    String
+                );
+                insert_dict_kv!(
+                    dict,
+                    starlark_heap,
+                    "remote_port",
+                    tcp_si.remote_port as u32,
+                    u32
+                );
+                insert_dict_kv!(
+                    dict,
+                    starlark_heap,
+                    "state",
+                    tcp_si.state.to_string(),
+                    String
+                );
                 insert_dict_kv!(dict, starlark_heap, "pids", si.associated_pids, Vec<_>);
                 out.push(dict);
-            },
+            }
             ProtocolSocketInfo::Udp(udp_si) => {
                 let map: SmallMap<Value, Value> = SmallMap::new();
                 // Create Dict type.
                 let mut dict = Dict::new(map);
                 insert_dict_kv!(dict, starlark_heap, "socket_type", "UDP", String);
-                insert_dict_kv!(dict, starlark_heap, "local_address", udp_si.local_addr.to_string(), String);
-                insert_dict_kv!(dict, starlark_heap, "local_port", udp_si.local_port as u32, u32);
+                insert_dict_kv!(
+                    dict,
+                    starlark_heap,
+                    "local_address",
+                    udp_si.local_addr.to_string(),
+                    String
+                );
+                insert_dict_kv!(
+                    dict,
+                    starlark_heap,
+                    "local_port",
+                    udp_si.local_port as u32,
+                    u32
+                );
                 insert_dict_kv!(dict, starlark_heap, "pids", si.associated_pids, Vec<_>);
                 out.push(dict);
-            },
+            }
         }
     }
     Ok(out)
@@ -42,12 +88,12 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starlark::values::{Heap, UnpackValue};
     use anyhow::Result;
+    use starlark::values::{Heap, UnpackValue};
+    use std::process::id;
+    use tokio::io::copy;
     use tokio::net::TcpListener;
     use tokio::task;
-    use tokio::io::copy;
-    use std::process::id;
 
     async fn local_bind_tcp() -> TcpListener {
         // Try three times to bind to a port
@@ -71,7 +117,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_netstat() -> Result<()>{
+    async fn test_netstat() -> Result<()> {
         let heap = Heap::new();
         let listener = local_bind_tcp().await;
         let test_port: i32 = listener.local_addr()?.port().into();
@@ -79,19 +125,43 @@ mod tests {
         let res = netstat(&heap)?;
         let pid = id() as i32;
         for socket in res {
-            if Some(Some("TCP")) != socket.get(const_frozen_string!("socket_type").to_value()).unwrap().map(|val| val.unpack_str()) {
+            if Some(Some("TCP"))
+                != socket
+                    .get(const_frozen_string!("socket_type").to_value())
+                    .unwrap()
+                    .map(|val| val.unpack_str())
+            {
                 continue;
             }
-            if Some(Some("127.0.0.1")) != socket.get(const_frozen_string!("local_address").to_value()).unwrap().map(|val| val.unpack_str()) {
+            if Some(Some("127.0.0.1"))
+                != socket
+                    .get(const_frozen_string!("local_address").to_value())
+                    .unwrap()
+                    .map(|val| val.unpack_str())
+            {
                 continue;
             }
-            if Some(Some(test_port)) != socket.get(const_frozen_string!("local_port").to_value()).unwrap().map(|val| val.unpack_i32()) {
+            if Some(Some(test_port))
+                != socket
+                    .get(const_frozen_string!("local_port").to_value())
+                    .unwrap()
+                    .map(|val| val.unpack_i32())
+            {
                 continue;
             }
-            if Some(Some("LISTEN")) != socket.get(const_frozen_string!("state").to_value()).unwrap().map(|val| val.unpack_str()) {
+            if Some(Some("LISTEN"))
+                != socket
+                    .get(const_frozen_string!("state").to_value())
+                    .unwrap()
+                    .map(|val| val.unpack_str())
+            {
                 continue;
             }
-            if let Some(Some(pids)) = socket.get(const_frozen_string!("pids").to_value()).unwrap().map(|val| Vec::<i32>::unpack_value(val)) {
+            if let Some(Some(pids)) = socket
+                .get(const_frozen_string!("pids").to_value())
+                .unwrap()
+                .map(|val| Vec::<i32>::unpack_value(val))
+            {
                 if pids.contains(&pid) {
                     return Ok(());
                 }

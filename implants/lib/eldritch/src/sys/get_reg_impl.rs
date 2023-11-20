@@ -1,16 +1,17 @@
 use anyhow::Result;
+use starlark::values::{dict::Dict, Heap};
 #[cfg(target_os = "windows")]
-use starlark::{values::Value, collections::SmallMap};
-use starlark::values::{Heap, dict::Dict};
-
+use starlark::{collections::SmallMap, values::Value};
 
 #[cfg(not(target_os = "windows"))]
-pub fn get_reg(_starlark_heap: &Heap, _reghive: String, _regpath: String) -> Result<Dict>  {
-    return Err(anyhow::anyhow!("This OS isn't supported by the get_reg function. Only windows systems are supported"));
+pub fn get_reg(_starlark_heap: &Heap, _reghive: String, _regpath: String) -> Result<Dict> {
+    return Err(anyhow::anyhow!(
+        "This OS isn't supported by the get_reg function. Only windows systems are supported"
+    ));
 }
 
 #[cfg(target_os = "windows")]
-pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result<Dict>  {
+pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result<Dict> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 
@@ -33,10 +34,8 @@ pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result
 
     };
 
-
     let hive = RegKey::predef(ihive);
     let subkey = hive.open_subkey(regpath)?;
-
 
     for result in subkey.enum_values() {
         let (key, val): (String, RegValue) = result?;
@@ -56,9 +55,11 @@ pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result
 #[cfg(target_os = "windows")]
 #[cfg(test)]
 mod tests {
-    use starlark::{values::{Value, Heap}, const_frozen_string};
     use super::*;
-
+    use starlark::{
+        const_frozen_string,
+        values::{Heap, Value},
+    };
 
     #[test]
     fn test_get_reg() -> anyhow::Result<()> {
@@ -69,8 +70,12 @@ mod tests {
         let (nkey, _ndisp) = hkcu.create_subkey("SOFTWARE\\TEST1")?;
         nkey.set_value("FOO", &"BAR")?;
 
-        let ares = get_reg(&binding, "HKEY_CURRENT_USER".to_string(), "SOFTWARE\\TEST1".to_string());
-        let val2 : Value<'_> = ares?.get(const_frozen_string!("FOO").to_value())?.unwrap();
+        let ares = get_reg(
+            &binding,
+            "HKEY_CURRENT_USER".to_string(),
+            "SOFTWARE\\TEST1".to_string(),
+        );
+        let val2: Value<'_> = ares?.get(const_frozen_string!("FOO").to_value())?.unwrap();
         //delete temp regkey
         nkey.delete_value("Foo")?;
 

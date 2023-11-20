@@ -1,13 +1,19 @@
-use anyhow::{Result, Context};
-use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
-use sysinfo::{ProcessExt,System,SystemExt,PidExt, UserExt};
 use super::super::insert_dict_kv;
+use anyhow::{Context, Result};
+use starlark::{
+    collections::SmallMap,
+    const_frozen_string,
+    values::{dict::Dict, Heap, Value},
+};
+use sysinfo::{PidExt, ProcessExt, System, SystemExt, UserExt};
 
 pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     if !System::IS_SUPPORTED {
-        return Err(anyhow::anyhow!("This OS isn't supported for process functions.
+        return Err(anyhow::anyhow!(
+            "This OS isn't supported for process functions.
          Pleases see sysinfo docs for a full list of supported systems.
-         https://docs.rs/sysinfo/0.23.5/sysinfo/index.html#supported-oses\n\n"));
+         https://docs.rs/sysinfo/0.23.5/sysinfo/index.html#supported-oses\n\n"
+        ));
     }
     const UNKNOWN_USER: &str = "???";
 
@@ -18,17 +24,19 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 
     for (pid, process) in sys.processes() {
         let mut tmp_ppid = 0;
-        if  process.parent() != None {
-            tmp_ppid = process.parent().context(format!("Failed to get parent process for {}", pid))?.as_u32();
+        if process.parent() != None {
+            tmp_ppid = process
+                .parent()
+                .context(format!("Failed to get parent process for {}", pid))?
+                .as_u32();
         }
         let tmp_username = match process.user_id() {
-            Some(local_user_id) => match sys.get_user_by_id(local_user_id){
-                    Some(local_username) => local_username.name().to_string(),
-                    None => String::from(UNKNOWN_USER),
+            Some(local_user_id) => match sys.get_user_by_id(local_user_id) {
+                Some(local_username) => local_username.name().to_string(),
+                None => String::from(UNKNOWN_USER),
             },
             None => String::from(UNKNOWN_USER),
         };
-
 
         let res: SmallMap<Value, Value> = SmallMap::new();
         // Create Dict type.
@@ -36,19 +44,54 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 
         insert_dict_kv!(tmp_res, starlark_heap, "pid", pid.as_u32(), u32);
         insert_dict_kv!(tmp_res, starlark_heap, "ppid", tmp_ppid, u32);
-        insert_dict_kv!(tmp_res, starlark_heap, "status", &process.status().to_string(), String);
+        insert_dict_kv!(
+            tmp_res,
+            starlark_heap,
+            "status",
+            &process.status().to_string(),
+            String
+        );
         insert_dict_kv!(tmp_res, starlark_heap, "username", &tmp_username, String);
-        insert_dict_kv!(tmp_res, starlark_heap, "path", process.exe().to_str().context("Failed to cast process exe to str")?, String);
-        insert_dict_kv!(tmp_res, starlark_heap, "command", process.cmd().join(" "), String);
-        insert_dict_kv!(tmp_res, starlark_heap, "cwd", process.cwd().to_str().context("Failed to cast cwd to str")?, String);
-        insert_dict_kv!(tmp_res, starlark_heap, "environ", process.environ().join(" "), String);
+        insert_dict_kv!(
+            tmp_res,
+            starlark_heap,
+            "path",
+            process
+                .exe()
+                .to_str()
+                .context("Failed to cast process exe to str")?,
+            String
+        );
+        insert_dict_kv!(
+            tmp_res,
+            starlark_heap,
+            "command",
+            process.cmd().join(" "),
+            String
+        );
+        insert_dict_kv!(
+            tmp_res,
+            starlark_heap,
+            "cwd",
+            process
+                .cwd()
+                .to_str()
+                .context("Failed to cast cwd to str")?,
+            String
+        );
+        insert_dict_kv!(
+            tmp_res,
+            starlark_heap,
+            "environ",
+            process.environ().join(" "),
+            String
+        );
         insert_dict_kv!(tmp_res, starlark_heap, "name", process.name(), String);
 
         final_res.push(tmp_res);
     }
     Ok(final_res)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -58,31 +101,38 @@ mod tests {
     use std::process::Command;
 
     #[test]
-    fn test_process_list() -> anyhow::Result<()>{
+    fn test_process_list() -> anyhow::Result<()> {
         #[cfg(not(target_os = "windows"))]
         let sleep_str = "sleep";
         #[cfg(target_os = "windows")]
         let sleep_str = "timeout";
 
-        let child = Command::new(sleep_str)
-            .arg("5")
-            .spawn()?;
+        let child = Command::new(sleep_str).arg("5").spawn()?;
 
         let binding = Heap::new();
         let res = list(&binding)?;
-        for proc in res{
-            println!("{}", format!("{:?}", proc.get(const_frozen_string!("pid").to_value())?.context("Fail")?));
+        for proc in res {
+            println!(
+                "{}",
+                format!(
+                    "{:?}",
+                    proc.get(const_frozen_string!("pid").to_value())?
+                        .context("Fail")?
+                )
+            );
             let cur_pid = match proc.get(const_frozen_string!("pid").to_value())? {
-                Some(local_cur_pid) => local_cur_pid.unpack_i32().context("Failed to unpack starlark int to i32")?,
+                Some(local_cur_pid) => local_cur_pid
+                    .unpack_i32()
+                    .context("Failed to unpack starlark int to i32")?,
                 None => return Err(anyhow::anyhow!("pid couldn't be unwrapped")),
             };
             if cur_pid as u32 == child.id() {
                 assert_eq!(true, true);
-                return Ok(())
+                return Ok(());
             }
         }
         println!("PID: {}", child.id());
         assert_eq!(true, false);
-        return Ok(())
+        return Ok(());
     }
 }

@@ -1,6 +1,6 @@
 mod append_impl;
-mod copy_impl;
 mod compress_impl;
+mod copy_impl;
 mod download_impl;
 mod exists_impl;
 mod hash_impl;
@@ -8,9 +8,9 @@ mod is_dir_impl;
 mod is_file_impl;
 mod list_impl;
 mod mkdir_impl;
+mod moveto_impl;
 mod read_impl;
 mod remove_impl;
-mod moveto_impl;
 mod replace_all_impl;
 mod replace_impl;
 mod template_impl;
@@ -20,13 +20,15 @@ mod write_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
-use starlark::values::dict::Dict;
+use serde::{Serialize, Serializer};
 use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
+use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
-use starlark::{starlark_simple_value, starlark_module};
-use serde::{Serialize,Serializer};
+use starlark::values::{
+    starlark_value, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+};
+use starlark::{starlark_module, starlark_simple_value};
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "FileLibrary")]
@@ -36,7 +38,6 @@ starlark_simple_value!(FileLibrary);
 #[allow(non_upper_case_globals)]
 #[starlark_value(type = "file_library")]
 impl<'v> StarlarkValue<'v> for FileLibrary {
-
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
         RES.methods(methods)
@@ -71,7 +72,16 @@ enum FileType {
 }
 
 #[derive(Debug, Display)]
-#[display(fmt = "{} {} {} {} {} {} {}", name, file_type, size, owner, group, permissions, time_modified)]
+#[display(
+    fmt = "{} {} {} {} {} {} {}",
+    name,
+    file_type,
+    size,
+    owner,
+    group,
+    permissions,
+    time_modified
+)]
 struct File {
     name: String,
     file_type: FileType,
@@ -81,7 +91,6 @@ struct File {
     permissions: String,
     time_modified: String,
 }
-
 
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]

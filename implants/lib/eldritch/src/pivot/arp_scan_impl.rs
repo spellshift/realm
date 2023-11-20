@@ -1,3 +1,4 @@
+use super::super::insert_dict_kv;
 use anyhow::{anyhow, Result};
 use ipnetwork::{IpNetwork, Ipv4Network};
 #[cfg(not(target_os = "windows"))]
@@ -11,14 +12,13 @@ use pnet::{
     util::MacAddr,
 };
 use starlark::collections::SmallMap;
+use starlark::const_frozen_string;
 use starlark::values::{dict::Dict, Heap};
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
-use super::super::insert_dict_kv;
-use starlark::const_frozen_string;
 
 #[cfg(not(target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq)]
@@ -103,7 +103,11 @@ fn start_listener(
             let elapsed = match now.elapsed() {
                 Ok(elapsed) => elapsed,
                 Err(err) => {
-                    return Err(anyhow!("Failed to get elapsed time on {}: {}", interface.name, err));
+                    return Err(anyhow!(
+                        "Failed to get elapsed time on {}: {}",
+                        interface.name,
+                        err
+                    ));
                 }
             };
             if elapsed > Duration::from_secs(5) {
@@ -205,15 +209,16 @@ pub fn handle_arp_scan(
     for interface in interfaces {
         let inner_out = listener_out.clone();
         let inner_interface = interface.clone();
-        let thread = std::thread::spawn(move || {
-            match start_listener(inner_interface.clone(), inner_out) {
-                Ok(_) => {},
-                Err(err) => {
-                    #[cfg(debug_assertions)]
-                    println!("Listener on {} failed: {}", inner_interface.name, err);
-                }
-            }
-        });
+        let thread =
+            std::thread::spawn(
+                move || match start_listener(inner_interface.clone(), inner_out) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        println!("Listener on {} failed: {}", inner_interface.name, err);
+                    }
+                },
+            );
         thread.join().map_err(|err| {
             anyhow::anyhow!(
                 "Failed to join thread for interface {}: {:?}",
@@ -239,8 +244,20 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
             let mut hit_dict = Dict::new(hit_small_map);
 
             insert_dict_kv!(hit_dict, starlark_heap, "ip", &ipaddr.to_string(), String);
-            insert_dict_kv!(hit_dict, starlark_heap, "mac", &res.source_mac.to_string(), String);
-            insert_dict_kv!(hit_dict, starlark_heap, "interface", &res.interface.to_string(), String);
+            insert_dict_kv!(
+                hit_dict,
+                starlark_heap,
+                "mac",
+                &res.source_mac.to_string(),
+                String
+            );
+            insert_dict_kv!(
+                hit_dict,
+                starlark_heap,
+                "interface",
+                &res.interface.to_string(),
+                String
+            );
             out.push(hit_dict);
         }
     }
@@ -255,10 +272,16 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
 #[cfg(not(target_os = "windows"))]
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, sync::{Mutex, Arc}, net::Ipv4Addr, thread, time::Duration};
     use pnet::datalink::interfaces;
+    use std::{
+        collections::HashMap,
+        net::Ipv4Addr,
+        sync::{Arc, Mutex},
+        thread,
+        time::Duration,
+    };
 
-    use crate::pivot::arp_scan_impl::{handle_arp_scan, ArpResponse, start_listener};
+    use crate::pivot::arp_scan_impl::{handle_arp_scan, start_listener, ArpResponse};
 
     #[test]
     fn test_positive() {
@@ -285,7 +308,9 @@ mod tests {
 
     #[test]
     fn test_lock_failure() {
-        let data = Arc::from(Mutex::from(HashMap::<Ipv4Addr, Option<ArpResponse>>::from([(Ipv4Addr::LOCALHOST, None)])));
+        let data = Arc::from(Mutex::from(HashMap::<Ipv4Addr, Option<ArpResponse>>::from(
+            [(Ipv4Addr::LOCALHOST, None)],
+        )));
         let data_clone = data.clone();
         thread::spawn(move || {
             let _x = data_clone.lock().unwrap();
@@ -294,12 +319,13 @@ mod tests {
         thread::sleep(Duration::from_secs(3));
         let loopback = {
             let interfaces = interfaces();
-            interfaces.iter().filter(|x| x.is_loopback()).next().unwrap().clone()
+            interfaces
+                .iter()
+                .filter(|x| x.is_loopback())
+                .next()
+                .unwrap()
+                .clone()
         };
-        assert!(
-            start_listener(loopback, data).is_err()
-        );
+        assert!(start_listener(loopback, data).is_err());
     }
-
-
 }

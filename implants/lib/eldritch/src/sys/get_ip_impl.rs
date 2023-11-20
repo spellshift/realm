@@ -1,11 +1,15 @@
 use anyhow::Result;
 #[cfg(target_os = "windows")]
-use network_interface::{NetworkInterfaceConfig, NetworkInterface};
+use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 #[cfg(not(target_os = "windows"))]
 use pnet::datalink::{interfaces, NetworkInterface};
 
-use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap, const_frozen_string};
 use super::super::insert_dict_kv;
+use starlark::{
+    collections::SmallMap,
+    const_frozen_string,
+    values::{dict::Dict, Heap, Value},
+};
 
 const UNKNOWN: &str = "UNKNOWN";
 
@@ -21,7 +25,6 @@ struct NetInterface {
 fn handle_get_ip() -> Result<Vec<NetInterface>> {
     let mut res = Vec::new();
     for network_interface in NetworkInterface::show()? {
-
         let mac_addr = match network_interface.mac_addr {
             Some(local_mac) => local_mac,
             None => UNKNOWN.to_string(),
@@ -32,7 +35,7 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
             ips.push(ip.ip());
         }
 
-        res.push(NetInterface{
+        res.push(NetInterface {
             name: network_interface.name,
             ips: ips,
             mac: mac_addr,
@@ -47,7 +50,7 @@ fn handle_get_ip() -> Result<Vec<NetworkInterface>> {
 }
 
 #[cfg(target_os = "windows")]
-fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> Result<Dict>{
+fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> Result<Dict> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 
@@ -64,7 +67,7 @@ fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> 
 }
 
 #[cfg(not(target_os = "windows"))]
-fn create_dict_from_interface(starlark_heap: &Heap, interface: NetworkInterface) -> Result<Dict>{
+fn create_dict_from_interface(starlark_heap: &Heap, interface: NetworkInterface) -> Result<Dict> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 
@@ -75,7 +78,16 @@ fn create_dict_from_interface(starlark_heap: &Heap, interface: NetworkInterface)
         tmp_value2_arr.push(starlark_heap.alloc_str(&ip.to_string()).to_value());
     }
     insert_dict_kv!(tmp_res, starlark_heap, "ips", tmp_value2_arr, Vec<_>);
-    insert_dict_kv!(tmp_res, starlark_heap, "mac", &interface.mac.map(|mac| mac.to_string()).unwrap_or(UNKNOWN.to_string()), String);
+    insert_dict_kv!(
+        tmp_res,
+        starlark_heap,
+        "mac",
+        &interface
+            .mac
+            .map(|mac| mac.to_string())
+            .unwrap_or(UNKNOWN.to_string()),
+        String
+    );
 
     Ok(tmp_res)
 }

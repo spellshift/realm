@@ -6,10 +6,13 @@ pub fn to_json(json: Value) -> Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use starlark::{values::{dict::Dict, Heap, Value}, collections::SmallMap};
-    use anyhow::Result;
     use super::super::super::insert_dict_kv;
+    use anyhow::Result;
     use starlark::const_frozen_string;
+    use starlark::{
+        collections::SmallMap,
+        values::{dict::Dict, Heap, Value},
+    };
 
     #[test]
     fn to_json_object() -> Result<()> {

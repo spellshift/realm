@@ -1,12 +1,12 @@
-mod ssh_exec_impl;
-mod ssh_copy_impl;
-mod ssh_password_spray_impl;
-mod smb_exec_impl;
-mod port_scan_impl;
 mod arp_scan_impl;
-mod port_forward_impl;
-mod ncat_impl;
 mod bind_proxy_impl;
+mod ncat_impl;
+mod port_forward_impl;
+mod port_scan_impl;
+mod smb_exec_impl;
+mod ssh_copy_impl;
+mod ssh_exec_impl;
+mod ssh_password_spray_impl;
 
 use std::sync::Arc;
 
@@ -15,15 +15,17 @@ use async_trait::async_trait;
 use derive_more::Display;
 
 use russh::{client, Disconnect};
+use russh_keys::{decode_secret_key, key};
 use russh_sftp::client::SftpSession;
-use russh_keys::{key, decode_secret_key};
-use starlark::values::dict::Dict;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
+use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
-use starlark::values::{StarlarkValue, Value, UnpackValue, ValueLike, ProvidesStaticType, Heap, starlark_value};
-use starlark::{starlark_simple_value, starlark_module};
+use starlark::values::{
+    starlark_value, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+};
+use starlark::{starlark_module, starlark_simple_value};
 
-use serde::{Serialize,Serializer};
+use serde::{Serialize, Serializer};
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "PivotLibrary")]
@@ -33,7 +35,6 @@ starlark_simple_value!(PivotLibrary);
 #[allow(non_upper_case_globals)]
 #[starlark_value(type = "pivot_library")]
 impl<'v> StarlarkValue<'v> for PivotLibrary {
-
     fn get_methods() -> Option<&'static Methods> {
         static RES: MethodsStatic = MethodsStatic::new();
         RES.methods(methods)
@@ -116,8 +117,6 @@ fn methods(builder: &mut MethodsBuilder) {
     // }
 }
 
-
-
 // SSH Client utils
 struct Client {}
 
@@ -145,9 +144,7 @@ impl Session {
         key_password: Option<&str>,
         addrs: String,
     ) -> anyhow::Result<Self> {
-        let config = client::Config {
-            ..<_>::default()
-        };
+        let config = client::Config { ..<_>::default() };
         let config = Arc::new(config);
         let sh = Client {};
         let mut session = client::connect(config, addrs.clone(), sh).await?;
@@ -160,21 +157,23 @@ impl Session {
                     .authenticate_publickey(user, Arc::new(key_pair))
                     .await?;
                 return Ok(Self { session });
-            },
-            None => {},
+            }
+            None => {}
         }
 
         // If key auth doesn't work try password auth
         match password {
             Some(local_pass) => {
-                let _auth_res: bool = session
-                    .authenticate_password(user, local_pass)
-                    .await?;
+                let _auth_res: bool = session.authenticate_password(user, local_pass).await?;
                 return Ok(Self { session });
-            },
-            None => {},
+            }
+            None => {}
         }
-        return Err(anyhow::anyhow!("Failed to authenticate to host {}@{}", user, addrs.clone()));
+        return Err(anyhow::anyhow!(
+            "Failed to authenticate to host {}@{}",
+            user,
+            addrs.clone()
+        ));
     }
 
     async fn copy(&mut self, src: &str, dst: &str) -> anyhow::Result<()> {
@@ -203,8 +202,7 @@ impl Session {
                 russh::ChannelMsg::ExitStatus { exit_status } => {
                     code = Some(exit_status);
                 }
-                _ => {
-                }
+                _ => {}
             }
         }
         Ok(CommandResult { output, code })

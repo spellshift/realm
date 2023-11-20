@@ -7,6 +7,7 @@ pub mod sys;
 pub mod time;
 
 use starlark::collections::SmallMap;
+use starlark::const_frozen_string;
 use starlark::environment::{Globals, GlobalsBuilder, LibraryExtension, Module};
 use starlark::eval::Evaluator;
 use starlark::syntax::{AstModule, Dialect};
@@ -15,7 +16,6 @@ use starlark::values::{AllocValue, Value};
 use starlark::{starlark_module, PrintHandler};
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
-use starlark::const_frozen_string;
 
 use crate::crypto::CryptoLibrary;
 use assets::AssetsLibrary;
