@@ -701,9 +701,9 @@ sys.shell("ls /nofile")
 
 ### sys.write_reg
 
-`sys.get_reg(reghive: str, regpath: str, regname: str, regvalue: str) -> String`
+`sys.write_reg(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> String`
 
-The <b>sys.get_reg</b> method writes registry values to the requested registry path.
+The <b>sys.write_reg</b> method writes registry values to the requested registry path.
 An example is below:
 
 ```python
