@@ -108,11 +108,6 @@ pub async fn handle_output_and_responses(
             exec_future.1.future_join_handle.is_finished()
         );
 
-        // If the task doesn't exist in the map add a vector for it.
-        if !running_task_res_map.contains_key(&task_id) {
-            running_task_res_map.insert(task_id.clone(), vec![]);
-        }
-
         let mut task_channel_output: Vec<String> = vec![];
 
         // Loop over each line of output from the task and append it the the channel output.
@@ -171,12 +166,10 @@ pub async fn handle_output_and_responses(
                 error: None,
             };
 
-            let mut tmp_res_list = running_task_res_map
-                .get(&task_id)
-                .context("Failed to get task output by ID")?
-                .clone();
-            tmp_res_list.push(task_response);
-            running_task_res_map.insert(task_id.clone(), tmp_res_list);
+            running_task_res_map
+                .entry(task_id)
+                .and_modify(|cur_list| cur_list.push(task_response.clone()))
+                .or_insert(vec![task_response]);
         }
 
         // Only re-insert the still running exec futures
