@@ -9,7 +9,6 @@ use imix::init::agent_init;
 use imix::tasks::start_new_tasks;
 use imix::{tasks, Config};
 use std::collections::HashMap;
-use std::fs::File;
 use std::time::Instant;
 
 fn get_callback_uri(imix_config: Config) -> Result<String> {
@@ -76,7 +75,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             new_tasks.len()
         );
 
-        start_new_tasks(new_tasks, all_exec_futures, debug_start_time).await?;
+        start_new_tasks(new_tasks, &mut all_exec_futures, debug_start_time).await?;
 
         // 3. Sleep till callback time
         let time_to_sleep = imix_config
@@ -102,11 +101,11 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             (Utc::now().time() - debug_start_time).num_milliseconds()
         );
 
-        let all_exec_futures_iter = all_exec_futures.into_iter();
+        // let all_exec_futures_iter = all_exec_futures.into_iter();
         let res = handle_output_and_responses(
             debug_start_time,
             tavern_client,
-            all_exec_futures_iter,
+            &mut all_exec_futures,
             all_task_res_map.clone(),
         )
         .await?;

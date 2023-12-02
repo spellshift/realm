@@ -49,7 +49,7 @@ pub async fn get_new_tasks(
 
 pub async fn start_new_tasks(
     new_tasks: Vec<Task>,
-    mut all_exec_futures: HashMap<i32, AsyncTask>,
+    all_exec_futures: &mut HashMap<i32, AsyncTask>,
     debug_start_time: NaiveTime,
 ) -> Result<()> {
     for task in new_tasks {

@@ -92,7 +92,7 @@ pub async fn handle_exec_timeout_and_response(
 pub async fn handle_output_and_responses(
     start_time: NaiveTime,
     mut tavern_client: C2Client<Channel>,
-    all_exec_futures_iter: IntoIter<i32, AsyncTask>,
+    all_exec_futures_iter: &mut HashMap<i32, AsyncTask>,
     mut running_task_res_map: HashMap<i32, Vec<TaskOutput>>,
 ) -> Result<(HashMap<i32, AsyncTask>, HashMap<i32, Vec<TaskOutput>>)> {
     let mut running_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
@@ -167,15 +167,12 @@ pub async fn handle_output_and_responses(
             };
 
             running_task_res_map
-                .entry(task_id)
+                .entry(*task_id)
                 .and_modify(|cur_list| cur_list.push(task_response.clone()))
                 .or_insert(vec![task_response]);
         }
 
-        // Only re-insert the still running exec futures
-        if !exec_future.1.future_join_handle.is_finished() {
-            running_exec_futures.insert(task_id, exec_future.1);
-        }
+        running_exec_futures.retain(|_index, exec_task| exec_task.future_join_handle.is_finished())
     }
 
     // Iterate over queued task results and send them back to the server
