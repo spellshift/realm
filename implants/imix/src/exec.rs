@@ -1,14 +1,16 @@
-use anyhow::{Error, Context, Result};
+use anyhow::{Context, Error, Result};
 use c2::pb::c2_client::C2Client;
-use c2::pb::{ReportTaskOutputRequest, TaskOutput, Task};
-
+use c2::pb::{ReportTaskOutputRequest, Task, TaskOutput};
 use chrono::{DateTime, NaiveTime, Utc};
-use tonic::transport::Channel;
+use eldritch::{eldritch_run, EldritchPrintHandler};
 use std::collections::hash_map::IntoIter;
 use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
-use tokio::time::Duration;
+use std::sync::mpsc::Sender;
+use std::thread;
 use tokio::task::JoinHandle;
+use tokio::time::Duration;
+use tonic::transport::Channel;
 
 pub struct AsyncTask {
     pub future_join_handle: JoinHandle<Result<(), Error>>,
@@ -17,13 +19,82 @@ pub struct AsyncTask {
     pub print_reciever: Receiver<String>,
 }
 
+async fn handle_exec_tome(
+    task: Task,
+    print_channel_sender: Sender<String>,
+) -> Result<(String, String)> {
+    // TODO: Download auxillary files from CDN
+
+    // Read a tome script
+    // let task_quest = match task.quest {
+    //     Some(quest) => quest,
+    //     None => return Ok(("".to_string(), format!("No quest associated for task ID: {}", task.id))),
+    // };
+
+    let print_handler = EldritchPrintHandler {
+        sender: print_channel_sender,
+    };
+
+    // Execute a tome script
+    let res = match thread::spawn(move || {
+        eldritch_run(
+            task.id.to_string(),
+            task.eldritch.clone(),
+            Some(task.parameters.clone()),
+            &print_handler,
+        )
+    })
+    .join()
+    {
+        Ok(local_thread_res) => local_thread_res,
+        Err(_) => todo!(),
+    };
+    match res {
+        Ok(tome_output) => Ok((tome_output, "".to_string())),
+        Err(tome_error) => Ok(("".to_string(), tome_error.to_string())),
+    }
+}
+
+pub async fn handle_exec_timeout_and_response(
+    task: Task,
+    print_channel_sender: Sender<String>,
+) -> Result<(), Error> {
+    // Tasks will be forcebly stopped after 1 week.
+    let timeout_duration = Duration::from_secs(60 * 60 * 24 * 7); // 1 Week.
+
+    // Define a future for our execution task
+    let exec_future = handle_exec_tome(task.clone(), print_channel_sender.clone());
+    // Execute that future with a timeout defined by the timeout argument.
+    let tome_result = match tokio::time::timeout(timeout_duration, exec_future).await {
+        Ok(res) => match res {
+            Ok(tome_result) => tome_result,
+            Err(tome_error) => ("".to_string(), tome_error.to_string()),
+        },
+        Err(timer_elapsed) => (
+            "".to_string(),
+            format!(
+                "Time elapsed task {} has been running for {} seconds",
+                task.id,
+                timer_elapsed.to_string()
+            ),
+        ),
+    };
+
+    print_channel_sender
+        .clone()
+        .send(format!("---[RESULT]----\n{}\n---------", tome_result.0))?;
+    print_channel_sender
+        .clone()
+        .send(format!("---[ERROR]----\n{}\n--------", tome_result.1))?;
+    Ok(())
+}
+
 pub async fn handle_output_and_responses(
     start_time: NaiveTime,
     mut tavern_client: C2Client<Channel>,
     all_exec_futures_iter: IntoIter<i32, AsyncTask>,
     mut running_task_res_map: HashMap<i32, Vec<TaskOutput>>,
 ) -> Result<(HashMap<i32, AsyncTask>, HashMap<i32, Vec<TaskOutput>>)> {
-
     let mut running_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
 
     for exec_future in all_exec_futures_iter {

@@ -1,9 +1,16 @@
-use std::{fs::{File, self}, path::Path, io::Write};
 use anyhow::Result;
-use uuid::Uuid;
 use c2::pb::host::Platform;
+use std::{
+    fs::{self, File},
+    io::Write,
+    path::Path,
+};
 use sys_info::{linux_os_release, os_release};
+use uuid::Uuid;
 
+use crate::Config;
+
+#[derive(Clone, Debug)]
 pub struct AgentProperties {
     pub principal: String,
     pub hostname: String,
@@ -63,7 +70,8 @@ fn get_primary_ip() -> Result<String> {
             "DANGER-UNKNOWN".to_string()
         }
     };
-    Ok(res)}
+    Ok(res)
+}
 
 fn get_host_platform() -> Result<Platform> {
     if cfg!(target_os = "linux") {
@@ -92,8 +100,10 @@ fn get_os_pretty_name() -> Result<String> {
     }
 }
 
+pub fn agent_init(config_path: String) -> Result<(AgentProperties, Config)> {
+    let config_file = File::open(config_path)?;
+    let imix_config = serde_json::from_reader(config_file)?;
 
-pub fn agent_init() -> Result<AgentProperties>{
     let principal = match get_principal() {
         Ok(username) => username,
         Err(error) => {
@@ -116,15 +126,16 @@ pub fn agent_init() -> Result<AgentProperties>{
         Ok(tmp_beacon_id) => tmp_beacon_id,
         Err(error) => {
             #[cfg(debug_assertions)]
-            eprintln!(
-                "Unable to get a random beacon id\n{}",
-                error
-            );
+            eprintln!("Unable to get a random beacon id\n{}", error);
             "DANGER-UNKNOWN".to_string()
         }
     };
 
-    let agent_id = format!("{}-{}", "imix", option_env!("CARGO_PKG_VERSION").unwrap_or_else(|| "UNKNOWN"));
+    let agent_id = format!(
+        "{}-{}",
+        "imix",
+        option_env!("CARGO_PKG_VERSION").unwrap_or_else(|| "UNKNOWN")
+    );
 
     let host_platform = match get_host_platform() {
         Ok(tmp_host_platform) => tmp_host_platform,
@@ -155,23 +166,23 @@ pub fn agent_init() -> Result<AgentProperties>{
         Ok(tmp_host_id) => tmp_host_id,
         Err(error) => {
             #[cfg(debug_assertions)]
-            eprintln!(
-                "Unable to get or create a host id\n{}",
-                error
-            );
+            eprintln!("Unable to get or create a host id\n{}", error);
             "DANGER-UNKNOWN".to_string()
         }
     };
 
-    Ok(AgentProperties{
-        principal,
-        hostname,
-        beacon_id,
-        host_id,
-        primary_ip,
-        agent_id,
-        host_platform,
-    })
+    Ok((
+        AgentProperties {
+            principal,
+            hostname,
+            beacon_id,
+            host_id,
+            primary_ip,
+            agent_id,
+            host_platform,
+        },
+        imix_config,
+    ))
 }
 
 #[cfg(test)]

