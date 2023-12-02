@@ -203,12 +203,12 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         }
 
         // 3. Sleep till callback time
-        let time_to_wait = imix_config.callback_config.interval as i64;
-        let time_elapsed = loop_start_time.elapsed().as_secs() as i64;
-        let mut time_to_sleep = time_to_wait - time_elapsed;
-        if time_to_sleep < 0 {
-            time_to_sleep = 0;
-        } // Control for unsigned underflow
+        let time_to_sleep = imix_config
+            .callback_config
+            .interval
+            .checked_sub(loop_start_time.elapsed().as_secs())
+            .context("Subtraction failed")?;
+
         #[cfg(debug_assertions)]
         println!(
             "[{}]: Sleeping seconds {}",
