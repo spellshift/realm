@@ -207,7 +207,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             .callback_config
             .interval
             .checked_sub(loop_start_time.elapsed().as_secs())
-            .context("Subtraction failed")?;
+            .unwrap_or_else(|| 0);
 
         #[cfg(debug_assertions)]
         println!(
