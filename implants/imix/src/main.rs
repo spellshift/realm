@@ -1,12 +1,11 @@
 use anyhow::{Context, Error, Result};
 use c2::pb::c2_client::C2Client;
-use c2::pb::host::Platform;
 use c2::pb::{Agent, Beacon, ClaimTasksRequest, Host, ReportTaskOutputRequest, Task, TaskOutput};
 
 use chrono::{DateTime, Utc};
 use clap::{arg, Command};
 use eldritch::{eldritch_run, EldritchPrintHandler};
-use imix::agent_init;
+use imix::init::agent_init;
 use std::fs::File;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
