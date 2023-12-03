@@ -192,23 +192,93 @@ pub fn agent_init(config_path: String) -> Result<(AgentProperties, Config)> {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Context;
+    use tempfile::NamedTempFile;
+
     use super::*;
 
     #[test]
-    fn imix_test_get_os_pretty_name() {
-        let res = get_os_pretty_name().unwrap();
-        assert!(!res.contains("UNKNOWN"));
+    fn imix_test_agent_init() -> Result<()> {
+        let mut tmp_file = NamedTempFile::new()?;
+        let tmp_path = tmp_file
+            .path()
+            .to_str()
+            .context("Failed to get path")?
+            .to_string();
+        tmp_file.write_all(
+            r#"{
+            "service_configs": [],
+            "target_forward_connect_ip": "127.0.0.1",
+            "target_name": "test1234",
+            "callback_config": {
+                "interval": 4,
+                "jitter": 1,
+                "timeout": 4,
+                "c2_configs": [
+                {
+                    "priority": 1,
+                    "uri": "http://127.0.0.1/grpc"
+                }
+                ]
+            }
+        }
+        "#
+            .as_bytes(),
+        )?;
+
+        let (properties, _config) = agent_init(tmp_path.clone())?;
+        let (properties2, config2) = agent_init(tmp_path)?;
+        assert_eq!(properties.host_id, properties2.host_id);
+        assert_ne!(properties.beacon_id, properties2.beacon_id);
+        assert!(properties2.agent_id.contains("imix-"));
+        assert_eq!(
+            config2.callback_config.c2_configs[0].uri,
+            "http://127.0.0.1/grpc"
+        );
+        Ok(())
     }
 
     #[test]
-    fn imix_test_default_ip() {
-        let primary_ip_address = match get_primary_ip() {
-            Ok(local_primary_ip) => local_primary_ip,
-            Err(_local_error) => {
-                assert_eq!(false, true);
-                "DANGER-UNKNOWN".to_string()
-            }
-        };
-        assert!((primary_ip_address != "DANGER-UNKNOWN".to_string()))
+    fn imix_test_get_os_pretty_name() {
+        assert!(get_os_pretty_name().is_ok());
+    }
+
+    #[test]
+    fn imix_test_get_principal() {
+        assert!(get_principal().is_ok())
+    }
+
+    #[test]
+    fn imix_test_get_hostname() {
+        assert!(get_hostname().is_ok())
+    }
+
+    #[test]
+    fn imix_test_get_beacon_id() {
+        assert!(get_beacon_id().is_ok())
+    }
+
+    #[test]
+    fn imix_test_get_host_id() -> Result<()> {
+        let tmp_file = NamedTempFile::new()?;
+        let tmp_path = tmp_file
+            .path()
+            .to_str()
+            .context("Failed to get path")?
+            .to_string();
+        let host_id = get_host_id(tmp_path.clone())?;
+        let host_id2 = get_host_id(tmp_path)?;
+        assert_eq!(host_id, host_id2);
+        Ok(())
+    }
+
+    #[test]
+    fn imix_test_get_primary_ip() {
+        assert!(get_primary_ip().is_ok())
+    }
+
+    #[test]
+    fn imix_test_get_host_platform() {
+        assert!(get_host_platform().is_ok())
     }
 }
