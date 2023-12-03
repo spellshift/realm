@@ -50,3 +50,5 @@ pub struct Config {
     pub callback_config: CallbackConfig,
     pub service_configs: Vec<ServiceConfig>,
 }
+
+type TaskID = i64;

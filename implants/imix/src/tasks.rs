@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
 use crate::init::AgentProperties;
-use crate::Config;
+use crate::{Config, TaskID};
 use anyhow::{Context, Result};
 use c2::pb::c2_client::C2Client;
 use c2::pb::{
@@ -54,7 +54,7 @@ pub async fn get_new_tasks(
 
 pub async fn start_new_tasks(
     new_tasks: Vec<Task>,
-    all_exec_futures: &mut HashMap<i64, AsyncTask>,
+    all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
     debug_start_time: Instant,
 ) -> Result<()> {
     for task in new_tasks {
@@ -103,13 +103,81 @@ pub async fn start_new_tasks(
     Ok(())
 }
 
+fn queue_task_output(
+    async_task: &AsyncTask,
+    task_id: TaskID,
+    task_channel_output: &mut Vec<String>,
+    running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
+    loop_start_time: Instant,
+) {
+    loop {
+        #[cfg(debug_assertions)]
+        eprintln!(
+            "[{}]: Task # {} recieving output",
+            (Instant::now() - loop_start_time).as_millis(),
+            task_id
+        );
+        let new_res_line = match async_task
+            .print_reciever
+            .recv_timeout(Duration::from_millis(100))
+        {
+            Ok(local_res_string) => local_res_string,
+            Err(local_err) => {
+                match local_err.to_string().as_str() {
+                    "channel is empty and sending half is closed" => {
+                        break;
+                    }
+                    "timed out waiting on channel" => {
+                        break;
+                    }
+                    _ => eprint!("Error: {}", local_err),
+                }
+                break;
+            }
+        };
+        // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
+        task_channel_output.push(new_res_line);
+    }
+
+    let task_is_finished = async_task.future_join_handle.is_finished();
+    let task_response_exec_finished_at = match task_is_finished {
+        true => Some(Utc::now()),
+        false => None,
+    };
+
+    // If the task is finished or there's new data queue a new task result.
+    if task_is_finished || task_channel_output.len() > 0 {
+        let task_response = TaskOutput {
+            id: async_task.grpc_task.id.clone(),
+            exec_started_at: Some(prost_types::Timestamp {
+                seconds: async_task.start_time.timestamp(),
+                nanos: async_task.start_time.timestamp_subsec_nanos() as i32,
+            }),
+            exec_finished_at: match task_response_exec_finished_at {
+                Some(timestamp) => Some(prost_types::Timestamp {
+                    seconds: timestamp.timestamp(),
+                    nanos: timestamp.timestamp_subsec_nanos() as i32,
+                }),
+                None => None,
+            },
+            output: task_channel_output.join("\n"),
+            error: None,
+        };
+
+        running_task_res_map
+            .entry(task_id)
+            .and_modify(|cur_list| cur_list.push(task_response.clone()))
+            .or_insert(vec![task_response]);
+    }
+}
+
 pub async fn submit_task_output(
     loop_start_time: Instant,
     mut tavern_client: C2Client<Channel>,
-    all_exec_futures: &mut HashMap<i64, AsyncTask>,
-    running_task_res_map: &mut HashMap<i64, Vec<TaskOutput>>,
+    all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
+    running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
 ) -> Result<()> {
-    let mut running_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
+    // let mut running_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
 
     for (task_id, async_task) in all_exec_futures {
         #[cfg(debug_assertions)]
@@ -123,67 +191,23 @@ pub async fn submit_task_output(
         let mut task_channel_output: Vec<String> = vec![];
 
         // Loop over each line of output from the task and append it the the channel output.
-        loop {
-            #[cfg(debug_assertions)]
-            eprintln!(
-                "[{}]: Task # {} recieving output",
-                (Instant::now() - loop_start_time).as_millis(),
-                task_id
-            );
-            let new_res_line = match async_task
-                .print_reciever
-                .recv_timeout(Duration::from_millis(100))
-            {
-                Ok(local_res_string) => local_res_string,
-                Err(local_err) => {
-                    match local_err.to_string().as_str() {
-                        "channel is empty and sending half is closed" => {
-                            break;
-                        }
-                        "timed out waiting on channel" => {
-                            break;
-                        }
-                        _ => eprint!("Error: {}", local_err),
-                    }
-                    break;
-                }
-            };
-            // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-            task_channel_output.push(new_res_line);
-        }
-
-        let task_is_finished = async_task.future_join_handle.is_finished();
-        let task_response_exec_finished_at = match task_is_finished {
-            true => Some(Utc::now()),
-            false => None,
-        };
-
-        // If the task is finished or there's new data queue a new task result.
-        if task_is_finished || task_channel_output.len() > 0 {
-            let task_response = TaskOutput {
-                id: async_task.grpc_task.id.clone(),
-                exec_started_at: Some(prost_types::Timestamp {
-                    seconds: async_task.start_time.timestamp(),
-                    nanos: async_task.start_time.timestamp_subsec_nanos() as i32,
-                }),
-                exec_finished_at: match task_response_exec_finished_at {
-                    Some(timestamp) => Some(prost_types::Timestamp {
-                        seconds: timestamp.timestamp(),
-                        nanos: timestamp.timestamp_subsec_nanos() as i32,
-                    }),
-                    None => None,
-                },
-                output: task_channel_output.join("\n"),
-                error: None,
-            };
-
-            running_task_res_map
-                .entry(*task_id)
-                .and_modify(|cur_list| cur_list.push(task_response.clone()))
-                .or_insert(vec![task_response]);
-        }
-
-        running_exec_futures.retain(|_index, exec_task| exec_task.future_join_handle.is_finished())
+        queue_task_output(
+            async_task,
+            *task_id,
+            &mut task_channel_output,
+            running_task_res_map,
+            loop_start_time,
+        );
+        // for (task_id, async_task) in &running_exec_futures {
+        //     if async_task.future_join_handle.is_finished() {}
+        // }
+        // if !async_task.future_join_handle.is_finished() {
+        //     running_exec_futures.insert(*task_id, async_task);
+        // }
+        // if async_task.future_join_handle.is_finished() {
+        //     all_exec_futures.remove(task_id);
+        // }
+        // all_exec_futures.retain(|_index, exec_task| exec_task.future_join_handle.is_finished())
     }
 
     // Iterate over queued task results and send them back to the server
@@ -214,4 +238,18 @@ async fn send_tavern_output(
         output: Some(output),
     });
     tavern_client.report_task_output(req).await
+}
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Result;
+    use c2::pb::Task;
+    use std::collections::HashMap;
+    use std::sync::mpsc::channel;
+    use std::time::Duration;
+
+    #[test]
+    fn imix_handle_tavern_response() -> Result<()> {
+        Ok(())
+    }
 }

@@ -96,11 +96,6 @@ mod tests {
     use std::time::Duration;
 
     #[test]
-    fn imix_handle_tavern_response() -> Result<()> {
-        Ok(())
-    }
-
-    #[test]
     fn imix_handle_exec_tome() -> Result<()> {
         let test_tome_input = Task {
             id: 123,
