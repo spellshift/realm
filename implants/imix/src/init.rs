@@ -230,7 +230,6 @@ mod tests {
 
         let (properties, _config) = agent_init(tmp_path.clone(), tmp_host_id.clone())?;
         let (properties2, config2) = agent_init(tmp_path, tmp_host_id)?;
-        File::create(Path::new("/etc/system-id"))?.write_all("Hello".as_bytes())?;
         assert_eq!(properties.host_id, properties2.host_id);
         assert_ne!(properties.beacon_id, properties2.beacon_id);
         assert!(properties2.agent_id.contains("imix-"));
