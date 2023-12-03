@@ -94,8 +94,8 @@ pub async fn handle_exec_timeout_and_response(
 pub async fn handle_tavern_response(
     loop_start_time: Instant,
     mut tavern_client: C2Client<Channel>,
-    all_exec_futures: &mut HashMap<i32, AsyncTask>,
-    running_task_res_map: &mut HashMap<i32, Vec<TaskOutput>>,
+    all_exec_futures: &mut HashMap<i64, AsyncTask>,
+    running_task_res_map: &mut HashMap<i64, Vec<TaskOutput>>,
 ) -> Result<()> {
     let mut running_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
 

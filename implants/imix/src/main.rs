@@ -21,10 +21,10 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
     // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
     // AKA Work queue
-    let mut all_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
+    let mut all_exec_futures: HashMap<i64, AsyncTask> = HashMap::new();
     // This hashmap tracks all tasks output
     // AKA Results queue
-    let mut all_task_res_map: HashMap<i32, Vec<TaskOutput>> = HashMap::new();
+    let mut all_task_res_map: HashMap<i64, Vec<TaskOutput>> = HashMap::new();
 
     let (agent_properties, imix_config) = agent_init(config_path)?;
 
