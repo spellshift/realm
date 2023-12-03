@@ -25,7 +25,14 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
     // AKA Results queue
     let mut all_task_res_map: HashMap<TaskID, Vec<TaskOutput>> = HashMap::new();
 
-    let (agent_properties, imix_config) = agent_init(config_path)?;
+    let host_id_file = if cfg!(target_os = "windows") {
+        "C:\\ProgramData\\system-id"
+    } else {
+        "/etc/system-id"
+    }
+    .to_string();
+
+    let (agent_properties, imix_config) = agent_init(config_path, host_id_file)?;
 
     loop {
         // @TODO: Why two timers?

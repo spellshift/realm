@@ -105,7 +105,7 @@ fn get_os_pretty_name() -> Result<String> {
     }
 }
 
-pub fn agent_init(config_path: String) -> Result<(AgentProperties, Config)> {
+pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentProperties, Config)> {
     let config_file = File::open(config_path)?;
     let imix_config = serde_json::from_reader(config_file)?;
 
@@ -160,14 +160,14 @@ pub fn agent_init(config_path: String) -> Result<(AgentProperties, Config)> {
         }
     };
 
-    let host_id_file = if cfg!(target_os = "windows") {
-        "C:\\ProgramData\\system-id"
-    } else {
-        "/etc/system-id"
-    }
-    .to_string();
+    // let host_id_file = if cfg!(target_os = "windows") {
+    //     "C:\\ProgramData\\system-id"
+    // } else {
+    //     "/etc/system-id"
+    // }
+    // .to_string();
 
-    let host_id = match get_host_id(host_id_file) {
+    let host_id = match get_host_id(host_id_path) {
         Ok(tmp_host_id) => tmp_host_id,
         Err(error) => {
             #[cfg(debug_assertions)]
@@ -225,9 +225,11 @@ mod tests {
         "#
             .as_bytes(),
         )?;
+        let tmp_file = NamedTempFile::new()?;
+        let tmp_host_id = String::from(tmp_file.path().to_str().unwrap());
 
-        let (properties, _config) = agent_init(tmp_path.clone())?;
-        let (properties2, config2) = agent_init(tmp_path)?;
+        let (properties, _config) = agent_init(tmp_path.clone(), tmp_host_id.clone())?;
+        let (properties2, config2) = agent_init(tmp_path, tmp_host_id)?;
         File::create(Path::new("/etc/system-id"))?.write_all("Hello".as_bytes())?;
         assert_eq!(properties.host_id, properties2.host_id);
         assert_ne!(properties.beacon_id, properties2.beacon_id);
