@@ -100,7 +100,7 @@ pub async fn handle_output_and_responses(
         let task_id = exec_future.0;
 
         #[cfg(debug_assertions)]
-        println!(
+        eprintln!(
             "[{}]: Task # {} is_finished? {}",
             (Utc::now().time() - start_time).num_milliseconds(),
             task_id,
@@ -112,7 +112,7 @@ pub async fn handle_output_and_responses(
         // Loop over each line of output from the task and append it the the channel output.
         loop {
             #[cfg(debug_assertions)]
-            println!(
+            eprintln!(
                 "[{}]: Task # {} recieving output",
                 (Utc::now().time() - start_time).num_milliseconds(),
                 task_id
@@ -186,7 +186,7 @@ pub async fn handle_output_and_responses(
                 }
                 Err(local_err) => {
                     #[cfg(debug_assertions)]
-                    println!("Failed to submit task resluts:\n{}", local_err.to_string());
+                    eprintln!("Failed to submit task resluts:\n{}", local_err.to_string());
                     {}
                 }
             }
