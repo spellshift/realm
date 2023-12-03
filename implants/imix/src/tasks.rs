@@ -229,13 +229,72 @@ async fn send_tavern_output(
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use c2::pb::Task;
+    use c2::pb::{Task, TaskOutput};
+    use chrono::Utc;
     use std::collections::HashMap;
     use std::sync::mpsc::channel;
-    use std::time::Duration;
+    use std::thread;
+    use std::time::{Duration, Instant};
+    use tokio::task;
 
-    #[test]
-    fn imix_handle_tavern_response() -> Result<()> {
+    use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
+    use crate::tasks::queue_task_output;
+    use crate::TaskID;
+
+    use super::start_new_tasks;
+
+    #[tokio::test]
+    async fn imix_test_start_new_tasks() -> Result<()> {
+        let debug_start_time = Instant::now();
+        let mut all_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
+        let new_tasks = vec![Task {
+            id: 123,
+            eldritch: "print('okay')".to_string(),
+            parameters: HashMap::from([("iter".to_string(), "3".to_string())]),
+        }];
+        start_new_tasks(new_tasks, &mut all_exec_futures, debug_start_time).await?;
+        assert_eq!(all_exec_futures.len(), 1);
+        for (task_id, _async_task) in all_exec_futures.into_iter() {
+            assert_eq!(task_id, 123);
+        }
         Ok(())
     }
+
+    // #[test]
+    // fn imix_test_queue_task_output() -> Result<()> {
+    //     let (sender, receiver) = channel::<String>();
+
+    //     let test_task = Task {
+    //         id: 123,
+    //         eldritch: "print('okay')".to_string(),
+    //         parameters: HashMap::from([("iter".to_string(), "3".to_string())]),
+    //     };
+    //     let exec_with_timeout =
+    //         handle_exec_timeout_and_response(test_task.clone(), sender.clone(), None);
+
+    //     let async_task = AsyncTask {
+    //         future_join_handle: task::spawn(exec_with_timeout),
+    //         start_time: Utc::now(),
+    //         grpc_task: test_task,
+    //         print_reciever: receiver,
+    //     };
+    //     let task_id = 123;
+    //     let mut running_task_res_map: HashMap<TaskID, Vec<TaskOutput>> = HashMap::new();
+    //     let loop_start_time = Instant::now();
+    //     for _ in 1..10 {
+    //         queue_task_output(
+    //             &async_task,
+    //             task_id,
+    //             &mut running_task_res_map,
+    //             loop_start_time,
+    //         );
+    //         thread::sleep(Duration::from_millis(200));
+    //     }
+    //     assert_eq!(running_task_res_map.len(), 1);
+    //     for (local_task_id, vec_task_output) in running_task_res_map {
+    //         assert_eq!(local_task_id, 123);
+    //         println!("vec_task_output: {:?}", vec_task_output);
+    //     }
+    //     Ok(())
+    // }
 }
