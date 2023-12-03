@@ -189,16 +189,16 @@ fn get_os_pretty_name() -> Result<String> {
 
 // Async handler for port scanning.
 async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
-    let debug = false;
+    let debug = true;
     let mut loop_count: i32 = 0;
     let version_string = "v0.0.3";
     let config_file = File::open(config_path)?;
     let imix_config: imix::Config = serde_json::from_reader(config_file)?;
 
     // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
-    let mut all_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
+    let mut all_exec_futures: HashMap<i64, AsyncTask> = HashMap::new();
     // This hashmap tracks all tasks output
-    let mut all_task_res_map: HashMap<i32, Vec<TaskOutput>> = HashMap::new();
+    let mut all_task_res_map: HashMap<i64, Vec<TaskOutput>> = HashMap::new();
 
     let principal = match get_principal() {
         Ok(username) => username,
@@ -402,8 +402,8 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601)); // This just sleeps our thread.
 
         // :clap: :clap: make new map!
-        let mut running_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
-        let mut running_task_res_map: HashMap<i32, Vec<TaskOutput>> = all_task_res_map.clone();
+        let mut running_exec_futures: HashMap<i64, AsyncTask> = HashMap::new();
+        let mut running_task_res_map: HashMap<i64, Vec<TaskOutput>> = all_task_res_map.clone();
 
         if debug {
             println!(
