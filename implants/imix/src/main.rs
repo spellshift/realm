@@ -3,9 +3,9 @@ use c2::pb::c2_client::C2Client;
 use c2::pb::TaskOutput;
 
 use clap::{arg, Command};
-use imix::exec::{handle_tavern_response, AsyncTask};
+use imix::exec::AsyncTask;
 use imix::init::agent_init;
-use imix::tasks::start_new_tasks;
+use imix::tasks::{start_new_tasks, submit_task_output};
 use imix::{tasks, Config};
 use std::collections::HashMap;
 use std::time::Instant;
@@ -100,7 +100,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         );
 
         // Update running tasks and results
-        handle_tavern_response(
+        submit_task_output(
             loop_start_time,
             tavern_client,
             &mut all_exec_futures,
