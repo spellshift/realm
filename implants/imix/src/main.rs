@@ -169,63 +169,6 @@ mod tests {
 
     #[test]
     fn imix_handle_exec_tome() {}
-
-    //     #[test]
-    //     fn imix_handle_exec_tome() {
-    //         let test_tome_input = Task {
-    //             id: "17179869185".to_string(),
-    //             quest: Quest {
-    //                 id: "4294967297".to_string(),
-    //                 name: "Test Exec".to_string(),
-    //                 parameters: Some(r#"{"cmd":"whoami"}"#.to_string()),
-    //                 tome: Tome {
-    //                     id: "21474836482".to_string(),
-    //                     name: "Shell execute".to_string(),
-    //                     description: "Execute a command in the default system shell".to_string(),
-    //                     eldritch: r#"
-    // print("custom_print_handler_test")
-    // sys.shell(input_params["cmd"])["stdout"]
-    // "#
-    //                     .to_string(),
-    //                     files: None,
-    //                     param_defs: Some(r#"{"params":[{"name":"cmd","type":"string"}]}"#.to_string()),
-    //                 },
-    //                 bundle: None,
-    //             },
-    //         };
-
-    //         let runtime = tokio::runtime::Builder::new_multi_thread()
-    //             .enable_all()
-    //             .build()
-    //             .unwrap();
-
-    //         let (sender, receiver) = channel::<String>();
-
-    //         // Define a future for our execution task
-    //         let exec_future = handle_exec_tome(test_tome_input, sender.clone());
-    //         let result = runtime.block_on(exec_future).unwrap();
-
-    //         let stdout = receiver.recv_timeout(Duration::from_millis(500)).unwrap();
-    //         assert_eq!(stdout, "custom_print_handler_test".to_string());
-
-    //         let mut bool_res = false;
-
-    //         if cfg!(target_os = "linux")
-    //             || cfg!(target_os = "ios")
-    //             || cfg!(target_os = "android")
-    //             || cfg!(target_os = "freebsd")
-    //             || cfg!(target_os = "openbsd")
-    //             || cfg!(target_os = "netbsd")
-    //             || cfg!(target_os = "macos")
-    //         {
-    //             bool_res = result.0 == "runner\n" || result.0 == "root\n";
-    //         } else if cfg!(target_os = "windows") {
-    //             bool_res = result.0.contains("runneradmin") || result.0.contains("Administrator");
-    //         }
-
-    //         assert_eq!(bool_res, true);
-    //     }
-
     //     #[test]
     //     fn imix_test_main_loop_sleep_twice_short() -> Result<()> {
     //         // Response expectations are poped in reverse order.

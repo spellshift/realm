@@ -60,7 +60,8 @@ pub async fn start_new_tasks(
         eprintln!("Launching:\n{:?}", task.clone().eldritch);
 
         let (sender, receiver) = channel::<String>();
-        let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
+        let exec_with_timeout =
+            handle_exec_timeout_and_response(task.clone(), sender.clone(), None);
 
         #[cfg(debug_assertions)]
         eprintln!(

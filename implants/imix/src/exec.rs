@@ -59,9 +59,10 @@ async fn handle_exec_tome(
 pub async fn handle_exec_timeout_and_response(
     task: Task,
     print_channel_sender: Sender<String>,
+    timeout: Option<Duration>,
 ) -> Result<(), Error> {
     // Tasks will be forcebly stopped after 1 week.
-    let timeout_duration = Duration::from_secs(60 * 60 * 24 * 7); // 1 Week.
+    let timeout_duration = timeout.unwrap_or_else(|| Duration::from_secs(60 * 60 * 24 * 7));
 
     // Define a future for our execution task
     let exec_future = handle_exec_tome(task.clone(), print_channel_sender.clone());
@@ -201,4 +202,89 @@ async fn send_tavern_output(
         output: Some(output),
     });
     tavern_client.report_task_output(req).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::handle_exec_tome;
+    use anyhow::Result;
+    use c2::pb::Task;
+    use std::collections::HashMap;
+    use std::sync::mpsc::channel;
+    use std::time::Duration;
+
+    #[test]
+    fn imix_handle_exec_tome() -> Result<()> {
+        let test_tome_input = Task {
+            id: 123,
+            eldritch: r#"
+print(sys.shell(input_params["cmd"])["stdout"])
+1"#
+            .to_string(),
+            parameters: HashMap::from([("cmd".to_string(), "echo hello_from_stdout".to_string())]),
+        };
+
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let (sender, receiver) = channel::<String>();
+
+        let exec_future = handle_exec_tome(test_tome_input, sender.clone());
+        let (eld_output, eld_error) = runtime.block_on(exec_future)?;
+
+        let cmd_output = receiver.recv_timeout(Duration::from_millis(500))?;
+        assert_eq!(cmd_output, "hello_from_stdout\n".to_string());
+        assert_eq!(eld_output, "1".to_string());
+        assert_eq!(eld_error, "".to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn imix_handle_exec_tome_error() -> Result<()> {
+        let test_tome_input = Task {
+            id: 123,
+            eldritch: r#"
+aoeu
+"#
+            .to_string(),
+            parameters: HashMap::new(),
+        };
+
+        let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let (sender, receiver) = channel::<String>();
+
+        let exec_future = handle_exec_tome(test_tome_input, sender.clone());
+        let (eld_output, eld_error) = runtime.block_on(exec_future)?;
+
+        // let cmd_output = receiver.recv_timeout(Duration::from_millis(500))?;
+        let mut index = 0;
+        loop {
+            let cmd_output = match receiver.recv_timeout(Duration::from_millis(500)) {
+                Ok(local_res_string) => local_res_string,
+                Err(local_err) => {
+                    match local_err.to_string().as_str() {
+                        "channel is empty and sending half is closed" => {
+                            break;
+                        }
+                        "timed out waiting on channel" => break,
+                        _ => eprint!("Error: {}", local_err),
+                    }
+                    break;
+                }
+            };
+            assert_eq!(cmd_output, "".to_string());
+
+            index = index + 1;
+        }
+
+        assert_eq!(eld_output, "".to_string());
+        assert_eq!(eld_error, "[eldritch] Eldritch eval_module failed:\nerror: Variable `aoeu` not found\n --> 123:2:1\n  |\n2 | aoeu\n  | ^^^^\n  |\n".to_string());
+        Ok(())
+    }
 }
