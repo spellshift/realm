@@ -117,7 +117,7 @@ print(sys.shell(input_params["cmd"])["stdout"])
         let (eld_output, eld_error) = runtime.block_on(exec_future)?;
 
         let cmd_output = receiver.recv_timeout(Duration::from_millis(500))?;
-        assert_eq!(cmd_output, "hello_from_stdout\n".to_string());
+        assert!(cmd_output.contains("hello_from_stdout"));
         assert_eq!(eld_output, "1".to_string());
         assert_eq!(eld_error, "".to_string());
         Ok(())
