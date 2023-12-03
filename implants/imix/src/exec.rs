@@ -206,6 +206,8 @@ async fn send_tavern_output(
 
 #[cfg(test)]
 mod tests {
+    use crate::exec::handle_exec_timeout_and_response;
+
     use super::handle_exec_tome;
     use anyhow::Result;
     use c2::pb::Task;
@@ -285,6 +287,55 @@ aoeu
 
         assert_eq!(eld_output, "".to_string());
         assert_eq!(eld_error, "[eldritch] Eldritch eval_module failed:\nerror: Variable `aoeu` not found\n --> 123:2:1\n  |\n2 | aoeu\n  | ^^^^\n  |\n".to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn imix_handle_exec_tome_timeout() -> Result<()> {
+        let test_tome_input = Task {
+            id: 123,
+            eldritch: r#"
+print("Hello_world")
+time.sleep(5)
+"#
+            .to_string(),
+            parameters: HashMap::new(),
+        };
+
+        let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let (sender, receiver) = channel::<String>();
+
+        let exec_future = handle_exec_timeout_and_response(
+            test_tome_input,
+            sender.clone(),
+            Some(Duration::from_secs(2)),
+        );
+        runtime.block_on(exec_future)?;
+
+        // let cmd_output = receiver.recv_timeout(Duration::from_millis(500))?;
+        let mut index = 0;
+        loop {
+            let cmd_output = match receiver.recv_timeout(Duration::from_millis(800)) {
+                Ok(local_res_string) => local_res_string,
+                Err(local_err) => {
+                    match local_err.to_string().as_str() {
+                        "channel is empty and sending half is closed" => {
+                            break;
+                        }
+                        "timed out waiting on channel" => break,
+                        _ => eprint!("Error: {}", local_err),
+                    }
+                    break;
+                }
+            };
+            println!("eld_output: {}", cmd_output);
+            index = index + 1;
+        }
+
         Ok(())
     }
 }
