@@ -106,10 +106,11 @@ pub async fn start_new_tasks(
 fn queue_task_output(
     async_task: &AsyncTask,
     task_id: TaskID,
-    task_channel_output: &mut Vec<String>,
     running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
     loop_start_time: Instant,
 ) {
+    let mut task_channel_output: Vec<String> = Vec::new();
+
     loop {
         #[cfg(debug_assertions)]
         eprintln!(
@@ -160,7 +161,7 @@ fn queue_task_output(
                 }),
                 None => None,
             },
-            output: task_channel_output.join("\n"),
+            output: task_channel_output.join(""),
             error: None,
         };
 
@@ -179,7 +180,7 @@ pub async fn submit_task_output(
 ) -> Result<()> {
     // let mut running_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
 
-    for (task_id, async_task) in all_exec_futures {
+    for (task_id, async_task) in all_exec_futures.into_iter() {
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Task # {} is_finished? {}",
@@ -188,26 +189,8 @@ pub async fn submit_task_output(
             async_task.future_join_handle.is_finished()
         );
 
-        let mut task_channel_output: Vec<String> = vec![];
-
         // Loop over each line of output from the task and append it the the channel output.
-        queue_task_output(
-            async_task,
-            *task_id,
-            &mut task_channel_output,
-            running_task_res_map,
-            loop_start_time,
-        );
-        // for (task_id, async_task) in &running_exec_futures {
-        //     if async_task.future_join_handle.is_finished() {}
-        // }
-        // if !async_task.future_join_handle.is_finished() {
-        //     running_exec_futures.insert(*task_id, async_task);
-        // }
-        // if async_task.future_join_handle.is_finished() {
-        //     all_exec_futures.remove(task_id);
-        // }
-        // all_exec_futures.retain(|_index, exec_task| exec_task.future_join_handle.is_finished())
+        queue_task_output(async_task, *task_id, running_task_res_map, loop_start_time);
     }
 
     // Iterate over queued task results and send them back to the server
@@ -226,6 +209,9 @@ pub async fn submit_task_output(
             };
         }
     }
+
+    // Iterate over all tasks and remove finished ones.
+    all_exec_futures.retain(|_index, exec_task| !exec_task.future_join_handle.is_finished());
 
     Ok(())
 }

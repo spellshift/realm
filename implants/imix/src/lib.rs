@@ -51,4 +51,4 @@ pub struct Config {
     pub service_configs: Vec<ServiceConfig>,
 }
 
-type TaskID = i64;
+pub type TaskID = i64;

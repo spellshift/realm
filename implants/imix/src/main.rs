@@ -1,12 +1,11 @@
 use anyhow::Result;
 use c2::pb::c2_client::C2Client;
 use c2::pb::TaskOutput;
-
 use clap::{arg, Command};
 use imix::exec::AsyncTask;
 use imix::init::agent_init;
 use imix::tasks::{start_new_tasks, submit_task_output};
-use imix::{tasks, Config};
+use imix::{tasks, Config, TaskID};
 use std::collections::HashMap;
 use std::time::Instant;
 
