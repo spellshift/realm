@@ -102,11 +102,11 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         );
 
         // Update running tasks and results
-        (all_exec_futures, all_task_res_map) = handle_output_and_responses(
+        handle_output_and_responses(
             debug_start_time,
             tavern_client,
             &mut all_exec_futures,
-            all_task_res_map.clone(),
+            &mut all_task_res_map,
         )
         .await?;
 

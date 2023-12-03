@@ -1,6 +1,6 @@
 use anyhow::{Error, Result};
 use c2::pb::c2_client::C2Client;
-use c2::pb::{ReportTaskOutputRequest, Task, TaskOutput};
+use c2::pb::{ReportTaskOutputRequest, ReportTaskOutputResponse, Task, TaskOutput};
 use chrono::{DateTime, NaiveTime, Utc};
 use eldritch::{eldritch_run, EldritchPrintHandler};
 use std::collections::HashMap;
@@ -10,6 +10,7 @@ use std::thread;
 use tokio::task::JoinHandle;
 use tokio::time::Duration;
 use tonic::transport::Channel;
+use tonic::Status;
 
 pub struct AsyncTask {
     pub future_join_handle: JoinHandle<Result<(), Error>>,
@@ -91,20 +92,18 @@ pub async fn handle_exec_timeout_and_response(
 pub async fn handle_output_and_responses(
     start_time: NaiveTime,
     mut tavern_client: C2Client<Channel>,
-    all_exec_futures_iter: &mut HashMap<i32, AsyncTask>,
-    mut running_task_res_map: HashMap<i32, Vec<TaskOutput>>,
-) -> Result<(HashMap<i32, AsyncTask>, HashMap<i32, Vec<TaskOutput>>)> {
+    all_exec_futures: &mut HashMap<i32, AsyncTask>,
+    running_task_res_map: &mut HashMap<i32, Vec<TaskOutput>>,
+) -> Result<()> {
     let mut running_exec_futures: HashMap<i32, AsyncTask> = HashMap::new();
 
-    for exec_future in all_exec_futures_iter {
-        let task_id = exec_future.0;
-
+    for (task_id, async_task) in all_exec_futures {
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Task # {} is_finished? {}",
             (Utc::now().time() - start_time).num_milliseconds(),
             task_id,
-            exec_future.1.future_join_handle.is_finished()
+            async_task.future_join_handle.is_finished()
         );
 
         let mut task_channel_output: Vec<String> = vec![];
@@ -117,8 +116,7 @@ pub async fn handle_output_and_responses(
                 (Utc::now().time() - start_time).num_milliseconds(),
                 task_id
             );
-            let new_res_line = match exec_future
-                .1
+            let new_res_line = match async_task
                 .print_reciever
                 .recv_timeout(Duration::from_millis(100))
             {
@@ -140,7 +138,7 @@ pub async fn handle_output_and_responses(
             task_channel_output.push(new_res_line);
         }
 
-        let task_is_finished = exec_future.1.future_join_handle.is_finished();
+        let task_is_finished = async_task.future_join_handle.is_finished();
         let task_response_exec_finished_at = match task_is_finished {
             true => Some(Utc::now()),
             false => None,
@@ -149,10 +147,10 @@ pub async fn handle_output_and_responses(
         // If the task is finished or there's new data queue a new task result.
         if task_is_finished || task_channel_output.len() > 0 {
             let task_response = TaskOutput {
-                id: exec_future.1.grpc_task.id.clone(),
+                id: async_task.grpc_task.id.clone(),
                 exec_started_at: Some(prost_types::Timestamp {
-                    seconds: exec_future.1.start_time.timestamp(),
-                    nanos: exec_future.1.start_time.timestamp_subsec_nanos() as i32,
+                    seconds: async_task.start_time.timestamp(),
+                    nanos: async_task.start_time.timestamp_subsec_nanos() as i32,
                 }),
                 exec_finished_at: match task_response_exec_finished_at {
                     Some(timestamp) => Some(prost_types::Timestamp {
@@ -177,11 +175,9 @@ pub async fn handle_output_and_responses(
     // Iterate over queued task results and send them back to the server
     for (task_id, task_res) in running_task_res_map.clone().into_iter() {
         for output in task_res {
-            let req = tonic::Request::new(ReportTaskOutputRequest {
-                output: Some(output),
-            });
-            match tavern_client.report_task_output(req).await {
+            match send_task_output(&mut tavern_client, output).await {
                 Ok(_) => {
+                    // Remove output that has been reported sucessfully.
                     running_task_res_map.remove(&task_id);
                 }
                 Err(local_err) => {
@@ -189,9 +185,19 @@ pub async fn handle_output_and_responses(
                     eprintln!("Failed to submit task resluts:\n{}", local_err.to_string());
                     {}
                 }
-            }
+            };
         }
     }
 
-    Ok((running_exec_futures, running_task_res_map))
+    Ok(())
+}
+
+async fn send_task_output(
+    tavern_client: &mut C2Client<Channel>,
+    output: TaskOutput,
+) -> Result<tonic::Response<ReportTaskOutputResponse>, Status> {
+    let req = tonic::Request::new(ReportTaskOutputRequest {
+        output: Some(output),
+    });
+    tavern_client.report_task_output(req).await
 }
