@@ -80,6 +80,11 @@ fn get_host_platform() -> Result<Platform> {
         return Ok(Platform::Windows);
     } else if cfg!(target_os = "macos") {
         return Ok(Platform::Macos);
+    } else if cfg!(target_os = "freebsd")
+        || cfg!(target_os = "openbsd")
+        || cfg!(target_os = "netbsd")
+    {
+        return Ok(Platform::Bsd);
     } else {
         return Ok(Platform::Unspecified);
     }

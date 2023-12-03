@@ -39,7 +39,7 @@ pub async fn get_new_tasks(
         Ok(resp) => resp.get_ref().tasks.clone(),
         Err(error) => {
             #[cfg(debug_assertions)]
-            println!("main_loop: error claiming task\n{:?}", error);
+            eprintln!("main_loop: error claiming task\n{:?}", error);
             let empty_vec = vec![];
             empty_vec
         }
@@ -54,15 +54,15 @@ pub async fn start_new_tasks(
 ) -> Result<()> {
     for task in new_tasks {
         #[cfg(debug_assertions)]
-        println!("Parameters:\n{:?}", task.clone().parameters);
+        eprintln!("Parameters:\n{:?}", task.clone().parameters);
         #[cfg(debug_assertions)]
-        println!("Launching:\n{:?}", task.clone().eldritch);
+        eprintln!("Launching:\n{:?}", task.clone().eldritch);
 
         let (sender, receiver) = channel::<String>();
         let exec_with_timeout = handle_exec_timeout_and_response(task.clone(), sender.clone());
 
         #[cfg(debug_assertions)]
-        println!(
+        eprintln!(
             "[{}]: Queueing task {}",
             (Utc::now().time() - debug_start_time).num_milliseconds(),
             task.clone().id
@@ -79,16 +79,16 @@ pub async fn start_new_tasks(
         ) {
             Some(_old_task) => {
                 #[cfg(debug_assertions)]
-                println!("main_loop: error adding new task. Non-unique taskID\n");
+                eprintln!("main_loop: error adding new task. Non-unique taskID\n");
             }
             None => {
                 #[cfg(debug_assertions)]
-                println!("main_loop: Task queued successfully\n");
+                eprintln!("main_loop: Task queued successfully\n");
             } // Task queued successfully
         }
 
         #[cfg(debug_assertions)]
-        println!(
+        eprintln!(
             "[{}]: Queued task {}",
             (Utc::now().time() - debug_start_time).num_milliseconds(),
             task.clone().id

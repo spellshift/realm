@@ -215,7 +215,7 @@ pub fn handle_arp_scan(
                     Ok(_) => {}
                     Err(err) => {
                         #[cfg(debug_assertions)]
-                        println!("Listener on {} failed: {}", inner_interface.name, err);
+                        eprintln!("Listener on {} failed: {}", inner_interface.name, err);
                     }
                 },
             );

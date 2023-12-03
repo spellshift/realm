@@ -37,7 +37,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         let loop_start_time = Instant::now();
 
         #[cfg(debug_assertions)]
-        println!("Get new tasks");
+        eprintln!("Get new tasks");
 
         // 1. Pull down new tasks
         // 1a) calculate callback uri
@@ -48,14 +48,14 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             Ok(tavern_client_local) => tavern_client_local,
             Err(err) => {
                 #[cfg(debug_assertions)]
-                println!("failed to create tavern client {}", err);
+                eprintln!("failed to create tavern client {}", err);
                 continue;
             }
         };
 
         // 1c) Collect new tasks
         #[cfg(debug_assertions)]
-        println!(
+        eprintln!(
             "[{}]: collecting tasks",
             (Utc::now().time() - debug_start_time).num_milliseconds()
         );
@@ -69,7 +69,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
         // 2. Start new tasks
         #[cfg(debug_assertions)]
-        println!(
+        eprintln!(
             "[{}]: Starting {} new tasks",
             (Utc::now().time() - debug_start_time).num_milliseconds(),
             new_tasks.len()
@@ -86,7 +86,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             .unwrap_or_else(|| 0);
 
         #[cfg(debug_assertions)]
-        println!(
+        eprintln!(
             "[{}]: Sleeping seconds {}",
             (Utc::now().time() - debug_start_time).num_milliseconds(),
             time_to_sleep
@@ -96,23 +96,19 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
         // Check status & send response
         #[cfg(debug_assertions)]
-        println!(
+        eprintln!(
             "[{}]: Checking task status",
             (Utc::now().time() - debug_start_time).num_milliseconds()
         );
 
-        // let all_exec_futures_iter = all_exec_futures.into_iter();
-        let res = handle_output_and_responses(
+        // Update running tasks and results
+        (all_exec_futures, all_task_res_map) = handle_output_and_responses(
             debug_start_time,
             tavern_client,
             &mut all_exec_futures,
             all_task_res_map.clone(),
         )
         .await?;
-
-        // change the reference! This is insane but okay.
-        all_exec_futures = res.0;
-        all_task_res_map = res.1.clone();
 
         // Debug loop tracker
         #[cfg(debug_assertions)]

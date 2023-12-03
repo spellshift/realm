@@ -1,9 +1,8 @@
-use anyhow::{Context, Error, Result};
+use anyhow::{Error, Result};
 use c2::pb::c2_client::C2Client;
 use c2::pb::{ReportTaskOutputRequest, Task, TaskOutput};
 use chrono::{DateTime, NaiveTime, Utc};
 use eldritch::{eldritch_run, EldritchPrintHandler};
-use std::collections::hash_map::IntoIter;
 use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
