@@ -213,7 +213,7 @@ mod tests {
     use c2::pb::Task;
     use std::collections::HashMap;
     use std::sync::mpsc::channel;
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     #[test]
     fn imix_handle_exec_tome() -> Result<()> {
@@ -309,13 +309,14 @@ time.sleep(5)
 
         let (sender, receiver) = channel::<String>();
 
+        let start_time = Instant::now();
         let exec_future = handle_exec_timeout_and_response(
             test_tome_input,
             sender.clone(),
             Some(Duration::from_secs(2)),
         );
         runtime.block_on(exec_future)?;
-
+        let end_time = Instant::now();
         // let cmd_output = receiver.recv_timeout(Duration::from_millis(500))?;
         let mut index = 0;
         loop {
@@ -335,6 +336,8 @@ time.sleep(5)
             println!("eld_output: {}", cmd_output);
             index = index + 1;
         }
+
+        assert!(end_time.checked_duration_since(start_time).unwrap() < Duration::from_secs(3));
 
         Ok(())
     }
