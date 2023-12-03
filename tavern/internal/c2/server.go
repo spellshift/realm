@@ -146,7 +146,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			}
 		}
 		resp.Tasks = append(resp.Tasks, &c2pb.Task{
-			Id:         int32(claimedTask.ID),
+			Id:         int64(claimedTask.ID),
 			Eldritch:   claimedTome.Eldritch,
 			Parameters: params,
 		})
