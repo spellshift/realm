@@ -709,7 +709,27 @@ An example is below:
 ```python
 $> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_SZ","BAR1")
 "A new key has been created"
-$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY","DEADBEEF")
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY","DEADBEEF") # Assume value is a hexadecimal as string
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_NONE","DEADBEEF")
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_EXPAND_SZ","BAR2")
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD","12345678") # Assume value is a integer as string
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG_ENDIAN","12345678") # Assume value is a integer as string
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK","A PLAIN STRING")
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3") 
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST","DEADBEEF") # Assume value is a hexadecimal as string
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESOURCE_DESCRIPTOR","DEADBEEF") # Assume value is a hexadecimal as string
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\AAAAAAAAA","FOO1","REG_RESOURCE_REQUIREMENTS_LIST","DEADBEEF") # Assume value is a hexadecimal as string
+"An existing key has been modified"
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\AAAAAAAAA","FOO1","REG_QWORD","1234567812345678") # Assume value is a integer as string
 "An existing key has been modified"
 ```
 
