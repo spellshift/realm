@@ -11,10 +11,10 @@ import (
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/kcarretto/realm/tavern/internal/auth"
 	"github.com/kcarretto/realm/tavern/internal/ent"
 	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
 	"github.com/kcarretto/realm/tavern/internal/graphql"
+	tavernhttp "github.com/kcarretto/realm/tavern/internal/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,8 +25,14 @@ func TestCreateQuest(t *testing.T) {
 	ctx := context.Background()
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
-	srv := auth.AuthDisabledMiddleware(handler.NewDefaultServer(graphql.NewSchema(graph)), graph)
-	gqlClient := client.New(srv)
+
+	srv := tavernhttp.NewServer(
+		tavernhttp.RouteMap{
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph)),
+		},
+		tavernhttp.WithAuthenticationBypass(graph),
+	)
+	gqlClient := client.New(srv, client.Path("/graphql"))
 
 	// Initialize sample data
 	testHost := graph.Host.Create().SetIdentifier("ABCDEFG").SaveX(ctx)

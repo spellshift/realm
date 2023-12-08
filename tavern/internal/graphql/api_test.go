@@ -13,12 +13,13 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/auth"
 	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
 	"github.com/kcarretto/realm/tavern/internal/graphql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	tavernhttp "github.com/kcarretto/realm/tavern/internal/http"
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
@@ -65,8 +66,13 @@ func runTestCase(t *testing.T, path string) {
 	require.NoError(t, dbErr, "failed to setup test db state")
 
 	// Server
-	srv := auth.Middleware(handler.NewDefaultServer(graphql.NewSchema(graph)), graph)
-	gqlClient := client.New(srv)
+	srv := tavernhttp.NewServer(
+		tavernhttp.RouteMap{
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph)),
+		},
+		tavernhttp.WithAuthenticationCookie(graph),
+	)
+	gqlClient := client.New(srv, client.Path("/graphql"))
 
 	var opts []client.Option
 

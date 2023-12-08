@@ -6,7 +6,6 @@ pub fn copy(src: String, dst: String) -> Result<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -14,7 +13,7 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[test]
-    fn test_copy() -> anyhow::Result<()>{
+    fn test_copy() -> anyhow::Result<()> {
         // Create files
         let mut tmp_file_src = NamedTempFile::new()?;
         let path_src = String::from(tmp_file_src.path().to_str().unwrap());

@@ -10,11 +10,10 @@ pub fn exists(path: String) -> Result<bool> {
 mod tests {
     use super::*;
     use std::io::prelude::*;
-    use tempfile::{NamedTempFile,tempdir};
-
+    use tempfile::{tempdir, NamedTempFile};
 
     #[test]
-    fn test_exists_file() -> anyhow::Result<()>{
+    fn test_exists_file() -> anyhow::Result<()> {
         // Create files
         let mut tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap());
@@ -30,7 +29,7 @@ mod tests {
         Ok(())
     }
     #[test]
-    fn test_exists_no_file() -> anyhow::Result<()>{
+    fn test_exists_no_file() -> anyhow::Result<()> {
         // Create file and then delete it (so we know it doesnt exist)
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap()).clone();
@@ -44,7 +43,7 @@ mod tests {
         Ok(())
     }
     #[test]
-    fn test_exists_dir() -> anyhow::Result<()>{
+    fn test_exists_dir() -> anyhow::Result<()> {
         // Create Dir
         let dir = tempdir()?;
         let path = String::from(dir.path().to_str().unwrap());
@@ -56,7 +55,7 @@ mod tests {
         Ok(())
     }
     #[test]
-    fn test_exists_no_dir() -> anyhow::Result<()>{
+    fn test_exists_no_dir() -> anyhow::Result<()> {
         // Create Dir and then delete it (so we know it doesnt exist)
         let dir = tempdir()?;
         let path = String::from(dir.path().to_str().unwrap()).clone();
