@@ -56,6 +56,10 @@ pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+    use starlark::{
+        const_frozen_string,
+        values::{Heap, Value},
+    };
     use uuid::Uuid;
 
     #[test]
