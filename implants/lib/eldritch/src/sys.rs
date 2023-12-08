@@ -12,8 +12,6 @@ mod is_linux_impl;
 mod is_macos_impl;
 mod is_windows_impl;
 mod shell_impl;
-mod dll_inject_impl;
-mod get_reg_impl;
 mod write_reg_impl;
 
 use allocative::Allocative;
