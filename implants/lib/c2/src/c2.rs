@@ -86,8 +86,8 @@ pub struct Beacon {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Task {
-    #[prost(int32, tag = "1")]
-    pub id: i32,
+    #[prost(int64, tag = "1")]
+    pub id: i64,
     #[prost(string, tag = "2")]
     pub eldritch: ::prost::alloc::string::String,
     #[prost(map = "string, string", tag = "3")]
@@ -107,8 +107,8 @@ pub struct TaskError {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TaskOutput {
-    #[prost(int32, tag = "1")]
-    pub id: i32,
+    #[prost(int64, tag = "1")]
+    pub id: i64,
     #[prost(string, tag = "2")]
     pub output: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "3")]

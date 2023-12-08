@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+pub mod exec;
+pub mod init;
+pub mod tasks;
+
 #[derive(Debug)]
 pub enum Error {
     Io(std::io::Error),
@@ -47,5 +51,4 @@ pub struct Config {
     pub service_configs: Vec<ServiceConfig>,
 }
 
-pub mod linux;
-pub mod windows;
+pub type TaskID = i64;
