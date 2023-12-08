@@ -707,9 +707,9 @@ The <b>sys.write_reg</b> method writes registry values to the requested registry
 An example is below:
 
 ```python
-$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","BAR1")
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_SZ","BAR1")
 "A new key has been created"
-$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","BAR2")
+$> sys.write_reg("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY","DEADBEEF")
 "An existing key has been modified"
 ```
 

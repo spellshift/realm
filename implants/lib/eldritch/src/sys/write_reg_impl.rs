@@ -1,4 +1,5 @@
 use anyhow::Result;
+use hex;
 
 
 pub fn write_reg(reghive: String, regpath: String, regname: String, regtype:String, regvalue: String ) -> Result<String>  {
@@ -25,22 +26,6 @@ pub fn write_reg(reghive: String, regpath: String, regname: String, regtype:Stri
             _ => return Err(anyhow::anyhow!("RegHive can only be one of the following values - HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS ")),
             
         };
-
-        let rtype: RegType = match regtype.as_ref() {
-            "REG_NONE" => REG_NONE,
-            "REG_SZ" => REG_SZ,
-            "REG_EXPAND_SZ" => REG_EXPAND_SZ,
-            "REG_BINARY" => REG_BINARY,
-            "REG_DWORD" => REG_DWORD,
-            "REG_DWORD_BIG_ENDIAN" => REG_DWORD_BIG_ENDIAN,
-            "REG_LINK" => REG_LINK,
-            "REG_MULTI_SZ" => REG_MULTI_SZ,
-            "REG_RESOURCE_LIST" => REG_RESOURCE_LIST,
-            "REG_FULL_RESOURCE_DESCRIPTOR" => REG_FULL_RESOURCE_DESCRIPTOR,
-            "REG_RESOURCE_REQUIREMENTS_LIST" => REG_RESOURCE_REQUIREMENTS_LIST,
-            "REG_QWORD" => REG_QWORD,
-            _ => return Err(anyhow::anyhow!("RegType can only be one of the following values - REG_NONE, REG_SZ, REG_EXPAND_SZ, REG_BINARY, REG_DWORD, REG_DWORD_BIG_ENDIAN, REG_LINK, REG_MULTI_SZ, REG_RESOURCE_LIST, REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR, REG_QWORD. ")),
-        };
         
         let hive = RegKey::predef(ihive);
         let (nkey, ndisp) = hive.create_subkey(regpath)?;
@@ -50,9 +35,64 @@ pub fn write_reg(reghive: String, regpath: String, regname: String, regtype:Stri
             REG_OPENED_EXISTING_KEY => "An existing key has been modified".to_string(),
         };
 
-        let bytes = regvalue.as_bytes().to_vec();
-        let data = RegValue{ vtype: rtype, bytes: bytes};
-        nkey.set_raw_value(regname, &data)?;
+        match regtype.as_ref() {
+            "REG_NONE" => {
+                // Assume value is a plain string
+                nkey.set_value(regname, &regvalue)?;
+            },
+            "REG_SZ" => nkey.set_value(regname, &regvalue)?,
+            "REG_EXPAND_SZ" => nkey.set_value(regname, &regvalue)?,
+            "REG_BINARY" => {
+                // Assume value is a hexadecimal string (e.g., "deadbeef")
+                let parsed_value: Vec<u8> = hex::decode(regvalue).expect("Invalid REG_BINARY value");
+                let data = RegValue{ vtype: REG_BINARY, bytes: parsed_value};
+                nkey.set_raw_value(regname, &data)?;
+            },
+            "REG_DWORD" => {
+                let parsed_value: u32 = u32::from_str_radix(&regvalue, 10).expect("Invalid DWORD value");
+                let data = RegValue{ vtype: REG_DWORD, bytes: parsed_value.to_le_bytes().to_vec()};
+                nkey.set_raw_value(regname, &data)?;
+            },
+            "REG_DWORD_BIG_ENDIAN" => {
+                let parsed_value: u32 = u32::from_str_radix(&regvalue, 10).expect("Invalid DWORD value");
+                let data = RegValue{ vtype: REG_DWORD, bytes: parsed_value.to_be_bytes().to_vec()};
+                nkey.set_raw_value(regname, &data)?;
+            },
+            "REG_LINK" => {
+                // Assume value is a plain string
+                nkey.set_value(regname, &regvalue)?;
+            },
+            "REG_MULTI_SZ" => {
+                // Assume value is a comma-separated string (e.g., "value1,value2,value3")
+                let parsed_value: Vec<&str> = regvalue.split(',').collect();
+                nkey.set_value(regname, &parsed_value)?;
+            },
+            "REG_RESOURCE_LIST" => {
+                // Assume value is a hexadecimal string (e.g., "deadbeef")
+                let parsed_value: Vec<u8> = hex::decode(regvalue).expect("Invalid REG_RESOURCE_LIST value");
+                let data = RegValue{ vtype: REG_RESOURCE_LIST, bytes: parsed_value};
+                nkey.set_raw_value(regname, &data)?;
+            },
+            "REG_FULL_RESOURCE_DESCRIPTOR" => {
+                // Assume value is a hexadecimal string (e.g., "deadbeef")
+                let parsed_value: Vec<u8> = hex::decode(regvalue).expect("Invalid REG_FULL_RESOURCE_DESCRIPTOR value");
+                let data = RegValue{ vtype: REG_FULL_RESOURCE_DESCRIPTOR, bytes: parsed_value};
+                nkey.set_raw_value(regname, &data)?;
+            },
+            "REG_RESOURCE_REQUIREMENTS_LIST" => {
+                // Assume value is a hexadecimal string (e.g., "deadbeef")
+                let parsed_value: Vec<u8> = hex::decode(regvalue).expect("Invalid REG_RESOURCE_REQUIREMENTS_LIST value");
+                let data = RegValue{ vtype: REG_RESOURCE_REQUIREMENTS_LIST, bytes: parsed_value};
+                nkey.set_raw_value(regname, &data)?;
+            },
+            "REG_QWORD" => {
+                let parsed_value: u64 = u64::from_str_radix(&regvalue, 10).expect("Invalid QWORD value");
+                let data = RegValue{ vtype: REG_QWORD, bytes: parsed_value.to_le_bytes().to_vec()};
+                nkey.set_raw_value(regname, &data)?;
+            },
+            _ => return Err(anyhow::anyhow!("RegType can only be one of the following values - REG_NONE, REG_SZ, REG_EXPAND_SZ, REG_BINARY, REG_DWORD, REG_DWORD_BIG_ENDIAN, REG_LINK, REG_MULTI_SZ, REG_RESOURCE_LIST, REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR, REG_QWORD. ")),
+        };
+
         Ok(resp.to_string())
     }
 }
@@ -68,18 +108,98 @@ mod tests {
         #[cfg(target_os = "windows")]{
             use winreg::{{enums::*}, RegKey};
             let id = Uuid::new_v4();
-            //Write something into temp regkey...
-            let _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_SZ".to_string(), "BAR2".to_string());
-            
-            //read temp regkey
-            let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            let subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
-            let val2 = subky.get_raw_value("FOO2")?;
+
+
+            //Write and then read REG_SZ into temp regkey...
+            let mut _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_SZ".to_string(), "BAR2".to_string());
+            let mut hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            let mut subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            let mut val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(val2.to_string(), "BAR2");
+
+            //Write and then read REG_NONE into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_NONE".to_string(), "BAR2".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(val2.to_string(), "BAR2");            
+
+            //Write and then read REG_EXPAND_SZ into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_EXPAND_SZ".to_string(), "BAR2".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(val2.to_string(), "BAR2");
+
+            //Write and then read REG_BINARY into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_BINARY".to_string(), "deadbeef".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(hex::encode(val2.bytes), "deadbeef");
+
+            //Write and then read REG_DWORD into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_DWORD".to_string(), "12345678".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(val2.to_string(), "12345678");
+
+            //Write and then read REG_DWORD_BIG_ENDIAN into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_DWORD_BIG_ENDIAN".to_string(), "12345678".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(val2.to_string(), "1315027968");
+
+            //Write and then read REG_LINK into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_LINK".to_string(), "BAR2".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(val2.to_string(), "BAR2");
+
+            //Write and then read REG_MULTI_SZ into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_MULTI_SZ".to_string(), "dead,beef".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(val2.to_string(), "dead\nbeef");
+
+            //Write and then read REG_RESOURCE_LIST into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_RESOURCE_LIST".to_string(), "deadbeef".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(hex::encode(val2.bytes), "deadbeef");
+
+            //Write and then read REG_FULL_RESOURCE_DESCRIPTOR into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_FULL_RESOURCE_DESCRIPTOR".to_string(), "deadbeef".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(hex::encode(val2.bytes), "deadbeef");
+
+            //Write and then read REG_RESOURCE_REQUIREMENTS_LIST into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_RESOURCE_REQUIREMENTS_LIST".to_string(), "deadbeef".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(hex::encode(val2.bytes), "deadbeef");
+
+            //Write and then read REG_QWORD into temp regkey...
+            _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_QWORD".to_string(), "1234567812345678".to_string());
+            hkcu = RegKey::predef(HKEY_CURRENT_USER);
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            val2 = subky.get_raw_value("FOO2")?;
+            assert_eq!(val2.to_string(), "1234567812345678");
+
 
             //delete temp regkey
-            //hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
 
-            assert_eq!(val2.to_string(), "BAR2");
+            
+
     
         }
 
