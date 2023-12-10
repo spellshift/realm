@@ -52,6 +52,8 @@ type BeaconMutation struct {
 	identifier       *string
 	agent_identifier *string
 	last_seen_at     *time.Time
+	interval         *uint64
+	addinterval      *int64
 	clearedFields    map[string]struct{}
 	host             *int
 	clearedhost      bool
@@ -380,6 +382,62 @@ func (m *BeaconMutation) ResetLastSeenAt() {
 	delete(m.clearedFields, beacon.FieldLastSeenAt)
 }
 
+// SetInterval sets the "interval" field.
+func (m *BeaconMutation) SetInterval(u uint64) {
+	m.interval = &u
+	m.addinterval = nil
+}
+
+// Interval returns the value of the "interval" field in the mutation.
+func (m *BeaconMutation) Interval() (r uint64, exists bool) {
+	v := m.interval
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInterval returns the old "interval" field's value of the Beacon entity.
+// If the Beacon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BeaconMutation) OldInterval(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInterval is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInterval requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInterval: %w", err)
+	}
+	return oldValue.Interval, nil
+}
+
+// AddInterval adds u to the "interval" field.
+func (m *BeaconMutation) AddInterval(u int64) {
+	if m.addinterval != nil {
+		*m.addinterval += u
+	} else {
+		m.addinterval = &u
+	}
+}
+
+// AddedInterval returns the value that was added to the "interval" field in this mutation.
+func (m *BeaconMutation) AddedInterval() (r int64, exists bool) {
+	v := m.addinterval
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetInterval resets all changes to the "interval" field.
+func (m *BeaconMutation) ResetInterval() {
+	m.interval = nil
+	m.addinterval = nil
+}
+
 // SetHostID sets the "host" edge to the Host entity by id.
 func (m *BeaconMutation) SetHostID(id int) {
 	m.host = &id
@@ -507,7 +565,7 @@ func (m *BeaconMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BeaconMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.name != nil {
 		fields = append(fields, beacon.FieldName)
 	}
@@ -522,6 +580,9 @@ func (m *BeaconMutation) Fields() []string {
 	}
 	if m.last_seen_at != nil {
 		fields = append(fields, beacon.FieldLastSeenAt)
+	}
+	if m.interval != nil {
+		fields = append(fields, beacon.FieldInterval)
 	}
 	return fields
 }
@@ -541,6 +602,8 @@ func (m *BeaconMutation) Field(name string) (ent.Value, bool) {
 		return m.AgentIdentifier()
 	case beacon.FieldLastSeenAt:
 		return m.LastSeenAt()
+	case beacon.FieldInterval:
+		return m.Interval()
 	}
 	return nil, false
 }
@@ -560,6 +623,8 @@ func (m *BeaconMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldAgentIdentifier(ctx)
 	case beacon.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
+	case beacon.FieldInterval:
+		return m.OldInterval(ctx)
 	}
 	return nil, fmt.Errorf("unknown Beacon field %s", name)
 }
@@ -604,6 +669,13 @@ func (m *BeaconMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastSeenAt(v)
 		return nil
+	case beacon.FieldInterval:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInterval(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Beacon field %s", name)
 }
@@ -611,13 +683,21 @@ func (m *BeaconMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *BeaconMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addinterval != nil {
+		fields = append(fields, beacon.FieldInterval)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *BeaconMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case beacon.FieldInterval:
+		return m.AddedInterval()
+	}
 	return nil, false
 }
 
@@ -626,6 +706,13 @@ func (m *BeaconMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BeaconMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case beacon.FieldInterval:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddInterval(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Beacon numeric field %s", name)
 }
@@ -688,6 +775,9 @@ func (m *BeaconMutation) ResetField(name string) error {
 		return nil
 	case beacon.FieldLastSeenAt:
 		m.ResetLastSeenAt()
+		return nil
+	case beacon.FieldInterval:
+		m.ResetInterval()
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon field %s", name)

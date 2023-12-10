@@ -94,6 +94,12 @@ func (bc *BeaconCreate) SetNillableLastSeenAt(t *time.Time) *BeaconCreate {
 	return bc
 }
 
+// SetInterval sets the "interval" field.
+func (bc *BeaconCreate) SetInterval(u uint64) *BeaconCreate {
+	bc.mutation.SetInterval(u)
+	return bc
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (bc *BeaconCreate) SetHostID(id int) *BeaconCreate {
 	bc.mutation.SetHostID(id)
@@ -193,6 +199,9 @@ func (bc *BeaconCreate) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
+	if _, ok := bc.mutation.Interval(); !ok {
+		return &ValidationError{Name: "interval", err: errors.New(`ent: missing required field "Beacon.interval"`)}
+	}
 	if _, ok := bc.mutation.HostID(); !ok {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "Beacon.host"`)}
 	}
@@ -242,6 +251,10 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.LastSeenAt(); ok {
 		_spec.SetField(beacon.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = value
+	}
+	if value, ok := bc.mutation.Interval(); ok {
+		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
+		_node.Interval = value
 	}
 	if nodes := bc.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -394,6 +407,24 @@ func (u *BeaconUpsert) ClearLastSeenAt() *BeaconUpsert {
 	return u
 }
 
+// SetInterval sets the "interval" field.
+func (u *BeaconUpsert) SetInterval(v uint64) *BeaconUpsert {
+	u.Set(beacon.FieldInterval, v)
+	return u
+}
+
+// UpdateInterval sets the "interval" field to the value that was provided on create.
+func (u *BeaconUpsert) UpdateInterval() *BeaconUpsert {
+	u.SetExcluded(beacon.FieldInterval)
+	return u
+}
+
+// AddInterval adds v to the "interval" field.
+func (u *BeaconUpsert) AddInterval(v uint64) *BeaconUpsert {
+	u.Add(beacon.FieldInterval, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -513,6 +544,27 @@ func (u *BeaconUpsertOne) UpdateLastSeenAt() *BeaconUpsertOne {
 func (u *BeaconUpsertOne) ClearLastSeenAt() *BeaconUpsertOne {
 	return u.Update(func(s *BeaconUpsert) {
 		s.ClearLastSeenAt()
+	})
+}
+
+// SetInterval sets the "interval" field.
+func (u *BeaconUpsertOne) SetInterval(v uint64) *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetInterval(v)
+	})
+}
+
+// AddInterval adds v to the "interval" field.
+func (u *BeaconUpsertOne) AddInterval(v uint64) *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.AddInterval(v)
+	})
+}
+
+// UpdateInterval sets the "interval" field to the value that was provided on create.
+func (u *BeaconUpsertOne) UpdateInterval() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateInterval()
 	})
 }
 
@@ -801,6 +853,27 @@ func (u *BeaconUpsertBulk) UpdateLastSeenAt() *BeaconUpsertBulk {
 func (u *BeaconUpsertBulk) ClearLastSeenAt() *BeaconUpsertBulk {
 	return u.Update(func(s *BeaconUpsert) {
 		s.ClearLastSeenAt()
+	})
+}
+
+// SetInterval sets the "interval" field.
+func (u *BeaconUpsertBulk) SetInterval(v uint64) *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetInterval(v)
+	})
+}
+
+// AddInterval adds v to the "interval" field.
+func (u *BeaconUpsertBulk) AddInterval(v uint64) *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.AddInterval(v)
+	})
+}
+
+// UpdateInterval sets the "interval" field to the value that was provided on create.
+func (u *BeaconUpsertBulk) UpdateInterval() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateInterval()
 	})
 }
 

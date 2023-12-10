@@ -49,6 +49,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if req.Beacon.Agent.Identifier == "" {
 		return nil, fmt.Errorf("must provide agent identifier")
 	}
+
 	hostPlaform := convertHostPlatform(req.Beacon.Host.Platform)
 
 	// 1. Upsert the host
@@ -72,6 +73,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
+		SetInterval(req.Beacon.Interval).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)

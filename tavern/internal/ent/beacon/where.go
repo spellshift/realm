@@ -80,6 +80,11 @@ func LastSeenAt(v time.Time) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldLastSeenAt, v))
 }
 
+// Interval applies equality check predicate on the "interval" field. It's identical to IntervalEQ.
+func Interval(v uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldInterval, v))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldName, v))
@@ -408,6 +413,46 @@ func LastSeenAtIsNil() predicate.Beacon {
 // LastSeenAtNotNil applies the NotNil predicate on the "last_seen_at" field.
 func LastSeenAtNotNil() predicate.Beacon {
 	return predicate.Beacon(sql.FieldNotNull(FieldLastSeenAt))
+}
+
+// IntervalEQ applies the EQ predicate on the "interval" field.
+func IntervalEQ(v uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldInterval, v))
+}
+
+// IntervalNEQ applies the NEQ predicate on the "interval" field.
+func IntervalNEQ(v uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNEQ(FieldInterval, v))
+}
+
+// IntervalIn applies the In predicate on the "interval" field.
+func IntervalIn(vs ...uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldIn(FieldInterval, vs...))
+}
+
+// IntervalNotIn applies the NotIn predicate on the "interval" field.
+func IntervalNotIn(vs ...uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotIn(FieldInterval, vs...))
+}
+
+// IntervalGT applies the GT predicate on the "interval" field.
+func IntervalGT(v uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldGT(FieldInterval, v))
+}
+
+// IntervalGTE applies the GTE predicate on the "interval" field.
+func IntervalGTE(v uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldGTE(FieldInterval, v))
+}
+
+// IntervalLT applies the LT predicate on the "interval" field.
+func IntervalLT(v uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldLT(FieldInterval, v))
+}
+
+// IntervalLTE applies the LTE predicate on the "interval" field.
+func IntervalLTE(v uint64) predicate.Beacon {
+	return predicate.Beacon(sql.FieldLTE(FieldInterval, v))
 }
 
 // HasHost applies the HasEdge predicate on the "host" edge.

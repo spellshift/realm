@@ -22,6 +22,9 @@ import (
 
 // region    ************************** generated!.gotpl **************************
 
+type BeaconResolver interface {
+	Interval(ctx context.Context, obj *ent.Beacon) (int, error)
+}
 type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
@@ -34,6 +37,20 @@ type QueryResolver interface {
 	Tomes(ctx context.Context, where *ent.TomeWhereInput) ([]*ent.Tome, error)
 	Users(ctx context.Context, where *ent.UserWhereInput) ([]*ent.User, error)
 	Me(ctx context.Context) (*ent.User, error)
+}
+
+type BeaconWhereInputResolver interface {
+	Interval(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error
+	IntervalNeq(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error
+	IntervalIn(ctx context.Context, obj *ent.BeaconWhereInput, data []int) error
+	IntervalNotIn(ctx context.Context, obj *ent.BeaconWhereInput, data []int) error
+	IntervalGt(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error
+	IntervalGte(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error
+	IntervalLt(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error
+	IntervalLte(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error
+}
+type UpdateBeaconInputResolver interface {
+	Interval(ctx context.Context, obj *ent.UpdateBeaconInput, data *int) error
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -463,6 +480,50 @@ func (ec *executionContext) fieldContext_Beacon_lastSeenAt(ctx context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Beacon_interval(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Beacon_interval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Beacon().Interval(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Beacon_interval(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Beacon",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1211,6 +1272,8 @@ func (ec *executionContext) fieldContext_Host_beacons(ctx context.Context, field
 				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
+			case "interval":
+				return ec.fieldContext_Beacon_interval(ctx, field)
 			case "host":
 				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
@@ -1867,6 +1930,8 @@ func (ec *executionContext) fieldContext_Query_beacons(ctx context.Context, fiel
 				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
+			case "interval":
+				return ec.fieldContext_Beacon_interval(ctx, field)
 			case "host":
 				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
@@ -3541,6 +3606,8 @@ func (ec *executionContext) fieldContext_Task_beacon(ctx context.Context, field 
 				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
+			case "interval":
+				return ec.fieldContext_Beacon_interval(ctx, field)
 			case "host":
 				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
@@ -4185,7 +4252,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4885,6 +4952,94 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 				return it, err
 			}
 			it.LastSeenAtNotNil = data
+		case "interval":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.BeaconWhereInput().Interval(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "intervalNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalNEQ"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.BeaconWhereInput().IntervalNeq(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "intervalIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalIn"))
+			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.BeaconWhereInput().IntervalIn(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "intervalNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalNotIn"))
+			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.BeaconWhereInput().IntervalNotIn(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "intervalGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalGT"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.BeaconWhereInput().IntervalGt(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "intervalGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalGTE"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.BeaconWhereInput().IntervalGte(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "intervalLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalLT"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.BeaconWhereInput().IntervalLt(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "intervalLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalLTE"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.BeaconWhereInput().IntervalLte(ctx, &it, data); err != nil {
+				return it, err
+			}
 		case "hasHost":
 			var err error
 
@@ -9065,13 +9220,24 @@ func (ec *executionContext) unmarshalInputUpdateBeaconInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"hostID"}
+	fieldsInOrder := [...]string{"interval", "hostID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "interval":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.UpdateBeaconInput().Interval(ctx, &it, data); err != nil {
+				return it, err
+			}
 		case "hostID":
 			var err error
 
@@ -9778,6 +9944,42 @@ func (ec *executionContext) _Beacon(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Beacon_agentIdentifier(ctx, field, obj)
 		case "lastSeenAt":
 			out.Values[i] = ec._Beacon_lastSeenAt(ctx, field, obj)
+		case "interval":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Beacon_interval(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "host":
 			field := field
 

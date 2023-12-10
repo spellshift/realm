@@ -6,10 +6,16 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kcarretto/realm/tavern/internal/ent"
 	"github.com/kcarretto/realm/tavern/internal/graphql/generated"
 )
+
+// Interval is the resolver for the interval field.
+func (r *beaconResolver) Interval(ctx context.Context, obj *ent.Beacon) (int, error) {
+	panic(fmt.Errorf("not implemented: Interval - interval"))
+}
 
 // Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
@@ -21,7 +27,68 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, erro
 	return r.client.Noders(ctx, ids)
 }
 
+// Interval is the resolver for the interval field.
+func (r *beaconWhereInputResolver) Interval(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: Interval - interval"))
+}
+
+// IntervalNeq is the resolver for the intervalNEQ field.
+func (r *beaconWhereInputResolver) IntervalNeq(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: IntervalNeq - intervalNEQ"))
+}
+
+// IntervalIn is the resolver for the intervalIn field.
+func (r *beaconWhereInputResolver) IntervalIn(ctx context.Context, obj *ent.BeaconWhereInput, data []int) error {
+	panic(fmt.Errorf("not implemented: IntervalIn - intervalIn"))
+}
+
+// IntervalNotIn is the resolver for the intervalNotIn field.
+func (r *beaconWhereInputResolver) IntervalNotIn(ctx context.Context, obj *ent.BeaconWhereInput, data []int) error {
+	panic(fmt.Errorf("not implemented: IntervalNotIn - intervalNotIn"))
+}
+
+// IntervalGt is the resolver for the intervalGT field.
+func (r *beaconWhereInputResolver) IntervalGt(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: IntervalGt - intervalGT"))
+}
+
+// IntervalGte is the resolver for the intervalGTE field.
+func (r *beaconWhereInputResolver) IntervalGte(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: IntervalGte - intervalGTE"))
+}
+
+// IntervalLt is the resolver for the intervalLT field.
+func (r *beaconWhereInputResolver) IntervalLt(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: IntervalLt - intervalLT"))
+}
+
+// IntervalLte is the resolver for the intervalLTE field.
+func (r *beaconWhereInputResolver) IntervalLte(ctx context.Context, obj *ent.BeaconWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: IntervalLte - intervalLTE"))
+}
+
+// Interval is the resolver for the interval field.
+func (r *updateBeaconInputResolver) Interval(ctx context.Context, obj *ent.UpdateBeaconInput, data *int) error {
+	panic(fmt.Errorf("not implemented: Interval - interval"))
+}
+
+// Beacon returns generated.BeaconResolver implementation.
+func (r *Resolver) Beacon() generated.BeaconResolver { return &beaconResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// BeaconWhereInput returns generated.BeaconWhereInputResolver implementation.
+func (r *Resolver) BeaconWhereInput() generated.BeaconWhereInputResolver {
+	return &beaconWhereInputResolver{r}
+}
+
+// UpdateBeaconInput returns generated.UpdateBeaconInputResolver implementation.
+func (r *Resolver) UpdateBeaconInput() generated.UpdateBeaconInputResolver {
+	return &updateBeaconInputResolver{r}
+}
+
+type beaconResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type beaconWhereInputResolver struct{ *Resolver }
+type updateBeaconInputResolver struct{ *Resolver }

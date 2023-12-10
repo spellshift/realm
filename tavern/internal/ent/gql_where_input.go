@@ -111,6 +111,16 @@ type BeaconWhereInput struct {
 	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
 	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
 
+	// "interval" field predicates.
+	Interval      *uint64  `json:"interval,omitempty"`
+	IntervalNEQ   *uint64  `json:"intervalNEQ,omitempty"`
+	IntervalIn    []uint64 `json:"intervalIn,omitempty"`
+	IntervalNotIn []uint64 `json:"intervalNotIn,omitempty"`
+	IntervalGT    *uint64  `json:"intervalGT,omitempty"`
+	IntervalGTE   *uint64  `json:"intervalGTE,omitempty"`
+	IntervalLT    *uint64  `json:"intervalLT,omitempty"`
+	IntervalLTE   *uint64  `json:"intervalLTE,omitempty"`
+
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
@@ -412,6 +422,30 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 	}
 	if i.LastSeenAtNotNil {
 		predicates = append(predicates, beacon.LastSeenAtNotNil())
+	}
+	if i.Interval != nil {
+		predicates = append(predicates, beacon.IntervalEQ(*i.Interval))
+	}
+	if i.IntervalNEQ != nil {
+		predicates = append(predicates, beacon.IntervalNEQ(*i.IntervalNEQ))
+	}
+	if len(i.IntervalIn) > 0 {
+		predicates = append(predicates, beacon.IntervalIn(i.IntervalIn...))
+	}
+	if len(i.IntervalNotIn) > 0 {
+		predicates = append(predicates, beacon.IntervalNotIn(i.IntervalNotIn...))
+	}
+	if i.IntervalGT != nil {
+		predicates = append(predicates, beacon.IntervalGT(*i.IntervalGT))
+	}
+	if i.IntervalGTE != nil {
+		predicates = append(predicates, beacon.IntervalGTE(*i.IntervalGTE))
+	}
+	if i.IntervalLT != nil {
+		predicates = append(predicates, beacon.IntervalLT(*i.IntervalLT))
+	}
+	if i.IntervalLTE != nil {
+		predicates = append(predicates, beacon.IntervalLTE(*i.IntervalLTE))
 	}
 
 	if i.HasHost != nil {
