@@ -150,7 +150,8 @@ mod tests {
         let test_port = allocate_localhost_unused_ports(1, "tcp".to_string())
             .await?
             .get(0)
-            .context("Unable to allocate port")?;
+            .context("Unable to allocate port")?
+            .clone();
         // Setup a test echo server
         let expected_response = String::from("Hello world!");
         let listen_task = task::spawn(setup_test_listener(
