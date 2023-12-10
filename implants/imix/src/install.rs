@@ -112,3 +112,17 @@ pub fn install_main(custom_config: Option<&str>) -> anyhow::Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn imix_test_execute_tomes_in_parallel() -> anyhow::Result<()> {
+        let tome_files_and_content = [("test_hello.eld".to_string(), "'hello world'".to_string())];
+        let (error_code, result) =
+            execute_tomes_in_parallel(tome_files_and_content.to_vec(), None).await?;
+        assert_eq!(error_code, 0);
+        assert!(result.contains(&"hello world".to_string()));
+        Ok(())
+    }
+}
