@@ -13,7 +13,7 @@ import (
 )
 
 // Interval is the resolver for the interval field.
-func (r *beaconResolver) Interval(ctx context.Context, obj *ent.Beacon) (int, error) {
+func (r *beaconResolver) Interval(ctx context.Context, obj *ent.Beacon) (*int, error) {
 	panic(fmt.Errorf("not implemented: Interval - interval"))
 }
 

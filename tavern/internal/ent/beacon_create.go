@@ -100,6 +100,14 @@ func (bc *BeaconCreate) SetInterval(u uint64) *BeaconCreate {
 	return bc
 }
 
+// SetNillableInterval sets the "interval" field if the given value is not nil.
+func (bc *BeaconCreate) SetNillableInterval(u *uint64) *BeaconCreate {
+	if u != nil {
+		bc.SetInterval(*u)
+	}
+	return bc
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (bc *BeaconCreate) SetHostID(id int) *BeaconCreate {
 	bc.mutation.SetHostID(id)
@@ -198,9 +206,6 @@ func (bc *BeaconCreate) check() error {
 		if err := beacon.AgentIdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
-	}
-	if _, ok := bc.mutation.Interval(); !ok {
-		return &ValidationError{Name: "interval", err: errors.New(`ent: missing required field "Beacon.interval"`)}
 	}
 	if _, ok := bc.mutation.HostID(); !ok {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "Beacon.host"`)}
@@ -425,6 +430,12 @@ func (u *BeaconUpsert) AddInterval(v uint64) *BeaconUpsert {
 	return u
 }
 
+// ClearInterval clears the value of the "interval" field.
+func (u *BeaconUpsert) ClearInterval() *BeaconUpsert {
+	u.SetNull(beacon.FieldInterval)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -565,6 +576,13 @@ func (u *BeaconUpsertOne) AddInterval(v uint64) *BeaconUpsertOne {
 func (u *BeaconUpsertOne) UpdateInterval() *BeaconUpsertOne {
 	return u.Update(func(s *BeaconUpsert) {
 		s.UpdateInterval()
+	})
+}
+
+// ClearInterval clears the value of the "interval" field.
+func (u *BeaconUpsertOne) ClearInterval() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.ClearInterval()
 	})
 }
 
@@ -874,6 +892,13 @@ func (u *BeaconUpsertBulk) AddInterval(v uint64) *BeaconUpsertBulk {
 func (u *BeaconUpsertBulk) UpdateInterval() *BeaconUpsertBulk {
 	return u.Update(func(s *BeaconUpsert) {
 		s.UpdateInterval()
+	})
+}
+
+// ClearInterval clears the value of the "interval" field.
+func (u *BeaconUpsertBulk) ClearInterval() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.ClearInterval()
 	})
 }
 

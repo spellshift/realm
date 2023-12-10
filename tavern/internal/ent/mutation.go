@@ -432,10 +432,24 @@ func (m *BeaconMutation) AddedInterval() (r int64, exists bool) {
 	return *v, true
 }
 
+// ClearInterval clears the value of the "interval" field.
+func (m *BeaconMutation) ClearInterval() {
+	m.interval = nil
+	m.addinterval = nil
+	m.clearedFields[beacon.FieldInterval] = struct{}{}
+}
+
+// IntervalCleared returns if the "interval" field was cleared in this mutation.
+func (m *BeaconMutation) IntervalCleared() bool {
+	_, ok := m.clearedFields[beacon.FieldInterval]
+	return ok
+}
+
 // ResetInterval resets all changes to the "interval" field.
 func (m *BeaconMutation) ResetInterval() {
 	m.interval = nil
 	m.addinterval = nil
+	delete(m.clearedFields, beacon.FieldInterval)
 }
 
 // SetHostID sets the "host" edge to the Host entity by id.
@@ -730,6 +744,9 @@ func (m *BeaconMutation) ClearedFields() []string {
 	if m.FieldCleared(beacon.FieldLastSeenAt) {
 		fields = append(fields, beacon.FieldLastSeenAt)
 	}
+	if m.FieldCleared(beacon.FieldInterval) {
+		fields = append(fields, beacon.FieldInterval)
+	}
 	return fields
 }
 
@@ -752,6 +769,9 @@ func (m *BeaconMutation) ClearField(name string) error {
 		return nil
 	case beacon.FieldLastSeenAt:
 		m.ClearLastSeenAt()
+		return nil
+	case beacon.FieldInterval:
+		m.ClearInterval()
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon nullable field %s", name)

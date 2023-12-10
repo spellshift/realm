@@ -455,6 +455,16 @@ func IntervalLTE(v uint64) predicate.Beacon {
 	return predicate.Beacon(sql.FieldLTE(FieldInterval, v))
 }
 
+// IntervalIsNil applies the IsNil predicate on the "interval" field.
+func IntervalIsNil() predicate.Beacon {
+	return predicate.Beacon(sql.FieldIsNull(FieldInterval))
+}
+
+// IntervalNotNil applies the NotNil predicate on the "interval" field.
+func IntervalNotNil() predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotNull(FieldInterval))
+}
+
 // HasHost applies the HasEdge predicate on the "host" edge.
 func HasHost() predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {

@@ -59,6 +59,7 @@ func (Beacon) Fields() []ent.Field {
 			).
 			Comment("Timestamp of when a task was last claimed or updated for the beacon."),
 		field.Uint64("interval").
+			Optional().
 			Comment("The callback interval of the agent"),
 	}
 }

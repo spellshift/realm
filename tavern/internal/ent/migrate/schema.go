@@ -16,7 +16,7 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
-		{Name: "interval", Type: field.TypeUint64},
+		{Name: "interval", Type: field.TypeUint64, Nullable: true},
 		{Name: "beacon_host", Type: field.TypeInt},
 	}
 	// BeaconsTable holds the schema information for the "beacons" table.

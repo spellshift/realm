@@ -8,12 +8,16 @@ import (
 
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
-	Interval *uint64
-	HostID   *int
+	ClearInterval bool
+	Interval      *uint64
+	HostID        *int
 }
 
 // Mutate applies the UpdateBeaconInput on the BeaconMutation builder.
 func (i *UpdateBeaconInput) Mutate(m *BeaconMutation) {
+	if i.ClearInterval {
+		m.ClearInterval()
+	}
 	if v := i.Interval; v != nil {
 		m.SetInterval(*v)
 	}
