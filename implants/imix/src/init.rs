@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use c2::pb::host::Platform;
 use std::{
     fs::{self, File},
@@ -106,8 +106,11 @@ fn get_os_pretty_name() -> Result<String> {
 }
 
 pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentProperties, Config)> {
-    let config_file = File::open(config_path)?;
-    let imix_config = serde_json::from_reader(config_file)?;
+    let config_file =
+        File::open(config_path.clone()).with_context(|| format!("Failed to open {config_path}"))?;
+
+    let imix_config = serde_json::from_reader(config_file)
+        .with_context(|| format!("Failed to parse {config_path}"))?;
 
     let principal = match get_principal() {
         Ok(username) => username,
