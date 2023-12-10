@@ -24,7 +24,7 @@ async fn handle_ssh_exec(
     timeout: Option<u32>,
 ) -> Result<SSHExecOutput> {
     let mut ssh = tokio::time::timeout(
-        std::time::Duration::from_secs(timeout.unwrap_or(3).into()),
+        std::time::Duration::from_secs(timeout.unwrap_or(3).try_into()?),
         Session::connect(
             username,
             password,
@@ -38,7 +38,7 @@ async fn handle_ssh_exec(
     ssh.close().await?;
 
     Ok(SSHExecOutput {
-        stdout: r.output(),
+        stdout: r.output()?,
         status: r.code.unwrap_or(0) as i32,
     })
 }
