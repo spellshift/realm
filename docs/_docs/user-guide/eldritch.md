@@ -14,6 +14,33 @@ By embedding the interpreter into the agent conditional logic can be quickly eva
 
 Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
+## Examples
+
+_Kill a specific process name_
+
+```python
+for p in process.list():
+    if p['name'] == "golem":
+        process.kill(p['pid'])
+```
+
+_Copy your current executable somewhere else_
+
+```python
+cur_bin_path = process.info()['exe']
+dest_path = '/tmp/win'
+file.copy(cur_bin_path, dest_path)
+file.remove(cur_bin_path)
+```
+
+_Parse a JSON file_
+
+```python
+json_str = file.read("/tmp/config.json")
+config_data = crypto.from_json(json_str)
+print(config_data['key1'])
+```
+
 ## Data types
 
 Eldritch currently only supports the [default starlark data types.](https://github.com/facebookexperimental/starlark-rust/blob/main/docs/types.md)
