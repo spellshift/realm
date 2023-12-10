@@ -267,7 +267,6 @@ it after running the install.
 }
 """
 def main():
-    input_params['custom_config'] = "/tmp/imix-config.json"
     if 'custom_config' in input_params:
         config_data = crypto.from_json(file.read(input_params['custom_config']))
         parse_and_persist(config_data)
