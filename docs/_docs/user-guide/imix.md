@@ -130,6 +130,8 @@ sudo apt install gcc-mingw-w64
 # Build the reflective loader
 cd realm/bin/reflective_loader
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --lib --target=x86_64-pc-windows-gnu
+# You may have to adjust `LOADER_BYTES` include path in `dll_reflect_impl.rs` changing `x86_64-pc-windows-msvc` ---> `x86_64-pc-windows-gnu`
+
 # Build imix
 cd realm/implants/imix/
 # Build imix.exe
