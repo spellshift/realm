@@ -1,4 +1,4 @@
 [build]
-target = "x86_64-pc-windows-msvc"
+target = "x86_64-pc-windows-gnu"
 rustflags = ["-Z", "share-generics=n"]
 profiler = false

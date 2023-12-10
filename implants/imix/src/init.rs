@@ -210,8 +210,15 @@ mod tests {
             .to_string();
         tmp_file.write_all(
             r#"{
-            "service_configs": [],
-            "target_forward_connect_ip": "127.0.0.1",
+                "service_configs": [
+                    {
+                        "name": "imix",
+                        "description": "Imix c2 agent",
+                        "executable_name": "imix",
+                        "executable_args": ""
+                    }
+                ],
+                        "target_forward_connect_ip": "127.0.0.1",
             "target_name": "test1234",
             "callback_config": {
                 "interval": 4,
