@@ -481,6 +481,8 @@ Not returning stderr is a limitation of the way we're performing execution. Sinc
 
 The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more flexibility but may be adding complexity.
 
+---
+
 ## Process
 
 ### process.info
@@ -583,6 +585,8 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
     ...
 ]
 ```
+
+---
 
 ## Sys
 
@@ -785,6 +789,8 @@ sys.shell("ls /nofile")
     "status":2,
 }
 ```
+
+---
 
 ## Time
 
