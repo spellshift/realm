@@ -4,8 +4,8 @@ version = "0.0.3"
 edition = "2021"
 
 [features]
-service = []
-default = ["service"]
+win_service = []
+default = []
 
 [dependencies]
 anyhow = { workspace = true }
@@ -28,7 +28,7 @@ uuid = { workspace = true, features = ["v4","fast-rng"] }
 whoami = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-windows-service = "0.6.0"
+windows-service = { workspace = true }
 
 [dev-dependencies]
 httptest = { workspace = true }
