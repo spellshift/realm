@@ -46,6 +46,11 @@ models:
       - github.com/kcarretto/realm/tavern/internal/ent.Noder
       # - entgo.io/contrib/entgql/internal/todo/ent.Noder
 
+  # Golang Types
+  Uint64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Uint64
+
   # Enums
   Kind:
     model:

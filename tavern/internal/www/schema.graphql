@@ -17,6 +17,8 @@ type Beacon implements Node {
   agentIdentifier: String
   """Timestamp of when a task was last claimed or updated for the beacon."""
   lastSeenAt: Time
+  """Duration until next callback, in seconds."""
+  interval: Uint64
   """Host this beacon is running on."""
   host: Host!
   """Tasks that have been assigned to the beacon."""
@@ -32,6 +34,7 @@ input BeaconOrder {
 """Properties by which Beacon connections can be ordered."""
 enum BeaconOrderField {
   LAST_SEEN_AT
+  INTERVAL
 }
 """
 BeaconWhereInput is used for filtering Beacon objects.
@@ -121,6 +124,17 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """interval field predicates"""
+  interval: Uint64
+  intervalNEQ: Uint64
+  intervalIn: [Uint64!]
+  intervalNotIn: [Uint64!]
+  intervalGT: Uint64
+  intervalGTE: Uint64
+  intervalLT: Uint64
+  intervalLTE: Uint64
+  intervalIsNil: Boolean
+  intervalNotNil: Boolean
   """host edge predicates"""
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
@@ -1079,3 +1093,4 @@ extend type Query {
   me: User!
 }
 scalar Time
+scalar Uint64

@@ -22,6 +22,8 @@ const (
 	FieldAgentIdentifier = "agent_identifier"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
+	// FieldInterval holds the string denoting the interval field in the database.
+	FieldInterval = "interval"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldAgentIdentifier,
 	FieldLastSeenAt,
+	FieldInterval,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "beacons"
@@ -121,6 +124,11 @@ func ByAgentIdentifier(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSeenAt orders the results by the last_seen_at field.
 func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
+}
+
+// ByInterval orders the results by the interval field.
+func ByInterval(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInterval, opts...).ToFunc()
 }
 
 // ByHostField orders the results by host field.
