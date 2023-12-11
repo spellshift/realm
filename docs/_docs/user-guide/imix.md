@@ -94,4 +94,8 @@ apt update
 sudo apt install gcc-mingw-w64
 
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-pc-windows-gnu
+
+# Compile windows service exe
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 ```
+_The windows service exe can also be executed as a standard exe. So if you only want on binary build a service exe and reuse it._
