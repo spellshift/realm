@@ -3,14 +3,14 @@ use std::fs;
 
 pub fn read(path: String) -> Result<String> {
     let data = fs::read_to_string(path)?;
-    return Ok(data)
+    return Ok(data);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::prelude::*;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_read_simple() -> anyhow::Result<()> {
@@ -26,7 +26,7 @@ mod tests {
         // Verify output
         assert_eq!(res, "Hello, world!\n");
         Ok(())
-    }    
+    }
     #[test]
     fn test_read_large() -> anyhow::Result<()> {
         // Create file
@@ -43,7 +43,7 @@ mod tests {
         // Verify output
         assert_eq!(res, "Hello, world!\n".repeat(256));
         Ok(())
-    }    
+    }
     #[test]
     fn test_read_nonexistent() -> anyhow::Result<()> {
         // Create file
@@ -54,5 +54,5 @@ mod tests {
         let res = read(path);
         assert_eq!(res.is_err(), true);
         Ok(())
-    }    
+    }
 }

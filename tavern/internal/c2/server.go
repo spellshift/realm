@@ -72,6 +72,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
+		SetInterval(req.Beacon.Interval).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)
@@ -146,7 +147,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			}
 		}
 		resp.Tasks = append(resp.Tasks, &c2pb.Task{
-			Id:         int32(claimedTask.ID),
+			Id:         int64(claimedTask.ID),
 			Eldritch:   claimedTome.Eldritch,
 			Parameters: params,
 		})

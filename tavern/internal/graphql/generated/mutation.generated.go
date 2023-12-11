@@ -392,6 +392,8 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
+			case "interval":
+				return ec.fieldContext_Beacon_interval(ctx, field)
 			case "host":
 				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
