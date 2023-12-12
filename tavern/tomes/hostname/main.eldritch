@@ -1,3 +1,4 @@
-print(sys.hostname()+"\n")
+print(sys.hostname())
+print("\n")
 print("\n")
 print("\n")
