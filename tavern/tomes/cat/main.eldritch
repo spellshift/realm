@@ -3,9 +3,12 @@ def cat(path):
     if file.is_file(path):
         res = file.read(path)
         print(res)
+        print("\n")
     else:
-        print("Error: Invalid Path ("+path+")")
+        print("Error: Invalid Path ("+path+")\n")
     
     return
 
 cat(input_params['path'])
+print("\n")
+print("\n")

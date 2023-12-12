@@ -6,6 +6,8 @@ def file_list(path):
             type_str = "Dir"
         if f['type'] == "File":
             type_str = "File"
-        print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name'])
+        print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name']+"\n")
 
 file_list(input_params['path'])
+print("\n")
+print("\n")
