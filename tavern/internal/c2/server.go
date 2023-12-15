@@ -11,6 +11,7 @@ import (
 	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
 	"github.com/kcarretto/realm/tavern/internal/ent/host"
 	"github.com/kcarretto/realm/tavern/internal/ent/task"
+	"github.com/kcarretto/realm/tavern/internal/namegen"
 )
 
 type Server struct {
@@ -64,12 +65,36 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert host entity: %w", err)
 	}
+	// 2. check if beacon is new
+	resolvedbeacons, err := srv.graph.Beacon.Query().Where(beacon.IdentifierEQ(req.Beacon.Identifier)).Exist(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query beacon entity: %w", err)
+	}
+	var beaconnameaddr *string = nil
+	//3. if the beacon is new lets pick a name for it
+	if !resolvedbeacons {
+		for i := 0; i < 3; i++ {
+			beaconname := namegen.GetRandomName(i)
+			namecollison, err := srv.graph.Beacon.Query().Where(beacon.Name(beaconname)).Exist(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to query beacon entity: %w", err)
+			}
+			if namecollison {
+				//detected name collision on new beacon registration, increasing the name complexity and trying again
+				continue
+			}
+			beaconnameaddr = &beaconname
+			//picked a good name, loop iterations not required
+			break
+		}
 
-	// 2. Upsert the beacon
+	}
+	// 4. Upsert the beacon
 	beaconID, err := srv.graph.Beacon.Create().
 		SetPrincipal(req.Beacon.Principal).
 		SetIdentifier(req.Beacon.Identifier).
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
+		SetNillableName(beaconnameaddr).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
 		SetInterval(req.Beacon.Interval).
@@ -80,7 +105,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, fmt.Errorf("failed to upsert beacon entity: %w", err)
 	}
 
-	// 3. Load Tasks
+	// 5. Load Tasks
 	tasks, err := srv.graph.Task.Query().
 		Where(task.And(
 			task.HasBeaconWith(beacon.ID(beaconID)),
@@ -91,14 +116,14 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
 	}
 
-	// 4. Prepare Transaction for Claiming Tasks
+	// 6. Prepare Transaction for Claiming Tasks
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
 	}
 	client := tx.Client()
 
-	// 5. Rollback transaction if we panic
+	// 7. Rollback transaction if we panic
 	defer func() {
 		if v := recover(); v != nil {
 			tx.Rollback()
@@ -106,7 +131,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 	}()
 
-	// 6. Update all ClaimedAt timestamps to claim tasks
+	// 8. Update all ClaimedAt timestamps to claim tasks
 	// ** Note: If one fails to update, we roll back the transaction and return the error
 	taskIDs := make([]int, 0, len(tasks))
 	for _, t := range tasks {
@@ -119,12 +144,12 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		taskIDs = append(taskIDs, t.ID)
 	}
 
-	// 7. Commit the transaction
+	// 9. Commit the transaction
 	if err := tx.Commit(); err != nil {
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
-	// 8. Load the tasks with our non transactional client (cannot use transaction after commit)
+	// 10. Load the tasks with our non transactional client (cannot use transaction after commit)
 	resp := c2pb.ClaimTasksResponse{}
 	resp.Tasks = make([]*c2pb.Task, 0, len(taskIDs))
 	for _, taskID := range taskIDs {
@@ -153,7 +178,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		})
 	}
 
-	// 9. Return claimed tasks
+	// 11. Return claimed tasks
 	return &resp, nil
 }
 

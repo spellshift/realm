@@ -886,21 +886,34 @@ var (
 	}
 )
 
-// GetRandomName generates a random name from the list of adjectives and surnames in this package
-// formatted as "adjective-surname". For example 'focused-turing'.
-func GetRandomName() string {
+// GetRandomName generates a random name from the list of adjectives.
+func GetRandomName(complexityfactor int) string {
+	var adj1, adj2, noun string
+	var num int64
+
 	if time.Now().Month() == time.October && time.Now().Day() == 31 {
-		adj1IndexHalloween := newRandInt(int64(len(adjectives_halloween)))
-		adj2IndexHalloween := newRandInt(int64(len(adjectives_halloween)))
-		nounIndex := newRandInt(int64(len(noun_halloween)))
-		randNum := newRandInt(10000000)
-		return fmt.Sprintf("%s-%s-%s-%d", adjectives_halloween[adj1IndexHalloween], adjectives_halloween[adj2IndexHalloween], noun_halloween[nounIndex], randNum)
+		adj1 = adjectives[newRandInt(int64(len(adjectives_halloween)))]
+		adj2 = adjectives[newRandInt(int64(len(adjectives_halloween)))]
+		noun = nouns[newRandInt(int64(len(noun_halloween)))]
+		num = newRandInt(10000000)
+	} else {
+		adj1 = adjectives[newRandInt(int64(len(adjectives)))]
+		adj2 = adjectives[newRandInt(int64(len(adjectives)))]
+		noun = nouns[newRandInt(int64(len(nouns)))]
+		num = newRandInt(10000000)
 	}
-	adj1Index := newRandInt(int64(len(adjectives)))
-	adj2Index := newRandInt(int64(len(adjectives)))
-	nounIndex := newRandInt(int64(len(nouns)))
-	randNum := newRandInt(10000000)
-	return fmt.Sprintf("%s-%s-%s-%d", adjectives[adj1Index], adjectives[adj2Index], nouns[nounIndex], randNum)
+
+	switch complexityfactor {
+	case 0:
+		return fmt.Sprintf("%s-%s", adj1, noun)
+	case 1:
+		return fmt.Sprintf("%s-%s-%s", adj1, adj2, noun)
+	case 2:
+		return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
+	default:
+		return "hacker1337"
+	}
+
 }
 
 // cryptoRandSecure is not always secure, if it errors we return 1337 % max
@@ -911,4 +924,7 @@ func newRandInt(max int64) int64 {
 		return 1337 % max
 	}
 	return nBig.Int64()
+}
+func GetComplexRandomName() string {
+	return GetRandomName(2)
 }
