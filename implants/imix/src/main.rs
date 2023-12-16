@@ -85,7 +85,8 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             imix_config.clone(),
             tavern_client.clone(),
         )
-        .await {
+        .await
+        {
             Ok(local_new_tasks) => local_new_tasks,
             Err(local_err) => {
                 #[cfg(debug_assertions)]
@@ -95,8 +96,8 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
                     local_err
                 );
                 continue;
-            },
-        }
+            }
+        };
 
         // 2. Start new tasks
         #[cfg(debug_assertions)]
@@ -107,7 +108,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         );
 
         match start_new_tasks(new_tasks, &mut all_exec_futures, loop_start_time).await {
-            Ok(is_ok) => {},
+            Ok(is_ok) => {}
             Err(local_err) => {
                 #[cfg(debug_assertions)]
                 eprintln!(
@@ -115,7 +116,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
                     (Instant::now() - loop_start_time).as_millis(),
                     local_err
                 );
-            },
+            }
         };
 
         // 3. Sleep till callback time
