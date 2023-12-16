@@ -13,6 +13,21 @@ fn get_callback_uri(imix_config: Config) -> Result<String> {
     Ok(imix_config.callback_config.c2_configs[0].uri.clone())
 }
 
+fn do_delay(interval: u64, loop_start_time: Instant) {
+    let time_to_sleep = interval
+        .checked_sub(loop_start_time.elapsed().as_secs())
+        .unwrap_or_else(|| 0);
+
+    #[cfg(debug_assertions)]
+    eprintln!(
+        "[{}]: Callback failed sleeping seconds {}",
+        (Instant::now() - loop_start_time).as_millis(),
+        time_to_sleep
+    );
+
+    std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601));
+}
+
 // Async handler for port scanning.
 async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
     #[cfg(debug_assertions)]
@@ -53,23 +68,8 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             Err(err) => {
                 #[cfg(debug_assertions)]
                 eprintln!("failed to create tavern client {}", err);
-                let time_to_sleep = imix_config
-                    .clone()
-                    .callback_config
-                    .interval
-                    .checked_sub(loop_start_time.elapsed().as_secs())
-                    .unwrap_or_else(|| 0);
-
-                #[cfg(debug_assertions)]
-                eprintln!(
-                    "[{}]: Callback failed sleeping seconds {}",
-                    (Instant::now() - loop_start_time).as_millis(),
-                    time_to_sleep
-                );
-
-                std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601));
+                do_delay(imix_config.callback_config.interval, loop_start_time);
                 continue;
-                // This just sleeps our thread.
             }
         };
 
@@ -95,6 +95,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
                     (Instant::now() - loop_start_time).as_millis(),
                     local_err
                 );
+                do_delay(imix_config.callback_config.interval, loop_start_time);
                 continue;
             }
         };
@@ -144,13 +145,25 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         );
 
         // Update running tasks and results
-        submit_task_output(
+        match submit_task_output(
             loop_start_time,
             tavern_client,
             &mut all_exec_futures,
             &mut all_task_res_map,
         )
-        .await?;
+        .await
+        {
+            Ok(_is_ok) => {}
+            Err(local_err) => {
+                #[cfg(debug_assertions)]
+                eprintln!(
+                    "[{}]: Error submitting task results {}",
+                    (Instant::now() - loop_start_time).as_millis(),
+                    local_err
+                );
+                do_delay(imix_config.callback_config.interval, loop_start_time);
+            }
+        };
 
         // Debug loop tracker
         #[cfg(debug_assertions)]
