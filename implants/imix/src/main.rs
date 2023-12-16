@@ -80,12 +80,23 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             (Instant::now() - loop_start_time).as_millis()
         );
 
-        let new_tasks = tasks::get_new_tasks(
+        let new_tasks = match tasks::get_new_tasks(
             agent_properties.clone(),
             imix_config.clone(),
             tavern_client.clone(),
         )
-        .await?;
+        .await {
+            Ok(local_new_tasks) => local_new_tasks,
+            Err(local_err) => {
+                #[cfg(debug_assertions)]
+                eprintln!(
+                    "[{}]: Error getting new tasks {}",
+                    (Instant::now() - loop_start_time).as_millis(),
+                    local_err
+                );
+                continue;
+            },
+        }
 
         // 2. Start new tasks
         #[cfg(debug_assertions)]
@@ -95,7 +106,17 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             new_tasks.len()
         );
 
-        start_new_tasks(new_tasks, &mut all_exec_futures, loop_start_time).await?;
+        match start_new_tasks(new_tasks, &mut all_exec_futures, loop_start_time).await {
+            Ok(is_ok) => {},
+            Err(local_err) => {
+                #[cfg(debug_assertions)]
+                eprintln!(
+                    "[{}]: Failed to start new tasks: {}",
+                    (Instant::now() - loop_start_time).as_millis(),
+                    local_err
+                );
+            },
+        };
 
         // 3. Sleep till callback time
         let time_to_sleep = imix_config
