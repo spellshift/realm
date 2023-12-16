@@ -53,7 +53,23 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             Err(err) => {
                 #[cfg(debug_assertions)]
                 eprintln!("failed to create tavern client {}", err);
+                let time_to_sleep = imix_config
+                    .clone()
+                    .callback_config
+                    .interval
+                    .checked_sub(loop_start_time.elapsed().as_secs())
+                    .unwrap_or_else(|| 0);
+
+                #[cfg(debug_assertions)]
+                eprintln!(
+                    "[{}]: Callback failed sleeping seconds {}",
+                    (Instant::now() - loop_start_time).as_millis(),
+                    time_to_sleep
+                );
+
+                std::thread::sleep(std::time::Duration::new(time_to_sleep as u64, 24601));
                 continue;
+                // This just sleeps our thread.
             }
         };
 
