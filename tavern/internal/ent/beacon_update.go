@@ -104,6 +104,33 @@ func (bu *BeaconUpdate) ClearLastSeenAt() *BeaconUpdate {
 	return bu
 }
 
+// SetInterval sets the "interval" field.
+func (bu *BeaconUpdate) SetInterval(u uint64) *BeaconUpdate {
+	bu.mutation.ResetInterval()
+	bu.mutation.SetInterval(u)
+	return bu
+}
+
+// SetNillableInterval sets the "interval" field if the given value is not nil.
+func (bu *BeaconUpdate) SetNillableInterval(u *uint64) *BeaconUpdate {
+	if u != nil {
+		bu.SetInterval(*u)
+	}
+	return bu
+}
+
+// AddInterval adds u to the "interval" field.
+func (bu *BeaconUpdate) AddInterval(u int64) *BeaconUpdate {
+	bu.mutation.AddInterval(u)
+	return bu
+}
+
+// ClearInterval clears the value of the "interval" field.
+func (bu *BeaconUpdate) ClearInterval() *BeaconUpdate {
+	bu.mutation.ClearInterval()
+	return bu
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (bu *BeaconUpdate) SetHostID(id int) *BeaconUpdate {
 	bu.mutation.SetHostID(id)
@@ -244,6 +271,15 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if bu.mutation.LastSeenAtCleared() {
 		_spec.ClearField(beacon.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := bu.mutation.Interval(); ok {
+		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
+	}
+	if value, ok := bu.mutation.AddedInterval(); ok {
+		_spec.AddField(beacon.FieldInterval, field.TypeUint64, value)
+	}
+	if bu.mutation.IntervalCleared() {
+		_spec.ClearField(beacon.FieldInterval, field.TypeUint64)
 	}
 	if bu.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -410,6 +446,33 @@ func (buo *BeaconUpdateOne) SetNillableLastSeenAt(t *time.Time) *BeaconUpdateOne
 // ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (buo *BeaconUpdateOne) ClearLastSeenAt() *BeaconUpdateOne {
 	buo.mutation.ClearLastSeenAt()
+	return buo
+}
+
+// SetInterval sets the "interval" field.
+func (buo *BeaconUpdateOne) SetInterval(u uint64) *BeaconUpdateOne {
+	buo.mutation.ResetInterval()
+	buo.mutation.SetInterval(u)
+	return buo
+}
+
+// SetNillableInterval sets the "interval" field if the given value is not nil.
+func (buo *BeaconUpdateOne) SetNillableInterval(u *uint64) *BeaconUpdateOne {
+	if u != nil {
+		buo.SetInterval(*u)
+	}
+	return buo
+}
+
+// AddInterval adds u to the "interval" field.
+func (buo *BeaconUpdateOne) AddInterval(u int64) *BeaconUpdateOne {
+	buo.mutation.AddInterval(u)
+	return buo
+}
+
+// ClearInterval clears the value of the "interval" field.
+func (buo *BeaconUpdateOne) ClearInterval() *BeaconUpdateOne {
+	buo.mutation.ClearInterval()
 	return buo
 }
 
@@ -583,6 +646,15 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 	}
 	if buo.mutation.LastSeenAtCleared() {
 		_spec.ClearField(beacon.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := buo.mutation.Interval(); ok {
+		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
+	}
+	if value, ok := buo.mutation.AddedInterval(); ok {
+		_spec.AddField(beacon.FieldInterval, field.TypeUint64, value)
+	}
+	if buo.mutation.IntervalCleared() {
+		_spec.ClearField(beacon.FieldInterval, field.TypeUint64)
 	}
 	if buo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -10,4 +10,5 @@ requests:
           platform: 1
         agent:
           identifier: test-case
+        interval: 300
     expected: {}
