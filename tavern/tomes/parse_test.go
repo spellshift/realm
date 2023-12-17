@@ -25,7 +25,7 @@ func TestUploadTomes(t *testing.T) {
 		Where(tome.Name("example")).
 		OnlyX(ctx)
 	require.NotNil(t, testTome)
-	assert.Equal(t, "print(input_params['msg'])\n", testTome.Eldritch)
+	assert.Equal(t, "print(input_params['msg'])", testTome.Eldritch)
 	assert.Equal(t, `An example tome!`, testTome.Description)
 	assert.Equal(t, `[{"name":"msg","label":"Message","type":"string","placeholder":"Something to print"}]`, testTome.ParamDefs)
 	testTomeFiles, err := testTome.Files(ctx)
