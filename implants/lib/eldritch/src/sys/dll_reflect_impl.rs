@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use starlark::values::none::NoneType;
 
 #[cfg(target_os = "windows")]
@@ -20,8 +22,45 @@ use {
     },
 };
 
+#[cfg(not(windows))]
+macro_rules! sep {
+    () => {
+        "/"
+    };
+}
+
+#[cfg(windows)]
+macro_rules! sep {
+    () => {
+        r#"\"#
+    };
+}
+
 #[cfg(target_os = "windows")]
-const LOADER_BYTES: &[u8] = include_bytes!("..\\..\\..\\..\\..\\bin\\reflective_loader\\target\\x86_64-pc-windows-msvc\\release\\reflective_loader.dll");
+const LOADER_BYTES: &[u8] = include_bytes!(concat!(
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "bin",
+    sep!(),
+    "reflective_loader",
+    sep!(),
+    "target",
+    sep!(),
+    "x86_64-pc-windows-msvc",
+    sep!(),
+    "release",
+    sep!(),
+    "reflective_loader.dll"
+));
+// const LOADER_BYTES: &[u8] = include_bytes!("../../../../../bin/reflective_loader/target/x86_64-pc-windows-gnu/release/reflective_loader.dll");
 
 #[cfg(target_os = "windows")]
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {

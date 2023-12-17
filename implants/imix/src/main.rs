@@ -5,7 +5,7 @@ use clap::{arg, Command};
 use imix::exec::AsyncTask;
 use imix::init::agent_init;
 use imix::tasks::{start_new_tasks, submit_task_output};
-use imix::{tasks, Config, TaskID};
+use imix::{install, tasks, Config, TaskID};
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -35,8 +35,6 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
     let (agent_properties, imix_config) = agent_init(config_path, host_id_file)?;
 
     loop {
-        // @TODO: Why two timers?
-
         // 0. Get loop start time
         let loop_start_time = Instant::now();
 
@@ -136,17 +134,25 @@ pub fn main() -> Result<(), imix::Error> {
         .subcommand(
             Command::new("install").about("Run in install mode").arg(
                 arg!(
-                    -c --config <FILE> "Sets a custom config file"
+                    -c --config  "Sets a custom config file"
                 )
-                .required(true),
+                .required(false),
             ),
         )
         .get_matches();
 
     match matches.subcommand() {
         Some(("install", args)) => {
-            let _config_path = args.value_of("config").unwrap();
-            unimplemented!("Install isn't implemented yet")
+            let config_path = args.value_of("config");
+            match install::install_main(config_path) {
+                Ok(_) => {}
+                Err(local_err) => {
+                    eprintln!(
+                        "An error occured during installation: {}",
+                        local_err.to_string()
+                    )
+                }
+            };
         }
         _ => {}
     }

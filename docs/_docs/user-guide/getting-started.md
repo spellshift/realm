@@ -1,15 +1,17 @@
 ---
 title: Getting Started
-tags: 
+tags:
  - User Guide
 description: Getting started with Realm
 permalink: user-guide/getting-started
 ---
 
 # Getting Started
+
 *To deploy a production ready instance see the [tavern setup guide](https://docs.realm.pub/user-guide/tavern).*
 
 ### Start the server
+
 ```bash
 git clone https://github.com/KCarretto/realm.git
 cd realm
@@ -20,6 +22,7 @@ ENABLE_TEST_DATA=1 go run ./tavern
 ```
 
 ### Start the agent
+
 ```bash
 git clone https://github.com/KCarretto/realm.git
 cd realm/implants/imix
@@ -27,7 +30,14 @@ cd realm/implants/imix
 # Create the config file
 cat <<EOF > /tmp/imix-config.json
 {
-    "service_configs": [],
+    "service_configs": [
+        {
+            "name": "imix",
+            "description": "Imix c2 agent",
+            "executable_name": "imix",
+            "executable_args": ""
+        }
+    ],
     "target_forward_connect_ip": "127.0.0.1",
     "target_name": "test1234",
     "callback_config": {
