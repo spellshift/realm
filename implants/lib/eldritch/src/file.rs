@@ -16,6 +16,7 @@ mod replace_impl;
 mod template_impl;
 mod timestomp_impl;
 mod write_impl;
+mod find_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -179,5 +180,9 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         write_impl::write(path, content)?;
         Ok(NoneType{})
+    }
+    fn find(this: FileLibrary, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<u64>, modified_time: Option<u64>, create_time: Option<u64>) -> anyhow::Result<Vec<String>> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        find_impl::find(path, name, file_type, permissions, modified_time, create_time)
     }
 }
