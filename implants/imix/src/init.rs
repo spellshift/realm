@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use c2::pb::host::Platform;
 use std::{
     fs::{self, File},
@@ -59,7 +59,12 @@ fn get_primary_ip() -> Result<String> {
     let res = match default_net::get_default_interface() {
         Ok(default_interface) => {
             if default_interface.ipv4.len() > 0 {
-                default_interface.ipv4[0].addr.to_string()
+                default_interface
+                    .ipv4
+                    .get(0)
+                    .context("No ips found")?
+                    .addr
+                    .to_string()
             } else {
                 "DANGER-UNKNOWN".to_string()
             }
@@ -106,8 +111,11 @@ fn get_os_pretty_name() -> Result<String> {
 }
 
 pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentProperties, Config)> {
-    let config_file = File::open(config_path)?;
-    let imix_config = serde_json::from_reader(config_file)?;
+    let config_file =
+        File::open(config_path.clone()).with_context(|| format!("Failed to open {config_path}"))?;
+
+    let imix_config = serde_json::from_reader(config_file)
+        .with_context(|| format!("Failed to parse {config_path}"))?;
 
     let principal = match get_principal() {
         Ok(username) => username,
@@ -207,8 +215,15 @@ mod tests {
             .to_string();
         tmp_file.write_all(
             r#"{
-            "service_configs": [],
-            "target_forward_connect_ip": "127.0.0.1",
+                "service_configs": [
+                    {
+                        "name": "imix",
+                        "description": "Imix c2 agent",
+                        "executable_name": "imix",
+                        "executable_args": ""
+                    }
+                ],
+                        "target_forward_connect_ip": "127.0.0.1",
             "target_name": "test1234",
             "callback_config": {
                 "interval": 4,
@@ -234,7 +249,12 @@ mod tests {
         assert_ne!(properties.beacon_id, properties2.beacon_id);
         assert!(properties2.agent_id.contains("imix-"));
         assert_eq!(
-            config2.callback_config.c2_configs[0].uri,
+            config2
+                .callback_config
+                .c2_configs
+                .get(0)
+                .context("No callbacks configured")?
+                .uri,
             "http://127.0.0.1/grpc"
         );
         Ok(())

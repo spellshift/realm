@@ -3,6 +3,10 @@ name = "eldritch"
 version = "0.0.3"
 edition = "2021"
 
+[features]
+# Check if compiled by imix
+imix = []
+
 [dependencies]
 aes = { workspace = true }
 allocative = { workspace = true }
