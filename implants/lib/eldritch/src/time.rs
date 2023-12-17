@@ -1,4 +1,5 @@
 mod sleep_impl;
+mod now_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -48,6 +49,10 @@ impl<'v> UnpackValue<'v> for TimeLibrary {
 #[starlark_module]
 #[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
+    fn now<'v>(this: TimeLibrary) -> anyhow::Result<u64> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        now_impl::now()
+    }
     fn sleep<'v>(this: TimeLibrary, secs: f64) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         sleep_impl::sleep(secs);

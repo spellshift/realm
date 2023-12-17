@@ -11,9 +11,9 @@ mod ssh_password_spray_impl;
 use std::sync::Arc;
 
 use allocative::Allocative;
+use anyhow::Result;
 use async_trait::async_trait;
 use derive_more::Display;
-
 use russh::{client, Disconnect};
 use russh_keys::{decode_secret_key, key};
 use russh_sftp::client::SftpSession;
@@ -222,7 +222,7 @@ struct CommandResult {
 }
 
 impl CommandResult {
-    fn output(&self) -> String {
-        String::from_utf8_lossy(&self.output).into()
+    fn output(&self) -> Result<String> {
+        Ok(String::from_utf8_lossy(&self.output).try_into()?)
     }
 }
