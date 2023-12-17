@@ -150,7 +150,7 @@ fn methods(builder: &mut MethodsBuilder) {
         remove_impl::remove(path)?;
         Ok(NoneType{})
     }
-    fn rename(this: FileLibrary, old: String, new: String) -> anyhow::Result<NoneType> {
+    fn moveto(this: FileLibrary, old: String, new: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         moveto_impl::moveto(old, new)?;
         Ok(NoneType{})

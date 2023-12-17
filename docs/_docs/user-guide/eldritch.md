@@ -813,6 +813,10 @@ crypto.to_json({"foo": "bar"})
 
 ### time.sleep
 
+`time.now() -> int`
+
+The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
+
 `time.sleep(secs: float)`
 
 The <b>time.sleep</b> method sleeps the task for the given number of seconds.

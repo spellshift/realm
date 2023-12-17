@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod exec;
 pub mod init;
+pub mod install;
 pub mod tasks;
 
 #[derive(Debug)]
@@ -32,7 +33,8 @@ pub struct C2Config {
 pub struct ServiceConfig {
     name: String,
     description: String,
-    executable_path: String,
+    executable_name: String,
+    executable_args: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
