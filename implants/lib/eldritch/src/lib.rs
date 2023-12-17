@@ -66,6 +66,87 @@ macro_rules! insert_dict_kv {
 }
 pub(crate) use insert_dict_kv;
 
+struct EldritchRuntime<'a, T: EldritchRuntimeFunctions> {
+    globals: Globals,
+    funcs: &'a T,
+}
+
+impl<T: EldritchRuntimeFunctions> EldritchRuntime<'_, T> {
+    pub fn eldritch_run(
+        self,
+        tome_filename: String,
+        tome_contents: String,
+        tome_parameters: Option<HashMap<String, String>>,
+    ) -> anyhow::Result<String> {
+        let ast = match AstModule::parse(
+            &tome_filename,
+            tome_contents.as_str().to_owned(),
+            &Dialect::Extended,
+        ) {
+            Ok(res) => res,
+            Err(err) => {
+                return Err(anyhow::anyhow!(
+                    "[eldritch] Unable to parse eldritch tome: {}: {} {}",
+                    err.to_string(),
+                    tome_filename.as_str(),
+                    tome_contents.as_str()
+                ))
+            }
+        };
+
+        let globals = self.globals;
+
+        let module: Module = Module::new();
+
+        let res: SmallMap<Value, Value> = SmallMap::new();
+        let mut input_params: Dict = Dict::new(res);
+
+        match tome_parameters {
+            Some(params) => {
+                for (key, value) in &params {
+                    let new_key = module.heap().alloc_str(&key);
+                    let new_value = module.heap().alloc_str(value.as_str()).to_value();
+                    let hashed_key = match new_key.to_value().get_hashed() {
+                        Ok(local_hashed_key) => local_hashed_key,
+                        Err(local_error) => {
+                            return Err(anyhow::anyhow!(
+                                "[eldritch] Failed to create hashed key for key {}: {}",
+                                new_key.to_string(),
+                                local_error.to_string()
+                            ))
+                        }
+                    };
+                    input_params.insert_hashed(hashed_key, new_value);
+                }
+            }
+            None => {}
+        }
+        module.set("input_params", input_params.alloc_value(module.heap()));
+
+        let mut eval: Evaluator = Evaluator::new(&module);
+        eval.set_print_handler(self.);
+
+        let res: Value = match eval.eval_module(ast, &globals) {
+            Ok(eval_val) => eval_val,
+            Err(eval_error) => {
+                return Err(anyhow::anyhow!(
+                    "[eldritch] Eldritch eval_module failed:\n{}",
+                    eval_error
+                ))
+            }
+        };
+
+        Ok(res.to_str())
+    }
+}
+
+trait EldritchRuntimeFunctions: EldritchTasksHandler + PrintHandler {}
+
+trait EldritchTasksHandler {
+    fn get_tasks();
+    fn kill_task();
+}
+
 pub fn get_eldritch() -> anyhow::Result<Globals> {
     #[starlark_module]
     fn eldritch(builder: &mut GlobalsBuilder) {
@@ -103,6 +184,7 @@ pub struct EldritchPrintHandler {
 }
 
 impl PrintHandler for EldritchPrintHandler {
+    // @TODO: This should be in imix ImixPrintHandler
     fn println(&self, text: &str) -> anyhow::Result<()> {
         let res = match self.sender.send(text.to_string()) {
             Ok(local_res) => local_res,

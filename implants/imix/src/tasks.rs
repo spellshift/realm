@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
@@ -54,7 +55,7 @@ pub async fn get_new_tasks(
 
 pub async fn start_new_tasks(
     new_tasks: Vec<Task>,
-    all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
+    all_exec_futures: Arc<HashMap<TaskID, AsyncTask>>,
     debug_start_time: Instant,
 ) -> Result<()> {
     for task in new_tasks {
@@ -73,7 +74,6 @@ pub async fn start_new_tasks(
             (Instant::now() - debug_start_time).as_millis(),
             task.clone().id
         );
-
         match all_exec_futures.insert(
             task.clone().id,
             AsyncTask {
