@@ -22,7 +22,7 @@ mod tests {
 
     #[test]
     fn test_assets_read_binary() -> anyhow::Result<()> {
-        let res = read_binary("print/main.eld".to_string())?;
+        let res = read_binary("print/main.eldritch".to_string())?;
         assert_eq!(
             res,
             [
