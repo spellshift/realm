@@ -72,6 +72,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
+		SetInterval(req.Beacon.Interval).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)
