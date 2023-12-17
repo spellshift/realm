@@ -81,6 +81,10 @@ if __name__ == "__main__":
         "auth-session": auth_session,
     }
 
+    graphql_url = f"{args.tavern_url}/graphql"
+
+    pwnboard_url = f"{args.pwnboard_url}/pwn/boxaccess"
+
     while True:
         current_time = datetime.utcnow()
 
@@ -91,13 +95,13 @@ if __name__ == "__main__":
         graphql_variables = {"input": {"lastSeenAtGT": formatted_time}}
 
         result = make_graphql_request(
-            args.tavern_url, graphql_query, graphql_variables, cookies
+            graphql_url, graphql_query, graphql_variables, cookies
         )
 
         if result:
             if result["data"] and len(result["data"]["hosts"]) > 0:
                 ips = list(map(lambda x: x["primaryIP"], result["data"]["hosts"]))
-                make_pwnboard_request(args.pwnboard_url, args.name, ips)
+                make_pwnboard_request(pwnboard_url, args.name, ips)
             else:
                 print("No data found :(")
         sleep(args.interval)
