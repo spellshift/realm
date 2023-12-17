@@ -76,6 +76,7 @@ pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Resul
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::Context;
     use tokio::io::copy;
     use tokio::net::TcpListener;
     use tokio::net::UdpSocket;
@@ -146,7 +147,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_ncat_send_tcp() -> anyhow::Result<()> {
-        let test_port = allocate_localhost_unused_ports(1, "tcp".to_string()).await?[0];
+        let test_port = allocate_localhost_unused_ports(1, "tcp".to_string())
+            .await?
+            .get(0)
+            .context("Unable to allocate port")?
+            .clone();
         // Setup a test echo server
         let expected_response = String::from("Hello world!");
         let listen_task = task::spawn(setup_test_listener(
