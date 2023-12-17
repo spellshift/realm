@@ -63,8 +63,12 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
 
     // Split on / to get host and cidr bits.
     let tmpvec: Vec<&str> = target_cidr.split("/").collect();
-    let host = tmpvec[0].to_string();
-    let bits: u32 = tmpvec[1].parse::<u8>()?.into();
+    let host = tmpvec.get(0).context("Index 0 not found")?.to_string();
+    let bits: u32 = tmpvec
+        .get(1)
+        .context("Index 1 not found")?
+        .parse::<u8>()?
+        .try_into()?;
 
     // Define our vector representations.
     let mut addr: Vec<u64> = vec![0, 0, 0, 0];
@@ -72,7 +76,7 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     let mut bcas: Vec<u32> = vec![0, 0, 0, 0];
     let mut netw: Vec<u32> = vec![0, 0, 0, 0];
 
-    let cidr: u64 = bits.into();
+    let cidr: u64 = bits.try_into()?;
 
     let (octet_one, octet_two, octet_three, octet_four) = scanf!(host, ".", u64, u64, u64, u64);
     addr[3] = octet_four.context(format!("Failed to extract fourth octet {}", host))?;
@@ -552,7 +556,7 @@ mod tests {
         // Iterate over append port number and start listen server
         let mut listen_tasks = vec![];
         for listener in bound_listeners_vec.into_iter() {
-            test_ports.push(listener.local_addr()?.port().into());
+            test_ports.push(listener.local_addr()?.port().try_into()?);
             listen_tasks.push(task::spawn(local_accept_tcp(listener)));
         }
 
