@@ -18,7 +18,7 @@ def str_to_str_list(list_str):
     list_str = list_str.removeprefix('[')
     list_str = list_str.removesuffix(']')
     return list_str.split(",")
-    
+
 def str_to_int_list(list_str):
     list_str = list_str.removeprefix('[')
     list_str = list_str.removesuffix(']')

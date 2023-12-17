@@ -6,14 +6,14 @@ def netstat():
     for n in nets:
         if str(n['socket_type']) == "TCP":
             print(str(n['socket_type'])+", "+str(n['local_address'])+":"+str(n['local_port'])+", "+str(n['remote_address'])+":"+str(n['remote_port'])+", "+str(n['state'])+", "+str(n['pids'])+"\n")
-    
+
     print("----UDP----\n")
     print("socket_type,local,pids\n")
     for n in nets:
         if str(n['socket_type']) == "UDP":
             print(str(n['socket_type'])+", "+str(n['local_address'])+":"+str(n['local_port'])+", "+str(n['pids'])+"\n")
 
-    
+
     return
 
 netstat()

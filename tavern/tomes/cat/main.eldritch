@@ -6,7 +6,7 @@ def cat(path):
         print("\n")
     else:
         print("Error: Invalid Path ("+path+")\n")
-    
+
     return
 
 cat(input_params['path'])
