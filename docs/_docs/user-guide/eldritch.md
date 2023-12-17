@@ -282,7 +282,7 @@ The <b>file.find</b> method finds all files matching the used paramters. Returns
 
 - name: Checks if file name contains provided input
 - file_type: Checks for 'file' or 'dir' for files or directories, respectively.
-- permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777)
+- permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.
 - modified_time: Checks if last modified time matches input specified in time since EPOCH
 - create_time: Checks if last modified time matches input specified in time since EPOCH
 

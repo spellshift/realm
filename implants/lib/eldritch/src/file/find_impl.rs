@@ -1,11 +1,12 @@
 use std::{path::{Path, PathBuf}, time::{SystemTime, UNIX_EPOCH}};
 use anyhow::{anyhow, Result};
+use std::fs::canonicalize;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
 fn check_path(path: &PathBuf,  name: Option<String>, file_type: Option<String>, permissions: Option<u64>, modified_time: Option<u64>, create_time: Option<u64>) -> Result<bool> {
     if let Some(name) = name {
-        if !path.file_name().unwrap().to_str().unwrap().contains(&name) {
+        if !path.file_name().ok_or(anyhow!("Failed to get item file name"))?.to_str().ok_or(anyhow!("Failed to convert file name to str"))?.contains(&name) {
             return Ok(false);
         }
     }
@@ -59,10 +60,10 @@ fn search_dir(path: &str, name: Option<String>, file_type: Option<String>, permi
             let entry = entry?;
             let path = entry.path();
             if path.is_dir() {
-                out.append(&mut search_dir(path.to_str().unwrap(), name.clone(), file_type.clone(), permissions, modified_time, create_time)?);
+                out.append(&mut search_dir(path.to_str().ok_or(anyhow!("Failed to convert path to str"))?, name.clone(), file_type.clone(), permissions, modified_time, create_time)?);
             } else {
                 if check_path(&path, name.clone(), file_type.clone(), permissions, modified_time, create_time)? {
-                    out.push(path.to_str().unwrap().to_string());
+                    out.push(canonicalize(path)?.to_str().ok_or(anyhow!("Failed to convert path to str"))?.to_owned());
                 }
             }
         }
