@@ -29,7 +29,7 @@ use {
 #[cfg(target_os = "windows")]
 macro_rules! sep {
     () => {
-        r#"\"#
+        r#"\"# // On linux swap with: r"/"#
     };
 }
 
@@ -51,13 +51,12 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     sep!(),
     "target",
     sep!(),
-    "x86_64-pc-windows-msvc",
+    "x86_64-pc-windows-msvc", //  On linux swap with: "x86_64-pc-windows-gnu",
     sep!(),
     "release",
     sep!(),
     "reflective_loader.dll"
 ));
-// const LOADER_BYTES: &[u8] = include_bytes!("../../../../../bin/reflective_loader/target/x86_64-pc-windows-gnu/release/reflective_loader.dll");
 
 #[cfg(target_os = "windows")]
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
