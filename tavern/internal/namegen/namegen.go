@@ -6,6 +6,8 @@ import (
 	"log"
 	"math/big"
 	"time"
+
+	"github.com/kcarretto/realm/tavern/internal/ent"
 )
 
 var (
@@ -886,8 +888,16 @@ var (
 	}
 )
 
-// GetRandomName generates a random name from the list of adjectives.
-func GetRandomName(complexityfactor int) string {
+type Complexity int
+
+const (
+	Simple   Complexity = iota // 0
+	Moderate                   // 1
+	Complex                    // 2
+)
+
+// GetRandomName generates a random name based on the complexity.
+func GetRandomName(complexity Complexity) string {
 	var adj1, adj2, noun string
 	var num int64
 
@@ -903,17 +913,16 @@ func GetRandomName(complexityfactor int) string {
 		num = newRandInt(10000000)
 	}
 
-	switch complexityfactor {
-	case 0:
+	switch complexity {
+	case Simple:
 		return fmt.Sprintf("%s-%s", adj1, noun)
-	case 1:
+	case Moderate:
 		return fmt.Sprintf("%s-%s-%s", adj1, adj2, noun)
-	case 2:
+	case Complex:
 		return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
 	default:
 		return "hacker1337"
 	}
-
 }
 
 // cryptoRandSecure is not always secure, if it errors we return 1337 % max
@@ -926,5 +935,14 @@ func newRandInt(max int64) int64 {
 	return nBig.Int64()
 }
 func GetComplexRandomName() string {
-	return GetRandomName(2)
+	return GetRandomName(Complex)
+}
+
+func Beaconnameinstring(beacons []*ent.Beacon, str string) bool {
+	for _, v := range beacons {
+		if v.Name == str {
+			return true
+		}
+	}
+	return false
 }

@@ -73,22 +73,22 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	var beaconnameaddr *string = nil
 	//3. if the beacon is new lets pick a name for it
 	if !resolvedbeacons {
-		for i := 0; i < 3; i++ {
-			beaconname := namegen.GetRandomName(i)
-			namecollison, err := srv.graph.Beacon.Query().Where(beacon.Name(beaconname)).Exist(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to query beacon entity: %w", err)
-			}
-			if namecollison {
-				//detected name collision on new beacon registration, increasing the name complexity and trying again
-				continue
-			}
-			beaconnameaddr = &beaconname
-			//picked a good name, loop iterations not required
-			break
+		candiatenames := []string{}
+		candiatenames = append(candiatenames, namegen.GetRandomName(namegen.Complexity(namegen.Simple)))
+		candiatenames = append(candiatenames, namegen.GetRandomName(namegen.Complexity(namegen.Moderate)))
+		candiatenames = append(candiatenames, namegen.GetRandomName(namegen.Complexity(namegen.Complex)))
+		collisions, err := srv.graph.Beacon.Query().Where(beacon.NameIn(candiatenames...)).All(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query beacon entity: %w", err)
 		}
-
+		for _, canidate := range candiatenames {
+			if !namegen.Beaconnameinstring(collisions, canidate) {
+				beaconnameaddr = &canidate
+				break
+			}
+		}
 	}
+
 	// 4. Upsert the beacon
 	beaconID, err := srv.graph.Beacon.Create().
 		SetPrincipal(req.Beacon.Principal).
