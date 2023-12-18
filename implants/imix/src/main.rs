@@ -4,17 +4,17 @@ extern crate windows_service;
 use anyhow::Result;
 use imix::standard_main;
 
-// #[cfg(win_service)]
+#[cfg(win_service)]
 use windows_service::service_dispatcher;
 
-// #[cfg(win_service)]
+#[cfg(win_service)]
 use imix::win_service::service_main;
 
-// #[cfg(win_service)]
+#[cfg(win_service)]
 define_windows_service!(ffi_service_main, service_main);
 
 pub fn main() -> Result<(), imix::Error> {
-    // #[cfg(win_service)]
+    #[cfg(win_service)]
     match service_dispatcher::start("myservice", ffi_service_main) {
         Ok(_) => {}
         Err(local_err) => {
@@ -29,7 +29,7 @@ pub fn main() -> Result<(), imix::Error> {
         Ok(_) => {}
         Err(local_err) => {
             #[cfg(debug_assertions)]
-            eprintln!("Failde to start imix: {}", local_err);
+            eprintln!("Failed to start imix: {}", local_err);
         }
     }
 
