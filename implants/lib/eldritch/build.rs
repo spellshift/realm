@@ -87,7 +87,18 @@ fn build_bin_reflective_loader() {
     assert!(test_dll_path.is_file());
 }
 
+#[cfg(windows)]
+const HOST_FAMILY: &str = "windows";
+
+#[cfg(unix)]
+const HOST_FAMILY: &str = "unix";
+
+fn set_host_family() {
+    println!("cargo:rust-cfg=host_family={}", HOST_FAMILY);
+}
+
 fn main() {
+    set_host_family();
     #[cfg(target_os = "windows")]
     build_bin_create_file_dll();
     #[cfg(target_os = "windows")]

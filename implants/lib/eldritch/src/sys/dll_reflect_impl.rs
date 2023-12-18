@@ -23,33 +23,33 @@ use {
 // Gross but oh well rust doesn't really support this rn.
 // https://github.com/rust-lang/rust/issues/75075#issuecomment-671370162
 // Thank you @danielhenrymantilla
-#[cfg(all(host_family = "windows", windows))]
+#[cfg(all(host_family = "windows", target_os = "windows"))]
 macro_rules! sep {
     () => {
         r"\"
     };
 }
-#[cfg(all(not(host_family = "windows"), windows))]
+#[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! sep {
     () => {
         r"/"
     };
 }
 
-#[cfg(all(host_family = "windows", windows))]
+#[cfg(all(host_family = "windows", target_os = "windows"))]
 macro_rules! win_target {
     () => {
         r"x86_64-pc-windows-msvc"
     };
 }
-#[cfg(all(not(host_family = "windows"), windows))]
+#[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! win_target {
     () => {
         r"x86_64-pc-windows-gnu"
     };
 }
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     "..",
     sep!(),
