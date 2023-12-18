@@ -57,7 +57,6 @@ windows-sys = { workspace = true, features = [
 ]}
 whoami = { workspace = true }
 
-
 [target.'cfg(windows)'.dependencies]
 network-interface = { workspace = true }
 winreg = { workspace = true }

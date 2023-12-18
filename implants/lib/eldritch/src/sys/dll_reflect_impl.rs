@@ -1,6 +1,5 @@
-use std::path::PathBuf;
-
 use starlark::values::none::NoneType;
+use std::path::PathBuf;
 
 #[cfg(target_os = "windows")]
 use {
@@ -22,14 +21,12 @@ use {
     },
 };
 
-#[cfg(not(windows))]
-macro_rules! sep {
-    () => {
-        "/"
-    };
-}
-
-#[cfg(windows)]
+// I don't have a cfg to determine source OS
+// Because of this I'm defaulting to the windows
+// compile use case because of CI. Would love to have a way
+// to determine the correct spereator at compile
+// time but that isn't clear at the moment.
+#[cfg(target_os = "windows")]
 macro_rules! sep {
     () => {
         r#"\"#

@@ -4,7 +4,7 @@ extern crate windows_service;
 use anyhow::Result;
 use imix::standard_main;
 
-#[cfg(all(feature = "win_service", not(target_os="windows")))]
+#[cfg(all(feature = "win_service", not(target_os = "windows")))]
 compile_error!("Feature win_service is only available on windows targets");
 
 #[cfg(feature = "win_service")]
