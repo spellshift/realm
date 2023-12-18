@@ -1,3 +1,4 @@
+#[cfg(all(feature = "win_service", windows))]
 #[macro_use]
 extern crate windows_service;
 
@@ -7,17 +8,17 @@ use imix::standard_main;
 #[cfg(all(feature = "win_service", not(target_os = "windows")))]
 compile_error!("Feature win_service is only available on windows targets");
 
-#[cfg(feature = "win_service")]
+#[cfg(all(feature = "win_service", windows))]
 use windows_service::service_dispatcher;
 
-#[cfg(feature = "win_service")]
+#[cfg(all(feature = "win_service", windows))]
 use imix::win_service::service_main;
 
-#[cfg(feature = "win_service")]
+#[cfg(all(feature = "win_service", windows))]
 define_windows_service!(ffi_service_main, service_main);
 
 pub fn main() -> Result<(), imix::Error> {
-    #[cfg(feature = "win_service")]
+    #[cfg(all(feature = "win_service", windows))]
     match service_dispatcher::start("myservice", ffi_service_main) {
         Ok(_) => {}
         Err(local_err) => {
