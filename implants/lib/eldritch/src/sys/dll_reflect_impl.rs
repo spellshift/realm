@@ -1,5 +1,4 @@
 use starlark::values::none::NoneType;
-use std::path::PathBuf;
 
 #[cfg(target_os = "windows")]
 use {
@@ -21,19 +20,36 @@ use {
     },
 };
 
-// I don't have a cfg to determine source OS
-// Because of this I'm defaulting to the windows
-// compile use case because of CI. Would love to have a way
-// to determine the correct spereator at compile
-// time but that isn't clear at the moment.
-#[cfg(target_os = "windows")]
+// Gross but oh well rust doesn't really support this rn.
+// https://github.com/rust-lang/rust/issues/75075#issuecomment-671370162
+// Thank you @danielhenrymantilla
+#[cfg(all(host_family = "windows", windows))]
 macro_rules! sep {
     () => {
-        r#"\"# // On linux swap with: r"/"#
+        r"\"
+    };
+}
+#[cfg(all(not(host_family = "windows"), windows))]
+macro_rules! sep {
+    () => {
+        r"/"
     };
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(all(host_family = "windows", windows))]
+macro_rules! win_target {
+    () => {
+        r"x86_64-pc-windows-msvc"
+    };
+}
+#[cfg(all(not(host_family = "windows"), windows))]
+macro_rules! win_target {
+    () => {
+        r"x86_64-pc-windows-gnu"
+    };
+}
+
+#[cfg(windows)]
 const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     "..",
     sep!(),
@@ -51,7 +67,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     sep!(),
     "target",
     sep!(),
-    "x86_64-pc-windows-msvc", //  On linux swap with: "x86_64-pc-windows-gnu",
+    win_target!(),
     sep!(),
     "release",
     sep!(),
