@@ -3,6 +3,10 @@ name = "imix"
 version = "0.0.3"
 edition = "2021"
 
+[features]
+win_service = []
+default = []
+
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true , features = ["serde"] }
@@ -22,6 +26,7 @@ tonic = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["v4","fast-rng"] }
 whoami = { workspace = true }
+windows-service = { workspace = true }
 
 [dev-dependencies]
 httptest = { workspace = true }

@@ -138,4 +138,8 @@ cd realm/implants/imix/
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-pc-windows-gnu
 # Build imix.dll
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --lib --target=x86_64-pc-windows-gnu
+# Compile a imix-service.exe
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 ```
+
+_The windows service exe can also be executed as a standard exe. So if you only want on binary build a service exe and reuse it._
