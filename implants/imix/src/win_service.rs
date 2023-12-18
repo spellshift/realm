@@ -1,5 +1,6 @@
 use std::{ffi::OsString, time::Duration};
 
+#[cfg(feature = "win_service")]
 fn run_service() -> windows_service::Result<()> {
     use windows_service::{
         service::{
@@ -42,6 +43,7 @@ fn run_service() -> windows_service::Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "win_service")]
 pub fn service_main(arguments: Vec<OsString>) {
     match run_service() {
         Ok(_) => {}
