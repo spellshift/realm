@@ -56,6 +56,9 @@ export const Table = ({
                       scope="col"
                       className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${header.column.getCanSort() && "cursor-pointer"}`}
                       onClick={header.column.getToggleSortingHandler()}
+                      style={{
+                        width: header.getSize() !== 0 ? header.getSize() : undefined,
+                      }}
                     >
                       {header.isPlaceholder ? null : (
                         <div
@@ -90,7 +93,9 @@ export const Table = ({
                     {/* first row is a normal row */}
                     {row.getVisibleCells().map(cell => {
                       return (
-                        <td key={cell.id} className="px-6 py-4">
+                        <td key={cell.id} className="px-6 py-4" style={{
+                          width: cell.column.getSize(),
+                        }}>
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
