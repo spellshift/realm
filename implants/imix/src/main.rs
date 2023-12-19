@@ -21,7 +21,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
     // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
     // AKA Work queue
-    let mut all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>> =
+    let all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>> =
         Arc::new(Mutex::new(HashMap::new()));
     // This hashmap tracks all tasks output
     // AKA Results queue
