@@ -21,7 +21,6 @@ pub struct AsyncTask {
 
 pub struct ImixEldritchRuntimeFunctions {
     pub sender: Sender<String>,
-    pub task_list: Vec<AsyncTask>,
 }
 
 impl EldritchRuntimeFunctions for ImixEldritchRuntimeFunctions {}
@@ -64,7 +63,6 @@ async fn handle_exec_tome(
             globals: EldritchRuntime::default().globals,
             funcs: &ImixEldritchRuntimeFunctions {
                 sender: print_channel_sender,
-                task_list: vec![],
             },
         };
         eldritch_runtime.run(
