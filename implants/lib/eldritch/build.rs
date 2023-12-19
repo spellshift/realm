@@ -1,6 +1,10 @@
 #[cfg(target_os = "windows")]
-fn build_bin_create_file_dll(){
-    use std::{process::{Command, Stdio}, path::Path, io::{BufReader, BufRead}};
+fn build_bin_create_file_dll() {
+    use std::{
+        io::{BufRead, BufReader},
+        path::Path,
+        process::{Command, Stdio},
+    };
 
     // Define which files should cause this section to be rebuilt.
     println!("cargo:rerun-if-changed=..\\..\\..\\bin\\create_file_dll\\src\\lib.rs");
@@ -15,10 +19,14 @@ fn build_bin_create_file_dll(){
     assert!(test_dll_path.is_dir());
 
     println!("Starting cargo build lib");
-    let res = Command::new("cargo").args(&["build","--lib"])
+    let res = Command::new("cargo")
+        .args(&["build", "--lib"])
         .current_dir(test_dll_path)
         .stderr(Stdio::piped())
-        .spawn().unwrap().stderr.unwrap();
+        .spawn()
+        .unwrap()
+        .stderr
+        .unwrap();
 
     let reader = BufReader::new(res);
     reader
@@ -26,15 +34,19 @@ fn build_bin_create_file_dll(){
         .filter_map(|line| line.ok())
         .for_each(|line| println!("cargo dll build: {}", line));
 
-    let relative_path_to_test_dll_file = "..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll";
+    let relative_path_to_test_dll_file =
+        "..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll";
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll_file);
     assert!(test_dll_path.is_file());
 }
 
-
 #[cfg(target_os = "windows")]
-fn build_bin_reflective_loader(){
-    use std::{process::{Command, Stdio}, path::Path, io::{BufReader, BufRead}};
+fn build_bin_reflective_loader() {
+    use std::{
+        io::{BufRead, BufReader},
+        path::Path,
+        process::{Command, Stdio},
+    };
 
     // Define which files should cause this section to be rebuilt.
     println!("cargo:rerun-if-changed=..\\..\\..\\bin\\reflective_loader\\src\\lib.rs");
@@ -48,22 +60,32 @@ fn build_bin_reflective_loader(){
     assert!(test_dll_path.is_dir());
 
     println!("Starting cargo build lib");
-    let res_build = Command::new("cargo").args(&["build","--release","-Z","build-std=core,compiler_builtins","-Z","build-std-features=compiler-builtins-mem"])
+    let res_build = Command::new("cargo")
+        .args(&[
+            "build",
+            "--release",
+            "-Z",
+            "build-std=core,compiler_builtins",
+            "-Z",
+            "build-std-features=compiler-builtins-mem",
+        ])
         .current_dir(test_dll_path.clone())
         .stderr(Stdio::piped())
-        .spawn().unwrap().stderr.unwrap();
+        .spawn()
+        .unwrap()
+        .stderr
+        .unwrap();
 
     let reader = BufReader::new(res_build);
     reader
         .lines()
         .filter_map(|line| line.ok())
-        .for_each(|line| println!("cargo dll build: {}", line));    
-    
+        .for_each(|line| println!("cargo dll build: {}", line));
+
     let relative_path_to_test_dll_file = "..\\..\\..\\bin\\reflective_loader\\target\\x86_64-pc-windows-msvc\\release\\reflective_loader.dll";
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll_file);
     assert!(test_dll_path.is_file());
 }
-
 
 fn main() {
     #[cfg(target_os = "windows")]

@@ -3,8 +3,9 @@ members = [
     "imix",
     "golem",
     "lib/eldritch",
-    "lib/tavern",
+    "lib/c2",
 ]
+resolver = "2"
 
 [workspace.dependencies]
 aes = "0.8.3"
@@ -26,6 +27,7 @@ gazebo = "0.8.1"
 graphql_client = "0.12.0"
 hex-literal = "0.4.1"
 httptest = "0.15.4"
+hyper = { version = "1", features = ["full"] }
 ipnetwork = "0.20.0"
 itertools = "0.10"
 lsp-types = "0.93.0"
@@ -37,6 +39,8 @@ object = "0.31.1"
 openssl = "0.10.55"
 pnet = "0.34.0"
 predicates = "2.1"
+prost = "0.12"
+prost-types = "0.12"
 rand = "0.8.5"
 regex = "1.5.5"
 reqwest = "0.11.18"
@@ -55,14 +59,17 @@ structopt = "0.3.23"
 sys-info = "0.9.1"
 sysinfo = "0.29.7"
 tar = "0.4.38"
-tavern = { path = "./lib/tavern" }
+tonic-build = "0.10"
+c2 = { path = "./lib/c2" }
 tempfile = "3.3.0"
 tera = "1.17.1"
 thiserror = "1.0.30"
 tokio = "1.19.1"
 tokio-stream = "0.1.9"
 tokio-test = "*"
+tonic = { git = "https://github.com/hyperium/tonic.git", rev = "07e4ee1" }
 uuid = "1.3.0"
+which = "4.4.2"
 whoami = "1.3.0"
 windows-sys = "0.45.0"
 winreg = "0.51.0"

@@ -1,13 +1,10 @@
-use std::fs::{File, rename};
+use aes::cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit};
+use aes::Aes128;
+use anyhow::{anyhow, Result};
+use std::fs::{rename, File};
 use std::io::{Read, Write};
 use std::path::Path;
-use anyhow::{anyhow, Result};
 use tempfile::NamedTempFile;
-use aes::Aes128;
-use aes::cipher::{
-    BlockEncrypt, KeyInit,
-    generic_array::GenericArray,
-};
 
 pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
     if !Path::new(&dst).exists() {
@@ -19,7 +16,7 @@ pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
     }
     let key_bytes: [u8; 16] = key_bytes[..16].try_into()?;
     let key = GenericArray::from(key_bytes);
-    
+
     let mut block = GenericArray::from([0; 16]);
     let cipher = Aes128::new(&key);
     let mut src_file = File::open(src.clone())?;
@@ -33,7 +30,7 @@ pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
             for i in 0..n {
                 short_buffer.push(block[i]);
             }
-            for _ in 0..(16-n) {
+            for _ in 0..(16 - n) {
                 short_buffer.push((16 - n).try_into()?);
             }
             block = GenericArray::from_iter(short_buffer);
@@ -49,15 +46,18 @@ pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::{Write, Read}};
+    use std::{
+        fs::File,
+        io::{Read, Write},
+    };
 
-    use tempfile::TempDir;
     use anyhow::Result;
+    use tempfile::TempDir;
 
     use super::encrypt_file;
 
-    use sha1::{Sha1, Digest};
     use hex_literal::hex;
+    use sha1::{Digest, Sha1};
 
     #[test]
     fn test_encrypt() -> Result<()> {
@@ -66,10 +66,14 @@ mod tests {
         let test_path = tmp_dir.path().join("test.txt");
         let test_enc_path = tmp_dir.path().join("test.txt.enc");
         {
-            let mut tmp_file = File::create(test_path.clone())?;      
+            let mut tmp_file = File::create(test_path.clone())?;
             write!(tmp_file, "{}", lorem)?;
         }
-        encrypt_file(test_path.to_str().unwrap().to_owned(), test_enc_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!".to_string())?;
+        encrypt_file(
+            test_path.to_str().unwrap().to_owned(),
+            test_enc_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD!".to_string(),
+        )?;
 
         let mut hasher = Sha1::new();
         let mut enc_f = File::open(test_enc_path)?;
@@ -86,8 +90,18 @@ mod tests {
     fn test_encrypt_bad_password() -> Result<()> {
         let tmp_dir = TempDir::new()?;
         let test_path = tmp_dir.path().join("test.txt");
-        assert!(encrypt_file(test_path.to_str().unwrap().to_owned(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!!".to_string()).is_err());
-        assert!(encrypt_file(test_path.to_str().unwrap().to_owned(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD".to_string()).is_err());
+        assert!(encrypt_file(
+            test_path.to_str().unwrap().to_owned(),
+            test_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD!!".to_string()
+        )
+        .is_err());
+        assert!(encrypt_file(
+            test_path.to_str().unwrap().to_owned(),
+            test_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD".to_string()
+        )
+        .is_err());
         Ok(())
     }
 
@@ -95,7 +109,12 @@ mod tests {
     fn test_encrypt_no_file() -> Result<()> {
         let tmp_dir = TempDir::new()?;
         let test_path = tmp_dir.path().join("test.txt");
-        assert!(encrypt_file("/I/Dont/Exist".to_string(), test_path.to_str().unwrap().to_owned(), "TESTINGPASSWORD!".to_string()).is_err());
+        assert!(encrypt_file(
+            "/I/Dont/Exist".to_string(),
+            test_path.to_str().unwrap().to_owned(),
+            "TESTINGPASSWORD!".to_string()
+        )
+        .is_err());
         Ok(())
     }
 }

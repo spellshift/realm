@@ -2,19 +2,45 @@ use anyhow::Result;
 
 use super::Session;
 
-async fn handle_ssh_copy(target: String, port: u16, src: String, dst: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<&str>, timeout: Option<u32>) -> Result<()> {
+async fn handle_ssh_copy(
+    target: String,
+    port: u16,
+    src: String,
+    dst: String,
+    username: String,
+    password: Option<String>,
+    key: Option<String>,
+    key_password: Option<&str>,
+    timeout: Option<u32>,
+) -> Result<()> {
     let mut ssh = tokio::time::timeout(
-        std::time::Duration::from_secs(timeout.unwrap_or(3).into()),
-        Session::connect(username, password, key, key_password, format!("{}:{}", target, port)),
-    ).await??;
+        std::time::Duration::from_secs(timeout.unwrap_or(3).try_into()?),
+        Session::connect(
+            username,
+            password,
+            key,
+            key_password,
+            format!("{}:{}", target, port),
+        ),
+    )
+    .await??;
     let _ = ssh.copy(&src, &dst).await?;
     ssh.close().await?;
 
     Ok(())
 }
 
-pub fn ssh_copy(target: String, port: i32, src: String, dst: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) -> Result<()> {
-    
+pub fn ssh_copy(
+    target: String,
+    port: i32,
+    src: String,
+    dst: String,
+    username: String,
+    password: Option<String>,
+    key: Option<String>,
+    key_password: Option<String>,
+    timeout: Option<u32>,
+) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
@@ -22,11 +48,24 @@ pub fn ssh_copy(target: String, port: i32, src: String, dst: String, username: S
     let key_password_ref = key_password.as_deref();
     let local_port: u16 = port.try_into()?;
 
-    let _ = match runtime.block_on(
-        handle_ssh_copy(target, local_port, src, dst, username, password, key, key_password_ref, timeout)
-    ) {
+    let _ = match runtime.block_on(handle_ssh_copy(
+        target,
+        local_port,
+        src,
+        dst,
+        username,
+        password,
+        key,
+        key_password_ref,
+        timeout,
+    )) {
         Ok(local_res) => local_res,
-        Err(local_err) => return Err(anyhow::anyhow!("Failed to run handle_ssh_exec: {}", local_err.to_string())),
+        Err(local_err) => {
+            return Err(anyhow::anyhow!(
+                "Failed to run handle_ssh_exec: {}",
+                local_err.to_string()
+            ))
+        }
     };
 
     Ok(())
@@ -34,36 +73,38 @@ pub fn ssh_copy(target: String, port: i32, src: String, dst: String, username: S
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use async_trait::async_trait;
-    use russh_sftp::protocol::{StatusCode, Version, Status, Handle, Name, FileAttributes, File, OpenFlags};
-    use tempfile::NamedTempFile;
-    use tokio::net::TcpListener;
-    use tokio::task;
+    use russh::server::{Auth, Msg, Session};
+    use russh::*;
+    use russh_sftp::protocol::{
+        File, FileAttributes, Handle, Name, OpenFlags, Status, StatusCode, Version,
+    };
+    use std::collections::HashMap;
     use std::fs;
     use std::io::Write;
     use std::net::SocketAddr;
-    use std::sync::{Mutex, Arc};
-    use russh::*;
-    use russh::server::{Auth, Session, Msg};
-    use std::collections::HashMap;
-    use super::*;
+    use std::sync::{Arc, Mutex};
+    use tempfile::NamedTempFile;
+    use tokio::net::TcpListener;
+    use tokio::task;
 
     // SSH Server utils
     #[derive(Clone)]
     struct Server;
-    
+
     impl russh::server::Server for Server {
         type Handler = SshSession;
-    
+
         fn new_client(&mut self, _: Option<SocketAddr>) -> Self::Handler {
             SshSession::default()
         }
     }
-    
+
     struct SshSession {
         clients: Arc<Mutex<HashMap<ChannelId, Channel<Msg>>>>,
     }
-    
+
     impl Default for SshSession {
         fn default() -> Self {
             Self {
@@ -71,23 +112,27 @@ mod tests {
             }
         }
     }
-    
+
     impl SshSession {
         pub async fn get_channel(&mut self, channel_id: ChannelId) -> Channel<Msg> {
             let mut clients = self.clients.lock().unwrap();
             clients.remove(&channel_id).unwrap()
         }
     }
-    
+
     #[async_trait]
     #[allow(unused_variables)]
     impl russh::server::Handler for SshSession {
         type Error = anyhow::Error;
-    
-        async fn auth_password(self, user: &str, password: &str) -> Result<(Self, Auth), Self::Error> {
+
+        async fn auth_password(
+            self,
+            user: &str,
+            password: &str,
+        ) -> Result<(Self, Auth), Self::Error> {
             Ok((self, Auth::Accept))
         }
-    
+
         async fn auth_publickey(
             self,
             user: &str,
@@ -95,7 +140,7 @@ mod tests {
         ) -> Result<(Self, Auth), Self::Error> {
             Ok((self, Auth::Accept))
         }
-    
+
         async fn channel_open_session(
             mut self,
             channel: Channel<Msg>,
@@ -107,7 +152,7 @@ mod tests {
             }
             Ok((self, true, session))
         }
-    
+
         async fn subsystem_request(
             mut self,
             channel_id: ChannelId,
@@ -122,16 +167,16 @@ mod tests {
             } else {
                 session.channel_failure(channel_id);
             }
-    
+
             Ok((self, session))
         }
     }
-    
+
     struct SftpSession {
         version: Option<u32>,
         root_dir_read_done: bool,
     }
-    
+
     impl Default for SftpSession {
         fn default() -> Self {
             Self {
@@ -140,16 +185,16 @@ mod tests {
             }
         }
     }
-    
+
     #[allow(unused_variables)]
     #[async_trait]
     impl russh_sftp::server::Handler for SftpSession {
         type Error = StatusCode;
-    
+
         fn unimplemented(&self) -> Self::Error {
             StatusCode::OpUnsupported
         }
-    
+
         async fn init(
             &mut self,
             version: u32,
@@ -161,7 +206,7 @@ mod tests {
             self.version = Some(version);
             Ok(Version::new())
         }
-    
+
         async fn close(&mut self, id: u32, _handle: String) -> Result<Status, Self::Error> {
             Ok(Status {
                 id,
@@ -180,7 +225,7 @@ mod tests {
                 language_tag: "en-US".to_string(),
             })
         }
-        
+
         async fn opendir(&mut self, id: u32, path: String) -> Result<Handle, Self::Error> {
             self.root_dir_read_done = false;
             Ok(Handle { id, handle: path })
@@ -193,7 +238,10 @@ mod tests {
             pflags: OpenFlags,
             attrs: FileAttributes,
         ) -> Result<Handle, Self::Error> {
-            Ok(Handle { id, handle: filename })
+            Ok(Handle {
+                id,
+                handle: filename,
+            })
         }
 
         #[allow(unused_variables)]
@@ -208,10 +256,14 @@ mod tests {
             // Tests over the size of the chunk will fail
             let tmp_data = String::from_utf8(data).unwrap();
             fs::write(handle, tmp_data.trim_end_matches(char::from(0))).unwrap();
-            Ok(Status { id: id, status_code: StatusCode::Ok, error_message: "".to_string(), language_tag: "".to_string() })
+            Ok(Status {
+                id: id,
+                status_code: StatusCode::Ok,
+                error_message: "".to_string(),
+                language_tag: "".to_string(),
+            })
         }
-    
-            
+
         async fn readdir(&mut self, id: u32, handle: String) -> Result<Name, Self::Error> {
             if handle == "/" && !self.root_dir_read_done {
                 self.root_dir_read_done = true;
@@ -233,7 +285,7 @@ mod tests {
             }
             Ok(Name { id, files: vec![] })
         }
-    
+
         async fn realpath(&mut self, id: u32, path: String) -> Result<Name, Self::Error> {
             Ok(Name {
                 id,
@@ -253,15 +305,17 @@ mod tests {
         let mut config = russh::server::Config::default();
         config.connection_timeout = Some(std::time::Duration::from_secs(3));
         config.auth_rejection_time = std::time::Duration::from_secs(3);
-        config.keys.push(russh_keys::key::KeyPair::generate_ed25519().unwrap());
+        config
+            .keys
+            .push(russh_keys::key::KeyPair::generate_ed25519().unwrap());
         let config = Arc::new(config);
-        let sh = Server {
-
-        };
+        let sh = Server {};
         let _res: std::result::Result<(), std::io::Error> = tokio::time::timeout(
-        std::time::Duration::from_secs(2),
-        russh::server::run(config, (address, port), sh)
-        ).await.unwrap_or(Ok(()));
+            std::time::Duration::from_secs(2),
+            russh::server::run(config, (address, port), sh),
+        )
+        .await
+        .unwrap_or(Ok(()));
     }
 
     // Tests run concurrently so each test needs a unique port.
@@ -269,7 +323,6 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         Ok(listener.local_addr().unwrap().port().into())
     }
-
 
     #[tokio::test]
     async fn test_pivot_ssh_copy() -> anyhow::Result<()> {
@@ -286,9 +339,7 @@ mod tests {
         // let path_dst = "/foo".to_string();
         // tmp_file_dst.close()?;
 
-        let test_server_task = task::spawn(
-            test_ssh_server(ssh_host.clone(), ssh_port)
-        );
+        let test_server_task = task::spawn(test_ssh_server(ssh_host.clone(), ssh_port));
 
         let key_pass = "test123";
         let ssh_client_task = task::spawn(
@@ -302,6 +353,4 @@ mod tests {
         assert_eq!(TEST_STRING, res_buf?.as_bytes());
         Ok(())
     }
-
-    
 }

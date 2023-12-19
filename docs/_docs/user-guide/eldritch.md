@@ -14,6 +14,33 @@ By embedding the interpreter into the agent conditional logic can be quickly eva
 
 Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
+## Examples
+
+_Kill a specific process name_
+
+```python
+for p in process.list():
+    if p['name'] == "golem":
+        process.kill(p['pid'])
+```
+
+_Copy your current executable somewhere else_
+
+```python
+cur_bin_path = process.info()['exe']
+dest_path = '/tmp/win'
+file.copy(cur_bin_path, dest_path)
+file.remove(cur_bin_path)
+```
+
+_Parse a JSON file_
+
+```python
+json_str = file.read("/tmp/config.json")
+config_data = crypto.from_json(json_str)
+print(config_data['key1'])
+```
+
 ## Data types
 
 Eldritch currently only supports the [default starlark data types.](https://github.com/facebookexperimental/starlark-rust/blob/main/docs/types.md)
@@ -124,6 +151,83 @@ The <b>assets.read_binary</b> method returns a list of u32 numbers representing 
 `assets.read(src: str) -> str`
 
 The <b>assets.read</b> method returns a UTF-8 string representation of the asset file.
+
+---
+
+## Crypto
+
+### crypto.aes_decrypt_file
+
+`crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### crypto.aes_encrypt_file
+
+`crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
+
+The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### crypto.encode_b64
+
+`crypto.encode_b64(content: str, encode_type: Optional<str>) -> str`
+
+The <b>crypto.encode_b64</b> method encodes the given text using the given base64 encoding method. Valid methods include:
+
+- STANDARD (default)
+- STANDARD_NO_PAD
+- URL_SAFE
+- URL_SAFE_NO_PAD
+
+### crypto.decode_b64
+
+`crypto.decode_b64(content: str, decode_type: Optional<str>) -> str`
+
+The <b>crypto.decode_b64</b> method encodes the given text using the given base64 decoding method. Valid methods include:
+
+- STANDARD (default)
+- STANDARD_NO_PAD
+- URL_SAFE
+- URL_SAFE_NO_PAD
+
+### crypto.from_json
+
+`crypto.from_json(content: str) -> Value`
+
+The <b>crypto.from_json</b> method converts JSON text to an object of correct type.
+
+```python
+crypto.from_json("{\"foo\":\"bar\"}")
+{
+    "foo": "bar"
+}
+```
+
+### crypto.hash_file
+
+`crypto.hash_file(file: str, algo: str) -> str`
+
+The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256
+- SHA512
+
+### crypto.to_json
+
+`crypto.to_json(content: Value) -> str`
+
+The <b>crypto.to_json</b> method converts given type to JSON text.
+
+```python
+crypto.to_json({"foo": "bar"})
+"{\"foo\":\"bar\"}"
+```
 
 ---
 
@@ -322,6 +426,12 @@ The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP t
 
 `protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
 
+### pivot.port_forward
+
+`pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
+
+The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
+
 ### pivot.port_scan
 
 `pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int) -> List<str>`
@@ -358,12 +468,6 @@ Each IP in the specified CIDR will be returned regardless of if it returns any o
 Be mindful of this when scanning large CIDRs as it may create largo return objects.
 
 NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely.
-
-### pivot.port_forward
-
-`pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
-
-The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
 ### pivot.smb_exec
 
@@ -404,41 +508,12 @@ Not returning stderr is a limitation of the way we're performing execution. Sinc
 
 The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more flexibility but may be adding complexity.
 
+---
+
 ## Process
 
-### process.kill
-
-`process.kill(pid: int) -> None`
-
-The <b>process.kill</b> method will kill a process using the KILL signal given its process id.
-
-### process.list
-
-`process.list() -> List<Dict>`
-
-The <b>process.list</b> method returns a list of dictionaries that describe each process. The dictionaries follow the schema:
-
-```json
-{
-    "pid": "9812",
-    "ppid": "1",
-    "status": "Sleeping",
-    "name": "golem",
-    "path": "/usr/bin/golem",
-    "username": "root",
-    "command": "/usr/bin/golem -i",
-    "cwd": "/root/",
-    "environ": "CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0",
-}
-```
-
-### process.name
-
-`process.name(pid: int) -> str`
-
-The <b>process.name</b> method returns the name of the process from it's given process id.
-
 ### process.info
+
 `process.info(pid: Optional<int>) -> Dict`
 
 The <b>process.info</b> method returns all information on a given process ID. Default is the current process.
@@ -483,7 +558,40 @@ The <b>process.info</b> method returns all information on a given process ID. De
 }
 ```
 
+### process.kill
+
+`process.kill(pid: int) -> None`
+
+The <b>process.kill</b> method will kill a process using the KILL signal given its process id.
+
+### process.list
+
+`process.list() -> List<Dict>`
+
+The <b>process.list</b> method returns a list of dictionaries that describe each process. The dictionaries follow the schema:
+
+```json
+{
+    "pid": "9812",
+    "ppid": "1",
+    "status": "Sleeping",
+    "name": "golem",
+    "path": "/usr/bin/golem",
+    "username": "root",
+    "command": "/usr/bin/golem -i",
+    "cwd": "/root/",
+    "environ": "CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0",
+}
+```
+
+### process.name
+
+`process.name(pid: int) -> str`
+
+The <b>process.name</b> method returns the name of the process from it's given process id.
+
 ### process.netstat
+
 `process.netstat() -> Vec<Dict>`
 
 The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
@@ -505,6 +613,8 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
 ]
 ```
 
+---
+
 ## Sys
 
 ### sys.dll_inject
@@ -512,6 +622,15 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
 `sys.dll_inject(dll_path: str, pid: int) -> None`
 
 The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
+
+### sys.dll_reflect
+
+`sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None`
+
+The <b>sys.dll_reflcet</b> method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
+
+The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
+If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark be sure careful of the u8::MAX bound for each byte.
 
 ### sys.exec
 
@@ -534,13 +653,6 @@ sys.exec("/bin/bash",["-c", "ls /nofile"])
     "status":2,
 }
 ```
-
-
-### sys.hostname
-
-`sys.hostname() -> String`
-
-The <b>sys.hostname</b> method returns a String containing the host's hostname.
 
 ### sys.get_env
 
@@ -619,16 +731,16 @@ An example is below:
 ```python
 $> sys.get_reg("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
 {
-    "ProgramFilesDir": "C:\\Program Files", 
-    "CommonFilesDir": "C:\\Program Files\\Common Files", 
-    "ProgramFilesDir (x86)": "C:\\Program Files (x86)", 
-    "CommonFilesDir (x86)": "C:\\Program Files (x86)\\Common Files", 
-    "CommonW6432Dir": "C:\\Program Files\\Common Files", 
-    "DevicePath": "%SystemRoot%\\inf", 
-    "MediaPathUnexpanded": "%SystemRoot%\\Media", 
-    "ProgramFilesPath": "%ProgramFiles%", 
-    "ProgramW6432Dir": "C:\\Program Files", 
-    "SM_ConfigureProgramsName": "Set Program Access and Defaults", 
+    "ProgramFilesDir": "C:\\Program Files",
+    "CommonFilesDir": "C:\\Program Files\\Common Files",
+    "ProgramFilesDir (x86)": "C:\\Program Files (x86)",
+    "CommonFilesDir (x86)": "C:\\Program Files (x86)\\Common Files",
+    "CommonW6432Dir": "C:\\Program Files\\Common Files",
+    "DevicePath": "%SystemRoot%\\inf",
+    "MediaPathUnexpanded": "%SystemRoot%\\Media",
+    "ProgramFilesPath": "%ProgramFiles%",
+    "ProgramW6432Dir": "C:\\Program Files",
+    "SM_ConfigureProgramsName": "Set Program Access and Defaults",
     "SM_GamesName": "Games"
 }
 ```
@@ -659,6 +771,12 @@ For users, will return name and groups of user.
     "egid": 0
 }
 ```
+
+### sys.hostname
+
+`sys.hostname() -> String`
+
+The <b>sys.hostname</b> method returns a String containing the host's hostname.
 
 ### sys.is_linux
 
@@ -699,84 +817,15 @@ sys.shell("ls /nofile")
 }
 ```
 
-## Crypto
-
-### crypto.aes_encrypt_file
-
-`crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
-
-The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
-
-Key must be 16 Bytes (Characters)
-
-### crypto.aes_decrypt_file
-
-`crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
-
-The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.
-
-Key must be 16 Bytes (Characters)
-
-### crypto.hash_file
-
-`crypto.hash_file(file: str, algo: str) -> str`
-
-The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
-
-- MD5
-- SHA1
-- SHA256
-- SHA512
-
-### crypto.encode_b64
-
-`crypto.encode_b64(content: str, encode_type: Optional<str>) -> str`
-
-The <b>crypto.encode_b64</b> method encodes the given text using the given base64 encoding method. Valid methods include:
-
-- STANDARD (default)
-- STANDARD_NO_PAD
-- URL_SAFE
-- URL_SAFE_NO_PAD
-
-### crypto.decode_b64
-
-`crypto.decode_b64(content: str, decode_type: Optional<str>) -> str`
-
-The <b>crypto.decode_b64</b> method encodes the given text using the given base64 decoding method. Valid methods include:
-
-- STANDARD (default)
-- STANDARD_NO_PAD
-- URL_SAFE
-- URL_SAFE_NO_PAD
-
-### crypto.from_json
-
-`crypto.from_json(content: str) -> Value`
-
-The <b>crypto.from_json</b> method converts JSON text to an object of correct type.
-
-```python
-crypto.from_json("{\"foo\":\"bar\"}")
-{
-    "foo": "bar"
-}
-```
-
-### crypto.to_json
-
-`crypto.to_json(content: Value) -> str`
-
-The <b>crypto.to_json</b> method converts given type to JSON text.
-
-```python
-crypto.to_json({"foo": "bar"})
-"{\"foo\":\"bar\"}"
-```
+---
 
 ## Time
 
 ### time.sleep
+
+`time.now() -> int`
+
+The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
 
 `time.sleep(secs: float)`
 
