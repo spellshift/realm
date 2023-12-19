@@ -1,7 +1,11 @@
 use anyhow::{Error, Result};
 use c2::pb::Task;
 use chrono::{DateTime, Utc};
-use eldritch::{eldritch_run, EldritchPrintHandler};
+use eldritch::eldritch_run;
+use eldritch::EldritchRuntimeFunctions;
+use eldritch::EldritchTasksHandler;
+use eldritch::ImixPrintHandler;
+use eldritch::PrintHandler;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -13,6 +17,33 @@ pub struct AsyncTask {
     pub start_time: DateTime<Utc>,
     pub grpc_task: Task,
     pub print_reciever: Receiver<String>,
+}
+
+pub struct ImixEldritchRuntimeFunctions {
+    pub sender: Sender<String>,
+    pub task_list: Vec<AsyncTask>,
+}
+
+impl EldritchRuntimeFunctions for ImixEldritchRuntimeFunctions {}
+
+impl EldritchTasksHandler for ImixEldritchRuntimeFunctions {
+    fn get_tasks() -> Vec<i64> {
+        todo!()
+    }
+
+    fn kill_task(id: i64) {
+        todo!()
+    }
+}
+
+impl PrintHandler for ImixEldritchRuntimeFunctions {
+    fn println(&self, text: &str) -> anyhow::Result<()> {
+        let res = match self.sender.send(text.to_string()) {
+            Ok(local_res) => local_res,
+            Err(local_err) => return Err(anyhow::anyhow!(local_err.to_string())),
+        };
+        Ok(res)
+    }
 }
 
 async fn handle_exec_tome(
@@ -27,7 +58,7 @@ async fn handle_exec_tome(
     //     None => return Ok(("".to_string(), format!("No quest associated for task ID: {}", task.id))),
     // };
 
-    let print_handler = EldritchPrintHandler {
+    let print_handler = ImixPrintHandler {
         sender: print_channel_sender,
     };
 

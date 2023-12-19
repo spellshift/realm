@@ -23,6 +23,7 @@ use std::iter;
 use std::path::Path;
 use std::path::PathBuf;
 
+use eldritch::EldritchRuntime;
 use gazebo::prelude::*;
 use itertools::Either;
 use lsp_types::Diagnostic;
@@ -369,7 +370,7 @@ impl LspContext for Context {
 }
 
 pub(crate) fn globals() -> Globals {
-    eldritch::get_eldritch().unwrap()
+    EldritchRuntime::default().globals
 }
 
 pub(crate) fn dialect() -> Dialect {
