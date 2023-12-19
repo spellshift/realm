@@ -9,6 +9,7 @@ pub mod process;
 pub mod sys;
 pub mod time;
 
+use anyhow::Result;
 use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
 use starlark::environment::{Globals, GlobalsBuilder, LibraryExtension, Module};
@@ -69,7 +70,6 @@ macro_rules! insert_dict_kv {
 }
 pub(crate) use insert_dict_kv;
 
-#[derive(Builder)]
 pub struct EldritchRuntime<'a, T: EldritchRuntimeFunctions> {
     pub globals: Globals,
     pub funcs: &'a T,
@@ -80,12 +80,12 @@ pub struct DefaultEldritchRuntimeFunctions {}
 impl EldritchRuntimeFunctions for DefaultEldritchRuntimeFunctions {}
 
 impl EldritchTasksHandler for DefaultEldritchRuntimeFunctions {
-    fn get_tasks() -> Vec<i64> {
+    fn get_tasks(self) -> Result<HashMap<i64, HashMap<String, String>>> {
         #[cfg(debug_assertions)]
         eprintln!("`get_tasks` function is unimplemented. Please implement one.");
-        return Vec::new();
+        Ok(HashMap::new())
     }
-    fn kill_task(_id: i64) {
+    fn kill_task(self, _id: i64) {
         #[cfg(debug_assertions)]
         eprintln!("`kill_task` function is unimplemented. Please implement one.");
     }
@@ -209,8 +209,8 @@ impl<T: EldritchRuntimeFunctions> EldritchRuntime<'_, T> {
 pub trait EldritchRuntimeFunctions: EldritchTasksHandler + PrintHandler {}
 
 pub trait EldritchTasksHandler {
-    fn get_tasks() -> Vec<i64>;
-    fn kill_task(id: i64);
+    fn get_tasks(self) -> Result<HashMap<i64, HashMap<String, String>>>; // {"taskID": {"tome_name":"test123","tome_contents":"print('hello')","start_time":"2023-02-01 10:11:04T00:00:01Z"}}
+    fn kill_task(self, id: i64);
 }
 
 pub struct StdPrintHandler {}
@@ -232,6 +232,7 @@ mod tests {
     };
 
     use super::*;
+    use chrono::DateTime;
     use starlark::assert::Assert;
     use tempfile::NamedTempFile;
 
@@ -338,11 +339,11 @@ file.download("https://www.google.com/", "{path}")
         impl EldritchRuntimeFunctions for TestEldritchRuntimeFunctions {}
 
         impl EldritchTasksHandler for TestEldritchRuntimeFunctions {
-            fn get_tasks() -> Vec<i64> {
-                DefaultEldritchRuntimeFunctions::get_tasks()
+            fn get_tasks(self) -> Result<HashMap<i64, HashMap<String, String>>> {
+                DefaultEldritchRuntimeFunctions::get_tasks(DefaultEldritchRuntimeFunctions {})
             }
-            fn kill_task(id: i64) {
-                DefaultEldritchRuntimeFunctions::kill_task(id)
+            fn kill_task(self, id: i64) {
+                DefaultEldritchRuntimeFunctions::kill_task(DefaultEldritchRuntimeFunctions {}, id)
             }
         }
 

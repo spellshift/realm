@@ -1,4 +1,5 @@
 use crate::ImixPrintHandler;
+use crate::TaskID;
 use anyhow::{Error, Result};
 use c2::pb::Task;
 use chrono::{DateTime, Utc};
@@ -6,8 +7,12 @@ use eldritch::EldritchRuntime;
 use eldritch::EldritchRuntimeFunctions;
 use eldritch::EldritchTasksHandler;
 use eldritch::PrintHandler;
+use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread;
 use tokio::task::JoinHandle;
 use tokio::time::Duration;
@@ -21,16 +26,39 @@ pub struct AsyncTask {
 
 pub struct ImixEldritchRuntimeFunctions {
     pub sender: Sender<String>,
+    pub task_list: Arc<Mutex<HashMap<TaskID, AsyncTask>>>,
 }
 
 impl EldritchRuntimeFunctions for ImixEldritchRuntimeFunctions {}
 
 impl EldritchTasksHandler for ImixEldritchRuntimeFunctions {
-    fn get_tasks() -> Vec<i64> {
-        todo!()
+    fn get_tasks(self) -> Result<HashMap<i64, HashMap<String, String>>> {
+        let res = self
+            .task_list
+            .clone()
+            .lock()
+            .unwrap()
+            .deref()
+            .into_iter()
+            .map(|(id, task)| {
+                (
+                    *id,
+                    HashMap::from([
+                        ("start_time".to_string(), task.start_time.to_string()),
+                        ("tome_contents".to_string(), task.grpc_task.eldritch.clone()),
+                        (
+                            "tome_params".to_string(),
+                            format!("{:?}", task.grpc_task.parameters),
+                        ),
+                        ("tome_name".to_string(), "unset".to_string()),
+                    ]),
+                )
+            })
+            .collect::<HashMap<i64, HashMap<String, String>>>();
+        Ok(res)
     }
 
-    fn kill_task(id: i64) {
+    fn kill_task(self, id: i64) {
         todo!()
     }
 }
@@ -63,6 +91,7 @@ async fn handle_exec_tome(
             globals: EldritchRuntime::default().globals,
             funcs: &ImixEldritchRuntimeFunctions {
                 sender: print_channel_sender,
+                task_list: todo!(),
             },
         };
         eldritch_runtime.run(
