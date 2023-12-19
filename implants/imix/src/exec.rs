@@ -2,7 +2,7 @@ use crate::ImixPrintHandler;
 use anyhow::{Error, Result};
 use c2::pb::Task;
 use chrono::{DateTime, Utc};
-use eldritch::eldritch_run;
+use eldritch::EldritchRuntime;
 use eldritch::EldritchRuntimeFunctions;
 use eldritch::EldritchTasksHandler;
 use eldritch::PrintHandler;
@@ -58,17 +58,19 @@ async fn handle_exec_tome(
     //     None => return Ok(("".to_string(), format!("No quest associated for task ID: {}", task.id))),
     // };
 
-    let print_handler = ImixPrintHandler {
-        sender: print_channel_sender,
-    };
-
     // Execute a tome script
     let res = match thread::spawn(move || {
-        eldritch_run(
+        let eldritch_runtime = EldritchRuntime {
+            globals: EldritchRuntime::default().globals,
+            funcs: &ImixEldritchRuntimeFunctions {
+                sender: print_channel_sender,
+                task_list: vec![],
+            },
+        };
+        eldritch_runtime.run(
             task.id.to_string(),
             task.eldritch.clone(),
             Some(task.parameters.clone()),
-            &print_handler,
         )
     })
     .join()

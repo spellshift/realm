@@ -19,7 +19,6 @@ use starlark::values::dict::Dict;
 use starlark::values::{AllocValue, Value};
 pub use starlark::PrintHandler;
 use std::collections::HashMap;
-use std::sync::mpsc::Sender;
 
 use crate::crypto::CryptoLibrary;
 use assets::AssetsLibrary;
@@ -223,95 +222,14 @@ impl PrintHandler for StdPrintHandler {
     }
 }
 
-pub fn eldritch_run(
-    tome_filename: String,
-    tome_contents: String,
-    tome_parameters: Option<HashMap<String, String>>,
-    print_handler: &(dyn PrintHandler),
-) -> anyhow::Result<String> {
-    // Boilder plate
-    let ast = match AstModule::parse(
-        &tome_filename,
-        tome_contents.as_str().to_owned(),
-        &Dialect::Extended,
-    ) {
-        Ok(res) => res,
-        Err(err) => {
-            return Err(anyhow::anyhow!(
-                "[eldritch] Unable to parse eldritch tome: {}: {} {}",
-                err.to_string(),
-                tome_filename.as_str(),
-                tome_contents.as_str()
-            ))
-        }
-    };
-
-    // let tome_params_str: String = match tome_parameters {
-    //     Some(local_param_string) => match local_param_string.as_str() {
-    //         "" => "{}".to_string(),  // If we get "" as our params update it to "{}"
-    //         _ => local_param_string, // Otherwise return our string.
-    //     },
-    //     None => "{}".to_string(),
-    // };
-
-    // let globals = match get_eldritch() {
-    //     Ok(local_globals) => local_globals,
-    //     Err(local_error) => {
-    //         return Err(anyhow::anyhow!(
-    //             "[eldritch] Failed to get_eldritch globals: {}",
-    //             local_error.to_string()
-    //         ))
-    //     }
-    // };
-
-    let globals = EldritchRuntime::default().globals;
-
-    let module: Module = Module::new();
-
-    let res: SmallMap<Value, Value> = SmallMap::new();
-    let mut input_params: Dict = Dict::new(res);
-
-    match tome_parameters {
-        Some(params) => {
-            for (key, value) in &params {
-                let new_key = module.heap().alloc_str(&key);
-                let new_value = module.heap().alloc_str(value.as_str()).to_value();
-                let hashed_key = match new_key.to_value().get_hashed() {
-                    Ok(local_hashed_key) => local_hashed_key,
-                    Err(local_error) => {
-                        return Err(anyhow::anyhow!(
-                            "[eldritch] Failed to create hashed key for key {}: {}",
-                            new_key.to_string(),
-                            local_error.to_string()
-                        ))
-                    }
-                };
-                input_params.insert_hashed(hashed_key, new_value);
-            }
-        }
-        None => {}
-    }
-    module.set("input_params", input_params.alloc_value(module.heap()));
-
-    let mut eval: Evaluator = Evaluator::new(&module);
-    eval.set_print_handler(print_handler);
-
-    let res: Value = match eval.eval_module(ast, &globals) {
-        Ok(eval_val) => eval_val,
-        Err(eval_error) => {
-            return Err(anyhow::anyhow!(
-                "[eldritch] Eldritch eval_module failed:\n{}",
-                eval_error
-            ))
-        }
-    };
-
-    Ok(res.to_str())
-}
-
 #[cfg(test)]
 mod tests {
-    use std::{borrow::Borrow, sync::mpsc::channel, thread, time::Duration};
+    use std::{
+        borrow::Borrow,
+        sync::mpsc::{channel, Sender},
+        thread,
+        time::Duration,
+    };
 
     use super::*;
     use starlark::assert::Assert;
@@ -366,12 +284,12 @@ input_params["number"]
 "#
         );
         let params = HashMap::from([("number".to_string(), "1".to_string())]);
-        let test_res = eldritch_run(
-            "test.tome".to_string(),
-            test_content,
-            Some(params),
-            &StdPrintHandler {},
-        );
+
+        let eldritch_runtime = EldritchRuntime {
+            globals: EldritchRuntime::default().globals,
+            funcs: &DefaultEldritchRuntimeFunctions {},
+        };
+        let test_res = eldritch_runtime.run("test.tome".to_string(), test_content, Some(params));
         assert_eq!(test_res.unwrap(), "1".to_string());
         Ok(())
     }
@@ -389,12 +307,11 @@ file.download("https://www.google.com/", "{path}")
 "#
         );
         let test_res = thread::spawn(|| {
-            eldritch_run(
-                "test.tome".to_string(),
-                test_content,
-                None,
-                &StdPrintHandler {},
-            )
+            let eldritch_runtime = EldritchRuntime {
+                globals: EldritchRuntime::default().globals,
+                funcs: &DefaultEldritchRuntimeFunctions {},
+            };
+            eldritch_runtime.run("test.tome".to_string(), test_content, None)
         });
         let _test_val = test_res.join();
 
