@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::ops::{Deref, DerefMut};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
@@ -55,7 +56,7 @@ pub async fn get_new_tasks(
 
 pub async fn start_new_tasks(
     new_tasks: Vec<Task>,
-    all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
+    all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>>,
     debug_start_time: Instant,
 ) -> Result<()> {
     for task in new_tasks {
@@ -74,7 +75,7 @@ pub async fn start_new_tasks(
             (Instant::now() - debug_start_time).as_millis(),
             task.clone().id
         );
-        match all_exec_futures.insert(
+        match all_exec_futures.try_lock().unwrap().insert(
             task.clone().id,
             AsyncTask {
                 future_join_handle: task::spawn(exec_with_timeout),
@@ -175,12 +176,12 @@ fn queue_task_output(
 pub async fn submit_task_output(
     loop_start_time: Instant,
     mut tavern_client: C2Client<Channel>,
-    all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
+    all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>>,
     running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
 ) -> Result<()> {
     // let mut running_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
 
-    for (task_id, async_task) in all_exec_futures.into_iter() {
+    for (task_id, async_task) in all_exec_futures.clone().lock().unwrap().deref() {
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Task # {} is_finished? {}",
@@ -211,7 +212,12 @@ pub async fn submit_task_output(
     }
 
     // Iterate over all tasks and remove finished ones.
-    all_exec_futures.retain(|_index, exec_task| !exec_task.future_join_handle.is_finished());
+    all_exec_futures
+        .clone()
+        .lock()
+        .unwrap()
+        .deref_mut()
+        .retain(|_index, exec_task| !exec_task.future_join_handle.is_finished());
 
     Ok(())
 }
@@ -232,7 +238,9 @@ mod tests {
     use c2::pb::{Task, TaskOutput};
     use chrono::Utc;
     use std::collections::HashMap;
+    use std::ops::Deref;
     use std::sync::mpsc::channel;
+    use std::sync::{Arc, Mutex};
     use std::thread;
     use std::time::{Duration, Instant};
     use tokio::task;
@@ -246,16 +254,23 @@ mod tests {
     #[tokio::test]
     async fn imix_test_start_new_tasks() -> Result<()> {
         let debug_start_time = Instant::now();
-        let mut all_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
+        let all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>> =
+            Arc::new(Mutex::new(HashMap::new()));
+
         let new_tasks = vec![Task {
             id: 123,
             eldritch: "print('okay')".to_string(),
             parameters: HashMap::from([("iter".to_string(), "3".to_string())]),
         }];
-        start_new_tasks(new_tasks, &mut all_exec_futures, debug_start_time).await?;
-        assert_eq!(all_exec_futures.len(), 1);
-        for (task_id, _async_task) in all_exec_futures.into_iter() {
-            assert_eq!(task_id, 123);
+
+        start_new_tasks(new_tasks, all_exec_futures.clone(), debug_start_time).await?;
+        {
+            let tasks_queue_len = all_exec_futures.clone().lock().unwrap().len();
+            assert_eq!(tasks_queue_len, 1);
+        }
+
+        for (task_id, _async_task) in all_exec_futures.lock().unwrap().deref() {
+            assert_eq!(*task_id, 123);
         }
         Ok(())
     }
