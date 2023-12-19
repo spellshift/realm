@@ -11,7 +11,7 @@ export const CreateQuest = () => {
     return (
         <PageWrapper currNavItem={PageNavItem.createQuest}>
             <div className="border-b border-gray-200 pb-6 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-2xl font-semibold leading-6 text-gray-900">Create new quest</h3>
+                <h3 className="text-xl font-semibold leading-6 text-gray-900">Create new quest</h3>
             </div>
             {isLoading ? (
                 <EmptyState type={EmptyStateType.loading} label="loading beacon info..." />
