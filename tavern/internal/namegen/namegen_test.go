@@ -3,6 +3,7 @@ package namegen_test
 import (
 	"testing"
 
+	"github.com/kcarretto/realm/tavern/internal/ent"
 	"github.com/kcarretto/realm/tavern/internal/namegen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,4 +29,42 @@ func TestGetRandomName(t *testing.T) {
 		}
 	})
 
+}
+
+// TestBeaconnameinstring tests the Beaconnameinstring function
+func TestBeaconnameinstring(t *testing.T) {
+	testCases := []struct {
+		name     string
+		beacons  []*ent.Beacon
+		str      string
+		expected bool
+	}{
+		{
+			name: "String matches a beacon name",
+			beacons: []*ent.Beacon{
+				{Name: "Alpha"},
+				{Name: "Beta"},
+			},
+			str:      "Beta",
+			expected: true,
+		},
+		{
+			name: "String does not match any beacon name",
+			beacons: []*ent.Beacon{
+				{Name: "Alpha"},
+				{Name: "Beta"},
+			},
+			str:      "Gamma",
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := namegen.Beaconnameinstring(tc.beacons, tc.str)
+			if result != tc.expected {
+				t.Errorf("Beaconnameinstring(%v, %s) = %v; expected %v", tc.beacons, tc.str, result, tc.expected)
+			}
+		})
+	}
 }
