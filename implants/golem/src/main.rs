@@ -2,11 +2,11 @@ extern crate eldritch;
 extern crate golem;
 
 use clap::{Arg, Command};
+use eldritch::DefaultEldritchRuntimeFunctions;
+use eldritch::EldritchRuntime;
 use std::fs;
 use std::process;
 use std::thread;
-
-use eldritch::{eldritch_run, StdPrintHandler};
 
 mod inter;
 
@@ -18,7 +18,13 @@ async fn execute_tomes_in_parallel(
     for tome_data in tome_name_and_content {
         let tmp_row = (
             tome_data.0.clone().to_string(),
-            thread::spawn(|| eldritch_run(tome_data.0, tome_data.1, None, &StdPrintHandler {})),
+            thread::spawn(|| {
+                let eldritch_runtime = EldritchRuntime {
+                    globals: EldritchRuntime::default().globals,
+                    funcs: &DefaultEldritchRuntimeFunctions {},
+                };
+                eldritch_runtime.run(tome_data.0, tome_data.1, None)
+            }),
         );
         all_tome_futures.push(tmp_row)
     }

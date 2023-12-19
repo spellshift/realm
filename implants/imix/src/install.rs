@@ -1,11 +1,13 @@
 use anyhow::Result;
 use clap::{Arg, Command};
+use eldritch::DefaultEldritchRuntimeFunctions;
+use eldritch::EldritchRuntime;
 use std::collections::HashMap;
 use std::fs;
 use std::process;
 use std::thread;
 
-use eldritch::{eldritch_run, StdPrintHandler};
+use eldritch::StdPrintHandler;
 
 async fn execute_tomes_in_parallel(
     tome_name_and_content: Vec<(String, String)>,
@@ -27,12 +29,11 @@ async fn execute_tomes_in_parallel(
         let tmp_row = (
             tome_data.0.clone().to_string(),
             thread::spawn(move || {
-                eldritch_run(
-                    tome_data.0,
-                    tome_data.1,
-                    local_tome_parameters,
-                    &StdPrintHandler {},
-                )
+                let eldritch_runtime = EldritchRuntime {
+                    globals: EldritchRuntime::default().globals,
+                    funcs: &DefaultEldritchRuntimeFunctions {},
+                };
+                eldritch_runtime.run(tome_data.0, tome_data.1, local_tome_parameters)
             }),
         );
         all_tome_futures.push(tmp_row)

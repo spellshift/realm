@@ -1,18 +1,76 @@
 use anyhow::{Error, Result};
 use c2::pb::Task;
 use chrono::{DateTime, Utc};
-use eldritch::{eldritch_run, EldritchPrintHandler};
+use eldritch::EldritchRuntime;
+use eldritch::EldritchRuntimeFunctions;
+use eldritch::EldritchTasksHandler;
+use eldritch::PrintHandler;
+use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread;
 use tokio::task::JoinHandle;
 use tokio::time::Duration;
+
+use crate::TaskID;
 
 pub struct AsyncTask {
     pub future_join_handle: JoinHandle<Result<(), Error>>,
     pub start_time: DateTime<Utc>,
     pub grpc_task: Task,
     pub print_reciever: Receiver<String>,
+}
+
+pub struct ImixEldritchRuntimeFunctions {
+    pub sender: Sender<String>,
+    pub task_list: Arc<Mutex<HashMap<TaskID, AsyncTask>>>,
+}
+
+impl EldritchRuntimeFunctions for ImixEldritchRuntimeFunctions {}
+
+impl EldritchTasksHandler for ImixEldritchRuntimeFunctions {
+    fn get_tasks(self) -> Result<HashMap<i64, HashMap<String, String>>> {
+        let res = self
+            .task_list
+            .clone()
+            .lock()
+            .unwrap()
+            .deref()
+            .into_iter()
+            .map(|(id, task)| {
+                (
+                    *id,
+                    HashMap::from([
+                        ("start_time".to_string(), task.start_time.to_string()),
+                        ("tome_contents".to_string(), task.grpc_task.eldritch.clone()),
+                        (
+                            "tome_params".to_string(),
+                            format!("{:?}", task.grpc_task.parameters),
+                        ),
+                        ("tome_name".to_string(), "unset".to_string()),
+                    ]),
+                )
+            })
+            .collect::<HashMap<i64, HashMap<String, String>>>();
+        Ok(res)
+    }
+
+    fn kill_task(self, id: i64) {
+        todo!()
+    }
+}
+
+impl PrintHandler for ImixEldritchRuntimeFunctions {
+    fn println(&self, text: &str) -> anyhow::Result<()> {
+        let res = match self.sender.send(text.to_string()) {
+            Ok(local_res) => local_res,
+            Err(local_err) => return Err(anyhow::anyhow!(local_err.to_string())),
+        };
+        Ok(res)
+    }
 }
 
 async fn handle_exec_tome(
@@ -27,17 +85,19 @@ async fn handle_exec_tome(
     //     None => return Ok(("".to_string(), format!("No quest associated for task ID: {}", task.id))),
     // };
 
-    let print_handler = EldritchPrintHandler {
-        sender: print_channel_sender,
-    };
-
     // Execute a tome script
     let res = match thread::spawn(move || {
-        eldritch_run(
+        let eldritch_runtime = EldritchRuntime {
+            globals: EldritchRuntime::default().globals,
+            funcs: &ImixEldritchRuntimeFunctions {
+                sender: print_channel_sender,
+                task_list: todo!(),
+            },
+        };
+        eldritch_runtime.run(
             task.id.to_string(),
             task.eldritch.clone(),
             Some(task.parameters.clone()),
-            &print_handler,
         )
     })
     .join()
