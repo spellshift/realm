@@ -1,3 +1,6 @@
+use std::sync::mpsc::Sender;
+
+use eldritch::PrintHandler;
 use serde::{Deserialize, Serialize};
 
 pub mod exec;
@@ -52,3 +55,17 @@ pub struct Config {
 }
 
 pub type TaskID = i64;
+
+struct ImixPrintHandler {
+    pub sender: Sender<String>,
+}
+
+impl PrintHandler for ImixPrintHandler {
+    fn println(&self, text: &str) -> anyhow::Result<()> {
+        let res = match self.sender.send(text.to_string()) {
+            Ok(local_res) => local_res,
+            Err(local_err) => return Err(anyhow::anyhow!(local_err.to_string())),
+        };
+        Ok(res)
+    }
+}

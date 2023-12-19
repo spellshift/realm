@@ -214,20 +214,6 @@ pub trait EldritchTasksHandler {
     fn kill_task(id: i64);
 }
 
-pub struct ImixPrintHandler {
-    pub sender: Sender<String>,
-}
-
-impl PrintHandler for ImixPrintHandler {
-    fn println(&self, text: &str) -> anyhow::Result<()> {
-        let res = match self.sender.send(text.to_string()) {
-            Ok(local_res) => local_res,
-            Err(local_err) => return Err(anyhow::anyhow!(local_err.to_string())),
-        };
-        Ok(res)
-    }
-}
-
 pub struct StdPrintHandler {}
 
 impl PrintHandler for StdPrintHandler {
@@ -325,30 +311,30 @@ pub fn eldritch_run(
 
 #[cfg(test)]
 mod tests {
-    use std::{sync::mpsc::channel, thread, time::Duration};
+    use std::{borrow::Borrow, sync::mpsc::channel, thread, time::Duration};
 
     use super::*;
     use starlark::assert::Assert;
     use tempfile::NamedTempFile;
 
     // just checks dir...
-    //     #[test]
-    //     fn test_library_bindings() {
-    //         let globals = get_eldritch().unwrap();
-    //         let mut a = Assert::new();
-    //         a.globals(globals);
-    //         a.all_true(
-    //             r#"
-    // dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "list", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
-    // dir(process) == ["info", "kill", "list", "name", "netstat"]
-    // dir(sys) == ["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell"]
-    // dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]
-    // dir(assets) == ["copy","list","read","read_binary"]
-    // dir(crypto) == ["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]
-    // dir(time) == ["sleep"]
-    // "#,
-    //         );
-    //     }
+    #[test]
+    fn test_library_bindings() {
+        let globals = EldritchRuntime::default().globals;
+        let mut a = Assert::new();
+        a.globals(globals);
+        a.all_true(
+                r#"
+dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "list", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
+dir(process) == ["info", "kill", "list", "name", "netstat"]
+dir(sys) == ["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell"]
+dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]
+dir(assets) == ["copy","list","read","read_binary"]
+dir(crypto) == ["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]
+dir(time) == ["sleep"]
+"#,
+            );
+    }
 
     #[test]
     fn test_library_parameter_input_string() -> anyhow::Result<()> {
@@ -416,46 +402,71 @@ file.download("https://www.google.com/", "{path}")
 
         Ok(())
     }
-    //     #[tokio::test]
-    //     async fn test_library_custom_print_handler() -> anyhow::Result<()> {
-    //         // just using a temp file for its path
-    //         let test_content = format!(
-    //             r#"
-    // print("Hello")
-    // print("World")
-    // print("123")
-    // "#
-    //         );
-    //         let (sender, receiver) = channel::<String>();
+    #[tokio::test]
+    async fn test_library_custom_print_handler() -> anyhow::Result<()> {
+        // just using a temp file for its path
+        let test_content = format!(
+            r#"
+    print("Hello")
+    print("World")
+    print("123")
+    "#
+        );
+        let (sender, receiver) = channel::<String>();
 
-    //         let test_res = thread::spawn(|| {
-    //             eldritch_run(
-    //                 "test.tome".to_string(),
-    //                 test_content,
-    //                 None,
-    //                 &EldritchPrintHandler { sender },
-    //             )
-    //         });
-    //         let _test_val = test_res.join();
-    //         let expected_output = vec!["Hello", "World", "123"];
-    //         let mut index = 0;
-    //         loop {
-    //             let res = match receiver.recv_timeout(Duration::from_millis(500)) {
-    //                 Ok(local_res_string) => local_res_string,
-    //                 Err(local_err) => {
-    //                     match local_err.to_string().as_str() {
-    //                         "channel is empty and sending half is closed" => {
-    //                             break;
-    //                         }
-    //                         _ => eprint!("Error: {}", local_err),
-    //                     }
-    //                     break;
-    //                 }
-    //             };
-    //             assert_eq!(res, expected_output[index].to_string());
-    //             index = index + 1;
-    //         }
+        struct TestEldritchRuntimeFunctions {
+            pub sender: Sender<String>,
+        }
 
-    //         Ok(())
-    //     }
+        impl EldritchRuntimeFunctions for TestEldritchRuntimeFunctions {}
+
+        impl EldritchTasksHandler for TestEldritchRuntimeFunctions {
+            fn get_tasks() -> Vec<i64> {
+                DefaultEldritchRuntimeFunctions::get_tasks()
+            }
+            fn kill_task(id: i64) {
+                DefaultEldritchRuntimeFunctions::kill_task(id)
+            }
+        }
+
+        impl PrintHandler for TestEldritchRuntimeFunctions {
+            fn println(&self, text: &str) -> anyhow::Result<()> {
+                let res = match self.sender.send(text.to_string()) {
+                    Ok(local_res) => local_res,
+                    Err(local_err) => return Err(anyhow::anyhow!(local_err.to_string())),
+                };
+                Ok(res)
+            }
+        }
+
+        let test_res = thread::spawn(|| {
+            let eldritch_funcs = TestEldritchRuntimeFunctions { sender: sender };
+            let eldritch_runtime = EldritchRuntime {
+                globals: EldritchRuntime::default().globals,
+                funcs: &eldritch_funcs,
+            };
+            eldritch_runtime.run("test.tome".to_string(), test_content, None)
+        });
+        let _test_val = test_res.join();
+        let expected_output = vec!["Hello", "World", "123"];
+        let mut index = 0;
+        loop {
+            let res = match receiver.recv_timeout(Duration::from_millis(500)) {
+                Ok(local_res_string) => local_res_string,
+                Err(local_err) => {
+                    match local_err.to_string().as_str() {
+                        "channel is empty and sending half is closed" => {
+                            break;
+                        }
+                        _ => eprint!("Error: {}", local_err),
+                    }
+                    break;
+                }
+            };
+            assert_eq!(res, expected_output[index].to_string());
+            index = index + 1;
+        }
+
+        Ok(())
+    }
 }
