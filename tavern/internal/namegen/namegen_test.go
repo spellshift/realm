@@ -11,8 +11,12 @@ import (
 
 func TestGetRandomName(t *testing.T) {
 	t.Run("BasicName", func(t *testing.T) {
-		name := namegen.GetRandomName(1)
-		assert.NotEmpty(t, name)
+		name1 := namegen.GetRandomName(0)
+		assert.NotEmpty(t, name1)
+		name2 := namegen.GetRandomName(1)
+		assert.NotEmpty(t, name2)
+		name3 := namegen.GetComplexRandomName()
+		assert.NotEmpty(t, name3)
 	})
 
 	t.Run("NoDuplicates", func(t *testing.T) {
