@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
@@ -54,7 +56,7 @@ pub async fn get_new_tasks(
 
 pub async fn start_new_tasks(
     new_tasks: Vec<Task>,
-    all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
+    all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>>,
     debug_start_time: Instant,
 ) -> Result<()> {
     for task in new_tasks {
@@ -64,8 +66,12 @@ pub async fn start_new_tasks(
         eprintln!("Launching:\n{:?}", task.clone().eldritch);
 
         let (sender, receiver) = channel::<String>();
-        let exec_with_timeout =
-            handle_exec_timeout_and_response(task.clone(), sender.clone(), None);
+        let exec_with_timeout = handle_exec_timeout_and_response(
+            task.clone(),
+            sender.clone(),
+            all_exec_futures.clone(),
+            None,
+        );
 
         #[cfg(debug_assertions)]
         eprintln!(
@@ -74,7 +80,7 @@ pub async fn start_new_tasks(
             task.clone().id
         );
 
-        match all_exec_futures.insert(
+        match all_exec_futures.lock().unwrap().deref_mut().insert(
             task.clone().id,
             AsyncTask {
                 future_join_handle: task::spawn(exec_with_timeout),
@@ -175,12 +181,12 @@ fn queue_task_output(
 pub async fn submit_task_output(
     loop_start_time: Instant,
     mut tavern_client: C2Client<Channel>,
-    all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
+    all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>>,
     running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
 ) -> Result<()> {
     // let mut running_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
 
-    for (task_id, async_task) in all_exec_futures.into_iter() {
+    for (task_id, async_task) in all_exec_futures.lock().unwrap().deref().into_iter() {
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Task # {} is_finished? {}",
@@ -211,7 +217,11 @@ pub async fn submit_task_output(
     }
 
     // Iterate over all tasks and remove finished ones.
-    all_exec_futures.retain(|_index, exec_task| !exec_task.future_join_handle.is_finished());
+    all_exec_futures
+        .lock()
+        .unwrap()
+        .deref_mut()
+        .retain(|_index, exec_task| !exec_task.future_join_handle.is_finished());
 
     Ok(())
 }
@@ -229,16 +239,14 @@ async fn send_tavern_output(
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use c2::pb::{Task, TaskOutput};
-    use chrono::Utc;
+    use c2::pb::Task;
     use std::collections::HashMap;
+    use std::ops::Deref;
     use std::sync::mpsc::channel;
-    use std::thread;
+    use std::sync::{Arc, Mutex};
     use std::time::{Duration, Instant};
-    use tokio::task;
 
     use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
-    use crate::tasks::queue_task_output;
     use crate::TaskID;
 
     use super::start_new_tasks;
@@ -246,16 +254,17 @@ mod tests {
     #[tokio::test]
     async fn imix_test_start_new_tasks() -> Result<()> {
         let debug_start_time = Instant::now();
-        let mut all_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
+        let mut all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>> =
+            Arc::new(Mutex::new(HashMap::new()));
         let new_tasks = vec![Task {
             id: 123,
             eldritch: "print('okay')".to_string(),
             parameters: HashMap::from([("iter".to_string(), "3".to_string())]),
         }];
-        start_new_tasks(new_tasks, &mut all_exec_futures, debug_start_time).await?;
-        assert_eq!(all_exec_futures.len(), 1);
-        for (task_id, _async_task) in all_exec_futures.into_iter() {
-            assert_eq!(task_id, 123);
+        start_new_tasks(new_tasks, all_exec_futures.clone(), debug_start_time).await?;
+        assert_eq!(all_exec_futures.clone().lock().unwrap().deref().len(), 1);
+        for (task_id, _async_task) in all_exec_futures.clone().lock().unwrap().deref().into_iter() {
+            assert_eq!(*task_id, 123);
         }
         Ok(())
     }

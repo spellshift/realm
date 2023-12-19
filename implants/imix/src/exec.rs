@@ -76,6 +76,7 @@ impl PrintHandler for ImixEldritchRuntimeFunctions {
 async fn handle_exec_tome(
     task: Task,
     print_channel_sender: Sender<String>,
+    task_list: Arc<Mutex<HashMap<TaskID, AsyncTask>>>,
 ) -> Result<(String, String)> {
     // TODO: Download auxillary files from CDN
 
@@ -91,7 +92,7 @@ async fn handle_exec_tome(
             globals: EldritchRuntime::default().globals,
             funcs: &ImixEldritchRuntimeFunctions {
                 sender: print_channel_sender,
-                task_list: todo!(),
+                task_list: task_list,
             },
         };
         eldritch_runtime.run(
@@ -114,13 +115,14 @@ async fn handle_exec_tome(
 pub async fn handle_exec_timeout_and_response(
     task: Task,
     print_channel_sender: Sender<String>,
+    task_list: Arc<Mutex<HashMap<TaskID, AsyncTask>>>,
     timeout: Option<Duration>,
 ) -> Result<(), Error> {
     // Tasks will be forcebly stopped after 1 week.
     let timeout_duration = timeout.unwrap_or_else(|| Duration::from_secs(60 * 60 * 24 * 7));
 
     // Define a future for our execution task
-    let exec_future = handle_exec_tome(task.clone(), print_channel_sender.clone());
+    let exec_future = handle_exec_tome(task.clone(), print_channel_sender.clone(), task_list);
     // Execute that future with a timeout defined by the timeout argument.
     let tome_result = match tokio::time::timeout(timeout_duration, exec_future).await {
         Ok(res) => match res {
@@ -153,6 +155,7 @@ mod tests {
     use c2::pb::Task;
     use std::collections::HashMap;
     use std::sync::mpsc::channel;
+    use std::sync::{Arc, Mutex};
     use std::time::Duration;
 
     #[test]
@@ -173,7 +176,9 @@ print(sys.shell(input_params["cmd"])["stdout"])
 
         let (sender, receiver) = channel::<String>();
 
-        let exec_future = handle_exec_tome(test_tome_input, sender.clone());
+        let empty_task_list = Arc::new(Mutex::new(HashMap::new()));
+
+        let exec_future = handle_exec_tome(test_tome_input, sender.clone(), empty_task_list);
         let (eld_output, eld_error) = runtime.block_on(exec_future)?;
 
         let cmd_output = receiver.recv_timeout(Duration::from_millis(500))?;
@@ -201,7 +206,9 @@ aoeu
 
         let (sender, receiver) = channel::<String>();
 
-        let exec_future = handle_exec_tome(test_tome_input, sender.clone());
+        let empty_task_list = Arc::new(Mutex::new(HashMap::new()));
+
+        let exec_future = handle_exec_tome(test_tome_input, sender.clone(), empty_task_list);
         let (eld_output, eld_error) = runtime.block_on(exec_future)?;
 
         let mut index = 0;

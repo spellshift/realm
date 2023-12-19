@@ -8,6 +8,7 @@ use clap::{arg, Command};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ffi::OsString;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 pub mod exec;
@@ -144,7 +145,8 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
     // This hashmap tracks all tasks by their ID (key) and a tuple value: (future, channel_reciever)
     // AKA Work queue
-    let mut all_exec_futures: HashMap<TaskID, AsyncTask> = HashMap::new();
+    let mut all_exec_futures: Arc<Mutex<HashMap<TaskID, AsyncTask>>> =
+        Arc::new(Mutex::new(HashMap::new()));
     // This hashmap tracks all tasks output
     // AKA Results queue
     let mut all_task_res_map: HashMap<TaskID, Vec<TaskOutput>> = HashMap::new();
@@ -215,8 +217,8 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             new_tasks.len()
         );
 
-        match start_new_tasks(new_tasks, &mut all_exec_futures, loop_start_time).await {
-            Ok(is_ok) => {}
+        match start_new_tasks(new_tasks, all_exec_futures.clone(), loop_start_time).await {
+            Ok(_is_ok) => {}
             Err(local_err) => {
                 #[cfg(debug_assertions)]
                 eprintln!(
@@ -255,7 +257,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         match submit_task_output(
             loop_start_time,
             tavern_client,
-            &mut all_exec_futures,
+            all_exec_futures.clone(),
             &mut all_task_res_map,
         )
         .await
@@ -282,4 +284,3 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         }
     }
 }
-
