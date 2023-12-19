@@ -4,6 +4,7 @@ pub mod file;
 pub mod pivot;
 pub mod process;
 pub mod sys;
+pub mod tasks;
 pub mod time;
 
 use anyhow::Result;
@@ -24,6 +25,7 @@ use file::FileLibrary;
 use pivot::PivotLibrary;
 use process::ProcessLibrary;
 use sys::SysLibrary;
+use tasks::TasksLibrary;
 use time::TimeLibrary;
 
 macro_rules! insert_dict_kv {
@@ -67,38 +69,6 @@ macro_rules! insert_dict_kv {
 }
 pub(crate) use insert_dict_kv;
 
-pub fn get_eldritch() -> anyhow::Result<Globals> {
-    #[starlark_module]
-    fn eldritch(builder: &mut GlobalsBuilder) {
-        const file: FileLibrary = FileLibrary();
-        const process: ProcessLibrary = ProcessLibrary();
-        const sys: SysLibrary = SysLibrary();
-        const pivot: PivotLibrary = PivotLibrary();
-        const assets: AssetsLibrary = AssetsLibrary();
-        const crypto: CryptoLibrary = CryptoLibrary();
-        const time: TimeLibrary = TimeLibrary();
-    }
-
-    let globals = GlobalsBuilder::extended_by(&[
-        LibraryExtension::StructType,
-        LibraryExtension::RecordType,
-        LibraryExtension::EnumType,
-        LibraryExtension::Map,
-        LibraryExtension::Filter,
-        LibraryExtension::Partial,
-        LibraryExtension::ExperimentalRegex,
-        LibraryExtension::Debug,
-        LibraryExtension::Print,
-        LibraryExtension::Breakpoint,
-        LibraryExtension::Json,
-        LibraryExtension::Abs,
-        LibraryExtension::Typing,
-    ])
-    .with(eldritch)
-    .build();
-    return Ok(globals);
-}
-
 pub struct EldritchRuntime<'a, T: EldritchRuntimeFunctions> {
     pub globals: Globals,
     pub funcs: &'a T,
@@ -140,6 +110,7 @@ impl EldritchRuntime<'_, DefaultEldritchRuntimeFunctions> {
                     const assets: AssetsLibrary = AssetsLibrary();
                     const crypto: CryptoLibrary = CryptoLibrary();
                     const time: TimeLibrary = TimeLibrary();
+                    const tasks: TasksLibrary = TasksLibrary();
                 }
                 let globals = GlobalsBuilder::extended_by(&[
                     LibraryExtension::StructType,
@@ -277,6 +248,7 @@ dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "s
 dir(assets) == ["copy","list","read","read_binary"]
 dir(crypto) == ["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]
 dir(time) == ["now", "sleep"]
+dir(tasks) == ["kill", "list"]
 "#,
         );
     }
