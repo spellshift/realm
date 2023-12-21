@@ -92,7 +92,9 @@ su ${USERNAME} -c "$(cat << EOF
         rustup update 2>&1
     fi
     echo "Installing common Rust dependencies..."
-    rustup component add rls rust-analysis rust-src rustfmt clippy 2>&1
+    rustup component add rls rust-analysis rust-src clippy 2>&1
+    rustup toolchain install nightly-2023-09-04
+    rustup component add rustfmt --toolchain nightly-2023-09-04
 EOF
 )"
 
