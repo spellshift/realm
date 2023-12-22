@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.774c2093.css",
-    "main.js": "/static/js/main.c7dfcbce.js",
+    "main.css": "/static/css/main.902ea72e.css",
+    "main.js": "/static/js/main.1fbec86d.js",
     "react-syntax-highlighter/refractor-core-import.js": "/static/js/react-syntax-highlighter/refractor-core-import.d0cd1e85.chunk.js",
     "react-syntax-highlighter_languages_refractor_abap.js": "/static/js/react-syntax-highlighter_languages_refractor_abap.a2bf84e3.chunk.js",
     "react-syntax-highlighter_languages_refractor_actionscript.js": "/static/js/react-syntax-highlighter_languages_refractor_actionscript.fff5a604.chunk.js",
@@ -157,8 +157,8 @@
     "static/js/787.4af0fb89.chunk.js": "/static/js/787.4af0fb89.chunk.js",
     "static/media/eldrich.png": "/static/media/eldrich.a80c74e8249d2461e174.png",
     "index.html": "/index.html",
-    "main.774c2093.css.map": "/static/css/main.774c2093.css.map",
-    "main.c7dfcbce.js.map": "/static/js/main.c7dfcbce.js.map",
+    "main.902ea72e.css.map": "/static/css/main.902ea72e.css.map",
+    "main.1fbec86d.js.map": "/static/js/main.1fbec86d.js.map",
     "refractor-core-import.d0cd1e85.chunk.js.map": "/static/js/react-syntax-highlighter/refractor-core-import.d0cd1e85.chunk.js.map",
     "react-syntax-highlighter_languages_refractor_abap.a2bf84e3.chunk.js.map": "/static/js/react-syntax-highlighter_languages_refractor_abap.a2bf84e3.chunk.js.map",
     "react-syntax-highlighter_languages_refractor_actionscript.fff5a604.chunk.js.map": "/static/js/react-syntax-highlighter_languages_refractor_actionscript.fff5a604.chunk.js.map",
@@ -314,7 +314,7 @@
     "787.4af0fb89.chunk.js.map": "/static/js/787.4af0fb89.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.774c2093.css",
-    "static/js/main.c7dfcbce.js"
+    "static/css/main.902ea72e.css",
+    "static/js/main.1fbec86d.js"
   ]
 }
