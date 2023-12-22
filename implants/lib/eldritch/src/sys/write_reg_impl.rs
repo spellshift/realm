@@ -2,7 +2,7 @@ use anyhow::Result;
 use hex;
 
 
-pub fn write_reg(reghive: String, regpath: String, regname: String, regtype:String, regvalue: String ) -> Result<String>  {
+pub fn write_reg(reghive: String, regpath: String, regname: String, regtype:String, regvalue: String ) -> Result<bool>  {
     
     #[cfg(not(target_os = "windows"))]
         return Err(anyhow::anyhow!("This OS isn't supported by the write_reg function. Only windows systems are supported"));
@@ -28,12 +28,7 @@ pub fn write_reg(reghive: String, regpath: String, regname: String, regtype:Stri
         };
         
         let hive = RegKey::predef(ihive);
-        let (nkey, ndisp) = hive.create_subkey(regpath)?;
-
-        let resp : String = match ndisp {
-            REG_CREATED_NEW_KEY => "A new key has been created".to_string(),
-            REG_OPENED_EXISTING_KEY => "An existing key has been modified".to_string(),
-        };
+        let (nkey, _ndisp) = hive.create_subkey(regpath)?;
 
         match regtype.as_ref() {
             "REG_NONE" => {
@@ -44,17 +39,17 @@ pub fn write_reg(reghive: String, regpath: String, regname: String, regtype:Stri
             "REG_EXPAND_SZ" => nkey.set_value(regname, &regvalue)?,
             "REG_BINARY" => {
                 // Assume value is a hexadecimal string (e.g., "deadbeef")
-                let parsed_value: Vec<u8> = hex::decode(regvalue).expect("Invalid REG_BINARY value");
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_BINARY, bytes: parsed_value};
                 nkey.set_raw_value(regname, &data)?;
             },
             "REG_DWORD" => {
-                let parsed_value: u32 = u32::from_str_radix(&regvalue, 10).expect("Invalid DWORD value");
+                let parsed_value: u32 = u32::from_str_radix(&regvalue, 10)?;
                 let data = RegValue{ vtype: REG_DWORD, bytes: parsed_value.to_le_bytes().to_vec()};
                 nkey.set_raw_value(regname, &data)?;
             },
             "REG_DWORD_BIG_ENDIAN" => {
-                let parsed_value: u32 = u32::from_str_radix(&regvalue, 10).expect("Invalid DWORD value");
+                let parsed_value: u32 = u32::from_str_radix(&regvalue, 10)?;
                 let data = RegValue{ vtype: REG_DWORD, bytes: parsed_value.to_be_bytes().to_vec()};
                 nkey.set_raw_value(regname, &data)?;
             },
@@ -69,31 +64,31 @@ pub fn write_reg(reghive: String, regpath: String, regname: String, regtype:Stri
             },
             "REG_RESOURCE_LIST" => {
                 // Assume value is a hexadecimal string (e.g., "deadbeef")
-                let parsed_value: Vec<u8> = hex::decode(regvalue).expect("Invalid REG_RESOURCE_LIST value");
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_RESOURCE_LIST, bytes: parsed_value};
                 nkey.set_raw_value(regname, &data)?;
             },
             "REG_FULL_RESOURCE_DESCRIPTOR" => {
                 // Assume value is a hexadecimal string (e.g., "deadbeef")
-                let parsed_value: Vec<u8> = hex::decode(regvalue).expect("Invalid REG_FULL_RESOURCE_DESCRIPTOR value");
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_FULL_RESOURCE_DESCRIPTOR, bytes: parsed_value};
                 nkey.set_raw_value(regname, &data)?;
             },
             "REG_RESOURCE_REQUIREMENTS_LIST" => {
                 // Assume value is a hexadecimal string (e.g., "deadbeef")
-                let parsed_value: Vec<u8> = hex::decode(regvalue).expect("Invalid REG_RESOURCE_REQUIREMENTS_LIST value");
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_RESOURCE_REQUIREMENTS_LIST, bytes: parsed_value};
                 nkey.set_raw_value(regname, &data)?;
             },
             "REG_QWORD" => {
-                let parsed_value: u64 = u64::from_str_radix(&regvalue, 10).expect("Invalid QWORD value");
+                let parsed_value: u64 = u64::from_str_radix(&regvalue, 10)?;
                 let data = RegValue{ vtype: REG_QWORD, bytes: parsed_value.to_le_bytes().to_vec()};
                 nkey.set_raw_value(regname, &data)?;
             },
             _ => return Err(anyhow::anyhow!("RegType can only be one of the following values - REG_NONE, REG_SZ, REG_EXPAND_SZ, REG_BINARY, REG_DWORD, REG_DWORD_BIG_ENDIAN, REG_LINK, REG_MULTI_SZ, REG_RESOURCE_LIST, REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR, REG_QWORD. ")),
         };
 
-        Ok(resp.to_string())
+        Ok(true)
     }
 }
 
@@ -117,12 +112,18 @@ mod tests {
             let mut val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "BAR2");
 
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+
             //Write and then read REG_NONE into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_NONE".to_string(), "BAR2".to_string());
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
             subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
             val2 = subky.get_raw_value("FOO2")?;
-            assert_eq!(val2.to_string(), "BAR2");            
+            assert_eq!(val2.to_string(), "BAR2");   
+            
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
 
             //Write and then read REG_EXPAND_SZ into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_EXPAND_SZ".to_string(), "BAR2".to_string());
@@ -131,12 +132,18 @@ mod tests {
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "BAR2");
 
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+
             //Write and then read REG_BINARY into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_BINARY".to_string(), "deadbeef".to_string());
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
             subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
+
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
 
             //Write and then read REG_DWORD into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_DWORD".to_string(), "12345678".to_string());
@@ -145,12 +152,18 @@ mod tests {
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "12345678");
 
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+
             //Write and then read REG_DWORD_BIG_ENDIAN into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_DWORD_BIG_ENDIAN".to_string(), "12345678".to_string());
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
             subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "1315027968");
+
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
 
             //Write and then read REG_LINK into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_LINK".to_string(), "BAR2".to_string());
@@ -159,12 +172,18 @@ mod tests {
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "BAR2");
 
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+
             //Write and then read REG_MULTI_SZ into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_MULTI_SZ".to_string(), "dead,beef".to_string());
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
             subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "dead\nbeef");
+
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
 
             //Write and then read REG_RESOURCE_LIST into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_RESOURCE_LIST".to_string(), "deadbeef".to_string());
@@ -173,12 +192,18 @@ mod tests {
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
 
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+
             //Write and then read REG_FULL_RESOURCE_DESCRIPTOR into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_FULL_RESOURCE_DESCRIPTOR".to_string(), "deadbeef".to_string());
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
             subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
+
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
 
             //Write and then read REG_RESOURCE_REQUIREMENTS_LIST into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_RESOURCE_REQUIREMENTS_LIST".to_string(), "deadbeef".to_string());
@@ -187,13 +212,15 @@ mod tests {
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
 
+            //delete temp regkey
+            hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+
             //Write and then read REG_QWORD into temp regkey...
             _ares = write_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string(),"FOO2".to_string(), "REG_QWORD".to_string(), "1234567812345678".to_string());
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
             subky = hkcu.open_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "1234567812345678");
-
 
             //delete temp regkey
             hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;

@@ -127,7 +127,7 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         get_reg_impl::get_reg(starlark_heap, reghiv, regpth)
     }
-    fn write_reg(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: String) ->  anyhow::Result<String> {
+    fn write_reg(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: String) ->  anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         write_reg_impl::write_reg(reghiv, regpth, regname, regtype, regvalue)
     }
