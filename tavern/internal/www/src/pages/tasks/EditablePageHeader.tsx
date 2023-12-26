@@ -39,4 +39,4 @@ export const EditablePageHeader = () => {
             </div>
         </div>
     );
-}
+};

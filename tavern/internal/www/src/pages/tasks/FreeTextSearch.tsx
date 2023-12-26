@@ -10,13 +10,13 @@ type Props = {
 const FreeTextSearch = (props: Props) => {
     const { questId } = useParams();
     const placeholderText = questId ? "Search by output" : "Search by tome name, quest name, or output";
-    const {setSearch} = props;
+    const { setSearch } = props;
 
     const debouncedSearch = useRef(
         debounce(async (criteria) => {
             setSearch(criteria);
         }, 300)
-      ).current;
+    ).current;
 
     async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         debouncedSearch(e.target.value);
@@ -24,17 +24,17 @@ const FreeTextSearch = (props: Props) => {
 
     useEffect(() => {
         return () => {
-          debouncedSearch.cancel();
+            debouncedSearch.cancel();
         };
-      }, [debouncedSearch]);
+    }, [debouncedSearch]);
 
     return (
         <div className="flex-1 gap-1">
             <InputGroup className=" border-gray-300">
                 <InputLeftElement pointerEvents='none'>
-                <SearchIcon color='gray.300' />
+                    <SearchIcon color='gray.300' />
                 </InputLeftElement>
-                <Input type='text' placeholder={placeholderText} onChange={handleChange}/>
+                <Input type='text' placeholder={placeholderText} onChange={handleChange} />
             </InputGroup>
         </div>
     );

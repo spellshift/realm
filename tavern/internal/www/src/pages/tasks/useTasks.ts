@@ -1,6 +1,6 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
-import { GET_TASK_QUERY } from "../..//utils/queries";
+import { GET_TASK_QUERY } from "../../utils/queries";
 
 export enum TASK_PAGE_TYPE{   
     questIdQuery= "ID_QUERY",
@@ -137,4 +137,4 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
         setHosts,
         setPlatforms
     }
-}
+};
