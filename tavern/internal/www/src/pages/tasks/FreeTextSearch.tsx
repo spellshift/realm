@@ -1,12 +1,15 @@
 import { SearchIcon } from "@chakra-ui/icons";
-import { FormLabel, Heading, Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
+import { Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
 import { debounce } from "lodash"
+import { useParams } from "react-router-dom";
 
 type Props = {
     setSearch: (args: string) => void;
 }
 const FreeTextSearch = (props: Props) => {
+    const { questId } = useParams();
+    const placeholderText = questId ? "Search by output" : "Search by tome name, quest name, or output";
     const {setSearch} = props;
 
     const debouncedSearch = useRef(
@@ -31,7 +34,7 @@ const FreeTextSearch = (props: Props) => {
                 <InputLeftElement pointerEvents='none'>
                 <SearchIcon color='gray.300' />
                 </InputLeftElement>
-                <Input type='text' placeholder='Search by tome name, quest name, or output' onChange={handleChange}/>
+                <Input type='text' placeholder={placeholderText} onChange={handleChange}/>
             </InputGroup>
         </div>
     );

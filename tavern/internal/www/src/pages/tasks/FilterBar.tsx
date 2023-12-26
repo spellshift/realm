@@ -1,6 +1,4 @@
 import { useQuery } from "@apollo/client";
-import { Heading } from "@chakra-ui/react";
-import { setgroups } from "process";
 import React from "react"
 import Select from 'react-select';
 
@@ -36,7 +34,7 @@ const FilterBar = (props: Props) => {
         <div>
             {(!loading && !error && data) && (
             <div className="grid grid-cols-2 gap-2 p-4 bg-white rounded-lg shadow-lg mt-2">
-                <FreeTextSearch setSearch={setSearch} />
+                <FreeTextSearch setSearch={setSearch}/>
                 <Select
                     isMulti
                     name="beacons"
@@ -45,7 +43,7 @@ const FilterBar = (props: Props) => {
                     classNamePrefix="select"
                     placeholder="Filter by beacons"
                     onChange={(newValue) => {
-                        if(newValue?.length == 0){
+                        if(newValue?.length === 0){
                             setBeacons([]);
                         }
                         else{
@@ -61,7 +59,7 @@ const FilterBar = (props: Props) => {
                     classNamePrefix="select"
                     placeholder="Filter by services"
                     onChange={(newValue) => {
-                        if(newValue?.length == 0){
+                        if(newValue?.length === 0){
                             setServices([]);
                         }
                         else{
@@ -77,7 +75,7 @@ const FilterBar = (props: Props) => {
                     classNamePrefix="select"
                     placeholder="Filter by group"
                     onChange={(newValue) => {
-                        if(newValue?.length == 0){
+                        if(newValue?.length === 0){
                             setGroups([]);
                         }
                         else{
@@ -93,7 +91,7 @@ const FilterBar = (props: Props) => {
                     classNamePrefix="select"
                     placeholder="Filter by hosts"
                     onChange={(newValue) => {
-                        if(newValue?.length == 0){
+                        if(newValue?.length === 0){
                             setHosts([]);
                         }
                         else{
@@ -109,7 +107,7 @@ const FilterBar = (props: Props) => {
                     classNamePrefix="select"
                     placeholder="Filter by platform"
                     onChange={(newValue) => {
-                        if(newValue?.length == 0){
+                        if(newValue?.length === 0){
                             setPlatforms([]);
                         }
                         else{
