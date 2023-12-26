@@ -92,4 +92,3 @@ export type OutputTableProps = {
     output: string,
     taskDetails?: Task   
 }
-

@@ -27,7 +27,7 @@ export const QuestTable = (props: Props) => {
     const currentDate = new Date();
 
     const onToggle = (row:any) => {
-        navigate(`/quests/${row?.original?.id}`)
+        navigate(`/results/${row?.original?.id}`)
     }
 
     const columns: ColumnDef<any>[] = [
