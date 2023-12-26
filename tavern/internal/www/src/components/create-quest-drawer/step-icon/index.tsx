@@ -1,1 +1,0 @@
-export {StepIcon} from "./StepIcon";

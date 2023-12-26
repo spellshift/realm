@@ -13,7 +13,7 @@ export const QuestList = () => {
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Quest list</h3>
+                <h3 className="text-xl font-semibold leading-6 text-gray-900">Quest history</h3>
             </div>
             <div className="flex flex-col justify-center items-center">
                 {loading ?

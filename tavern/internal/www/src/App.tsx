@@ -8,19 +8,18 @@ import { useQuery, gql } from '@apollo/client';
 
 import { QuestList } from "./pages/quest-list";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { Home } from "./pages/home";
 import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { QuestDetails } from "./pages/quest-details";
-import { OutputResults } from "./pages/output-results";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
+import Tasks from "./pages/tasks/Tasks";
 
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <CreateQuest/>,
+    element: <Tasks/>,
   },
   {
     path: "/quests",
@@ -35,8 +34,8 @@ const router = createBrowserRouter([
     element: <CreateQuest />,
   },
   {
-    path: "/output-results",
-    element: <OutputResults />,
+    path: "/results",
+    element: <Tasks />,
   },
 ]);
 

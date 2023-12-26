@@ -6,7 +6,8 @@ import {
   XMarkIcon,
   ClipboardDocumentCheckIcon,
   CommandLineIcon,
-  BookOpenIcon
+  BookOpenIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 
 import logo from '../../assets/eldrich.png';
@@ -16,8 +17,8 @@ import { AccessGate } from '../access-gate';
 
 const navigation = [
   { name: PageNavItem.createQuest, href:'/createQuest', icon:CommandLineIcon, internal: true },
-  { name: PageNavItem.results, href: '/output-results', icon: ClipboardDocumentCheckIcon, internal: true},
-  { name: PageNavItem.quests, href: '/quests', icon: BookOpenIcon, internal: true},
+  { name: PageNavItem.results, href: '/results', icon: ClipboardDocumentCheckIcon, internal: true},
+  { name: PageNavItem.quests, href: '/quests', icon: ClockIcon, internal: true},
   // { name: 'Beacons', href: '/beacons', icon: BugAntIcon, current: false },
   // { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
   { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
