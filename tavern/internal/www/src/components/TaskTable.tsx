@@ -1,14 +1,12 @@
-import { Badge, Tooltip, Icon } from "@chakra-ui/react";
-import { BookOpenIcon } from "@heroicons/react/20/solid";
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import { Badge, Tooltip } from "@chakra-ui/react";
 
 import { ColumnDef } from "@tanstack/react-table";
-import React, { useCallback } from "react";
+import React from "react";
 
 import Table from "./tavern-base-ui/Table";
-import { TaskStatus } from "../utils/enums";
 import { formatDistance } from "date-fns";
 import TaskStatusBadge from "./TaskStatusBadge";
+import BeaconTile from "./BeaconTile";
 
 type Props = {
     tasks: Array<any>,
@@ -26,6 +24,7 @@ const TaskTable = (props: Props) => {
             header: 'Quest details',
             accessorFn: row => row.quest,
             footer: props => props.column.id,
+            enableSorting: false,
             cell: (cellData: any) => {
                 const questData = cellData.getValue();
                 return (
@@ -44,20 +43,11 @@ const TaskTable = (props: Props) => {
             accessorFn: row => row.beacon,
             footer: props => props.column.id,
             minSize: window.innerWidth/8,
+            enableSorting: false,
             cell: (cellData: any) => {
                 const beaconData = cellData.getValue();
                 return (
-                    <div className="flex flex-col gap-1">
-                        <div>{beaconData.name}</div>
-                        <div className="flex flex-row flex-wrap gap-1">
-                            {beaconData?.host?.tags.map((tag: any)=> {
-                                return <Badge>{tag.name}</Badge>
-                            })}
-                            <Badge>{beaconData?.host?.name}</Badge>
-                            <Badge>{beaconData?.host?.primaryIP}</Badge>
-                            <Badge>{beaconData?.host?.platform}</Badge>
-                        </div>
-                    </div>
+                    <BeaconTile beaconData={beaconData} />
                 );
             }
         },
@@ -66,6 +56,7 @@ const TaskTable = (props: Props) => {
             header: 'Status',
             accessorFn: row => row,
             maxSize: 100,
+            enableSorting: false,
             cell: (cellData: any) => {
                 const taskData = cellData.getValue();
                 const statusTime = new Date(taskData?.lastModifiedAt)
@@ -76,7 +67,7 @@ const TaskTable = (props: Props) => {
                             <div className="flex flex-row gap-2 flex-wrap">
                                 <TaskStatusBadge task={taskData} />
                                 {hasOutput && <div>
-                                    <Badge fontSize='0.8em' size="large" colorScheme="gray">
+                                    <Badge fontSize='0.8em' size="large" colorScheme="purple">
                                         <div className="p-1">
                                             Has Output
                                         </div>
