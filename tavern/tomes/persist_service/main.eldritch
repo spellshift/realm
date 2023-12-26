@@ -216,7 +216,7 @@ def persist_service(service_name, service_desc, executable_name, executable_url)
         executable_path = "/var/root/"+executable_name
         launch_daemon(service_name, executable_path, executable_url)
     else:
-        print("OS not supported")
+        print("OS not supported\n")
 
 persist_service(
     input_params['service_name'],
@@ -224,3 +224,5 @@ persist_service(
     input_params['executable_name'],
     input_params['executable_url']
 )
+print("\n")
+print("\n")
