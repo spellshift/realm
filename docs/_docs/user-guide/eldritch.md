@@ -823,6 +823,14 @@ sys.shell("ls /nofile")
 
 ### time.sleep
 
+`time.format_to_epoch(input: str, format: str) -> int`
+
+The <b>time.format_to_epoch</b> method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
+
+`time.format_to_readable(input: int, format: str) -> str`
+
+The <b>time.format_to_readable</b> method returns the timestamp in the provided format of the provided UTC timestamp.
+
 `time.now() -> int`
 
 The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
