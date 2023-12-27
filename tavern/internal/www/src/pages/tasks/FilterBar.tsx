@@ -1,6 +1,7 @@
 import { useQuery } from "@apollo/client";
 import React from "react"
 import Select from 'react-select';
+import { SupportedPlatforms } from "../../utils/enums";
 
 import { GET_SEARCH_FILTERS } from "../../utils/queries";
 import FreeTextSearch from "./FreeTextSearch";
@@ -22,11 +23,11 @@ const FilterBar = (props: Props) => {
         }
     }
     const platformEnum = [
-        { value: 'Windows', label: 'Windows' },
-        { value: 'Linux', label: 'Linux' },
-        { value: 'MacOS', label: 'MacOS' },
-        { value: 'BSD', label: 'BSD' },
-        { value: 'Unknown', label: 'Unknown' }
+        { value: SupportedPlatforms.Windows, label: SupportedPlatforms.Windows },
+        { value: SupportedPlatforms.Linux, label: SupportedPlatforms.Linux },
+        { value: SupportedPlatforms.MacOS, label: SupportedPlatforms.MacOS },
+        { value: SupportedPlatforms.BSD, label: SupportedPlatforms.BSD},
+        { value: SupportedPlatforms.Unknown, label: SupportedPlatforms.Unknown }
     ];
     const { data, loading, error } = useQuery(GET_SEARCH_FILTERS, PARAMS);
 

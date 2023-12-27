@@ -32,7 +32,7 @@ export const SelectBeacons = (props: Props) => {
             }
         }
         formik.setFieldValue('beacons', beaconToSubmit);
-        formik.handleSubmit();
+        setCurrStep(1);
     }
 
     return (
@@ -53,14 +53,10 @@ export const SelectBeacons = (props: Props) => {
                  </button>
                  <button
                     className="btn-primary"
-                    onClick={(event) => {
-                        event.preventDefault();
-                        handleClickContinue(selectedBeacons);
-                    }}
+                    onClick={() =>  handleClickContinue(selectedBeacons)}
                     disabled={!hasBeaconSelected}
-                    type="submit"
                 >
-                    Submit
+                    Continue
                 </button>
              </div>
         </div>
