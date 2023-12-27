@@ -40,13 +40,13 @@ const Tasks = () => {
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                 <TaskPageHeader />
             </div>
+            <FilterBar setSearch={setSearch} setBeacons={setBeacons} setGroups={setGroups} setServices={setServices} setHosts={setHosts} setPlatforms={setPlatforms} />
             {loading ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading quest tasks..." />
             ) : error ? (
                 <EmptyState type={EmptyStateType.error} label="Error loading tasks..." />
             ) : (
                 <div>
-                    <FilterBar setSearch={setSearch} setBeacons={setBeacons} setGroups={setGroups} setServices={setServices} setHosts={setHosts} setPlatforms={setPlatforms} />
                     {data?.tasks?.length > 0 ? (
                         <div className="py-4 bg-white rounded-lg shadow-lg mt-2">
                             <TaskTable tasks={tableData} onToggle={handleClick} />
