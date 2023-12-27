@@ -1,4 +1,4 @@
-import { useQuery } from "@apollo/client";
+import { NetworkStatus, useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
 import { GET_TASK_QUERY } from "../..//utils/queries";
 
@@ -50,7 +50,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
     },[defaultQuery, id]);
 
     // get tasks
-    const { loading, error, data, refetch } = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery("")});
+    const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(""),  notifyOnNetworkStatusChange: true});
 
     const updateTaskList = useCallback(() => {
         let fq = constructDefaultQuery(search) as any;
