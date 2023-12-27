@@ -45,12 +45,6 @@ export const SelectBeacons = (props: Props) => {
                 <BeaconView beacons={data?.beacons || []} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
             )}
              <div className="flex flex-row gap-2">
-                <button
-                    className="inline-flex items-center rounded-md bg-gray-50 py-3 px-4 text-sm font-semibold text-purple-600 shadow-sm hover:bg-purple-100"
-                    onClick={()=> setCurrStep(0)}
-                >
-                     Back
-                 </button>
                  <button
                     className="btn-primary"
                     onClick={() =>  handleClickContinue(selectedBeacons)}
