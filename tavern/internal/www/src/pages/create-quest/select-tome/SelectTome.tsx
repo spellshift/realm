@@ -25,7 +25,6 @@ const GET_TOMES = gql`
 
 export const SelectTome = (props: Props) => {
     const { loading, error, data } = useQuery(GET_TOMES);
-    const step = 0;
     const { setCurrStep, formik } = props;
 
     const handleSelectTome = (tome: Tome) => {
@@ -37,12 +36,6 @@ export const SelectTome = (props: Props) => {
     const handleNameQuest = (name: string) => {
         formik.setFieldValue('name', name);
     }
-
-    // PARAM-DEFS FORMAT:     JSON STRING List<TomeParams>:   '[ {"name": "blah", ... } ]'
-    //      * This is what is defined on a tome
-    //
-    // PARAMS SUBMITTED FOR CREATE QUEST FORMAT:  JSON STRING Dict<string, string>: '{"blah": "some value"}'
-    //      * This is what is submitted for creating a quest
 
     const hasAllParamsSet = formik?.values?.params.filter((param: TomeParams) => {
         return param?.value && param?.value !== "";
@@ -80,11 +73,21 @@ export const SelectTome = (props: Props) => {
 
             <div className="flex flex-row gap-2">
                 <button
-                    className="btn-primary"
-                    onClick={() => setCurrStep(step + 1)}
-                    disabled={isContinueDisabled}
+                    className="inline-flex items-center rounded-md bg-gray-50 py-3 px-4 text-sm font-semibold text-purple-600 shadow-sm hover:bg-purple-100"
+                    onClick={()=> setCurrStep(0)}
                 >
-                    Continue
+                     Back
+                 </button>
+                <button
+                    className="btn-primary"
+                    onClick={(event) => {
+                        event.preventDefault();
+                        formik.handleSubmit();
+                    }}
+                    disabled={isContinueDisabled}
+                    type="submit"
+                >
+                    Submit
                 </button>
             </div>
         </div>

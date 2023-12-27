@@ -1,4 +1,4 @@
-import { NetworkStatus, useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
 import { GET_TASK_QUERY } from "../../utils/queries";
 
@@ -16,41 +16,41 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
     const [hosts, setHosts] = useState<Array<string>>([]);
     const [platforms, setPlatforms] = useState<Array<string>>([]);
 
-    const constructDefaultQuery = useCallback((searchText: string) => {
+    const constructDefaultQuery = useCallback((searchText?: string) => {
+      const query = {
+        "where": {
+          "and": [] as Array<any>
+        }
+      };
         switch(defaultQuery){
             case TASK_PAGE_TYPE.questIdQuery:
-                return {
-                    "where": {
-                        "and": [
-                            {"hasQuestWith": {"id": id}},
-                            {"outputContains": searchText},
-                          ]
-                    }
-                };
+                const include = [{"hasQuestWith": {"id": id}}] as Array<any>;
+
+                if(searchText){include.push({"outputContains": searchText})};
+
+                query.where.and = include;
+                break;
             case TASK_PAGE_TYPE.questDetailsQuery:
             default:
-                return {
-                    "where": {
-                        "and": [
-                            {
+                const text = searchText || "";  
+                query.where.and = [{
                                 "or": [
-                                  {"outputContains": searchText},
+                                  {"outputContains": text},
                                   {"hasQuestWith": {
-                                      "nameContains": searchText
+                                      "nameContains": text
                                     }
                                   },
                                   {"hasQuestWith": 
-                                    {"hasTomeWith": {"nameContains": searchText}}}
+                                    {"hasTomeWith": {"nameContains": text}}}
                                 ]
-                            },
-                          ]
-                    }
-                };
+                }];
+                break;
         }
+        return query;
     },[defaultQuery, id]);
 
     // get tasks
-    const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(""),  notifyOnNetworkStatusChange: true});
+    const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
 
     const updateTaskList = useCallback(() => {
         let fq = constructDefaultQuery(search) as any;
