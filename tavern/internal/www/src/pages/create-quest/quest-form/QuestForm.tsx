@@ -10,8 +10,8 @@ export const QuestForm = () => {
     const {submitQuest, loading, error, reset} = useSubmitQuest();
 
     const steps = [
-        { name: 'Select a tome', description: 'Step 1', href: '#', step: 0 },
-        { name: 'Select agent beacons', description: 'Step 2', href: '#', step: 1 },
+        { name: 'Select agent beacons', description: 'Step 1', href: '#', step: 0 },
+        { name: 'Select a tome', description: 'Step 2', href: '#', step: 1 },
     ];
 
     const formik = useFormik({
@@ -27,9 +27,9 @@ export const QuestForm = () => {
     function getStepView(step: number){
         switch(step) {
             case 0:
-                return <SelectTome setCurrStep={setCurrStep} formik={formik} />
-            case 1:
                 return <SelectBeacons setCurrStep={setCurrStep} formik={formik} />
+            case 1:
+                return <SelectTome setCurrStep={setCurrStep} formik={formik} />
             default:
                 return <div>An error has occured</div>;
         }
