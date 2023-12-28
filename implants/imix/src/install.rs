@@ -70,7 +70,7 @@ pub fn install_main(custom_config: Option<&str>) -> anyhow::Result<()> {
             None => "",
         };
         println!("{}", embedded_file_path);
-        if filename == "main.eld" {
+        if filename == "main.eldritch" {
             let tome_path = embedded_file_path.to_string().clone();
             let tome_contents_extraction_result =
                 match eldritch::assets::Asset::get(embedded_file_path.as_ref()) {
@@ -118,7 +118,10 @@ mod tests {
     use super::*;
     #[tokio::test]
     async fn imix_test_execute_tomes_in_parallel() -> anyhow::Result<()> {
-        let tome_files_and_content = [("test_hello.eld".to_string(), "'hello world'".to_string())];
+        let tome_files_and_content = [(
+            "test_hello.eldritch".to_string(),
+            "'hello world'".to_string(),
+        )];
         let (error_code, result) =
             execute_tomes_in_parallel(tome_files_and_content.to_vec(), None).await?;
         assert_eq!(error_code, 0);
