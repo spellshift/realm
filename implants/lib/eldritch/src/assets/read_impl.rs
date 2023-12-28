@@ -18,8 +18,8 @@ mod tests {
 
     #[test]
     fn test_assets_read() -> anyhow::Result<()> {
-        let res = read("print/main.eld".to_string())?;
-        assert_eq!(res, r#"print("This script just prints")"#);
+        let res = read("print/main.eldritch".to_string())?;
+        assert_eq!(res.trim(), r#"print("This script just prints")"#);
         Ok(())
     }
 }

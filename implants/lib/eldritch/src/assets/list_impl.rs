@@ -22,8 +22,8 @@ mod tests {
             [
                 "exec_script/hello_world.bat",
                 "exec_script/hello_world.sh",
-                "exec_script/main.eld",
-                "print/main.eld"
+                "exec_script/main.eldritch",
+                "print/main.eldritch"
             ]
         );
 
