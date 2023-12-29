@@ -12,16 +12,25 @@ state: |
   INSERT INTO `tasks` (id, task_beacon, quest_tasks, created_at, last_modified_at)
     VALUES (8000,1337,7000,"2023-03-04 14:51:13","2023-03-04 14:51:13");
   INSERT INTO `tasks` (id, task_beacon, quest_tasks, created_at, last_modified_at)
-    VALUES (8001,1337,7000,"2023-03-04 14:51:13","2023-03-04 14:51:13");
+    VALUES (8001,1337,7000,"2023-03-04 14:51:13","2023-03-04 14:51:14");
 requestor:
   session_token: secretToken
 query: |
   query Tasks {
-    tasks {
+    tasks(
+      first: 1,
+      orderBy: {
+        direction: DESC,
+        field: LAST_MODIFIED_AT
+      }
+    ) {
       edges {
         node {
           id
         }
+      }
+      pageInfo {
+        hasNextPage
       }
     }
   }
@@ -29,6 +38,6 @@ expected:
   tasks:
     edges:
       - node:
-          id: "8000"
-      - node:
           id: "8001"
+    pageInfo:
+      hasNextPage: true

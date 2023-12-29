@@ -27,7 +27,7 @@ type QueryResolver interface {
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
 	Files(ctx context.Context, where *ent.FileWhereInput) ([]*ent.File, error)
 	Quests(ctx context.Context, where *ent.QuestWhereInput) ([]*ent.Quest, error)
-	Tasks(ctx context.Context, where *ent.TaskWhereInput) ([]*ent.Task, error)
+	Tasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) (*ent.TaskConnection, error)
 	Beacons(ctx context.Context, where *ent.BeaconWhereInput) ([]*ent.Beacon, error)
 	Hosts(ctx context.Context, where *ent.HostWhereInput) ([]*ent.Host, error)
 	Tags(ctx context.Context, where *ent.TagWhereInput) ([]*ent.Tag, error)
@@ -163,15 +163,60 @@ func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs m
 func (ec *executionContext) field_Query_tasks_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ent.TaskWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg0, err = ec.unmarshalOTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx, tmp)
+	var arg0 *entgql.Cursor[int]
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg0
+	args["after"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *entgql.Cursor[int]
+	if tmp, ok := rawArgs["before"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	var arg4 []*ent.TaskOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg4, err = ec.unmarshalOTaskOrder2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskOrderᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg4
+	var arg5 *ent.TaskWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg5, err = ec.unmarshalOTaskWhereInput2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg5
 	return args, nil
 }
 
@@ -1706,7 +1751,7 @@ func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Tasks(rctx, fc.Args["where"].(*ent.TaskWhereInput))
+			return ec.resolvers.Query().Tasks(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
@@ -1726,10 +1771,10 @@ func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.Coll
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*ent.Task); ok {
+		if data, ok := tmp.(*ent.TaskConnection); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.Task`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.TaskConnection`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1741,9 +1786,9 @@ func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Task)
+	res := resTmp.(*ent.TaskConnection)
 	fc.Result = res
-	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx, field.Selections, res)
+	return ec.marshalNTaskConnection2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_tasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1754,28 +1799,14 @@ func (ec *executionContext) fieldContext_Query_tasks(ctx context.Context, field 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Task_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Task_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_Task_lastModifiedAt(ctx, field)
-			case "claimedAt":
-				return ec.fieldContext_Task_claimedAt(ctx, field)
-			case "execStartedAt":
-				return ec.fieldContext_Task_execStartedAt(ctx, field)
-			case "execFinishedAt":
-				return ec.fieldContext_Task_execFinishedAt(ctx, field)
-			case "output":
-				return ec.fieldContext_Task_output(ctx, field)
-			case "error":
-				return ec.fieldContext_Task_error(ctx, field)
-			case "quest":
-				return ec.fieldContext_Task_quest(ctx, field)
-			case "beacon":
-				return ec.fieldContext_Task_beacon(ctx, field)
+			case "edges":
+				return ec.fieldContext_TaskConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_TaskConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_TaskConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type TaskConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -3547,6 +3578,258 @@ func (ec *executionContext) fieldContext_Task_beacon(ctx context.Context, field 
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TaskConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.TaskConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TaskConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.TaskEdge)
+	fc.Result = res
+	return ec.marshalOTaskEdge2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TaskConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TaskConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_TaskEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_TaskEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TaskEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TaskConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.TaskConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TaskConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(entgql.PageInfo[int])
+	fc.Result = res
+	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TaskConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TaskConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TaskConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.TaskConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TaskConnection_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TaskConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TaskConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TaskEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.TaskEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TaskEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Task)
+	fc.Result = res
+	return ec.marshalOTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TaskEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TaskEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Task_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Task_lastModifiedAt(ctx, field)
+			case "claimedAt":
+				return ec.fieldContext_Task_claimedAt(ctx, field)
+			case "execStartedAt":
+				return ec.fieldContext_Task_execStartedAt(ctx, field)
+			case "execFinishedAt":
+				return ec.fieldContext_Task_execFinishedAt(ctx, field)
+			case "output":
+				return ec.fieldContext_Task_output(ctx, field)
+			case "error":
+				return ec.fieldContext_Task_error(ctx, field)
+			case "quest":
+				return ec.fieldContext_Task_quest(ctx, field)
+			case "beacon":
+				return ec.fieldContext_Task_beacon(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TaskEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.TaskEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TaskEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(entgql.Cursor[int])
+	fc.Result = res
+	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TaskEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TaskEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Cursor does not have child fields")
 		},
 	}
 	return fc, nil
@@ -10796,6 +11079,93 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
+var taskConnectionImplementors = []string{"TaskConnection"}
+
+func (ec *executionContext) _TaskConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.TaskConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, taskConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TaskConnection")
+		case "edges":
+			out.Values[i] = ec._TaskConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._TaskConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._TaskConnection_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var taskEdgeImplementors = []string{"TaskEdge"}
+
+func (ec *executionContext) _TaskEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.TaskEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, taskEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TaskEdge")
+		case "node":
+			out.Values[i] = ec._TaskEdge_node(ctx, field, obj)
+		case "cursor":
+			out.Values[i] = ec._TaskEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var tomeImplementors = []string{"Tome", "Node"}
 
 func (ec *executionContext) _Tome(ctx context.Context, sel ast.SelectionSet, obj *ent.Tome) graphql.Marshaler {
@@ -11052,6 +11422,16 @@ func (ec *executionContext) unmarshalNCreateTomeInput2githubᚗcomᚋkcarretto�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v interface{}) (entgql.Cursor[int], error) {
+	var res entgql.Cursor[int]
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, sel ast.SelectionSet, v entgql.Cursor[int]) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNFile2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.File) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -11262,6 +11642,10 @@ func (ec *executionContext) unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentg
 
 func (ec *executionContext) marshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx context.Context, sel ast.SelectionSet, v entgql.OrderDirection) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v entgql.PageInfo[int]) graphql.Marshaler {
+	return ec._PageInfo(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNQuest2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuestᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Quest) graphql.Marshaler {
@@ -11480,6 +11864,25 @@ func (ec *executionContext) marshalNTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋt
 		return graphql.Null
 	}
 	return ec._Task(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTaskConnection2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskConnection(ctx context.Context, sel ast.SelectionSet, v ent.TaskConnection) graphql.Marshaler {
+	return ec._TaskConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTaskConnection2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskConnection(ctx context.Context, sel ast.SelectionSet, v *ent.TaskConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TaskConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTaskOrder2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskOrder(ctx context.Context, v interface{}) (*ent.TaskOrder, error) {
+	res, err := ec.unmarshalInputTaskOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNTaskOrderField2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskOrderField(ctx context.Context, v interface{}) (*ent.TaskOrderField, error) {
@@ -12248,6 +12651,74 @@ func (ec *executionContext) marshalOTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋt
 		return graphql.Null
 	}
 	return ec._Task(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTaskEdge2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.TaskEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTaskEdge2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOTaskEdge2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskEdge(ctx context.Context, sel ast.SelectionSet, v *ent.TaskEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TaskEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTaskOrder2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskOrderᚄ(ctx context.Context, v interface{}) ([]*ent.TaskOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.TaskOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNTaskOrder2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOTaskWhereInput2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.TaskWhereInput, error) {

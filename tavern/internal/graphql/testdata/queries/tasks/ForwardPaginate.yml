@@ -17,11 +17,14 @@ requestor:
   session_token: secretToken
 query: |
   query Tasks {
-    tasks {
+    tasks(first: 1) {
       edges {
         node {
           id
         }
+      }
+      pageInfo {
+        hasNextPage
       }
     }
   }
@@ -30,5 +33,5 @@ expected:
     edges:
       - node:
           id: "8000"
-      - node:
-          id: "8001"
+    pageInfo:
+      hasNextPage: true
