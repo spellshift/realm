@@ -12,12 +12,13 @@ def port_scan(target_cidrs, ports, protocol, timeout):
     scan_res = pivot.port_scan(target_cidrs, ports, protocol, timeout)
     for port_res in sorted(scan_res, key=sort_by_ip_then_port):
         print(port_res)
+        print("\n")
 
 def str_to_str_list(list_str):
     list_str = list_str.removeprefix('[')
     list_str = list_str.removesuffix(']')
     return list_str.split(",")
-    
+
 def str_to_int_list(list_str):
     list_str = list_str.removeprefix('[')
     list_str = list_str.removesuffix(']')
@@ -33,3 +34,5 @@ port_scan(
     input_params['protocol'],
     int(input_params['timeout'])
 )
+print("\n")
+print("\n")

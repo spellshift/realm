@@ -15,6 +15,9 @@
 .max-width{
     width: 100%;
 }
+.basic-multi-select .select__control {
+  height: 100%;
+}
 
 @layer components {
     .btn-primary {

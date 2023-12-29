@@ -9,8 +9,15 @@ export enum TaskStatus {
     queued = "QUEUED",
 }
 export enum PageNavItem {
-    quests='Quest list',
+    quests='Quest history',
     documentation='Documentation',
     results='Quest outputs',
     createQuest= 'Create new quest',
+}
+export enum SupportedPlatforms {
+    Windows="Windows",
+    Linux='Linux',
+    MacOS='MacOS',
+    BSD='BSD',
+    Unknown='Unknown'
 }
