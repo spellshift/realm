@@ -3,8 +3,8 @@ state: |
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
   INSERT INTO `hosts` (id, name, identifier)
     VALUES (1010,"db1","EXISTING-HOST");
-  INSERT INTO `beacons` (id, name, identifier, beacon_host)
-    VALUES (1337,"delightful-lich","ABCDEFG-123456",1010);
+  INSERT INTO `beacons` (id, name, identifier, beacon_host, interval)
+    VALUES (1337,"delightful-lich","ABCDEFG-123456",1010, 120);
 requestor:
   session_token: secretToken
 query: |
@@ -14,6 +14,7 @@ query: |
       host {
         id
       }
+      interval
     }
   }
 expected:
@@ -21,3 +22,4 @@ expected:
     - id: "1337"
       host:
         id: "1010"
+      interval: 120

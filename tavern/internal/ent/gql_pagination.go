@@ -325,6 +325,20 @@ var (
 			}
 		},
 	}
+	// BeaconOrderFieldInterval orders Beacon by interval.
+	BeaconOrderFieldInterval = &BeaconOrderField{
+		Value: func(b *Beacon) (ent.Value, error) {
+			return b.Interval, nil
+		},
+		column: beacon.FieldInterval,
+		toTerm: beacon.ByInterval,
+		toCursor: func(b *Beacon) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.Interval,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -333,6 +347,8 @@ func (f BeaconOrderField) String() string {
 	switch f.column {
 	case BeaconOrderFieldLastSeenAt.column:
 		str = "LAST_SEEN_AT"
+	case BeaconOrderFieldInterval.column:
+		str = "INTERVAL"
 	}
 	return str
 }
@@ -351,6 +367,8 @@ func (f *BeaconOrderField) UnmarshalGQL(v interface{}) error {
 	switch str {
 	case "LAST_SEEN_AT":
 		*f = *BeaconOrderFieldLastSeenAt
+	case "INTERVAL":
+		*f = *BeaconOrderFieldInterval
 	default:
 		return fmt.Errorf("%s is not a valid BeaconOrderField", str)
 	}

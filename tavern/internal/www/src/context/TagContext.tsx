@@ -21,19 +21,22 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
                 kind   
             },
             beacons {
-            id
-            name
-            principal
-            host{
+                id
                 name
-                primaryIP
-                tags {
-                    id
-                    kind
+                principal
+                lastSeenAt
+                interval
+                host{
                     name
-                }  
+                    primaryIP
+                    platform
+                    tags {
+                        id
+                        kind
+                        name
+                    }  
+                }
             }
-        }
     }
     `;
     const PARAMS = {

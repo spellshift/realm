@@ -21,9 +21,16 @@ use serde::{Serialize, Serializer};
 #[folder = "../../../bin/embedded_files_test"]
 pub struct Asset;
 
+#[cfg(not(feature = "imix"))]
 #[cfg(not(debug_assertions))]
 #[derive(RustEmbed)]
 #[folder = "../../../implants/golem/embed_files_golem_prod"]
+pub struct Asset;
+
+#[cfg(feature = "imix")]
+#[cfg(not(debug_assertions))]
+#[derive(RustEmbed)]
+#[folder = "../../../implants/imix/install_scripts"]
 pub struct Asset;
 
 #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]

@@ -49,6 +49,7 @@ type ComplexityRoot struct {
 		Host            func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Identifier      func(childComplexity int) int
+		Interval        func(childComplexity int) int
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Principal       func(childComplexity int) int
@@ -217,6 +218,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Beacon.Identifier(childComplexity), true
+
+	case "Beacon.interval":
+		if e.complexity.Beacon.Interval == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Interval(childComplexity), true
 
 	case "Beacon.lastSeenAt":
 		if e.complexity.Beacon.LastSeenAt == nil {
@@ -1043,6 +1051,8 @@ type Beacon implements Node {
   agentIdentifier: String
   """Timestamp of when a task was last claimed or updated for the beacon."""
   lastSeenAt: Time
+  """Duration until next callback, in seconds."""
+  interval: Uint64
   """Host this beacon is running on."""
   host: Host!
   """Tasks that have been assigned to the beacon."""
@@ -1058,6 +1068,7 @@ input BeaconOrder {
 """Properties by which Beacon connections can be ordered."""
 enum BeaconOrderField {
   LAST_SEEN_AT
+  INTERVAL
 }
 """
 BeaconWhereInput is used for filtering Beacon objects.
@@ -1147,6 +1158,17 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """interval field predicates"""
+  interval: Uint64
+  intervalNEQ: Uint64
+  intervalIn: [Uint64!]
+  intervalNotIn: [Uint64!]
+  intervalGT: Uint64
+  intervalGTE: Uint64
+  intervalLT: Uint64
+  intervalLTE: Uint64
+  intervalIsNil: Boolean
+  intervalNotNil: Boolean
   """host edge predicates"""
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
@@ -2030,7 +2052,9 @@ input UserWhereInput {
   isAdminNEQ: Boolean
 }
 `, BuiltIn: false},
-	{Name: "../schema/scalars.graphql", Input: `scalar Time`, BuiltIn: false},
+	{Name: "../schema/scalars.graphql", Input: `scalar Time
+scalar Uint64
+`, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
   quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)

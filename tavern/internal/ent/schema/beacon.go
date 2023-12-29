@@ -58,6 +58,14 @@ func (Beacon) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Timestamp of when a task was last claimed or updated for the beacon."),
+		field.Uint64("interval").
+			Optional().
+			Annotations(
+				entgql.Type("Uint64"),
+				entgql.OrderField("INTERVAL"),
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Duration until next callback, in seconds."),
 	}
 }
 
