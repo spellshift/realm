@@ -11,9 +11,9 @@ import (
 
 func TestGetRandomName(t *testing.T) {
 	t.Run("BasicName", func(t *testing.T) {
-		name1 := namegen.GetRandomName(0)
+		name1 := namegen.GetRandomName(namegen.Simple)
 		assert.NotEmpty(t, name1)
-		name2 := namegen.GetRandomName(1)
+		name2 := namegen.GetRandomName(namegen.Moderate)
 		assert.NotEmpty(t, name2)
 		name3 := namegen.GetComplexRandomName()
 		assert.NotEmpty(t, name3)
@@ -24,7 +24,7 @@ func TestGetRandomName(t *testing.T) {
 		names := make(map[string]bool, 1000000)
 		count := 0
 		for i := 0; i < 1000000; i++ {
-			name := namegen.GetRandomName(2)
+			name := namegen.GetRandomName(namegen.Moderate)
 			exists, ok := names[name]
 			require.False(t, ok, "Name %s already exists - after %d attempts", name, count)
 			assert.False(t, exists)
@@ -65,7 +65,7 @@ func TestBeaconnameinstring(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := namegen.Beaconnameinstring(tc.beacons, tc.str)
+			result := namegen.IsCollision(tc.beacons, tc.str)
 			if result != tc.expected {
 				t.Errorf("Beaconnameinstring(%v, %s) = %v; expected %v", tc.beacons, tc.str, result, tc.expected)
 			}

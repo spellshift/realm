@@ -901,10 +901,10 @@ func GetRandomName(complexity Complexity) string {
 	var adj1, adj2, noun string
 	var num int64
 
-	if time.Now().Month() == time.October && time.Now().Day() == 31 {
-		adj1 = adjectives[newRandInt(int64(len(adjectives_halloween)))]
-		adj2 = adjectives[newRandInt(int64(len(adjectives_halloween)))]
-		noun = nouns[newRandInt(int64(len(noun_halloween)))]
+	if time.Now().Month() == time.October {
+		adj1 = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
+		adj2 = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
+		noun = noun_halloween[newRandInt(int64(len(noun_halloween)))]
 		num = newRandInt(10000000)
 	} else {
 		adj1 = adjectives[newRandInt(int64(len(adjectives)))]
@@ -921,7 +921,8 @@ func GetRandomName(complexity Complexity) string {
 	case Complex:
 		return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
 	default:
-		return "hacker1337"
+		//same as complex case
+		return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
 	}
 }
 
@@ -938,7 +939,7 @@ func GetComplexRandomName() string {
 	return GetRandomName(Complex)
 }
 
-func Beaconnameinstring(beacons []*ent.Beacon, str string) bool {
+func IsCollision(beacons []*ent.Beacon, str string) bool {
 	for _, v := range beacons {
 		if v.Name == str {
 			return true
