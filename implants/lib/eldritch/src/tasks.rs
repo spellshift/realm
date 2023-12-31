@@ -1,12 +1,11 @@
 mod kill_impl;
 mod list_impl;
 
-use std::sync::Arc;
-
 use allocative::Allocative;
 use anyhow::Result;
 use derive_more::Display;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
+use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
 use starlark::values::{
@@ -49,7 +48,6 @@ impl<'v> UnpackValue<'v> for TasksLibrary {
     }
 }
 
-// This is where all of the "file.X" impl methods are bound
 #[starlark_module]
 #[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
@@ -58,8 +56,8 @@ fn methods(builder: &mut MethodsBuilder) {
         kill_impl::kill(task_id)?;
         Ok(NoneType{})
     }
-    fn list<'v>(this: TasksLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Vec<Dict<'v>>> { //Should we use the JSON starlark type instead of String? Do I implement that here or somewhere else?
+    fn list(this: TasksLibrary, starlark_eval: &mut Evaluator) -> anyhow::Result<Vec<i32>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        list_impl::list(starlark_heap)
+        list_impl::list(starlark_eval)
     }
 }
