@@ -24,7 +24,7 @@ func TestGetRandomName(t *testing.T) {
 		names := make(map[string]bool, 1000000)
 		count := 0
 		for i := 0; i < 1000000; i++ {
-			name := namegen.GetRandomName(namegen.Moderate)
+			name := namegen.GetRandomName(namegen.Complex)
 			exists, ok := names[name]
 			require.False(t, ok, "Name %s already exists - after %d attempts", name, count)
 			assert.False(t, exists)
