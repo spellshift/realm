@@ -26,7 +26,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
     }
 
     const constructDefaultQuery = useCallback((searchText?: string, afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
-      const defaultRowLimit = 2;
+      const defaultRowLimit = 8;
       const query = {
         "where": {
           "and": [] as Array<any>
