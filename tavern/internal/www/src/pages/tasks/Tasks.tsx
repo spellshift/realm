@@ -4,6 +4,8 @@ import { PageWrapper } from "../../components/page-wrapper";
 import { TaskOutput } from "../../components/task-output";
 import TaskTable from "../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
+import TablePagination from "../../components/tavern-base-ui/TablePagination";
+import { TableRowLimit } from "../../utils/enums";
 import FilterBar from "./FilterBar";
 import { TaskPageHeader } from "./TaskPageHeader";
 import { TASK_PAGE_TYPE, useTasks } from "./useTasks";
@@ -16,43 +18,37 @@ const Tasks = () => {
         loading,
         error,
         setSearch,
-        setGroups,
-        setBeacons,
-        setServices,
-        setHosts,
-        setPlatforms
+        setFiltersSelected,
+        updateTaskList,
+        page,
+        setPage
     } = useTasks(pageType, questId);
 
     const [isOpen, setOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<any | null>(null);
 
     const handleClick =(e: any) => {
-        const selectedTaskData = e?.original;
+        const selectedTaskData = e?.original?.node;
         setSelectedTask(selectedTaskData);
         setOpen((state)=> !state);
     }
-
-    // TODO: REMOVE THIS LIMIT
-    const tableData = data?.tasks.slice(0,100);
 
     return (
         <PageWrapper>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                 <TaskPageHeader />
             </div>
-            <FilterBar setSearch={setSearch} setBeacons={setBeacons} setGroups={setGroups} setServices={setServices} setHosts={setHosts} setPlatforms={setPlatforms} />
+            <FilterBar setSearch={setSearch} setFiltersSelected={setFiltersSelected} />
             {loading ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading quest tasks..." />
             ) : error ? (
                 <EmptyState type={EmptyStateType.error} label="Error loading tasks..." />
             ) : (
                 <div>
-                    {data?.tasks?.length > 0 ? (
-                        <div className="py-4 bg-white rounded-lg shadow-lg mt-2">
-                            <TaskTable tasks={tableData} onToggle={handleClick} />
-                            <div className="px-4">
-                                * Table only shows top 100 results matching query
-                            </div>
+                    {data?.tasks?.edges.length > 0 ? (
+                        <div className="py-4 bg-white rounded-lg shadow-lg mt-2 flex flex-col gap-1">
+                            <TaskTable tasks={data?.tasks?.edges} onToggle={handleClick} />
+                            <TablePagination totalCount={data?.tasks?.totalCount} pageInfo={data?.tasks?.pageInfo} refetchTable={updateTaskList} page={page} setPage={setPage} rowLimit={TableRowLimit.TaskRowLimit} />
                         </div>
                     ): (
                         <EmptyState label="No data found" details="Try creating a new quest or adjusting filters." type={EmptyStateType.noData}>

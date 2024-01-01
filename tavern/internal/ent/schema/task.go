@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -52,6 +53,14 @@ func (Task) Edges() []ent.Edge {
 		edge.To("beacon", Beacon.Type).
 			Required().
 			Unique(),
+	}
+}
+
+// Annotations to configure code generation
+func (Task) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 	}
 }
 

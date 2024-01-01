@@ -21,3 +21,6 @@ export enum SupportedPlatforms {
     BSD='BSD',
     Unknown='Unknown'
 }
+export enum TableRowLimit {
+    TaskRowLimit=8
+}

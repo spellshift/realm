@@ -22,7 +22,7 @@ const TaskTable = (props: Props) => {
         {
             id: "name",
             header: 'Quest details',
-            accessorFn: row => row.quest,
+            accessorFn: row => row?.node?.quest,
             footer: props => props.column.id,
             enableSorting: false,
             cell: (cellData: any) => {
@@ -40,7 +40,7 @@ const TaskTable = (props: Props) => {
         {
             id: "beacon",
             header: 'Beacon',
-            accessorFn: row => row.beacon,
+            accessorFn: row => row?.node?.beacon,
             footer: props => props.column.id,
             minSize: window.innerWidth/8,
             enableSorting: false,
@@ -54,7 +54,7 @@ const TaskTable = (props: Props) => {
         {
             id: "status",
             header: 'Status',
-            accessorFn: row => row,
+            accessorFn: row => row?.node,
             maxSize: 100,
             enableSorting: false,
             cell: (cellData: any) => {

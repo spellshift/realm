@@ -761,24 +761,30 @@ func newTaskPaginateArgs(rv map[string]any) *taskPaginateArgs {
 	}
 	if v, ok := rv[orderByField]; ok {
 		switch v := v.(type) {
-		case map[string]any:
-			var (
-				err1, err2 error
-				order      = &TaskOrder{Field: &TaskOrderField{}, Direction: entgql.OrderDirectionAsc}
-			)
-			if d, ok := v[directionField]; ok {
-				err1 = order.Direction.UnmarshalGQL(d)
+		case []*TaskOrder:
+			args.opts = append(args.opts, WithTaskOrder(v))
+		case []any:
+			var orders []*TaskOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &TaskOrder{Field: &TaskOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
 			}
-			if f, ok := v[fieldField]; ok {
-				err2 = order.Field.UnmarshalGQL(f)
-			}
-			if err1 == nil && err2 == nil {
-				args.opts = append(args.opts, WithTaskOrder(order))
-			}
-		case *TaskOrder:
-			if v != nil {
-				args.opts = append(args.opts, WithTaskOrder(v))
-			}
+			args.opts = append(args.opts, WithTaskOrder(orders))
 		}
 	}
 	if v, ok := rv[whereField].(*TaskWhereInput); ok {
