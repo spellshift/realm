@@ -45,8 +45,8 @@ export const GET_QUEST_QUERY = gql`
 `;
 
 export const GET_TASK_QUERY = gql`
-    query GetTasks($where: TaskWhereInput, $first: Int, $after: Cursor, $before:Cursor, $orderBy: [TaskOrder!]) {
-            tasks(where: $where, first: $first, after: $after, before:$before, orderBy: $orderBy){
+    query GetTasks($where: TaskWhereInput, $first: Int, $last:Int, $after: Cursor, $before:Cursor, $orderBy: [TaskOrder!]) {
+            tasks(where: $where, first: $first, last: $last, after: $after, before:$before, orderBy: $orderBy){
                 pageInfo{
                     hasNextPage,
                     hasPreviousPage,
