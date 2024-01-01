@@ -5,6 +5,7 @@ import { TaskOutput } from "../../components/task-output";
 import TaskTable from "../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
+import { TableRowLimit } from "../../utils/enums";
 import FilterBar from "./FilterBar";
 import { TaskPageHeader } from "./TaskPageHeader";
 import { TASK_PAGE_TYPE, useTasks } from "./useTasks";
@@ -47,7 +48,7 @@ const Tasks = () => {
                     {data?.tasks?.edges.length > 0 ? (
                         <div className="py-4 bg-white rounded-lg shadow-lg mt-2 flex flex-col gap-1">
                             <TaskTable tasks={data?.tasks?.edges} onToggle={handleClick} />
-                            <TablePagination rowCount={data?.tasks?.edges.length} totalCount={data?.tasks?.totalCount} pageInfo={data?.tasks?.pageInfo} refetchTable={updateTaskList} page={page} setPage={setPage} />
+                            <TablePagination totalCount={data?.tasks?.totalCount} pageInfo={data?.tasks?.pageInfo} refetchTable={updateTaskList} page={page} setPage={setPage} rowLimit={TableRowLimit.TaskRowLimit} />
                         </div>
                     ): (
                         <EmptyState label="No data found" details="Try creating a new quest or adjusting filters." type={EmptyStateType.noData}>

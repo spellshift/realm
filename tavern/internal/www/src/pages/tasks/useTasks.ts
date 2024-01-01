@@ -1,5 +1,6 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
+import { TableRowLimit } from "../../utils/enums";
 import { GET_TASK_QUERY } from "../../utils/queries";
 import { getFilterNameByTypes } from "../../utils/utils";
 
@@ -26,7 +27,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
     }
 
     const constructDefaultQuery = useCallback((searchText?: string, afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
-      const defaultRowLimit = 8;
+      const defaultRowLimit = TableRowLimit.TaskRowLimit;
       const query = {
         "where": {
           "and": [] as Array<any>
@@ -141,7 +142,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
         const defaultQuery = constructDefaultQuery(search, afterCursor, beforeCursor);
         const queryWithFilter =  constructFilterBasedQuery(filtersSelected , defaultQuery) as any;
         refetch(queryWithFilter);
-    },[search, filtersSelected, constructDefaultQuery, refetch]);
+    },[search, filtersSelected, constructDefaultQuery, constructFilterBasedQuery, refetch]);
 
 
     useEffect(()=> {

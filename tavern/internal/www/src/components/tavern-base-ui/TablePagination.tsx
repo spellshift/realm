@@ -6,14 +6,14 @@ type PageInfo = {
 }
 type Props = {
     totalCount: number;
-    rowCount: number;
     pageInfo: PageInfo;
     refetchTable: (endCursor: string | undefined, startCursor: string | undefined) => void;
     page: number;
     setPage: any;
+    rowLimit: number;
 }
 export default function TablePagination(props: Props) {
-    const {totalCount, rowCount, pageInfo, refetchTable, page, setPage} = props;
+    const {totalCount, pageInfo, refetchTable, page, setPage, rowLimit} = props;
 
     function handlePreviousClick(){
         if(refetchTable && pageInfo.hasPreviousPage){
@@ -27,14 +27,8 @@ export default function TablePagination(props: Props) {
             refetchTable( pageInfo.endCursor, undefined);
         }
     }
-    const getStartCount = () => {
-        if(page === 1){return 1;}
-        return rowCount * (page -1);
-    }
-    const getEndCount = () => {
-        const endCount = rowCount * page;
-        if(endCount > totalCount){return totalCount;}
-        return endCount;
+    const getPageCount = () => {
+      return Math.ceil(totalCount / rowLimit);
     }
 
     return (
@@ -43,8 +37,8 @@ export default function TablePagination(props: Props) {
         aria-label="Pagination"
       >
         <div className="hidden sm:block">
-          <p className="text-sm text-gray-700">
-            Showing <span className="font-medium">{getStartCount()}</span> to <span className="font-medium">{getEndCount()}</span> of{' '} <span className="font-medium">{totalCount}</span> results
+          <p className="text-sm text-gray-800">
+            Page <span className="font-semibold">{page}</span> of <span className="font-semibold">{getPageCount()}</span> {`(${totalCount} results)`}
           </p>
         </div>
         <div className="flex flex-1 justify-between sm:justify-end">
