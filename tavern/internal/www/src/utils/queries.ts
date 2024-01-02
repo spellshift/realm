@@ -79,6 +79,8 @@ export const GET_TASK_QUERY = gql`
                         beacon {
                             id
                             name
+                            lastSeenAt
+                            interval
                                 host{
                                 id
                                 name
