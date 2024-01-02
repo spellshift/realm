@@ -40,14 +40,12 @@ export function getFilterNameByTypes(typeFilters: Array<any>){
 };
 
 export function getOnlineBeacons(beacons: Array<BeaconType>) : Array<BeaconType>{
-    const minIntervalBuffer = 60;
     const currentDate = new Date();
-    return beacons.filter((beacon: BeaconType)=> add(new Date(beacon.lastSeenAt),{seconds: beacon.interval + minIntervalBuffer}) >= currentDate);
+    return beacons.filter((beacon: BeaconType)=> add(new Date(beacon.lastSeenAt),{seconds: beacon.interval, minutes: 1}) >= currentDate);
 }
-export function checkIfBeaconOnline(beacon: BeaconType) : boolean{
-    const minIntervalBuffer = 60;
+export function checkIfBeaconOnline(beacon: {lastSeenAt: string, interval: number}) : boolean{
     const currentDate = new Date();
-    return add(new Date(beacon.lastSeenAt),{seconds: beacon.interval + minIntervalBuffer}) >= currentDate;
+    return add(new Date(beacon.lastSeenAt),{seconds: beacon.interval, minutes: 1}) < currentDate;
 }
 
 export function isBeaconSelected(selectedBeacons: any): boolean{

@@ -2,8 +2,8 @@ import React, { useContext, useState } from "react";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { TagContext } from "../../../context/TagContext";
 import { SelectedBeacons } from "../../../utils/consts";
+import { getOnlineBeacons, isBeaconSelected } from "../../../utils/utils";
 import { BeaconView } from "./beacon-view";
-import { getOnlineBeacons, isBeaconSelected } from "./utils";
 
 type Props = {
     setCurrStep: (arg1: number) => void;
