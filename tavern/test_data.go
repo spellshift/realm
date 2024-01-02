@@ -57,6 +57,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
+					SetInterval(600000).
 					SaveX(ctx),
 			)
 
@@ -66,6 +67,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
+					SetInterval(1000).
 					SaveX(ctx),
 			)
 
@@ -75,6 +77,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
+					SetInterval(4).
 					SaveX(ctx),
 			)
 		}
