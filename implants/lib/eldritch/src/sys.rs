@@ -127,8 +127,16 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         get_reg_impl::get_reg(starlark_heap, reghiv, regpth)
     }
-    fn write_reg(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: String) ->  anyhow::Result<bool> {
+    fn write_reg_str(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: String) ->  anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        write_reg_impl::write_reg(reghiv, regpth, regname, regtype, regvalue)
+        write_reg_impl::write_reg_str(reghiv, regpth, regname, regtype, regvalue)
+    }
+    fn write_reg_int(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: u32) ->  anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        write_reg_impl::write_reg_int(reghiv, regpth, regname, regtype, regvalue)
+    }
+    fn write_reg_hex(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: String) ->  anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        write_reg_impl::write_reg_hex(reghiv, regpth, regname, regtype, regvalue)
     }
 }
