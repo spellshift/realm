@@ -46,7 +46,6 @@ tempfile = { workspace = true }
 tera = { workspace = true }
 tokio = { workspace = true , features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
-uuid = { workspace = true, features = ["v4"] }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
@@ -69,3 +68,4 @@ pnet = { workspace = true }
 
 [dev-dependencies]
 httptest = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
