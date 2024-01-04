@@ -819,7 +819,7 @@ sys.shell("ls /nofile")
 
 ### sys.write_reg_hex
 
-`sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: hexstring) -> Bool`
+`sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
 
 The <b>sys.write_reg_hex</b> method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument. 
 An example is below:
