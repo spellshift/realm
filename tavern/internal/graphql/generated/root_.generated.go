@@ -8,6 +8,7 @@ import (
 	"errors"
 	"sync/atomic"
 
+	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/kcarretto/realm/tavern/internal/ent"
@@ -103,7 +104,7 @@ type ComplexityRoot struct {
 		Nodes   func(childComplexity int, ids []int) int
 		Quests  func(childComplexity int, where *ent.QuestWhereInput) int
 		Tags    func(childComplexity int, where *ent.TagWhereInput) int
-		Tasks   func(childComplexity int, where *ent.TaskWhereInput) int
+		Tasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tomes   func(childComplexity int, where *ent.TomeWhereInput) int
 		Users   func(childComplexity int, where *ent.UserWhereInput) int
 	}
@@ -138,6 +139,17 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
 		Quest          func(childComplexity int) int
+	}
+
+	TaskConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	TaskEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Tome struct {
@@ -577,7 +589,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tasks(childComplexity, args["where"].(*ent.TaskWhereInput)), true
+		return e.complexity.Query.Tasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TaskOrder), args["where"].(*ent.TaskWhereInput)), true
 
 	case "Query.tomes":
 		if e.complexity.Query.Tomes == nil {
@@ -763,6 +775,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Task.Quest(childComplexity), true
+
+	case "TaskConnection.edges":
+		if e.complexity.TaskConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.TaskConnection.Edges(childComplexity), true
+
+	case "TaskConnection.pageInfo":
+		if e.complexity.TaskConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TaskConnection.PageInfo(childComplexity), true
+
+	case "TaskConnection.totalCount":
+		if e.complexity.TaskConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.TaskConnection.TotalCount(childComplexity), true
+
+	case "TaskEdge.cursor":
+		if e.complexity.TaskEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.TaskEdge.Cursor(childComplexity), true
+
+	case "TaskEdge.node":
+		if e.complexity.TaskEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.TaskEdge.Node(childComplexity), true
 
 	case "Tome.createdAt":
 		if e.complexity.Tome.CreatedAt == nil {
@@ -1627,6 +1674,22 @@ type Task implements Node {
   quest: Quest!
   beacon: Beacon!
 }
+"""A connection to a list of items."""
+type TaskConnection {
+  """A list of edges."""
+  edges: [TaskEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type TaskEdge {
+  """The item at the end of the edge."""
+  node: Task
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
 """Ordering options for Task connections"""
 input TaskOrder {
   """The ordering direction."""
@@ -1995,7 +2058,25 @@ scalar Uint64
 	{Name: "../schema/query.graphql", Input: `extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
   quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
-  tasks(where: TaskWhereInput): [Task!]! @requireRole(role: USER)
+  tasks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Tasks returned from the connection."""
+    orderBy: [TaskOrder!]
+
+    """Filtering options for Tasks returned from the connection."""
+    where: TaskWhereInput
+  ): TaskConnection! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
   hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)

@@ -15,7 +15,7 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
                 name
                 kind   
             },
-            serviceTags:tags(where: $serviceTag) {
+            serviceTags:tags(where: $serviceTag) {       
                 id
                 name
                 kind   
@@ -36,8 +36,12 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
                         name
                     }  
                 }
+            },
+            hosts{
+                id
+                name
             }
-    }
+        }
     `;
     const PARAMS = {
         variables: { 
@@ -45,7 +49,7 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
             serviceTag: { kind: "service" },
         }
     }
-    const { loading: isLoading, error: error, data: data } = useQuery(GET_TAG_FILTERS, PARAMS);
+    const { loading: isLoading, error, data } = useQuery(GET_TAG_FILTERS, PARAMS);
 
   
     return (

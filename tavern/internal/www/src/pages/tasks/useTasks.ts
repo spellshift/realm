@@ -1,6 +1,8 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
+import { TableRowLimit } from "../../utils/enums";
 import { GET_TASK_QUERY } from "../../utils/queries";
+import { getFilterNameByTypes } from "../../utils/utils";
 
 export enum TASK_PAGE_TYPE{   
     questIdQuery= "ID_QUERY",
@@ -9,20 +11,38 @@ export enum TASK_PAGE_TYPE{
 
 export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
     // store filters
+    const [page, setPage] = useState<number>(1);
     const [search, setSearch] = useState("");
-    const [groups, setGroups] = useState<Array<string>>([]);
-    const [services, setServices] = useState<Array<string>>([]);
-    const [beacons, setBeacons] = useState<Array<string>>([]);
-    const [hosts, setHosts] = useState<Array<string>>([]);
-    const [platforms, setPlatforms] = useState<Array<string>>([]);
+    const [filtersSelected, setFiltersSelected] = useState<Array<any>>([]);
 
-    const constructDefaultQuery = useCallback((searchText?: string) => {
+
+    const handleFilterChange = (filters: Array<any>)=> {
+      setPage(1);
+      setFiltersSelected(filters);
+    }
+
+    const handleSearchChange = (search: string)=> {
+      setPage(1);
+      setSearch(search);
+    }
+
+    const constructDefaultQuery = useCallback((searchText?: string, afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+      const defaultRowLimit = TableRowLimit.TaskRowLimit;
       const query = {
         "where": {
           "and": [] as Array<any>
-        }
-      };
-        switch(defaultQuery){
+        },
+        "first": beforeCursor ? null : defaultRowLimit,
+        "last": beforeCursor ? defaultRowLimit : null,
+        "after": afterCursor ? afterCursor : null,
+        "before": beforeCursor ? beforeCursor : null,
+        "orderBy": [{
+          "direction": "DESC",
+          "field": "LAST_MODIFIED_AT"
+        }]
+      } as any;
+
+      switch(defaultQuery){
             case TASK_PAGE_TYPE.questIdQuery:
                 const include = [{"hasQuestWith": {"id": id}}] as Array<any>;
 
@@ -49,75 +69,80 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
         return query;
     },[defaultQuery, id]);
 
-    // get tasks
-    const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
+    const constructFilterBasedQuery = useCallback((filtersSelected: Array<any>, currentQuery: any) => {
+      const fq = currentQuery;
+      const {beacon: beacons, group: groups, service: services, platform: platforms, hosts=[]} = getFilterNameByTypes(filtersSelected);
 
-    const updateTaskList = useCallback(() => {
-        let fq = constructDefaultQuery(search) as any;
-
-        if(beacons.length > 0){
+      if(beacons.length > 0){
             fq.where.and = fq.where.and.concat(
                 {
                 "hasBeaconWith": {"nameIn": beacons}
                 }
             );
-        }
+      }
 
-        if(groups.length > 0){
-            fq.where.and = fq.where.and.concat(
-                {
-                    "hasBeaconWith": { "hasHostWith": {
-                      "hasTagsWith": {
-                        "and": [
-                          {"kind": "group"},
-                          {"nameIn": groups}
-                        ]
-                      }
-                    }}
-                }
-            );
-        }
-
-        if(services.length > 0){
-            fq.where.and = fq.where.and.concat(
-                {
-                    "hasBeaconWith": { "hasHostWith": {
-                      "hasTagsWith": {
-                        "and": [
-                          {"kind": "service"},
-                          {"nameIn": services}
-                        ]
-                      }
-                    }}
-                }
-            );
-        }
-
-        if(hosts.length > 0){
-            fq.where.and = fq.where.and.concat(
-                {
-                    "hasBeaconWith": {
-                      "hasHostWith": {"nameIn": hosts}
+      if(groups.length > 0){
+          fq.where.and = fq.where.and.concat(
+              {
+                  "hasBeaconWith": { "hasHostWith": {
+                    "hasTagsWith": {
+                      "and": [
+                        {"kind": "group"},
+                        {"nameIn": groups}
+                      ]
                     }
-                }
-            );
-        }
+                  }}
+              }
+          );
+      }
 
-        if(platforms.length > 0){
-            fq.where.and = fq.where.and.concat(
-                {
-                    "hasBeaconWith": {
-                      "hasHostWith": {
-                        "platformIn": platforms
-                      }
+      if(services.length > 0){
+          fq.where.and = fq.where.and.concat(
+              {
+                  "hasBeaconWith": { "hasHostWith": {
+                    "hasTagsWith": {
+                      "and": [
+                        {"kind": "service"},
+                        {"nameIn": services}
+                      ]
+                    }
+                  }}
+              }
+          );
+      }
+
+      if(hosts.length > 0){
+          fq.where.and = fq.where.and.concat(
+              {
+                  "hasBeaconWith": {
+                    "hasHostWith": {"nameIn": hosts}
+                  }
+              }
+          );
+      }
+
+      if(platforms.length > 0){
+          fq.where.and = fq.where.and.concat(
+              {
+                  "hasBeaconWith": {
+                    "hasHostWith": {
+                      "platformIn": platforms
                     }
                   }
-            );
-        }
+                }
+          );
+      }
+      return fq;
+    },[]);
 
-        refetch(fq);
+    // get tasks
+    const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
 
-    },[search, beacons, groups, services, hosts, platforms, constructDefaultQuery, refetch]);
+    const updateTaskList = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+        const defaultQuery = constructDefaultQuery(search, afterCursor, beforeCursor);
+        const queryWithFilter =  constructFilterBasedQuery(filtersSelected , defaultQuery) as any;
+        refetch(queryWithFilter);
+    },[search, filtersSelected, constructDefaultQuery, constructFilterBasedQuery, refetch]);
 
 
     useEffect(()=> {
@@ -130,11 +155,10 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
         data,
         loading,
         error,
-        setSearch,
-        setBeacons,
-        setGroups,
-        setServices,
-        setHosts,
-        setPlatforms
+        page,
+        setPage,
+        setSearch: handleSearchChange,
+        setFiltersSelected: handleFilterChange,
+        updateTaskList
     }
 };
