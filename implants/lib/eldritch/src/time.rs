@@ -1,5 +1,7 @@
 mod sleep_impl;
 mod now_impl;
+mod format_to_epoch_impl;
+mod format_to_readable_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -57,5 +59,13 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         sleep_impl::sleep(secs);
         Ok(NoneType{})
+    }
+    fn format_to_epoch<'v>(this: TimeLibrary, s: &str, fmt: &str) -> anyhow::Result<u64> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        format_to_epoch_impl::format_to_epoch(s, fmt)
+    }
+    fn format_to_readable<'v>(this: TimeLibrary, t: i64, fmt: &str) -> anyhow::Result<String> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        format_to_readable_impl::format_to_readable(t, fmt)
     }
 }

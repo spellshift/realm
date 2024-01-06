@@ -933,12 +933,41 @@ True
 
 ## Time
 
-### time.sleep
+### time.format_to_epoch
+
+`time.format_to_epoch(input: str, format: str) -> int`
+
+The <b>time.format_to_epoch</b> method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
+
+Some common formating methods are:
+
+- "%Y-%m-%d %H:%M:%S" (24 Hour Time)
+- "%Y-%m-%d %I:%M:%S %P" (AM/PM)
+
+For reference on all available format specifiers, see https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+
+### time.format_to_readable
+
+`time.format_to_readable(input: int, format: str) -> str`
+
+The <b>time.format_to_readable</b> method returns the timestamp in the provided format of the provided UTC timestamp.
+
+Some common formating methods are:
+
+- "%Y-%m-%d %H:%M:%S" (24 Hour Time)
+- "%Y-%m-%d %I:%M:%S %P" (AM/PM)
+
+For reference on all available format specifiers, see https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+
+### time.now
 
 `time.now() -> int`
 
 The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
 
+### time.sleep
+
 `time.sleep(secs: float)`
 
 The <b>time.sleep</b> method sleeps the task for the given number of seconds.
+
