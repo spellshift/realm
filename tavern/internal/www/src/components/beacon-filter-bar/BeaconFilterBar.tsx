@@ -11,6 +11,8 @@ type Props = {
     services: Array<TomeTag>;
 }
 export const BeaconFilterBar = (props: Props) => {
+    // TODO add host to filter
+
     const {setFiltersSelected, beacons, groups, services} = props;
     const supportedPlatformsList = Object.values(SupportedPlatforms);
 
@@ -20,6 +22,7 @@ export const BeaconFilterBar = (props: Props) => {
                 label: "Platform",
                 options: supportedPlatformsList.map(function(platform: string){
                     return {
+                        name: platform,
                         value: platform,
                         label: platform,
                         kind: "platform"
@@ -57,7 +60,7 @@ export const BeaconFilterBar = (props: Props) => {
                         kind: "beacon"
                     };
                 })
-            },
+            }
         ];
     };
 

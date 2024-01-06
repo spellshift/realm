@@ -3,8 +3,8 @@ import { Fragment} from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { CopyBlock, tomorrow} from "react-code-blocks";
-import { Badge } from "@chakra-ui/react";
 import TaskStatusBadge from "../TaskStatusBadge";
+import BeaconTile from "../BeaconTile";
 
 type Props = {
     isOpen: boolean,
@@ -87,17 +87,7 @@ export const TaskOutput =(props: Props) => {
                       </div>
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl text-gray-800">Beacon</h3>
-                          <div className="flex flex-col gap-1">
-                            <h4 className="font-semibold text-gray-900">{selectedTask?.beacon.name}</h4>
-                            <div className="flex flex-row flex-wrap gap-1">
-                                {selectedTask?.beacon?.host?.tags.map((tag: any)=> {
-                                    return <Badge>{tag.name}</Badge>
-                                })}
-                                <Badge>{selectedTask?.beacon?.host?.name}</Badge>
-                                <Badge>{selectedTask?.beacon?.host?.primaryIP}</Badge>
-                                <Badge>{selectedTask?.beacon?.host?.platform}</Badge>
-                            </div>
-                          </div>
+                        <BeaconTile beaconData={selectedTask?.beacon} />
                       </div>
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl text-gray-800">Tome</h3>
@@ -112,10 +102,11 @@ export const TaskOutput =(props: Props) => {
                               <div className="flex flex-row gap-8 flex-wrap text-sm">
                                   {paramKeys.map((value: string) => {
                                     return (
-                                    <div className="flex flex-col gap-0">
-                                      <div className="font-semibold">{value}</div>
-                                      <div>{params[value]}</div>
-                                    </div>)
+                                      <div className="flex flex-col gap-0" key={value}>
+                                        <div className="font-semibold">{value}</div>
+                                        <div>{params[value]}</div>
+                                      </div>
+                                    )
                                   })}
                               </div>
                             )}

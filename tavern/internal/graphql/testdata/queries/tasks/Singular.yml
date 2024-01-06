@@ -16,9 +16,15 @@ requestor:
 query: |
   query Tasks {
     tasks {
-      id
+      edges {
+        node {
+          id
+        }
+      }
     }
   }
 expected:
   tasks:
-    - id: "8000"
+    edges:
+      - node:
+          id: "8000"
