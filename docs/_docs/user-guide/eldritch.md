@@ -378,6 +378,18 @@ The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick
 The <b>file.write</b> method writes to a given file path with the given content.
 If a file or directory already exists at this path, the method will fail.
 
+### file.find
+
+`file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> Vec<str>`
+
+The <b>file.find</b> method finds all files matching the used paramters. Returns file path for all matching items.
+
+- name: Checks if file name contains provided input
+- file_type: Checks for 'file' or 'dir' for files or directories, respectively.
+- permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.
+- modified_time: Checks if last modified time matches input specified in time since EPOCH
+- create_time: Checks if last modified time matches input specified in time since EPOCH
+
 ---
 
 ## Pivot
@@ -921,12 +933,41 @@ True
 
 ## Time
 
-### time.sleep
+### time.format_to_epoch
+
+`time.format_to_epoch(input: str, format: str) -> int`
+
+The <b>time.format_to_epoch</b> method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
+
+Some common formating methods are:
+
+- "%Y-%m-%d %H:%M:%S" (24 Hour Time)
+- "%Y-%m-%d %I:%M:%S %P" (AM/PM)
+
+For reference on all available format specifiers, see https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+
+### time.format_to_readable
+
+`time.format_to_readable(input: int, format: str) -> str`
+
+The <b>time.format_to_readable</b> method returns the timestamp in the provided format of the provided UTC timestamp.
+
+Some common formating methods are:
+
+- "%Y-%m-%d %H:%M:%S" (24 Hour Time)
+- "%Y-%m-%d %I:%M:%S %P" (AM/PM)
+
+For reference on all available format specifiers, see https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+
+### time.now
 
 `time.now() -> int`
 
 The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
 
+### time.sleep
+
 `time.sleep(secs: float)`
 
 The <b>time.sleep</b> method sleeps the task for the given number of seconds.
+
