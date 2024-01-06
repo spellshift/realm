@@ -635,6 +635,22 @@ type Task implements Node {
   quest: Quest!
   beacon: Beacon!
 }
+"""A connection to a list of items."""
+type TaskConnection {
+  """A list of edges."""
+  edges: [TaskEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type TaskEdge {
+  """The item at the end of the edge."""
+  node: Task
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
 """Ordering options for Task connections"""
 input TaskOrder {
   """The ordering direction."""

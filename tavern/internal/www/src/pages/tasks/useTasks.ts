@@ -1,101 +1,148 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
+import { TableRowLimit } from "../../utils/enums";
 import { GET_TASK_QUERY } from "../../utils/queries";
+import { getFilterNameByTypes } from "../../utils/utils";
 
-export const useTasks = () => {
+export enum TASK_PAGE_TYPE{   
+    questIdQuery= "ID_QUERY",
+    questDetailsQuery= "QUEST_DETAILS_QUERY",
+}
+
+export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
     // store filters
+    const [page, setPage] = useState<number>(1);
     const [search, setSearch] = useState("");
-    const [groups, setGroups] = useState<Array<string>>([]);
-    const [services, setServices] = useState<Array<string>>([]);
-    const [beacons, setBeacons] = useState<Array<string>>([]);
-    const [hosts, setHosts] = useState<Array<string>>([]);
-    const [platforms, setPlatforms] = useState<Array<string>>([]);
+    const [filtersSelected, setFiltersSelected] = useState<Array<any>>([]);
 
-    // get tasks
-    const { loading, error, data, refetch } = useQuery(GET_TASK_QUERY,  {});
 
-    const updateTaskList = useCallback(() => {
-        let fq = {
-            "where": {
-                "and": [
-                    {
-                        "or": [
-                          {"outputContains": search},
-                          {"hasQuestWith": {
-                              "nameContains": search
-                            }
-                          },
-                          {"hasQuestWith": 
-                            {"hasTomeWith": {"nameContains": search}}}
-                        ]
-                    },
-                  ]
-            }
-        } as any;
+    const handleFilterChange = (filters: Array<any>)=> {
+      setPage(1);
+      setFiltersSelected(filters);
+    }
 
-        if(beacons.length > 0){
+    const handleSearchChange = (search: string)=> {
+      setPage(1);
+      setSearch(search);
+    }
+
+    const constructDefaultQuery = useCallback((searchText?: string, afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+      const defaultRowLimit = TableRowLimit.TaskRowLimit;
+      const query = {
+        "where": {
+          "and": [] as Array<any>
+        },
+        "first": beforeCursor ? null : defaultRowLimit,
+        "last": beforeCursor ? defaultRowLimit : null,
+        "after": afterCursor ? afterCursor : null,
+        "before": beforeCursor ? beforeCursor : null,
+        "orderBy": [{
+          "direction": "DESC",
+          "field": "LAST_MODIFIED_AT"
+        }]
+      } as any;
+
+      switch(defaultQuery){
+            case TASK_PAGE_TYPE.questIdQuery:
+                const include = [{"hasQuestWith": {"id": id}}] as Array<any>;
+
+                if(searchText){include.push({"outputContains": searchText})};
+
+                query.where.and = include;
+                break;
+            case TASK_PAGE_TYPE.questDetailsQuery:
+            default:
+                const text = searchText || "";  
+                query.where.and = [{
+                                "or": [
+                                  {"outputContains": text},
+                                  {"hasQuestWith": {
+                                      "nameContains": text
+                                    }
+                                  },
+                                  {"hasQuestWith": 
+                                    {"hasTomeWith": {"nameContains": text}}}
+                                ]
+                }];
+                break;
+        }
+        return query;
+    },[defaultQuery, id]);
+
+    const constructFilterBasedQuery = useCallback((filtersSelected: Array<any>, currentQuery: any) => {
+      const fq = currentQuery;
+      const {beacon: beacons, group: groups, service: services, platform: platforms, hosts=[]} = getFilterNameByTypes(filtersSelected);
+
+      if(beacons.length > 0){
             fq.where.and = fq.where.and.concat(
                 {
                 "hasBeaconWith": {"nameIn": beacons}
                 }
             );
-        }
+      }
 
-        if(groups.length > 0){
-            fq.where.and = fq.where.and.concat(
-                {
-                    "hasBeaconWith": { "hasHostWith": {
-                      "hasTagsWith": {
-                        "and": [
-                          {"kind": "group"},
-                          {"nameIn": groups}
-                        ]
-                      }
-                    }}
-                }
-            );
-        }
-
-        if(services.length > 0){
-            fq.where.and = fq.where.and.concat(
-                {
-                    "hasBeaconWith": { "hasHostWith": {
-                      "hasTagsWith": {
-                        "and": [
-                          {"kind": "service"},
-                          {"nameIn": services}
-                        ]
-                      }
-                    }}
-                }
-            );
-        }
-
-        if(hosts.length > 0){
-            fq.where.and = fq.where.and.concat(
-                {
-                    "hasBeaconWith": {
-                      "hasHostWith": {"nameIn": hosts}
+      if(groups.length > 0){
+          fq.where.and = fq.where.and.concat(
+              {
+                  "hasBeaconWith": { "hasHostWith": {
+                    "hasTagsWith": {
+                      "and": [
+                        {"kind": "group"},
+                        {"nameIn": groups}
+                      ]
                     }
-                }
-            );
-        }
+                  }}
+              }
+          );
+      }
 
-        if(platforms.length > 0){
-            fq.where.and = fq.where.and.concat(
-                {
-                    "hasBeaconWith": {
-                      "hasHostWith": {
-                        "platformIn": platforms
-                      }
+      if(services.length > 0){
+          fq.where.and = fq.where.and.concat(
+              {
+                  "hasBeaconWith": { "hasHostWith": {
+                    "hasTagsWith": {
+                      "and": [
+                        {"kind": "service"},
+                        {"nameIn": services}
+                      ]
+                    }
+                  }}
+              }
+          );
+      }
+
+      if(hosts.length > 0){
+          fq.where.and = fq.where.and.concat(
+              {
+                  "hasBeaconWith": {
+                    "hasHostWith": {"nameIn": hosts}
+                  }
+              }
+          );
+      }
+
+      if(platforms.length > 0){
+          fq.where.and = fq.where.and.concat(
+              {
+                  "hasBeaconWith": {
+                    "hasHostWith": {
+                      "platformIn": platforms
                     }
                   }
-            );
-        }
+                }
+          );
+      }
+      return fq;
+    },[]);
 
-        refetch(fq);
+    // get tasks
+    const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
 
-    },[search, beacons, groups, services, hosts, platforms]);
+    const updateTaskList = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+        const defaultQuery = constructDefaultQuery(search, afterCursor, beforeCursor);
+        const queryWithFilter =  constructFilterBasedQuery(filtersSelected , defaultQuery) as any;
+        refetch(queryWithFilter);
+    },[search, filtersSelected, constructDefaultQuery, constructFilterBasedQuery, refetch]);
 
 
     useEffect(()=> {
@@ -108,11 +155,10 @@ export const useTasks = () => {
         data,
         loading,
         error,
-        setSearch,
-        setBeacons,
-        setGroups,
-        setServices,
-        setHosts,
-        setPlatforms
+        page,
+        setPage,
+        setSearch: handleSearchChange,
+        setFiltersSelected: handleFilterChange,
+        updateTaskList
     }
-}
+};

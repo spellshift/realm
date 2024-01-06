@@ -829,7 +829,107 @@ sys.shell("ls /nofile")
 }
 ```
 
----
+### sys.write_reg_hex
+
+`sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
+
+The <b>sys.write_reg_hex</b> method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument. 
+An example is below:
+
+```python
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_SZ","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_NONE","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_EXPAND_SZ","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG_ENDIAN","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","dead,beef") 
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESOURCE_DESCRIPTOR","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST","deadbeef")
+True
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD","deadbeefdeadbeef") 
+True
+```
+
+### sys.write_reg_int
+
+`sys.write_reg_int(reghive: str, regpath: str, regname: str, regtype: str, regvalue: int) -> Bool`
+
+The <b>sys.write_reg_int</b> method returns `True` if registry values are written to the requested registry path and accepts an integer as the value argument.
+An example is below:
+
+```python
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_SZ",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_NONE",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_EXPAND_SZ",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG_ENDIAN",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ",12345678) 
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESOURCE_DESCRIPTOR",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST",12345678)
+True
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD",12345678) 
+True
+```
+
+### sys.write_reg_str
+
+`sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
+
+The <b>sys.write_reg_str</b> method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument. 
+An example is below:
+
+```python
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_SZ","BAR1")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY","DEADBEEF")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_NONE","DEADBEEF")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_EXPAND_SZ","BAR2")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD","12345678")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG_ENDIAN","12345678")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK","A PLAIN STRING")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3") 
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST","DEADBEEF")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESOURCE_DESCRIPTOR","DEADBEEF")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST","DEADBEEF")
+True
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD","1234567812345678") 
+True
+```
 
 ## Time
 

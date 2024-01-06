@@ -14,6 +14,9 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
             if(currentValue.kind === "beacon"){
                 accumulator.beacon.push(currentValue.value);
             }
+            else if(currentValue.kind === "platform"){
+                accumulator.platform.push(currentValue.value);
+            }
             else if(currentValue.kind === "service"){
                 accumulator.service.push(currentValue.value);
             }
@@ -25,7 +28,8 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
         {
             "beacon": [],
             "service": [],
-            "group": []
+            "group": [],
+            "platform": []
         });
     };
 
@@ -68,6 +72,15 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
 
             if(searchTypes.group.length > 0){
                 if(group && searchTypes.group.indexOf(group?.id) > -1){
+                    match = true;
+                }
+                else{
+                    return false;
+                }
+            }
+
+            if(searchTypes.platform.length > 0){
+                if(searchTypes.platform.indexOf(beacon?.host?.platform) > -1){
                     match = true;
                 }
                 else{
