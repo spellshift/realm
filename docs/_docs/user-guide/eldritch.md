@@ -378,6 +378,18 @@ The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick
 The <b>file.write</b> method writes to a given file path with the given content.
 If a file or directory already exists at this path, the method will fail.
 
+### file.find
+
+`file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> Vec<str>`
+
+The <b>file.find</b> method finds all files matching the used paramters. Returns file path for all matching items.
+
+- name: Checks if file name contains provided input
+- file_type: Checks for 'file' or 'dir' for files or directories, respectively.
+- permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.
+- modified_time: Checks if last modified time matches input specified in time since EPOCH
+- create_time: Checks if last modified time matches input specified in time since EPOCH
+
 ---
 
 ## Pivot
