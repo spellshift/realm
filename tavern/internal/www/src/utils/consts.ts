@@ -1,4 +1,5 @@
 import { string } from "yup";
+import { SupportedPlatforms } from "./enums";
 
 export type FormStep = {
     name: string;
@@ -29,6 +30,7 @@ export type HostType = {
     id: string;
     name: string;
     primaryIP: string;
+    platform: SupportedPlatforms;
     tags: Array<TomeTag>;
 }
 export type BeaconType = {
@@ -92,4 +94,3 @@ export type OutputTableProps = {
     output: string,
     taskDetails?: Task   
 }
-

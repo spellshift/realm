@@ -11,9 +11,9 @@ const TaskStatusBadge = (props: Props) => {
     if(task.execFinishedAt){
         return (
             <div>
-                <Badge fontSize='0.8em' size="large" colorScheme="green" variant="outline">
+                <Badge fontSize='0.8em' size="large" colorScheme="green" variant="solid">
                     <div className="flex flex-row gap-1 justify-center items-center p-1" >
-                        <CheckCircleIcon className="w-4" color="green"/>
+                        <CheckCircleIcon className="w-5" color="white"/>
                         <div>Finished</div>
                     </div>
                 </Badge>
@@ -26,7 +26,7 @@ const TaskStatusBadge = (props: Props) => {
         <div>
             <Badge fontSize='0.8em' size="large" colorScheme="gray" variant="outline">
                 <div className="flex flex-row gap-1 justify-center items-center p-1" >
-                    <RepeatClockIcon className="w-4" color="gray"/> 
+                    <RepeatClockIcon w={4} h={4} color="gray"/> 
                     <div>In-Progress</div>
                 </div>
             </Badge>
@@ -38,7 +38,7 @@ const TaskStatusBadge = (props: Props) => {
         <div>
             <Badge fontSize='0.8em' size="large" colorScheme="gray" variant="outline">
                 <div className="flex flex-row gap-1 justify-center items-center p-1" >
-                    <TimeIcon className="w-4" color="gray" />
+                    <TimeIcon w={4} h={4} color="gray" />
                     <div>Queued</div>
                 </div>
             </Badge>

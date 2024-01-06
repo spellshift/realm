@@ -2,6 +2,7 @@ import React from "react";
 import {Heading} from "@chakra-ui/react";
 import Select,  { createFilter } from "react-select"
 import { BeaconType, TomeTag } from "../../utils/consts";
+import { SupportedPlatforms } from "../../utils/enums";
 
 type Props = {
     setFiltersSelected: (arg1: any) => void;
@@ -10,10 +11,24 @@ type Props = {
     services: Array<TomeTag>;
 }
 export const BeaconFilterBar = (props: Props) => {
+    // TODO add host to filter
+
     const {setFiltersSelected, beacons, groups, services} = props;
+    const supportedPlatformsList = Object.values(SupportedPlatforms);
 
     const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>) => {
         return [
+            {
+                label: "Platform",
+                options: supportedPlatformsList.map(function(platform: string){
+                    return {
+                        name: platform,
+                        value: platform,
+                        label: platform,
+                        kind: "platform"
+                    };
+                })
+            },
             {
                 label: "Service",
                 options: services.map(function(service: TomeTag){
@@ -45,13 +60,13 @@ export const BeaconFilterBar = (props: Props) => {
                         kind: "beacon"
                     };
                 })
-            },
+            }
         ];
     };
 
     return (
         <div>
-            <Heading size="sm" mb={2}> Filter by service, group, and beacon</Heading>
+            <Heading size="sm" mb={2}> Filter by platform, service, group, and beacon</Heading>
             <Select
                 isSearchable={true}
                 isMulti
