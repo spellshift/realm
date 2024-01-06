@@ -12,6 +12,9 @@ mod is_linux_impl;
 mod is_macos_impl;
 mod is_windows_impl;
 mod shell_impl;
+mod write_reg_str_impl;
+mod write_reg_int_impl;
+mod write_reg_hex_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -125,5 +128,17 @@ fn methods(builder: &mut MethodsBuilder) {
     fn get_reg<'v>(this:  SysLibrary, starlark_heap: &'v Heap, reghiv: String, regpth: String) ->  anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         get_reg_impl::get_reg(starlark_heap, reghiv, regpth)
+    }
+    fn write_reg_str(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: String) ->  anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        write_reg_str_impl::write_reg_str(reghiv, regpth, regname, regtype, regvalue)
+    }
+    fn write_reg_int(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: u32) ->  anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        write_reg_int_impl::write_reg_int(reghiv, regpth, regname, regtype, regvalue)
+    }
+    fn write_reg_hex(this:  SysLibrary, reghiv: String, regpth: String, regname: String, regtype: String, regvalue: String) ->  anyhow::Result<bool> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        write_reg_hex_impl::write_reg_hex(reghiv, regpth, regname, regtype, regvalue)
     }
 }
