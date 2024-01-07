@@ -4,7 +4,8 @@ import * as ReactDOM from "react-dom/client"
 import { App } from "./App"
 import reportWebVitals from "./reportWebVitals"
 import * as serviceWorker from "./serviceWorker"
-import { ApolloClient, InMemoryCache, ApolloProvider, gql } from '@apollo/client';
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+import { relayStylePagination } from "@apollo/client/utilities";
 
 
 const container = document.getElementById("root")
@@ -12,9 +13,20 @@ if (!container) throw new Error('Failed to find the root element');
 const root = ReactDOM.createRoot(container);
 const REACT_APP_API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ;
 
+
+const cache = new InMemoryCache({
+  typePolicies: {
+    Query: {
+      fields: {
+        tasks: relayStylePagination(),
+      },
+    },
+  },
+});
+
 const client = new ApolloClient({
   uri: `${REACT_APP_API_ENDPOINT}/graphql`,
-  cache: new InMemoryCache(),
+  cache: cache,
 });
 
 root.render(

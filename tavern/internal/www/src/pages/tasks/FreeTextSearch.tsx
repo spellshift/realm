@@ -1,5 +1,5 @@
 import { SearchIcon } from "@chakra-ui/icons";
-import { Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
+import { Heading, Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
 import { debounce } from "lodash"
 import { useParams } from "react-router-dom";
@@ -30,6 +30,7 @@ const FreeTextSearch = (props: Props) => {
 
     return (
         <div className="flex-1 gap-1">
+            <Heading size="sm" mb={2}> {placeholderText}</Heading>
             <InputGroup className=" border-gray-300">
                 <InputLeftElement pointerEvents='none'>
                     <SearchIcon color='gray.300' />
