@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { TagContext } from "../../../context/TagContext";
 import { SelectedBeacons } from "../../../utils/consts";
+import { getOnlineBeacons, isBeaconSelected } from "../../../utils/utils";
 import { BeaconView } from "./beacon-view";
 
 type Props = {
@@ -12,17 +13,12 @@ export const SelectBeacons = (props: Props) => {
     const {setCurrStep, formik} = props;
     const [selectedBeacons, setSelectedBeacons] = useState<any>({});
 
-    const {data, isLoading, error } = useContext(TagContext);
+    const {data, isLoading, error } = useContext(TagContext); 
 
-    function isBeaconSelected(){
-        for (let key in selectedBeacons) {
-            if (selectedBeacons[key] === true) {
-                return true;
-            }
-        }
-        return false;
-    }
-    const hasBeaconSelected = isBeaconSelected();
+    //filter to only show online beacons
+    const onlineBeacons = getOnlineBeacons(data?.beacons || []);
+
+    const hasBeaconSelected = isBeaconSelected(selectedBeacons);
 
     const handleClickContinue = (selectedBeacons: SelectedBeacons) => {
         const beaconToSubmit = [] as Array<string>;
@@ -37,12 +33,15 @@ export const SelectBeacons = (props: Props) => {
 
     return (
         <div className="flex flex-col gap-6">
-            <h2 className="text-xl font-semibold text-gray-900">Select agent beacons</h2>
+            <div className="flex flex-col gap-1">
+                <h2 className="text-xl font-semibold text-gray-900">Select agent beacons</h2>
+                <p className="text-sm text-gray-700 italic">Only active beacons are available for selection</p>
+            </div>
             {isLoading || data === undefined ?
             (
                 <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />
             ): (
-                <BeaconView beacons={data?.beacons || []} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
+                <BeaconView beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
             )}
              <div className="flex flex-row gap-2">
                  <button
