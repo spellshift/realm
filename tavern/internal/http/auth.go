@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/internal/auth"
-	"github.com/kcarretto/realm/tavern/internal/ent"
+	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/ent"
 )
 
 // An Authenticator returns an authenticated context based on the given http request.

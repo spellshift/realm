@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
-	"github.com/kcarretto/realm/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/quest"
 )
 
 // QuestDelete is the builder for deleting a Quest entity.
