@@ -7,9 +7,9 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/tome"
 	"gopkg.in/yaml.v3"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 type tomeParamDef struct {

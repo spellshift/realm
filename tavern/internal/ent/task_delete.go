@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
-	"github.com/kcarretto/realm/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/task"
 )
 
 // TaskDelete is the builder for deleting a Task entity.

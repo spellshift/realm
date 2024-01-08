@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/file"
 )
 
 // File is the model entity for the File schema.

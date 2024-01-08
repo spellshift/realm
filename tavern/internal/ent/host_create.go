@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/tag"
 )
 
 // HostCreate is the builder for creating a Host entity.

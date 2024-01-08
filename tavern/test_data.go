@@ -12,9 +12,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
-	"github.com/kcarretto/realm/tavern/internal/namegen"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/namegen"
 )
 
 // createTestData populates the DB with some test data :)
