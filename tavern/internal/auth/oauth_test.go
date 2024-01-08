@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/kcarretto/realm/tavern/internal/auth"
-	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
-	"github.com/kcarretto/realm/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/ent/user"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

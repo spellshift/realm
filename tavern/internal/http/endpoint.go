@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/kcarretto/realm/tavern/internal/auth"
+	"realm.pub/tavern/internal/auth"
 )
 
 // An Endpoint wraps an HTTP handler with configuration options.

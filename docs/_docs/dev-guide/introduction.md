@@ -13,7 +13,7 @@ This section of the documentation is meant for new Realm-contributors, and shoul
 ### Documentation
 Realm is under heavy active development and documentation can go stale quickly if it's not actively maintained. Please take a moment to familiarize yourself with both the **[Developer Documentation](/dev-guide)** you're reading now as well as the **[User-Facing Documentation](/user-guide)**. When submitting a code change, please include updates to the relevant portions of our documentation.
 
-We will do our best during code review to catch changes that require documentation updates, but sometimes things will slip by. If you notice a discrepancy between our codebase and the documentation, please kindly [file an issue](https://github.com/kcarretto/realm/issues/new?labels=documentation&title=Documentation%20Discrepancy:&body=Please%20include%20the%20location%20of%20the%20inaccurate%20documentation%20and%20a%20helpful%20description%20of%20what%20needs%20improvement.) to track it or submit a PR to correct it. You can use the ["Edit this page"](https://github.com/kcarretto/realm/edit/main/docs/_docs/dev-guide/introduction.md) feature in the right navbar of the documentation to quickly navigate to the appropriate section of documentation that requires an update.
+We will do our best during code review to catch changes that require documentation updates, but sometimes things will slip by. If you notice a discrepancy between our codebase and the documentation, please kindly [file an issue](https://realm.pub/issues/new?labels=documentation&title=Documentation%20Discrepancy:&body=Please%20include%20the%20location%20of%20the%20inaccurate%20documentation%20and%20a%20helpful%20description%20of%20what%20needs%20improvement.) to track it or submit a PR to correct it. You can use the ["Edit this page"](https://realm.pub/edit/main/docs/_docs/dev-guide/introduction.md) feature in the right navbar of the documentation to quickly navigate to the appropriate section of documentation that requires an update.
 
 ### Testing
 
@@ -42,7 +42,7 @@ All code changes to Tavern must be tested. Below are some standards for test wri
 * Please use existing tests as a reference for writing new tests
 
 ##### Tavern Tests (Front End)
-At the time of writing, the Tavern UI is still in an early stage, and therefore minimal testing exists for it. Once the UI is considered more stable, this documentation will be updated. If the Tavern UI is useable and this documentation still exists, please [file an issue](https://github.com/kcarretto/realm/issues/new?labels=documentation&title=Documentation%20Discrepancy:&body=Please%20include%20the%20location%20of%20the%20inaccurate%20documentation%20and%20a%20helpful%20description%20of%20what%20needs%20improvement.).
+At the time of writing, the Tavern UI is still in an early stage, and therefore minimal testing exists for it. Once the UI is considered more stable, this documentation will be updated. If the Tavern UI is useable and this documentation still exists, please [file an issue](https://realm.pub/issues/new?labels=documentation&title=Documentation%20Discrepancy:&body=Please%20include%20the%20location%20of%20the%20inaccurate%20documentation%20and%20a%20helpful%20description%20of%20what%20needs%20improvement.).
 
 ### Linear History
 
@@ -71,29 +71,29 @@ A Task represents a set of instructions for an Agent to perform. For example, li
 Eldritch is our Pythonic Domain Specific Language (DSL), which can be used to progammatically define red team operations. Many of the language's built-in features do not rely on system binaries. For more information, please see the [Eldritch section](/user-guide/eldritch) of the documentation.
 
 ### Tome
-A Tome is a prebuilt Eldritch bundle, which provides execution instructions to a Beacon. Tomes can embed files and accept parameters to change their behaviour at runtime. Tavern's built-in Tomes are defined [here](https://github.com/KCarretto/realm/tree/main/tavern/tomes).
+A Tome is a prebuilt Eldritch bundle, which provides execution instructions to a Beacon. Tomes can embed files and accept parameters to change their behaviour at runtime. Tavern's built-in Tomes are defined [here](https://realm.pub/tree/main/tavern/tomes).
 
 # Project Structure
-* **[.devcontainer](https://github.com/KCarretto/realm/tree/main/.devcontainer)** contains settings required for configuring a VSCode dev container that can be used for Realm development
-* **[.github](https://github.com/KCarretto/realm/tree/main/.github)** contains GitHub related actions, issue templates, etc
-* **[docker](https://github.com/KCarretto/realm/tree/main/docker)** docker containers for production builds
-* **[docs](https://github.com/KCarretto/realm/tree/main/docs)** contains the Jekyll code for the documentation site that you're reading now!
-* **[implants](https://github.com/KCarretto/realm/tree/main/implants)** is the parent folder of any implant executables or libraries
-    * **[implants/golem](https://github.com/KCarretto/realm/tree/main/implants/golem)** the stand-alone interpreter that implements the eldritch language (Rust)
-    * **[implants/golem/embed_files_golem_prod](https://github.com/KCarretto/realm/tree/main/implants/golem/embed_files_golem_prod)** Files and scripts that will be embedded into production builds of imix, golem, and eldritch. These files can be accessed through the [`assets` module.](https://docs.realm.pub/user-guide/eldritch#assets)
-    * **[implants/imix](https://github.com/KCarretto/realm/tree/main/implants/imix)** is our agent that executes eldritch tomes (Rust)
-    * **[implants/lib/eldritch](https://github.com/KCarretto/realm/tree/main/implants/lib/eldritch)** is the source of our eldritch library (Rust)
-    * **[implants/lib/tavern](https://github.com/KCarretto/realm/tree/main/implants/lib/tavern)** is the source of our agents graphql API to interface with Tavern (Rust)
-* **[tavern](https://github.com/KCarretto/realm/tree/main/tavern)** is the parent folder of Tavern related code and packages, and stores the `main.go` executable for the service
-    * **[tavern/auth](https://github.com/KCarretto/realm/tree/main/tavern/auth)** is a package for managing authentication for Tavern, and is used by various packages that rely on obtaining viewer information
-    * **[tavern/internal/ent](https://github.com/KCarretto/realm/tree/main/tavern/internal/ent)** contains models and related code for interacting with the database (most of this is code generated by **[entgo](https://entgo.io/))**
-        * **[tavern/internal/ent/schema](https://github.com/KCarretto/realm/tree/main/tavern/internal/ent/schema)** contains the schema definitions for our DB models
-    * **[tavern/internal/graphql](https://github.com/KCarretto/realm/tree/main/tavern/internal/graphql)** contains our GraphQL definitions and resolvers (most of this code is generated by **[entgo](https://entgo.io/)** and **[gqlgen](https://github.com/99designs/gqlgen))**
-    * **[tavern/internal](https://github.com/KCarretto/realm/tree/main/tavern/internal)** contains various internal packages that makeup Tavern
-        * **[tavern/internal/www](https://github.com/KCarretto/realm/tree/main/tavern/internal/www)** contains Tavern's UI code
-* **[terraform](https://github.com/KCarretto/realm/tree/main/terraform)** contains the Terraform used to deploy a production ready Realm instance. See [Tavern User Guide](https://docs.realm.pub/user-guide/tavern) to learn how to use.
-* **[tests](https://github.com/KCarretto/realm/tree/main/tests)** miscellaneous files and example code used for testing. Generally won't be used but required for some niche situations like deadlocking cargo build.
-* **[vscode](https://github.com/KCarretto/realm/tree/main/vscode)** contains our Eldritch VSCode integration source code **(Unmaintained)**
+* **[.devcontainer](https://realm.pub/tree/main/.devcontainer)** contains settings required for configuring a VSCode dev container that can be used for Realm development
+* **[.github](https://realm.pub/tree/main/.github)** contains GitHub related actions, issue templates, etc
+* **[docker](https://realm.pub/tree/main/docker)** docker containers for production builds
+* **[docs](https://realm.pub/tree/main/docs)** contains the Jekyll code for the documentation site that you're reading now!
+* **[implants](https://realm.pub/tree/main/implants)** is the parent folder of any implant executables or libraries
+    * **[implants/golem](https://realm.pub/tree/main/implants/golem)** the stand-alone interpreter that implements the eldritch language (Rust)
+    * **[implants/golem/embed_files_golem_prod](https://realm.pub/tree/main/implants/golem/embed_files_golem_prod)** Files and scripts that will be embedded into production builds of imix, golem, and eldritch. These files can be accessed through the [`assets` module.](https://docs.realm.pub/user-guide/eldritch#assets)
+    * **[implants/imix](https://realm.pub/tree/main/implants/imix)** is our agent that executes eldritch tomes (Rust)
+    * **[implants/lib/eldritch](https://realm.pub/tree/main/implants/lib/eldritch)** is the source of our eldritch library (Rust)
+    * **[implants/lib/tavern](https://realm.pub/tree/main/implants/lib/tavern)** is the source of our agents graphql API to interface with Tavern (Rust)
+* **[tavern](https://realm.pub/tree/main/tavern)** is the parent folder of Tavern related code and packages, and stores the `main.go` executable for the service
+    * **[tavern/auth](https://realm.pub/tree/main/tavern/auth)** is a package for managing authentication for Tavern, and is used by various packages that rely on obtaining viewer information
+    * **[tavern/internal/ent](https://realm.pub/tree/main/tavern/internal/ent)** contains models and related code for interacting with the database (most of this is code generated by **[entgo](https://entgo.io/))**
+        * **[tavern/internal/ent/schema](https://realm.pub/tree/main/tavern/internal/ent/schema)** contains the schema definitions for our DB models
+    * **[tavern/internal/graphql](https://realm.pub/tree/main/tavern/internal/graphql)** contains our GraphQL definitions and resolvers (most of this code is generated by **[entgo](https://entgo.io/)** and **[gqlgen](https://github.com/99designs/gqlgen))**
+    * **[tavern/internal](https://realm.pub/tree/main/tavern/internal)** contains various internal packages that makeup Tavern
+        * **[tavern/internal/www](https://realm.pub/tree/main/tavern/internal/www)** contains Tavern's UI code
+* **[terraform](https://realm.pub/tree/main/terraform)** contains the Terraform used to deploy a production ready Realm instance. See [Tavern User Guide](https://docs.realm.pub/user-guide/tavern) to learn how to use.
+* **[tests](https://realm.pub/tree/main/tests)** miscellaneous files and example code used for testing. Generally won't be used but required for some niche situations like deadlocking cargo build.
+* **[vscode](https://realm.pub/tree/main/vscode)** contains our Eldritch VSCode integration source code **(Unmaintained)**
 
 # Where to Start?
-If you'd like to make a contribution to Realm but aren't sure where to start or what features could use help, please consult our [Good First Issues](https://github.com/KCarretto/realm/labels/good%20first%20issue) for some starting ideas.
+If you'd like to make a contribution to Realm but aren't sure where to start or what features could use help, please consult our [Good First Issues](https://realm.pub/labels/good%20first%20issue) for some starting ideas.

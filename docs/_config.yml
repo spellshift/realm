@@ -31,7 +31,7 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://docs.realm.pub" # the base hostname & protocol for your site
 
 # Social (First three Required)
-repo: "https://github.com/kcarretto/realm"
+repo: "https://realm.pub"
 github_user: "kcarretto"
 github_repo: "realm"
 github_branch: "main"

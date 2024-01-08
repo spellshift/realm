@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
-	"github.com/kcarretto/realm/tavern/internal/ent/quest"
-	"github.com/kcarretto/realm/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/task"
 )
 
 // TaskCreate is the builder for creating a Task entity.

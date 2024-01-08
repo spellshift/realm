@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 var (

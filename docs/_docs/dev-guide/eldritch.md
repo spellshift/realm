@@ -22,7 +22,7 @@ sys.exec("C:/temp/payload.exe")
 _Exceptions to the rule above exist if performing the activities requires the performance of rust._
 _Eg. port scanning could be implemented using a for loop and `tcp_connect` however due to the performance demand of port scanning a direct implementation in rust makes more sense_
 
-Want to contribute to Eldritch but aren't sure what to build check our ["good first issue" tickets.](https://github.com/KCarretto/realm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+Want to contribute to Eldritch but aren't sure what to build check our ["good first issue" tickets.](https://realm.pub/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 # Creating a function
 
@@ -177,7 +177,7 @@ Any methods added to the Eldritch Standard Library should have tests collocated 
 * Chunk out implementation code into discrete helper functions so each can be tested individually.
 
 ### Example PR for an Eldritch method.
-Check out [this basic example of a PR](https://github.com/KCarretto/realm/pull/231) to see what they should look like.
+Check out [this basic example of a PR](https://realm.pub/pull/231) to see what they should look like.
 This PR implements the `sys.hostname` function into Eldritch and is a simple example of how to get started.
 
 # OS Specific functions
@@ -257,7 +257,7 @@ mod tests {
 
 ## Example PR
 Example of how to return a dictionary:
-PR #[238](https://github.com/KCarretto/realm/pull/238/files) This PR implements the `sys.get_os` function which returns a dictionary of string types.
+PR #[238](https://realm.pub/pull/238/files) This PR implements the `sys.get_os` function which returns a dictionary of string types.
 
 # Notes about asynchronous Eldritch code
 ---
@@ -379,6 +379,6 @@ mod tests {
 ```
 
 ### Async PR example
-An example of how async can be used in testing: [PR for the Eldritch `pivot.ncat` implementation](https://github.com/KCarretto/realm/pull/44/files).
+An example of how async can be used in testing: [PR for the Eldritch `pivot.ncat` implementation](https://realm.pub/pull/44/files).
 
-An example of testing async functions with multiple concurrent functions: [PR for the Eldritch `pivot.port_scan` implementation](https://github.com/KCarretto/realm/pull/45/files).
+An example of testing async functions with multiple concurrent functions: [PR for the Eldritch `pivot.port_scan` implementation](https://realm.pub/pull/45/files).

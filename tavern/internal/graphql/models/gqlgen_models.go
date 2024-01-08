@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/host"
 )
 
 type ClaimTasksInput struct {

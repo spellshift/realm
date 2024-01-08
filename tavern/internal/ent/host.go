@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/host"
 )
 
 // Host is the model entity for the Host schema.

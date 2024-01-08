@@ -13,7 +13,7 @@ permalink: user-guide/getting-started
 ### Start the server
 
 ```bash
-git clone https://github.com/KCarretto/realm.git
+git clone https://realm.pub.git
 cd realm
 go run ./tavern
 
@@ -24,7 +24,7 @@ ENABLE_TEST_DATA=1 go run ./tavern
 ### Start the agent
 
 ```bash
-git clone https://github.com/KCarretto/realm.git
+git clone https://realm.pub.git
 cd realm/implants/imix
 
 # Create the config file

@@ -3,7 +3,7 @@ package cdn
 import (
 	"net/http"
 
-	"github.com/kcarretto/realm/tavern/internal/errors"
+	"realm.pub/tavern/internal/errors"
 )
 
 // ErrInvalidFileName occurs when an invalid file name is provided to the API.

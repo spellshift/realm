@@ -14,9 +14,9 @@ import (
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/tag"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -1625,7 +1625,7 @@ func (ec *executionContext) _Query_files(ctx context.Context, field graphql.Coll
 		if data, ok := tmp.([]*ent.File); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.File`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.File`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1718,7 +1718,7 @@ func (ec *executionContext) _Query_quests(ctx context.Context, field graphql.Col
 		if data, ok := tmp.([]*ent.Quest); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.Quest`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Quest`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1817,7 +1817,7 @@ func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.Coll
 		if data, ok := tmp.(*ent.TaskConnection); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.TaskConnection`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.TaskConnection`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1904,7 +1904,7 @@ func (ec *executionContext) _Query_beacons(ctx context.Context, field graphql.Co
 		if data, ok := tmp.([]*ent.Beacon); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.Beacon`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Beacon`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2003,7 +2003,7 @@ func (ec *executionContext) _Query_hosts(ctx context.Context, field graphql.Coll
 		if data, ok := tmp.([]*ent.Host); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.Host`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Host`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2100,7 +2100,7 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 		if data, ok := tmp.([]*ent.Tag); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.Tag`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Tag`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2189,7 +2189,7 @@ func (ec *executionContext) _Query_tomes(ctx context.Context, field graphql.Coll
 		if data, ok := tmp.([]*ent.Tome); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.Tome`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Tome`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2286,7 +2286,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 		if data, ok := tmp.([]*ent.User); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kcarretto/realm/tavern/internal/ent.User`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.User`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)

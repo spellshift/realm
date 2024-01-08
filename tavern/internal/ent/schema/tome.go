@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/hook"
+	"realm.pub/tavern/internal/ent/hook"
 	"golang.org/x/crypto/sha3"
 )
 

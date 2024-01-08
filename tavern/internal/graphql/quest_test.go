@@ -11,10 +11,10 @@ import (
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
-	"github.com/kcarretto/realm/tavern/internal/graphql"
-	tavernhttp "github.com/kcarretto/realm/tavern/internal/http"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/graphql"
+	tavernhttp "realm.pub/tavern/internal/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
