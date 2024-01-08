@@ -10,15 +10,15 @@ import (
 	"strconv"
 	"testing"
 
-	tavern "github.com/kcarretto/realm/tavern"
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
-	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
-	"github.com/kcarretto/realm/tavern/internal/ent/quest"
-	"github.com/kcarretto/realm/tavern/internal/ent/tome"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	tavern "realm.pub/tavern"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 func TestEndToEnd(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/tag"
 )
 
 // TagCreate is the builder for creating a Tag entity.

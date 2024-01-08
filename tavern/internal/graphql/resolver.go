@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kcarretto/realm/tavern/internal/auth"
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/graphql/generated"
-	"github.com/kcarretto/realm/tavern/internal/graphql/models"
+	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/graphql/generated"
+	"realm.pub/tavern/internal/graphql/models"
 
 	"github.com/99designs/gqlgen/graphql"
 )

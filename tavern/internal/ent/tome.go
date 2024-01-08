@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/kcarretto/realm/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // Tome is the model entity for the Tome schema.

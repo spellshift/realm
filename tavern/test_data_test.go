@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
-	"github.com/kcarretto/realm/tavern/internal/ent/tome"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // TestCreateTestData ensures createTestData runs without error and creates at least one beacon.
