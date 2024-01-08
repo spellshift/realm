@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"realm.pub/tavern/internal/errors"
+	"github.com/kcarretto/realm/tavern/internal/errors"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/file"
-	"realm.pub/tavern/internal/errors"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/errors"
 )
 
 // HeaderIfNoneMatch is the name of the header the client should set if they wish to only download the file if it has been modified since the provided hash.

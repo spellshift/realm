@@ -4,10 +4,10 @@
     "author": "realm",
     "license": "GNU GPL v3.0",
     "version": "0.0.3",
-    "icon": "images/eldritch.png",
+	"icon": "images/eldritch.png",
     "repository": {
         "type": "git",
-        "url": "https://realm.pub"
+        "url": "https://github.com/kcarretto/realm"
     },
     "publisher": "realm",
     "categories": [],
@@ -19,7 +19,7 @@
     ],
     "engines": {
         "vscode": "^1.43.0"
-    },
+    }, 
     "activationEvents": [
         "onLanguage:eldritch",
         "workspaceContains:*.tome",
@@ -32,8 +32,8 @@
             {
                 "id": "eldritch",
                 "icon": {
-                    "light": "client/src/images/eldritch.png",
-                    "dark": "client/src/images/eldritch.png"
+	                "light": "client/src/images/eldritch.png",
+	                "dark": "client/src/images/eldritch.png"
                 },
                 "aliases": [
                     "Eldritch",

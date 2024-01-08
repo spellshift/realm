@@ -2,4 +2,4 @@
 
 package ent
 
-// The schema-stitching logic is generated in realm.pub/tavern/internal/ent/runtime/runtime.go
+// The schema-stitching logic is generated in github.com/kcarretto/realm/tavern/internal/ent/runtime/runtime.go

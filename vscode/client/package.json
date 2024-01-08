@@ -7,7 +7,7 @@
 	"publisher": "vscode",
 	"repository": {
 		"type": "git",
-		"url": "https://realm.pub"
+		"url": "https://github.com/kcarretto/realm"
 	},
 	"engines": {
 		"vscode": "^1.43.0"

@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"strings"
 
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
 	"golang.org/x/crypto/sha3"
 )
 

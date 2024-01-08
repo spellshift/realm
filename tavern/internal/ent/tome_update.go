@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
-	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/tome"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
+	"github.com/kcarretto/realm/tavern/internal/ent/tome"
 )
 
 // TomeUpdate is the builder for updating Tome entities.

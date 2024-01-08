@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"realm.pub/tavern/internal/c2"
-	"realm.pub/tavern/internal/c2/c2pb"
-	"realm.pub/tavern/internal/ent/enttest"
+	"github.com/kcarretto/realm/tavern/internal/c2"
+	"github.com/kcarretto/realm/tavern/internal/c2/c2pb"
+	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"

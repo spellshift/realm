@@ -11,9 +11,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"realm.pub/tavern/internal/cdn"
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/enttest"
+	"github.com/kcarretto/realm/tavern/internal/cdn"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"

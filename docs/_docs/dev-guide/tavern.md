@@ -10,7 +10,7 @@ permalink: dev-guide/tavern
 
 Tavern is a teamserver for Realm, providing a UI to control deployments and implants during an engagement. The majority of Tavern's functionality is exposed through a GraphQL API, which is used by both implants and the UI.
 
-If you would like to help contribute to Tavern, please take a look at our [open issues](https://realm.pub/issues?q=is%3Aopen+is%3Aissue+label%3Atavern).
+If you would like to help contribute to Tavern, please take a look at our [open issues](https://github.com/KCarretto/realm/issues?q=is%3Aopen+is%3Aissue+label%3Atavern).
 
 ## Configuration
 
@@ -246,8 +246,8 @@ query get_task_res {
 1. Initialize the schema `cd tavern && go run entgo.io/ent/cmd/ent init <NAME>`
 2. Update the generated file in `tavern/internal/ent/schema/<NAME>.go`
 3. Ensure you include a `func (<NAME>) Annotations() []schema.Annotation` method which returns a `entgql.QueryField()` annotation to tell entgo to generate a GraphQL root query for this model (if you'd like it to be queryable from the root query)
-4. Update `tavern/internal/graphql/gqlgen.yml` to include the ent types in the `autobind:` section (e.g.`- realm.pub/tavern/internal/ent/<NAME>`)
-5. **Optionally** update the `models:` section of `tavern/internal/graphql/gqlgen.yml` to bind any GraphQL enum types to their respective `entgo` generated types (e.g. `realm.pub/tavern/internal/ent/<NAME>.<ENUM_FIELD>`)
+4. Update `tavern/internal/graphql/gqlgen.yml` to include the ent types in the `autobind:` section (e.g.`- github.com/kcarretto/realm/tavern/internal/ent/<NAME>`)
+5. **Optionally** update the `models:` section of `tavern/internal/graphql/gqlgen.yml` to bind any GraphQL enum types to their respective `entgo` generated types (e.g. `github.com/kcarretto/realm/tavern/internal/ent/<NAME>.<ENUM_FIELD>`)
 6. Run `go generate ./tavern/...` from the project root
 7. If you added an annotation for a root query field (see above), you will notice auto-generated the `query.resolvers.go` file has been updated with new methods to query your model (e.g. `func (r *queryResolver) <NAME>s ...`)
     * This must be implemented (e.g. `return r.client.<NAME>.Query().All(ctx)` where NAME is the name of your model)
@@ -329,13 +329,13 @@ Tavern provides an HTTP(s) GraphQL API that agents may use directly to claim tas
 
 ![/assets/img/tavern/standard-usage-arch.png](/assets/img/tavern/standard-usage-arch.png)
 
-This however restricts the available transport methods the agent may use to communicate with the teamserver e.g. only HTTP(s). If you wish to develop an agent using a different transport method (e.g. DNS), your development will need to include a C2. The role of the C2 is to handle agent communication, and translate the chosen transport method into HTTP(s) requests to Tavern's GraphQL API. This enables developers to use any transport mechanism with Tavern. If you plan to build a C2 for a common protocol for use with Tavern, consider [submitting a PR](https://realm.pub/pulls).
+This however restricts the available transport methods the agent may use to communicate with the teamserver e.g. only HTTP(s). If you wish to develop an agent using a different transport method (e.g. DNS), your development will need to include a C2. The role of the C2 is to handle agent communication, and translate the chosen transport method into HTTP(s) requests to Tavern's GraphQL API. This enables developers to use any transport mechanism with Tavern. If you plan to build a C2 for a common protocol for use with Tavern, consider [submitting a PR](https://github.com/KCarretto/realm/pulls).
 
 ![/assets/img/tavern/custom-usage-arch.png](/assets/img/tavern/custom-usage-arch.png)
 
 ### GraphQL Example
 
-GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supports a variety of different mutations for interacting with the graph ([see schema](https://realm.pub/blob/main/tavern/internal/graphql/schema/mutation.graphql)). The two mutations agents rely on are `claimTasks` and `submitTaskResult` (covered in more detail below). GraphQL requests are submitted as HTTP POST requests to Tavern, with a JSON body including the GraphQL mutation. Below is an example JSON body that may be sent to the Tavern GraphQL API:
+GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supports a variety of different mutations for interacting with the graph ([see schema](https://github.com/KCarretto/realm/blob/main/tavern/internal/graphql/schema/mutation.graphql)). The two mutations agents rely on are `claimTasks` and `submitTaskResult` (covered in more detail below). GraphQL requests are submitted as HTTP POST requests to Tavern, with a JSON body including the GraphQL mutation. Below is an example JSON body that may be sent to the Tavern GraphQL API:
 
 ```json
 {

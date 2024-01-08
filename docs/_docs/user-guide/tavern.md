@@ -93,7 +93,7 @@ After installing the gcloud CLI, run `gcloud auth application-default login` to 
 ### 4. Terraform
 
 1. Follow [these instructions](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) to install the Terraform CLI.
-2. Clone [the repo](https://realm.pub) and navigate to the `terraform` directory.
+2. Clone [the repo](https://github.com/kcarretto/realm) and navigate to the `terraform` directory.
 3. Run `terraform init` to install the Google provider for terraform.
 4. Run `terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>"` to deploy Tavern!
 

@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"realm.pub/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent"
 )
 
 // An Option to configure a Tavern HTTP Server.

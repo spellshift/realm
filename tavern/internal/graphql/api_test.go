@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"realm.pub/tavern/internal/auth"
-	"realm.pub/tavern/internal/ent/enttest"
-	"realm.pub/tavern/internal/graphql"
-	tavernhttp "realm.pub/tavern/internal/http"
+	"github.com/kcarretto/realm/tavern/internal/auth"
+	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
+	"github.com/kcarretto/realm/tavern/internal/graphql"
+	tavernhttp "github.com/kcarretto/realm/tavern/internal/http"
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"

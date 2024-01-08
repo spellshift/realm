@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
 )
 
 // FileCreate is the builder for creating a File entity.

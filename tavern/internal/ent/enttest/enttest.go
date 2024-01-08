@@ -5,12 +5,12 @@ package enttest
 import (
 	"context"
 
-	"realm.pub/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent"
 	// required by schema hooks.
-	_ "realm.pub/tavern/internal/ent/runtime"
+	_ "github.com/kcarretto/realm/tavern/internal/ent/runtime"
 
 	"entgo.io/ent/dialect/sql/schema"
-	"realm.pub/tavern/internal/ent/migrate"
+	"github.com/kcarretto/realm/tavern/internal/ent/migrate"
 )
 
 type (

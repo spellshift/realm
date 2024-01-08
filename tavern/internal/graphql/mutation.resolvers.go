@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"time"
 
-	"realm.pub/tavern/internal/auth"
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
-	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/task"
-	"realm.pub/tavern/internal/graphql/generated"
-	"realm.pub/tavern/internal/graphql/models"
+	"github.com/kcarretto/realm/tavern/internal/auth"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
+	"github.com/kcarretto/realm/tavern/internal/ent/task"
+	"github.com/kcarretto/realm/tavern/internal/graphql/generated"
+	"github.com/kcarretto/realm/tavern/internal/graphql/models"
 )
 
 // CreateQuest is the resolver for the createQuest field.

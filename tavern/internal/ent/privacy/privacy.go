@@ -5,7 +5,7 @@ package privacy
 import (
 	"context"
 
-	"realm.pub/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent"
 
 	"entgo.io/ent/privacy"
 )

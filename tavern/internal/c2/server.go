@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"realm.pub/tavern/internal/c2/c2pb"
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/task"
+	"github.com/kcarretto/realm/tavern/internal/c2/c2pb"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
+	"github.com/kcarretto/realm/tavern/internal/ent/task"
 )
 
 type Server struct {

@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"realm.pub/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent"
 )
 
 // The BeaconFunc type is an adapter to allow the use of ordinary

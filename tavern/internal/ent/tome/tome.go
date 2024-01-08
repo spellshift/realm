@@ -68,7 +68,7 @@ func ValidColumn(column string) bool {
 // package on the initialization of the application. Therefore,
 // it should be imported in the main as follows:
 //
-//	import _ "realm.pub/tavern/internal/ent/runtime"
+//	import _ "github.com/kcarretto/realm/tavern/internal/ent/runtime"
 var (
 	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.

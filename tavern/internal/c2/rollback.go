@@ -3,7 +3,7 @@ package c2
 import (
 	"fmt"
 
-	"realm.pub/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent"
 )
 
 func rollback(tx *ent.Tx, err error) error {

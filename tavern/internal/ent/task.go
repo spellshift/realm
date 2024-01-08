@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/quest"
-	"realm.pub/tavern/internal/ent/task"
+	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/quest"
+	"github.com/kcarretto/realm/tavern/internal/ent/task"
 )
 
 // Task is the model entity for the Task schema.

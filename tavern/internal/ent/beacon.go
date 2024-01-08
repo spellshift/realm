@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/host"
+	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
 )
 
 // Beacon is the model entity for the Beacon schema.

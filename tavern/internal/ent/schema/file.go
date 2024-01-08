@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"realm.pub/tavern/internal/ent/hook"
+	"github.com/kcarretto/realm/tavern/internal/ent/hook"
 	"golang.org/x/crypto/sha3"
 
 	"entgo.io/contrib/entgql"

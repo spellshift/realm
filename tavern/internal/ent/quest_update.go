@@ -11,12 +11,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
-	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/quest"
-	"realm.pub/tavern/internal/ent/task"
-	"realm.pub/tavern/internal/ent/tome"
-	"realm.pub/tavern/internal/ent/user"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
+	"github.com/kcarretto/realm/tavern/internal/ent/quest"
+	"github.com/kcarretto/realm/tavern/internal/ent/task"
+	"github.com/kcarretto/realm/tavern/internal/ent/tome"
+	"github.com/kcarretto/realm/tavern/internal/ent/user"
 )
 
 // QuestUpdate is the builder for updating Quest entities.

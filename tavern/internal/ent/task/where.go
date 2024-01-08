@@ -7,7 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"realm.pub/tavern/internal/ent/predicate"
+	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.

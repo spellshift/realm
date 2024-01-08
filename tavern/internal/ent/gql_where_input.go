@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"time"
 
-	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
-	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/quest"
-	"realm.pub/tavern/internal/ent/tag"
-	"realm.pub/tavern/internal/ent/task"
-	"realm.pub/tavern/internal/ent/tome"
-	"realm.pub/tavern/internal/ent/user"
+	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
+	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
+	"github.com/kcarretto/realm/tavern/internal/ent/quest"
+	"github.com/kcarretto/realm/tavern/internal/ent/tag"
+	"github.com/kcarretto/realm/tavern/internal/ent/task"
+	"github.com/kcarretto/realm/tavern/internal/ent/tome"
+	"github.com/kcarretto/realm/tavern/internal/ent/user"
 )
 
 // BeaconWhereInput represents a where input for filtering Beacon queries.

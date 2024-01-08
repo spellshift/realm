@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"entgo.io/contrib/entgql"
-	"realm.pub/tavern/internal/auth"
-	"realm.pub/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/auth"
+	"github.com/kcarretto/realm/tavern/internal/ent"
 )
 
 // Files is the resolver for the files field.

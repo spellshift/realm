@@ -9,20 +9,20 @@ import (
 	"log"
 	"reflect"
 
-	"realm.pub/tavern/internal/ent/migrate"
+	"github.com/kcarretto/realm/tavern/internal/ent/migrate"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
-	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/quest"
-	"realm.pub/tavern/internal/ent/tag"
-	"realm.pub/tavern/internal/ent/task"
-	"realm.pub/tavern/internal/ent/tome"
-	"realm.pub/tavern/internal/ent/user"
+	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
+	"github.com/kcarretto/realm/tavern/internal/ent/file"
+	"github.com/kcarretto/realm/tavern/internal/ent/host"
+	"github.com/kcarretto/realm/tavern/internal/ent/quest"
+	"github.com/kcarretto/realm/tavern/internal/ent/tag"
+	"github.com/kcarretto/realm/tavern/internal/ent/task"
+	"github.com/kcarretto/realm/tavern/internal/ent/tome"
+	"github.com/kcarretto/realm/tavern/internal/ent/user"
 )
 
 // Client is the client that holds all ent builders.

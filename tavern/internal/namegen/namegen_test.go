@@ -3,7 +3,7 @@ package namegen_test
 import (
 	"testing"
 
-	"realm.pub/tavern/internal/namegen"
+	"github.com/kcarretto/realm/tavern/internal/namegen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

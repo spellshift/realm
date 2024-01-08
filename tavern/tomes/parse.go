@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/tome"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/ent/tome"
 	"gopkg.in/yaml.v3"
 )
 

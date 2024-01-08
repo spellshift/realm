@@ -11,8 +11,8 @@ import (
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/graphql/models"
+	"github.com/kcarretto/realm/tavern/internal/ent"
+	"github.com/kcarretto/realm/tavern/internal/graphql/models"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -1347,7 +1347,7 @@ enum HostOrderField {
   LAST_SEEN_AT
 }
 """HostPlatform is enum for the field platform"""
-enum HostPlatform @goModel(model: "realm.pub/tavern/internal/ent/host.Platform") {
+enum HostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/host.Platform") {
   Windows
   Linux
   MacOS
@@ -1444,7 +1444,7 @@ input HostWhereInput {
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
 """
-interface Node @goModel(model: "realm.pub/tavern/internal/ent.Noder") {
+interface Node @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent.Noder") {
   """The id of the object."""
   id: ID!
 }
@@ -1600,7 +1600,7 @@ type Tag implements Node {
   hosts: [Host!]
 }
 """TagKind is enum for the field kind"""
-enum TagKind @goModel(model: "realm.pub/tavern/internal/ent/tag.Kind") {
+enum TagKind @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/tag.Kind") {
   group
   service
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"realm.pub/tavern/internal/namegen"
+	"github.com/kcarretto/realm/tavern/internal/namegen"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"

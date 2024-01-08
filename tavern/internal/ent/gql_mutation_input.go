@@ -3,7 +3,7 @@
 package ent
 
 import (
-	"realm.pub/tavern/internal/ent/tag"
+	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 )
 
 // UpdateBeaconInput represents a mutation input for updating beacons.

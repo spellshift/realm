@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"realm.pub/tavern/internal/ent/migrate"
-	"realm.pub/tavern/internal/ent/tag"
+	"github.com/kcarretto/realm/tavern/internal/ent/migrate"
+	"github.com/kcarretto/realm/tavern/internal/ent/tag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
