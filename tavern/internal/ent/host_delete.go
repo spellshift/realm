@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
-	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/predicate"
 )
 
 // HostDelete is the builder for deleting a Host entity.

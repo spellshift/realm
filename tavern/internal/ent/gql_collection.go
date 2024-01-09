@@ -8,14 +8,14 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent/dialect/sql"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
-	"github.com/kcarretto/realm/tavern/internal/ent/file"
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
-	"github.com/kcarretto/realm/tavern/internal/ent/quest"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
-	"github.com/kcarretto/realm/tavern/internal/ent/task"
-	"github.com/kcarretto/realm/tavern/internal/ent/tome"
-	"github.com/kcarretto/realm/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.

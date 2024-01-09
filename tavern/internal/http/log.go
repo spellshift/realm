@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/kcarretto/realm/tavern/internal/auth"
+	"realm.pub/tavern/internal/auth"
 )
 
 // A Logger to display information about the incoming request.

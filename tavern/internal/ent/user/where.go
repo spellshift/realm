@@ -4,7 +4,7 @@ package user
 
 import (
 	"entgo.io/ent/dialect/sql"
-	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.

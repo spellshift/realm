@@ -1,4 +1,4 @@
-module github.com/kcarretto/realm
+module realm.pub
 
 go 1.20
 

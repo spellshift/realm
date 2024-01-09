@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kcarretto/realm/tavern/internal/errors"
 	"github.com/stretchr/testify/assert"
+	"realm.pub/tavern/internal/errors"
 )
 
 // TestWrapHandler asserts that wrapped handlers exhibit expected behaviour.

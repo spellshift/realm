@@ -10,8 +10,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/file"
-	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/predicate"
 )
 
 // FileQuery is the builder for querying File entities.

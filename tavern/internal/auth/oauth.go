@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/user"
 	"golang.org/x/oauth2"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 const (

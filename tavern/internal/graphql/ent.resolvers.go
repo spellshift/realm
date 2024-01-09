@@ -7,8 +7,8 @@ package graphql
 import (
 	"context"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/graphql/generated"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/graphql/generated"
 )
 
 // Node is the resolver for the node field.

@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/kcarretto/realm/tavern/internal/ent/runtime"
+	_ "realm.pub/tavern/internal/ent/runtime"
 
 	_ "github.com/mattn/go-sqlite3"
 )
