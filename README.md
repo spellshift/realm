@@ -48,12 +48,10 @@ Realm is a cross platform Red Team engagement platform with a focus on automatio
 ### Start the server
 
 ```bash
-git clone https://github.com/spellshift/realm.git
-cd realm
-go run ./tavern
+go run ream.pub/tavern
 
 # If you'd like to test without deploying an agent use the test data.
-ENABLE_TEST_DATA=1 go run ./tavern
+ENABLE_TEST_DATA=1 go run ream.pub/tavern
 ```
 
 ### Start the agent
