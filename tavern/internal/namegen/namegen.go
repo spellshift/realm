@@ -891,9 +891,9 @@ var (
 type Complexity int
 
 const (
-	Simple   Complexity = iota // 0
-	Moderate                   // 1
-	Complex                    // 2
+	ComplexitySimple   Complexity = iota // 0
+	ComplexityModerate                   // 1
+	ComplexityComplex                    // 2
 )
 
 // GetRandomName generates a random name based on the complexity.
@@ -914,11 +914,11 @@ func GetRandomName(complexity Complexity) string {
 	}
 
 	switch complexity {
-	case Simple:
+	case ComplexitySimple:
 		return fmt.Sprintf("%s-%s", adj1, noun)
-	case Moderate:
+	case ComplexityModerate:
 		return fmt.Sprintf("%s-%s-%s", adj1, adj2, noun)
-	case Complex:
+	case ComplexityComplex:
 		return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
 	default:
 		//same as complex case
@@ -936,7 +936,7 @@ func newRandInt(max int64) int64 {
 	return nBig.Int64()
 }
 func GetComplexRandomName() string {
-	return GetRandomName(Complex)
+	return GetRandomName(ComplexityComplex)
 }
 
 func IsCollision(beacons []*ent.Beacon, str string) bool {

@@ -74,9 +74,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	//3. if the beacon is new lets pick a name for it
 	if !beaconExists {
 		candidateNames := []string{
-			namegen.GetRandomName(namegen.Complexity(namegen.Simple)),
-			namegen.GetRandomName(namegen.Complexity(namegen.Moderate)),
-			namegen.GetRandomName(namegen.Complexity((namegen.Complex))),
+			namegen.GetRandomName(namegen.Complexity(namegen.ComplexitySimple)),
+			namegen.GetRandomName(namegen.Complexity(namegen.ComplexityModerate)),
+			namegen.GetRandomName(namegen.Complexity((namegen.ComplexityComplex))),
 		}
 
 		collisions, err := srv.graph.Beacon.Query().Where(beacon.NameIn(candidateNames...)).All(ctx)
@@ -85,9 +85,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 		if len(collisions) == 3 {
 			candidateNames := []string{
-				namegen.GetRandomName(namegen.Complexity(namegen.Simple)),
-				namegen.GetRandomName(namegen.Complexity(namegen.Moderate)),
-				namegen.GetRandomName(namegen.Complexity((namegen.Complex))),
+				namegen.GetRandomName(namegen.Complexity(namegen.ComplexitySimple)),
+				namegen.GetRandomName(namegen.Complexity(namegen.ComplexityModerate)),
+				namegen.GetRandomName(namegen.Complexity((namegen.ComplexityComplex))),
 			}
 
 			collisions, err = srv.graph.Beacon.Query().Where(beacon.NameIn(candidateNames...)).All(ctx)
