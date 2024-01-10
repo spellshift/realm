@@ -22,14 +22,27 @@ use {
     },
 };
 
-#[cfg(not(windows))]
+#[cfg(all(host_family = "windows", target_os = "windows"))]
+macro_rules! win_target {
+    () => {
+        r"x86_64-pc-windows-msvc"
+    };
+}
+#[cfg(all(host_family = "unix", target_os = "windows"))]
+macro_rules! win_target {
+    () => {
+        r"x86_64-pc-windows-gnu"
+    };
+}
+
+#[cfg(host_family="unix")]
 macro_rules! sep {
     () => {
         "/"
     };
 }
 
-#[cfg(windows)]
+#[cfg(host_family="windows")]
 macro_rules! sep {
     () => {
         r#"\"#
@@ -54,7 +67,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     sep!(),
     "target",
     sep!(),
-    "x86_64-pc-windows-msvc",
+    win_target!(),
     sep!(),
     "release",
     sep!(),
