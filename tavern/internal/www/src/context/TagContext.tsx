@@ -1,4 +1,4 @@
-import React, { createContext } from "react";
+import React, { createContext, useEffect } from "react";
 import { ApolloError, gql, useQuery } from "@apollo/client";
 import { TagContextType } from "../utils/consts";
 
@@ -49,7 +49,14 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
             serviceTag: { kind: "service" },
         }
     }
-    const { loading: isLoading, error, data } = useQuery(GET_TAG_FILTERS, PARAMS);
+    const { loading: isLoading, error, data, startPolling, stopPolling } = useQuery(GET_TAG_FILTERS, PARAMS);
+
+    useEffect(() => {
+        startPolling(60000);
+      return () => {
+       stopPolling();
+      }
+    }, [startPolling, stopPolling])
 
   
     return (

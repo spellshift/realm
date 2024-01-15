@@ -5,10 +5,10 @@
 
 # Realm
 
-![test-status](https://github.com/kcarretto/realm/actions/workflows/tests.yml/badge.svg?branch=main)
-[![codecov](https://codecov.io/github/kcarretto/realm/branch/main/graph/badge.svg?token=KSRPHYDIE4)](https://app.codecov.io/github/kcarretto/realm)
-[![Go Report Card](https://goreportcard.com/badge/github.com/kcarretto/realm)](https://goreportcard.com/report/github.com/kcarretto/realm)
-[![Rust Report Card](https://rust-reportcard.xuri.me/badge/github.com/kcarretto/realm)](https://rust-reportcard.xuri.me/report/github.com/kcarretto/realm)
+![test-status](https://github.com/spellshift/realm/actions/workflows/tests.yml/badge.svg?branch=main)
+[![codecov](https://codecov.io/github/spellshift/realm/branch/main/graph/badge.svg?token=KSRPHYDIE4)](https://app.codecov.io/github/spellshift/realm)
+[![Go Report Card](https://goreportcard.com/badge/github.com/spellshift/realm)](https://goreportcard.com/report/github.com/spellshift/realm)
+[![Rust Report Card](https://rust-reportcard.xuri.me/badge/github.com/spellshift/realm)](https://rust-reportcard.xuri.me/report/github.com/spellshift/realm)
 [![Docs](https://img.shields.io/badge/read%20our-docs-informational)](https://docs.realm.pub/)
 
 Realm is a cross platform Red Team engagement platform with a focus on automation and reliability.
@@ -48,8 +48,8 @@ Realm is a cross platform Red Team engagement platform with a focus on automatio
 ### Start the server
 
 ```bash
-git clone https://github.com/KCarretto/realm.git
-cd realm
+git clone https://github.com/spellshift/realm.git && cd realm
+
 go run ./tavern
 
 # If you'd like to test without deploying an agent use the test data.
@@ -59,7 +59,7 @@ ENABLE_TEST_DATA=1 go run ./tavern
 ### Start the agent
 
 ```bash
-git clone https://github.com/KCarretto/realm.git
+git clone https://github.com/spellshift/realm.git
 cd realm/implants/imix
 
 # Create the config file

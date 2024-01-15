@@ -1,3 +1,6 @@
+import {add} from "date-fns";
+import { BeaconType } from "./consts";
+
 export const safelyJsonParse = (value: string) => {
     let error = false;
     let params = [];
@@ -35,3 +38,21 @@ export function getFilterNameByTypes(typeFilters: Array<any>){
         "platform": []
     });
 };
+
+export function getOnlineBeacons(beacons: Array<BeaconType>) : Array<BeaconType>{
+    const currentDate = new Date();
+    return beacons.filter((beacon: BeaconType)=> add(new Date(beacon.lastSeenAt),{seconds: beacon.interval, minutes: 1}) >= currentDate);
+}
+export function checkIfBeaconOnline(beacon: {lastSeenAt: string, interval: number}) : boolean{
+    const currentDate = new Date();
+    return add(new Date(beacon.lastSeenAt),{seconds: beacon.interval, minutes: 1}) < currentDate;
+}
+
+export function isBeaconSelected(selectedBeacons: any): boolean{
+    for (let key in selectedBeacons) {
+        if (selectedBeacons[key] === true) {
+            return true;
+        }
+    }
+    return false;
+}

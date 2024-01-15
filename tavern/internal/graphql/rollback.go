@@ -3,7 +3,7 @@ package graphql
 import (
 	"fmt"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent"
 )
 
 func rollback(tx *ent.Tx, err error) error {

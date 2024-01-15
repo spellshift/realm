@@ -12,14 +12,14 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/kcarretto/realm/tavern/internal/ent/beacon"
-	"github.com/kcarretto/realm/tavern/internal/ent/file"
-	"github.com/kcarretto/realm/tavern/internal/ent/host"
-	"github.com/kcarretto/realm/tavern/internal/ent/quest"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
-	"github.com/kcarretto/realm/tavern/internal/ent/task"
-	"github.com/kcarretto/realm/tavern/internal/ent/tome"
-	"github.com/kcarretto/realm/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ent aliases to avoid import conflicts in user's code.

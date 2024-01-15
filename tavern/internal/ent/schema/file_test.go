@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/enttest"
 )
 
 func TestFileHooks(t *testing.T) {
