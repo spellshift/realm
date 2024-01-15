@@ -1,1 +1,0 @@
-export {BeaconView} from "./BeaconView";
