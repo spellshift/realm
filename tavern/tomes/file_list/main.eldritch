@@ -1,12 +1,15 @@
 def file_list(path):
-    files = file.list(path)
-    for f in files:
-        type_str = ""
-        if f['type'] == "Directory":
-            type_str = "Dir"
-        if f['type'] == "File":
-            type_str = "File"
-        print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name']+"\n")
+    if file.is_dir(path):
+        files = file.list(path)
+        for f in files:
+            type_str = ""
+            if f['type'] == "Directory":
+                type_str = "Dir"
+            if f['type'] == "File":
+                type_str = "File"
+            print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name']+"\n")
+    else:
+        print("Error: Invalid Path ("+path+")\n")
 
 file_list(input_params['path'])
 print("\n")
