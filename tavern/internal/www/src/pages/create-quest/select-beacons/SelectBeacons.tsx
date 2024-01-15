@@ -10,10 +10,10 @@ type Props = {
     formik: any;
 }
 export const SelectBeacons = (props: Props) => {
-    const {setCurrStep, formik} = props;
+    const { setCurrStep, formik } = props;
     const [selectedBeacons, setSelectedBeacons] = useState<any>({});
 
-    const {data, isLoading, error } = useContext(TagContext); 
+    const { data, isLoading } = useContext(TagContext);
 
     //filter to only show online beacons
     const onlineBeacons = getOnlineBeacons(data?.beacons || []);
@@ -24,7 +24,7 @@ export const SelectBeacons = (props: Props) => {
         const beaconToSubmit = [] as Array<string>;
         for (let key in selectedBeacons) {
             if (selectedBeacons[key] === true) {
-               beaconToSubmit.push(key);
+                beaconToSubmit.push(key);
             }
         }
         formik.setFieldValue('beacons', beaconToSubmit);
@@ -38,20 +38,20 @@ export const SelectBeacons = (props: Props) => {
                 <p className="text-sm text-gray-700 italic">Only active beacons are available for selection</p>
             </div>
             {isLoading || data === undefined ?
-            (
-                <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />
-            ): (
-                <BeaconView beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
-            )}
-             <div className="flex flex-row gap-2">
-                 <button
+                (
+                    <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />
+                ) : (
+                    <BeaconView beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
+                )}
+            <div className="flex flex-row gap-2">
+                <button
                     className="btn-primary"
-                    onClick={() =>  handleClickContinue(selectedBeacons)}
+                    onClick={() => handleClickContinue(selectedBeacons)}
                     disabled={!hasBeaconSelected}
                 >
                     Continue
                 </button>
-             </div>
+            </div>
         </div>
     );
 }

@@ -3,10 +3,10 @@ import { PageWrapper } from "../../components/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 import { TagContext } from "../../context/TagContext";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
-import { QuestForm } from "./quest-form";
+import QuestForm from "./components/QuestForm";
 
 export const CreateQuest = () => {
-    const {data, isLoading, error } = useContext(TagContext);
+    const { data, isLoading, error } = useContext(TagContext);
 
     return (
         <PageWrapper currNavItem={PageNavItem.createQuest}>
@@ -24,7 +24,7 @@ export const CreateQuest = () => {
                     <button
                         type="button"
                         className="inline-flex items-center rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-700"
-                        onClick={() => window.open("https://docs.realm.pub/user-guide/getting-started#start-the-agent", '_blank')}  
+                        onClick={() => window.open("https://docs.realm.pub/user-guide/getting-started#start-the-agent", '_blank')}
                     >
                         See imix docs
                     </button>
