@@ -11,6 +11,7 @@ export enum TaskStatus {
 export enum PageNavItem {
     quests='Quest history',
     documentation='Documentation',
+    playground='API Playground',
     results='Quest outputs',
     createQuest= 'Create new quest',
 }
