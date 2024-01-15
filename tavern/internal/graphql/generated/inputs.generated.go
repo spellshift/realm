@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/kcarretto/realm/tavern/internal/graphql/models"
+	"realm.pub/tavern/internal/graphql/models"
 )
 
 // region    ************************** generated!.gotpl **************************

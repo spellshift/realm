@@ -3,9 +3,9 @@ package namegen_test
 import (
 	"testing"
 
-	"github.com/kcarretto/realm/tavern/internal/namegen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"realm.pub/tavern/internal/namegen"
 )
 
 func TestGetRandomName(t *testing.T) {

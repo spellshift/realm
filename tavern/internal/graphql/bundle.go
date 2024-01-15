@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/file"
 	"golang.org/x/crypto/sha3"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/file"
 )
 
 func createBundle(ctx context.Context, client *ent.Client, bundleFiles []*ent.File) (*ent.File, error) {

@@ -7,13 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kcarretto/realm/tavern/internal/cdn"
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/enttest"
-	"github.com/kcarretto/realm/tavern/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/sha3"
+	"realm.pub/tavern/internal/cdn"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/errors"
 )
 
 // TestUpload asserts that the download handler exhibits expected behavior.

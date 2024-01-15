@@ -10,8 +10,8 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/hook"
 	"golang.org/x/crypto/sha3"
+	"realm.pub/tavern/internal/ent/hook"
 )
 
 // Tome holds the schema definition for the Tome entity.

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"realm.pub/tavern/internal/ent"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"

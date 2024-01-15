@@ -9,10 +9,10 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/kcarretto/realm/tavern/internal/ent/file"
-	"github.com/kcarretto/realm/tavern/internal/ent/quest"
-	"github.com/kcarretto/realm/tavern/internal/ent/tome"
-	"github.com/kcarretto/realm/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Quest is the model entity for the Quest schema.
