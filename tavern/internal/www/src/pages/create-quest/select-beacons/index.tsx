@@ -1,1 +1,0 @@
-export {SelectBeacons} from "./SelectBeacons";
