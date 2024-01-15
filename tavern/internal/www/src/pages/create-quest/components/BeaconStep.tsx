@@ -1,18 +1,18 @@
 import { Heading, Text, Stack, StackItem, Box, Button, FormLabel, Switch, Divider } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import React, { FC, useCallback } from "react";
-import { BeaconType, TomeTag } from "../../../../utils/consts";
 import {
     AutoSizer as _AutoSizer,
     AutoSizerProps,
     Grid as _Grid,
     GridProps
-  } from "react-virtualized";
+} from "react-virtualized";
 
 import 'react-virtualized/styles.css';
-import { BeaconFilterBar } from "../../../../components/beacon-filter-bar";
-import BeaconOption from "../../../../components/beacon-option/BeaconOption";
-import { useBeaconFilter } from "../../../../hooks/useBeaconFilter";
+import { BeaconFilterBar } from "../../../components/beacon-filter-bar";
+import BeaconOption from "../../../components/beacon-option/BeaconOption";
+import { BeaconType, TomeTag } from "../../../utils/consts";
+import { useBeaconFilter } from "../hooks/useBeaconFilter";
 
 const Grid = _Grid as unknown as FC<GridProps>;
 const AutoSizer = _AutoSizer as unknown as FC<AutoSizerProps>;
@@ -25,11 +25,12 @@ type Props = {
     setSelectedBeacons: any;
 }
 
-export const BeaconView = (props: Props) => {
+
+const BeaconStep = (props: Props) => {
     const CARD_HEIGHT = 100;
     const COLUMN_COUNT = 1;
 
-    const {beacons, groups, services, selectedBeacons, setSelectedBeacons} = props;
+    const { beacons, groups, services, selectedBeacons, setSelectedBeacons } = props;
 
     const {
         filteredBeacons,
@@ -37,28 +38,28 @@ export const BeaconView = (props: Props) => {
         setViewOnlySelected
     } = useBeaconFilter(beacons, selectedBeacons);
 
-    const toggleCheck = useCallback( (inputName :any) => {
+    const toggleCheck = useCallback((inputName: any) => {
         setSelectedBeacons((currentState: any) => {
-            const newState = {...currentState};
+            const newState = { ...currentState };
             newState[inputName] = !currentState[inputName];
             return newState;
         });
     }, []);
 
-    const handleCheckAllFiltered = useCallback( () => {
+    const handleCheckAllFiltered = useCallback(() => {
         setSelectedBeacons((currentState: any) => {
-            const newState = {...currentState};
-            filteredBeacons.map((beacon :any) => {
+            const newState = { ...currentState };
+            filteredBeacons.map((beacon: any) => {
                 newState[beacon.id] = true;
             });
             return newState;
         });
     }, [filteredBeacons]);
 
-    const handleUnCheckAllFiltered = useCallback( () => {
+    const handleUnCheckAllFiltered = useCallback(() => {
         setSelectedBeacons((currentState: any) => {
-            const newState = {...currentState};
-            filteredBeacons.map((beacon :any) => {
+            const newState = { ...currentState };
+            filteredBeacons.map((beacon: any) => {
                 newState[beacon.id] = false;
             });
             return newState;
@@ -66,21 +67,21 @@ export const BeaconView = (props: Props) => {
     }, [filteredBeacons]);
 
     const cellRenderer = (props: any, width: any) => {
-            const {columnIndex, key, rowIndex, style} = props;
-            const index = rowIndex * COLUMN_COUNT + columnIndex;
-            return (
-                <div key={key} style={style}>
-                    <BeaconOption index={index} style={{ width: width, height: CARD_HEIGHT }} beaconsToDisplay={filteredBeacons} toggleCheck={toggleCheck} beaconsSelected={selectedBeacons}  />
-                </div>
-            );
+        const { columnIndex, key, rowIndex, style } = props;
+        const index = rowIndex * COLUMN_COUNT + columnIndex;
+        return (
+            <div key={key} style={style}>
+                <BeaconOption index={index} style={{ width: width, height: CARD_HEIGHT }} beaconsToDisplay={filteredBeacons} toggleCheck={toggleCheck} beaconsSelected={selectedBeacons} />
+            </div>
+        );
     };
 
 
-    function getSelectedCount(){
+    function getSelectedCount() {
         let targetCount = 0;
         for (var key in selectedBeacons) {
             if (selectedBeacons[key] === true) {
-                targetCount = targetCount +1;
+                targetCount = targetCount + 1;
             }
         }
         return targetCount;
@@ -92,28 +93,28 @@ export const BeaconView = (props: Props) => {
         <div className="flex flex-col gap-4">
             <Stack direction="column" gap="4">
                 <StackItem>
-                <div className="flex flex-row justify-between gap-8">
-                    <div className=" flex-1">
-                        <BeaconFilterBar setFiltersSelected={setTypeFilters} groups={groups} services={services} beacons={beacons} />
+                    <div className="flex flex-row justify-between gap-8">
+                        <div className=" flex-1">
+                            <BeaconFilterBar setFiltersSelected={setTypeFilters} groups={groups} services={services} beacons={beacons} />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <FormLabel htmlFor='isSelected'>
+                                <Heading size="sm" >Filter by selected</Heading>
+                            </FormLabel>
+                            <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value) => !value)} />
+                        </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <FormLabel htmlFor='isSelected'>
-                            <Heading size="sm" >Filter by selected</Heading>
-                        </FormLabel>
-                        <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value)=> !value)} />
-                    </div>
-                </div>
                 </StackItem>
                 <StackItem>
                     <Box p={2} className="option-container" borderRadius={"md"}>
                         <Stack direction="column" gap={2} width="full" height="full">
                             <StackItem>
-                                    <StackItem>
-                                        <Button leftIcon={<PlusIcon className="h-4 w-4"/>} size={"sm"} onClick={()=> handleCheckAllFiltered()}>Select all ({filteredBeacons.length})</Button>
-                                    </StackItem>
-                                    <StackItem>
-                                        <Button leftIcon={<TrashIcon className=" h-4 w-4"/>} size={"sm"} onClick={()=> handleUnCheckAllFiltered()}>Clear selected</Button>
-                                    </StackItem>
+                                <StackItem>
+                                    <Button leftIcon={<PlusIcon className="h-4 w-4" />} size={"sm"} onClick={() => handleCheckAllFiltered()}>Select all ({filteredBeacons.length})</Button>
+                                </StackItem>
+                                <StackItem>
+                                    <Button leftIcon={<TrashIcon className=" h-4 w-4" />} size={"sm"} onClick={() => handleUnCheckAllFiltered()}>Clear selected</Button>
+                                </StackItem>
                             </StackItem>
 
                             {filteredBeacons.length === 0 && (
@@ -126,16 +127,16 @@ export const BeaconView = (props: Props) => {
                             )}
                             <StackItem className="md-scroll-container" >
                                 <AutoSizer disableHeight>
-                                    {({width}) => {
+                                    {({ width }) => {
                                         return (
                                             <Grid
-                                                    cellRenderer={(props) => cellRenderer(props, width)}
-                                                    columnCount={COLUMN_COUNT}
-                                                    columnWidth={width}
-                                                    height={filteredBeacons.length * CARD_HEIGHT}
-                                                    rowCount={filteredBeacons.length}
-                                                    rowHeight={CARD_HEIGHT}
-                                                    width={width}
+                                                cellRenderer={(props) => cellRenderer(props, width)}
+                                                columnCount={COLUMN_COUNT}
+                                                columnWidth={width}
+                                                height={filteredBeacons.length * CARD_HEIGHT}
+                                                rowCount={filteredBeacons.length}
+                                                rowHeight={CARD_HEIGHT}
+                                                width={width}
                                             />
                                         )
                                     }}
@@ -151,3 +152,4 @@ export const BeaconView = (props: Props) => {
         </div>
     )
 }
+export default BeaconStep;

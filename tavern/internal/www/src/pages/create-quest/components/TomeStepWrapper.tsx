@@ -29,11 +29,11 @@ const TomeStepWrapper = (
         return param?.value && param?.value !== "";
     });
 
-    const isContinueDisabled = hasAllParamsSet.length !== formik?.values?.params.length || formik?.values?.tome === null || formik?.values?.name === "";
+    const isContinueDisabled = hasAllParamsSet.length !== formik?.values?.params.length || formik?.values?.tome === null;
 
     return (
         <div className="flex flex-col gap-6">
-            <h2 className="text-xl font-semibold text-gray-900">Customize a tome</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Select a tome</h2>
             {loading ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading tomes..." />
             ) : error ? (
@@ -50,14 +50,10 @@ const TomeStepWrapper = (
                 </button>
                 <button
                     className="btn-primary"
-                    onClick={(event) => {
-                        event.preventDefault();
-                        formik.handleSubmit();
-                    }}
+                    onClick={() => setCurrStep(2)}
                     disabled={isContinueDisabled}
-                    type="submit"
                 >
-                    Submit
+                    Continue
                 </button>
             </div>
         </div>

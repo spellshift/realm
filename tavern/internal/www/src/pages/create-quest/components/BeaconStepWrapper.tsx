@@ -3,13 +3,13 @@ import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/E
 import { TagContext } from "../../../context/TagContext";
 import { SelectedBeacons } from "../../../utils/consts";
 import { getOnlineBeacons, isBeaconSelected } from "../../../utils/utils";
-import { BeaconView } from "./beacon-view";
+import BeaconStep from "./BeaconStep";
 
 type Props = {
     setCurrStep: (arg1: number) => void;
     formik: any;
 }
-export const SelectBeacons = (props: Props) => {
+export const BeaconStepWrapper = (props: Props) => {
     const { setCurrStep, formik } = props;
     const [selectedBeacons, setSelectedBeacons] = useState<any>({});
 
@@ -41,7 +41,7 @@ export const SelectBeacons = (props: Props) => {
                 (
                     <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />
                 ) : (
-                    <BeaconView beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
+                    <BeaconStep beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
                 )}
             <div className="flex flex-row gap-2">
                 <button
@@ -55,3 +55,4 @@ export const SelectBeacons = (props: Props) => {
         </div>
     );
 }
+export default BeaconStepWrapper;

@@ -32,7 +32,7 @@ const TomeRadioGroup = (
         <div className="w-full">
             <div className="mx-auto w-full">
                 <RadioGroup value={selected} onChange={setSelected} className="flex flex-col gap-3">
-                    <RadioGroup.Label>
+                    <RadioGroup.Label className="sr-only">
                         <Heading size="sm" >{label}</Heading>
                     </RadioGroup.Label>
                     <InputGroup>
@@ -78,15 +78,13 @@ const TomeRadioGroup = (
                                                             <Box as="div" flex='1' textAlign='left' className='flex flex-col w-full gap-1'>
                                                                 <RadioGroup.Label
                                                                     as="div"
-                                                                    className={`flex flex-row gap-2 items-center font-medium text-gray-900'
-                                                                                    }`}
+                                                                    className={`items-center font-medium text-gray-900`}
                                                                 >
                                                                     {tome.name}
                                                                 </RadioGroup.Label>
                                                                 <RadioGroup.Description
                                                                     as="div"
-                                                                    className={`flex flex-col gap- w-full text-sm text-gray-600'
-                                                                                    }`}
+                                                                    className={`flex flex-col gap- w-full text-sm text-gray-600`}
                                                                 >
                                                                     <p>{tome.description}</p>
                                                                     {params &&

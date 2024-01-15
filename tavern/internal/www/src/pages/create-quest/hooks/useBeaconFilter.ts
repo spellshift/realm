@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { BeaconType } from "../utils/consts";
+import { BeaconType } from "../../../utils/consts";
 
 export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any) => {
 

@@ -17,19 +17,8 @@ const TomeStep = (props: Props) => {
         formik.setFieldValue('params', params ? params : []);
     };
 
-    const handleNameQuest = (name: string) => {
-        formik.setFieldValue('name', name);
-    };
-
     return (
         <div className="flex flex-col gap-6">
-            <FormTextField
-                htmlFor="questName"
-                label="Quest name"
-                placeholder={"Provide a recognizable name to this quest"}
-                value={formik?.values?.name}
-                onChange={(event) => handleNameQuest(event?.target?.value)}
-            />
             <TomeRadioGroup
                 label="Select a tome"
                 data={data}

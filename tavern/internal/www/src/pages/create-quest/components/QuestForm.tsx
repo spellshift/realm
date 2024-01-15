@@ -1,22 +1,28 @@
 import { useFormik } from "formik";
+import { faker } from '@faker-js/faker';
 import React, { useState } from "react";
+
 import { FormSteps } from "../../../components/form-steps";
-import { useSubmitQuest } from "../../../hooks/useSubmitQuest";
 import TomeStepWrapper from "./TomeStepWrapper";
-import { SelectBeacons } from "../select-beacons";
+import FinalizeStep from "./FinalizeStep";
+import BeaconStepWrapper from "./BeaconStepWrapper";
+import { useSubmitQuest } from "../hooks/useSubmitQuest";
 
 const QuestForm = () => {
     const [currStep, setCurrStep] = useState<number>(0);
-    const { submitQuest, loading, error, reset } = useSubmitQuest();
+    const { submitQuest } = useSubmitQuest();
+    const placeholderTitle = faker.music.songName();
+
 
     const steps = [
         { name: 'Select agent beacons', description: 'Step 1', href: '#', step: 0 },
         { name: 'Select a tome', description: 'Step 2', href: '#', step: 1 },
+        { name: 'Confirm quest details', description: 'Step 3', href: '#', step: 2 },
     ];
 
     const formik = useFormik({
         initialValues: {
-            name: "",
+            name: placeholderTitle,
             tome: null,
             params: [],
             beacons: [],
@@ -27,9 +33,11 @@ const QuestForm = () => {
     function getStepView(step: number) {
         switch (step) {
             case 0:
-                return <SelectBeacons setCurrStep={setCurrStep} formik={formik} />
+                return <BeaconStepWrapper setCurrStep={setCurrStep} formik={formik} />
             case 1:
                 return <TomeStepWrapper setCurrStep={setCurrStep} formik={formik} />
+            case 2:
+                return <FinalizeStep setCurrStep={setCurrStep} formik={formik} />
             default:
                 return <div>An error has occured</div>;
         }

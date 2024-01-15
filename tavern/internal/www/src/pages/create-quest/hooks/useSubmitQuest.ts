@@ -2,8 +2,8 @@ import { gql, useMutation } from "@apollo/client"
 import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreateQuestProps } from "../utils/consts";
-import { GET_QUEST_QUERY } from "../utils/queries";
+import { CreateQuestProps } from "../../../utils/consts";
+import { GET_QUEST_QUERY } from "../../../utils/queries";
 
 export const useSubmitQuest = () => {
     const [error, setError] = useState(false);
