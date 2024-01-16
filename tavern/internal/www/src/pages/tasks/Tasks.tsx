@@ -5,7 +5,7 @@ import { TaskOutput } from "../../components/task-output";
 import TaskTable from "../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
-import { TableRowLimit } from "../../utils/enums";
+import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import FilterBar from "./FilterBar";
 import { TaskPageHeader } from "./TaskPageHeader";
 import { TASK_PAGE_TYPE, useTasks } from "./useTasks";
@@ -27,14 +27,14 @@ const Tasks = () => {
     const [isOpen, setOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<any | null>(null);
 
-    const handleClick =(e: any) => {
+    const handleClick = (e: any) => {
         const selectedTaskData = e?.original?.node;
         setSelectedTask(selectedTaskData);
-        setOpen((state)=> !state);
+        setOpen((state) => !state);
     }
 
     return (
-        <PageWrapper>
+        <PageWrapper currNavItem={PageNavItem.results}>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                 <TaskPageHeader />
             </div>
@@ -50,7 +50,7 @@ const Tasks = () => {
                             <TaskTable tasks={data?.tasks?.edges} onToggle={handleClick} />
                             <TablePagination totalCount={data?.tasks?.totalCount} pageInfo={data?.tasks?.pageInfo} refetchTable={updateTaskList} page={page} setPage={setPage} rowLimit={TableRowLimit.TaskRowLimit} />
                         </div>
-                    ): (
+                    ) : (
                         <EmptyState label="No data found" details="Try creating a new quest or adjusting filters." type={EmptyStateType.noData}>
                             <Link to="/createQuest">
                                 <button
@@ -64,7 +64,7 @@ const Tasks = () => {
                     )}
                 </div>
             )}
-            <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask}/>
+            <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask} />
         </PageWrapper>
     );
 };
