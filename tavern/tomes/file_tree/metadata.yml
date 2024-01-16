@@ -1,0 +1,7 @@
+name: List file tree
+description: List the files and directories found at the path in tree-like format
+paramdefs:
+- name: path
+  type: string
+  label: File path
+  placeholder: "/etc/"
