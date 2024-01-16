@@ -16,7 +16,7 @@ You can leverage the power of Eldritch with minimal exposure in the system proce
 ## Try it out
 
 ```bash
-git clone git@github.com:KCarretto/realm.git
+git clone git@github.com:spellshift/realm.git
 cd realm/implants/golem
 cargo run -- -i
 # - or -
