@@ -7,6 +7,8 @@ def file_list(path,tree):
             if f['type'] == "Directory":
                 print(tree+"|---"+path+"/"+f['file_name']+"\n")
                 file_list(path+"/"+f['file_name'],tree)
+            if f['type'] == "Link":
+                print(tree+"|---"+f['file_name']+"\n")
             if f['type'] == "File":
                 print(tree+"|---"+f['file_name']+"\n")
     else:
