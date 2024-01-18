@@ -11,11 +11,11 @@ import (
 
 func TestGetRandomName(t *testing.T) {
 	t.Run("BasicName", func(t *testing.T) {
-		name1 := namegen.GetRandomName(namegen.ComplexitySimple)
+		name1 := namegen.GetRandomNameSimple()
 		assert.NotEmpty(t, name1)
-		name2 := namegen.GetRandomName(namegen.ComplexityModerate)
+		name2 := namegen.GetRandomNameModerate()
 		assert.NotEmpty(t, name2)
-		name3 := namegen.GetComplexRandomName()
+		name3 := namegen.GetRandomNameComplex()
 		assert.NotEmpty(t, name3)
 	})
 
@@ -24,7 +24,7 @@ func TestGetRandomName(t *testing.T) {
 		names := make(map[string]bool, 1000000)
 		count := 0
 		for i := 0; i < 1000000; i++ {
-			name := namegen.GetRandomName(namegen.ComplexityComplex)
+			name := namegen.GetRandomNameComplex()
 			exists, ok := names[name]
 			require.False(t, ok, "Name %s already exists - after %d attempts", name, count)
 			assert.False(t, exists)

@@ -888,42 +888,49 @@ var (
 	}
 )
 
-type Complexity int
+// getRandomNameSimple generates a random name with one adjective and one noun.
+func GetRandomNameSimple() string {
+	adj, noun := getRandomAdjNoun()
+	return fmt.Sprintf("%s-%s", adj, noun)
+}
 
-const (
-	ComplexitySimple   Complexity = iota // 0
-	ComplexityModerate                   // 1
-	ComplexityComplex                    // 2
-)
+// getRandomNameModerate generates a random name with two adjectives and one noun.
+func GetRandomNameModerate() string {
+	adj1, adj2, noun := getRandomAdjAdjNoun()
+	return fmt.Sprintf("%s-%s-%s", adj1, adj2, noun)
+}
 
-// GetRandomName generates a random name based on the complexity.
-func GetRandomName(complexity Complexity) string {
-	var adj1, adj2, noun string
-	var num int64
+// getRandomNameComplex generates a random name with two adjectives, one noun, and a number.
+func GetRandomNameComplex() string {
+	adj1, adj2, noun := getRandomAdjAdjNoun()
+	num := newRandInt(10000000)
+	return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
+}
+
+// Helper function to get a random adjective and noun.
+func getRandomAdjNoun() (string, string) {
+	var adj, noun string
 
 	if time.Now().Month() == time.October {
-		adj1 = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
-		adj2 = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
+		adj = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
 		noun = noun_halloween[newRandInt(int64(len(noun_halloween)))]
-		num = newRandInt(10000000)
 	} else {
-		adj1 = adjectives[newRandInt(int64(len(adjectives)))]
-		adj2 = adjectives[newRandInt(int64(len(adjectives)))]
+		adj = adjectives[newRandInt(int64(len(adjectives)))]
 		noun = nouns[newRandInt(int64(len(nouns)))]
-		num = newRandInt(10000000)
 	}
+	return adj, noun
+}
 
-	switch complexity {
-	case ComplexitySimple:
-		return fmt.Sprintf("%s-%s", adj1, noun)
-	case ComplexityModerate:
-		return fmt.Sprintf("%s-%s-%s", adj1, adj2, noun)
-	case ComplexityComplex:
-		return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
-	default:
-		//same as complex case
-		return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
+// Helper function to get two random adjectives and a noun.
+func getRandomAdjAdjNoun() (string, string, string) {
+	adj1, noun := getRandomAdjNoun()
+	var adj2 string
+	if time.Now().Month() == time.October {
+		adj2 = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
+	} else {
+		adj2 = adjectives[newRandInt(int64(len(adjectives)))]
 	}
+	return adj1, adj2, noun
 }
 
 // cryptoRandSecure is not always secure, if it errors we return 1337 % max
@@ -934,9 +941,6 @@ func newRandInt(max int64) int64 {
 		return 1337 % max
 	}
 	return nBig.Int64()
-}
-func GetComplexRandomName() string {
-	return GetRandomName(ComplexityComplex)
 }
 
 func IsCollision(beacons []*ent.Beacon, str string) bool {

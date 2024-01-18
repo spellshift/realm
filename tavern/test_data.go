@@ -348,14 +348,14 @@ None
 func createQuest(ctx context.Context, client *ent.Client, beacons ...*ent.Beacon) {
 	// Mid-Execution
 	testTome := client.Tome.Create().
-		SetName(namegen.GetRandomName(2)).
+		SetName(namegen.GetRandomNameComplex()).
 		SetDescription("Print a message for fun!").
 		SetEldritch(`print(input_params['msg'])`).
 		SetParamDefs(`[{"name":"msg","label":"Message","type":"string","placeholder":"something to print"}]`).
 		SaveX(ctx)
 
 	q := client.Quest.Create().
-		SetName(namegen.GetRandomName(2)).
+		SetName(namegen.GetRandomNameComplex()).
 		SetParameters(`{"msg":"Hello World!"}`).
 		SetTome(testTome).
 		SaveX(ctx)
