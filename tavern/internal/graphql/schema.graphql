@@ -313,7 +313,7 @@ enum HostOrderField {
   LAST_SEEN_AT
 }
 """HostPlatform is enum for the field platform"""
-enum HostPlatform @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/host.Platform") {
+enum HostPlatform @goModel(model: "realm.pub/tavern/internal/ent/host.Platform") {
   Windows
   Linux
   MacOS
@@ -410,7 +410,7 @@ input HostWhereInput {
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
 """
-interface Node @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent.Noder") {
+interface Node @goModel(model: "realm.pub/tavern/internal/ent.Noder") {
   """The id of the object."""
   id: ID!
 }
@@ -566,7 +566,7 @@ type Tag implements Node {
   hosts: [Host!]
 }
 """TagKind is enum for the field kind"""
-enum TagKind @goModel(model: "github.com/kcarretto/realm/tavern/internal/ent/tag.Kind") {
+enum TagKind @goModel(model: "realm.pub/tavern/internal/ent/tag.Kind") {
   group
   service
 }
@@ -639,6 +639,22 @@ type Task implements Node {
   error: String
   quest: Quest!
   beacon: Beacon!
+}
+"""A connection to a list of items."""
+type TaskConnection {
+  """A list of edges."""
+  edges: [TaskEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type TaskEdge {
+  """The item at the end of the edge."""
+  node: Task
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """Ordering options for Task connections"""
 input TaskOrder {
@@ -1084,7 +1100,25 @@ type Mutation {
 extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
   quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
-  tasks(where: TaskWhereInput): [Task!]! @requireRole(role: USER)
+  tasks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Tasks returned from the connection."""
+    orderBy: [TaskOrder!]
+
+    """Filtering options for Tasks returned from the connection."""
+    where: TaskWhereInput
+  ): TaskConnection! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
   hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)

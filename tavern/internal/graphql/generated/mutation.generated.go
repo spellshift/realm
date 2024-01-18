@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/graphql/models"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/graphql/models"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -259,7 +259,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 		if data, ok := tmp.(*ent.Quest); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Quest`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.Quest`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -355,7 +355,7 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 		if data, ok := tmp.(*ent.Beacon); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Beacon`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.Beacon`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -454,7 +454,7 @@ func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field grap
 		if data, ok := tmp.(*ent.Host); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Host`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.Host`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -551,7 +551,7 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 		if data, ok := tmp.(*ent.Tag); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Tag`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.Tag`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -640,7 +640,7 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 		if data, ok := tmp.(*ent.Tag); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Tag`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.Tag`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -880,7 +880,7 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 		if data, ok := tmp.(*ent.Tome); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.Tome`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.Tome`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -977,7 +977,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 		if data, ok := tmp.(*ent.User); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kcarretto/realm/tavern/internal/ent.User`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.User`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)

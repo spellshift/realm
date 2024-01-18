@@ -12,9 +12,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
-	"github.com/kcarretto/realm/tavern/internal/namegen"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/namegen"
 )
 
 // createTestData populates the DB with some test data :)
@@ -57,6 +57,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
+					SetInterval(600000).
 					SaveX(ctx),
 			)
 
@@ -66,6 +67,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
+					SetInterval(1000).
 					SaveX(ctx),
 			)
 
@@ -75,6 +77,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
+					SetInterval(4).
 					SaveX(ctx),
 			)
 		}

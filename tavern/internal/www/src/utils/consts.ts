@@ -38,6 +38,8 @@ export type BeaconType = {
     name: string;
     principal: string;
     host: HostType;
+    lastSeenAt: string;
+    interval: number;
 }
 export type SelectedBeacons = {
     [beaconId: string]: boolean

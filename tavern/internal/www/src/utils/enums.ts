@@ -11,6 +11,7 @@ export enum TaskStatus {
 export enum PageNavItem {
     quests='Quest history',
     documentation='Documentation',
+    playground='API Playground',
     results='Quest outputs',
     createQuest= 'Create new quest',
 }
@@ -20,4 +21,7 @@ export enum SupportedPlatforms {
     MacOS='MacOS',
     BSD='BSD',
     Unknown='Unknown'
+}
+export enum TableRowLimit {
+    TaskRowLimit=8
 }

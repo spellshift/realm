@@ -8,7 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/tag"
 )
 
 // Tag is the model entity for the Tag schema.

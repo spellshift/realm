@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/kcarretto/realm/tavern/internal/ent/predicate"
-	"github.com/kcarretto/realm/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/tag"
 )
 
 // TagDelete is the builder for deleting a Tag entity.

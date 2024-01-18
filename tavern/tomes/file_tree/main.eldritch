@@ -1,0 +1,21 @@
+def file_list(path,tree):
+    tree="|\t\t"+tree
+    if file.is_dir(path):
+        files = file.list(path)
+        for f in files:
+            type_str = ""
+            if f['type'] == "Directory":
+                print(tree+"|---"+path+"/"+f['file_name']+"\n")
+                file_list(path+"/"+f['file_name'],tree)
+            if f['type'] == "Link":
+                print(tree+"|---"+f['file_name']+"\n")
+            if f['type'] == "File":
+                print(tree+"|---"+f['file_name']+"\n")
+    else:
+        print("Error: Invalid Path ("+path+")\n")
+
+tree=""
+print(input_params['path']+"\n")
+file_list(input_params['path'],tree)
+print("\n")
+print("\n")

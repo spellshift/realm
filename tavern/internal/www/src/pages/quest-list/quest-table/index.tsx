@@ -1,1 +1,0 @@
-export {QuestTable} from "./QuestTable";

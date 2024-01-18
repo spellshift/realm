@@ -5,9 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/kcarretto/realm/tavern/internal/ent"
-	"github.com/kcarretto/realm/tavern/internal/ent/file"
-	"github.com/kcarretto/realm/tavern/internal/errors"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/errors"
 )
 
 // DefaultMaxUploadSize defines the maximum number of bytes an uploaded file can be.

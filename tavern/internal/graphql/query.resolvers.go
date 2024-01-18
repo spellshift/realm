@@ -8,8 +8,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kcarretto/realm/tavern/internal/auth"
-	"github.com/kcarretto/realm/tavern/internal/ent"
+	"entgo.io/contrib/entgql"
+	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/ent"
 )
 
 // Files is the resolver for the files field.
@@ -45,7 +46,7 @@ func (r *queryResolver) Quests(ctx context.Context, where *ent.QuestWhereInput) 
 }
 
 // Tasks is the resolver for the tasks field.
-func (r *queryResolver) Tasks(ctx context.Context, where *ent.TaskWhereInput) ([]*ent.Task, error) {
+func (r *queryResolver) Tasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) (*ent.TaskConnection, error) {
 	query, err := r.client.Task.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
@@ -55,9 +56,9 @@ func (r *queryResolver) Tasks(ctx context.Context, where *ent.TaskWhereInput) ([
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.All(ctx)
+		return query.Paginate(ctx, after, first, before, last, ent.WithTaskOrder(orderBy))
 	}
-	return query.All(ctx)
+	return query.Paginate(ctx, after, first, before, last, ent.WithTaskOrder(orderBy))
 }
 
 // Beacons is the resolver for the beacons field.

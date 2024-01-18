@@ -10,8 +10,11 @@
 			"NODE_VERSION": "lts/*"
 		}
 	},
-	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
-
+	"runArgs": [
+		"--cap-add=SYS_PTRACE",
+		"--security-opt",
+		"seccomp=unconfined"
+	],
 	// Set *default* container specific settings.json values on container create.
 	"customizations": {
 		"vscode": {
@@ -21,18 +24,14 @@
 				"go.useLanguageServer": true,
 				"go.gopath": "/go",
 				"go.goroot": "/usr/local/go",
-
 				// Formatting
 				"editor.formatOnSave": true,
-
 				"files.trimTrailingWhitespace": true,
 				"files.insertFinalNewline": true,
 				"files.trimFinalNewlines": true,
-
 				// Misc
 				"git.autofetch": true
 			},
-
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"DavidAnson.vscode-markdownlint",
@@ -47,21 +46,16 @@
 			]
 		}
 	},
-
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"appPort": [
 		"127.0.0.1:80:80"
 	],
-
-
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	// "remoteUser": "vscode"
-
 	// SPEEEEEEED on MacOS & Windows. Note that your local clone of realm will not be updated.
 	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
 	"workspaceFolder": "/workspaces/realm",
-	"postCreateCommand": "cd /workspaces && git clone https://github.com/KCarretto/realm.git",
-
+	"postCreateCommand": "cd /workspaces && git clone https://github.com/spellshift/realm.git",
 	"mounts": [
 		"source=realm-bashhistory,target=/commandhistory,type=volume"
 	]

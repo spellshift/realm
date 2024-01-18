@@ -6,8 +6,8 @@ import {
   XMarkIcon,
   ClipboardDocumentCheckIcon,
   CommandLineIcon,
-  BookOpenIcon,
-  ClockIcon
+  ClockIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline'
 
 import logo from '../../assets/eldrich.png';
@@ -16,17 +16,11 @@ import { Link } from 'react-router-dom';
 import { AccessGate } from '../access-gate';
 
 const navigation = [
-  { name: PageNavItem.createQuest, href:'/createQuest', icon:CommandLineIcon, internal: true },
-  { name: PageNavItem.results, href: '/results', icon: ClipboardDocumentCheckIcon, internal: true},
-  { name: PageNavItem.quests, href: '/quests', icon: ClockIcon, internal: true},
-  // { name: 'Beacons', href: '/beacons', icon: BugAntIcon, current: false },
-  // { name: 'Realm status', href: '#', icon: PresentationChartLineIcon, current: false },
+  { name: PageNavItem.createQuest, href: '/createQuest', icon: CommandLineIcon, internal: true },
+  { name: PageNavItem.results, href: '/results', icon: ClipboardDocumentCheckIcon, internal: true },
+  { name: PageNavItem.quests, href: '/quests', icon: ClockIcon, internal: true },
   { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
-]
-const teams = [
-  { id: 1, name: 'Heroicons', href: '#', initial: 'H', current: false },
-  { id: 2, name: 'Tailwind Labs', href: '#', initial: 'T', current: false },
-  { id: 3, name: 'Workcation', href: '#', initial: 'W', current: false },
+  { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
 ]
 
 function classNames(...classes: string[]) {
@@ -38,7 +32,7 @@ type Props = {
   currNavItem?: PageNavItem;
 }
 export const PageWrapper = (props: Props) => {
-  const {children, currNavItem} = props;
+  const { children, currNavItem } = props;
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -101,7 +95,7 @@ export const PageWrapper = (props: Props) => {
                             {navigation.map((item) => (
                               <li key={item.name}>
                                 {item.internal ? (
-                                  <Link 
+                                  <Link
                                     to={item.href}
                                     className={classNames(
                                       item.name === currNavItem
@@ -113,10 +107,10 @@ export const PageWrapper = (props: Props) => {
                                     <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
                                     {item.name}
                                   </Link>
-                                ): (
+                                ) : (
                                   <a
                                     href={item.href}
-                                    target={item?.target ? '__blank': undefined}
+                                    target={item?.target ? '__blank' : undefined}
                                     className={classNames(
                                       item.name === currNavItem
                                         ? 'bg-gray-800 text-white'
@@ -151,8 +145,8 @@ export const PageWrapper = (props: Props) => {
                   className="h-12 w-auto"
                   src={logo}
                   alt="Your Company"
-                                    />
-                  <div className="text-white text-2xl leading-6 font-semibold tracking-wide">Tavern</div>
+                />
+                <div className="text-white text-2xl leading-6 font-semibold tracking-wide">Tavern</div>
               </div>
             </a>
             <nav className="flex flex-1 flex-col">
@@ -162,32 +156,32 @@ export const PageWrapper = (props: Props) => {
                     {navigation.map((item) => (
                       <li key={item.name}>
                         {item.internal ? (
-                          <Link 
-                          to={item.href}
-                          className={classNames(
-                            item.name === currNavItem
-                              ? 'bg-gray-800 text-white'
-                              : 'text-gray-400 hover:text-white hover:bg-gray-800',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
-                          )}
-                        >
-                          <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
-                          {item.name}
-                        </Link>
-                        ): (
+                          <Link
+                            to={item.href}
+                            className={classNames(
+                              item.name === currNavItem
+                                ? 'bg-gray-800 text-white'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                              'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                            )}
+                          >
+                            <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                            {item.name}
+                          </Link>
+                        ) : (
                           <a
-                          href={item.href}
-                          target={item?.target ? '__blank': undefined}
-                          className={classNames(
-                            item.name === currNavItem
-                              ? 'bg-gray-800 text-white'
-                              : 'text-gray-400 hover:text-white hover:bg-gray-800',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
-                          )}
-                        >
-                          <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
-                          {item.name}
-                        </a>
+                            href={item.href}
+                            target={item?.target ? '__blank' : undefined}
+                            className={classNames(
+                              item.name === currNavItem
+                                ? 'bg-gray-800 text-white'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                              'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                            )}
+                          >
+                            <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                            {item.name}
+                          </a>
                         )}
                       </li>
                     ))}
