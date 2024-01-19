@@ -14,7 +14,6 @@ def file_list(path,tree):
     else:
         print("Error: Invalid Path ("+path+")\n")
 
-input_params['path']="/root/"
 tree=""
 print(input_params['path']+"\n")
 file_list(input_params['path'],tree)
