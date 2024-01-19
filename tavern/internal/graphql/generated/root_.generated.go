@@ -11,10 +11,10 @@ import (
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/graphql/models"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/graphql/models"
 )
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
@@ -138,6 +138,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
+		OutputSize     func(childComplexity int) int
 		Quest          func(childComplexity int) int
 	}
 
@@ -768,6 +769,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Task.Output(childComplexity), true
+
+	case "Task.outputSize":
+		if e.complexity.Task.OutputSize == nil {
+			break
+		}
+
+		return e.complexity.Task.OutputSize(childComplexity), true
 
 	case "Task.quest":
 		if e.complexity.Task.Quest == nil {
@@ -1669,6 +1677,8 @@ type Task implements Node {
   execFinishedAt: Time
   """Output from executing the task"""
   output: String
+  """The size of the output in bytes"""
+  outputSize: Int!
   """Error, if any, produced while executing the Task"""
   error: String
   quest: Quest!
@@ -1704,6 +1714,7 @@ enum TaskOrderField {
   CLAIMED_AT
   EXEC_STARTED_AT
   EXEC_FINISHED_AT
+  SIZE
 }
 """
 TaskWhereInput is used for filtering Task objects.
@@ -1789,6 +1800,15 @@ input TaskWhereInput {
   outputNotNil: Boolean
   outputEqualFold: String
   outputContainsFold: String
+  """output_size field predicates"""
+  outputSize: Int
+  outputSizeNEQ: Int
+  outputSizeIn: [Int!]
+  outputSizeNotIn: [Int!]
+  outputSizeGT: Int
+  outputSizeGTE: Int
+  outputSizeLT: Int
+  outputSizeLTE: Int
   """error field predicates"""
   error: String
   errorNEQ: String

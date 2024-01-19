@@ -635,6 +635,8 @@ type Task implements Node {
   execFinishedAt: Time
   """Output from executing the task"""
   output: String
+  """The size of the output in bytes"""
+  outputSize: Int!
   """Error, if any, produced while executing the Task"""
   error: String
   quest: Quest!
@@ -670,6 +672,7 @@ enum TaskOrderField {
   CLAIMED_AT
   EXEC_STARTED_AT
   EXEC_FINISHED_AT
+  SIZE
 }
 """
 TaskWhereInput is used for filtering Task objects.
@@ -755,6 +758,15 @@ input TaskWhereInput {
   outputNotNil: Boolean
   outputEqualFold: String
   outputContainsFold: String
+  """output_size field predicates"""
+  outputSize: Int
+  outputSizeNEQ: Int
+  outputSizeIn: [Int!]
+  outputSizeNotIn: [Int!]
+  outputSizeGT: Int
+  outputSizeGTE: Int
+  outputSizeLT: Int
+  outputSizeLTE: Int
   """error field predicates"""
   error: String
   errorNEQ: String

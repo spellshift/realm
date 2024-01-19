@@ -85,6 +85,11 @@ func Output(v string) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldOutput, v))
 }
 
+// OutputSize applies equality check predicate on the "output_size" field. It's identical to OutputSizeEQ.
+func OutputSize(v int) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldOutputSize, v))
+}
+
 // Error applies equality check predicate on the "error" field. It's identical to ErrorEQ.
 func Error(v string) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldError, v))
@@ -393,6 +398,46 @@ func OutputEqualFold(v string) predicate.Task {
 // OutputContainsFold applies the ContainsFold predicate on the "output" field.
 func OutputContainsFold(v string) predicate.Task {
 	return predicate.Task(sql.FieldContainsFold(FieldOutput, v))
+}
+
+// OutputSizeEQ applies the EQ predicate on the "output_size" field.
+func OutputSizeEQ(v int) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldOutputSize, v))
+}
+
+// OutputSizeNEQ applies the NEQ predicate on the "output_size" field.
+func OutputSizeNEQ(v int) predicate.Task {
+	return predicate.Task(sql.FieldNEQ(FieldOutputSize, v))
+}
+
+// OutputSizeIn applies the In predicate on the "output_size" field.
+func OutputSizeIn(vs ...int) predicate.Task {
+	return predicate.Task(sql.FieldIn(FieldOutputSize, vs...))
+}
+
+// OutputSizeNotIn applies the NotIn predicate on the "output_size" field.
+func OutputSizeNotIn(vs ...int) predicate.Task {
+	return predicate.Task(sql.FieldNotIn(FieldOutputSize, vs...))
+}
+
+// OutputSizeGT applies the GT predicate on the "output_size" field.
+func OutputSizeGT(v int) predicate.Task {
+	return predicate.Task(sql.FieldGT(FieldOutputSize, v))
+}
+
+// OutputSizeGTE applies the GTE predicate on the "output_size" field.
+func OutputSizeGTE(v int) predicate.Task {
+	return predicate.Task(sql.FieldGTE(FieldOutputSize, v))
+}
+
+// OutputSizeLT applies the LT predicate on the "output_size" field.
+func OutputSizeLT(v int) predicate.Task {
+	return predicate.Task(sql.FieldLT(FieldOutputSize, v))
+}
+
+// OutputSizeLTE applies the LTE predicate on the "output_size" field.
+func OutputSizeLTE(v int) predicate.Task {
+	return predicate.Task(sql.FieldLTE(FieldOutputSize, v))
 }
 
 // ErrorEQ applies the EQ predicate on the "error" field.

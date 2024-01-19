@@ -131,6 +131,7 @@ var (
 		{Name: "exec_started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "exec_finished_at", Type: field.TypeTime, Nullable: true},
 		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "output_size", Type: field.TypeInt, Default: 0},
 		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "quest_tasks", Type: field.TypeInt},
 		{Name: "task_beacon", Type: field.TypeInt},
@@ -143,13 +144,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tasks_quests_tasks",
-				Columns:    []*schema.Column{TasksColumns[8]},
+				Columns:    []*schema.Column{TasksColumns[9]},
 				RefColumns: []*schema.Column{QuestsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "tasks_beacons_beacon",
-				Columns:    []*schema.Column{TasksColumns[9]},
+				Columns:    []*schema.Column{TasksColumns[10]},
 				RefColumns: []*schema.Column{BeaconsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

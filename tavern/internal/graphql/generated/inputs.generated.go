@@ -63,7 +63,7 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatform"))
-			data, err := ec.unmarshalNHostPlatform2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, v)
+			data, err := ec.unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -187,12 +187,12 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNClaimTasksInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐClaimTasksInput(ctx context.Context, v interface{}) (models.ClaimTasksInput, error) {
+func (ec *executionContext) unmarshalNClaimTasksInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐClaimTasksInput(ctx context.Context, v interface{}) (models.ClaimTasksInput, error) {
 	res, err := ec.unmarshalInputClaimTasksInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNSubmitTaskResultInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐSubmitTaskResultInput(ctx context.Context, v interface{}) (models.SubmitTaskResultInput, error) {
+func (ec *executionContext) unmarshalNSubmitTaskResultInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐSubmitTaskResultInput(ctx context.Context, v interface{}) (models.SubmitTaskResultInput, error) {
 	res, err := ec.unmarshalInputSubmitTaskResultInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }

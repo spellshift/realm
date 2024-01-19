@@ -1,11 +1,15 @@
 package schema
 
 import (
+	"context"
+	"fmt"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/hook"
 )
 
 // Task holds the schema definition for the Task entity.
@@ -37,6 +41,13 @@ func (Task) Fields() []ent.Field {
 		field.Text("output").
 			Optional().
 			Comment("Output from executing the task"),
+		field.Int("output_size").
+			Default(0).
+			Min(0).
+			Annotations(
+				entgql.OrderField("SIZE"),
+			).
+			Comment("The size of the output in bytes"),
 		field.String("error").
 			Optional().
 			Comment("Error, if any, produced while executing the Task"),
@@ -68,5 +79,38 @@ func (Task) Annotations() []schema.Annotation {
 func (Task) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		MixinHistory{}, // created_at, last_modified_at
+	}
+}
+
+// Hooks defines middleware for mutations for the ent.
+func (Task) Hooks() []ent.Hook {
+	return []ent.Hook{
+		hook.On(HookDeriveTaskInfo(), ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne),
+	}
+}
+
+// HookDeriveTaskInfo will update task info (e.g. output_size) whenever it is mutated.
+func HookDeriveTaskInfo() ent.Hook {
+	// Get the relevant methods from the Task Mutation
+	// See this example: https://github.com/ent/ent/blob/master/entc/integration/hooks/ent/schema/user.go#L98
+	type tMutation interface {
+		Output() (string, bool)
+		SetOutputSize(i int)
+	}
+
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			// Get the mutation
+			t, ok := m.(tMutation)
+			if !ok {
+				return nil, fmt.Errorf("expected task mutation in schema hook, got: %+v", m)
+			}
+
+			// Set the new size
+			output, _ := t.Output()
+			t.SetOutputSize(len([]byte(output)))
+
+			return next.Mutate(ctx, m)
+		})
 	}
 }

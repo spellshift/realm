@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
@@ -22,7 +23,6 @@ import (
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // Common entgql types.
@@ -1990,6 +1990,20 @@ var (
 			}
 		},
 	}
+	// TaskOrderFieldOutputSize orders Task by output_size.
+	TaskOrderFieldOutputSize = &TaskOrderField{
+		Value: func(t *Task) (ent.Value, error) {
+			return t.OutputSize, nil
+		},
+		column: task.FieldOutputSize,
+		toTerm: task.ByOutputSize,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.OutputSize,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -2006,6 +2020,8 @@ func (f TaskOrderField) String() string {
 		str = "EXEC_STARTED_AT"
 	case TaskOrderFieldExecFinishedAt.column:
 		str = "EXEC_FINISHED_AT"
+	case TaskOrderFieldOutputSize.column:
+		str = "SIZE"
 	}
 	return str
 }
@@ -2032,6 +2048,8 @@ func (f *TaskOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *TaskOrderFieldExecStartedAt
 	case "EXEC_FINISHED_AT":
 		*f = *TaskOrderFieldExecFinishedAt
+	case "SIZE":
+		*f = *TaskOrderFieldOutputSize
 	default:
 		return fmt.Errorf("%s is not a valid TaskOrderField", str)
 	}
