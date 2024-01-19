@@ -667,7 +667,7 @@ enum TaskOrderField {
   CLAIMED_AT
   EXEC_STARTED_AT
   EXEC_FINISHED_AT
-  SIZE
+  OUTPUT_SIZE
 }
 """
 TaskWhereInput is used for filtering Task objects.

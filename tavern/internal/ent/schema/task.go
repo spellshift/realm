@@ -45,7 +45,7 @@ func (Task) Fields() []ent.Field {
 			Default(0).
 			Min(0).
 			Annotations(
-				entgql.OrderField("SIZE"),
+				entgql.OrderField("OUTPUT_SIZE"),
 			).
 			Comment("The size of the output in bytes"),
 		field.String("error").

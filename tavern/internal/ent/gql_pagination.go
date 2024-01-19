@@ -2021,7 +2021,7 @@ func (f TaskOrderField) String() string {
 	case TaskOrderFieldExecFinishedAt.column:
 		str = "EXEC_FINISHED_AT"
 	case TaskOrderFieldOutputSize.column:
-		str = "SIZE"
+		str = "OUTPUT_SIZE"
 	}
 	return str
 }
@@ -2048,7 +2048,7 @@ func (f *TaskOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *TaskOrderFieldExecStartedAt
 	case "EXEC_FINISHED_AT":
 		*f = *TaskOrderFieldExecFinishedAt
-	case "SIZE":
+	case "OUTPUT_SIZE":
 		*f = *TaskOrderFieldOutputSize
 	default:
 		return fmt.Errorf("%s is not a valid TaskOrderField", str)
