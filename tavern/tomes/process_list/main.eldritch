@@ -33,7 +33,7 @@ def process_list(cmd_substring):
             print(pad_pid(current_proc_pid))
             print(pad_pid(current_proc_ppid))
             print(pad_username(current_proc_username))
-            print(current_proc_command+"\n")
+            print(current_proc_command.replace("\n","\\n")+"\n")
 
 process_list(input_params['cmd_substring'])
 print("\n")
