@@ -128,7 +128,11 @@ pub fn eldritch_run(
     print_handler: &(dyn PrintHandler),
 ) -> anyhow::Result<String> {
     // Boilder plate
-    let ast = match AstModule::parse(&tome_filename, tome_contents.as_str().to_owned(), &Dialect::Extended) {
+    let ast = match AstModule::parse(
+        &tome_filename,
+        tome_contents.as_str().to_owned(),
+        &Dialect::Extended,
+    ) {
         Ok(res) => res,
         Err(err) => {
             return Err(anyhow::anyhow!(
