@@ -126,6 +126,35 @@ print(sys.shell(input_params["cmd"])["stdout"])
     }
 
     #[test]
+    fn imix_test_assets() -> Result<()> {
+        let test_tome_input = Task {
+            id: 123,
+            eldritch: r#"
+print(remote_assets['test/test.txt'])
+1"#
+            .to_string(),
+            parameters: HashMap::from([("cmd".to_string(), "echo hello_from_stdout".to_string())]),
+            assets: HashMap::from([("test/test.txt".to_string(), "test".to_string())]),
+        };
+
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        let (sender, receiver) = channel::<String>();
+
+        let exec_future = handle_exec_tome(test_tome_input, sender.clone());
+        let (eld_output, eld_error) = runtime.block_on(exec_future)?;
+
+        let cmd_output = receiver.recv_timeout(Duration::from_millis(500))?;
+        assert!(cmd_output.contains("test"));
+        assert_eq!(eld_output, "1".to_string());
+        assert_eq!(eld_error, "".to_string());
+        Ok(())
+    }
+
+    #[test]
     fn imix_handle_exec_tome_error() -> Result<()> {
         let test_tome_input = Task {
             id: 123,

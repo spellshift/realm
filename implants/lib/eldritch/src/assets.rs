@@ -7,6 +7,7 @@ use allocative::Allocative;
 use derive_more::Display;
 
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
+use starlark::eval::Evaluator;
 use starlark::values::none::NoneType;
 use starlark::values::{
     starlark_value, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
@@ -70,9 +71,9 @@ impl<'v> UnpackValue<'v> for AssetsLibrary {
 #[starlark_module]
 #[rustfmt::skip]
 fn methods(builder: &mut MethodsBuilder) {
-    fn copy(this: AssetsLibrary, src: String, dest: String) -> anyhow::Result<NoneType> {
+    fn copy<'v>(this: AssetsLibrary, starlark_eval: &mut Evaluator<'v, '_>, src: String, dest: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        copy_impl::copy(src, dest)?;
+        copy_impl::copy(starlark_eval, src, dest)?;
         Ok(NoneType{})
     }
     fn list(this: AssetsLibrary) -> anyhow::Result<Vec<String>> {
