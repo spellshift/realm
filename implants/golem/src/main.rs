@@ -18,7 +18,9 @@ async fn execute_tomes_in_parallel(
     for tome_data in tome_name_and_content {
         let tmp_row = (
             tome_data.0.clone().to_string(),
-            thread::spawn(|| eldritch_run(tome_data.0, tome_data.1, None, &StdPrintHandler {})),
+            thread::spawn(|| {
+                eldritch_run(tome_data.0, tome_data.1, None, None, &StdPrintHandler {})
+            }),
         );
         all_tome_futures.push(tmp_row)
     }

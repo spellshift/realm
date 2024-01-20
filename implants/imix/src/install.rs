@@ -31,6 +31,7 @@ async fn execute_tomes_in_parallel(
                     tome_data.0,
                     tome_data.1,
                     local_tome_parameters,
+                    None,
                     &StdPrintHandler {},
                 )
             }),

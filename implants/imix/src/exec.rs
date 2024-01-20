@@ -37,6 +37,7 @@ async fn handle_exec_tome(
             task.id.to_string(),
             task.eldritch.clone(),
             Some(task.parameters.clone()),
+            None,
             &print_handler,
         )
     })
