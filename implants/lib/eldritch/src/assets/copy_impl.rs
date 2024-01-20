@@ -4,13 +4,14 @@ use starlark::eval::Evaluator;
 use std::fs;
 
 pub fn copy<'v>(starlark_eval: &mut Evaluator<'v, '_>, src: String, dst: String) -> Result<()> {
+    // Check remote
     let remote_assets = starlark_eval.module().get("remote_assets");
     match remote_assets {
         Some(assets) => {
             let json_string = assets.to_json()?;
             println!("{}", json_string);
             let json_map: serde_json::Value = serde_json::from_str(&json_string)?;
-            match json_map.get("src") {
+            match json_map.get(src.clone()) {
                 Some(remote_src) => {
                     println!("{}", remote_src)
                 }
@@ -20,6 +21,7 @@ pub fn copy<'v>(starlark_eval: &mut Evaluator<'v, '_>, src: String, dst: String)
         None => {}
     }
 
+    // Check local
     let src_file = match super::Asset::get(src.as_str()) {
         Some(local_src_file) => local_src_file.data,
         None => return Err(anyhow::anyhow!("Embedded file {src} not found.")),
