@@ -143,6 +143,18 @@ pub struct ReportTaskOutputRequest {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportTaskOutputResponse {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DownloadFileRequest {
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DownloadFileResponse {
+    #[prost(bytes = "vec", tag = "1")]
+    pub chunk: ::prost::alloc::vec::Vec<u8>,
+}
 /// Generated client implementations.
 pub mod c2_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -271,6 +283,28 @@ pub mod c2_client {
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
             self.inner.unary(req, path, codec).await
+        }
+        pub async fn download_file(
+            &mut self,
+            request: impl tonic::IntoRequest<super::DownloadFileRequest>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::DownloadFileResponse>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/DownloadFile");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "DownloadFile"));
+            self.inner.server_streaming(req, path, codec).await
         }
     }
 }
