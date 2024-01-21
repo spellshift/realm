@@ -29,7 +29,7 @@ func (srv *Server) DownloadFile(req *c2pb.DownloadFileRequest, stream c2pb.C2_Do
 
 	// Set Header Metadata
 	stream.SetHeader(metadata.Pairs(
-		"sha3-checksum", f.Hash,
+		"sha3-256-checksum", f.Hash,
 		"file-size", fmt.Sprintf("%d", f.Size),
 	))
 

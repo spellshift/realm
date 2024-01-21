@@ -98,8 +98,8 @@ func TestDownloadFile(t *testing.T) {
 		// Assert Headers
 		metadata, err := fileClient.Header()
 		require.NoError(t, err)
-		require.Len(t, metadata.Get("sha3-checksum"), 1)
-		assert.Equal(t, f.Hash, metadata.Get("sha3-checksum")[0])
+		require.Len(t, metadata.Get("sha3-256-checksum"), 1)
+		assert.Equal(t, f.Hash, metadata.Get("sha3-256-checksum")[0])
 		require.Len(t, metadata.Get("file-size"), 1)
 		assert.Equal(t, fmt.Sprintf("%d", f.Size), metadata.Get("file-size")[0])
 	}

@@ -289,7 +289,7 @@ Tavern also supports a gRPC API for agents to claim tasks and report execution o
 
 You may download files from Tavern utilizing the `DownloadFile` gRPC method. This method streams responses, each of which will contain a chunk of the desired file. We rely on the [ordering guarantees](https://grpc.io/docs/languages/go/basics/#defining-the-service) provided by gRPC to ensure the file is assembled correctly. This API also sets two headers to ensure the integrity of files:
 
-* `sha3-checksum`: Set to the SHA3 hash of the entire file.
+* `sha3-256-checksum`: Set to the SHA3 hash of the entire file.
 * `file-size`: Set to the number of bytes contained by the file.
 
 ## Performance Profiling
