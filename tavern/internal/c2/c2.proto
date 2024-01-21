@@ -48,6 +48,7 @@ message Task {
     string eldritch = 2;
     map<string, string> parameters = 3;
     repeated string file_names = 4;
+    string quest_name = 5;
 }
 
 // TaskError provides information when task execution fails.

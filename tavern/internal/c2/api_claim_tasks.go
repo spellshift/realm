@@ -192,6 +192,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			Eldritch:   claimedTome.Eldritch,
 			Parameters: params,
 			FileNames:  claimedFileNames,
+			QuestName:  claimedQuest.Name,
 		})
 	}
 
