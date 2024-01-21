@@ -20,8 +20,6 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	beaconHooks := schema.Beacon{}.Hooks()
-	beacon.Hooks[0] = beaconHooks[0]
 	beaconFields := schema.Beacon{}.Fields()
 	_ = beaconFields
 	// beaconDescName is the schema descriptor for name field.

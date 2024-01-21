@@ -40,8 +40,6 @@ func TestClaimTasks(t *testing.T) {
 		wantBeaconExist            bool
 		wantBeaconLastSeenAtBefore time.Time
 		wantBeaconLastSeenAtAfter  time.Time
-		wantBeaconNextSeenAtBefore time.Time
-		wantBeaconNextSeenAtAfter  time.Time
 	}{
 		{
 			name: "First_Callback",
@@ -65,8 +63,6 @@ func TestClaimTasks(t *testing.T) {
 			wantCode: codes.OK,
 
 			wantBeaconExist:            true,
-			wantBeaconNextSeenAtBefore: time.Now().UTC().Add(120 * time.Second),
-			wantBeaconNextSeenAtAfter:  time.Now().UTC().Add(-120 * time.Second),
 			wantBeaconLastSeenAtBefore: time.Now().UTC().Add(10 * time.Second),
 			wantBeaconLastSeenAtAfter:  time.Now().UTC().Add(-10 * time.Second),
 		},
@@ -92,8 +88,6 @@ func TestClaimTasks(t *testing.T) {
 			wantCode: codes.OK,
 
 			wantBeaconExist:            true,
-			wantBeaconNextSeenAtBefore: time.Now().UTC().Add(200 * time.Second),
-			wantBeaconNextSeenAtAfter:  time.Now().UTC().Add(-200 * time.Second),
 			wantBeaconLastSeenAtBefore: time.Now().UTC().Add(10 * time.Second),
 			wantBeaconLastSeenAtAfter:  time.Now().UTC().Add(-10 * time.Second),
 		},
@@ -124,8 +118,6 @@ func TestClaimTasks(t *testing.T) {
 			wantCode: codes.OK,
 
 			wantBeaconExist:            true,
-			wantBeaconNextSeenAtBefore: time.Now().UTC().Add(200 * time.Second),
-			wantBeaconNextSeenAtAfter:  time.Now().UTC().Add(-200 * time.Second),
 			wantBeaconLastSeenAtBefore: time.Now().UTC().Add(10 * time.Second),
 			wantBeaconLastSeenAtAfter:  time.Now().UTC().Add(-10 * time.Second),
 		},
@@ -164,7 +156,6 @@ func TestClaimTasks(t *testing.T) {
 
 			// Beacon Assertions
 			assert.WithinRange(t, testBeacon.LastSeenAt, tc.wantBeaconLastSeenAtAfter, tc.wantBeaconLastSeenAtBefore)
-			assert.WithinRange(t, testBeacon.NextSeenAt, tc.wantBeaconNextSeenAtAfter, tc.wantBeaconNextSeenAtBefore)
 		})
 	}
 }
