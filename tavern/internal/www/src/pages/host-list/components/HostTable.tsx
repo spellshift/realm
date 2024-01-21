@@ -35,6 +35,15 @@ const HostTable = ({ data }: any) => {
             accessorFn: row => row.beaconStatus,
             footer: props => props.column.id,
             maxSize: 100,
+            sortingFn: (
+                rowA,
+                rowB,
+            ) => {
+                const numA = rowA?.original?.beaconStatus.online / (rowA?.original?.beaconStatus.offline + rowA?.original?.beaconStatus.online);
+                const numB = rowB?.original?.beaconStatus.online / (rowB?.original?.beaconStatus.offline + rowB?.original?.beaconStatus.online);
+
+                return numA < numB ? 1 : numA > numB ? -1 : 0;
+            },
             cell: (cellData: any) => {
                 const beacons = cellData.getValue();
                 const color = beacons.online === 0 ? "red" : "gray";
@@ -50,14 +59,23 @@ const HostTable = ({ data }: any) => {
             header: "Beacon principals",
             accessorFn: row => row.beaconPrincipals,
             footer: props => props.column.id,
+            sortingFn: (
+                rowA,
+                rowB,
+            ) => {
+                const numA = rowA?.original?.beaconPrincipals ? rowA?.original?.beaconPrincipals.filter((princial: any) => princialColors.indexOf(princial) !== -1).length : 0;
+                const numB = rowA?.original?.beaconPrincipals ? rowB?.original?.beaconPrincipals.filter((princial: any) => princialColors.indexOf(princial) !== -1).length : 0;
+
+                return numA < numB ? 1 : numA > numB ? -1 : 0;
+            },
             cell: (cellData: any) => {
-                const beaconsPrincipals = cellData.getValue();
+                const beaconPrincipals = cellData.getValue();
                 return (
                     <div className="flex flex-row flex-wrap gap-1">
 
-                        {beaconsPrincipals.map((principal: any) => {
+                        {beaconPrincipals.map((principal: any) => {
                             const color = princialColors.indexOf(principal) === -1 ? 'gray' : 'purple';
-                            return <Badge textTransform="none" colorScheme={color}>{principal}</Badge>
+                            return <Badge textTransform="none" colorScheme={color} key={principal}>{principal}</Badge>
                         })}
                     </div>
                 );

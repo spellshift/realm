@@ -181,6 +181,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
         loading,
         error,
         page,
+        filtersSelected,
         setPage,
         setSearch: handleSearchChange,
         setFiltersSelected: handleFilterChange,

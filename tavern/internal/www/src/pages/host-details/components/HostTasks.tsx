@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { TaskOutput } from "../../../components/task-output";
 import TaskTable from "../../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
@@ -15,6 +15,7 @@ const HostTasks = () => {
         loading: taskLoading,
         error: taskError,
         page,
+        filtersSelected,
         setPage,
         setSearch,
         updateTaskList
@@ -46,9 +47,19 @@ const HostTasks = () => {
                                 <TaskTable tasks={taskData?.tasks?.edges} onToggle={handleClick} />
                                 <TablePagination totalCount={taskData?.tasks?.totalCount} pageInfo={taskData?.tasks?.pageInfo} refetchTable={updateTaskList} page={page} setPage={setPage} rowLimit={TableRowLimit.TaskRowLimit} />
                             </>
-                        ) : (
-                            <EmptyState label="No data found" details="" type={EmptyStateType.noData} />
-                        )}
+                        )
+                            : (
+                                <EmptyState label="No tasks found" type={EmptyStateType.noData} details="Get started by creating a new quest." >
+                                    <Link to="/createQuest">
+                                        <button
+                                            type="button"
+                                            className="inline-flex items-center rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-700"
+                                        >
+                                            Create new quest
+                                        </button>
+                                    </Link>
+                                </EmptyState>
+                            )}
                     </div>
                 )}
             </div>

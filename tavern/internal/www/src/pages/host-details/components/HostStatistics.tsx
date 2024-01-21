@@ -54,7 +54,7 @@ const HostStatistics = (
                 <div className="rounded-md bg-purple-900 p-6">
                     <BugAntIcon className="text-white w-8 h-8" />
                 </div>
-                <div className='flex flex-col gap-2 px-6'>
+                <div className='flex flex-col gap-2'>
                     {host ?
                         <HostTile data={host} />
                         : "-"
