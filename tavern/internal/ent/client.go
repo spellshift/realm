@@ -1210,7 +1210,8 @@ func (c *TaskClient) QueryBeacon(t *Task) *BeaconQuery {
 
 // Hooks returns the client hooks.
 func (c *TaskClient) Hooks() []Hook {
-	return c.hooks.Task
+	hooks := c.hooks.Task
+	return append(hooks[:len(hooks):len(hooks)], task.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.

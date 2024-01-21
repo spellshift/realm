@@ -719,6 +719,11 @@ func (t *TaskQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				selectedFields = append(selectedFields, task.FieldOutput)
 				fieldSeen[task.FieldOutput] = struct{}{}
 			}
+		case "outputSize":
+			if _, ok := fieldSeen[task.FieldOutputSize]; !ok {
+				selectedFields = append(selectedFields, task.FieldOutputSize)
+				fieldSeen[task.FieldOutputSize] = struct{}{}
+			}
 		case "error":
 			if _, ok := fieldSeen[task.FieldError]; !ok {
 				selectedFields = append(selectedFields, task.FieldError)
