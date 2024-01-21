@@ -42,9 +42,9 @@ pub async fn get_new_tasks(
     });
     let new_tasks = match tavern_client.claim_tasks(req).await {
         Ok(resp) => resp.get_ref().tasks.clone(),
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("main_loop: error claiming task\n{:?}", error);
+            eprintln!("main_loop: error claiming task\n{:?}", _error);
             let empty_vec = vec![];
             empty_vec
         }
