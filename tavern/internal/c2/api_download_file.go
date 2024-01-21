@@ -48,7 +48,7 @@ func (srv *Server) DownloadFile(req *c2pb.DownloadFileRequest, stream c2pb.C2_Do
 		}
 
 		// Read Chunk
-		chunk := make([]byte, chunkLen) // TODO
+		chunk := make([]byte, chunkLen)
 		if _, err := buf.Read(chunk); err != nil {
 			return status.Errorf(codes.Internal, "failed to read file content: %v", err)
 		}
