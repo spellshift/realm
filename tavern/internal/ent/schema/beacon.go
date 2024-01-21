@@ -1,18 +1,20 @@
 package schema
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"io"
-
-	"realm.pub/tavern/internal/namegen"
+	"time"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/hook"
+	"realm.pub/tavern/internal/namegen"
 )
 
 // Beacon holds the schema definition for the Beacon entity.
@@ -58,6 +60,13 @@ func (Beacon) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Timestamp of when a task was last claimed or updated for the beacon."),
+		field.Time("next_seen_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("NEXT_SEEN_AT"),
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Timestamp of when the beacon will next callback (if it's in the past, the beacon may be dead)."),
 		field.Uint64("interval").
 			Optional().
 			Annotations(
@@ -91,6 +100,44 @@ func (Beacon) Annotations() []schema.Annotation {
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),
+	}
+}
+
+// Hooks defines middleware for mutations for the ent.
+func (Beacon) Hooks() []ent.Hook {
+	return []ent.Hook{
+		hook.On(HookDeriveBeaconInfo(), ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne),
+	}
+}
+
+// HookDeriveBeaconInfo will update beacon info (e.g. next_seen_at) whenever it is mutated.
+func HookDeriveBeaconInfo() ent.Hook {
+	// Get the relevant methods from the Beacon Mutation
+	type bMutation interface {
+		LastSeenAt() (time.Time, bool)
+		Interval() (uint64, bool)
+		SetNextSeenAt(time.Time)
+	}
+
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			// Get the mutation
+			b, ok := m.(bMutation)
+			if !ok {
+				return nil, fmt.Errorf("expected beacon mutation in schema hook, got: %+v", m)
+			}
+
+			// Set next_seen_at
+			lastSeenAt, hasLastSeenAt := b.LastSeenAt()
+			interval, hasInterval := b.Interval()
+			if hasLastSeenAt && hasInterval {
+				b.SetNextSeenAt(
+					lastSeenAt.Add(time.Duration(interval) * time.Second),
+				)
+			}
+
+			return next.Mutate(ctx, m)
+		})
 	}
 }
 

@@ -52,6 +52,7 @@ type ComplexityRoot struct {
 		Interval        func(childComplexity int) int
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
+		NextSeenAt      func(childComplexity int) int
 		Principal       func(childComplexity int) int
 		Tasks           func(childComplexity int) int
 	}
@@ -240,6 +241,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Beacon.Name(childComplexity), true
+
+	case "Beacon.nextSeenAt":
+		if e.complexity.Beacon.NextSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Beacon.NextSeenAt(childComplexity), true
 
 	case "Beacon.principal":
 		if e.complexity.Beacon.Principal == nil {
@@ -1059,6 +1067,8 @@ type Beacon implements Node {
   agentIdentifier: String
   """Timestamp of when a task was last claimed or updated for the beacon."""
   lastSeenAt: Time
+  """Timestamp of when the beacon will next callback (if it's in the past, the beacon may be dead)."""
+  nextSeenAt: Time
   """Duration until next callback, in seconds."""
   interval: Uint64
   """Host this beacon is running on."""
@@ -1076,6 +1086,7 @@ input BeaconOrder {
 """Properties by which Beacon connections can be ordered."""
 enum BeaconOrderField {
   LAST_SEEN_AT
+  NEXT_SEEN_AT
   INTERVAL
 }
 """
@@ -1166,6 +1177,17 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """next_seen_at field predicates"""
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
   """interval field predicates"""
   interval: Uint64
   intervalNEQ: Uint64

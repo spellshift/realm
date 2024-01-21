@@ -28,6 +28,8 @@ type Beacon struct {
 	AgentIdentifier string `json:"agent_identifier,omitempty"`
 	// Timestamp of when a task was last claimed or updated for the beacon.
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
+	// Timestamp of when the beacon will next callback (if it's in the past, the beacon may be dead).
+	NextSeenAt time.Time `json:"next_seen_at,omitempty"`
 	// Duration until next callback, in seconds.
 	Interval uint64 `json:"interval,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -83,7 +85,7 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldIdentifier, beacon.FieldAgentIdentifier:
 			values[i] = new(sql.NullString)
-		case beacon.FieldLastSeenAt:
+		case beacon.FieldLastSeenAt, beacon.FieldNextSeenAt:
 			values[i] = new(sql.NullTime)
 		case beacon.ForeignKeys[0]: // beacon_host
 			values[i] = new(sql.NullInt64)
@@ -137,6 +139,12 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
 			} else if value.Valid {
 				b.LastSeenAt = value.Time
+			}
+		case beacon.FieldNextSeenAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field next_seen_at", values[i])
+			} else if value.Valid {
+				b.NextSeenAt = value.Time
 			}
 		case beacon.FieldInterval:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -211,6 +219,9 @@ func (b *Beacon) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_seen_at=")
 	builder.WriteString(b.LastSeenAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("next_seen_at=")
+	builder.WriteString(b.NextSeenAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("interval=")
 	builder.WriteString(fmt.Sprintf("%v", b.Interval))

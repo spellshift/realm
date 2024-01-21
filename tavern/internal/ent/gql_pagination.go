@@ -325,6 +325,20 @@ var (
 			}
 		},
 	}
+	// BeaconOrderFieldNextSeenAt orders Beacon by next_seen_at.
+	BeaconOrderFieldNextSeenAt = &BeaconOrderField{
+		Value: func(b *Beacon) (ent.Value, error) {
+			return b.NextSeenAt, nil
+		},
+		column: beacon.FieldNextSeenAt,
+		toTerm: beacon.ByNextSeenAt,
+		toCursor: func(b *Beacon) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.NextSeenAt,
+			}
+		},
+	}
 	// BeaconOrderFieldInterval orders Beacon by interval.
 	BeaconOrderFieldInterval = &BeaconOrderField{
 		Value: func(b *Beacon) (ent.Value, error) {
@@ -347,6 +361,8 @@ func (f BeaconOrderField) String() string {
 	switch f.column {
 	case BeaconOrderFieldLastSeenAt.column:
 		str = "LAST_SEEN_AT"
+	case BeaconOrderFieldNextSeenAt.column:
+		str = "NEXT_SEEN_AT"
 	case BeaconOrderFieldInterval.column:
 		str = "INTERVAL"
 	}
@@ -367,6 +383,8 @@ func (f *BeaconOrderField) UnmarshalGQL(v interface{}) error {
 	switch str {
 	case "LAST_SEEN_AT":
 		*f = *BeaconOrderFieldLastSeenAt
+	case "NEXT_SEEN_AT":
+		*f = *BeaconOrderFieldNextSeenAt
 	case "INTERVAL":
 		*f = *BeaconOrderFieldInterval
 	default:

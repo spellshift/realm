@@ -3,8 +3,10 @@ package c2_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -12,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/c2test"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
 )
 
 func TestClaimTasks(t *testing.T) {
@@ -28,13 +31,18 @@ func TestClaimTasks(t *testing.T) {
 	}
 
 	// Test Cases
-	type testCase struct {
+	tests := []struct {
 		name     string
 		req      *c2pb.ClaimTasksRequest
 		wantResp *c2pb.ClaimTasksResponse
 		wantCode codes.Code
-	}
-	tests := []testCase{
+
+		wantBeaconExist            bool
+		wantBeaconLastSeenAtBefore time.Time
+		wantBeaconLastSeenAtAfter  time.Time
+		wantBeaconNextSeenAtBefore time.Time
+		wantBeaconNextSeenAtAfter  time.Time
+	}{
 		{
 			name: "First_Callback",
 			req: &c2pb.ClaimTasksRequest{
@@ -50,11 +58,17 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					Interval: uint64(100),
+					Interval: uint64(60),
 				},
 			},
 			wantResp: &c2pb.ClaimTasksResponse{},
 			wantCode: codes.OK,
+
+			wantBeaconExist:            true,
+			wantBeaconNextSeenAtBefore: time.Now().UTC().Add(120 * time.Second),
+			wantBeaconNextSeenAtAfter:  time.Now().UTC().Add(-120 * time.Second),
+			wantBeaconLastSeenAtBefore: time.Now().UTC().Add(10 * time.Second),
+			wantBeaconLastSeenAtAfter:  time.Now().UTC().Add(-10 * time.Second),
 		},
 		{
 			name: "Second_Callback",
@@ -76,9 +90,15 @@ func TestClaimTasks(t *testing.T) {
 			},
 			wantResp: &c2pb.ClaimTasksResponse{},
 			wantCode: codes.OK,
+
+			wantBeaconExist:            true,
+			wantBeaconNextSeenAtBefore: time.Now().UTC().Add(200 * time.Second),
+			wantBeaconNextSeenAtAfter:  time.Now().UTC().Add(-200 * time.Second),
+			wantBeaconLastSeenAtBefore: time.Now().UTC().Add(10 * time.Second),
+			wantBeaconLastSeenAtAfter:  time.Now().UTC().Add(-10 * time.Second),
 		},
 		{
-			name: "Callback_With_Tasks",
+			name: "Existing_Beacon",
 			req: &c2pb.ClaimTasksRequest{
 				Beacon: &c2pb.Beacon{
 					Identifier: existingBeacon.Identifier,
@@ -102,26 +122,49 @@ func TestClaimTasks(t *testing.T) {
 				},
 			},
 			wantCode: codes.OK,
+
+			wantBeaconExist:            true,
+			wantBeaconNextSeenAtBefore: time.Now().UTC().Add(200 * time.Second),
+			wantBeaconNextSeenAtAfter:  time.Now().UTC().Add(-200 * time.Second),
+			wantBeaconLastSeenAtBefore: time.Now().UTC().Add(10 * time.Second),
+			wantBeaconLastSeenAtAfter:  time.Now().UTC().Add(-10 * time.Second),
 		},
 	}
 
-	testHandler := func(t *testing.T, tc testCase) {
-		resp, err := client.ClaimTasks(ctx, tc.req)
-		require.Equal(t, tc.wantCode.String(), status.Code(err).String(), err)
-		if status.Code(err) != codes.OK {
-			// Do not continue if we expected error code
-			return
-		}
-
-		if diff := cmp.Diff(tc.wantResp, resp, protocmp.Transform()); diff != "" {
-			t.Errorf("invalid response (-want +got): %v", diff)
-		}
-
-	}
-
+	// Run Tests
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			testHandler(t, tc)
+			// Callback
+			resp, err := client.ClaimTasks(ctx, tc.req)
+
+			// Assert Response Code
+			require.Equal(t, tc.wantCode.String(), status.Code(err).String(), err)
+			if status.Code(err) != codes.OK {
+				// Do not continue if we expected error code
+				return
+			}
+
+			// Assert Response
+			if diff := cmp.Diff(tc.wantResp, resp, protocmp.Transform()); diff != "" {
+				t.Errorf("invalid response (-want +got): %v", diff)
+			}
+
+			// Load Beacon
+			testBeacon, err := graph.Beacon.Query().
+				Where(
+					beacon.Identifier(tc.req.Beacon.Identifier),
+				).Only(ctx)
+			if ent.IsNotFound(err) && !tc.wantBeaconExist {
+				return
+			}
+			if err != nil {
+				t.Errorf("failed to load beacon: %v", err)
+				return
+			}
+
+			// Beacon Assertions
+			assert.WithinRange(t, testBeacon.LastSeenAt, tc.wantBeaconLastSeenAtAfter, tc.wantBeaconLastSeenAtBefore)
+			assert.WithinRange(t, testBeacon.NextSeenAt, tc.wantBeaconNextSeenAtAfter, tc.wantBeaconNextSeenAtBefore)
 		})
 	}
 }

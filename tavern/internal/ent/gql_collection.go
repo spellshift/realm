@@ -86,6 +86,11 @@ func (b *BeaconQuery) collectField(ctx context.Context, opCtx *graphql.Operation
 				selectedFields = append(selectedFields, beacon.FieldLastSeenAt)
 				fieldSeen[beacon.FieldLastSeenAt] = struct{}{}
 			}
+		case "nextSeenAt":
+			if _, ok := fieldSeen[beacon.FieldNextSeenAt]; !ok {
+				selectedFields = append(selectedFields, beacon.FieldNextSeenAt)
+				fieldSeen[beacon.FieldNextSeenAt] = struct{}{}
+			}
 		case "interval":
 			if _, ok := fieldSeen[beacon.FieldInterval]; !ok {
 				selectedFields = append(selectedFields, beacon.FieldInterval)

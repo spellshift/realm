@@ -513,6 +513,47 @@ func (ec *executionContext) fieldContext_Beacon_lastSeenAt(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Beacon_nextSeenAt(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Beacon_nextSeenAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NextSeenAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Beacon_nextSeenAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Beacon",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Beacon_interval(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Beacon_interval(ctx, field)
 	if err != nil {
@@ -1299,6 +1340,8 @@ func (ec *executionContext) fieldContext_Host_beacons(ctx context.Context, field
 				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
+			case "nextSeenAt":
+				return ec.fieldContext_Beacon_nextSeenAt(ctx, field)
 			case "interval":
 				return ec.fieldContext_Beacon_interval(ctx, field)
 			case "host":
@@ -1943,6 +1986,8 @@ func (ec *executionContext) fieldContext_Query_beacons(ctx context.Context, fiel
 				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
+			case "nextSeenAt":
+				return ec.fieldContext_Beacon_nextSeenAt(ctx, field)
 			case "interval":
 				return ec.fieldContext_Beacon_interval(ctx, field)
 			case "host":
@@ -3665,6 +3710,8 @@ func (ec *executionContext) fieldContext_Task_beacon(ctx context.Context, field 
 				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
+			case "nextSeenAt":
+				return ec.fieldContext_Beacon_nextSeenAt(ctx, field)
 			case "interval":
 				return ec.fieldContext_Beacon_interval(ctx, field)
 			case "host":
@@ -4565,7 +4612,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "intervalIsNil", "intervalNotNil", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "intervalIsNil", "intervalNotNil", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5265,6 +5312,96 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 				return it, err
 			}
 			it.LastSeenAtNotNil = data
+		case "nextSeenAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAt = data
+		case "nextSeenAtNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtNEQ = data
+		case "nextSeenAtIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtIn = data
+		case "nextSeenAtNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtNotIn = data
+		case "nextSeenAtGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtGT = data
+		case "nextSeenAtGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtGTE = data
+		case "nextSeenAtLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtLT = data
+		case "nextSeenAtLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtLTE = data
+		case "nextSeenAtIsNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtIsNil = data
+		case "nextSeenAtNotNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nextSeenAtNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NextSeenAtNotNil = data
 		case "interval":
 			var err error
 
@@ -10320,6 +10457,8 @@ func (ec *executionContext) _Beacon(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Beacon_agentIdentifier(ctx, field, obj)
 		case "lastSeenAt":
 			out.Values[i] = ec._Beacon_lastSeenAt(ctx, field, obj)
+		case "nextSeenAt":
+			out.Values[i] = ec._Beacon_nextSeenAt(ctx, field, obj)
 		case "interval":
 			out.Values[i] = ec._Beacon_interval(ctx, field, obj)
 		case "host":
