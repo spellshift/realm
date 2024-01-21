@@ -84,6 +84,14 @@ message ReportTaskOutputRequest {
 
 message ReportTaskOutputResponse {}
 
+message DownloadFileRequest {
+    string name = 1;
+}
+message DownloadFileResponse {
+    bytes chunk = 1;
+    string hash = 2;
+}
+
 /*
  * Service
  */
@@ -91,4 +99,5 @@ message ReportTaskOutputResponse {}
 service C2 {
     rpc ClaimTasks(ClaimTasksRequest) returns (ClaimTasksResponse) {}
     rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
+    rpc DownloadFile(DownloadFileRequest) returns (stream DownloadFileResponse);
 }

@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type C2Client interface {
 	ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts ...grpc.CallOption) (*ClaimTasksResponse, error)
 	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
+	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error)
 }
 
 type c2Client struct {
@@ -52,12 +53,45 @@ func (c *c2Client) ReportTaskOutput(ctx context.Context, in *ReportTaskOutputReq
 	return out, nil
 }
 
+func (c *c2Client) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error) {
+	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[0], "/c2.C2/DownloadFile", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &c2DownloadFileClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type C2_DownloadFileClient interface {
+	Recv() (*DownloadFileResponse, error)
+	grpc.ClientStream
+}
+
+type c2DownloadFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2DownloadFileClient) Recv() (*DownloadFileResponse, error) {
+	m := new(DownloadFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // C2Server is the server API for C2 service.
 // All implementations must embed UnimplementedC2Server
 // for forward compatibility
 type C2Server interface {
 	ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error)
 	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
+	DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error
 	mustEmbedUnimplementedC2Server()
 }
 
@@ -70,6 +104,9 @@ func (UnimplementedC2Server) ClaimTasks(context.Context, *ClaimTasksRequest) (*C
 }
 func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutput not implemented")
+}
+func (UnimplementedC2Server) DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
 }
 func (UnimplementedC2Server) mustEmbedUnimplementedC2Server() {}
 
@@ -120,6 +157,27 @@ func _C2_ReportTaskOutput_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _C2_DownloadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadFileRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(C2Server).DownloadFile(m, &c2DownloadFileServer{stream})
+}
+
+type C2_DownloadFileServer interface {
+	Send(*DownloadFileResponse) error
+	grpc.ServerStream
+}
+
+type c2DownloadFileServer struct {
+	grpc.ServerStream
+}
+
+func (x *c2DownloadFileServer) Send(m *DownloadFileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // C2_ServiceDesc is the grpc.ServiceDesc for C2 service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -136,6 +194,12 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _C2_ReportTaskOutput_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DownloadFile",
+			Handler:       _C2_DownloadFile_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "c2.proto",
 }
