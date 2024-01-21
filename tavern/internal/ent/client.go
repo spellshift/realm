@@ -531,6 +531,22 @@ func (c *FileClient) GetX(ctx context.Context, id int) *File {
 	return obj
 }
 
+// QueryTomes queries the tomes edge of a File.
+func (c *FileClient) QueryTomes(f *File) *TomeQuery {
+	query := (&TomeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(file.Table, file.FieldID, id),
+			sqlgraph.To(tome.Table, tome.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, file.TomesTable, file.TomesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *FileClient) Hooks() []Hook {
 	hooks := c.hooks.File
@@ -1350,7 +1366,7 @@ func (c *TomeClient) QueryFiles(t *Tome) *FileQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tome.Table, tome.FieldID, id),
 			sqlgraph.To(file.Table, file.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, tome.FilesTable, tome.FilesColumn),
+			sqlgraph.Edge(sqlgraph.M2M, false, tome.FilesTable, tome.FilesPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

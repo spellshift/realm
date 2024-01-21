@@ -63,6 +63,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Size           func(childComplexity int) int
+		Tomes          func(childComplexity int) int
 	}
 
 	Host struct {
@@ -296,6 +297,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.File.Size(childComplexity), true
+
+	case "File.tomes":
+		if e.complexity.File.Tomes == nil {
+			break
+		}
+
+		return e.complexity.File.Tomes(childComplexity), true
 
 	case "Host.beacons":
 		if e.complexity.Host.Beacons == nil {
@@ -1238,6 +1246,7 @@ type File implements Node {
   size: Int!
   """A SHA3 digest of the content field"""
   hash: String!
+  tomes: [Tome!]
 }
 """Ordering options for File connections"""
 input FileOrder {
@@ -1325,6 +1334,9 @@ input FileWhereInput {
   hashHasSuffix: String
   hashEqualFold: String
   hashContainsFold: String
+  """tomes edge predicates"""
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
 }
 type Host implements Node {
   id: ID!

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // FileUpdate is the builder for updating File entities.
@@ -73,9 +74,45 @@ func (fu *FileUpdate) SetContent(b []byte) *FileUpdate {
 	return fu
 }
 
+// AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
+func (fu *FileUpdate) AddTomeIDs(ids ...int) *FileUpdate {
+	fu.mutation.AddTomeIDs(ids...)
+	return fu
+}
+
+// AddTomes adds the "tomes" edges to the Tome entity.
+func (fu *FileUpdate) AddTomes(t ...*Tome) *FileUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return fu.AddTomeIDs(ids...)
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (fu *FileUpdate) Mutation() *FileMutation {
 	return fu.mutation
+}
+
+// ClearTomes clears all "tomes" edges to the Tome entity.
+func (fu *FileUpdate) ClearTomes() *FileUpdate {
+	fu.mutation.ClearTomes()
+	return fu
+}
+
+// RemoveTomeIDs removes the "tomes" edge to Tome entities by IDs.
+func (fu *FileUpdate) RemoveTomeIDs(ids ...int) *FileUpdate {
+	fu.mutation.RemoveTomeIDs(ids...)
+	return fu
+}
+
+// RemoveTomes removes "tomes" edges to Tome entities.
+func (fu *FileUpdate) RemoveTomes(t ...*Tome) *FileUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return fu.RemoveTomeIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -170,6 +207,51 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := fu.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
 	}
+	if fu.mutation.TomesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   file.TomesTable,
+			Columns: file.TomesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fu.mutation.RemovedTomesIDs(); len(nodes) > 0 && !fu.mutation.TomesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   file.TomesTable,
+			Columns: file.TomesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fu.mutation.TomesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   file.TomesTable,
+			Columns: file.TomesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, fu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{file.Label}
@@ -235,9 +317,45 @@ func (fuo *FileUpdateOne) SetContent(b []byte) *FileUpdateOne {
 	return fuo
 }
 
+// AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
+func (fuo *FileUpdateOne) AddTomeIDs(ids ...int) *FileUpdateOne {
+	fuo.mutation.AddTomeIDs(ids...)
+	return fuo
+}
+
+// AddTomes adds the "tomes" edges to the Tome entity.
+func (fuo *FileUpdateOne) AddTomes(t ...*Tome) *FileUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return fuo.AddTomeIDs(ids...)
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (fuo *FileUpdateOne) Mutation() *FileMutation {
 	return fuo.mutation
+}
+
+// ClearTomes clears all "tomes" edges to the Tome entity.
+func (fuo *FileUpdateOne) ClearTomes() *FileUpdateOne {
+	fuo.mutation.ClearTomes()
+	return fuo
+}
+
+// RemoveTomeIDs removes the "tomes" edge to Tome entities by IDs.
+func (fuo *FileUpdateOne) RemoveTomeIDs(ids ...int) *FileUpdateOne {
+	fuo.mutation.RemoveTomeIDs(ids...)
+	return fuo
+}
+
+// RemoveTomes removes "tomes" edges to Tome entities.
+func (fuo *FileUpdateOne) RemoveTomes(t ...*Tome) *FileUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return fuo.RemoveTomeIDs(ids...)
 }
 
 // Where appends a list predicates to the FileUpdate builder.
@@ -361,6 +479,51 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 	}
 	if value, ok := fuo.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
+	}
+	if fuo.mutation.TomesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   file.TomesTable,
+			Columns: file.TomesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fuo.mutation.RemovedTomesIDs(); len(nodes) > 0 && !fuo.mutation.TomesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   file.TomesTable,
+			Columns: file.TomesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fuo.mutation.TomesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   file.TomesTable,
+			Columns: file.TomesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &File{config: fuo.config}
 	_spec.Assign = _node.assignValues

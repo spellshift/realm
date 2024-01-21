@@ -10,6 +10,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -48,7 +49,10 @@ func (File) Fields() []ent.Field {
 
 // Edges of the File.
 func (File) Edges() []ent.Edge {
-	return []ent.Edge{}
+	return []ent.Edge{
+		edge.From("tomes", Tome.Type).
+			Ref("files"),
+	}
 }
 
 // Annotations describes additional information for the ent.
