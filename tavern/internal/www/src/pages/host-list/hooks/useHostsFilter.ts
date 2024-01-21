@@ -43,13 +43,13 @@ export const useHostsFilter = (hosts: Array<HostType>) => {
         const searchTypes = getSearchTypes(typeFilters);
 
         return filteredHosts.filter( (host) => {
-            let group = host?.tags && (host?.tags).find( (obj : any) => {
+            let group = host?.tags ? (host?.tags).find( (obj : any) => {
                 return obj?.kind === "group"
-            }) || null;
+            }) : null;
 
-            let service = host?.tags && (host?.tags).find( (obj : any) => {
+            let service = host?.tags ? (host?.tags).find( (obj : any) => {
                 return obj?.kind === "service"
-            }) || null;
+            }) : null;
 
             let match = true;
 
@@ -113,7 +113,7 @@ export const useHostsFilter = (hosts: Array<HostType>) => {
             );
             setLoading(false);
         }
-    },[hosts, typeFilters]);
+    },[hosts, typeFilters, filterByTypes]);
 
     return {
         loading,

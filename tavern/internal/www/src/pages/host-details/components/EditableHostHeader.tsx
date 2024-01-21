@@ -1,5 +1,5 @@
 import { ApolloError } from "@apollo/client";
-import { CloseIcon, EditIcon } from "@chakra-ui/icons";
+import { CloseIcon } from "@chakra-ui/icons";
 import { Button } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { HostType } from "../../../utils/consts";
@@ -33,7 +33,7 @@ const EditableHostHeader = (props: Props) => {
                     </Link>
                 }
             </div>
-
+            {/* TODO support changing tags
             <Button
                 leftIcon={<EditIcon />}
                 colorScheme="gray"
@@ -42,7 +42,7 @@ const EditableHostHeader = (props: Props) => {
             >
 
                 Change host tags
-            </Button>
+            </Button> */}
 
         </div>
     );

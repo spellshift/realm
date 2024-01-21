@@ -45,13 +45,13 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
         const searchTypes = getSearchTypes(typeFilters);
 
         return filteredBeacons.filter( (beacon) => {
-            let group = beacon?.host?.tags && (beacon?.host?.tags).find( (obj : any) => {
+            let group = beacon?.host?.tags ? (beacon?.host?.tags).find( (obj : any) => {
                 return obj?.kind === "group"
-            }) || null;
+            }) : null;
 
-            let service = beacon?.host?.tags && (beacon?.host?.tags).find( (obj : any) => {
+            let service = beacon?.host?.tags ? (beacon?.host?.tags).find( (obj : any) => {
                 return obj?.kind === "service"
-            }) || null;
+            }) : null;
 
             let match = true;
 

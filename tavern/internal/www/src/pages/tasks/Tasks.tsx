@@ -8,7 +8,7 @@ import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import FilterBar from "./FilterBar";
 import { TaskPageHeader } from "./TaskPageHeader";
-import { TASK_PAGE_TYPE, useTasks } from "./useTasks";
+import { TASK_PAGE_TYPE, useTasks } from "../../hooks/useTasks";
 
 const Tasks = () => {
     const { questId } = useParams();

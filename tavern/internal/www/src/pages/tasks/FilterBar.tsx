@@ -2,7 +2,7 @@
 import React, { useContext } from "react"
 import { BeaconFilterBar } from "../../components/beacon-filter-bar";
 import { TagContext } from "../../context/TagContext";
-import FreeTextSearch from "./FreeTextSearch";
+import FreeTextSearch from "../../components/tavern-base-ui/DebouncedFreeTextSearch";
 
 type Props = {
     setSearch: (arg: string) => void;

@@ -5,8 +5,8 @@ import TaskTable from "../../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../../components/tavern-base-ui/TablePagination";
 import { TableRowLimit } from "../../../utils/enums";
-import FreeTextSearch from "../../tasks/FreeTextSearch";
-import { TASK_PAGE_TYPE, useTasks } from "../../tasks/useTasks";
+import FreeTextSearch from "../../../components/tavern-base-ui/DebouncedFreeTextSearch";
+import { TASK_PAGE_TYPE, useTasks } from "../../../hooks/useTasks";
 
 const HostTasks = () => {
     const { hostId } = useParams();

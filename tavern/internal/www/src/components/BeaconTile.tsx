@@ -6,6 +6,7 @@ type Props = {
         name: string;
         lastSeenAt: string;
         interval: number;
+        principal?: string;
         host: {
             id: string;
             tags?: Array<any>;
@@ -22,12 +23,15 @@ const BeaconTile = (props: Props) => {
         <div className="flex flex-col gap-1">
             <div className="flex flex-row gap-4">{beaconData.name}</div>
             <div className="flex flex-row flex-wrap gap-1">
-                {beaconData?.host?.tags && beaconData?.host?.tags.map((tag: any) => {
-                    return <Badge key={tag.id}>{tag.name}</Badge>
-                })}
+                {(beaconData.principal && beaconData.principal !== "") &&
+                    <Badge textTransform="none">{beaconData.principal}</Badge>
+                }
                 <Badge>{beaconData?.host?.name}</Badge>
                 <Badge>{beaconData?.host?.primaryIP}</Badge>
                 <Badge>{beaconData?.host?.platform}</Badge>
+                {beaconData?.host?.tags && beaconData?.host?.tags.map((tag: any) => {
+                    return <Badge key={tag.id}>{tag.name}</Badge>
+                })}
                 {beaconOffline && <Badge>Offline</Badge>}
             </div>
         </div>

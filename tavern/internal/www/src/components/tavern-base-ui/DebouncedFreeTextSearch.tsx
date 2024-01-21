@@ -5,11 +5,12 @@ import { debounce } from "lodash"
 import { useParams } from "react-router-dom";
 
 type Props = {
+    placeholder?: string
     setSearch: (args: string) => void;
 }
 const FreeTextSearch = (props: Props) => {
-    const { questId } = useParams();
-    const placeholderText = questId ? "Search by output" : "Search by tome name, quest name, or output";
+    const { placeholder, questId } = useParams();
+    const placeholderText = placeholder ? placeholder : questId ? "Search by output" : "Search by tome name, quest name, or output";
     const { setSearch } = props;
 
     const debouncedSearch = useRef(

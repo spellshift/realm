@@ -1,8 +1,8 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
-import { TableRowLimit } from "../../utils/enums";
-import { GET_TASK_QUERY } from "../../utils/queries";
-import { getFilterNameByTypes } from "../../utils/utils";
+import { TableRowLimit } from "../utils/enums";
+import { GET_TASK_QUERY } from "../utils/queries";
+import { getFilterNameByTypes } from "../utils/utils";
 
 export enum TASK_PAGE_TYPE{
     hostIDQuery="HOST_ID_QUERY",

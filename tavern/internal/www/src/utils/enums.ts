@@ -26,3 +26,8 @@ export enum SupportedPlatforms {
 export enum TableRowLimit {
     TaskRowLimit=8
 }
+export enum PrincipalAdminTypes {
+    root='root',
+    Administrator='Administrator',
+    SYSTEM="SYSTEM"
+}

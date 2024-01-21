@@ -1,3 +1,4 @@
+import { ApolloError } from '@apollo/client';
 import {
     ClipboardDocumentCheckIcon,
     ArrowsUpDownIcon,
@@ -6,11 +7,45 @@ import {
 } from '@heroicons/react/24/outline'
 import HostTile from '../../../components/HostTile';
 import { HostType } from '../../../utils/consts';
+import { getOfflineOnlineStatus } from '../../../utils/utils';
 
 const HostStatistics = (
-    { host }:
-        { host: HostType }
+    {
+        host,
+        taskLoading,
+        taskError,
+        taskData
+    }:
+        {
+            host: HostType | null;
+            taskLoading: boolean;
+            taskError: ApolloError | undefined;
+            taskData: any;
+        }
 ) => {
+
+    const getTaskCounts = (edges: any) => {
+        return edges.reduce(
+            (accumulator: any, currentValue: any) => {
+                const task = currentValue?.node;
+                if (task.outputSize > 0) {
+                    accumulator.hasOutputCount += 1;
+                }
+                if (task.execFinishedAt) {
+                    accumulator.hasFinishedCount += 1;
+                }
+                return accumulator;
+            },
+            {
+                hasFinishedCount: 0,
+                hasOutputCount: 0
+            },
+        );
+    };
+
+    const beaconStatuses = getOfflineOnlineStatus(host?.beacons || []);
+    const taskCounts = getTaskCounts(taskData?.tasks?.edges || []);
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5  gap-2">
             <div
@@ -20,7 +55,10 @@ const HostStatistics = (
                     <BugAntIcon className="text-white w-8 h-8" />
                 </div>
                 <div className='flex flex-col gap-2 px-6'>
-                    <HostTile data={host} />
+                    {host ?
+                        <HostTile data={host} />
+                        : "-"
+                    }
                 </div>
             </div>
             <div
@@ -31,7 +69,9 @@ const HostStatistics = (
                 </div>
                 <div className='flex flex-col gap-2'>
                     <p className="truncate text-sm font-medium text-gray-500">Active beacons</p>
-                    <p className="text-2xl font-semibold text-gray-900">2/3</p>
+                    <p className="text-2xl font-semibold text-gray-900">
+                        {!host ? "-" : `${beaconStatuses.online} / ${beaconStatuses.online + beaconStatuses.offline}`}
+                    </p>
                 </div>
             </div>
             <div
@@ -42,7 +82,9 @@ const HostStatistics = (
                 </div>
                 <div className='flex flex-col gap-2'>
                     <p className="truncate text-sm font-medium text-gray-500">Tasks finished</p>
-                    <p className="text-2xl font-semibold text-gray-900">8/10</p>
+                    <p className="text-2xl font-semibold text-gray-900">
+                        {taskLoading || taskError || !taskData?.tasks?.edges ? "-" : `${taskCounts.hasFinishedCount} / ${taskData?.tasks?.totalCount}`}
+                    </p>
                 </div>
             </div>
             <div
@@ -53,7 +95,9 @@ const HostStatistics = (
                 </div>
                 <div className='flex flex-col gap-2'>
                     <p className="truncate text-sm font-medium text-gray-500">Tasks with output</p>
-                    <p className="text-2xl font-semibold text-gray-900">9</p>
+                    <p className="text-2xl font-semibold text-gray-900">
+                        {taskLoading || taskError || !taskData?.tasks?.edges ? "-" : `${taskCounts.hasOutputCount} / ${taskData?.tasks?.totalCount}`}
+                    </p>
                 </div>
             </div>
         </div>

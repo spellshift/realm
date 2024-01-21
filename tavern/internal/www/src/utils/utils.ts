@@ -49,7 +49,7 @@ export function getFilterNameByTypes(typeFilters: Array<any>){
     });
 };
 
-export const getOfflineOnlineStatus =  (beacons: any) => {
+export const getOfflineOnlineStatus = (beacons: any) => {
     return beacons.reduce(
     (accumulator: any, currentValue: any) => {
         const beaconOffline = checkIfBeaconOnline(currentValue);
