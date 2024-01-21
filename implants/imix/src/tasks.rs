@@ -21,7 +21,7 @@ pub async fn get_new_tasks(
     imix_config: Config,
     mut tavern_client: TavernClient,
 ) -> Result<Vec<Task>> {
-    let req = ClaimTasksRequest {
+    let req = tonic::Request::new(ClaimTasksRequest {
         beacon: Some(Beacon {
             identifier: agent_properties.beacon_id.clone(),
             principal: agent_properties.principal.clone(),
@@ -39,7 +39,7 @@ pub async fn get_new_tasks(
             }),
             interval: imix_config.callback_config.interval,
         }),
-    };
+    });
     let new_tasks = match tavern_client.claim_tasks(req).await {
         Ok(resp) => resp.get_ref().tasks.clone(),
         Err(error) => {
