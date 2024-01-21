@@ -28,9 +28,33 @@ type File struct {
 	// A SHA3 digest of the content field
 	Hash string `json:"hash,omitempty"`
 	// The content of the file
-	Content      []byte `json:"content,omitempty"`
-	tome_files   *int
+	Content []byte `json:"content,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the FileQuery when eager-loading is set.
+	Edges        FileEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// FileEdges holds the relations/edges for other nodes in the graph.
+type FileEdges struct {
+	// Tomes holds the value of the tomes edge.
+	Tomes []*Tome `json:"tomes,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+
+	namedTomes map[string][]*Tome
+}
+
+// TomesOrErr returns the Tomes value or an error if the edge
+// was not loaded in eager-loading.
+func (e FileEdges) TomesOrErr() ([]*Tome, error) {
+	if e.loadedTypes[0] {
+		return e.Tomes, nil
+	}
+	return nil, &NotLoadedError{edge: "tomes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -46,8 +70,6 @@ func (*File) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case file.FieldCreatedAt, file.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
-		case file.ForeignKeys[0]: // tome_files
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -105,13 +127,6 @@ func (f *File) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				f.Content = *value
 			}
-		case file.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field tome_files", value)
-			} else if value.Valid {
-				f.tome_files = new(int)
-				*f.tome_files = int(value.Int64)
-			}
 		default:
 			f.selectValues.Set(columns[i], values[i])
 		}
@@ -123,6 +138,11 @@ func (f *File) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (f *File) Value(name string) (ent.Value, error) {
 	return f.selectValues.Get(name)
+}
+
+// QueryTomes queries the "tomes" edge of the File entity.
+func (f *File) QueryTomes() *TomeQuery {
+	return NewFileClient(f.config).QueryTomes(f)
 }
 
 // Update returns a builder for updating this File.
@@ -167,6 +187,30 @@ func (f *File) String() string {
 	builder.WriteString(fmt.Sprintf("%v", f.Content))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedTomes returns the Tomes named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (f *File) NamedTomes(name string) ([]*Tome, error) {
+	if f.Edges.namedTomes == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := f.Edges.namedTomes[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (f *File) appendNamedTomes(name string, edges ...*Tome) {
+	if f.Edges.namedTomes == nil {
+		f.Edges.namedTomes = make(map[string][]*Tome)
+	}
+	if len(edges) == 0 {
+		f.Edges.namedTomes[name] = []*Tome{}
+	} else {
+		f.Edges.namedTomes[name] = append(f.Edges.namedTomes[name], edges...)
+	}
 }
 
 // Files is a parsable slice of File.

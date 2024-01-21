@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -372,6 +373,29 @@ func ContentLT(v []byte) predicate.File {
 // ContentLTE applies the LTE predicate on the "content" field.
 func ContentLTE(v []byte) predicate.File {
 	return predicate.File(sql.FieldLTE(FieldContent, v))
+}
+
+// HasTomes applies the HasEdge predicate on the "tomes" edge.
+func HasTomes() predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, TomesTable, TomesPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTomesWith applies the HasEdge predicate on the "tomes" edge with a given conditions (other predicates).
+func HasTomesWith(preds ...predicate.Tome) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		step := newTomesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

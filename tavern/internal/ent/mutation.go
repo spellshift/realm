@@ -919,6 +919,9 @@ type FileMutation struct {
 	hash             *string
 	content          *[]byte
 	clearedFields    map[string]struct{}
+	tomes            map[int]struct{}
+	removedtomes     map[int]struct{}
+	clearedtomes     bool
 	done             bool
 	oldValue         func(context.Context) (*File, error)
 	predicates       []predicate.File
@@ -1258,6 +1261,60 @@ func (m *FileMutation) ResetContent() {
 	m.content = nil
 }
 
+// AddTomeIDs adds the "tomes" edge to the Tome entity by ids.
+func (m *FileMutation) AddTomeIDs(ids ...int) {
+	if m.tomes == nil {
+		m.tomes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tomes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTomes clears the "tomes" edge to the Tome entity.
+func (m *FileMutation) ClearTomes() {
+	m.clearedtomes = true
+}
+
+// TomesCleared reports if the "tomes" edge to the Tome entity was cleared.
+func (m *FileMutation) TomesCleared() bool {
+	return m.clearedtomes
+}
+
+// RemoveTomeIDs removes the "tomes" edge to the Tome entity by IDs.
+func (m *FileMutation) RemoveTomeIDs(ids ...int) {
+	if m.removedtomes == nil {
+		m.removedtomes = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.tomes, ids[i])
+		m.removedtomes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTomes returns the removed IDs of the "tomes" edge to the Tome entity.
+func (m *FileMutation) RemovedTomesIDs() (ids []int) {
+	for id := range m.removedtomes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TomesIDs returns the "tomes" edge IDs in the mutation.
+func (m *FileMutation) TomesIDs() (ids []int) {
+	for id := range m.tomes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTomes resets all changes to the "tomes" edge.
+func (m *FileMutation) ResetTomes() {
+	m.tomes = nil
+	m.clearedtomes = false
+	m.removedtomes = nil
+}
+
 // Where appends a list predicates to the FileMutation builder.
 func (m *FileMutation) Where(ps ...predicate.File) {
 	m.predicates = append(m.predicates, ps...)
@@ -1491,49 +1548,85 @@ func (m *FileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *FileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.tomes != nil {
+		edges = append(edges, file.EdgeTomes)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *FileMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case file.EdgeTomes:
+		ids := make([]ent.Value, 0, len(m.tomes))
+		for id := range m.tomes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *FileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedtomes != nil {
+		edges = append(edges, file.EdgeTomes)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *FileMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case file.EdgeTomes:
+		ids := make([]ent.Value, 0, len(m.removedtomes))
+		for id := range m.removedtomes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *FileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedtomes {
+		edges = append(edges, file.EdgeTomes)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *FileMutation) EdgeCleared(name string) bool {
+	switch name {
+	case file.EdgeTomes:
+		return m.clearedtomes
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *FileMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown File unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *FileMutation) ResetEdge(name string) error {
+	switch name {
+	case file.EdgeTomes:
+		m.ResetTomes()
+		return nil
+	}
 	return fmt.Errorf("unknown File edge %s", name)
 }
 

@@ -510,7 +510,7 @@ func HasFiles() predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
+			sqlgraph.Edge(sqlgraph.M2M, false, FilesTable, FilesPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

@@ -28,6 +28,18 @@ func (b *Beacon) Tasks(ctx context.Context) (result []*Task, err error) {
 	return result, err
 }
 
+func (f *File) Tomes(ctx context.Context) (result []*Tome, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = f.NamedTomes(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = f.Edges.TomesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = f.QueryTomes().All(ctx)
+	}
+	return result, err
+}
+
 func (h *Host) Tags(ctx context.Context) (result []*Tag, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = h.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
