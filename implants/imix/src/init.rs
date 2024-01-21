@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn imix_test_get_os_pretty_name() {
-        assert!(get_os_pretty_name().is_ok());
+        assert!(_get_os_pretty_name().is_ok());
     }
 
     #[test]
