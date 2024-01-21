@@ -58,6 +58,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
 					SetInterval(600000).
+					SetPrincipal("root").
 					SaveX(ctx),
 			)
 
@@ -68,6 +69,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
 					SetInterval(1000).
+					SetPrincipal("admin").
 					SaveX(ctx),
 			)
 
@@ -78,6 +80,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
 					SetInterval(4).
+					SetPrincipal("Administrator").
 					SaveX(ctx),
 			)
 		}
