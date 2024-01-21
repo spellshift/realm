@@ -1,0 +1,80 @@
+def pad_pid(pid):
+    pid_column_width = 16
+    padding = pid_column_width - len(pid)
+    return pid +  " "*padding
+
+def pad_username (username):
+    username_column_width = 32
+    padding = username_column_width - len(username)
+    return username +  " "*padding
+
+def depth_first_search(visited, process_tree, current_proc_pid, padding, process_list_dictionary):
+    if current_proc_pid not in visited:
+
+        padding_string = ""
+
+        if padding > 0:
+            padding_string = (padding - 1) * "  " + " \_ "
+
+        if current_proc_pid != "0":
+            print(pad_pid(current_proc_pid))
+            print(pad_pid(process_list_dictionary[current_proc_pid]["ppid"]))
+            print(pad_username(process_list_dictionary[current_proc_pid]["username"]))
+            print(padding_string + process_list_dictionary[current_proc_pid]["command"].replace("\n","\\n")+"\n")
+
+        padding = padding + 1
+
+        visited.append(current_proc_pid)
+
+        for process_pid in process_tree[current_proc_pid]:
+            depth_first_search(visited, process_tree, process_pid, padding, process_list_dictionary)
+
+def process_tree(cmd_substring):
+
+    if cmd_substring == '*':
+        cmd_substring = ''
+
+    procs = process.list()
+
+    print(pad_pid("PID"))
+    print(pad_pid("PPID")) 
+    print(pad_username("username"))
+    print("command\n")
+
+    process_list_dictionary = {}
+
+    process_tree = {}
+
+    for proc in procs:
+        if cmd_substring in proc['command']:
+            current_proc_command = proc['command']
+            if current_proc_command == "":
+                current_proc_command = proc['name']
+
+            current_proc_pid = str(proc['pid'])
+            current_proc_ppid = str(proc['ppid'])
+            current_proc_username = proc['username']
+
+            current_process_content = {
+                "ppid": current_proc_ppid,
+                "username": current_proc_username,
+                "command": current_proc_command
+            }
+            process_list_dictionary[current_proc_pid] = current_process_content
+
+            if current_proc_pid not in process_tree:
+                process_tree[current_proc_pid] = []
+
+            if current_proc_ppid in process_tree:
+                process_tree[current_proc_ppid].append(current_proc_pid)
+            else:
+                process_tree[current_proc_ppid] = []
+            
+    visited = []
+
+    for pid in process_tree:
+        depth_first_search(visited, process_tree, pid, 0, process_list_dictionary)
+
+process_tree(input_params['cmd_substring'])
+print("\n")
+print("\n")
