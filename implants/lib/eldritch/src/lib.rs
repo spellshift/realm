@@ -125,7 +125,7 @@ pub fn eldritch_run(
     tome_filename: String,
     tome_contents: String,
     tome_parameters: Option<HashMap<String, String>>,
-    tome_remote_assets: Option<HashMap<String, String>>,
+    tome_remote_assets: Option<Vec<String>>,
     print_handler: &(dyn PrintHandler),
 ) -> anyhow::Result<String> {
     // Boilder plate
@@ -189,31 +189,14 @@ pub fn eldritch_run(
         None => {}
     }
     module.set("input_params", input_params.alloc_value(module.heap()));
-
-    let tmp_map2: SmallMap<Value, Value> = SmallMap::new();
-    let mut remote_assets: Dict = Dict::new(tmp_map2);
-
-    match tome_remote_assets {
-        Some(assets) => {
-            for (key, value) in &assets {
-                let new_key = module.heap().alloc_str(&key);
-                let new_value = module.heap().alloc_str(value.as_str()).to_value();
-                let hashed_key = match new_key.to_value().get_hashed() {
-                    Ok(local_hashed_key) => local_hashed_key,
-                    Err(local_error) => {
-                        return Err(anyhow::anyhow!(
-                            "[eldritch] Failed to create hashed key for key {}: {}",
-                            new_key.to_string(),
-                            local_error.to_string()
-                        ))
-                    }
-                };
-                remote_assets.insert_hashed(hashed_key, new_value);
-            }
-        }
-        None => {}
+    if let Some(remote_assets) = tome_remote_assets {
+        module.set("remote_assets", remote_assets.alloc_value(module.heap()));
+    } else {
+        module.set(
+            "remote_assets",
+            Vec::<String>::new().alloc_value(module.heap()),
+        );
     }
-    module.set("remote_assets", remote_assets.alloc_value(module.heap()));
 
     let mut eval: Evaluator = Evaluator::new(&module);
     eval.set_print_handler(print_handler);
@@ -263,22 +246,13 @@ dir(time) == ["format_to_epoch", "format_to_readable", "now", "sleep"]
         // Create test script
         let test_content = format!(
             r#"
-remote_assets['peas-ng/winpeas.ps1']
+remote_assets
 "#
         );
-        let assets = HashMap::from([
-            (
-                "peas-ng/linpeas.sh".to_string(),
-                "https://example.com/aoeu".to_string(),
-            ),
-            (
-                "peas-ng/winpeas.ps1".to_string(),
-                "https://example.com/TESTPASSES".to_string(),
-            ),
-            (
-                "peas-ng/macos.sh".to_string(),
-                "https://example.com/aaaoec".to_string(),
-            ),
+        let assets = Vec::<String>::from([
+            "peas-ng/linpeas.sh".to_string(),
+            "peas-ng/winpeas.ps1".to_string(),
+            "peas-ng/macos.sh".to_string(),
         ]);
         let test_res = eldritch_run(
             "test.tome".to_string(),
@@ -287,7 +261,7 @@ remote_assets['peas-ng/winpeas.ps1']
             Some(assets),
             &StdPrintHandler {},
         );
-        assert!(test_res?.contains("https://example.com/TESTPASSES"));
+        assert!(test_res?.contains("peas-ng/winpeas.ps1"));
         Ok(())
     }
 

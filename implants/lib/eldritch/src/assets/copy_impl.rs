@@ -1,6 +1,11 @@
 use anyhow::{Context, Result};
-use starlark::const_frozen_string;
-use starlark::eval::Evaluator;
+use starlark::{
+    eval::Evaluator,
+    values::{
+        list::{ListOf, ListRef},
+        Value,
+    },
+};
 use std::fs;
 
 pub fn copy<'v>(starlark_eval: &mut Evaluator<'v, '_>, src: String, dst: String) -> Result<()> {
@@ -8,14 +13,12 @@ pub fn copy<'v>(starlark_eval: &mut Evaluator<'v, '_>, src: String, dst: String)
     let remote_assets = starlark_eval.module().get("remote_assets");
     match remote_assets {
         Some(assets) => {
-            let json_string = assets.to_json()?;
-            println!("{}", json_string);
-            let json_map: serde_json::Value = serde_json::from_str(&json_string)?;
-            match json_map.get(src.clone()) {
-                Some(remote_src) => {
-                    println!("{}", remote_src)
-                }
-                None => {}
+            let tmp_list = ListRef::from_value(assets).context("Assets is not type list")?;
+            let src_value = starlark_eval.module().heap().alloc_str(&src);
+            if tmp_list.contains(&src_value.to_value()) {
+                println!("{}", src);
+                // Do API call
+                return Ok(());
             }
         }
         None => {}
@@ -35,14 +38,8 @@ pub fn copy<'v>(starlark_eval: &mut Evaluator<'v, '_>, src: String, dst: String)
 
 #[cfg(test)]
 mod tests {
-    use crate::insert_dict_kv;
-
     use super::*;
-    use starlark::{
-        collections::SmallMap,
-        environment::Module,
-        values::{dict::Dict, AllocValue, Value},
-    };
+    use starlark::{environment::Module, values::AllocValue};
     use std::io::prelude::*;
     use tempfile::NamedTempFile;
 
@@ -51,17 +48,10 @@ mod tests {
         let module: Module = Module::new();
         let mut eval: Evaluator = Evaluator::new(&module);
 
-        let res: SmallMap<Value, Value> = SmallMap::new();
-        let mut remote_assets: Dict = Dict::new(res);
-        insert_dict_kv!(
-            remote_assets,
-            module.heap(),
-            "test_tome/test_file.txt",
-            "grpc://remote/file",
-            String
+        module.set(
+            "remote_assets",
+            Vec::from(["test_tome/test_file.txt".to_string()]).alloc_value(module.heap()),
         );
-
-        module.set("remote_assets", remote_assets.alloc_value(module.heap()));
 
         // Create files
         let mut tmp_file_dst = NamedTempFile::new()?;

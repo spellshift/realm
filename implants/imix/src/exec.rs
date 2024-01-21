@@ -37,7 +37,7 @@ async fn handle_exec_tome(
             task.id.to_string(),
             task.eldritch.clone(),
             Some(task.parameters.clone()),
-            None,
+            Some(task.file_names.clone()),
             &print_handler,
         )
     })
@@ -134,7 +134,7 @@ print(remote_assets['test/test.txt'])
 1"#
             .to_string(),
             parameters: HashMap::from([("cmd".to_string(), "echo hello_from_stdout".to_string())]),
-            assets: HashMap::from([("test/test.txt".to_string(), "test".to_string())]),
+            file_names: Vec::<String>::from(["test/test.txt".to_string()]),
         };
 
         let runtime = tokio::runtime::Builder::new_multi_thread()
