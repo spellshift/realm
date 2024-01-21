@@ -6,6 +6,8 @@ import (
 	"log"
 	"math/big"
 	"time"
+
+	"realm.pub/tavern/internal/ent"
 )
 
 var (
@@ -886,21 +888,49 @@ var (
 	}
 )
 
-// GetRandomName generates a random name from the list of adjectives and surnames in this package
-// formatted as "adjective-surname". For example 'focused-turing'.
-func GetRandomName() string {
-	if time.Now().Month() == time.October && time.Now().Day() == 31 {
-		adj1IndexHalloween := newRandInt(int64(len(adjectives_halloween)))
-		adj2IndexHalloween := newRandInt(int64(len(adjectives_halloween)))
-		nounIndex := newRandInt(int64(len(noun_halloween)))
-		randNum := newRandInt(10000000)
-		return fmt.Sprintf("%s-%s-%s-%d", adjectives_halloween[adj1IndexHalloween], adjectives_halloween[adj2IndexHalloween], noun_halloween[nounIndex], randNum)
+// getRandomNameSimple generates a random name with one adjective and one noun.
+func GetRandomNameSimple() string {
+	adj, noun := getRandomAdjNoun()
+	return fmt.Sprintf("%s-%s", adj, noun)
+}
+
+// getRandomNameModerate generates a random name with two adjectives and one noun.
+func GetRandomNameModerate() string {
+	adj1, adj2, noun := getRandomAdjAdjNoun()
+	return fmt.Sprintf("%s-%s-%s", adj1, adj2, noun)
+}
+
+// getRandomNameComplex generates a random name with two adjectives, one noun, and a number.
+func GetRandomNameComplex() string {
+	adj1, adj2, noun := getRandomAdjAdjNoun()
+	num := newRandInt(10000000)
+	return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
+}
+
+// Helper function to get a random adjective and noun.
+func getRandomAdjNoun() (string, string) {
+	var adj, noun string
+
+	if time.Now().Month() == time.October {
+		adj = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
+		noun = noun_halloween[newRandInt(int64(len(noun_halloween)))]
+	} else {
+		adj = adjectives[newRandInt(int64(len(adjectives)))]
+		noun = nouns[newRandInt(int64(len(nouns)))]
 	}
-	adj1Index := newRandInt(int64(len(adjectives)))
-	adj2Index := newRandInt(int64(len(adjectives)))
-	nounIndex := newRandInt(int64(len(nouns)))
-	randNum := newRandInt(10000000)
-	return fmt.Sprintf("%s-%s-%s-%d", adjectives[adj1Index], adjectives[adj2Index], nouns[nounIndex], randNum)
+	return adj, noun
+}
+
+// Helper function to get two random adjectives and a noun.
+func getRandomAdjAdjNoun() (string, string, string) {
+	adj1, noun := getRandomAdjNoun()
+	var adj2 string
+	if time.Now().Month() == time.October {
+		adj2 = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
+	} else {
+		adj2 = adjectives[newRandInt(int64(len(adjectives)))]
+	}
+	return adj1, adj2, noun
 }
 
 // cryptoRandSecure is not always secure, if it errors we return 1337 % max
@@ -911,4 +941,13 @@ func newRandInt(max int64) int64 {
 		return 1337 % max
 	}
 	return nBig.Int64()
+}
+
+func IsCollision(beacons []*ent.Beacon, str string) bool {
+	for _, v := range beacons {
+		if v.Name == str {
+			return true
+		}
+	}
+	return false
 }

@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/task"
+  "realm.pub/tavern/internal/namegen"
+
 )
 
 type Server struct {
@@ -66,12 +67,50 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert host entity: %w", err)
 	}
+	// 2. check if beacon is new
+	beaconExists, err := srv.graph.Beacon.Query().Where(beacon.IdentifierEQ(req.Beacon.Identifier)).Exist(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query beacon entity: %w", err)
+	}
+	var beaconnameaddr *string = nil
+	//3. if the beacon is new lets pick a name for it
+	if !beaconExists {
+		candidateNames := []string{
+			namegen.GetRandomNameSimple(),
+			namegen.GetRandomNameModerate(),
+			namegen.GetRandomNameComplex(),
+		}
 
-	// 2. Upsert the beacon
+		collisions, err := srv.graph.Beacon.Query().Where(beacon.NameIn(candidateNames...)).All(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query beacon entity: %w", err)
+		}
+		if len(collisions) == 3 {
+			candidateNames := []string{
+				namegen.GetRandomNameSimple(),
+				namegen.GetRandomNameModerate(),
+				namegen.GetRandomNameComplex(),
+			}
+
+			collisions, err = srv.graph.Beacon.Query().Where(beacon.NameIn(candidateNames...)).All(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to query beacon entity: %w", err)
+			}
+		}
+		for _, canidate := range candidateNames {
+			if !namegen.IsCollision(collisions, canidate) {
+				beaconnameaddr = &canidate
+				break
+			}
+		}
+	}
+
+	// 4. Upsert the beacon
 	beaconID, err := srv.graph.Beacon.Create().
 		SetPrincipal(req.Beacon.Principal).
 		SetIdentifier(req.Beacon.Identifier).
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
+		SetNillableName(beaconnameaddr).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
 		SetInterval(req.Beacon.Interval).
@@ -82,7 +121,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, fmt.Errorf("failed to upsert beacon entity: %w", err)
 	}
 
-	// 3. Load Tasks
+	// 5. Load Tasks
 	tasks, err := srv.graph.Task.Query().
 		Where(task.And(
 			task.HasBeaconWith(beacon.ID(beaconID)),
@@ -93,14 +132,14 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
 	}
 
-	// 4. Prepare Transaction for Claiming Tasks
+	// 6. Prepare Transaction for Claiming Tasks
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
 	}
 	client := tx.Client()
 
-	// 5. Rollback transaction if we panic
+	// 7. Rollback transaction if we panic
 	defer func() {
 		if v := recover(); v != nil {
 			tx.Rollback()
@@ -108,7 +147,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 	}()
 
-	// 6. Update all ClaimedAt timestamps to claim tasks
+	// 8. Update all ClaimedAt timestamps to claim tasks
 	// ** Note: If one fails to update, we roll back the transaction and return the error
 	taskIDs := make([]int, 0, len(tasks))
 	for _, t := range tasks {
@@ -121,12 +160,12 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		taskIDs = append(taskIDs, t.ID)
 	}
 
-	// 7. Commit the transaction
+	// 9. Commit the transaction
 	if err := tx.Commit(); err != nil {
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
-	// 8. Load the tasks with our non transactional client (cannot use transaction after commit)
+	// 10. Load the tasks with our non transactional client (cannot use transaction after commit)
 	resp := c2pb.ClaimTasksResponse{}
 	resp.Tasks = make([]*c2pb.Task, 0, len(taskIDs))
 	for _, taskID := range taskIDs {
@@ -155,7 +194,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		})
 	}
 
-	// 9. Return claimed tasks
+	// 11. Return claimed tasks
 	return &resp, nil
 }
 
