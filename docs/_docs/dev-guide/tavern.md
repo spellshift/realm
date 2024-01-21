@@ -141,17 +141,6 @@ terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLI
 
 ## User Interface
 
-## CDN API
-
-### Uploading Files
-
-* File uploads require 2 form parameters: `fileName` and `fileContent`
-* A successful response returns JSON with the following content: `{"data":{"file":{"id":<FILE_ID>}}}`
-
-### Downloading Files
-
-* TODO (CDN is not yet added to Tavern)
-
 ## GraphQL API
 
 ### Playground
@@ -296,9 +285,12 @@ query get_task_res {
 
 Tavern also supports a gRPC API for agents to claim tasks and report execution output. This API is defined by our c2.proto spec and is still under active development.
 
-### YAML Test Reference (gRPC)
+### Downloading Files
 
-Still under development.
+You may download files from Tavern utilizing the `DownloadFile` gRPC method. This method streams responses, each of which will contain a chunk of the desired file. We rely on the [ordering guarantees](https://grpc.io/docs/languages/go/basics/#defining-the-service) provided by gRPC to ensure the file is assembled correctly. This API also sets two headers to ensure the integrity of files:
+
+* `sha3-checksum`: Set to the SHA3 hash of the entire file.
+* `file-size`: Set to the number of bytes contained by the file.
 
 ## Performance Profiling
 

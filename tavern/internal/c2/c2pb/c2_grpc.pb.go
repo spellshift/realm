@@ -24,6 +24,13 @@ const _ = grpc.SupportPackageIsVersion7
 type C2Client interface {
 	ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts ...grpc.CallOption) (*ClaimTasksResponse, error)
 	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
+	// Download a file from the server, returning one or more chunks of data.
+	// The maximum size of these chunks is determined by the server.
+	// The server should reply with two headers:
+	//   - "sha3-checksum": A SHA3 digest of the entire file contents.
+	//   - "file-size": The number of bytes contained by the file.
+	//
+	// If no associated file can be found, a NotFound status error is returned.
 	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error)
 }
 
@@ -91,6 +98,13 @@ func (x *c2DownloadFileClient) Recv() (*DownloadFileResponse, error) {
 type C2Server interface {
 	ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error)
 	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
+	// Download a file from the server, returning one or more chunks of data.
+	// The maximum size of these chunks is determined by the server.
+	// The server should reply with two headers:
+	//   - "sha3-checksum": A SHA3 digest of the entire file contents.
+	//   - "file-size": The number of bytes contained by the file.
+	//
+	// If no associated file can be found, a NotFound status error is returned.
 	DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error
 	mustEmbedUnimplementedC2Server()
 }
