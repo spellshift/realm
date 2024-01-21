@@ -12,17 +12,37 @@ import (
 	"realm.pub/tavern/internal/ent/tome"
 )
 
-type tomeParamDef struct {
+// ErrParamNameInvalid occurs when a parameter definition specifies an invalid parameter name.
+// ErrParamTypeUnsupported occurs when a parameter definition specifies an unsupported parameter type.
+var (
+	ErrParamNameInvalid     = fmt.Errorf("invalid name in parameter definition")
+	ErrParamTypeUnsupported = fmt.Errorf("unsupported type in parameter definition")
+)
+
+// ParamDefinition provides structured information for a tome to define a parameter.
+type ParamDefinition struct {
 	Name        string `yaml:"name" json:"name"`
 	Label       string `yaml:"label" json:"label"`
 	Type        string `yaml:"type" json:"type"`
 	Placeholder string `yaml:"placeholder" json:"placeholder"`
 }
 
-type tomeMetadata struct {
+// Validate the parameter definition, returning an error if an invalid definition has been defined.
+func (paramDef ParamDefinition) Validate() error {
+	if paramDef.Name == "" {
+		return fmt.Errorf("%w: %q", ErrParamNameInvalid, paramDef.Name)
+	}
+	// TODO: Support Types
+	// if paramDef.Type != "string" {
+	// 	return fmt.Errorf("%w: %v is of type %v", ErrParamTypeUnsupported, paramDef.Name, paramDef.Type)
+	// }
+	return nil
+}
+
+type metadataDefinition struct {
 	Name        string
 	Description string
-	ParamDefs   []tomeParamDef
+	ParamDefs   []ParamDefinition
 }
 
 // UploadTomes traverses the provided filesystem and creates tomes using the provided graph.
@@ -55,7 +75,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			continue
 		}
 
-		var metadata tomeMetadata
+		var metadata metadataDefinition
 		var eldritch string
 		var tomeFiles []*ent.File
 		if err := fs.WalkDir(fileSystem, entry.Name(), func(path string, d fs.DirEntry, err error) error {
@@ -79,6 +99,13 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 					return rollback(tx, fmt.Errorf("failed to parse %q: %w", path, err))
 				}
 				return nil
+			}
+
+			// Validate Params
+			for _, paramDef := range metadata.ParamDefs {
+				if err := paramDef.Validate(); err != nil {
+					return rollback(tx, fmt.Errorf("failed to validate tome parameter definition: %w", err))
+				}
 			}
 
 			// Parse main.eldritch

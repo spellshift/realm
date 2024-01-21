@@ -83,6 +83,8 @@ var (
 	UpdateDefaultLastModifiedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// ParamDefsValidator is a validator for the "param_defs" field. It is called by the builders before save.
+	ParamDefsValidator func(string) error
 	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	HashValidator func(string) error
 )

@@ -1223,7 +1223,7 @@ input CreateTomeInput {
   name: String!
   """Information about the tome"""
   description: String!
-  """JSON string describing what parameters are used with the tome"""
+  """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
@@ -1854,7 +1854,7 @@ type Tome implements Node {
   name: String!
   """Information about the tome"""
   description: String!
-  """JSON string describing what parameters are used with the tome"""
+  """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!

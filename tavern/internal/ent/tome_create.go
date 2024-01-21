@@ -177,6 +177,11 @@ func (tc *TomeCreate) check() error {
 	if _, ok := tc.mutation.Description(); !ok {
 		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Tome.description"`)}
 	}
+	if v, ok := tc.mutation.ParamDefs(); ok {
+		if err := tome.ParamDefsValidator(v); err != nil {
+			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
+		}
+	}
 	if _, ok := tc.mutation.Hash(); !ok {
 		return &ValidationError{Name: "hash", err: errors.New(`ent: missing required field "Tome.hash"`)}
 	}

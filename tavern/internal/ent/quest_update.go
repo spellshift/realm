@@ -215,6 +215,11 @@ func (qu *QuestUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Quest.name": %w`, err)}
 		}
 	}
+	if v, ok := qu.mutation.Parameters(); ok {
+		if err := quest.ParametersValidator(v); err != nil {
+			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
+		}
+	}
 	if _, ok := qu.mutation.TomeID(); qu.mutation.TomeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Quest.tome"`)
 	}
@@ -591,6 +596,11 @@ func (quo *QuestUpdateOne) check() error {
 	if v, ok := quo.mutation.Name(); ok {
 		if err := quest.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Quest.name": %w`, err)}
+		}
+	}
+	if v, ok := quo.mutation.Parameters(); ok {
+		if err := quest.ParametersValidator(v); err != nil {
+			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
 	}
 	if _, ok := quo.mutation.TomeID(); quo.mutation.TomeCleared() && !ok {
