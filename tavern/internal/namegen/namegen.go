@@ -888,20 +888,20 @@ var (
 	}
 )
 
-// getRandomNameSimple generates a random name with one adjective and one noun.
-func GetRandomNameSimple() string {
+// NewSimple generates a random name with one adjective and one noun.
+func NewSimple() string {
 	adj, noun := getRandomAdjNoun()
 	return fmt.Sprintf("%s-%s", adj, noun)
 }
 
-// getRandomNameModerate generates a random name with two adjectives and one noun.
-func GetRandomNameModerate() string {
+// New generates a random name with two adjectives and one noun.
+func New() string {
 	adj1, adj2, noun := getRandomAdjAdjNoun()
 	return fmt.Sprintf("%s-%s-%s", adj1, adj2, noun)
 }
 
-// getRandomNameComplex generates a random name with two adjectives, one noun, and a number.
-func GetRandomNameComplex() string {
+// NewComplex generates a random name with two adjectives, one noun, and a number.
+func NewComplex() string {
 	adj1, adj2, noun := getRandomAdjAdjNoun()
 	num := newRandInt(10000000)
 	return fmt.Sprintf("%s-%s-%s-%d", adj1, adj2, noun, num)
