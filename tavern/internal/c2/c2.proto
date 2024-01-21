@@ -89,7 +89,6 @@ message DownloadFileRequest {
 }
 message DownloadFileResponse {
     bytes chunk = 1;
-    string hash = 2;
 }
 
 /*
