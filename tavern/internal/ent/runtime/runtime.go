@@ -109,6 +109,8 @@ func init() {
 	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
 	taskMixin := schema.Task{}.Mixin()
+	taskHooks := schema.Task{}.Hooks()
+	task.Hooks[0] = taskHooks[0]
 	taskMixinFields0 := taskMixin[0].Fields()
 	_ = taskMixinFields0
 	taskFields := schema.Task{}.Fields()
@@ -123,6 +125,12 @@ func init() {
 	task.DefaultLastModifiedAt = taskDescLastModifiedAt.Default.(func() time.Time)
 	// task.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	task.UpdateDefaultLastModifiedAt = taskDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// taskDescOutputSize is the schema descriptor for output_size field.
+	taskDescOutputSize := taskFields[4].Descriptor()
+	// task.DefaultOutputSize holds the default value on creation for the output_size field.
+	task.DefaultOutputSize = taskDescOutputSize.Default.(int)
+	// task.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
+	task.OutputSizeValidator = taskDescOutputSize.Validators[0].(func(int) error)
 	tomeMixin := schema.Tome{}.Mixin()
 	tomeHooks := schema.Tome{}.Hooks()
 	tome.Hooks[0] = tomeHooks[0]

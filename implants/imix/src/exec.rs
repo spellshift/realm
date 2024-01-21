@@ -104,6 +104,7 @@ print(sys.shell(input_params["cmd"])["stdout"])
 1"#
             .to_string(),
             parameters: HashMap::from([("cmd".to_string(), "echo hello_from_stdout".to_string())]),
+            file_names: Vec::new(),
         };
 
         let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -132,6 +133,7 @@ aoeu
 "#
             .to_string(),
             parameters: HashMap::new(),
+            file_names: Vec::new(),
         };
 
         let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()

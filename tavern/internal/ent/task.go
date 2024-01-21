@@ -31,6 +31,8 @@ type Task struct {
 	ExecFinishedAt time.Time `json:"exec_finished_at,omitempty"`
 	// Output from executing the task
 	Output string `json:"output,omitempty"`
+	// The size of the output in bytes
+	OutputSize int `json:"output_size,omitempty"`
 	// Error, if any, produced while executing the Task
 	Error string `json:"error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -85,7 +87,7 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case task.FieldID:
+		case task.FieldID, task.FieldOutputSize:
 			values[i] = new(sql.NullInt64)
 		case task.FieldOutput, task.FieldError:
 			values[i] = new(sql.NullString)
@@ -151,6 +153,12 @@ func (t *Task) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field output", values[i])
 			} else if value.Valid {
 				t.Output = value.String
+			}
+		case task.FieldOutputSize:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field output_size", values[i])
+			} else if value.Valid {
+				t.OutputSize = int(value.Int64)
 			}
 		case task.FieldError:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -235,6 +243,9 @@ func (t *Task) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("output=")
 	builder.WriteString(t.Output)
+	builder.WriteString(", ")
+	builder.WriteString("output_size=")
+	builder.WriteString(fmt.Sprintf("%v", t.OutputSize))
 	builder.WriteString(", ")
 	builder.WriteString("error=")
 	builder.WriteString(t.Error)

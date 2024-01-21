@@ -744,6 +744,8 @@ func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context
 				return ec.fieldContext_Task_execFinishedAt(ctx, field)
 			case "output":
 				return ec.fieldContext_Task_output(ctx, field)
+			case "outputSize":
+				return ec.fieldContext_Task_outputSize(ctx, field)
 			case "error":
 				return ec.fieldContext_Task_error(ctx, field)
 			case "quest":
@@ -818,6 +820,8 @@ func (ec *executionContext) fieldContext_Mutation_submitTaskResult(ctx context.C
 				return ec.fieldContext_Task_execFinishedAt(ctx, field)
 			case "output":
 				return ec.fieldContext_Task_output(ctx, field)
+			case "outputSize":
+				return ec.fieldContext_Task_outputSize(ctx, field)
 			case "error":
 				return ec.fieldContext_Task_error(ctx, field)
 			case "quest":

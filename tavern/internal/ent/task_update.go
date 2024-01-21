@@ -116,6 +116,27 @@ func (tu *TaskUpdate) ClearOutput() *TaskUpdate {
 	return tu
 }
 
+// SetOutputSize sets the "output_size" field.
+func (tu *TaskUpdate) SetOutputSize(i int) *TaskUpdate {
+	tu.mutation.ResetOutputSize()
+	tu.mutation.SetOutputSize(i)
+	return tu
+}
+
+// SetNillableOutputSize sets the "output_size" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableOutputSize(i *int) *TaskUpdate {
+	if i != nil {
+		tu.SetOutputSize(*i)
+	}
+	return tu
+}
+
+// AddOutputSize adds i to the "output_size" field.
+func (tu *TaskUpdate) AddOutputSize(i int) *TaskUpdate {
+	tu.mutation.AddOutputSize(i)
+	return tu
+}
+
 // SetError sets the "error" field.
 func (tu *TaskUpdate) SetError(s string) *TaskUpdate {
 	tu.mutation.SetError(s)
@@ -177,7 +198,9 @@ func (tu *TaskUpdate) ClearBeacon() *TaskUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TaskUpdate) Save(ctx context.Context) (int, error) {
-	tu.defaults()
+	if err := tu.defaults(); err != nil {
+		return 0, err
+	}
 	return withHooks(ctx, tu.sqlSave, tu.mutation, tu.hooks)
 }
 
@@ -204,15 +227,24 @@ func (tu *TaskUpdate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (tu *TaskUpdate) defaults() {
+func (tu *TaskUpdate) defaults() error {
 	if _, ok := tu.mutation.LastModifiedAt(); !ok {
+		if task.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized task.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := task.UpdateDefaultLastModifiedAt()
 		tu.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (tu *TaskUpdate) check() error {
+	if v, ok := tu.mutation.OutputSize(); ok {
+		if err := task.OutputSizeValidator(v); err != nil {
+			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "Task.output_size": %w`, err)}
+		}
+	}
 	if _, ok := tu.mutation.QuestID(); tu.mutation.QuestCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Task.quest"`)
 	}
@@ -260,6 +292,12 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if tu.mutation.OutputCleared() {
 		_spec.ClearField(task.FieldOutput, field.TypeString)
+	}
+	if value, ok := tu.mutation.OutputSize(); ok {
+		_spec.SetField(task.FieldOutputSize, field.TypeInt, value)
+	}
+	if value, ok := tu.mutation.AddedOutputSize(); ok {
+		_spec.AddField(task.FieldOutputSize, field.TypeInt, value)
 	}
 	if value, ok := tu.mutation.Error(); ok {
 		_spec.SetField(task.FieldError, field.TypeString, value)
@@ -431,6 +469,27 @@ func (tuo *TaskUpdateOne) ClearOutput() *TaskUpdateOne {
 	return tuo
 }
 
+// SetOutputSize sets the "output_size" field.
+func (tuo *TaskUpdateOne) SetOutputSize(i int) *TaskUpdateOne {
+	tuo.mutation.ResetOutputSize()
+	tuo.mutation.SetOutputSize(i)
+	return tuo
+}
+
+// SetNillableOutputSize sets the "output_size" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableOutputSize(i *int) *TaskUpdateOne {
+	if i != nil {
+		tuo.SetOutputSize(*i)
+	}
+	return tuo
+}
+
+// AddOutputSize adds i to the "output_size" field.
+func (tuo *TaskUpdateOne) AddOutputSize(i int) *TaskUpdateOne {
+	tuo.mutation.AddOutputSize(i)
+	return tuo
+}
+
 // SetError sets the "error" field.
 func (tuo *TaskUpdateOne) SetError(s string) *TaskUpdateOne {
 	tuo.mutation.SetError(s)
@@ -505,7 +564,9 @@ func (tuo *TaskUpdateOne) Select(field string, fields ...string) *TaskUpdateOne 
 
 // Save executes the query and returns the updated Task entity.
 func (tuo *TaskUpdateOne) Save(ctx context.Context) (*Task, error) {
-	tuo.defaults()
+	if err := tuo.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
 }
 
@@ -532,15 +593,24 @@ func (tuo *TaskUpdateOne) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (tuo *TaskUpdateOne) defaults() {
+func (tuo *TaskUpdateOne) defaults() error {
 	if _, ok := tuo.mutation.LastModifiedAt(); !ok {
+		if task.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized task.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := task.UpdateDefaultLastModifiedAt()
 		tuo.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TaskUpdateOne) check() error {
+	if v, ok := tuo.mutation.OutputSize(); ok {
+		if err := task.OutputSizeValidator(v); err != nil {
+			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "Task.output_size": %w`, err)}
+		}
+	}
 	if _, ok := tuo.mutation.QuestID(); tuo.mutation.QuestCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Task.quest"`)
 	}
@@ -605,6 +675,12 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 	}
 	if tuo.mutation.OutputCleared() {
 		_spec.ClearField(task.FieldOutput, field.TypeString)
+	}
+	if value, ok := tuo.mutation.OutputSize(); ok {
+		_spec.SetField(task.FieldOutputSize, field.TypeInt, value)
+	}
+	if value, ok := tuo.mutation.AddedOutputSize(); ok {
+		_spec.AddField(task.FieldOutputSize, field.TypeInt, value)
 	}
 	if value, ok := tuo.mutation.Error(); ok {
 		_spec.SetField(task.FieldError, field.TypeString, value)

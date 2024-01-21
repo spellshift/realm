@@ -95,6 +95,8 @@ pub struct Task {
         ::prost::alloc::string::String,
         ::prost::alloc::string::String,
     >,
+    #[prost(string, repeated, tag = "4")]
+    pub file_names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// TaskError provides information when task execution fails.
 #[allow(clippy::derive_partial_eq_without_eq)]
