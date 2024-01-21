@@ -12,12 +12,22 @@ import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import Tasks from "./pages/tasks/Tasks";
+import HostList from "./pages/host-list/HostList";
+import HostDetails from "./pages/host-details/HostDetails";
 
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Tasks/>,
+    element: <Tasks />,
+  },
+  {
+    path: "/hosts",
+    element: <HostList />,
+  },
+  {
+    path: "/hosts/:hostId",
+    element: <HostDetails />,
   },
   {
     path: "/quests",
@@ -38,7 +48,7 @@ const router = createBrowserRouter([
 ]);
 
 export const App = () => {
-  
+
   return (
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
@@ -47,4 +57,5 @@ export const App = () => {
         </TagContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
-)}
+  )
+}

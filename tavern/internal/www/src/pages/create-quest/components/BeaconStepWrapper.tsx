@@ -41,7 +41,7 @@ export const BeaconStepWrapper = (props: Props) => {
                 (
                     <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />
                 ) : (
-                    <BeaconStep beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
+                    <BeaconStep beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} hosts={data?.hosts || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
                 )}
             <div className="flex flex-row gap-2">
                 <button
