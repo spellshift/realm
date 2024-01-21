@@ -7,6 +7,7 @@ pub mod sys;
 pub mod time;
 
 use starlark::collections::SmallMap;
+#[allow(unused_imports)]
 use starlark::const_frozen_string;
 use starlark::environment::{Globals, GlobalsBuilder, LibraryExtension, Module};
 use starlark::eval::Evaluator;
