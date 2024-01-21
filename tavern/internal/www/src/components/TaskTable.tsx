@@ -10,11 +10,11 @@ import BeaconTile from "./BeaconTile";
 
 type Props = {
     tasks: Array<any>,
-    onToggle: (e:any ) => void;
+    onToggle: (e: any) => void;
 }
 
 const TaskTable = (props: Props) => {
-    const {tasks, onToggle} = props;
+    const { tasks, onToggle } = props;
     const currentDate = new Date();
 
 
@@ -24,6 +24,7 @@ const TaskTable = (props: Props) => {
             header: 'Quest details',
             accessorFn: row => row?.node?.quest,
             footer: props => props.column.id,
+            maxSize: 110,
             enableSorting: false,
             cell: (cellData: any) => {
                 const questData = cellData.getValue();
@@ -42,7 +43,7 @@ const TaskTable = (props: Props) => {
             header: 'Beacon',
             accessorFn: row => row?.node?.beacon,
             footer: props => props.column.id,
-            minSize: window.innerWidth/8,
+            minSize: window.innerWidth / 8,
             enableSorting: false,
             cell: (cellData: any) => {
                 const beaconData = cellData.getValue();
@@ -55,6 +56,7 @@ const TaskTable = (props: Props) => {
             id: "status",
             header: 'Status',
             accessorFn: row => row?.node,
+            minSize: 80,
             maxSize: 100,
             enableSorting: false,
             cell: (cellData: any) => {
@@ -88,7 +90,7 @@ const TaskTable = (props: Props) => {
     ];
 
     return (
-        <Table data={tasks} columns={columns} onRowClick={onToggle}/>
+        <Table data={tasks} columns={columns} onRowClick={onToggle} />
     );
 }
 export default TaskTable;
