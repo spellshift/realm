@@ -251,6 +251,7 @@ mod tests {
             id: 123,
             eldritch: "print('okay')".to_string(),
             parameters: HashMap::from([("iter".to_string(), "3".to_string())]),
+            file_names: Vec::new(),
         }];
         start_new_tasks(new_tasks, &mut all_exec_futures, debug_start_time).await?;
         assert_eq!(all_exec_futures.len(), 1);
