@@ -117,7 +117,7 @@ pub struct StdPrintHandler {}
 
 impl PrintHandler for StdPrintHandler {
     fn println(&self, text: &str) -> anyhow::Result<()> {
-        println!("{}", text.to_owned());
+        print!("{}", text.to_owned());
         Ok(())
     }
 }

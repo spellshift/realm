@@ -33,13 +33,11 @@ const (
 	EdgeFiles = "files"
 	// Table holds the table name of the tome in the database.
 	Table = "tomes"
-	// FilesTable is the table that holds the files relation/edge.
-	FilesTable = "files"
+	// FilesTable is the table that holds the files relation/edge. The primary key declared below.
+	FilesTable = "tome_files"
 	// FilesInverseTable is the table name for the File entity.
 	// It exists in this package in order to avoid circular dependency with the "file" package.
 	FilesInverseTable = "files"
-	// FilesColumn is the table column denoting the files relation/edge.
-	FilesColumn = "tome_files"
 )
 
 // Columns holds all SQL columns for tome fields.
@@ -53,6 +51,12 @@ var Columns = []string{
 	FieldHash,
 	FieldEldritch,
 }
+
+var (
+	// FilesPrimaryKey and FilesColumn2 are the table columns denoting the
+	// primary key for the files relation (M2M).
+	FilesPrimaryKey = []string{"tome_id", "file_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -143,6 +147,6 @@ func newFilesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FilesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
+		sqlgraph.Edge(sqlgraph.M2M, false, FilesTable, FilesPrimaryKey...),
 	)
 }

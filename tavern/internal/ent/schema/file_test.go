@@ -35,6 +35,28 @@ func TestFileHooks(t *testing.T) {
 	assert.NotZero(t, testFile.LastModifiedAt)
 }
 
+func TestMultipleTomes(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	defer graph.Close()
+
+	files := []*ent.File{
+		newFile(graph, "TestFile001", []byte("Test Content")),
+	}
+	graph.Tome.Create().
+		SetName("TestTome001").
+		SetEldritch(`print("hello world")`).
+		SetDescription("Hello World").
+		AddFiles(files...).
+		SaveX(ctx)
+	graph.Tome.Create().
+		SetName("TestTome002").
+		SetEldritch(`print("hello world")`).
+		SetDescription("Hello World").
+		AddFiles(files...).
+		SaveX(ctx)
+}
+
 // newFile is a helper to create files directly via ent
 func newFile(graph *ent.Client, name string, content []byte) *ent.File {
 	return graph.File.Create().
