@@ -15,13 +15,15 @@ import (
 )
 
 type Server struct {
-	graph *ent.Client
+	MaxFileChunkSize uint64
+	graph            *ent.Client
 	c2pb.UnimplementedC2Server
 }
 
 func New(graph *ent.Client) *Server {
 	return &Server{
-		graph: graph,
+		MaxFileChunkSize: 1024 * 1024, // 1 MB
+		graph:            graph,
 	}
 }
 
