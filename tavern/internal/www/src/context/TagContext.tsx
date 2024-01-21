@@ -2,23 +2,23 @@ import React, { createContext, useEffect } from "react";
 import { ApolloError, gql, useQuery } from "@apollo/client";
 import { TagContextType } from "../utils/consts";
 
-const defaultValue = {data: undefined, isLoading: false, error: undefined} as {data: undefined | TagContextType, isLoading: boolean, error: ApolloError | undefined};
+const defaultValue = { data: undefined, isLoading: false, error: undefined } as { data: undefined | TagContextType, isLoading: boolean, error: ApolloError | undefined };
 
 export const TagContext = createContext(defaultValue);
-  
-export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
+
+export const TagContextProvider = ({ children }: { children: React.ReactNode }) => {
 
     const GET_TAG_FILTERS = gql`
         query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
             groupTags:tags(where: $groupTag) {
                 id
                 name
-                kind   
+                kind
             },
-            serviceTags:tags(where: $serviceTag) {       
+            serviceTags:tags(where: $serviceTag) {
                 id
                 name
-                kind   
+                kind
             },
             beacons {
                 id
@@ -27,6 +27,7 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
                 lastSeenAt
                 interval
                 host{
+                    id
                     name
                     primaryIP
                     platform
@@ -34,7 +35,7 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
                         id
                         kind
                         name
-                    }  
+                    }
                 }
             },
             hosts{
@@ -44,7 +45,7 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
         }
     `;
     const PARAMS = {
-        variables: { 
+        variables: {
             groupTag: { kind: "group" },
             serviceTag: { kind: "service" },
         }
@@ -53,15 +54,15 @@ export const TagContextProvider = ({children}: {children: React.ReactNode}) => {
 
     useEffect(() => {
         startPolling(60000);
-      return () => {
-       stopPolling();
-      }
+        return () => {
+            stopPolling();
+        }
     }, [startPolling, stopPolling])
 
-  
+
     return (
-      <TagContext.Provider value={{ data, isLoading, error }}>
-        {children}
-      </TagContext.Provider>
+        <TagContext.Provider value={{ data, isLoading, error }}>
+            {children}
+        </TagContext.Provider>
     );
 };

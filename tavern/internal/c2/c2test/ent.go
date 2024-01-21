@@ -67,6 +67,10 @@ func ConvertTaskToC2PB(t *testing.T, ctx context.Context, task *ent.Task) *c2pb.
 			Eldritch,
 		Parameters: params,
 		FileNames:  fileNames,
+		QuestName: task.
+			QueryQuest().
+			OnlyX(ctx).
+			Name,
 	}
 }
 

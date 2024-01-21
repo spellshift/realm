@@ -23,11 +23,15 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
             else if(currentValue.kind === "group"){
                 accumulator.group.push(currentValue.value);
             }
+            else if(currentValue.kind === "host"){
+                accumulator.host.push(currentValue.value);
+            }
             return accumulator;
         },
         {
             "beacon": [],
             "service": [],
+            "host": [],
             "group": [],
             "platform": []
         });
@@ -41,19 +45,28 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
         const searchTypes = getSearchTypes(typeFilters);
 
         return filteredBeacons.filter( (beacon) => {
-            let group = (beacon.host?.tags).find( (obj : any) => {
+            let group = beacon?.host?.tags ? (beacon?.host?.tags).find( (obj : any) => {
                 return obj?.kind === "group"
-            }) || null;
+            }) : null;
 
-            let service = (beacon.host?.tags).find( (obj : any) => {
+            let service = beacon?.host?.tags ? (beacon?.host?.tags).find( (obj : any) => {
                 return obj?.kind === "service"
-            }) || null;
+            }) : null;
 
             let match = true;
 
             if(searchTypes.beacon.length > 0){
                 // If a beacon filter is applied ignore other filters to just match the beacon
                 if(searchTypes.beacon.indexOf(beacon.id) > -1){
+                    match = true;
+                }
+                else{
+                    return false;
+                }
+            }
+
+            if(searchTypes.host.length > 0){
+                if(searchTypes.host.indexOf(beacon?.host?.id) > -1){
                     match = true;
                 }
                 else{

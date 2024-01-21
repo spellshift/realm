@@ -35,14 +35,37 @@ export function getFilterNameByTypes(typeFilters: Array<any>){
         else if(currentValue.kind === "group"){
             accumulator.group.push(currentValue.name);
         }
+        else if(currentValue.kind === "host"){
+            accumulator.host.push(currentValue.name);
+        }
         return accumulator;
     },
     {
         "beacon": [],
         "service": [],
         "group": [],
+        "host": [],
         "platform": []
     });
+};
+
+export const getOfflineOnlineStatus = (beacons: any) => {
+    return beacons.reduce(
+    (accumulator: any, currentValue: any) => {
+        const beaconOffline = checkIfBeaconOnline(currentValue);
+        if(beaconOffline){
+            accumulator.offline += 1;
+        }
+        else{
+            accumulator.online += 1;
+        }
+        return accumulator;
+    },
+    {
+        online: 0,
+        offline: 0
+    },
+    );
 };
 
 export function getOnlineBeacons(beacons: Array<BeaconType>) : Array<BeaconType>{
