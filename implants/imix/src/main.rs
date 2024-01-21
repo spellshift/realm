@@ -107,7 +107,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         );
 
         match start_new_tasks(new_tasks, &mut all_exec_futures, loop_start_time).await {
-            Ok(is_ok) => {}
+            Ok(_is_ok) => {}
             Err(local_err) => {
                 #[cfg(debug_assertions)]
                 eprintln!(

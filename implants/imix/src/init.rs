@@ -95,7 +95,7 @@ fn get_host_platform() -> Result<Platform> {
     }
 }
 
-fn get_os_pretty_name() -> Result<String> {
+fn _get_os_pretty_name() -> Result<String> {
     if cfg!(target_os = "linux") {
         let linux_rel = linux_os_release()?;
         let pretty_name = match linux_rel.pretty_name {
