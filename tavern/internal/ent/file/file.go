@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -26,8 +27,15 @@ const (
 	FieldHash = "hash"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
+	// EdgeTomes holds the string denoting the tomes edge name in mutations.
+	EdgeTomes = "tomes"
 	// Table holds the table name of the file in the database.
 	Table = "files"
+	// TomesTable is the table that holds the tomes relation/edge. The primary key declared below.
+	TomesTable = "tome_files"
+	// TomesInverseTable is the table name for the Tome entity.
+	// It exists in this package in order to avoid circular dependency with the "tome" package.
+	TomesInverseTable = "tomes"
 )
 
 // Columns holds all SQL columns for file fields.
@@ -41,21 +49,16 @@ var Columns = []string{
 	FieldContent,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "files"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"tome_files",
-}
+var (
+	// TomesPrimaryKey and TomesColumn2 are the table columns denoting the
+	// primary key for the tomes relation (M2M).
+	TomesPrimaryKey = []string{"tome_id", "file_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -116,4 +119,25 @@ func BySize(opts ...sql.OrderTermOption) OrderOption {
 // ByHash orders the results by the hash field.
 func ByHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHash, opts...).ToFunc()
+}
+
+// ByTomesCount orders the results by tomes count.
+func ByTomesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTomesStep(), opts...)
+	}
+}
+
+// ByTomes orders the results by tomes terms.
+func ByTomes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTomesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newTomesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TomesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, TomesTable, TomesPrimaryKey...),
+	)
 }

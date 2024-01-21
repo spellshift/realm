@@ -578,6 +578,10 @@ type FileWhereInput struct {
 	HashHasSuffix    *string  `json:"hashHasSuffix,omitempty"`
 	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
 	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
+
+	// "tomes" edge predicates.
+	HasTomes     *bool             `json:"hasTomes,omitempty"`
+	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -826,6 +830,24 @@ func (i *FileWhereInput) P() (predicate.File, error) {
 		predicates = append(predicates, file.HashContainsFold(*i.HashContainsFold))
 	}
 
+	if i.HasTomes != nil {
+		p := file.HasTomes()
+		if !*i.HasTomes {
+			p = file.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTomesWith) > 0 {
+		with := make([]predicate.Tome, 0, len(i.HasTomesWith))
+		for _, w := range i.HasTomesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTomesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, file.HasTomesWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyFileWhereInput
