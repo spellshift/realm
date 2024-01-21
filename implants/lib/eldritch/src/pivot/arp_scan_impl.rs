@@ -213,9 +213,9 @@ pub fn handle_arp_scan(
             std::thread::spawn(
                 move || match start_listener(inner_interface.clone(), inner_out) {
                     Ok(_) => {}
-                    Err(err) => {
+                    Err(_err) => {
                         #[cfg(debug_assertions)]
-                        eprintln!("Listener on {} failed: {}", inner_interface.name, err);
+                        eprintln!("Listener on {} failed: {}", inner_interface.name, _err);
                     }
                 },
             );

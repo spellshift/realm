@@ -69,9 +69,9 @@ fn get_primary_ip() -> Result<String> {
                 "DANGER-UNKNOWN".to_string()
             }
         }
-        Err(e) => {
+        Err(_err) => {
             #[cfg(debug_assertions)]
-            eprintln!("Error getting primary ip address:\n{e}");
+            eprintln!("Error getting primary ip address:\n{_err}");
             "DANGER-UNKNOWN".to_string()
         }
     };
@@ -119,27 +119,27 @@ pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentPro
 
     let principal = match get_principal() {
         Ok(username) => username,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get process username\n{}", error);
+            eprintln!("Unable to get process username\n{}", _error);
             "UNKNOWN".to_string()
         }
     };
 
     let hostname = match get_hostname() {
         Ok(tmp_hostname) => tmp_hostname,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get system hostname\n{}", error);
+            eprintln!("Unable to get system hostname\n{}", _error);
             "UNKNOWN".to_string()
         }
     };
 
     let beacon_id = match get_beacon_id() {
         Ok(tmp_beacon_id) => tmp_beacon_id,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get a random beacon id\n{}", error);
+            eprintln!("Unable to get a random beacon id\n{}", _error);
             "DANGER-UNKNOWN".to_string()
         }
     };
@@ -152,18 +152,18 @@ pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentPro
 
     let host_platform = match get_host_platform() {
         Ok(tmp_host_platform) => tmp_host_platform,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get host platform id\n{}", error);
+            eprintln!("Unable to get host platform id\n{}", _error);
             Platform::Unspecified
         }
     };
 
     let primary_ip = match get_primary_ip() {
         Ok(tmp_primary_ip) => Some(tmp_primary_ip),
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get primary ip\n{}", error);
+            eprintln!("Unable to get primary ip\n{}", _error);
             None
         }
     };
