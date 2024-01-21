@@ -35,6 +35,7 @@ export const QuestTable = (props: Props) => {
             accessorFn: row => row,
             footer: props => props.column.id,
             enableSorting: false,
+            minSize: 200,
             cell: (cellData: any) => {
                 const questData = cellData.getValue();
                 return (
@@ -50,6 +51,7 @@ export const QuestTable = (props: Props) => {
         {
             id: "lastUpdated",
             header: 'Last updated',
+            maxSize: 100,
             accessorFn: row => formatDistance(new Date(row.lastUpdated), currentDate),
             footer: props => props.column.id,
             sortingFn: (

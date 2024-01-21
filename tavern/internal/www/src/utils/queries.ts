@@ -1,5 +1,41 @@
-import { gql, } from "@apollo/client";
+import { gql } from "@apollo/client";
 
+export const GET_HOST_QUERY = gql`
+    query GetHosts($where: HostWhereInput) {
+        hosts(where: $where){
+            id
+            name
+            primaryIP
+            platform
+            lastSeenAt
+            tags{
+                name
+                id
+                kind
+            }
+            beacons{
+                id
+                name
+                principal
+                interval
+                lastSeenAt
+            }
+        }
+}`;
+
+export const GET_HOST_TASK_SUMMARY = gql`
+    query GetTasks($where: TaskWhereInput) {
+            tasks(where: $where){
+        	    totalCount
+                edges{
+                    node{
+                        execFinishedAt
+                        outputSize
+                    }
+                }
+        }
+    }
+`;
 
 export const GET_QUEST_QUERY = gql`
     query GetQuests($where: QuestWhereInput) {
@@ -24,7 +60,7 @@ export const GET_QUEST_QUERY = gql`
                         id
                         name
                         kind
-                      } 
+                      }
                     }
                 }
             }
@@ -48,12 +84,12 @@ export const GET_TASK_QUERY = gql`
     query GetTasks($where: TaskWhereInput, $first: Int, $last:Int, $after: Cursor, $before:Cursor, $orderBy: [TaskOrder!]) {
             tasks(where: $where, first: $first, last: $last, after: $after, before:$before, orderBy: $orderBy){
                 pageInfo{
-                    hasNextPage,
-                    hasPreviousPage,
-                    startCursor,
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
                     endCursor
-                },
-        	    totalCount,
+                }
+        	    totalCount
                 edges{
                     node{
                         id
@@ -79,6 +115,7 @@ export const GET_TASK_QUERY = gql`
                         beacon {
                             id
                             name
+                            principal
                             lastSeenAt
                             interval
                                 host{
@@ -90,7 +127,7 @@ export const GET_TASK_QUERY = gql`
                                     id
                                     name
                                     kind
-                                } 
+                                }
                             }
                         }
                     }
@@ -103,27 +140,27 @@ export const GET_SEARCH_FILTERS = gql`
     query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
         groupTags:tags(where: $groupTag) {
             label:name
-            value:id  
+            value:id
             id
             name
-            kind    
-        },
+            kind
+        }
         serviceTags:tags(where: $serviceTag) {
             label:name
             value:id
             id
             name
-            kind      
-        },
+            kind
+        }
         beacons{
             label:name
-            value:id 
+            value:id
             id
             name
-        },
+        }
         hosts{
             label:name
-            value:id 
+            value:id
         }
     }
 `;
