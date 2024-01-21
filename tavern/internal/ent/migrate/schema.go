@@ -42,21 +42,12 @@ var (
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "content", Type: field.TypeBytes},
-		{Name: "tome_files", Type: field.TypeInt, Nullable: true},
 	}
 	// FilesTable holds the schema information for the "files" table.
 	FilesTable = &schema.Table{
 		Name:       "files",
 		Columns:    FilesColumns,
 		PrimaryKey: []*schema.Column{FilesColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "files_tomes_files",
-				Columns:    []*schema.Column{FilesColumns[7]},
-				RefColumns: []*schema.Column{TomesColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
 	}
 	// HostsColumns holds the columns for the "hosts" table.
 	HostsColumns = []*schema.Column{
@@ -214,6 +205,31 @@ var (
 			},
 		},
 	}
+	// TomeFilesColumns holds the columns for the "tome_files" table.
+	TomeFilesColumns = []*schema.Column{
+		{Name: "tome_id", Type: field.TypeInt},
+		{Name: "file_id", Type: field.TypeInt},
+	}
+	// TomeFilesTable holds the schema information for the "tome_files" table.
+	TomeFilesTable = &schema.Table{
+		Name:       "tome_files",
+		Columns:    TomeFilesColumns,
+		PrimaryKey: []*schema.Column{TomeFilesColumns[0], TomeFilesColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tome_files_tome_id",
+				Columns:    []*schema.Column{TomeFilesColumns[0]},
+				RefColumns: []*schema.Column{TomesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "tome_files_file_id",
+				Columns:    []*schema.Column{TomeFilesColumns[1]},
+				RefColumns: []*schema.Column{FilesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		BeaconsTable,
@@ -225,12 +241,12 @@ var (
 		TomesTable,
 		UsersTable,
 		HostTagsTable,
+		TomeFilesTable,
 	}
 )
 
 func init() {
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
-	FilesTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = FilesTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable
@@ -238,4 +254,6 @@ func init() {
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
+	TomeFilesTable.ForeignKeys[0].RefTable = TomesTable
+	TomeFilesTable.ForeignKeys[1].RefTable = FilesTable
 }

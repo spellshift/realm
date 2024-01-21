@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // FileCreate is the builder for creating a File entity.
@@ -80,6 +81,21 @@ func (fc *FileCreate) SetHash(s string) *FileCreate {
 func (fc *FileCreate) SetContent(b []byte) *FileCreate {
 	fc.mutation.SetContent(b)
 	return fc
+}
+
+// AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
+func (fc *FileCreate) AddTomeIDs(ids ...int) *FileCreate {
+	fc.mutation.AddTomeIDs(ids...)
+	return fc
+}
+
+// AddTomes adds the "tomes" edges to the Tome entity.
+func (fc *FileCreate) AddTomes(t ...*Tome) *FileCreate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return fc.AddTomeIDs(ids...)
 }
 
 // Mutation returns the FileMutation object of the builder.
@@ -225,6 +241,22 @@ func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 	if value, ok := fc.mutation.Content(); ok {
 		_spec.SetField(file.FieldContent, field.TypeBytes, value)
 		_node.Content = value
+	}
+	if nodes := fc.mutation.TomesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   file.TomesTable,
+			Columns: file.TomesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
