@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/namegen"
 )
 
@@ -46,14 +47,13 @@ func ConvertTaskToC2PB(t *testing.T, ctx context.Context, task *ent.Task) *c2pb.
 		),
 	)
 
-	var bundleName string
-	bundle := task.
+	var fileNames []string
+	task.
 		QueryQuest().
-		QueryBundle().
-		FirstX(ctx)
-	if bundle != nil {
-		bundleName = bundle.Name
-	}
+		QueryTome().
+		QueryFiles().
+		Select(file.FieldName).
+		ScanX(ctx, &fileNames)
 
 	return &c2pb.Task{
 		Id: int64(task.ID),
@@ -63,7 +63,7 @@ func ConvertTaskToC2PB(t *testing.T, ctx context.Context, task *ent.Task) *c2pb.
 			OnlyX(ctx).
 			Eldritch,
 		Parameters: params,
-		BundleName: bundleName,
+		FileNames:  fileNames,
 	}
 }
 

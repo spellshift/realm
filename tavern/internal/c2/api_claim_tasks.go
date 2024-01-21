@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
-	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/namegen"
@@ -180,19 +179,19 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				return nil, rollback(tx, fmt.Errorf("failed to parse task parameters (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err))
 			}
 		}
-		var bundleName string
-		bundle, err := claimedQuest.Bundle(ctx)
-		if err != nil && !ent.IsNotFound(err) {
-			return nil, rollback(tx, fmt.Errorf("failed to query quest bundle (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err))
+		claimedFiles, err := claimedTome.Files(ctx)
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to load tome files (id=%d,tomeID=%d)", taskID, claimedTome.ID))
 		}
-		if bundle != nil {
-			bundleName = bundle.Name
+		claimedFileNames := make([]string, 0, len(claimedFiles))
+		for _, f := range claimedFiles {
+			claimedFileNames = append(claimedFileNames, f.Name)
 		}
 		resp.Tasks = append(resp.Tasks, &c2pb.Task{
 			Id:         int64(claimedTask.ID),
 			Eldritch:   claimedTome.Eldritch,
 			Parameters: params,
-			BundleName: bundleName,
+			FileNames:  claimedFileNames,
 		})
 	}
 
