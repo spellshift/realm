@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/namegen"
+	"realm.pub/tavern/internal/ent"
 )
 
 func TestGetRandomName(t *testing.T) {
