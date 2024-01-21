@@ -212,10 +212,10 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if tu.mutation.FilesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   tome.FilesTable,
-			Columns: []string{tome.FilesColumn},
+			Columns: tome.FilesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
@@ -225,10 +225,10 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := tu.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tu.mutation.FilesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   tome.FilesTable,
-			Columns: []string{tome.FilesColumn},
+			Columns: tome.FilesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
@@ -241,10 +241,10 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := tu.mutation.FilesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   tome.FilesTable,
-			Columns: []string{tome.FilesColumn},
+			Columns: tome.FilesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
@@ -488,10 +488,10 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	}
 	if tuo.mutation.FilesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   tome.FilesTable,
-			Columns: []string{tome.FilesColumn},
+			Columns: tome.FilesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
@@ -501,10 +501,10 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	}
 	if nodes := tuo.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tuo.mutation.FilesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   tome.FilesTable,
-			Columns: []string{tome.FilesColumn},
+			Columns: tome.FilesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
@@ -517,10 +517,10 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	}
 	if nodes := tuo.mutation.FilesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   tome.FilesTable,
-			Columns: []string{tome.FilesColumn},
+			Columns: tome.FilesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
