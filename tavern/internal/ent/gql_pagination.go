@@ -1990,6 +1990,20 @@ var (
 			}
 		},
 	}
+	// TaskOrderFieldOutputSize orders Task by output_size.
+	TaskOrderFieldOutputSize = &TaskOrderField{
+		Value: func(t *Task) (ent.Value, error) {
+			return t.OutputSize, nil
+		},
+		column: task.FieldOutputSize,
+		toTerm: task.ByOutputSize,
+		toCursor: func(t *Task) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.OutputSize,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -2006,6 +2020,8 @@ func (f TaskOrderField) String() string {
 		str = "EXEC_STARTED_AT"
 	case TaskOrderFieldExecFinishedAt.column:
 		str = "EXEC_FINISHED_AT"
+	case TaskOrderFieldOutputSize.column:
+		str = "OUTPUT_SIZE"
 	}
 	return str
 }
@@ -2032,6 +2048,8 @@ func (f *TaskOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *TaskOrderFieldExecStartedAt
 	case "EXEC_FINISHED_AT":
 		*f = *TaskOrderFieldExecFinishedAt
+	case "OUTPUT_SIZE":
+		*f = *TaskOrderFieldOutputSize
 	default:
 		return fmt.Errorf("%s is not a valid TaskOrderField", str)
 	}
