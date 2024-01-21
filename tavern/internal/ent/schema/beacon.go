@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"io"
 
-	"realm.pub/tavern/internal/namegen"
-
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/namegen"
 )
 
 // Beacon holds the schema definition for the Beacon entity.
