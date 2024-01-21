@@ -177,9 +177,9 @@ pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentPro
 
     let host_id = match get_host_id(host_id_path) {
         Ok(tmp_host_id) => tmp_host_id,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get or create a host id\n{}", error);
+            eprintln!("Unable to get or create a host id\n{}", _error);
             "DANGER-UNKNOWN".to_string()
         }
     };
