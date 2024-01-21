@@ -27,7 +27,7 @@ func (Beacon) Fields() []ent.Field {
 			NotEmpty().
 			Unique().
 			Immutable().
-			DefaultFunc(namegen.GetRandomNameComplex).
+			DefaultFunc(namegen.NewComplex).
 			Comment("A human readable identifier for the beacon."),
 		field.String("principal").
 			Optional().
