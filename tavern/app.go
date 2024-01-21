@@ -216,11 +216,11 @@ func newGraphQLHandler(client *ent.Client) http.Handler {
 	})
 }
 
-func newGRPCHandler(client *ent.Client) http.HandlerFunc {
+func newGRPCHandler(client *ent.Client) http.Handler {
 	c2srv := c2.New(client)
 	grpcSrv := grpc.NewServer()
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.StripPrefix("/grpc", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor != 2 {
 			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
 			return
@@ -232,7 +232,7 @@ func newGRPCHandler(client *ent.Client) http.HandlerFunc {
 		}
 
 		grpcSrv.ServeHTTP(w, r)
-	})
+	}))
 }
 
 func registerProfiler(router tavernhttp.RouteMap) {

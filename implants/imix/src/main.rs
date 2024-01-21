@@ -1,5 +1,5 @@
 use anyhow::Result;
-use c2::pb::c2_client::C2Client;
+use c2::pb::c2_manual_client::TavernClient;
 use c2::pb::TaskOutput;
 use clap::{arg, Command};
 use imix::exec::AsyncTask;
@@ -61,8 +61,8 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         let cur_callback_uri = get_callback_uri(imix_config.clone())?;
 
         // 1b) Setup the tavern client
-        let tavern_client = match C2Client::connect(cur_callback_uri.clone()).await {
-            Ok(tavern_client_local) => tavern_client_local,
+        let tavern_client = match TavernClient::connect(cur_callback_uri.clone()).await {
+            Ok(t) => t,
             Err(err) => {
                 #[cfg(debug_assertions)]
                 eprintln!("failed to create tavern client {}", err);
