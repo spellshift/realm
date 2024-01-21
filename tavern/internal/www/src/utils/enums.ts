@@ -14,6 +14,7 @@ export enum PageNavItem {
     playground='API Playground',
     results='Quest outputs',
     createQuest= 'Create new quest',
+    hosts="Hosts"
 }
 export enum SupportedPlatforms {
     Windows="Windows",

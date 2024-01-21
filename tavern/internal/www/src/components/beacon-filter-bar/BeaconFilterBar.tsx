@@ -1,7 +1,7 @@
 import React from "react";
-import {Heading} from "@chakra-ui/react";
-import Select,  { createFilter } from "react-select"
-import { BeaconType, TomeTag } from "../../utils/consts";
+import { Heading } from "@chakra-ui/react";
+import Select, { createFilter } from "react-select"
+import { BeaconType, FilterBarOption, HostType, TomeTag } from "../../utils/consts";
 import { SupportedPlatforms } from "../../utils/enums";
 
 type Props = {
@@ -9,18 +9,19 @@ type Props = {
     beacons: Array<BeaconType>;
     groups: Array<TomeTag>;
     services: Array<TomeTag>;
+    hosts: Array<HostType>;
 }
 export const BeaconFilterBar = (props: Props) => {
     // TODO add host to filter
 
-    const {setFiltersSelected, beacons, groups, services} = props;
+    const { setFiltersSelected, beacons, groups, services, hosts } = props;
     const supportedPlatformsList = Object.values(SupportedPlatforms);
 
-    const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>) => {
+    const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>, hosts: Array<HostType>) => {
         return [
             {
                 label: "Platform",
-                options: supportedPlatformsList.map(function(platform: string){
+                options: supportedPlatformsList.map(function (platform: string) {
                     return {
                         name: platform,
                         value: platform,
@@ -31,17 +32,18 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Service",
-                options: services.map(function(service: TomeTag){
+                options: services.map(function (service: TomeTag) {
                     return {
                         ...service,
                         value: service?.id,
                         label: service?.name,
                         kind: service?.kind
-                    }})
+                    }
+                })
             },
             {
                 label: "Group",
-                options: groups.map(function(group: TomeTag){
+                options: groups.map(function (group: TomeTag) {
                     return {
                         ...group,
                         value: group?.id,
@@ -51,8 +53,19 @@ export const BeaconFilterBar = (props: Props) => {
                 })
             },
             {
+                label: "Host",
+                options: hosts.map(function (host: HostType) {
+                    return {
+                        ...host,
+                        value: host?.id,
+                        label: host?.name,
+                        kind: "host"
+                    };
+                })
+            },
+            {
                 label: "Beacon",
-                options: beacons.map(function(beacon: BeaconType){
+                options: beacons.map(function (beacon: BeaconType) {
                     return {
                         ...beacon,
                         value: beacon?.id,
@@ -66,16 +79,16 @@ export const BeaconFilterBar = (props: Props) => {
 
     return (
         <div>
-            <Heading size="sm" mb={2}> Filter by platform, service, group, and beacon</Heading>
+            <Heading size="sm" mb={2}> Filter by platform, service, group, hosts, and beacon</Heading>
             <Select
                 isSearchable={true}
                 isMulti
-                options={getFormattedOptions(beacons, groups, services)}
+                options={getFormattedOptions(beacons, groups, services, hosts)}
                 onChange={setFiltersSelected}
                 filterOption={createFilter({
                     matchFrom: 'any',
                     stringify: option => `${option.label}`,
-                  })}
+                })}
             />
         </div>
     );

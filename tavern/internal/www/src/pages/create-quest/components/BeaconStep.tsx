@@ -11,7 +11,7 @@ import {
 import 'react-virtualized/styles.css';
 import { BeaconFilterBar } from "../../../components/beacon-filter-bar";
 import BeaconOption from "../../../components/beacon-option/BeaconOption";
-import { BeaconType, TomeTag } from "../../../utils/consts";
+import { BeaconType, HostType, TomeTag } from "../../../utils/consts";
 import { useBeaconFilter } from "../hooks/useBeaconFilter";
 
 const Grid = _Grid as unknown as FC<GridProps>;
@@ -21,6 +21,7 @@ type Props = {
     beacons: Array<BeaconType>;
     groups: Array<TomeTag>;
     services: Array<TomeTag>;
+    hosts: Array<HostType>;
     selectedBeacons: any;
     setSelectedBeacons: any;
 }
@@ -30,7 +31,7 @@ const BeaconStep = (props: Props) => {
     const CARD_HEIGHT = 100;
     const COLUMN_COUNT = 1;
 
-    const { beacons, groups, services, selectedBeacons, setSelectedBeacons } = props;
+    const { beacons, groups, services, hosts, selectedBeacons, setSelectedBeacons } = props;
 
     const {
         filteredBeacons,
@@ -95,7 +96,7 @@ const BeaconStep = (props: Props) => {
                 <StackItem>
                     <div className="flex flex-row justify-between gap-8">
                         <div className=" flex-1">
-                            <BeaconFilterBar setFiltersSelected={setTypeFilters} groups={groups} services={services} beacons={beacons} />
+                            <BeaconFilterBar setFiltersSelected={setTypeFilters} groups={groups} services={services} beacons={beacons} hosts={hosts} />
                         </div>
                         <div className="flex flex-col gap-2">
                             <FormLabel htmlFor='isSelected'>

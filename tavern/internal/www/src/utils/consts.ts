@@ -26,12 +26,18 @@ export type TomeTag = {
     name: string;
     kind: string;
 }
+export type FilterBarOption = {
+    id: string;
+    name: string;
+    kind: string;
+}
 export type HostType = {
     id: string;
     name: string;
-    primaryIP: string;
-    platform: SupportedPlatforms;
-    tags: Array<TomeTag>;
+    primaryIP?: string;
+    platform?: SupportedPlatforms;
+    tags?: Array<TomeTag>;
+    beacons?: Array<BeaconType>;
 }
 export type BeaconType = {
     id: string;
@@ -45,9 +51,10 @@ export type SelectedBeacons = {
     [beaconId: string]: boolean
 };
 export type TagContextType = {
-    beacons: Array<BeaconType>,
-    groupTags: Array<TomeTag>,
-    serviceTags: Array<TomeTag>
+    beacons: Array<BeaconType>;
+    groupTags: Array<TomeTag>;
+    serviceTags: Array<TomeTag>;
+    hosts: Array<HostType>;
 }
 export type QuestParam = {
     label: string,
@@ -94,5 +101,5 @@ export type OutputTableProps = {
     service: string | null,
     group: string | null,
     output: string,
-    taskDetails?: Task   
+    taskDetails?: Task
 }

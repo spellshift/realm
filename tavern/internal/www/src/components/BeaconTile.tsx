@@ -7,21 +7,22 @@ type Props = {
         lastSeenAt: string;
         interval: number;
         host: {
-            tags: Array<any>;
+            id: string;
+            tags?: Array<any>;
             name: string;
-            primaryIP: string;
-            platform: string;
+            primaryIP?: string;
+            platform?: string;
         }
     }
 }
 const BeaconTile = (props: Props) => {
-    const {beaconData} = props;
+    const { beaconData } = props;
     const beaconOffline = checkIfBeaconOnline(beaconData);
     return (
         <div className="flex flex-col gap-1">
             <div className="flex flex-row gap-4">{beaconData.name}</div>
             <div className="flex flex-row flex-wrap gap-1">
-                {beaconData?.host?.tags.map((tag: any)=> {
+                {beaconData?.host?.tags && beaconData?.host?.tags.map((tag: any) => {
                     return <Badge key={tag.id}>{tag.name}</Badge>
                 })}
                 <Badge>{beaconData?.host?.name}</Badge>

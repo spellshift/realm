@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useState } from "react"
-import { BeaconType } from "../../../utils/consts";
+import { HostType } from "../../../utils/consts";
 
-export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any) => {
+export const useHostsFilter = (hosts: Array<HostType>) => {
+    const [loading, setLoading] = useState(true);
+    const [filteredHosts, setFilteredHosts] = useState(hosts);
 
-    const [filteredBeacons, setFilteredBeacons] = useState(beacons);
-
-    const [typeFilters, setTypeFilters] = useState([]);
-
-    const [viewOnlySelected, setViewOnlySelected] = useState(false);
+    const [typeFilters, setTypeFilters] = useState([]) as Array<any>;
 
     function getSearchTypes(typeFilters: any){
         return typeFilters.reduce((accumulator:any, currentValue:any) => {
@@ -37,19 +35,19 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
         });
     };
 
-    const filterByTypes = useCallback((filteredBeacons: Array<BeaconType>) => {
+    const filterByTypes = useCallback((filteredHosts: Array<HostType>) => {
         if(typeFilters.length < 1){
-            return filteredBeacons;
+            return filteredHosts;
         }
 
         const searchTypes = getSearchTypes(typeFilters);
 
-        return filteredBeacons.filter( (beacon) => {
-            let group = beacon?.host?.tags && (beacon?.host?.tags).find( (obj : any) => {
+        return filteredHosts.filter( (host) => {
+            let group = host?.tags && (host?.tags).find( (obj : any) => {
                 return obj?.kind === "group"
             }) || null;
 
-            let service = beacon?.host?.tags && (beacon?.host?.tags).find( (obj : any) => {
+            let service = host?.tags && (host?.tags).find( (obj : any) => {
                 return obj?.kind === "service"
             }) || null;
 
@@ -57,7 +55,7 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
 
             if(searchTypes.beacon.length > 0){
                 // If a beacon filter is applied ignore other filters to just match the beacon
-                if(searchTypes.beacon.indexOf(beacon.id) > -1){
+                if(host?.beacons?.some(beacon=> searchTypes.beacon.includes(beacon.id))){
                     match = true;
                 }
                 else{
@@ -66,7 +64,7 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
             }
 
             if(searchTypes.host.length > 0){
-                if(searchTypes.host.indexOf(beacon?.host?.id) > -1){
+                if(searchTypes.host.indexOf(host?.id) > -1){
                     match = true;
                 }
                 else{
@@ -93,7 +91,7 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
             }
 
             if(searchTypes.platform.length > 0){
-                if(searchTypes.platform.indexOf(beacon?.host?.platform) > -1){
+                if(searchTypes.platform.indexOf(host?.platform) > -1){
                     match = true;
                 }
                 else{
@@ -105,27 +103,21 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
         });
     },[typeFilters]);
 
-    const filterBySelected = useCallback((beacons: Array<BeaconType>, selectedBeacons: any) => {
-        if(viewOnlySelected){
-            return beacons.filter((beacon: BeaconType)=> selectedBeacons[beacon?.id]);
-        }
-        else{
-            return beacons;
-        }
-    },[viewOnlySelected]);
-
     useEffect(()=> {
-       let filteredBeacons = filterBySelected(beacons, selectedBeacons);
-       filteredBeacons = filterByTypes(filteredBeacons);
-       setFilteredBeacons(
-        filteredBeacons
-       );
-    },[beacons, selectedBeacons, typeFilters, viewOnlySelected]);
+        if(hosts.length > 0){
+            setLoading(true);
+
+            const filtered = filterByTypes(hosts);
+            setFilteredHosts(
+                filtered
+            );
+            setLoading(false);
+        }
+    },[hosts, typeFilters]);
 
     return {
-        filteredBeacons,
-        setTypeFilters,
-        viewOnlySelected,
-        setViewOnlySelected
+        loading,
+        filteredHosts,
+        setTypeFilters
     }
 }

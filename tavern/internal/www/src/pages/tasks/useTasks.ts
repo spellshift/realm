@@ -4,8 +4,9 @@ import { TableRowLimit } from "../../utils/enums";
 import { GET_TASK_QUERY } from "../../utils/queries";
 import { getFilterNameByTypes } from "../../utils/utils";
 
-export enum TASK_PAGE_TYPE{   
-    questIdQuery= "ID_QUERY",
+export enum TASK_PAGE_TYPE{
+    hostIDQuery="HOST_ID_QUERY",
+    questIdQuery= "QUEST_ID_QUERY",
     questDetailsQuery= "QUEST_DETAILS_QUERY",
 }
 
@@ -43,6 +44,30 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
       } as any;
 
       switch(defaultQuery){
+            case TASK_PAGE_TYPE.hostIDQuery:
+              const hostParams = [{
+                  "hasBeaconWith": {
+                      "hasHostWith": {
+                          "id": id
+                      }
+                  }
+              }] as Array<any>;
+
+              if(searchText){
+                hostParams.push({
+                "or": [
+                  {"outputContains": searchText},
+                  {"hasQuestWith": {
+                      "nameContains": searchText
+                    }
+                  },
+                  {"hasQuestWith":
+                    {"hasTomeWith": {"nameContains": searchText}}}
+                ]
+              })};
+
+              query.where.and = hostParams;
+              break;
             case TASK_PAGE_TYPE.questIdQuery:
                 const include = [{"hasQuestWith": {"id": id}}] as Array<any>;
 
@@ -52,7 +77,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
                 break;
             case TASK_PAGE_TYPE.questDetailsQuery:
             default:
-                const text = searchText || "";  
+                const text = searchText || "";
                 query.where.and = [{
                                 "or": [
                                   {"outputContains": text},
@@ -60,7 +85,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
                                       "nameContains": text
                                     }
                                   },
-                                  {"hasQuestWith": 
+                                  {"hasQuestWith":
                                     {"hasTomeWith": {"nameContains": text}}}
                                 ]
                 }];

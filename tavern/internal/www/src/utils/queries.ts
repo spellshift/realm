@@ -1,5 +1,26 @@
 import { gql, } from "@apollo/client";
 
+export const GET_HOST_QUERY = gql`
+    query GetHosts($where: HostWhereInput) {
+        hosts(where: $where){
+            id,
+            name,
+            primaryIP,
+            platform,
+            lastSeenAt,
+            tags{
+                name,
+                id,
+                kind
+            }
+            beacons{
+                id,
+                name,
+                interval,
+                lastSeenAt
+            }
+        }
+}`;
 
 export const GET_QUEST_QUERY = gql`
     query GetQuests($where: QuestWhereInput) {
@@ -24,7 +45,7 @@ export const GET_QUEST_QUERY = gql`
                         id
                         name
                         kind
-                      } 
+                      }
                     }
                 }
             }
@@ -90,7 +111,7 @@ export const GET_TASK_QUERY = gql`
                                     id
                                     name
                                     kind
-                                } 
+                                }
                             }
                         }
                     }
@@ -103,27 +124,27 @@ export const GET_SEARCH_FILTERS = gql`
     query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
         groupTags:tags(where: $groupTag) {
             label:name
-            value:id  
+            value:id
             id
             name
-            kind    
+            kind
         },
         serviceTags:tags(where: $serviceTag) {
             label:name
             value:id
             id
             name
-            kind      
+            kind
         },
         beacons{
             label:name
-            value:id 
+            value:id
             id
             name
         },
         hosts{
             label:name
-            value:id 
+            value:id
         }
     }
 `;

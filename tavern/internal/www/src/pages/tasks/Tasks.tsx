@@ -38,7 +38,9 @@ const Tasks = () => {
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                 <TaskPageHeader />
             </div>
-            <FilterBar setSearch={setSearch} setFiltersSelected={setFiltersSelected} />
+            <div className="p-4 bg-white rounded-lg shadow-lg mt-2">
+                <FilterBar setSearch={setSearch} setFiltersSelected={setFiltersSelected} />
+            </div>
             {loading ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading quest tasks..." />
             ) : error ? (
