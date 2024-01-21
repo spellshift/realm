@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
@@ -22,7 +23,6 @@ import (
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // Common entgql types.

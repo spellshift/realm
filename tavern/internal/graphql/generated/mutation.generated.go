@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/vektah/gqlparser/v2/ast"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/graphql/models"
-	"github.com/vektah/gqlparser/v2/ast"
 )
 
 // region    ************************** generated!.gotpl **************************
@@ -39,7 +39,7 @@ func (ec *executionContext) field_Mutation_claimTasks_args(ctx context.Context, 
 	var arg0 models.ClaimTasksInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNClaimTasksInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐClaimTasksInput(ctx, tmp)
+		arg0, err = ec.unmarshalNClaimTasksInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐClaimTasksInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +63,7 @@ func (ec *executionContext) field_Mutation_createQuest_args(ctx context.Context,
 	var arg1 ent.CreateQuestInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNCreateQuestInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateQuestInput(ctx, tmp)
+		arg1, err = ec.unmarshalNCreateQuestInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateQuestInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func (ec *executionContext) field_Mutation_createTag_args(ctx context.Context, r
 	var arg0 ent.CreateTagInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateTagInput(ctx, tmp)
+		arg0, err = ec.unmarshalNCreateTagInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateTagInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func (ec *executionContext) field_Mutation_createTome_args(ctx context.Context, 
 	var arg0 ent.CreateTomeInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateTomeInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐCreateTomeInput(ctx, tmp)
+		arg0, err = ec.unmarshalNCreateTomeInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateTomeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func (ec *executionContext) field_Mutation_submitTaskResult_args(ctx context.Con
 	var arg0 models.SubmitTaskResultInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNSubmitTaskResultInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐSubmitTaskResultInput(ctx, tmp)
+		arg0, err = ec.unmarshalNSubmitTaskResultInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐSubmitTaskResultInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (ec *executionContext) field_Mutation_updateBeacon_args(ctx context.Context
 	var arg1 ent.UpdateBeaconInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateBeaconInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateBeaconInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateBeaconInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateBeaconInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +156,7 @@ func (ec *executionContext) field_Mutation_updateHost_args(ctx context.Context, 
 	var arg1 ent.UpdateHostInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateHostInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateHostInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateHostInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateHostInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +180,7 @@ func (ec *executionContext) field_Mutation_updateTag_args(ctx context.Context, r
 	var arg1 ent.UpdateTagInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateTagInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateTagInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateTagInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateTagInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -204,7 +204,7 @@ func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, 
 	var arg1 ent.UpdateUserInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateUserInput2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUpdateUserInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateUserInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateUserInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -239,7 +239,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 			return ec.resolvers.Mutation().CreateQuest(rctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -270,7 +270,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 	}
 	res := resTmp.(*ent.Quest)
 	fc.Result = res
-	return ec.marshalOQuest2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐQuest(ctx, field.Selections, res)
+	return ec.marshalOQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -335,7 +335,7 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 			return ec.resolvers.Mutation().UpdateBeacon(rctx, fc.Args["beaconID"].(int), fc.Args["input"].(ent.UpdateBeaconInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -369,7 +369,7 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 	}
 	res := resTmp.(*ent.Beacon)
 	fc.Result = res
-	return ec.marshalNBeacon2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐBeacon(ctx, field.Selections, res)
+	return ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -434,7 +434,7 @@ func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field grap
 			return ec.resolvers.Mutation().UpdateHost(rctx, fc.Args["hostID"].(int), fc.Args["input"].(ent.UpdateHostInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -468,7 +468,7 @@ func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field grap
 	}
 	res := resTmp.(*ent.Host)
 	fc.Result = res
-	return ec.marshalNHost2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐHost(ctx, field.Selections, res)
+	return ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -531,7 +531,7 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 			return ec.resolvers.Mutation().CreateTag(rctx, fc.Args["input"].(ent.CreateTagInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
 				return nil, err
 			}
@@ -565,7 +565,7 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 	}
 	res := resTmp.(*ent.Tag)
 	fc.Result = res
-	return ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTag(ctx, field.Selections, res)
+	return ec.marshalNTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createTag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -620,7 +620,7 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 			return ec.resolvers.Mutation().UpdateTag(rctx, fc.Args["tagID"].(int), fc.Args["input"].(ent.UpdateTagInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -654,7 +654,7 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 	}
 	res := resTmp.(*ent.Tag)
 	fc.Result = res
-	return ec.marshalNTag2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTag(ctx, field.Selections, res)
+	return ec.marshalNTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateTag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -719,7 +719,7 @@ func (ec *executionContext) _Mutation_claimTasks(ctx context.Context, field grap
 	}
 	res := resTmp.([]*ent.Task)
 	fc.Result = res
-	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx, field.Selections, res)
+	return ec.marshalNTask2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -793,7 +793,7 @@ func (ec *executionContext) _Mutation_submitTaskResult(ctx context.Context, fiel
 	}
 	res := resTmp.(*ent.Task)
 	fc.Result = res
-	return ec.marshalOTask2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+	return ec.marshalOTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_submitTaskResult(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -860,7 +860,7 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 			return ec.resolvers.Mutation().CreateTome(rctx, fc.Args["input"].(ent.CreateTomeInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
 				return nil, err
 			}
@@ -894,7 +894,7 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 	}
 	res := resTmp.(*ent.Tome)
 	fc.Result = res
-	return ec.marshalNTome2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐTome(ctx, field.Selections, res)
+	return ec.marshalNTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -957,7 +957,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 			return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["userID"].(int), fc.Args["input"].(ent.UpdateUserInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
 				return nil, err
 			}
@@ -988,7 +988,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋkcarrettoᚋrealmᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {

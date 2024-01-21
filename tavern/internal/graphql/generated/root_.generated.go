@@ -11,10 +11,10 @@ import (
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/graphql/models"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/graphql/models"
 )
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
