@@ -48,12 +48,15 @@ func ConvertTaskToC2PB(t *testing.T, ctx context.Context, task *ent.Task) *c2pb.
 	)
 
 	var fileNames []string
-	task.
+	files := task.
 		QueryQuest().
 		QueryTome().
 		QueryFiles().
-		Select(file.FieldName).
-		ScanX(ctx, &fileNames)
+		Order(file.ByID()).
+		AllX(ctx)
+	for _, f := range files {
+		fileNames = append(fileNames, f.Name)
+	}
 
 	return &c2pb.Task{
 		Id: int64(task.ID),

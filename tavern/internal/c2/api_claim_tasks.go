@@ -61,7 +61,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to query beacon entity: %v", err)
 	}
-	var beaconnameaddr *string = nil
+	var beaconNameAddr *string = nil
 	if !beaconExists {
 		candidateNames := []string{
 			namegen.NewSimple(),
@@ -91,7 +91,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 		for _, canidate := range candidateNames {
 			if !namegen.IsCollision(collisions, canidate) {
-				beaconnameaddr = &canidate
+				beaconNameAddr = &canidate
 				break
 			}
 		}
@@ -102,7 +102,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetPrincipal(req.Beacon.Principal).
 		SetIdentifier(req.Beacon.Identifier).
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
-		SetNillableName(beaconnameaddr).
+		SetNillableName(beaconNameAddr).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
 		SetInterval(req.Beacon.Interval).
@@ -179,7 +179,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				return nil, rollback(tx, fmt.Errorf("failed to parse task parameters (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err))
 			}
 		}
-		claimedFiles, err := claimedTome.Files(ctx)
+		claimedFiles, err := claimedTome.QueryFiles().All(ctx)
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to load tome files (id=%d,tomeID=%d)", taskID, claimedTome.ID))
 		}
