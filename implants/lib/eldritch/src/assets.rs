@@ -33,9 +33,11 @@ pub struct Asset;
 #[folder = "../../../implants/imix/install_scripts"]
 pub struct Asset;
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
+#[derive(Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
 #[display(fmt = "AssetsLibrary")]
-pub struct AssetsLibrary();
+pub struct AssetsLibrary {
+    pub test: String,
+}
 starlark_simple_value!(AssetsLibrary);
 
 #[allow(non_upper_case_globals)]

@@ -15,6 +15,7 @@ anyhow = { workspace = true }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
 base64 = { workspace = true }
+c2 = { workspace = true }
 chrono = { workspace = true }
 derive_more = { workspace = true }
 eval = { workspace = true }

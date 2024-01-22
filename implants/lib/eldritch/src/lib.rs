@@ -6,6 +6,7 @@ pub mod process;
 pub mod sys;
 pub mod time;
 
+use c2::pb::c2_client::C2Client;
 use starlark::collections::SmallMap;
 use starlark::const_frozen_string;
 use starlark::environment::{Globals, GlobalsBuilder, LibraryExtension, Module};
@@ -66,14 +67,21 @@ macro_rules! insert_dict_kv {
 }
 pub(crate) use insert_dict_kv;
 
-pub fn get_eldritch() -> anyhow::Result<Globals> {
+pub struct EldritchRuntime {
+    pub print_handler: dyn PrintHandler,
+}
+
+pub fn get_eldritch(c2client: String) -> anyhow::Result<Globals> {
+    let _ = c2client;
     #[starlark_module]
     fn eldritch(builder: &mut GlobalsBuilder) {
         const file: FileLibrary = FileLibrary();
         const process: ProcessLibrary = ProcessLibrary();
         const sys: SysLibrary = SysLibrary();
         const pivot: PivotLibrary = PivotLibrary();
-        const assets: AssetsLibrary = AssetsLibrary();
+        const assets: AssetsLibrary = AssetsLibrary {
+            test: "test".to_string(),
+        };
         const crypto: CryptoLibrary = CryptoLibrary();
         const time: TimeLibrary = TimeLibrary();
     }
@@ -152,7 +160,7 @@ pub fn eldritch_run(
     //     None => "{}".to_string(),
     // };
 
-    let globals = match get_eldritch() {
+    let globals = match get_eldritch("test".to_string()) {
         Ok(local_globals) => local_globals,
         Err(local_error) => {
             return Err(anyhow::anyhow!(
@@ -216,7 +224,7 @@ mod tests {
     // just checks dir...
     #[test]
     fn test_library_bindings() {
-        let globals = get_eldritch().unwrap();
+        let globals = get_eldritch("test".to_string()).unwrap();
         let mut a = Assert::new();
         a.globals(globals);
         a.all_true(
