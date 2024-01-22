@@ -42,9 +42,9 @@ pub async fn get_new_tasks(
     });
     let new_tasks = match tavern_client.claim_tasks(req).await {
         Ok(resp) => resp.get_ref().tasks.clone(),
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("main_loop: error claiming task\n{:?}", error);
+            eprintln!("main_loop: error claiming task\n{:?}", _error);
             let empty_vec = vec![];
             empty_vec
         }
@@ -201,9 +201,9 @@ pub async fn submit_task_output(
                     // Remove output that has been reported sucessfully.
                     running_task_res_map.remove(&task_id);
                 }
-                Err(local_err) => {
+                Err(_err) => {
                     #[cfg(debug_assertions)]
-                    eprintln!("Failed to submit task resluts:\n{}", local_err.to_string());
+                    eprintln!("Failed to submit task resluts:\n{}", _err.to_string());
                     {}
                 }
             };

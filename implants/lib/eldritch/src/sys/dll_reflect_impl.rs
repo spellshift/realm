@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use starlark::values::none::NoneType;
 
 #[cfg(target_os = "windows")]
@@ -35,14 +33,14 @@ macro_rules! win_target {
     };
 }
 
-#[cfg(host_family="unix")]
+#[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! sep {
     () => {
         "/"
     };
 }
 
-#[cfg(host_family="windows")]
+#[cfg(host_family = "windows")]
 macro_rules! sep {
     () => {
         r#"\"#
