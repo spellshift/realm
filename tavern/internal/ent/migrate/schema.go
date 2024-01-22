@@ -64,6 +64,28 @@ var (
 		Columns:    HostsColumns,
 		PrimaryKey: []*schema.Column{HostsColumns[0]},
 	}
+	// ProcessesColumns holds the columns for the "processes" table.
+	ProcessesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "pid", Type: field.TypeUint64},
+		{Name: "name", Type: field.TypeString},
+		{Name: "principal", Type: field.TypeString},
+		{Name: "task_reported_processes", Type: field.TypeInt, Nullable: true},
+	}
+	// ProcessesTable holds the schema information for the "processes" table.
+	ProcessesTable = &schema.Table{
+		Name:       "processes",
+		Columns:    ProcessesColumns,
+		PrimaryKey: []*schema.Column{ProcessesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "processes_tasks_reported_processes",
+				Columns:    []*schema.Column{ProcessesColumns[4]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// QuestsColumns holds the columns for the "quests" table.
 	QuestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -235,6 +257,7 @@ var (
 		BeaconsTable,
 		FilesTable,
 		HostsTable,
+		ProcessesTable,
 		QuestsTable,
 		TagsTable,
 		TasksTable,
@@ -247,6 +270,7 @@ var (
 
 func init() {
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
+	ProcessesTable.ForeignKeys[0].RefTable = TasksTable
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = FilesTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable

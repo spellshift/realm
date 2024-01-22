@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/schema"
 	"realm.pub/tavern/internal/ent/tag"
@@ -83,6 +84,12 @@ func init() {
 	hostDescName := hostFields[1].Descriptor()
 	// host.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	host.NameValidator = hostDescName.Validators[0].(func(string) error)
+	processFields := schema.Process{}.Fields()
+	_ = processFields
+	// processDescPrincipal is the schema descriptor for principal field.
+	processDescPrincipal := processFields[2].Descriptor()
+	// process.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
+	process.PrincipalValidator = processDescPrincipal.Validators[0].(func(string) error)
 	questMixin := schema.Quest{}.Mixin()
 	questMixinFields0 := questMixin[0].Fields()
 	_ = questMixinFields0

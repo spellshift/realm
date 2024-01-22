@@ -182,6 +182,30 @@ func (f HostMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) 
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.HostMutation", m)
 }
 
+// The ProcessQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type ProcessQueryRuleFunc func(context.Context, *ent.ProcessQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f ProcessQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ProcessQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ProcessQuery", q)
+}
+
+// The ProcessMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type ProcessMutationRuleFunc func(context.Context, *ent.ProcessMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f ProcessMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.ProcessMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ProcessMutation", m)
+}
+
 // The QuestQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type QuestQueryRuleFunc func(context.Context, *ent.QuestQuery) error

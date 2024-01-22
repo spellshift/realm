@@ -128,6 +128,18 @@ func (t *Task) Beacon(ctx context.Context) (*Beacon, error) {
 	return result, err
 }
 
+func (t *Task) ReportedProcesses(ctx context.Context) (result []*Process, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = t.NamedReportedProcesses(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = t.Edges.ReportedProcessesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = t.QueryReportedProcesses().All(ctx)
+	}
+	return result, err
+}
+
 func (t *Tome) Files(ctx context.Context) (result []*File, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = t.NamedFiles(graphql.GetFieldContext(ctx).Field.Alias)

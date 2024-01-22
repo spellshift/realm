@@ -15,6 +15,9 @@ type File func(*sql.Selector)
 // Host is the predicate function for host builders.
 type Host func(*sql.Selector)
 
+// Process is the predicate function for process builders.
+type Process func(*sql.Selector)
+
 // Quest is the predicate function for quest builders.
 type Quest func(*sql.Selector)
 

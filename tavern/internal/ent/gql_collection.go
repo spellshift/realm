@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -409,6 +410,83 @@ func newHostPaginateArgs(rv map[string]any) *hostPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (pr *ProcessQuery) CollectFields(ctx context.Context, satisfies ...string) (*ProcessQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return pr, nil
+	}
+	if err := pr.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return pr, nil
+}
+
+func (pr *ProcessQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(process.Columns))
+		selectedFields = []string{process.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "pid":
+			if _, ok := fieldSeen[process.FieldPid]; !ok {
+				selectedFields = append(selectedFields, process.FieldPid)
+				fieldSeen[process.FieldPid] = struct{}{}
+			}
+		case "name":
+			if _, ok := fieldSeen[process.FieldName]; !ok {
+				selectedFields = append(selectedFields, process.FieldName)
+				fieldSeen[process.FieldName] = struct{}{}
+			}
+		case "principal":
+			if _, ok := fieldSeen[process.FieldPrincipal]; !ok {
+				selectedFields = append(selectedFields, process.FieldPrincipal)
+				fieldSeen[process.FieldPrincipal] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		pr.Select(selectedFields...)
+	}
+	return nil
+}
+
+type processPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ProcessPaginateOption
+}
+
+func newProcessPaginateArgs(rv map[string]any) *processPaginateArgs {
+	args := &processPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*ProcessWhereInput); ok {
+		args.opts = append(args.opts, WithProcessFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (q *QuestQuery) CollectFields(ctx context.Context, satisfies ...string) (*QuestQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -701,6 +779,18 @@ func (t *TaskQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				return err
 			}
 			t.withBeacon = query
+		case "reportedProcesses":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ProcessClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedReportedProcesses(alias, func(wq *ProcessQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[task.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, task.FieldCreatedAt)
