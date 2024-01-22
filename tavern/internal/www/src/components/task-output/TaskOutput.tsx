@@ -1,22 +1,24 @@
 import React from "react";
-import { Fragment} from 'react'
+import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { CopyBlock, tomorrow} from "react-code-blocks";
+import { CopyBlock, tomorrow } from "react-code-blocks";
 import TaskStatusBadge from "../TaskStatusBadge";
 import BeaconTile from "../BeaconTile";
+import TomeAccordion from "../TomeAccordion";
+import { Image } from "@chakra-ui/react";
 
 type Props = {
-    isOpen: boolean,
-    setOpen: (arg: any) => any,
-    selectedTask: any
+  isOpen: boolean,
+  setOpen: (arg: any) => any,
+  selectedTask: any
 }
 
-export const TaskOutput =(props: Props) => {
-  const {isOpen, setOpen, selectedTask} = props;
-  const createdTime = new Date(selectedTask?.createdAt|| "");
-  const finishTime = new Date(selectedTask?.execFinishedAt|| "");
-  const startTime = new Date(selectedTask?.execStartedAt|| "");
+export const TaskOutput = (props: Props) => {
+  const { isOpen, setOpen, selectedTask } = props;
+  const createdTime = new Date(selectedTask?.createdAt || "");
+  const finishTime = new Date(selectedTask?.execFinishedAt || "");
+  const startTime = new Date(selectedTask?.execStartedAt || "");
 
   let params = selectedTask?.quest?.parameters ? JSON.parse(selectedTask?.quest?.parameters) : {};
   let paramKeys = Object.keys(params);
@@ -58,63 +60,62 @@ export const TaskOutput =(props: Props) => {
                     </div>
                     <div className="relative mt-6 flex-1 px-4 sm:px-6 flex flex-col gap-4">
                       <div className="flex flex-row gap-4 items-center">
-                          <h2 className="text-3xl font-semibold text-gray-900">{selectedTask?.quest?.name}</h2>
-                          <TaskStatusBadge task={selectedTask} />
+                        <h2 className="text-3xl font-semibold text-gray-900">{selectedTask?.quest?.name}</h2>
+                        <TaskStatusBadge task={selectedTask} />
                       </div>
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl">Status</h3>
-                        <div className="flex flex-row gap-4 sm:gap-12 text-sm">
+                        <div className="flex flex-row gap-4 sm:gap-12 text-sm mx-4">
                           <div className="flex flex-col">
                             <span className="font-semibold">Created</span>
                             <span>{`${createdTime.toLocaleTimeString()}`}</span>
                             <span>{`on ${createdTime.toDateString()}`}</span>
                           </div>
                           {selectedTask?.execStartedAt && (
-                          <div className="flex flex-col">
-                            <span className="font-semibold">Started</span>
-                            <span>{`${startTime.toLocaleTimeString()}`}</span>
-                            <span>{`on ${startTime.toDateString()}`}</span>
-                          </div>
+                            <div className="flex flex-col">
+                              <span className="font-semibold">Started</span>
+                              <span>{`${startTime.toLocaleTimeString()}`}</span>
+                              <span>{`on ${startTime.toDateString()}`}</span>
+                            </div>
                           )}
-                          {selectedTask?.execFinishedAt  && (
-                          <div className="flex flex-col">
-                            <span className="font-semibold">Finished</span>
-                            <span>{`${finishTime.toLocaleTimeString()}`}</span>
-                            <span>{`on ${finishTime.toDateString()}`}</span>
-                          </div>
+                          {selectedTask?.execFinishedAt && (
+                            <div className="flex flex-col">
+                              <span className="font-semibold">Finished</span>
+                              <span>{`${finishTime.toLocaleTimeString()}`}</span>
+                              <span>{`on ${finishTime.toDateString()}`}</span>
+                            </div>
                           )}
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl text-gray-800">Beacon</h3>
-                        <BeaconTile beaconData={selectedTask?.beacon} />
+                        <div className="mx-4">
+                          <BeaconTile beaconData={selectedTask?.beacon} />
+                        </div>
                       </div>
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl text-gray-800">Tome</h3>
-                          <div className="flex flex-col gap-2">
-                            <div>
-                              <h4 className="font-semibold text-gray-900">{selectedTask?.quest?.tome?.name}</h4>
-                              <p className="text-sm">
-                                {selectedTask?.quest?.tome?.description}
-                              </p>
-                            </div>
-                            {paramKeys.length > 0 &&(
-                              <div className="flex flex-row gap-8 flex-wrap text-sm">
-                                  {paramKeys.map((value: string) => {
-                                    return (
-                                      <div className="flex flex-col gap-0" key={value}>
-                                        <div className="font-semibold">{value}</div>
-                                        <div>{params[value]}</div>
-                                      </div>
-                                    )
-                                  })}
-                              </div>
-                            )}
-                          </div>
+                        <TomeAccordion tome={selectedTask?.quest?.tome} params={params} paramKeys={paramKeys} />
                       </div>
+                      {selectedTask?.quest?.creator && (
+                        <div className="flex flex-col gap-2">
+                          <h3 className="text-2xl text-gray-800">Creator</h3>
+                          <div className="flex flex-row gap-2 items-center mx-4">
+                            <Image
+                              borderRadius='full'
+                              boxSize='20px'
+                              src={selectedTask?.quest?.creator?.photoURL}
+                              alt={`Profile of ${selectedTask?.quest?.creator?.name}`}
+                            />
+                            <div className="text-sm flex flex-row gap-1 items-center text-gray-600">
+                              {selectedTask?.quest?.creator?.name}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl text-gray-800">Output</h3>
-                        <div className="bg-gray-200 rounded-md p-0.5">
+                        <div className="bg-gray-200 rounded-md p-0.5 ">
                           <CopyBlock
                             text={selectedTask?.output ? selectedTask?.output : "No output available"}
                             language={""}
@@ -135,4 +136,3 @@ export const TaskOutput =(props: Props) => {
     </Transition.Root>
   )
 }
-  

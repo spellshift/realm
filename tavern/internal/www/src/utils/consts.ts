@@ -73,6 +73,7 @@ export type CreateQuestProps = {
 export type Task = {
     id: string,
     lastModifiedAt: string,
+    outputSize: number,
     output: string,
     execStartedAt: string,
     execFinishedAt: string,
