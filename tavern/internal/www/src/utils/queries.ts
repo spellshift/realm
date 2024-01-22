@@ -45,29 +45,14 @@ export const GET_QUEST_QUERY = gql`
             tasks{
                 id
                 lastModifiedAt
-                output
+                outputSize
                 execStartedAt
                 execFinishedAt
                 createdAt
-                beacon {
-                    id
-                    name
-					host{
-                      id
-                      name
-                      primaryIP
-                      tags {
-                        id
-                        name
-                        kind
-                      }
-                    }
-                }
             }
             tome{
                 id
                 name
-                paramDefs
             }
             creator {
                     id
@@ -105,10 +90,12 @@ export const GET_TASK_QUERY = gql`
                             creator{
                                 id
                                 name
+                                photoURL
                             }
                             tome{
                                 name
                                 description
+                                eldritch
                             }
                             parameters
                         }
@@ -144,14 +131,14 @@ export const GET_SEARCH_FILTERS = gql`
             id
             name
             kind
-        }
+        },
         serviceTags:tags(where: $serviceTag) {
             label:name
             value:id
             id
             name
             kind
-        }
+        },
         beacons{
             label:name
             value:id

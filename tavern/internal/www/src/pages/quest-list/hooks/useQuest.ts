@@ -26,7 +26,7 @@ export const useQuests = () => {
                     modMap.lastUpdated = task.lastModifiedAt;
                 }
 
-                if (task.output !== "") {
+                if (task.outputSize && task.outputSize > 0) {
                     modMap.outputCount += 1;
                 }
 
