@@ -13,7 +13,6 @@ use c2::pb::{
 use chrono::Utc;
 use std::sync::mpsc::channel;
 use tokio::task;
-use tonic::transport::Channel;
 use tonic::Status;
 
 pub async fn get_new_tasks(
@@ -229,16 +228,11 @@ async fn send_tavern_output(
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use c2::pb::{Task, TaskOutput};
-    use chrono::Utc;
+    use c2::pb::Task;
     use std::collections::HashMap;
-    use std::sync::mpsc::channel;
-    use std::thread;
-    use std::time::{Duration, Instant};
-    use tokio::task;
+    use std::time::Instant;
 
-    use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
-    use crate::tasks::queue_task_output;
+    use crate::exec::AsyncTask;
     use crate::TaskID;
 
     use super::start_new_tasks;

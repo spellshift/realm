@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+#[allow(unused_variables)]
 pub fn write_reg_hex(
     reghive: String,
     regpath: String,
@@ -93,15 +94,16 @@ pub fn write_reg_hex(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::str;
-    use uuid::Uuid;
 
     #[test]
     fn test_write_reg_hex() -> anyhow::Result<()> {
         #[cfg(target_os = "windows")]
         {
+            use super::*;
+            use std::str;
+            use uuid::Uuid;
             use winreg::{enums::*, RegKey};
+
             let id = Uuid::new_v4();
 
             // -------------------- WRITE_REG_HEX TESTS ---------------------------------------
