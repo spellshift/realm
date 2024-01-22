@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+#[allow(unused_variables)]
 pub fn write_reg_str(
     reghive: String,
     regpath: String,
@@ -89,14 +90,14 @@ pub fn write_reg_str(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::str;
-    use uuid::Uuid;
 
     #[test]
     fn test_write_reg_str() -> anyhow::Result<()> {
         #[cfg(target_os = "windows")]
         {
+            use super::*;
+            use std::str;
+            use uuid::Uuid;
             use winreg::{enums::*, RegKey};
             let id = Uuid::new_v4();
 
