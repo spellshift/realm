@@ -1,8 +1,4 @@
-use anyhow::Result;
-use clap::{Arg, Command};
 use std::collections::HashMap;
-use std::fs;
-use std::process;
 use std::thread;
 
 use eldritch::{eldritch_run, StdPrintHandler};
@@ -96,7 +92,7 @@ pub fn install_main(custom_config: Option<&str>) -> anyhow::Result<()> {
         .build()
         .unwrap();
 
-    let (error_code, result) = match runtime.block_on(execute_tomes_in_parallel(
+    let (_error_code, result) = match runtime.block_on(execute_tomes_in_parallel(
         tome_files_and_content,
         custom_config,
     )) {

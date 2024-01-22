@@ -29,7 +29,7 @@ fn do_delay(interval: u64, loop_start_time: Instant) {
 }
 
 // Async handler for port scanning.
-async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<()> {
+async fn main_loop(config_path: String, _loop_count_max: Option<i32>) -> Result<()> {
     #[cfg(debug_assertions)]
     let mut debug_loop_count: i32 = 0;
 
@@ -51,7 +51,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
 
     loop {
         // 0. Get loop start time
-        let loop_start_time = Instant::now();
+        let _loop_start_time = Instant::now();
 
         #[cfg(debug_assertions)]
         eprintln!("Get new tasks");
@@ -63,10 +63,10 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         // 1b) Setup the tavern client
         let tavern_client = match TavernClient::connect(cur_callback_uri.clone()).await {
             Ok(t) => t,
-            Err(err) => {
+            Err(_err) => {
                 #[cfg(debug_assertions)]
-                eprintln!("failed to create tavern client {}", err);
-                do_delay(imix_config.callback_config.interval, loop_start_time);
+                eprintln!("failed to create tavern client {}", _err);
+                do_delay(imix_config.callback_config.interval, _loop_start_time);
                 continue;
             }
         };
@@ -75,7 +75,7 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: collecting tasks",
-            (Instant::now() - loop_start_time).as_millis()
+            (Instant::now() - _loop_start_time).as_millis()
         );
 
         let new_tasks = match tasks::get_new_tasks(
@@ -86,14 +86,14 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         .await
         {
             Ok(local_new_tasks) => local_new_tasks,
-            Err(local_err) => {
+            Err(_local_err) => {
                 #[cfg(debug_assertions)]
                 eprintln!(
                     "[{}]: Error getting new tasks {}",
-                    (Instant::now() - loop_start_time).as_millis(),
-                    local_err
+                    (Instant::now() - _loop_start_time).as_millis(),
+                    _local_err
                 );
-                do_delay(imix_config.callback_config.interval, loop_start_time);
+                do_delay(imix_config.callback_config.interval, _loop_start_time);
                 continue;
             }
         };
@@ -102,18 +102,18 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Starting {} new tasks",
-            (Instant::now() - loop_start_time).as_millis(),
+            (Instant::now() - _loop_start_time).as_millis(),
             new_tasks.len()
         );
 
-        match start_new_tasks(new_tasks, &mut all_exec_futures, loop_start_time).await {
-            Ok(is_ok) => {}
-            Err(local_err) => {
+        match start_new_tasks(new_tasks, &mut all_exec_futures, _loop_start_time).await {
+            Ok(_is_ok) => {}
+            Err(_local_err) => {
                 #[cfg(debug_assertions)]
                 eprintln!(
                     "[{}]: Failed to start new tasks: {}",
-                    (Instant::now() - loop_start_time).as_millis(),
-                    local_err
+                    (Instant::now() - _loop_start_time).as_millis(),
+                    _local_err
                 );
             }
         };
@@ -123,13 +123,13 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
             .clone()
             .callback_config
             .interval
-            .checked_sub(loop_start_time.elapsed().as_secs())
+            .checked_sub(_loop_start_time.elapsed().as_secs())
             .unwrap_or_else(|| 0);
 
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Sleeping seconds {}",
-            (Instant::now() - loop_start_time).as_millis(),
+            (Instant::now() - _loop_start_time).as_millis(),
             time_to_sleep
         );
 
@@ -139,12 +139,12 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         #[cfg(debug_assertions)]
         eprintln!(
             "[{}]: Checking task status",
-            (Instant::now() - loop_start_time).as_millis()
+            (Instant::now() - _loop_start_time).as_millis()
         );
 
         // Update running tasks and results
         match submit_task_output(
-            loop_start_time,
+            _loop_start_time,
             tavern_client,
             &mut all_exec_futures,
             &mut all_task_res_map,
@@ -152,20 +152,20 @@ async fn main_loop(config_path: String, loop_count_max: Option<i32>) -> Result<(
         .await
         {
             Ok(_is_ok) => {}
-            Err(local_err) => {
+            Err(_local_err) => {
                 #[cfg(debug_assertions)]
                 eprintln!(
                     "[{}]: Error submitting task results {}",
-                    (Instant::now() - loop_start_time).as_millis(),
-                    local_err
+                    (Instant::now() - _loop_start_time).as_millis(),
+                    _local_err
                 );
-                do_delay(imix_config.callback_config.interval, loop_start_time);
+                do_delay(imix_config.callback_config.interval, _loop_start_time);
             }
         };
 
         // Debug loop tracker
         #[cfg(debug_assertions)]
-        if let Some(count_max) = loop_count_max {
+        if let Some(count_max) = _loop_count_max {
             debug_loop_count += 1;
             if debug_loop_count >= count_max {
                 return Ok(());

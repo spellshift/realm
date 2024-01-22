@@ -107,7 +107,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
             ))
         }
     };
-    let time_modified: DateTime<Utc> = DateTime::from_utc(naive_datetime, Utc);
+    let time_modified: DateTime<Utc> = DateTime::from_naive_utc_and_offset(naive_datetime, Utc);
 
     Ok(File {
         name: file_name,

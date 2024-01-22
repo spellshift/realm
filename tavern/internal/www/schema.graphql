@@ -196,6 +196,7 @@ type File implements Node {
   size: Int!
   """A SHA3 digest of the content field"""
   hash: String!
+  tomes: [Tome!]
 }
 """Ordering options for File connections"""
 input FileOrder {
@@ -283,6 +284,9 @@ input FileWhereInput {
   hashHasSuffix: String
   hashEqualFold: String
   hashContainsFold: String
+  """tomes edge predicates"""
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
 }
 type Host implements Node {
   id: ID!

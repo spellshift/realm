@@ -7,7 +7,8 @@ import {
   ClipboardDocumentCheckIcon,
   CommandLineIcon,
   ClockIcon,
-  WrenchScrewdriverIcon
+  WrenchScrewdriverIcon,
+  BugAntIcon
 } from '@heroicons/react/24/outline'
 
 import logo from '../../assets/eldrich.png';
@@ -19,6 +20,7 @@ const navigation = [
   { name: PageNavItem.createQuest, href: '/createQuest', icon: CommandLineIcon, internal: true },
   { name: PageNavItem.results, href: '/results', icon: ClipboardDocumentCheckIcon, internal: true },
   { name: PageNavItem.quests, href: '/quests', icon: ClockIcon, internal: true },
+  { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
   { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
   { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
 ]

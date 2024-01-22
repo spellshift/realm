@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -12,18 +13,20 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // FileQuery is the builder for querying File entities.
 type FileQuery struct {
 	config
-	ctx        *QueryContext
-	order      []file.OrderOption
-	inters     []Interceptor
-	predicates []predicate.File
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*File) error
+	ctx            *QueryContext
+	order          []file.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.File
+	withTomes      *TomeQuery
+	modifiers      []func(*sql.Selector)
+	loadTotal      []func(context.Context, []*File) error
+	withNamedTomes map[string]*TomeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +61,28 @@ func (fq *FileQuery) Unique(unique bool) *FileQuery {
 func (fq *FileQuery) Order(o ...file.OrderOption) *FileQuery {
 	fq.order = append(fq.order, o...)
 	return fq
+}
+
+// QueryTomes chains the current query on the "tomes" edge.
+func (fq *FileQuery) QueryTomes() *TomeQuery {
+	query := (&TomeClient{config: fq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := fq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := fq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(file.Table, file.FieldID, selector),
+			sqlgraph.To(tome.Table, tome.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, file.TomesTable, file.TomesPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(fq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first File entity from the query.
@@ -252,10 +277,22 @@ func (fq *FileQuery) Clone() *FileQuery {
 		order:      append([]file.OrderOption{}, fq.order...),
 		inters:     append([]Interceptor{}, fq.inters...),
 		predicates: append([]predicate.File{}, fq.predicates...),
+		withTomes:  fq.withTomes.Clone(),
 		// clone intermediate query.
 		sql:  fq.sql.Clone(),
 		path: fq.path,
 	}
+}
+
+// WithTomes tells the query-builder to eager-load the nodes that are connected to
+// the "tomes" edge. The optional arguments are used to configure the query builder of the edge.
+func (fq *FileQuery) WithTomes(opts ...func(*TomeQuery)) *FileQuery {
+	query := (&TomeClient{config: fq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	fq.withTomes = query
+	return fq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -334,19 +371,19 @@ func (fq *FileQuery) prepareQuery(ctx context.Context) error {
 
 func (fq *FileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*File, error) {
 	var (
-		nodes   = []*File{}
-		withFKs = fq.withFKs
-		_spec   = fq.querySpec()
+		nodes       = []*File{}
+		_spec       = fq.querySpec()
+		loadedTypes = [1]bool{
+			fq.withTomes != nil,
+		}
 	)
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, file.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*File).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &File{config: fq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(fq.modifiers) > 0 {
@@ -361,12 +398,88 @@ func (fq *FileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*File, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := fq.withTomes; query != nil {
+		if err := fq.loadTomes(ctx, query, nodes,
+			func(n *File) { n.Edges.Tomes = []*Tome{} },
+			func(n *File, e *Tome) { n.Edges.Tomes = append(n.Edges.Tomes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range fq.withNamedTomes {
+		if err := fq.loadTomes(ctx, query, nodes,
+			func(n *File) { n.appendNamedTomes(name) },
+			func(n *File, e *Tome) { n.appendNamedTomes(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range fq.loadTotal {
 		if err := fq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (fq *FileQuery) loadTomes(ctx context.Context, query *TomeQuery, nodes []*File, init func(*File), assign func(*File, *Tome)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*File)
+	nids := make(map[int]map[*File]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(file.TomesTable)
+		s.Join(joinT).On(s.C(tome.FieldID), joinT.C(file.TomesPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(file.TomesPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(file.TomesPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*File]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Tome](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "tomes" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
 }
 
 func (fq *FileQuery) sqlCount(ctx context.Context) (int, error) {
@@ -451,6 +564,20 @@ func (fq *FileQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedTomes tells the query-builder to eager-load the nodes that are connected to the "tomes"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (fq *FileQuery) WithNamedTomes(name string, opts ...func(*TomeQuery)) *FileQuery {
+	query := (&TomeClient{config: fq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if fq.withNamedTomes == nil {
+		fq.withNamedTomes = make(map[string]*TomeQuery)
+	}
+	fq.withNamedTomes[name] = query
+	return fq
 }
 
 // FileGroupBy is the group-by builder for File entities.

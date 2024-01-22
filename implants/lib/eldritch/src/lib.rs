@@ -7,6 +7,7 @@ pub mod sys;
 pub mod time;
 
 use starlark::collections::SmallMap;
+#[allow(unused_imports)]
 use starlark::const_frozen_string;
 use starlark::environment::{Globals, GlobalsBuilder, LibraryExtension, Module};
 use starlark::eval::Evaluator;
@@ -116,7 +117,7 @@ pub struct StdPrintHandler {}
 
 impl PrintHandler for StdPrintHandler {
     fn println(&self, text: &str) -> anyhow::Result<()> {
-        println!("{}", text.to_owned());
+        print!("{}", text.to_owned());
         Ok(())
     }
 }
