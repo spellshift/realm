@@ -169,6 +169,11 @@ func (tu *TomeUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
 		}
 	}
+	if v, ok := tu.mutation.ParamDefs(); ok {
+		if err := tome.ParamDefsValidator(v); err != nil {
+			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
+		}
+	}
 	if v, ok := tu.mutation.Hash(); ok {
 		if err := tome.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "Tome.hash": %w`, err)}
@@ -426,6 +431,11 @@ func (tuo *TomeUpdateOne) check() error {
 	if v, ok := tuo.mutation.Name(); ok {
 		if err := tome.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
+		}
+	}
+	if v, ok := tuo.mutation.ParamDefs(); ok {
+		if err := tome.ParamDefsValidator(v); err != nil {
+			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
 		}
 	}
 	if v, ok := tuo.mutation.Hash(); ok {

@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/schema/validators"
 )
 
 // Quest holds the schema definition for the Quest entity.
@@ -24,6 +25,7 @@ func (Quest) Fields() []ent.Field {
 			).
 			Comment("Name of the quest"),
 		field.String("parameters").
+			Validate(validators.NewJSONStringString()).
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
 			}).
