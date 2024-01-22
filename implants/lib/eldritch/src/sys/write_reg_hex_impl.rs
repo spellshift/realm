@@ -1,11 +1,12 @@
 use anyhow::Result;
 
+#[allow(unused_variables)]
 pub fn write_reg_hex(
-    _reghive: String,
-    _regpath: String,
-    _regname: String,
-    _regtype: String,
-    _regvalue: String,
+    reghive: String,
+    regpath: String,
+    regname: String,
+    regtype: String,
+    regvalue: String,
 ) -> Result<bool> {
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!(
@@ -18,7 +19,7 @@ pub fn write_reg_hex(
 
         //Accepted values for reghive :
         //HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS
-        let ihive: isize = match _reghive.as_ref() {
+        let ihive: isize = match reghive.as_ref() {
             "HKEY_CLASSES_ROOT" => HKEY_CLASSES_ROOT,
             "HKEY_CURRENT_USER" => HKEY_CURRENT_USER,
             "HKEY_LOCAL_MACHINE" => HKEY_LOCAL_MACHINE,
@@ -34,55 +35,55 @@ pub fn write_reg_hex(
         };
 
         let hive = RegKey::predef(ihive);
-        let (nkey, _ndisp) = hive.create_subkey(_regpath)?;
+        let (nkey, _ndisp) = hive.create_subkey(regpath)?;
 
-        match _regtype.as_ref() {
+        match regtype.as_ref() {
             "REG_NONE" => {
-                nkey.set_value(_regname, &_regvalue)?;
+                nkey.set_value(regname, &regvalue)?;
             },
-            "REG_SZ" => nkey.set_value(_regname, &_regvalue)?,
-            "REG_EXPAND_SZ" => nkey.set_value(_regname, &_regvalue)?,
+            "REG_SZ" => nkey.set_value(regname, &regvalue)?,
+            "REG_EXPAND_SZ" => nkey.set_value(regname, &regvalue)?,
             "REG_BINARY" => {
-                let parsed_value: Vec<u8> = hex::decode(_regvalue)?;
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_BINARY, bytes: parsed_value};
-                nkey.set_raw_value(_regname, &data)?;
+                nkey.set_raw_value(regname, &data)?;
             },
             "REG_DWORD" => {
-                let parsed_value: Vec<u8> = hex::decode(_regvalue)?;
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_DWORD, bytes: parsed_value};
-                nkey.set_raw_value(_regname, &data)?;
+                nkey.set_raw_value(regname, &data)?;
             },
             "REG_DWORD_BIG_ENDIAN" => {
-                let parsed_value: u32 = u32::from_str_radix(&_regvalue, 16)?;
+                let parsed_value: u32 = u32::from_str_radix(&regvalue, 16)?;
                 let data = RegValue{ vtype: REG_DWORD_BIG_ENDIAN, bytes: parsed_value.to_be_bytes().to_vec()};
-                nkey.set_raw_value(_regname, &data)?;
+                nkey.set_raw_value(regname, &data)?;
             },
             "REG_LINK" => {
-                nkey.set_value(_regname, &_regvalue)?;
+                nkey.set_value(regname, &regvalue)?;
             },
             "REG_MULTI_SZ" => {
-                let parsed_value: Vec<&str> = _regvalue.split(',').collect();
-                nkey.set_value(_regname, &parsed_value)?;
+                let parsed_value: Vec<&str> = regvalue.split(',').collect();
+                nkey.set_value(regname, &parsed_value)?;
             },
             "REG_RESOURCE_LIST" => {
-                let parsed_value: Vec<u8> = hex::decode(_regvalue)?;
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_RESOURCE_LIST, bytes: parsed_value};
-                nkey.set_raw_value(_regname, &data)?;
+                nkey.set_raw_value(regname, &data)?;
             },
             "REG_FULL_RESOURCE_DESCRIPTOR" => {
-                let parsed_value: Vec<u8> = hex::decode(_regvalue)?;
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_FULL_RESOURCE_DESCRIPTOR, bytes: parsed_value};
-                nkey.set_raw_value(_regname, &data)?;
+                nkey.set_raw_value(regname, &data)?;
             },
             "REG_RESOURCE_REQUIREMENTS_LIST" => {
-                let parsed_value: Vec<u8> = hex::decode(_regvalue)?;
+                let parsed_value: Vec<u8> = hex::decode(regvalue)?;
                 let data = RegValue{ vtype: REG_RESOURCE_REQUIREMENTS_LIST, bytes: parsed_value};
-                nkey.set_raw_value(_regname, &data)?;
+                nkey.set_raw_value(regname, &data)?;
             },
             "REG_QWORD" => {
-                let parsed_value: u64 = u64::from_str_radix(&_regvalue, 16)?;
+                let parsed_value: u64 = u64::from_str_radix(&regvalue, 16)?;
                 let data = RegValue{ vtype: REG_QWORD, bytes: parsed_value.to_le_bytes().to_vec()};
-                nkey.set_raw_value(_regname, &data)?;
+                nkey.set_raw_value(regname, &data)?;
             },
             _ => return Err(anyhow::anyhow!("RegType can only be one of the following values - REG_NONE, REG_SZ, REG_EXPAND_SZ, REG_BINARY, REG_DWORD, REG_DWORD_BIG_ENDIAN, REG_LINK, REG_MULTI_SZ, REG_RESOURCE_LIST, REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR, REG_QWORD. ")),
         };
