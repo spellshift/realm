@@ -5,7 +5,7 @@ use crate::exec::{handle_exec_timeout_and_response, AsyncTask};
 use crate::init::AgentProperties;
 use crate::{Config, TaskID};
 use anyhow::{Context, Result};
-use c2::pb::c2_client::C2Client;
+use c2::pb::c2_manual_client::TavernClient;
 use c2::pb::{
     Agent, Beacon, ClaimTasksRequest, Host, ReportTaskOutputRequest, ReportTaskOutputResponse,
     Task, TaskOutput,
@@ -19,7 +19,7 @@ use tonic::Status;
 pub async fn get_new_tasks(
     agent_properties: AgentProperties,
     imix_config: Config,
-    mut tavern_client: C2Client<Channel>,
+    mut tavern_client: TavernClient,
 ) -> Result<Vec<Task>> {
     let req = tonic::Request::new(ClaimTasksRequest {
         beacon: Some(Beacon {
@@ -42,9 +42,9 @@ pub async fn get_new_tasks(
     });
     let new_tasks = match tavern_client.claim_tasks(req).await {
         Ok(resp) => resp.get_ref().tasks.clone(),
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("main_loop: error claiming task\n{:?}", error);
+            eprintln!("main_loop: error claiming task\n{:?}", _error);
             let empty_vec = vec![];
             empty_vec
         }
@@ -174,7 +174,7 @@ fn queue_task_output(
 
 pub async fn submit_task_output(
     loop_start_time: Instant,
-    mut tavern_client: C2Client<Channel>,
+    mut tavern_client: TavernClient,
     all_exec_futures: &mut HashMap<TaskID, AsyncTask>,
     running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
 ) -> Result<()> {
@@ -201,9 +201,9 @@ pub async fn submit_task_output(
                     // Remove output that has been reported sucessfully.
                     running_task_res_map.remove(&task_id);
                 }
-                Err(local_err) => {
+                Err(_err) => {
                     #[cfg(debug_assertions)]
-                    eprintln!("Failed to submit task resluts:\n{}", local_err.to_string());
+                    eprintln!("Failed to submit task resluts:\n{}", _err.to_string());
                     {}
                 }
             };
@@ -217,7 +217,7 @@ pub async fn submit_task_output(
 }
 
 async fn send_tavern_output(
-    tavern_client: &mut C2Client<Channel>,
+    tavern_client: &mut TavernClient,
     output: TaskOutput,
 ) -> Result<tonic::Response<ReportTaskOutputResponse>, Status> {
     let req = tonic::Request::new(ReportTaskOutputRequest {
