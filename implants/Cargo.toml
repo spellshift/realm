@@ -1,10 +1,5 @@
 [workspace]
-members = [
-    "imix",
-    "golem",
-    "lib/eldritch",
-    "lib/c2",
-]
+members = ["imix", "golem", "lib/eldritch", "lib/c2"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -76,8 +71,8 @@ windows-sys = "0.45.0"
 winreg = "0.51.0"
 
 [profile.release]
-strip = true  # Automatically strip symbols from the binary.
-opt-level = "z"  # Optimize for size.
+strip = true      # Automatically strip symbols from the binary.
+opt-level = "z"   # Optimize for size.
 lto = true
 codegen-units = 1
 panic = "abort"
