@@ -3,9 +3,9 @@ pub mod c2_manual_client {
     use tonic::codec::ProstCodec;
     use tonic::GrpcMethod;
 
-    static CLAIM_TASKS_PATH: &str = "/grpc/c2.C2/ClaimTasks";
-    static REPORT_TASK_OUTPUT_PATH: &str = "/grpc/c2.C2/ReportTaskOutput";
-    static DOWNLOAD_FILE_PATH: &str = "/grpc/c2.C2/DownloadFile";
+    static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
+    static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
+    static DOWNLOAD_FILE_PATH: &str = "/c2.C2/DownloadFile";
 
     #[derive(Debug, Clone)]
     pub struct TavernClient {

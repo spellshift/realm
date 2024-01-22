@@ -123,7 +123,6 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 
 	// Route Map
-	grpcHandler := newGRPCHandler(client)
 	routes := tavernhttp.RouteMap{
 		"/status":      tavernhttp.Endpoint{Handler: newStatusHandler()},
 		"/oauth/login": tavernhttp.Endpoint{Handler: auth.NewOAuthLoginHandler(cfg.oauth, privKey)},
@@ -134,8 +133,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			"https://www.googleapis.com/oauth2/v3/userinfo",
 		)},
 		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client)},
-		"/c2.C2/":     tavernhttp.Endpoint{Handler: grpcHandler},
-		"/grpc/":      tavernhttp.Endpoint{Handler: grpcHandler},
+		"/c2.C2/":     tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
 		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
 		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
 		"/": tavernhttp.Endpoint{
@@ -220,7 +218,7 @@ func newGRPCHandler(client *ent.Client) http.Handler {
 	c2srv := c2.New(client)
 	grpcSrv := grpc.NewServer()
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
-	return http.StripPrefix("/grpc", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor != 2 {
 			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
 			return
@@ -232,7 +230,7 @@ func newGRPCHandler(client *ent.Client) http.Handler {
 		}
 
 		grpcSrv.ServeHTTP(w, r)
-	}))
+	})
 }
 
 func registerProfiler(router tavernhttp.RouteMap) {
