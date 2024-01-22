@@ -16,7 +16,6 @@ type Props = {
 
 export const TaskOutput = (props: Props) => {
   const { isOpen, setOpen, selectedTask } = props;
-  console.log(selectedTask);
   const createdTime = new Date(selectedTask?.createdAt || "");
   const finishTime = new Date(selectedTask?.execFinishedAt || "");
   const startTime = new Date(selectedTask?.execStartedAt || "");

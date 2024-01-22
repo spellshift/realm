@@ -9,7 +9,6 @@ type Props = {
 }
 const TomeAccordion = (props: Props) => {
     const { tome, params, paramKeys } = props;
-    console.log(tome);
 
     return (
         <Accordion allowToggle className='w-full'>
