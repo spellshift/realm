@@ -103,6 +103,8 @@ var (
 	UpdateDefaultLastModifiedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// ParametersValidator is a validator for the "parameters" field. It is called by the builders before save.
+	ParametersValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Quest queries.

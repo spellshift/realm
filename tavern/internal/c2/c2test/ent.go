@@ -98,14 +98,14 @@ func NewRandomAssignedTask(ctx context.Context, graph *ent.Client, beaconIdentif
 		SetName(namegen.NewComplex()).
 		SetEldritch(fmt.Sprintf(`print("%s")`, namegen.NewComplex())).
 		SetDescription(string(newRandomBytes(120))).
-		SetParamDefs(`{"test":"string"}`).
+		SetParamDefs(`[{"name":"test-param","label":"Test","type":"string","placeholder":"Enter text..."}]`).
 		AddFiles(files...).
 		SaveX(ctx)
 	quest := graph.Quest.Create().
 		SetName(namegen.NewComplex()).
 		SetBundle(bundle).
 		SetTome(tome).
-		SetParameters(fmt.Sprintf(`{"test":"%v"}`, namegen.NewComplex())).
+		SetParameters(fmt.Sprintf(`{"test-param":"%v"}`, namegen.NewComplex())).
 		SaveX(ctx)
 
 	return graph.Task.Create().

@@ -102,6 +102,10 @@ func init() {
 	questDescName := questFields[0].Descriptor()
 	// quest.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	quest.NameValidator = questDescName.Validators[0].(func(string) error)
+	// questDescParameters is the schema descriptor for parameters field.
+	questDescParameters := questFields[1].Descriptor()
+	// quest.ParametersValidator is a validator for the "parameters" field. It is called by the builders before save.
+	quest.ParametersValidator = questDescParameters.Validators[0].(func(string) error)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.
@@ -152,6 +156,10 @@ func init() {
 	tomeDescName := tomeFields[0].Descriptor()
 	// tome.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tome.NameValidator = tomeDescName.Validators[0].(func(string) error)
+	// tomeDescParamDefs is the schema descriptor for param_defs field.
+	tomeDescParamDefs := tomeFields[2].Descriptor()
+	// tome.ParamDefsValidator is a validator for the "param_defs" field. It is called by the builders before save.
+	tome.ParamDefsValidator = tomeDescParamDefs.Validators[0].(func(string) error)
 	// tomeDescHash is the schema descriptor for hash field.
 	tomeDescHash := tomeFields[3].Descriptor()
 	// tome.HashValidator is a validator for the "hash" field. It is called by the builders before save.

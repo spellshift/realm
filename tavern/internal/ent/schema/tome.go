@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"golang.org/x/crypto/sha3"
 	"realm.pub/tavern/internal/ent/hook"
+	"realm.pub/tavern/internal/ent/schema/validators"
 )
 
 // Tome holds the schema definition for the Tome entity.
@@ -32,11 +33,12 @@ func (Tome) Fields() []ent.Field {
 		field.String("description").
 			Comment("Information about the tome"),
 		field.String("param_defs").
+			Validate(validators.NewTomeParameterDefinitions()).
 			Optional().
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
 			}).
-			Comment("JSON string describing what parameters are used with the tome"),
+			Comment("JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."),
 		field.String("hash").
 			MaxLen(100).
 			Annotations(

@@ -199,6 +199,11 @@ func (qc *QuestCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Quest.name": %w`, err)}
 		}
 	}
+	if v, ok := qc.mutation.Parameters(); ok {
+		if err := quest.ParametersValidator(v); err != nil {
+			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
+		}
+	}
 	if _, ok := qc.mutation.TomeID(); !ok {
 		return &ValidationError{Name: "tome", err: errors.New(`ent: missing required edge "Quest.tome"`)}
 	}
