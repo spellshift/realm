@@ -69,9 +69,9 @@ fn get_primary_ip() -> Result<String> {
                 "DANGER-UNKNOWN".to_string()
             }
         }
-        Err(e) => {
+        Err(_err) => {
             #[cfg(debug_assertions)]
-            eprintln!("Error getting primary ip address:\n{e}");
+            eprintln!("Error getting primary ip address:\n{_err}");
             "DANGER-UNKNOWN".to_string()
         }
     };
@@ -95,7 +95,7 @@ fn get_host_platform() -> Result<Platform> {
     }
 }
 
-fn get_os_pretty_name() -> Result<String> {
+fn _get_os_pretty_name() -> Result<String> {
     if cfg!(target_os = "linux") {
         let linux_rel = linux_os_release()?;
         let pretty_name = match linux_rel.pretty_name {
@@ -119,27 +119,27 @@ pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentPro
 
     let principal = match get_principal() {
         Ok(username) => username,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get process username\n{}", error);
+            eprintln!("Unable to get process username\n{}", _error);
             "UNKNOWN".to_string()
         }
     };
 
     let hostname = match get_hostname() {
         Ok(tmp_hostname) => tmp_hostname,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get system hostname\n{}", error);
+            eprintln!("Unable to get system hostname\n{}", _error);
             "UNKNOWN".to_string()
         }
     };
 
     let beacon_id = match get_beacon_id() {
         Ok(tmp_beacon_id) => tmp_beacon_id,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get a random beacon id\n{}", error);
+            eprintln!("Unable to get a random beacon id\n{}", _error);
             "DANGER-UNKNOWN".to_string()
         }
     };
@@ -152,18 +152,18 @@ pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentPro
 
     let host_platform = match get_host_platform() {
         Ok(tmp_host_platform) => tmp_host_platform,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get host platform id\n{}", error);
+            eprintln!("Unable to get host platform id\n{}", _error);
             Platform::Unspecified
         }
     };
 
     let primary_ip = match get_primary_ip() {
         Ok(tmp_primary_ip) => Some(tmp_primary_ip),
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get primary ip\n{}", error);
+            eprintln!("Unable to get primary ip\n{}", _error);
             None
         }
     };
@@ -177,9 +177,9 @@ pub fn agent_init(config_path: String, host_id_path: String) -> Result<(AgentPro
 
     let host_id = match get_host_id(host_id_path) {
         Ok(tmp_host_id) => tmp_host_id,
-        Err(error) => {
+        Err(_error) => {
             #[cfg(debug_assertions)]
-            eprintln!("Unable to get or create a host id\n{}", error);
+            eprintln!("Unable to get or create a host id\n{}", _error);
             "DANGER-UNKNOWN".to_string()
         }
     };
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn imix_test_get_os_pretty_name() {
-        assert!(get_os_pretty_name().is_ok());
+        assert!(_get_os_pretty_name().is_ok());
     }
 
     #[test]
