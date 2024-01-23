@@ -201,7 +201,7 @@ pub async fn submit_task_output(
         );
 
         // Loop over each line of output from the task and append it the the channel output.
-        let _ = queue_task_output(async_task, *task_id, running_task_res_map);
+        queue_task_output(async_task, *task_id, running_task_res_map)?;
     }
 
     // Iterate over queued task results and send them back to the server
