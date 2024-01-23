@@ -11,6 +11,20 @@ import "google/protobuf/timestamp.proto";
  * Messages
  */
 
+// Agent information to identify the type of beacon.
+message Agent {
+    string identifier = 1;
+}
+
+// Beacon information that is unique to the current running beacon.
+message Beacon {
+    string identifier = 1;
+    string principal = 2;
+    Host host = 3;
+    Agent agent = 4;
+    uint64 interval = 5; // Duration until next callback, in seconds.
+}
+
  // Host information for the system a beacon is running on.
 message Host {
     string identifier = 1;
@@ -28,19 +42,37 @@ message Host {
     string primary_ip = 4;
 }
 
-// Agent information to identify the type of beacon.
-message Agent {
-    string identifier = 1;
+// Process running on the host system.
+message Process {
+    uint64 pid = 1;
+    uint64 ppid = 2;
+    string name = 3;
+    string principal = 4;
+
+    string path = 5;
+    string cmd = 6;
+    string env = 7;
+    string cwd = 8;
+
+    enum Status {
+        STATUS_UNSPECIFIED = 0;
+        STATUS_UNKNOWN = 1;
+        STATUS_IDLE = 2;
+        STATUS_RUN = 3;
+        STATUS_SLEEP = 4;
+        STATUS_STOP = 5;
+        STATUS_ZOMBIE = 6;
+        STATUS_TRACING = 7;
+        STATUS_DEAD = 8;
+        STATUS_WAKE_KILL = 9;
+        STATUS_WAKING = 10;
+        STATUS_PARKED = 11;
+        STATUS_LOCK_BLOCKED = 12;
+        STATUS_UNINTERUPTIBLE_DISK_SLEEP = 13;
+    }
+    Status status = 9;
 }
 
-// Beacon information that is unique to the current running beacon.
-message Beacon {
-    string identifier = 1;
-    string principal = 2;
-    Host host = 3;
-    Agent agent = 4;
-    uint64 interval = 5; // Duration until next callback, in seconds.
-}
 
 // Task instructions for the beacon to execute.
 message Task {
@@ -69,12 +101,6 @@ message TaskOutput {
     google.protobuf.Timestamp exec_finished_at = 5;
 }
 
-// Process running on the system.
-message Process {
-    uint64 pid = 1;
-    string name = 2;
-    string principal = 3;
-}
 
 /*
  * RPC Messages
@@ -82,10 +108,35 @@ message Process {
 message ClaimTasksRequest {
     Beacon beacon = 1;
 }
-
 message ClaimTasksResponse {
     repeated Task tasks = 1;
 }
+
+message DownloadFileRequest {
+    string name = 1;
+}
+message DownloadFileResponse {
+    bytes chunk = 1;
+}
+
+message ReportFileRequest {
+    int64 task_id = 1;
+    string path = 2;
+    string owner = 3;
+    string group = 4;
+    string permissions = 5;
+    int64 size = 6;
+    string sha3_256_hash = 7;
+
+    bytes chunk = 8;
+}
+message ReportFileResponse {}
+
+message ReportProcessListRequest {
+    repeated Process list = 1;
+    int64 task_id = 2;
+}
+message ReportProcessListResponse {}
 
 message ReportTaskOutputRequest {
     TaskOutput output = 1;
@@ -93,34 +144,15 @@ message ReportTaskOutputRequest {
 
 message ReportTaskOutputResponse {}
 
-message DownloadFileRequest {
-    string name = 1;
-}
-
-message DownloadFileResponse {
-    bytes chunk = 1;
-}
-
-message ReportProcessListRequest {
-    repeated Process list = 1;
-    int64 task_id = 2;
-}
-
-message ReportProcessListResponse {}
-
 /*
  * Service
  */
 
 service C2 {
-    rpc ClaimTasks(ClaimTasksRequest) returns (ClaimTasksResponse) {}
-    rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
-
     /*
-     * Report the active list of running processes. This list will replace any previously reported
-     * lists for the same host.
+     * Contact the server for new tasks to execute.
      */
-    rpc ReportProcessList(ReportProcessListRequest) returns (ReportProcessListResponse);
+    rpc ClaimTasks(ClaimTasksRequest) returns (ClaimTasksResponse) {}
 
     /*
      * Download a file from the server, returning one or more chunks of data.
@@ -131,5 +163,29 @@ service C2 {
      *
      * If no associated file can be found, a NotFound status error is returned.
      */
-    rpc DownloadFile(DownloadFileRequest) returns (stream DownloadFileResponse);
+     rpc DownloadFile(DownloadFileRequest) returns (stream DownloadFileResponse);
+
+    /*
+     * Report a file from the host to the server.
+     * Providing content of the file is optional. If content is provided:
+     *   - Hash will automatically be calculated and the provided hash will be ignored.
+     *   - Size will automatically be calculated and the provided size will be ignored.
+     * Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
+     * Any existing files at the provided path for the host are replaced.
+     */
+     rpc ReportFile(stream ReportFileRequest) returns (ReportFileResponse);
+
+    /*
+     * Report the active list of running processes. This list will replace any previously reported
+     * lists for the same host.
+     */
+    rpc ReportProcessList(ReportProcessListRequest) returns (ReportProcessListResponse);
+
+    /*
+     * Report execution output for a task.
+     */
+    rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
+
+
+
 }

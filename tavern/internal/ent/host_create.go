@@ -11,9 +11,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/tag"
 )
 
@@ -88,16 +90,8 @@ func (hc *HostCreate) SetNillablePrimaryIP(s *string) *HostCreate {
 }
 
 // SetPlatform sets the "platform" field.
-func (hc *HostCreate) SetPlatform(h host.Platform) *HostCreate {
-	hc.mutation.SetPlatform(h)
-	return hc
-}
-
-// SetNillablePlatform sets the "platform" field if the given value is not nil.
-func (hc *HostCreate) SetNillablePlatform(h *host.Platform) *HostCreate {
-	if h != nil {
-		hc.SetPlatform(*h)
-	}
+func (hc *HostCreate) SetPlatform(cp c2pb.Host_Platform) *HostCreate {
+	hc.mutation.SetPlatform(cp)
 	return hc
 }
 
@@ -145,17 +139,32 @@ func (hc *HostCreate) AddBeacons(b ...*Beacon) *HostCreate {
 	return hc.AddBeaconIDs(ids...)
 }
 
-// AddProcessIDs adds the "processes" edge to the Process entity by IDs.
+// AddFileIDs adds the "files" edge to the HostFile entity by IDs.
+func (hc *HostCreate) AddFileIDs(ids ...int) *HostCreate {
+	hc.mutation.AddFileIDs(ids...)
+	return hc
+}
+
+// AddFiles adds the "files" edges to the HostFile entity.
+func (hc *HostCreate) AddFiles(h ...*HostFile) *HostCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hc.AddFileIDs(ids...)
+}
+
+// AddProcessIDs adds the "processes" edge to the HostProcess entity by IDs.
 func (hc *HostCreate) AddProcessIDs(ids ...int) *HostCreate {
 	hc.mutation.AddProcessIDs(ids...)
 	return hc
 }
 
-// AddProcesses adds the "processes" edges to the Process entity.
-func (hc *HostCreate) AddProcesses(p ...*Process) *HostCreate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddProcesses adds the "processes" edges to the HostProcess entity.
+func (hc *HostCreate) AddProcesses(h ...*HostProcess) *HostCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return hc.AddProcessIDs(ids...)
 }
@@ -202,10 +211,6 @@ func (hc *HostCreate) defaults() {
 	if _, ok := hc.mutation.LastModifiedAt(); !ok {
 		v := host.DefaultLastModifiedAt()
 		hc.mutation.SetLastModifiedAt(v)
-	}
-	if _, ok := hc.mutation.Platform(); !ok {
-		v := host.DefaultPlatform
-		hc.mutation.SetPlatform(v)
 	}
 }
 
@@ -325,6 +330,22 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := hc.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.FilesTable,
+			Columns: []string{host.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := hc.mutation.ProcessesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -333,7 +354,7 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Columns: []string{host.ProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -454,7 +475,7 @@ func (u *HostUpsert) ClearPrimaryIP() *HostUpsert {
 }
 
 // SetPlatform sets the "platform" field.
-func (u *HostUpsert) SetPlatform(v host.Platform) *HostUpsert {
+func (u *HostUpsert) SetPlatform(v c2pb.Host_Platform) *HostUpsert {
 	u.Set(host.FieldPlatform, v)
 	return u
 }
@@ -599,7 +620,7 @@ func (u *HostUpsertOne) ClearPrimaryIP() *HostUpsertOne {
 }
 
 // SetPlatform sets the "platform" field.
-func (u *HostUpsertOne) SetPlatform(v host.Platform) *HostUpsertOne {
+func (u *HostUpsertOne) SetPlatform(v c2pb.Host_Platform) *HostUpsertOne {
 	return u.Update(func(s *HostUpsert) {
 		s.SetPlatform(v)
 	})
@@ -915,7 +936,7 @@ func (u *HostUpsertBulk) ClearPrimaryIP() *HostUpsertBulk {
 }
 
 // SetPlatform sets the "platform" field.
-func (u *HostUpsertBulk) SetPlatform(v host.Platform) *HostUpsertBulk {
+func (u *HostUpsertBulk) SetPlatform(v c2pb.Host_Platform) *HostUpsertBulk {
 	return u.Update(func(s *HostUpsert) {
 		s.SetPlatform(v)
 	})

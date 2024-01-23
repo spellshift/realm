@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/host"
 )
 
@@ -28,7 +29,7 @@ type Host struct {
 	// Primary interface IP address reported by the agent.
 	PrimaryIP string `json:"primary_ip,omitempty"`
 	// Platform the agent is operating on.
-	Platform host.Platform `json:"platform,omitempty"`
+	Platform c2pb.Host_Platform `json:"platform,omitempty"`
 	// Timestamp of when a task was last claimed or updated for the host.
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -43,17 +44,20 @@ type HostEdges struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// Beacons that are present on this host system.
 	Beacons []*Beacon `json:"beacons,omitempty"`
+	// Files reported on this host system.
+	Files []*HostFile `json:"files,omitempty"`
 	// Processes reported as running on this host system.
-	Processes []*Process `json:"processes,omitempty"`
+	Processes []*HostProcess `json:"processes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedTags      map[string][]*Tag
 	namedBeacons   map[string][]*Beacon
-	namedProcesses map[string][]*Process
+	namedFiles     map[string][]*HostFile
+	namedProcesses map[string][]*HostProcess
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -74,10 +78,19 @@ func (e HostEdges) BeaconsOrErr() ([]*Beacon, error) {
 	return nil, &NotLoadedError{edge: "beacons"}
 }
 
+// FilesOrErr returns the Files value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) FilesOrErr() ([]*HostFile, error) {
+	if e.loadedTypes[2] {
+		return e.Files, nil
+	}
+	return nil, &NotLoadedError{edge: "files"}
+}
+
 // ProcessesOrErr returns the Processes value or an error if the edge
 // was not loaded in eager-loading.
-func (e HostEdges) ProcessesOrErr() ([]*Process, error) {
-	if e.loadedTypes[2] {
+func (e HostEdges) ProcessesOrErr() ([]*HostProcess, error) {
+	if e.loadedTypes[3] {
 		return e.Processes, nil
 	}
 	return nil, &NotLoadedError{edge: "processes"}
@@ -88,9 +101,11 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case host.FieldPlatform:
+			values[i] = new(c2pb.Host_Platform)
 		case host.FieldID:
 			values[i] = new(sql.NullInt64)
-		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP, host.FieldPlatform:
+		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP:
 			values[i] = new(sql.NullString)
 		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
@@ -146,10 +161,10 @@ func (h *Host) assignValues(columns []string, values []any) error {
 				h.PrimaryIP = value.String
 			}
 		case host.FieldPlatform:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*c2pb.Host_Platform); !ok {
 				return fmt.Errorf("unexpected type %T for field platform", values[i])
-			} else if value.Valid {
-				h.Platform = host.Platform(value.String)
+			} else if value != nil {
+				h.Platform = *value
 			}
 		case host.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -180,8 +195,13 @@ func (h *Host) QueryBeacons() *BeaconQuery {
 	return NewHostClient(h.config).QueryBeacons(h)
 }
 
+// QueryFiles queries the "files" edge of the Host entity.
+func (h *Host) QueryFiles() *HostFileQuery {
+	return NewHostClient(h.config).QueryFiles(h)
+}
+
 // QueryProcesses queries the "processes" edge of the Host entity.
-func (h *Host) QueryProcesses() *ProcessQuery {
+func (h *Host) QueryProcesses() *HostProcessQuery {
 	return NewHostClient(h.config).QueryProcesses(h)
 }
 
@@ -280,9 +300,33 @@ func (h *Host) appendNamedBeacons(name string, edges ...*Beacon) {
 	}
 }
 
+// NamedFiles returns the Files named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedFiles(name string) ([]*HostFile, error) {
+	if h.Edges.namedFiles == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedFiles[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedFiles(name string, edges ...*HostFile) {
+	if h.Edges.namedFiles == nil {
+		h.Edges.namedFiles = make(map[string][]*HostFile)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedFiles[name] = []*HostFile{}
+	} else {
+		h.Edges.namedFiles[name] = append(h.Edges.namedFiles[name], edges...)
+	}
+}
+
 // NamedProcesses returns the Processes named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (h *Host) NamedProcesses(name string) ([]*Process, error) {
+func (h *Host) NamedProcesses(name string) ([]*HostProcess, error) {
 	if h.Edges.namedProcesses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
@@ -293,12 +337,12 @@ func (h *Host) NamedProcesses(name string) ([]*Process, error) {
 	return nodes, nil
 }
 
-func (h *Host) appendNamedProcesses(name string, edges ...*Process) {
+func (h *Host) appendNamedProcesses(name string, edges ...*HostProcess) {
 	if h.Edges.namedProcesses == nil {
-		h.Edges.namedProcesses = make(map[string][]*Process)
+		h.Edges.namedProcesses = make(map[string][]*HostProcess)
 	}
 	if len(edges) == 0 {
-		h.Edges.namedProcesses[name] = []*Process{}
+		h.Edges.namedProcesses[name] = []*HostProcess{}
 	} else {
 		h.Edges.namedProcesses[name] = append(h.Edges.namedProcesses[name], edges...)
 	}

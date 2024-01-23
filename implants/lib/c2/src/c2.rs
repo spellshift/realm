@@ -1,3 +1,26 @@
+/// Agent information to identify the type of beacon.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Agent {
+    #[prost(string, tag = "1")]
+    pub identifier: ::prost::alloc::string::String,
+}
+/// Beacon information that is unique to the current running beacon.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Beacon {
+    #[prost(string, tag = "1")]
+    pub identifier: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub principal: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub host: ::core::option::Option<Host>,
+    #[prost(message, optional, tag = "4")]
+    pub agent: ::core::option::Option<Agent>,
+    /// Duration until next callback, in seconds.
+    #[prost(uint64, tag = "5")]
+    pub interval: u64,
+}
 /// Host information for the system a beacon is running on.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -59,28 +82,103 @@ pub mod host {
         }
     }
 }
-/// Agent information to identify the type of beacon.
+/// Process running on the host system.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Agent {
-    #[prost(string, tag = "1")]
-    pub identifier: ::prost::alloc::string::String,
-}
-/// Beacon information that is unique to the current running beacon.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Beacon {
-    #[prost(string, tag = "1")]
-    pub identifier: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
+pub struct Process {
+    #[prost(uint64, tag = "1")]
+    pub pid: u64,
+    #[prost(uint64, tag = "2")]
+    pub ppid: u64,
+    #[prost(string, tag = "3")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
     pub principal: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
-    pub host: ::core::option::Option<Host>,
-    #[prost(message, optional, tag = "4")]
-    pub agent: ::core::option::Option<Agent>,
-    /// Duration until next callback, in seconds.
-    #[prost(uint64, tag = "5")]
-    pub interval: u64,
+    #[prost(string, tag = "5")]
+    pub path: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub cmd: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub env: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub cwd: ::prost::alloc::string::String,
+    #[prost(enumeration = "process::Status", tag = "9")]
+    pub status: i32,
+}
+/// Nested message and enum types in `Process`.
+pub mod process {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
+    pub enum Status {
+        Unspecified = 0,
+        Unknown = 1,
+        Idle = 2,
+        Run = 3,
+        Sleep = 4,
+        Stop = 5,
+        Zombie = 6,
+        Tracing = 7,
+        Dead = 8,
+        WakeKill = 9,
+        Waking = 10,
+        Parked = 11,
+        LockBlocked = 12,
+        UninteruptibleDiskSleep = 13,
+    }
+    impl Status {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Status::Unspecified => "STATUS_UNSPECIFIED",
+                Status::Unknown => "STATUS_UNKNOWN",
+                Status::Idle => "STATUS_IDLE",
+                Status::Run => "STATUS_RUN",
+                Status::Sleep => "STATUS_SLEEP",
+                Status::Stop => "STATUS_STOP",
+                Status::Zombie => "STATUS_ZOMBIE",
+                Status::Tracing => "STATUS_TRACING",
+                Status::Dead => "STATUS_DEAD",
+                Status::WakeKill => "STATUS_WAKE_KILL",
+                Status::Waking => "STATUS_WAKING",
+                Status::Parked => "STATUS_PARKED",
+                Status::LockBlocked => "STATUS_LOCK_BLOCKED",
+                Status::UninteruptibleDiskSleep => "STATUS_UNINTERUPTIBLE_DISK_SLEEP",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "STATUS_UNSPECIFIED" => Some(Self::Unspecified),
+                "STATUS_UNKNOWN" => Some(Self::Unknown),
+                "STATUS_IDLE" => Some(Self::Idle),
+                "STATUS_RUN" => Some(Self::Run),
+                "STATUS_SLEEP" => Some(Self::Sleep),
+                "STATUS_STOP" => Some(Self::Stop),
+                "STATUS_ZOMBIE" => Some(Self::Zombie),
+                "STATUS_TRACING" => Some(Self::Tracing),
+                "STATUS_DEAD" => Some(Self::Dead),
+                "STATUS_WAKE_KILL" => Some(Self::WakeKill),
+                "STATUS_WAKING" => Some(Self::Waking),
+                "STATUS_PARKED" => Some(Self::Parked),
+                "STATUS_LOCK_BLOCKED" => Some(Self::LockBlocked),
+                "STATUS_UNINTERUPTIBLE_DISK_SLEEP" => Some(Self::UninteruptibleDiskSleep),
+                _ => None,
+            }
+        }
+    }
 }
 /// Task instructions for the beacon to execute.
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -124,17 +222,6 @@ pub struct TaskOutput {
     #[prost(message, optional, tag = "5")]
     pub exec_finished_at: ::core::option::Option<::prost_types::Timestamp>,
 }
-/// Process running on the system.
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Process {
-    #[prost(uint64, tag = "1")]
-    pub pid: u64,
-    #[prost(string, tag = "2")]
-    pub name: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
-    pub principal: ::prost::alloc::string::String,
-}
 ///
 /// RPC Messages
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -151,15 +238,6 @@ pub struct ClaimTasksResponse {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ReportTaskOutputRequest {
-    #[prost(message, optional, tag = "1")]
-    pub output: ::core::option::Option<TaskOutput>,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ReportTaskOutputResponse {}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DownloadFileRequest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -172,6 +250,29 @@ pub struct DownloadFileResponse {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportFileRequest {
+    #[prost(int64, tag = "1")]
+    pub task_id: i64,
+    #[prost(string, tag = "2")]
+    pub path: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub owner: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub group: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub permissions: ::prost::alloc::string::String,
+    #[prost(int64, tag = "6")]
+    pub size: i64,
+    #[prost(string, tag = "7")]
+    pub sha3_256_hash: ::prost::alloc::string::String,
+    #[prost(bytes = "vec", tag = "8")]
+    pub chunk: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportFileResponse {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportProcessListRequest {
     #[prost(message, repeated, tag = "1")]
     pub list: ::prost::alloc::vec::Vec<Process>,
@@ -181,6 +282,15 @@ pub struct ReportProcessListRequest {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportProcessListResponse {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportTaskOutputRequest {
+    #[prost(message, optional, tag = "1")]
+    pub output: ::core::option::Option<TaskOutput>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportTaskOutputResponse {}
 /// Generated client implementations.
 pub mod c2_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -266,6 +376,8 @@ pub mod c2_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
+        ///
+        /// Contact the server for new tasks to execute.
         pub async fn claim_tasks(
             &mut self,
             request: impl tonic::IntoRequest<super::ClaimTasksRequest>,
@@ -286,53 +398,6 @@ pub mod c2_client {
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ClaimTasks");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ClaimTasks"));
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn report_task_output(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ReportTaskOutputRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ReportTaskOutputResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportTaskOutput");
-            let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
-            self.inner.unary(req, path, codec).await
-        }
-        ///
-        /// Report the active list of running processes. This list will replace any previously reported
-        /// lists for the same host.
-        pub async fn report_process_list(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ReportProcessListRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ReportProcessListResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportProcessList");
-            let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
             self.inner.unary(req, path, codec).await
         }
         ///
@@ -364,6 +429,84 @@ pub mod c2_client {
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "DownloadFile"));
             self.inner.server_streaming(req, path, codec).await
+        }
+        ///
+        /// Report a file from the host to the server.
+        /// Providing content of the file is optional. If content is provided:
+        ///   - Hash will automatically be calculated and the provided hash will be ignored.
+        ///   - Size will automatically be calculated and the provided size will be ignored.
+        /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
+        /// Any existing files at the provided path for the host are replaced.
+        pub async fn report_file(
+            &mut self,
+            request: impl tonic::IntoStreamingRequest<Message = super::ReportFileRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportFileResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportFile");
+            let mut req = request.into_streaming_request();
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportFile"));
+            self.inner.client_streaming(req, path, codec).await
+        }
+        ///
+        /// Report the active list of running processes. This list will replace any previously reported
+        /// lists for the same host.
+        pub async fn report_process_list(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ReportProcessListRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportProcessListResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportProcessList");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
+            self.inner.unary(req, path, codec).await
+        }
+        ///
+        /// Report execution output for a task.
+        pub async fn report_task_output(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ReportTaskOutputRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportTaskOutputResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportTaskOutput");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
+            self.inner.unary(req, path, codec).await
         }
     }
 }

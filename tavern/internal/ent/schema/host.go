@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 // Host holds the schema definition for the Host entity.
@@ -34,8 +35,7 @@ func (Host) Fields() []ent.Field {
 			).
 			Comment("Primary interface IP address reported by the agent."),
 		field.Enum("platform").
-			Values("Windows", "Linux", "MacOS", "BSD", "Unknown").
-			Default("Unknown").
+			GoType(c2pb.Host_Platform(0)).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
@@ -58,7 +58,9 @@ func (Host) Edges() []ent.Edge {
 		edge.From("beacons", Beacon.Type).
 			Ref("host").
 			Comment("Beacons that are present on this host system."),
-		edge.To("processes", Process.Type).
+		edge.To("files", HostFile.Type).
+			Comment("Files reported on this host system."),
+		edge.To("processes", HostProcess.Type).
 			Comment("Processes reported as running on this host system."),
 	}
 }

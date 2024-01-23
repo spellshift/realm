@@ -50,18 +50,24 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 	}()
 
 	// Create Processes
-	builders := make([]*ent.ProcessCreate, 0, len(req.List))
+	builders := make([]*ent.HostProcessCreate, 0, len(req.List))
 	for _, proc := range req.List {
 		builders = append(builders,
-			txGraph.Process.Create().
+			txGraph.HostProcess.Create().
 				SetHostID(host.ID).
 				SetTaskID(task.ID).
 				SetPid(proc.Pid).
+				SetPpid(proc.Ppid).
 				SetName(proc.Name).
-				SetPrincipal(proc.Principal),
+				SetPrincipal(proc.Principal).
+				SetPath(proc.Path).
+				SetCmd(proc.Cmd).
+				SetEnv(proc.Env).
+				SetCwd(proc.Cwd).
+				SetStatus(proc.Status),
 		)
 	}
-	processList, err := txGraph.Process.CreateBulk(builders...).Save(ctx)
+	processList, err := txGraph.HostProcess.CreateBulk(builders...).Save(ctx)
 	if err != nil {
 		return nil, rollback(tx, fmt.Errorf("failed to create process list: %w", err))
 	}

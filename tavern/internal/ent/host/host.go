@@ -4,12 +4,12 @@ package host
 
 import (
 	"fmt"
-	"io"
-	"strconv"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/99designs/gqlgen/graphql"
+	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 const (
@@ -35,6 +35,8 @@ const (
 	EdgeTags = "tags"
 	// EdgeBeacons holds the string denoting the beacons edge name in mutations.
 	EdgeBeacons = "beacons"
+	// EdgeFiles holds the string denoting the files edge name in mutations.
+	EdgeFiles = "files"
 	// EdgeProcesses holds the string denoting the processes edge name in mutations.
 	EdgeProcesses = "processes"
 	// Table holds the table name of the host in the database.
@@ -51,11 +53,18 @@ const (
 	BeaconsInverseTable = "beacons"
 	// BeaconsColumn is the table column denoting the beacons relation/edge.
 	BeaconsColumn = "beacon_host"
+	// FilesTable is the table that holds the files relation/edge.
+	FilesTable = "host_files"
+	// FilesInverseTable is the table name for the HostFile entity.
+	// It exists in this package in order to avoid circular dependency with the "hostfile" package.
+	FilesInverseTable = "host_files"
+	// FilesColumn is the table column denoting the files relation/edge.
+	FilesColumn = "host_files"
 	// ProcessesTable is the table that holds the processes relation/edge.
-	ProcessesTable = "processes"
-	// ProcessesInverseTable is the table name for the Process entity.
-	// It exists in this package in order to avoid circular dependency with the "process" package.
-	ProcessesInverseTable = "processes"
+	ProcessesTable = "host_processes"
+	// ProcessesInverseTable is the table name for the HostProcess entity.
+	// It exists in this package in order to avoid circular dependency with the "hostprocess" package.
+	ProcessesInverseTable = "host_processes"
 	// ProcessesColumn is the table column denoting the processes relation/edge.
 	ProcessesColumn = "host_processes"
 )
@@ -101,29 +110,10 @@ var (
 	NameValidator func(string) error
 )
 
-// Platform defines the type for the "platform" enum field.
-type Platform string
-
-// PlatformUnknown is the default value of the Platform enum.
-const DefaultPlatform = PlatformUnknown
-
-// Platform values.
-const (
-	PlatformWindows Platform = "Windows"
-	PlatformLinux   Platform = "Linux"
-	PlatformMacOS   Platform = "MacOS"
-	PlatformBSD     Platform = "BSD"
-	PlatformUnknown Platform = "Unknown"
-)
-
-func (pl Platform) String() string {
-	return string(pl)
-}
-
 // PlatformValidator is a validator for the "platform" field enum values. It is called by the builders before save.
-func PlatformValidator(pl Platform) error {
-	switch pl {
-	case PlatformWindows, PlatformLinux, PlatformMacOS, PlatformBSD, PlatformUnknown:
+func PlatformValidator(pl c2pb.Host_Platform) error {
+	switch pl.String() {
+	case "PLATFORM_BSD", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS":
 		return nil
 	default:
 		return fmt.Errorf("host: invalid enum value for platform field: %q", pl)
@@ -201,6 +191,20 @@ func ByBeacons(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByFilesCount orders the results by files count.
+func ByFilesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFilesStep(), opts...)
+	}
+}
+
+// ByFiles orders the results by files terms.
+func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByProcessesCount orders the results by processes count.
 func ByProcessesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -228,6 +232,13 @@ func newBeaconsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, true, BeaconsTable, BeaconsColumn),
 	)
 }
+func newFilesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FilesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
+	)
+}
 func newProcessesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -236,20 +247,9 @@ func newProcessesStep() *sqlgraph.Step {
 	)
 }
 
-// MarshalGQL implements graphql.Marshaler interface.
-func (e Platform) MarshalGQL(w io.Writer) {
-	io.WriteString(w, strconv.Quote(e.String()))
-}
-
-// UnmarshalGQL implements graphql.Unmarshaler interface.
-func (e *Platform) UnmarshalGQL(val interface{}) error {
-	str, ok := val.(string)
-	if !ok {
-		return fmt.Errorf("enum %T must be a string", val)
-	}
-	*e = Platform(str)
-	if err := PlatformValidator(*e); err != nil {
-		return fmt.Errorf("%s is not a valid Platform", str)
-	}
-	return nil
-}
+var (
+	// c2pb.Host_Platform must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*c2pb.Host_Platform)(nil)
+	// c2pb.Host_Platform must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*c2pb.Host_Platform)(nil)
+)

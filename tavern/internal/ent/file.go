@@ -25,7 +25,7 @@ type File struct {
 	Name string `json:"name,omitempty"`
 	// The size of the file in bytes
 	Size int `json:"size,omitempty"`
-	// A SHA3 digest of the content field
+	// A SHA3-256 digest of the content field
 	Hash string `json:"hash,omitempty"`
 	// The content of the file
 	Content []byte `json:"content,omitempty"`

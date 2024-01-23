@@ -11,11 +11,13 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -32,15 +34,16 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeBeacon  = "Beacon"
-	TypeFile    = "File"
-	TypeHost    = "Host"
-	TypeProcess = "Process"
-	TypeQuest   = "Quest"
-	TypeTag     = "Tag"
-	TypeTask    = "Task"
-	TypeTome    = "Tome"
-	TypeUser    = "User"
+	TypeBeacon      = "Beacon"
+	TypeFile        = "File"
+	TypeHost        = "Host"
+	TypeHostFile    = "HostFile"
+	TypeHostProcess = "HostProcess"
+	TypeQuest       = "Quest"
+	TypeTag         = "Tag"
+	TypeTask        = "Task"
+	TypeTome        = "Tome"
+	TypeUser        = "User"
 )
 
 // BeaconMutation represents an operation that mutates the Beacon nodes in the graph.
@@ -1751,7 +1754,7 @@ type HostMutation struct {
 	identifier       *string
 	name             *string
 	primary_ip       *string
-	platform         *host.Platform
+	platform         *c2pb.Host_Platform
 	last_seen_at     *time.Time
 	clearedFields    map[string]struct{}
 	tags             map[int]struct{}
@@ -1760,6 +1763,9 @@ type HostMutation struct {
 	beacons          map[int]struct{}
 	removedbeacons   map[int]struct{}
 	clearedbeacons   bool
+	files            map[int]struct{}
+	removedfiles     map[int]struct{}
+	clearedfiles     bool
 	processes        map[int]struct{}
 	removedprocesses map[int]struct{}
 	clearedprocesses bool
@@ -2073,12 +2079,12 @@ func (m *HostMutation) ResetPrimaryIP() {
 }
 
 // SetPlatform sets the "platform" field.
-func (m *HostMutation) SetPlatform(h host.Platform) {
-	m.platform = &h
+func (m *HostMutation) SetPlatform(cp c2pb.Host_Platform) {
+	m.platform = &cp
 }
 
 // Platform returns the value of the "platform" field in the mutation.
-func (m *HostMutation) Platform() (r host.Platform, exists bool) {
+func (m *HostMutation) Platform() (r c2pb.Host_Platform, exists bool) {
 	v := m.platform
 	if v == nil {
 		return
@@ -2089,7 +2095,7 @@ func (m *HostMutation) Platform() (r host.Platform, exists bool) {
 // OldPlatform returns the old "platform" field's value of the Host entity.
 // If the Host object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HostMutation) OldPlatform(ctx context.Context) (v host.Platform, err error) {
+func (m *HostMutation) OldPlatform(ctx context.Context) (v c2pb.Host_Platform, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPlatform is only allowed on UpdateOne operations")
 	}
@@ -2265,7 +2271,61 @@ func (m *HostMutation) ResetBeacons() {
 	m.removedbeacons = nil
 }
 
-// AddProcessIDs adds the "processes" edge to the Process entity by ids.
+// AddFileIDs adds the "files" edge to the HostFile entity by ids.
+func (m *HostMutation) AddFileIDs(ids ...int) {
+	if m.files == nil {
+		m.files = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.files[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFiles clears the "files" edge to the HostFile entity.
+func (m *HostMutation) ClearFiles() {
+	m.clearedfiles = true
+}
+
+// FilesCleared reports if the "files" edge to the HostFile entity was cleared.
+func (m *HostMutation) FilesCleared() bool {
+	return m.clearedfiles
+}
+
+// RemoveFileIDs removes the "files" edge to the HostFile entity by IDs.
+func (m *HostMutation) RemoveFileIDs(ids ...int) {
+	if m.removedfiles == nil {
+		m.removedfiles = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.files, ids[i])
+		m.removedfiles[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFiles returns the removed IDs of the "files" edge to the HostFile entity.
+func (m *HostMutation) RemovedFilesIDs() (ids []int) {
+	for id := range m.removedfiles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FilesIDs returns the "files" edge IDs in the mutation.
+func (m *HostMutation) FilesIDs() (ids []int) {
+	for id := range m.files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFiles resets all changes to the "files" edge.
+func (m *HostMutation) ResetFiles() {
+	m.files = nil
+	m.clearedfiles = false
+	m.removedfiles = nil
+}
+
+// AddProcessIDs adds the "processes" edge to the HostProcess entity by ids.
 func (m *HostMutation) AddProcessIDs(ids ...int) {
 	if m.processes == nil {
 		m.processes = make(map[int]struct{})
@@ -2275,17 +2335,17 @@ func (m *HostMutation) AddProcessIDs(ids ...int) {
 	}
 }
 
-// ClearProcesses clears the "processes" edge to the Process entity.
+// ClearProcesses clears the "processes" edge to the HostProcess entity.
 func (m *HostMutation) ClearProcesses() {
 	m.clearedprocesses = true
 }
 
-// ProcessesCleared reports if the "processes" edge to the Process entity was cleared.
+// ProcessesCleared reports if the "processes" edge to the HostProcess entity was cleared.
 func (m *HostMutation) ProcessesCleared() bool {
 	return m.clearedprocesses
 }
 
-// RemoveProcessIDs removes the "processes" edge to the Process entity by IDs.
+// RemoveProcessIDs removes the "processes" edge to the HostProcess entity by IDs.
 func (m *HostMutation) RemoveProcessIDs(ids ...int) {
 	if m.removedprocesses == nil {
 		m.removedprocesses = make(map[int]struct{})
@@ -2296,7 +2356,7 @@ func (m *HostMutation) RemoveProcessIDs(ids ...int) {
 	}
 }
 
-// RemovedProcesses returns the removed IDs of the "processes" edge to the Process entity.
+// RemovedProcesses returns the removed IDs of the "processes" edge to the HostProcess entity.
 func (m *HostMutation) RemovedProcessesIDs() (ids []int) {
 	for id := range m.removedprocesses {
 		ids = append(ids, id)
@@ -2465,7 +2525,7 @@ func (m *HostMutation) SetField(name string, value ent.Value) error {
 		m.SetPrimaryIP(v)
 		return nil
 	case host.FieldPlatform:
-		v, ok := value.(host.Platform)
+		v, ok := value.(c2pb.Host_Platform)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2575,12 +2635,15 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.beacons != nil {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.files != nil {
+		edges = append(edges, host.EdgeFiles)
 	}
 	if m.processes != nil {
 		edges = append(edges, host.EdgeProcesses)
@@ -2604,6 +2667,12 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeFiles:
+		ids := make([]ent.Value, 0, len(m.files))
+		for id := range m.files {
+			ids = append(ids, id)
+		}
+		return ids
 	case host.EdgeProcesses:
 		ids := make([]ent.Value, 0, len(m.processes))
 		for id := range m.processes {
@@ -2616,12 +2685,15 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.removedbeacons != nil {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.removedfiles != nil {
+		edges = append(edges, host.EdgeFiles)
 	}
 	if m.removedprocesses != nil {
 		edges = append(edges, host.EdgeProcesses)
@@ -2645,6 +2717,12 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeFiles:
+		ids := make([]ent.Value, 0, len(m.removedfiles))
+		for id := range m.removedfiles {
+			ids = append(ids, id)
+		}
+		return ids
 	case host.EdgeProcesses:
 		ids := make([]ent.Value, 0, len(m.removedprocesses))
 		for id := range m.removedprocesses {
@@ -2657,12 +2735,15 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.clearedbeacons {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.clearedfiles {
+		edges = append(edges, host.EdgeFiles)
 	}
 	if m.clearedprocesses {
 		edges = append(edges, host.EdgeProcesses)
@@ -2678,6 +2759,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedtags
 	case host.EdgeBeacons:
 		return m.clearedbeacons
+	case host.EdgeFiles:
+		return m.clearedfiles
 	case host.EdgeProcesses:
 		return m.clearedprocesses
 	}
@@ -2702,6 +2785,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 	case host.EdgeBeacons:
 		m.ResetBeacons()
 		return nil
+	case host.EdgeFiles:
+		m.ResetFiles()
+		return nil
 	case host.EdgeProcesses:
 		m.ResetProcesses()
 		return nil
@@ -2709,39 +2795,43 @@ func (m *HostMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Host edge %s", name)
 }
 
-// ProcessMutation represents an operation that mutates the Process nodes in the graph.
-type ProcessMutation struct {
+// HostFileMutation represents an operation that mutates the HostFile nodes in the graph.
+type HostFileMutation struct {
 	config
 	op               Op
 	typ              string
 	id               *int
 	created_at       *time.Time
 	last_modified_at *time.Time
-	pid              *uint64
-	addpid           *int64
-	name             *string
-	principal        *string
+	_path            *string
+	owner            *string
+	group            *string
+	permissions      *string
+	size             *int
+	addsize          *int
+	hash             *string
+	content          *[]byte
 	clearedFields    map[string]struct{}
 	host             *int
 	clearedhost      bool
 	task             *int
 	clearedtask      bool
 	done             bool
-	oldValue         func(context.Context) (*Process, error)
-	predicates       []predicate.Process
+	oldValue         func(context.Context) (*HostFile, error)
+	predicates       []predicate.HostFile
 }
 
-var _ ent.Mutation = (*ProcessMutation)(nil)
+var _ ent.Mutation = (*HostFileMutation)(nil)
 
-// processOption allows management of the mutation configuration using functional options.
-type processOption func(*ProcessMutation)
+// hostfileOption allows management of the mutation configuration using functional options.
+type hostfileOption func(*HostFileMutation)
 
-// newProcessMutation creates new mutation for the Process entity.
-func newProcessMutation(c config, op Op, opts ...processOption) *ProcessMutation {
-	m := &ProcessMutation{
+// newHostFileMutation creates new mutation for the HostFile entity.
+func newHostFileMutation(c config, op Op, opts ...hostfileOption) *HostFileMutation {
+	m := &HostFileMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeProcess,
+		typ:           TypeHostFile,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -2750,20 +2840,20 @@ func newProcessMutation(c config, op Op, opts ...processOption) *ProcessMutation
 	return m
 }
 
-// withProcessID sets the ID field of the mutation.
-func withProcessID(id int) processOption {
-	return func(m *ProcessMutation) {
+// withHostFileID sets the ID field of the mutation.
+func withHostFileID(id int) hostfileOption {
+	return func(m *HostFileMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *Process
+			value *HostFile
 		)
-		m.oldValue = func(ctx context.Context) (*Process, error) {
+		m.oldValue = func(ctx context.Context) (*HostFile, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().Process.Get(ctx, id)
+					value, err = m.Client().HostFile.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -2772,10 +2862,10 @@ func withProcessID(id int) processOption {
 	}
 }
 
-// withProcess sets the old Process of the mutation.
-func withProcess(node *Process) processOption {
-	return func(m *ProcessMutation) {
-		m.oldValue = func(context.Context) (*Process, error) {
+// withHostFile sets the old HostFile of the mutation.
+func withHostFile(node *HostFile) hostfileOption {
+	return func(m *HostFileMutation) {
+		m.oldValue = func(context.Context) (*HostFile, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -2784,7 +2874,7 @@ func withProcess(node *Process) processOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ProcessMutation) Client() *Client {
+func (m HostFileMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -2792,7 +2882,7 @@ func (m ProcessMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m ProcessMutation) Tx() (*Tx, error) {
+func (m HostFileMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -2803,7 +2893,7 @@ func (m ProcessMutation) Tx() (*Tx, error) {
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *ProcessMutation) ID() (id int, exists bool) {
+func (m *HostFileMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2814,7 +2904,7 @@ func (m *ProcessMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *ProcessMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *HostFileMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -2823,19 +2913,19 @@ func (m *ProcessMutation) IDs(ctx context.Context) ([]int, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Process.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().HostFile.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (m *ProcessMutation) SetCreatedAt(t time.Time) {
+func (m *HostFileMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
 }
 
 // CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *ProcessMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *HostFileMutation) CreatedAt() (r time.Time, exists bool) {
 	v := m.created_at
 	if v == nil {
 		return
@@ -2843,10 +2933,10 @@ func (m *ProcessMutation) CreatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the Process entity.
-// If the Process object wasn't provided to the builder, the object is fetched from the database.
+// OldCreatedAt returns the old "created_at" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProcessMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *HostFileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
@@ -2861,17 +2951,17 @@ func (m *ProcessMutation) OldCreatedAt(ctx context.Context) (v time.Time, err er
 }
 
 // ResetCreatedAt resets all changes to the "created_at" field.
-func (m *ProcessMutation) ResetCreatedAt() {
+func (m *HostFileMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (m *ProcessMutation) SetLastModifiedAt(t time.Time) {
+func (m *HostFileMutation) SetLastModifiedAt(t time.Time) {
 	m.last_modified_at = &t
 }
 
 // LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
-func (m *ProcessMutation) LastModifiedAt() (r time.Time, exists bool) {
+func (m *HostFileMutation) LastModifiedAt() (r time.Time, exists bool) {
 	v := m.last_modified_at
 	if v == nil {
 		return
@@ -2879,10 +2969,10 @@ func (m *ProcessMutation) LastModifiedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldLastModifiedAt returns the old "last_modified_at" field's value of the Process entity.
-// If the Process object wasn't provided to the builder, the object is fetched from the database.
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProcessMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+func (m *HostFileMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
 	}
@@ -2897,18 +2987,1039 @@ func (m *ProcessMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, e
 }
 
 // ResetLastModifiedAt resets all changes to the "last_modified_at" field.
-func (m *ProcessMutation) ResetLastModifiedAt() {
+func (m *HostFileMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetPath sets the "path" field.
+func (m *HostFileMutation) SetPath(s string) {
+	m._path = &s
+}
+
+// Path returns the value of the "path" field in the mutation.
+func (m *HostFileMutation) Path() (r string, exists bool) {
+	v := m._path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPath returns the old "path" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+	}
+	return oldValue.Path, nil
+}
+
+// ResetPath resets all changes to the "path" field.
+func (m *HostFileMutation) ResetPath() {
+	m._path = nil
+}
+
+// SetOwner sets the "owner" field.
+func (m *HostFileMutation) SetOwner(s string) {
+	m.owner = &s
+}
+
+// Owner returns the value of the "owner" field in the mutation.
+func (m *HostFileMutation) Owner() (r string, exists bool) {
+	v := m.owner
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwner returns the old "owner" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldOwner(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwner is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwner requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwner: %w", err)
+	}
+	return oldValue.Owner, nil
+}
+
+// ClearOwner clears the value of the "owner" field.
+func (m *HostFileMutation) ClearOwner() {
+	m.owner = nil
+	m.clearedFields[hostfile.FieldOwner] = struct{}{}
+}
+
+// OwnerCleared returns if the "owner" field was cleared in this mutation.
+func (m *HostFileMutation) OwnerCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldOwner]
+	return ok
+}
+
+// ResetOwner resets all changes to the "owner" field.
+func (m *HostFileMutation) ResetOwner() {
+	m.owner = nil
+	delete(m.clearedFields, hostfile.FieldOwner)
+}
+
+// SetGroup sets the "group" field.
+func (m *HostFileMutation) SetGroup(s string) {
+	m.group = &s
+}
+
+// Group returns the value of the "group" field in the mutation.
+func (m *HostFileMutation) Group() (r string, exists bool) {
+	v := m.group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroup returns the old "group" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldGroup(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroup is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroup requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroup: %w", err)
+	}
+	return oldValue.Group, nil
+}
+
+// ClearGroup clears the value of the "group" field.
+func (m *HostFileMutation) ClearGroup() {
+	m.group = nil
+	m.clearedFields[hostfile.FieldGroup] = struct{}{}
+}
+
+// GroupCleared returns if the "group" field was cleared in this mutation.
+func (m *HostFileMutation) GroupCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldGroup]
+	return ok
+}
+
+// ResetGroup resets all changes to the "group" field.
+func (m *HostFileMutation) ResetGroup() {
+	m.group = nil
+	delete(m.clearedFields, hostfile.FieldGroup)
+}
+
+// SetPermissions sets the "permissions" field.
+func (m *HostFileMutation) SetPermissions(s string) {
+	m.permissions = &s
+}
+
+// Permissions returns the value of the "permissions" field in the mutation.
+func (m *HostFileMutation) Permissions() (r string, exists bool) {
+	v := m.permissions
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPermissions returns the old "permissions" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldPermissions(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPermissions is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPermissions requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPermissions: %w", err)
+	}
+	return oldValue.Permissions, nil
+}
+
+// ClearPermissions clears the value of the "permissions" field.
+func (m *HostFileMutation) ClearPermissions() {
+	m.permissions = nil
+	m.clearedFields[hostfile.FieldPermissions] = struct{}{}
+}
+
+// PermissionsCleared returns if the "permissions" field was cleared in this mutation.
+func (m *HostFileMutation) PermissionsCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldPermissions]
+	return ok
+}
+
+// ResetPermissions resets all changes to the "permissions" field.
+func (m *HostFileMutation) ResetPermissions() {
+	m.permissions = nil
+	delete(m.clearedFields, hostfile.FieldPermissions)
+}
+
+// SetSize sets the "size" field.
+func (m *HostFileMutation) SetSize(i int) {
+	m.size = &i
+	m.addsize = nil
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *HostFileMutation) Size() (r int, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldSize(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// AddSize adds i to the "size" field.
+func (m *HostFileMutation) AddSize(i int) {
+	if m.addsize != nil {
+		*m.addsize += i
+	} else {
+		m.addsize = &i
+	}
+}
+
+// AddedSize returns the value that was added to the "size" field in this mutation.
+func (m *HostFileMutation) AddedSize() (r int, exists bool) {
+	v := m.addsize
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *HostFileMutation) ResetSize() {
+	m.size = nil
+	m.addsize = nil
+}
+
+// SetHash sets the "hash" field.
+func (m *HostFileMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *HostFileMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ClearHash clears the value of the "hash" field.
+func (m *HostFileMutation) ClearHash() {
+	m.hash = nil
+	m.clearedFields[hostfile.FieldHash] = struct{}{}
+}
+
+// HashCleared returns if the "hash" field was cleared in this mutation.
+func (m *HostFileMutation) HashCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldHash]
+	return ok
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *HostFileMutation) ResetHash() {
+	m.hash = nil
+	delete(m.clearedFields, hostfile.FieldHash)
+}
+
+// SetContent sets the "content" field.
+func (m *HostFileMutation) SetContent(b []byte) {
+	m.content = &b
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *HostFileMutation) Content() (r []byte, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldContent(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ClearContent clears the value of the "content" field.
+func (m *HostFileMutation) ClearContent() {
+	m.content = nil
+	m.clearedFields[hostfile.FieldContent] = struct{}{}
+}
+
+// ContentCleared returns if the "content" field was cleared in this mutation.
+func (m *HostFileMutation) ContentCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldContent]
+	return ok
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *HostFileMutation) ResetContent() {
+	m.content = nil
+	delete(m.clearedFields, hostfile.FieldContent)
+}
+
+// SetHostID sets the "host" edge to the Host entity by id.
+func (m *HostFileMutation) SetHostID(id int) {
+	m.host = &id
+}
+
+// ClearHost clears the "host" edge to the Host entity.
+func (m *HostFileMutation) ClearHost() {
+	m.clearedhost = true
+}
+
+// HostCleared reports if the "host" edge to the Host entity was cleared.
+func (m *HostFileMutation) HostCleared() bool {
+	return m.clearedhost
+}
+
+// HostID returns the "host" edge ID in the mutation.
+func (m *HostFileMutation) HostID() (id int, exists bool) {
+	if m.host != nil {
+		return *m.host, true
+	}
+	return
+}
+
+// HostIDs returns the "host" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HostID instead. It exists only for internal usage by the builders.
+func (m *HostFileMutation) HostIDs() (ids []int) {
+	if id := m.host; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHost resets all changes to the "host" edge.
+func (m *HostFileMutation) ResetHost() {
+	m.host = nil
+	m.clearedhost = false
+}
+
+// SetTaskID sets the "task" edge to the Task entity by id.
+func (m *HostFileMutation) SetTaskID(id int) {
+	m.task = &id
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (m *HostFileMutation) ClearTask() {
+	m.clearedtask = true
+}
+
+// TaskCleared reports if the "task" edge to the Task entity was cleared.
+func (m *HostFileMutation) TaskCleared() bool {
+	return m.clearedtask
+}
+
+// TaskID returns the "task" edge ID in the mutation.
+func (m *HostFileMutation) TaskID() (id int, exists bool) {
+	if m.task != nil {
+		return *m.task, true
+	}
+	return
+}
+
+// TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
+func (m *HostFileMutation) TaskIDs() (ids []int) {
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTask resets all changes to the "task" edge.
+func (m *HostFileMutation) ResetTask() {
+	m.task = nil
+	m.clearedtask = false
+}
+
+// Where appends a list predicates to the HostFileMutation builder.
+func (m *HostFileMutation) Where(ps ...predicate.HostFile) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the HostFileMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *HostFileMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.HostFile, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *HostFileMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *HostFileMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (HostFile).
+func (m *HostFileMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *HostFileMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, hostfile.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, hostfile.FieldLastModifiedAt)
+	}
+	if m._path != nil {
+		fields = append(fields, hostfile.FieldPath)
+	}
+	if m.owner != nil {
+		fields = append(fields, hostfile.FieldOwner)
+	}
+	if m.group != nil {
+		fields = append(fields, hostfile.FieldGroup)
+	}
+	if m.permissions != nil {
+		fields = append(fields, hostfile.FieldPermissions)
+	}
+	if m.size != nil {
+		fields = append(fields, hostfile.FieldSize)
+	}
+	if m.hash != nil {
+		fields = append(fields, hostfile.FieldHash)
+	}
+	if m.content != nil {
+		fields = append(fields, hostfile.FieldContent)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *HostFileMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case hostfile.FieldCreatedAt:
+		return m.CreatedAt()
+	case hostfile.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case hostfile.FieldPath:
+		return m.Path()
+	case hostfile.FieldOwner:
+		return m.Owner()
+	case hostfile.FieldGroup:
+		return m.Group()
+	case hostfile.FieldPermissions:
+		return m.Permissions()
+	case hostfile.FieldSize:
+		return m.Size()
+	case hostfile.FieldHash:
+		return m.Hash()
+	case hostfile.FieldContent:
+		return m.Content()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *HostFileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case hostfile.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case hostfile.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case hostfile.FieldPath:
+		return m.OldPath(ctx)
+	case hostfile.FieldOwner:
+		return m.OldOwner(ctx)
+	case hostfile.FieldGroup:
+		return m.OldGroup(ctx)
+	case hostfile.FieldPermissions:
+		return m.OldPermissions(ctx)
+	case hostfile.FieldSize:
+		return m.OldSize(ctx)
+	case hostfile.FieldHash:
+		return m.OldHash(ctx)
+	case hostfile.FieldContent:
+		return m.OldContent(ctx)
+	}
+	return nil, fmt.Errorf("unknown HostFile field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostFileMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case hostfile.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case hostfile.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case hostfile.FieldPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPath(v)
+		return nil
+	case hostfile.FieldOwner:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwner(v)
+		return nil
+	case hostfile.FieldGroup:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroup(v)
+		return nil
+	case hostfile.FieldPermissions:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPermissions(v)
+		return nil
+	case hostfile.FieldSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	case hostfile.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case hostfile.FieldContent:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *HostFileMutation) AddedFields() []string {
+	var fields []string
+	if m.addsize != nil {
+		fields = append(fields, hostfile.FieldSize)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *HostFileMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case hostfile.FieldSize:
+		return m.AddedSize()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostFileMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case hostfile.FieldSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *HostFileMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(hostfile.FieldOwner) {
+		fields = append(fields, hostfile.FieldOwner)
+	}
+	if m.FieldCleared(hostfile.FieldGroup) {
+		fields = append(fields, hostfile.FieldGroup)
+	}
+	if m.FieldCleared(hostfile.FieldPermissions) {
+		fields = append(fields, hostfile.FieldPermissions)
+	}
+	if m.FieldCleared(hostfile.FieldHash) {
+		fields = append(fields, hostfile.FieldHash)
+	}
+	if m.FieldCleared(hostfile.FieldContent) {
+		fields = append(fields, hostfile.FieldContent)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *HostFileMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *HostFileMutation) ClearField(name string) error {
+	switch name {
+	case hostfile.FieldOwner:
+		m.ClearOwner()
+		return nil
+	case hostfile.FieldGroup:
+		m.ClearGroup()
+		return nil
+	case hostfile.FieldPermissions:
+		m.ClearPermissions()
+		return nil
+	case hostfile.FieldHash:
+		m.ClearHash()
+		return nil
+	case hostfile.FieldContent:
+		m.ClearContent()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *HostFileMutation) ResetField(name string) error {
+	switch name {
+	case hostfile.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case hostfile.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case hostfile.FieldPath:
+		m.ResetPath()
+		return nil
+	case hostfile.FieldOwner:
+		m.ResetOwner()
+		return nil
+	case hostfile.FieldGroup:
+		m.ResetGroup()
+		return nil
+	case hostfile.FieldPermissions:
+		m.ResetPermissions()
+		return nil
+	case hostfile.FieldSize:
+		m.ResetSize()
+		return nil
+	case hostfile.FieldHash:
+		m.ResetHash()
+		return nil
+	case hostfile.FieldContent:
+		m.ResetContent()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *HostFileMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.host != nil {
+		edges = append(edges, hostfile.EdgeHost)
+	}
+	if m.task != nil {
+		edges = append(edges, hostfile.EdgeTask)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *HostFileMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case hostfile.EdgeHost:
+		if id := m.host; id != nil {
+			return []ent.Value{*id}
+		}
+	case hostfile.EdgeTask:
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *HostFileMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *HostFileMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *HostFileMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedhost {
+		edges = append(edges, hostfile.EdgeHost)
+	}
+	if m.clearedtask {
+		edges = append(edges, hostfile.EdgeTask)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *HostFileMutation) EdgeCleared(name string) bool {
+	switch name {
+	case hostfile.EdgeHost:
+		return m.clearedhost
+	case hostfile.EdgeTask:
+		return m.clearedtask
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *HostFileMutation) ClearEdge(name string) error {
+	switch name {
+	case hostfile.EdgeHost:
+		m.ClearHost()
+		return nil
+	case hostfile.EdgeTask:
+		m.ClearTask()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *HostFileMutation) ResetEdge(name string) error {
+	switch name {
+	case hostfile.EdgeHost:
+		m.ResetHost()
+		return nil
+	case hostfile.EdgeTask:
+		m.ResetTask()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile edge %s", name)
+}
+
+// HostProcessMutation represents an operation that mutates the HostProcess nodes in the graph.
+type HostProcessMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	pid              *uint64
+	addpid           *int64
+	ppid             *uint64
+	addppid          *int64
+	name             *string
+	principal        *string
+	_path            *string
+	cmd              *string
+	env              *string
+	cwd              *string
+	status           *c2pb.Process_Status
+	clearedFields    map[string]struct{}
+	host             *int
+	clearedhost      bool
+	task             *int
+	clearedtask      bool
+	done             bool
+	oldValue         func(context.Context) (*HostProcess, error)
+	predicates       []predicate.HostProcess
+}
+
+var _ ent.Mutation = (*HostProcessMutation)(nil)
+
+// hostprocessOption allows management of the mutation configuration using functional options.
+type hostprocessOption func(*HostProcessMutation)
+
+// newHostProcessMutation creates new mutation for the HostProcess entity.
+func newHostProcessMutation(c config, op Op, opts ...hostprocessOption) *HostProcessMutation {
+	m := &HostProcessMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeHostProcess,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withHostProcessID sets the ID field of the mutation.
+func withHostProcessID(id int) hostprocessOption {
+	return func(m *HostProcessMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *HostProcess
+		)
+		m.oldValue = func(ctx context.Context) (*HostProcess, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().HostProcess.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withHostProcess sets the old HostProcess of the mutation.
+func withHostProcess(node *HostProcess) hostprocessOption {
+	return func(m *HostProcessMutation) {
+		m.oldValue = func(context.Context) (*HostProcess, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m HostProcessMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m HostProcessMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *HostProcessMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *HostProcessMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().HostProcess.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *HostProcessMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *HostProcessMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *HostProcessMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *HostProcessMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *HostProcessMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *HostProcessMutation) ResetLastModifiedAt() {
 	m.last_modified_at = nil
 }
 
 // SetPid sets the "pid" field.
-func (m *ProcessMutation) SetPid(u uint64) {
+func (m *HostProcessMutation) SetPid(u uint64) {
 	m.pid = &u
 	m.addpid = nil
 }
 
 // Pid returns the value of the "pid" field in the mutation.
-func (m *ProcessMutation) Pid() (r uint64, exists bool) {
+func (m *HostProcessMutation) Pid() (r uint64, exists bool) {
 	v := m.pid
 	if v == nil {
 		return
@@ -2916,10 +4027,10 @@ func (m *ProcessMutation) Pid() (r uint64, exists bool) {
 	return *v, true
 }
 
-// OldPid returns the old "pid" field's value of the Process entity.
-// If the Process object wasn't provided to the builder, the object is fetched from the database.
+// OldPid returns the old "pid" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProcessMutation) OldPid(ctx context.Context) (v uint64, err error) {
+func (m *HostProcessMutation) OldPid(ctx context.Context) (v uint64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPid is only allowed on UpdateOne operations")
 	}
@@ -2934,7 +4045,7 @@ func (m *ProcessMutation) OldPid(ctx context.Context) (v uint64, err error) {
 }
 
 // AddPid adds u to the "pid" field.
-func (m *ProcessMutation) AddPid(u int64) {
+func (m *HostProcessMutation) AddPid(u int64) {
 	if m.addpid != nil {
 		*m.addpid += u
 	} else {
@@ -2943,7 +4054,7 @@ func (m *ProcessMutation) AddPid(u int64) {
 }
 
 // AddedPid returns the value that was added to the "pid" field in this mutation.
-func (m *ProcessMutation) AddedPid() (r int64, exists bool) {
+func (m *HostProcessMutation) AddedPid() (r int64, exists bool) {
 	v := m.addpid
 	if v == nil {
 		return
@@ -2952,18 +4063,74 @@ func (m *ProcessMutation) AddedPid() (r int64, exists bool) {
 }
 
 // ResetPid resets all changes to the "pid" field.
-func (m *ProcessMutation) ResetPid() {
+func (m *HostProcessMutation) ResetPid() {
 	m.pid = nil
 	m.addpid = nil
 }
 
+// SetPpid sets the "ppid" field.
+func (m *HostProcessMutation) SetPpid(u uint64) {
+	m.ppid = &u
+	m.addppid = nil
+}
+
+// Ppid returns the value of the "ppid" field in the mutation.
+func (m *HostProcessMutation) Ppid() (r uint64, exists bool) {
+	v := m.ppid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPpid returns the old "ppid" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldPpid(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPpid is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPpid requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPpid: %w", err)
+	}
+	return oldValue.Ppid, nil
+}
+
+// AddPpid adds u to the "ppid" field.
+func (m *HostProcessMutation) AddPpid(u int64) {
+	if m.addppid != nil {
+		*m.addppid += u
+	} else {
+		m.addppid = &u
+	}
+}
+
+// AddedPpid returns the value that was added to the "ppid" field in this mutation.
+func (m *HostProcessMutation) AddedPpid() (r int64, exists bool) {
+	v := m.addppid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPpid resets all changes to the "ppid" field.
+func (m *HostProcessMutation) ResetPpid() {
+	m.ppid = nil
+	m.addppid = nil
+}
+
 // SetName sets the "name" field.
-func (m *ProcessMutation) SetName(s string) {
+func (m *HostProcessMutation) SetName(s string) {
 	m.name = &s
 }
 
 // Name returns the value of the "name" field in the mutation.
-func (m *ProcessMutation) Name() (r string, exists bool) {
+func (m *HostProcessMutation) Name() (r string, exists bool) {
 	v := m.name
 	if v == nil {
 		return
@@ -2971,10 +4138,10 @@ func (m *ProcessMutation) Name() (r string, exists bool) {
 	return *v, true
 }
 
-// OldName returns the old "name" field's value of the Process entity.
-// If the Process object wasn't provided to the builder, the object is fetched from the database.
+// OldName returns the old "name" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProcessMutation) OldName(ctx context.Context) (v string, err error) {
+func (m *HostProcessMutation) OldName(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldName is only allowed on UpdateOne operations")
 	}
@@ -2989,17 +4156,17 @@ func (m *ProcessMutation) OldName(ctx context.Context) (v string, err error) {
 }
 
 // ResetName resets all changes to the "name" field.
-func (m *ProcessMutation) ResetName() {
+func (m *HostProcessMutation) ResetName() {
 	m.name = nil
 }
 
 // SetPrincipal sets the "principal" field.
-func (m *ProcessMutation) SetPrincipal(s string) {
+func (m *HostProcessMutation) SetPrincipal(s string) {
 	m.principal = &s
 }
 
 // Principal returns the value of the "principal" field in the mutation.
-func (m *ProcessMutation) Principal() (r string, exists bool) {
+func (m *HostProcessMutation) Principal() (r string, exists bool) {
 	v := m.principal
 	if v == nil {
 		return
@@ -3007,10 +4174,10 @@ func (m *ProcessMutation) Principal() (r string, exists bool) {
 	return *v, true
 }
 
-// OldPrincipal returns the old "principal" field's value of the Process entity.
-// If the Process object wasn't provided to the builder, the object is fetched from the database.
+// OldPrincipal returns the old "principal" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProcessMutation) OldPrincipal(ctx context.Context) (v string, err error) {
+func (m *HostProcessMutation) OldPrincipal(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPrincipal is only allowed on UpdateOne operations")
 	}
@@ -3025,27 +4192,259 @@ func (m *ProcessMutation) OldPrincipal(ctx context.Context) (v string, err error
 }
 
 // ResetPrincipal resets all changes to the "principal" field.
-func (m *ProcessMutation) ResetPrincipal() {
+func (m *HostProcessMutation) ResetPrincipal() {
 	m.principal = nil
 }
 
+// SetPath sets the "path" field.
+func (m *HostProcessMutation) SetPath(s string) {
+	m._path = &s
+}
+
+// Path returns the value of the "path" field in the mutation.
+func (m *HostProcessMutation) Path() (r string, exists bool) {
+	v := m._path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPath returns the old "path" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+	}
+	return oldValue.Path, nil
+}
+
+// ClearPath clears the value of the "path" field.
+func (m *HostProcessMutation) ClearPath() {
+	m._path = nil
+	m.clearedFields[hostprocess.FieldPath] = struct{}{}
+}
+
+// PathCleared returns if the "path" field was cleared in this mutation.
+func (m *HostProcessMutation) PathCleared() bool {
+	_, ok := m.clearedFields[hostprocess.FieldPath]
+	return ok
+}
+
+// ResetPath resets all changes to the "path" field.
+func (m *HostProcessMutation) ResetPath() {
+	m._path = nil
+	delete(m.clearedFields, hostprocess.FieldPath)
+}
+
+// SetCmd sets the "cmd" field.
+func (m *HostProcessMutation) SetCmd(s string) {
+	m.cmd = &s
+}
+
+// Cmd returns the value of the "cmd" field in the mutation.
+func (m *HostProcessMutation) Cmd() (r string, exists bool) {
+	v := m.cmd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCmd returns the old "cmd" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldCmd(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCmd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCmd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCmd: %w", err)
+	}
+	return oldValue.Cmd, nil
+}
+
+// ClearCmd clears the value of the "cmd" field.
+func (m *HostProcessMutation) ClearCmd() {
+	m.cmd = nil
+	m.clearedFields[hostprocess.FieldCmd] = struct{}{}
+}
+
+// CmdCleared returns if the "cmd" field was cleared in this mutation.
+func (m *HostProcessMutation) CmdCleared() bool {
+	_, ok := m.clearedFields[hostprocess.FieldCmd]
+	return ok
+}
+
+// ResetCmd resets all changes to the "cmd" field.
+func (m *HostProcessMutation) ResetCmd() {
+	m.cmd = nil
+	delete(m.clearedFields, hostprocess.FieldCmd)
+}
+
+// SetEnv sets the "env" field.
+func (m *HostProcessMutation) SetEnv(s string) {
+	m.env = &s
+}
+
+// Env returns the value of the "env" field in the mutation.
+func (m *HostProcessMutation) Env() (r string, exists bool) {
+	v := m.env
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnv returns the old "env" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldEnv(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnv: %w", err)
+	}
+	return oldValue.Env, nil
+}
+
+// ClearEnv clears the value of the "env" field.
+func (m *HostProcessMutation) ClearEnv() {
+	m.env = nil
+	m.clearedFields[hostprocess.FieldEnv] = struct{}{}
+}
+
+// EnvCleared returns if the "env" field was cleared in this mutation.
+func (m *HostProcessMutation) EnvCleared() bool {
+	_, ok := m.clearedFields[hostprocess.FieldEnv]
+	return ok
+}
+
+// ResetEnv resets all changes to the "env" field.
+func (m *HostProcessMutation) ResetEnv() {
+	m.env = nil
+	delete(m.clearedFields, hostprocess.FieldEnv)
+}
+
+// SetCwd sets the "cwd" field.
+func (m *HostProcessMutation) SetCwd(s string) {
+	m.cwd = &s
+}
+
+// Cwd returns the value of the "cwd" field in the mutation.
+func (m *HostProcessMutation) Cwd() (r string, exists bool) {
+	v := m.cwd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCwd returns the old "cwd" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldCwd(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCwd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCwd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCwd: %w", err)
+	}
+	return oldValue.Cwd, nil
+}
+
+// ClearCwd clears the value of the "cwd" field.
+func (m *HostProcessMutation) ClearCwd() {
+	m.cwd = nil
+	m.clearedFields[hostprocess.FieldCwd] = struct{}{}
+}
+
+// CwdCleared returns if the "cwd" field was cleared in this mutation.
+func (m *HostProcessMutation) CwdCleared() bool {
+	_, ok := m.clearedFields[hostprocess.FieldCwd]
+	return ok
+}
+
+// ResetCwd resets all changes to the "cwd" field.
+func (m *HostProcessMutation) ResetCwd() {
+	m.cwd = nil
+	delete(m.clearedFields, hostprocess.FieldCwd)
+}
+
+// SetStatus sets the "status" field.
+func (m *HostProcessMutation) SetStatus(cs c2pb.Process_Status) {
+	m.status = &cs
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *HostProcessMutation) Status() (r c2pb.Process_Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldStatus(ctx context.Context) (v c2pb.Process_Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *HostProcessMutation) ResetStatus() {
+	m.status = nil
+}
+
 // SetHostID sets the "host" edge to the Host entity by id.
-func (m *ProcessMutation) SetHostID(id int) {
+func (m *HostProcessMutation) SetHostID(id int) {
 	m.host = &id
 }
 
 // ClearHost clears the "host" edge to the Host entity.
-func (m *ProcessMutation) ClearHost() {
+func (m *HostProcessMutation) ClearHost() {
 	m.clearedhost = true
 }
 
 // HostCleared reports if the "host" edge to the Host entity was cleared.
-func (m *ProcessMutation) HostCleared() bool {
+func (m *HostProcessMutation) HostCleared() bool {
 	return m.clearedhost
 }
 
 // HostID returns the "host" edge ID in the mutation.
-func (m *ProcessMutation) HostID() (id int, exists bool) {
+func (m *HostProcessMutation) HostID() (id int, exists bool) {
 	if m.host != nil {
 		return *m.host, true
 	}
@@ -3055,7 +4454,7 @@ func (m *ProcessMutation) HostID() (id int, exists bool) {
 // HostIDs returns the "host" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // HostID instead. It exists only for internal usage by the builders.
-func (m *ProcessMutation) HostIDs() (ids []int) {
+func (m *HostProcessMutation) HostIDs() (ids []int) {
 	if id := m.host; id != nil {
 		ids = append(ids, *id)
 	}
@@ -3063,28 +4462,28 @@ func (m *ProcessMutation) HostIDs() (ids []int) {
 }
 
 // ResetHost resets all changes to the "host" edge.
-func (m *ProcessMutation) ResetHost() {
+func (m *HostProcessMutation) ResetHost() {
 	m.host = nil
 	m.clearedhost = false
 }
 
 // SetTaskID sets the "task" edge to the Task entity by id.
-func (m *ProcessMutation) SetTaskID(id int) {
+func (m *HostProcessMutation) SetTaskID(id int) {
 	m.task = &id
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (m *ProcessMutation) ClearTask() {
+func (m *HostProcessMutation) ClearTask() {
 	m.clearedtask = true
 }
 
 // TaskCleared reports if the "task" edge to the Task entity was cleared.
-func (m *ProcessMutation) TaskCleared() bool {
+func (m *HostProcessMutation) TaskCleared() bool {
 	return m.clearedtask
 }
 
 // TaskID returns the "task" edge ID in the mutation.
-func (m *ProcessMutation) TaskID() (id int, exists bool) {
+func (m *HostProcessMutation) TaskID() (id int, exists bool) {
 	if m.task != nil {
 		return *m.task, true
 	}
@@ -3094,7 +4493,7 @@ func (m *ProcessMutation) TaskID() (id int, exists bool) {
 // TaskIDs returns the "task" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // TaskID instead. It exists only for internal usage by the builders.
-func (m *ProcessMutation) TaskIDs() (ids []int) {
+func (m *HostProcessMutation) TaskIDs() (ids []int) {
 	if id := m.task; id != nil {
 		ids = append(ids, *id)
 	}
@@ -3102,20 +4501,20 @@ func (m *ProcessMutation) TaskIDs() (ids []int) {
 }
 
 // ResetTask resets all changes to the "task" edge.
-func (m *ProcessMutation) ResetTask() {
+func (m *HostProcessMutation) ResetTask() {
 	m.task = nil
 	m.clearedtask = false
 }
 
-// Where appends a list predicates to the ProcessMutation builder.
-func (m *ProcessMutation) Where(ps ...predicate.Process) {
+// Where appends a list predicates to the HostProcessMutation builder.
+func (m *HostProcessMutation) Where(ps ...predicate.HostProcess) {
 	m.predicates = append(m.predicates, ps...)
 }
 
-// WhereP appends storage-level predicates to the ProcessMutation builder. Using this method,
+// WhereP appends storage-level predicates to the HostProcessMutation builder. Using this method,
 // users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *ProcessMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.Process, len(ps))
+func (m *HostProcessMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.HostProcess, len(ps))
 	for i := range ps {
 		p[i] = ps[i]
 	}
@@ -3123,39 +4522,57 @@ func (m *ProcessMutation) WhereP(ps ...func(*sql.Selector)) {
 }
 
 // Op returns the operation name.
-func (m *ProcessMutation) Op() Op {
+func (m *HostProcessMutation) Op() Op {
 	return m.op
 }
 
 // SetOp allows setting the mutation operation.
-func (m *ProcessMutation) SetOp(op Op) {
+func (m *HostProcessMutation) SetOp(op Op) {
 	m.op = op
 }
 
-// Type returns the node type of this mutation (Process).
-func (m *ProcessMutation) Type() string {
+// Type returns the node type of this mutation (HostProcess).
+func (m *HostProcessMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *ProcessMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+func (m *HostProcessMutation) Fields() []string {
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
-		fields = append(fields, process.FieldCreatedAt)
+		fields = append(fields, hostprocess.FieldCreatedAt)
 	}
 	if m.last_modified_at != nil {
-		fields = append(fields, process.FieldLastModifiedAt)
+		fields = append(fields, hostprocess.FieldLastModifiedAt)
 	}
 	if m.pid != nil {
-		fields = append(fields, process.FieldPid)
+		fields = append(fields, hostprocess.FieldPid)
+	}
+	if m.ppid != nil {
+		fields = append(fields, hostprocess.FieldPpid)
 	}
 	if m.name != nil {
-		fields = append(fields, process.FieldName)
+		fields = append(fields, hostprocess.FieldName)
 	}
 	if m.principal != nil {
-		fields = append(fields, process.FieldPrincipal)
+		fields = append(fields, hostprocess.FieldPrincipal)
+	}
+	if m._path != nil {
+		fields = append(fields, hostprocess.FieldPath)
+	}
+	if m.cmd != nil {
+		fields = append(fields, hostprocess.FieldCmd)
+	}
+	if m.env != nil {
+		fields = append(fields, hostprocess.FieldEnv)
+	}
+	if m.cwd != nil {
+		fields = append(fields, hostprocess.FieldCwd)
+	}
+	if m.status != nil {
+		fields = append(fields, hostprocess.FieldStatus)
 	}
 	return fields
 }
@@ -3163,18 +4580,30 @@ func (m *ProcessMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *ProcessMutation) Field(name string) (ent.Value, bool) {
+func (m *HostProcessMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case process.FieldCreatedAt:
+	case hostprocess.FieldCreatedAt:
 		return m.CreatedAt()
-	case process.FieldLastModifiedAt:
+	case hostprocess.FieldLastModifiedAt:
 		return m.LastModifiedAt()
-	case process.FieldPid:
+	case hostprocess.FieldPid:
 		return m.Pid()
-	case process.FieldName:
+	case hostprocess.FieldPpid:
+		return m.Ppid()
+	case hostprocess.FieldName:
 		return m.Name()
-	case process.FieldPrincipal:
+	case hostprocess.FieldPrincipal:
 		return m.Principal()
+	case hostprocess.FieldPath:
+		return m.Path()
+	case hostprocess.FieldCmd:
+		return m.Cmd()
+	case hostprocess.FieldEnv:
+		return m.Env()
+	case hostprocess.FieldCwd:
+		return m.Cwd()
+	case hostprocess.FieldStatus:
+		return m.Status()
 	}
 	return nil, false
 }
@@ -3182,72 +4611,129 @@ func (m *ProcessMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *ProcessMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *HostProcessMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case process.FieldCreatedAt:
+	case hostprocess.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case process.FieldLastModifiedAt:
+	case hostprocess.FieldLastModifiedAt:
 		return m.OldLastModifiedAt(ctx)
-	case process.FieldPid:
+	case hostprocess.FieldPid:
 		return m.OldPid(ctx)
-	case process.FieldName:
+	case hostprocess.FieldPpid:
+		return m.OldPpid(ctx)
+	case hostprocess.FieldName:
 		return m.OldName(ctx)
-	case process.FieldPrincipal:
+	case hostprocess.FieldPrincipal:
 		return m.OldPrincipal(ctx)
+	case hostprocess.FieldPath:
+		return m.OldPath(ctx)
+	case hostprocess.FieldCmd:
+		return m.OldCmd(ctx)
+	case hostprocess.FieldEnv:
+		return m.OldEnv(ctx)
+	case hostprocess.FieldCwd:
+		return m.OldCwd(ctx)
+	case hostprocess.FieldStatus:
+		return m.OldStatus(ctx)
 	}
-	return nil, fmt.Errorf("unknown Process field %s", name)
+	return nil, fmt.Errorf("unknown HostProcess field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *ProcessMutation) SetField(name string, value ent.Value) error {
+func (m *HostProcessMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case process.FieldCreatedAt:
+	case hostprocess.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
 		return nil
-	case process.FieldLastModifiedAt:
+	case hostprocess.FieldLastModifiedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLastModifiedAt(v)
 		return nil
-	case process.FieldPid:
+	case hostprocess.FieldPid:
 		v, ok := value.(uint64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPid(v)
 		return nil
-	case process.FieldName:
+	case hostprocess.FieldPpid:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPpid(v)
+		return nil
+	case hostprocess.FieldName:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
 		return nil
-	case process.FieldPrincipal:
+	case hostprocess.FieldPrincipal:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPrincipal(v)
 		return nil
+	case hostprocess.FieldPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPath(v)
+		return nil
+	case hostprocess.FieldCmd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCmd(v)
+		return nil
+	case hostprocess.FieldEnv:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnv(v)
+		return nil
+	case hostprocess.FieldCwd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCwd(v)
+		return nil
+	case hostprocess.FieldStatus:
+		v, ok := value.(c2pb.Process_Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
 	}
-	return fmt.Errorf("unknown Process field %s", name)
+	return fmt.Errorf("unknown HostProcess field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *ProcessMutation) AddedFields() []string {
+func (m *HostProcessMutation) AddedFields() []string {
 	var fields []string
 	if m.addpid != nil {
-		fields = append(fields, process.FieldPid)
+		fields = append(fields, hostprocess.FieldPid)
+	}
+	if m.addppid != nil {
+		fields = append(fields, hostprocess.FieldPpid)
 	}
 	return fields
 }
@@ -3255,10 +4741,12 @@ func (m *ProcessMutation) AddedFields() []string {
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *ProcessMutation) AddedField(name string) (ent.Value, bool) {
+func (m *HostProcessMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case process.FieldPid:
+	case hostprocess.FieldPid:
 		return m.AddedPid()
+	case hostprocess.FieldPpid:
+		return m.AddedPpid()
 	}
 	return nil, false
 }
@@ -3266,82 +4754,134 @@ func (m *ProcessMutation) AddedField(name string) (ent.Value, bool) {
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *ProcessMutation) AddField(name string, value ent.Value) error {
+func (m *HostProcessMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case process.FieldPid:
+	case hostprocess.FieldPid:
 		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPid(v)
 		return nil
+	case hostprocess.FieldPpid:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPpid(v)
+		return nil
 	}
-	return fmt.Errorf("unknown Process numeric field %s", name)
+	return fmt.Errorf("unknown HostProcess numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *ProcessMutation) ClearedFields() []string {
-	return nil
+func (m *HostProcessMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(hostprocess.FieldPath) {
+		fields = append(fields, hostprocess.FieldPath)
+	}
+	if m.FieldCleared(hostprocess.FieldCmd) {
+		fields = append(fields, hostprocess.FieldCmd)
+	}
+	if m.FieldCleared(hostprocess.FieldEnv) {
+		fields = append(fields, hostprocess.FieldEnv)
+	}
+	if m.FieldCleared(hostprocess.FieldCwd) {
+		fields = append(fields, hostprocess.FieldCwd)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *ProcessMutation) FieldCleared(name string) bool {
+func (m *HostProcessMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *ProcessMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Process nullable field %s", name)
+func (m *HostProcessMutation) ClearField(name string) error {
+	switch name {
+	case hostprocess.FieldPath:
+		m.ClearPath()
+		return nil
+	case hostprocess.FieldCmd:
+		m.ClearCmd()
+		return nil
+	case hostprocess.FieldEnv:
+		m.ClearEnv()
+		return nil
+	case hostprocess.FieldCwd:
+		m.ClearCwd()
+		return nil
+	}
+	return fmt.Errorf("unknown HostProcess nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *ProcessMutation) ResetField(name string) error {
+func (m *HostProcessMutation) ResetField(name string) error {
 	switch name {
-	case process.FieldCreatedAt:
+	case hostprocess.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
-	case process.FieldLastModifiedAt:
+	case hostprocess.FieldLastModifiedAt:
 		m.ResetLastModifiedAt()
 		return nil
-	case process.FieldPid:
+	case hostprocess.FieldPid:
 		m.ResetPid()
 		return nil
-	case process.FieldName:
+	case hostprocess.FieldPpid:
+		m.ResetPpid()
+		return nil
+	case hostprocess.FieldName:
 		m.ResetName()
 		return nil
-	case process.FieldPrincipal:
+	case hostprocess.FieldPrincipal:
 		m.ResetPrincipal()
 		return nil
+	case hostprocess.FieldPath:
+		m.ResetPath()
+		return nil
+	case hostprocess.FieldCmd:
+		m.ResetCmd()
+		return nil
+	case hostprocess.FieldEnv:
+		m.ResetEnv()
+		return nil
+	case hostprocess.FieldCwd:
+		m.ResetCwd()
+		return nil
+	case hostprocess.FieldStatus:
+		m.ResetStatus()
+		return nil
 	}
-	return fmt.Errorf("unknown Process field %s", name)
+	return fmt.Errorf("unknown HostProcess field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *ProcessMutation) AddedEdges() []string {
+func (m *HostProcessMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.host != nil {
-		edges = append(edges, process.EdgeHost)
+		edges = append(edges, hostprocess.EdgeHost)
 	}
 	if m.task != nil {
-		edges = append(edges, process.EdgeTask)
+		edges = append(edges, hostprocess.EdgeTask)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *ProcessMutation) AddedIDs(name string) []ent.Value {
+func (m *HostProcessMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case process.EdgeHost:
+	case hostprocess.EdgeHost:
 		if id := m.host; id != nil {
 			return []ent.Value{*id}
 		}
-	case process.EdgeTask:
+	case hostprocess.EdgeTask:
 		if id := m.task; id != nil {
 			return []ent.Value{*id}
 		}
@@ -3350,36 +4890,36 @@ func (m *ProcessMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *ProcessMutation) RemovedEdges() []string {
+func (m *HostProcessMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *ProcessMutation) RemovedIDs(name string) []ent.Value {
+func (m *HostProcessMutation) RemovedIDs(name string) []ent.Value {
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *ProcessMutation) ClearedEdges() []string {
+func (m *HostProcessMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.clearedhost {
-		edges = append(edges, process.EdgeHost)
+		edges = append(edges, hostprocess.EdgeHost)
 	}
 	if m.clearedtask {
-		edges = append(edges, process.EdgeTask)
+		edges = append(edges, hostprocess.EdgeTask)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *ProcessMutation) EdgeCleared(name string) bool {
+func (m *HostProcessMutation) EdgeCleared(name string) bool {
 	switch name {
-	case process.EdgeHost:
+	case hostprocess.EdgeHost:
 		return m.clearedhost
-	case process.EdgeTask:
+	case hostprocess.EdgeTask:
 		return m.clearedtask
 	}
 	return false
@@ -3387,30 +4927,30 @@ func (m *ProcessMutation) EdgeCleared(name string) bool {
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *ProcessMutation) ClearEdge(name string) error {
+func (m *HostProcessMutation) ClearEdge(name string) error {
 	switch name {
-	case process.EdgeHost:
+	case hostprocess.EdgeHost:
 		m.ClearHost()
 		return nil
-	case process.EdgeTask:
+	case hostprocess.EdgeTask:
 		m.ClearTask()
 		return nil
 	}
-	return fmt.Errorf("unknown Process unique edge %s", name)
+	return fmt.Errorf("unknown HostProcess unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *ProcessMutation) ResetEdge(name string) error {
+func (m *HostProcessMutation) ResetEdge(name string) error {
 	switch name {
-	case process.EdgeHost:
+	case hostprocess.EdgeHost:
 		m.ResetHost()
 		return nil
-	case process.EdgeTask:
+	case hostprocess.EdgeTask:
 		m.ResetTask()
 		return nil
 	}
-	return fmt.Errorf("unknown Process edge %s", name)
+	return fmt.Errorf("unknown HostProcess edge %s", name)
 }
 
 // QuestMutation represents an operation that mutates the Quest nodes in the graph.
@@ -4686,6 +6226,9 @@ type TaskMutation struct {
 	clearedquest              bool
 	beacon                    *int
 	clearedbeacon             bool
+	reported_files            map[int]struct{}
+	removedreported_files     map[int]struct{}
+	clearedreported_files     bool
 	reported_processes        map[int]struct{}
 	removedreported_processes map[int]struct{}
 	clearedreported_processes bool
@@ -5243,7 +6786,61 @@ func (m *TaskMutation) ResetBeacon() {
 	m.clearedbeacon = false
 }
 
-// AddReportedProcessIDs adds the "reported_processes" edge to the Process entity by ids.
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by ids.
+func (m *TaskMutation) AddReportedFileIDs(ids ...int) {
+	if m.reported_files == nil {
+		m.reported_files = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.reported_files[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReportedFiles clears the "reported_files" edge to the HostFile entity.
+func (m *TaskMutation) ClearReportedFiles() {
+	m.clearedreported_files = true
+}
+
+// ReportedFilesCleared reports if the "reported_files" edge to the HostFile entity was cleared.
+func (m *TaskMutation) ReportedFilesCleared() bool {
+	return m.clearedreported_files
+}
+
+// RemoveReportedFileIDs removes the "reported_files" edge to the HostFile entity by IDs.
+func (m *TaskMutation) RemoveReportedFileIDs(ids ...int) {
+	if m.removedreported_files == nil {
+		m.removedreported_files = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.reported_files, ids[i])
+		m.removedreported_files[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReportedFiles returns the removed IDs of the "reported_files" edge to the HostFile entity.
+func (m *TaskMutation) RemovedReportedFilesIDs() (ids []int) {
+	for id := range m.removedreported_files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReportedFilesIDs returns the "reported_files" edge IDs in the mutation.
+func (m *TaskMutation) ReportedFilesIDs() (ids []int) {
+	for id := range m.reported_files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReportedFiles resets all changes to the "reported_files" edge.
+func (m *TaskMutation) ResetReportedFiles() {
+	m.reported_files = nil
+	m.clearedreported_files = false
+	m.removedreported_files = nil
+}
+
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by ids.
 func (m *TaskMutation) AddReportedProcessIDs(ids ...int) {
 	if m.reported_processes == nil {
 		m.reported_processes = make(map[int]struct{})
@@ -5253,17 +6850,17 @@ func (m *TaskMutation) AddReportedProcessIDs(ids ...int) {
 	}
 }
 
-// ClearReportedProcesses clears the "reported_processes" edge to the Process entity.
+// ClearReportedProcesses clears the "reported_processes" edge to the HostProcess entity.
 func (m *TaskMutation) ClearReportedProcesses() {
 	m.clearedreported_processes = true
 }
 
-// ReportedProcessesCleared reports if the "reported_processes" edge to the Process entity was cleared.
+// ReportedProcessesCleared reports if the "reported_processes" edge to the HostProcess entity was cleared.
 func (m *TaskMutation) ReportedProcessesCleared() bool {
 	return m.clearedreported_processes
 }
 
-// RemoveReportedProcessIDs removes the "reported_processes" edge to the Process entity by IDs.
+// RemoveReportedProcessIDs removes the "reported_processes" edge to the HostProcess entity by IDs.
 func (m *TaskMutation) RemoveReportedProcessIDs(ids ...int) {
 	if m.removedreported_processes == nil {
 		m.removedreported_processes = make(map[int]struct{})
@@ -5274,7 +6871,7 @@ func (m *TaskMutation) RemoveReportedProcessIDs(ids ...int) {
 	}
 }
 
-// RemovedReportedProcesses returns the removed IDs of the "reported_processes" edge to the Process entity.
+// RemovedReportedProcesses returns the removed IDs of the "reported_processes" edge to the HostProcess entity.
 func (m *TaskMutation) RemovedReportedProcessesIDs() (ids []int) {
 	for id := range m.removedreported_processes {
 		ids = append(ids, id)
@@ -5597,12 +7194,15 @@ func (m *TaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.quest != nil {
 		edges = append(edges, task.EdgeQuest)
 	}
 	if m.beacon != nil {
 		edges = append(edges, task.EdgeBeacon)
+	}
+	if m.reported_files != nil {
+		edges = append(edges, task.EdgeReportedFiles)
 	}
 	if m.reported_processes != nil {
 		edges = append(edges, task.EdgeReportedProcesses)
@@ -5622,6 +7222,12 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 		if id := m.beacon; id != nil {
 			return []ent.Value{*id}
 		}
+	case task.EdgeReportedFiles:
+		ids := make([]ent.Value, 0, len(m.reported_files))
+		for id := range m.reported_files {
+			ids = append(ids, id)
+		}
+		return ids
 	case task.EdgeReportedProcesses:
 		ids := make([]ent.Value, 0, len(m.reported_processes))
 		for id := range m.reported_processes {
@@ -5634,7 +7240,10 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.removedreported_files != nil {
+		edges = append(edges, task.EdgeReportedFiles)
+	}
 	if m.removedreported_processes != nil {
 		edges = append(edges, task.EdgeReportedProcesses)
 	}
@@ -5645,6 +7254,12 @@ func (m *TaskMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case task.EdgeReportedFiles:
+		ids := make([]ent.Value, 0, len(m.removedreported_files))
+		for id := range m.removedreported_files {
+			ids = append(ids, id)
+		}
+		return ids
 	case task.EdgeReportedProcesses:
 		ids := make([]ent.Value, 0, len(m.removedreported_processes))
 		for id := range m.removedreported_processes {
@@ -5657,12 +7272,15 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedquest {
 		edges = append(edges, task.EdgeQuest)
 	}
 	if m.clearedbeacon {
 		edges = append(edges, task.EdgeBeacon)
+	}
+	if m.clearedreported_files {
+		edges = append(edges, task.EdgeReportedFiles)
 	}
 	if m.clearedreported_processes {
 		edges = append(edges, task.EdgeReportedProcesses)
@@ -5678,6 +7296,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 		return m.clearedquest
 	case task.EdgeBeacon:
 		return m.clearedbeacon
+	case task.EdgeReportedFiles:
+		return m.clearedreported_files
 	case task.EdgeReportedProcesses:
 		return m.clearedreported_processes
 	}
@@ -5707,6 +7327,9 @@ func (m *TaskMutation) ResetEdge(name string) error {
 		return nil
 	case task.EdgeBeacon:
 		m.ResetBeacon()
+		return nil
+	case task.EdgeReportedFiles:
+		m.ResetReportedFiles()
 		return nil
 	case task.EdgeReportedProcesses:
 		m.ResetReportedProcesses()
