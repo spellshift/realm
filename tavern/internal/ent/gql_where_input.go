@@ -1015,10 +1015,10 @@ type HostWhereInput struct {
 	PrimaryIPContainsFold *string  `json:"primaryIPContainsFold,omitempty"`
 
 	// "platform" field predicates.
-	Platform      *host.Platform  `json:"platform,omitempty"`
-	PlatformNEQ   *host.Platform  `json:"platformNEQ,omitempty"`
-	PlatformIn    []host.Platform `json:"platformIn,omitempty"`
-	PlatformNotIn []host.Platform `json:"platformNotIn,omitempty"`
+	Platform      *c2pb.Host_Platform  `json:"platform,omitempty"`
+	PlatformNEQ   *c2pb.Host_Platform  `json:"platformNEQ,omitempty"`
+	PlatformIn    []c2pb.Host_Platform `json:"platformIn,omitempty"`
+	PlatformNotIn []c2pb.Host_Platform `json:"platformNotIn,omitempty"`
 
 	// "last_seen_at" field predicates.
 	LastSeenAt       *time.Time  `json:"lastSeenAt,omitempty"`

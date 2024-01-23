@@ -114,7 +114,7 @@ var (
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s c2pb.Process_Status) error {
 	switch s.String() {
-	case "STATUS_ZOMBIE", "STATUS_TRACING", "STATUS_WAKE_KILL", "STATUS_RUN", "STATUS_DEAD", "STATUS_UNSPECIFIED", "STATUS_UNKNOWN", "STATUS_SLEEP", "STATUS_PARKED", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_IDLE", "STATUS_STOP", "STATUS_WAKING", "STATUS_LOCK_BLOCKED":
+	case "STATUS_DEAD", "STATUS_PARKED", "STATUS_UNKNOWN", "STATUS_IDLE", "STATUS_RUN", "STATUS_SLEEP", "STATUS_ZOMBIE", "STATUS_TRACING", "STATUS_LOCK_BLOCKED", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNSPECIFIED", "STATUS_STOP", "STATUS_WAKE_KILL", "STATUS_WAKING":
 		return nil
 	default:
 		return fmt.Errorf("hostprocess: invalid enum value for status field: %q", s)

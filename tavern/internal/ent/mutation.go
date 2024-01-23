@@ -1752,7 +1752,7 @@ type HostMutation struct {
 	identifier       *string
 	name             *string
 	primary_ip       *string
-	platform         *host.Platform
+	platform         *c2pb.Host_Platform
 	last_seen_at     *time.Time
 	clearedFields    map[string]struct{}
 	tags             map[int]struct{}
@@ -2074,12 +2074,12 @@ func (m *HostMutation) ResetPrimaryIP() {
 }
 
 // SetPlatform sets the "platform" field.
-func (m *HostMutation) SetPlatform(h host.Platform) {
-	m.platform = &h
+func (m *HostMutation) SetPlatform(cp c2pb.Host_Platform) {
+	m.platform = &cp
 }
 
 // Platform returns the value of the "platform" field in the mutation.
-func (m *HostMutation) Platform() (r host.Platform, exists bool) {
+func (m *HostMutation) Platform() (r c2pb.Host_Platform, exists bool) {
 	v := m.platform
 	if v == nil {
 		return
@@ -2090,7 +2090,7 @@ func (m *HostMutation) Platform() (r host.Platform, exists bool) {
 // OldPlatform returns the old "platform" field's value of the Host entity.
 // If the Host object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HostMutation) OldPlatform(ctx context.Context) (v host.Platform, err error) {
+func (m *HostMutation) OldPlatform(ctx context.Context) (v c2pb.Host_Platform, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPlatform is only allowed on UpdateOne operations")
 	}
@@ -2466,7 +2466,7 @@ func (m *HostMutation) SetField(name string, value ent.Value) error {
 		m.SetPrimaryIP(v)
 		return nil
 	case host.FieldPlatform:
-		v, ok := value.(host.Platform)
+		v, ok := value.(c2pb.Host_Platform)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

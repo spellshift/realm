@@ -18,6 +18,7 @@ import (
 // NewRandomBeacon creates and returns a new randomized beacon.
 func NewRandomBeacon(ctx context.Context, graph *ent.Client) *ent.Beacon {
 	host := graph.Host.Create().
+		SetPlatform(c2pb.Host_PLATFORM_UNSPECIFIED).
 		SetIdentifier(namegen.NewComplex()).
 		SaveX(ctx)
 

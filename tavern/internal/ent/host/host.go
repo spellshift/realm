@@ -4,12 +4,12 @@ package host
 
 import (
 	"fmt"
-	"io"
-	"strconv"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/99designs/gqlgen/graphql"
+	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 const (
@@ -101,29 +101,10 @@ var (
 	NameValidator func(string) error
 )
 
-// Platform defines the type for the "platform" enum field.
-type Platform string
-
-// PlatformUnknown is the default value of the Platform enum.
-const DefaultPlatform = PlatformUnknown
-
-// Platform values.
-const (
-	PlatformWindows Platform = "Windows"
-	PlatformLinux   Platform = "Linux"
-	PlatformMacOS   Platform = "MacOS"
-	PlatformBSD     Platform = "BSD"
-	PlatformUnknown Platform = "Unknown"
-)
-
-func (pl Platform) String() string {
-	return string(pl)
-}
-
 // PlatformValidator is a validator for the "platform" field enum values. It is called by the builders before save.
-func PlatformValidator(pl Platform) error {
-	switch pl {
-	case PlatformWindows, PlatformLinux, PlatformMacOS, PlatformBSD, PlatformUnknown:
+func PlatformValidator(pl c2pb.Host_Platform) error {
+	switch pl.String() {
+	case "PLATFORM_MACOS", "PLATFORM_BSD", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX":
 		return nil
 	default:
 		return fmt.Errorf("host: invalid enum value for platform field: %q", pl)
@@ -236,20 +217,9 @@ func newProcessesStep() *sqlgraph.Step {
 	)
 }
 
-// MarshalGQL implements graphql.Marshaler interface.
-func (e Platform) MarshalGQL(w io.Writer) {
-	io.WriteString(w, strconv.Quote(e.String()))
-}
-
-// UnmarshalGQL implements graphql.Unmarshaler interface.
-func (e *Platform) UnmarshalGQL(val interface{}) error {
-	str, ok := val.(string)
-	if !ok {
-		return fmt.Errorf("enum %T must be a string", val)
-	}
-	*e = Platform(str)
-	if err := PlatformValidator(*e); err != nil {
-		return fmt.Errorf("%s is not a valid Platform", str)
-	}
-	return nil
-}
+var (
+	// c2pb.Host_Platform must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*c2pb.Host_Platform)(nil)
+	// c2pb.Host_Platform must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*c2pb.Host_Platform)(nil)
+)

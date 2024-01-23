@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -381,22 +382,22 @@ func PrimaryIPContainsFold(v string) predicate.Host {
 }
 
 // PlatformEQ applies the EQ predicate on the "platform" field.
-func PlatformEQ(v Platform) predicate.Host {
+func PlatformEQ(v c2pb.Host_Platform) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldPlatform, v))
 }
 
 // PlatformNEQ applies the NEQ predicate on the "platform" field.
-func PlatformNEQ(v Platform) predicate.Host {
+func PlatformNEQ(v c2pb.Host_Platform) predicate.Host {
 	return predicate.Host(sql.FieldNEQ(FieldPlatform, v))
 }
 
 // PlatformIn applies the In predicate on the "platform" field.
-func PlatformIn(vs ...Platform) predicate.Host {
+func PlatformIn(vs ...c2pb.Host_Platform) predicate.Host {
 	return predicate.Host(sql.FieldIn(FieldPlatform, vs...))
 }
 
 // PlatformNotIn applies the NotIn predicate on the "platform" field.
-func PlatformNotIn(vs ...Platform) predicate.Host {
+func PlatformNotIn(vs ...c2pb.Host_Platform) predicate.Host {
 	return predicate.Host(sql.FieldNotIn(FieldPlatform, vs...))
 }
 

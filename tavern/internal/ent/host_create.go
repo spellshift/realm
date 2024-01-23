@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
@@ -88,16 +89,8 @@ func (hc *HostCreate) SetNillablePrimaryIP(s *string) *HostCreate {
 }
 
 // SetPlatform sets the "platform" field.
-func (hc *HostCreate) SetPlatform(h host.Platform) *HostCreate {
-	hc.mutation.SetPlatform(h)
-	return hc
-}
-
-// SetNillablePlatform sets the "platform" field if the given value is not nil.
-func (hc *HostCreate) SetNillablePlatform(h *host.Platform) *HostCreate {
-	if h != nil {
-		hc.SetPlatform(*h)
-	}
+func (hc *HostCreate) SetPlatform(cp c2pb.Host_Platform) *HostCreate {
+	hc.mutation.SetPlatform(cp)
 	return hc
 }
 
@@ -202,10 +195,6 @@ func (hc *HostCreate) defaults() {
 	if _, ok := hc.mutation.LastModifiedAt(); !ok {
 		v := host.DefaultLastModifiedAt()
 		hc.mutation.SetLastModifiedAt(v)
-	}
-	if _, ok := hc.mutation.Platform(); !ok {
-		v := host.DefaultPlatform
-		hc.mutation.SetPlatform(v)
 	}
 }
 
@@ -454,7 +443,7 @@ func (u *HostUpsert) ClearPrimaryIP() *HostUpsert {
 }
 
 // SetPlatform sets the "platform" field.
-func (u *HostUpsert) SetPlatform(v host.Platform) *HostUpsert {
+func (u *HostUpsert) SetPlatform(v c2pb.Host_Platform) *HostUpsert {
 	u.Set(host.FieldPlatform, v)
 	return u
 }
@@ -599,7 +588,7 @@ func (u *HostUpsertOne) ClearPrimaryIP() *HostUpsertOne {
 }
 
 // SetPlatform sets the "platform" field.
-func (u *HostUpsertOne) SetPlatform(v host.Platform) *HostUpsertOne {
+func (u *HostUpsertOne) SetPlatform(v c2pb.Host_Platform) *HostUpsertOne {
 	return u.Update(func(s *HostUpsert) {
 		s.SetPlatform(v)
 	})
@@ -915,7 +904,7 @@ func (u *HostUpsertBulk) ClearPrimaryIP() *HostUpsertBulk {
 }
 
 // SetPlatform sets the "platform" field.
-func (u *HostUpsertBulk) SetPlatform(v host.Platform) *HostUpsertBulk {
+func (u *HostUpsertBulk) SetPlatform(v c2pb.Host_Platform) *HostUpsertBulk {
 	return u.Update(func(s *HostUpsert) {
 		s.SetPlatform(v)
 	})

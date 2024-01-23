@@ -17,7 +17,6 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -1417,9 +1416,9 @@ func (ec *executionContext) _Host_platform(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(host.Platform)
+	res := resTmp.(c2pb.Host_Platform)
 	fc.Result = res
-	return ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, field.Selections, res)
+	return ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Host_platform(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9755,7 +9754,7 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("platform"))
-			data, err := ec.unmarshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, v)
+			data, err := ec.unmarshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9764,7 +9763,7 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("platformNEQ"))
-			data, err := ec.unmarshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, v)
+			data, err := ec.unmarshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9773,7 +9772,7 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("platformIn"))
-			data, err := ec.unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatformᚄ(ctx, v)
+			data, err := ec.unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9782,7 +9781,7 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("platformNotIn"))
-			data, err := ec.unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatformᚄ(ctx, v)
+			data, err := ec.unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -15771,13 +15770,13 @@ func (ec *executionContext) marshalNHostOrderField2ᚖrealmᚗpubᚋtavernᚋint
 	return v
 }
 
-func (ec *executionContext) unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx context.Context, v interface{}) (host.Platform, error) {
-	var res host.Platform
+func (ec *executionContext) unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx context.Context, v interface{}) (c2pb.Host_Platform, error) {
+	var res c2pb.Host_Platform
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx context.Context, sel ast.SelectionSet, v host.Platform) graphql.Marshaler {
+func (ec *executionContext) marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx context.Context, sel ast.SelectionSet, v c2pb.Host_Platform) graphql.Marshaler {
 	return v
 }
 
@@ -16500,7 +16499,7 @@ func (ec *executionContext) marshalOHost2ᚕᚖrealmᚗpubᚋtavernᚋinternal�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatformᚄ(ctx context.Context, v interface{}) ([]host.Platform, error) {
+func (ec *executionContext) unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx context.Context, v interface{}) ([]c2pb.Host_Platform, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -16509,10 +16508,10 @@ func (ec *executionContext) unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋint
 		vSlice = graphql.CoerceList(v)
 	}
 	var err error
-	res := make([]host.Platform, len(vSlice))
+	res := make([]c2pb.Host_Platform, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -16520,7 +16519,7 @@ func (ec *executionContext) unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋint
 	return res, nil
 }
 
-func (ec *executionContext) marshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatformᚄ(ctx context.Context, sel ast.SelectionSet, v []host.Platform) graphql.Marshaler {
+func (ec *executionContext) marshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx context.Context, sel ast.SelectionSet, v []c2pb.Host_Platform) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -16547,7 +16546,7 @@ func (ec *executionContext) marshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinter
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, sel, v[i])
+			ret[i] = ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -16567,16 +16566,16 @@ func (ec *executionContext) marshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinter
 	return ret
 }
 
-func (ec *executionContext) unmarshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx context.Context, v interface{}) (*host.Platform, error) {
+func (ec *executionContext) unmarshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx context.Context, v interface{}) (*c2pb.Host_Platform, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(host.Platform)
+	var res = new(c2pb.Host_Platform)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx context.Context, sel ast.SelectionSet, v *host.Platform) graphql.Marshaler {
+func (ec *executionContext) marshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx context.Context, sel ast.SelectionSet, v *c2pb.Host_Platform) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
@@ -84,16 +85,8 @@ func (hu *HostUpdate) ClearPrimaryIP() *HostUpdate {
 }
 
 // SetPlatform sets the "platform" field.
-func (hu *HostUpdate) SetPlatform(h host.Platform) *HostUpdate {
-	hu.mutation.SetPlatform(h)
-	return hu
-}
-
-// SetNillablePlatform sets the "platform" field if the given value is not nil.
-func (hu *HostUpdate) SetNillablePlatform(h *host.Platform) *HostUpdate {
-	if h != nil {
-		hu.SetPlatform(*h)
-	}
+func (hu *HostUpdate) SetPlatform(cp c2pb.Host_Platform) *HostUpdate {
+	hu.mutation.SetPlatform(cp)
 	return hu
 }
 
@@ -533,16 +526,8 @@ func (huo *HostUpdateOne) ClearPrimaryIP() *HostUpdateOne {
 }
 
 // SetPlatform sets the "platform" field.
-func (huo *HostUpdateOne) SetPlatform(h host.Platform) *HostUpdateOne {
-	huo.mutation.SetPlatform(h)
-	return huo
-}
-
-// SetNillablePlatform sets the "platform" field if the given value is not nil.
-func (huo *HostUpdateOne) SetNillablePlatform(h *host.Platform) *HostUpdateOne {
-	if h != nil {
-		huo.SetPlatform(*h)
-	}
+func (huo *HostUpdateOne) SetPlatform(cp c2pb.Host_Platform) *HostUpdateOne {
+	huo.mutation.SetPlatform(cp)
 	return huo
 }
 

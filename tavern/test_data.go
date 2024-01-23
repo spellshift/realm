@@ -12,6 +12,7 @@ import (
 	"net"
 	"time"
 
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/namegen"
@@ -48,6 +49,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetName(hostName).
 				SetIdentifier(hostID).
 				SetPrimaryIP(hostIP).
+				SetPlatform(c2pb.Host_PLATFORM_UNSPECIFIED).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)
 

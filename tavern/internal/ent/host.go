@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/host"
 )
 
@@ -28,7 +29,7 @@ type Host struct {
 	// Primary interface IP address reported by the agent.
 	PrimaryIP string `json:"primary_ip,omitempty"`
 	// Platform the agent is operating on.
-	Platform host.Platform `json:"platform,omitempty"`
+	Platform c2pb.Host_Platform `json:"platform,omitempty"`
 	// Timestamp of when a task was last claimed or updated for the host.
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -88,9 +89,11 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case host.FieldPlatform:
+			values[i] = new(c2pb.Host_Platform)
 		case host.FieldID:
 			values[i] = new(sql.NullInt64)
-		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP, host.FieldPlatform:
+		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP:
 			values[i] = new(sql.NullString)
 		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
@@ -146,10 +149,10 @@ func (h *Host) assignValues(columns []string, values []any) error {
 				h.PrimaryIP = value.String
 			}
 		case host.FieldPlatform:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*c2pb.Host_Platform); !ok {
 				return fmt.Errorf("unexpected type %T for field platform", values[i])
-			} else if value.Valid {
-				h.Platform = host.Platform(value.String)
+			} else if value != nil {
+				h.Platform = *value
 			}
 		case host.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {

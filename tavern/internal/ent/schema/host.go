@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 // Host holds the schema definition for the Host entity.
@@ -34,8 +35,9 @@ func (Host) Fields() []ent.Field {
 			).
 			Comment("Primary interface IP address reported by the agent."),
 		field.Enum("platform").
-			Values("Windows", "Linux", "MacOS", "BSD", "Unknown").
-			Default("Unknown").
+			GoType(c2pb.Host_Platform(0)).
+			// Values("Windows", "Linux", "MacOS", "BSD", "Unknown").
+			// Default("Unknown").
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
