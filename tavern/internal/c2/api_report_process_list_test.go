@@ -95,6 +95,17 @@ func TestReportProcessList(t *testing.T) {
 			wantResp: nil,
 			wantCode: codes.InvalidArgument,
 		},
+		{
+			name: "Not_Found",
+			req: &c2pb.ReportProcessListRequest{
+				TaskId: 99888777776666,
+				List: []*c2pb.Process{
+					{Pid: 1, Name: "systemd", Principal: "root"},
+				},
+			},
+			wantResp: nil,
+			wantCode: codes.NotFound,
+		},
 	}
 
 	// Run Tests
