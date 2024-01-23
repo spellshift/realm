@@ -17,6 +17,10 @@ type Host struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Timestamp of when this ent was created
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Timestamp of when this ent was last updated
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// Unique identifier for the host. Unique to each host.
 	Identifier string `json:"identifier,omitempty"`
 	// A human readable identifier for the host.
@@ -88,7 +92,7 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP, host.FieldPlatform:
 			values[i] = new(sql.NullString)
-		case host.FieldLastSeenAt:
+		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -111,6 +115,18 @@ func (h *Host) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			h.ID = int(value.Int64)
+		case host.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				h.CreatedAt = value.Time
+			}
+		case host.FieldLastModifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
+			} else if value.Valid {
+				h.LastModifiedAt = value.Time
+			}
 		case host.FieldIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field identifier", values[i])
@@ -192,6 +208,12 @@ func (h *Host) String() string {
 	var builder strings.Builder
 	builder.WriteString("Host(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", h.ID))
+	builder.WriteString("created_at=")
+	builder.WriteString(h.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("last_modified_at=")
+	builder.WriteString(h.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("identifier=")
 	builder.WriteString(h.Identifier)
 	builder.WriteString(", ")
