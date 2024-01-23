@@ -3,7 +3,7 @@ mod compress_impl;
 mod copy_impl;
 mod download_impl;
 mod exists_impl;
-mod hash_impl;
+mod find_impl;
 mod is_dir_impl;
 mod is_file_impl;
 mod list_impl;
@@ -16,7 +16,6 @@ mod replace_impl;
 mod template_impl;
 mod timestomp_impl;
 mod write_impl;
-mod find_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -120,10 +119,6 @@ fn methods(builder: &mut MethodsBuilder) {
     fn exists(this: FileLibrary, path: String) -> anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         exists_impl::exists(path)
-    }
-    fn hash(this: FileLibrary, path: String) -> anyhow::Result<String> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        hash_impl::hash(path)
     }
     fn is_dir(this: FileLibrary, path: String) -> anyhow::Result<bool> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
