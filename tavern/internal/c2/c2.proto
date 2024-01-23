@@ -72,8 +72,32 @@ message TaskOutput {
 // Process running on the system.
 message Process {
     uint64 pid = 1;
-    string name = 2;
-    string principal = 3;
+    uint64 ppid = 2;
+    string name = 3;
+    string principal = 4;
+
+    string path = 5;
+    string cmd = 6;
+    string env = 7;
+    string cwd = 8;
+
+    enum Status {
+        STATUS_UNSPECIFIED = 0;
+        STATUS_UNKNOWN = 1;
+        STATUS_IDLE = 2;
+        STATUS_RUN = 3;
+        STATUS_SLEEP = 4;
+        STATUS_STOP = 5;
+        STATUS_ZOMBIE = 6;
+        STATUS_TRACING = 7;
+        STATUS_DEAD = 8;
+        STATUS_WAKE_KILL = 9;
+        STATUS_WAKING = 10;
+        STATUS_PARKED = 11;
+        STATUS_LOCK_BLOCKED = 12;
+        STATUS_UNINTERUPTIBLE_DISK_SLEEP = 13;
+    }
+    Status status = 9;
 }
 
 /*
