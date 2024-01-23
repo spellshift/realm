@@ -18,8 +18,10 @@ type Tx struct {
 	File *FileClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
-	// Process is the client for interacting with the Process builders.
-	Process *ProcessClient
+	// HostFile is the client for interacting with the HostFile builders.
+	HostFile *HostFileClient
+	// HostProcess is the client for interacting with the HostProcess builders.
+	HostProcess *HostProcessClient
 	// Quest is the client for interacting with the Quest builders.
 	Quest *QuestClient
 	// Tag is the client for interacting with the Tag builders.
@@ -164,7 +166,8 @@ func (tx *Tx) init() {
 	tx.Beacon = NewBeaconClient(tx.config)
 	tx.File = NewFileClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
-	tx.Process = NewProcessClient(tx.config)
+	tx.HostFile = NewHostFileClient(tx.config)
+	tx.HostProcess = NewHostProcessClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)

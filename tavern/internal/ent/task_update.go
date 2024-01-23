@@ -12,8 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -180,17 +181,32 @@ func (tu *TaskUpdate) SetBeacon(b *Beacon) *TaskUpdate {
 	return tu.SetBeaconID(b.ID)
 }
 
-// AddReportedProcessIDs adds the "reported_processes" edge to the Process entity by IDs.
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by IDs.
+func (tu *TaskUpdate) AddReportedFileIDs(ids ...int) *TaskUpdate {
+	tu.mutation.AddReportedFileIDs(ids...)
+	return tu
+}
+
+// AddReportedFiles adds the "reported_files" edges to the HostFile entity.
+func (tu *TaskUpdate) AddReportedFiles(h ...*HostFile) *TaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tu.AddReportedFileIDs(ids...)
+}
+
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
 func (tu *TaskUpdate) AddReportedProcessIDs(ids ...int) *TaskUpdate {
 	tu.mutation.AddReportedProcessIDs(ids...)
 	return tu
 }
 
-// AddReportedProcesses adds the "reported_processes" edges to the Process entity.
-func (tu *TaskUpdate) AddReportedProcesses(p ...*Process) *TaskUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (tu *TaskUpdate) AddReportedProcesses(h ...*HostProcess) *TaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tu.AddReportedProcessIDs(ids...)
 }
@@ -212,23 +228,44 @@ func (tu *TaskUpdate) ClearBeacon() *TaskUpdate {
 	return tu
 }
 
-// ClearReportedProcesses clears all "reported_processes" edges to the Process entity.
+// ClearReportedFiles clears all "reported_files" edges to the HostFile entity.
+func (tu *TaskUpdate) ClearReportedFiles() *TaskUpdate {
+	tu.mutation.ClearReportedFiles()
+	return tu
+}
+
+// RemoveReportedFileIDs removes the "reported_files" edge to HostFile entities by IDs.
+func (tu *TaskUpdate) RemoveReportedFileIDs(ids ...int) *TaskUpdate {
+	tu.mutation.RemoveReportedFileIDs(ids...)
+	return tu
+}
+
+// RemoveReportedFiles removes "reported_files" edges to HostFile entities.
+func (tu *TaskUpdate) RemoveReportedFiles(h ...*HostFile) *TaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tu.RemoveReportedFileIDs(ids...)
+}
+
+// ClearReportedProcesses clears all "reported_processes" edges to the HostProcess entity.
 func (tu *TaskUpdate) ClearReportedProcesses() *TaskUpdate {
 	tu.mutation.ClearReportedProcesses()
 	return tu
 }
 
-// RemoveReportedProcessIDs removes the "reported_processes" edge to Process entities by IDs.
+// RemoveReportedProcessIDs removes the "reported_processes" edge to HostProcess entities by IDs.
 func (tu *TaskUpdate) RemoveReportedProcessIDs(ids ...int) *TaskUpdate {
 	tu.mutation.RemoveReportedProcessIDs(ids...)
 	return tu
 }
 
-// RemoveReportedProcesses removes "reported_processes" edges to Process entities.
-func (tu *TaskUpdate) RemoveReportedProcesses(p ...*Process) *TaskUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveReportedProcesses removes "reported_processes" edges to HostProcess entities.
+func (tu *TaskUpdate) RemoveReportedProcesses(h ...*HostProcess) *TaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tu.RemoveReportedProcessIDs(ids...)
 }
@@ -400,6 +437,51 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.ReportedFilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedFilesTable,
+			Columns: []string{task.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedReportedFilesIDs(); len(nodes) > 0 && !tu.mutation.ReportedFilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedFilesTable,
+			Columns: []string{task.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ReportedFilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedFilesTable,
+			Columns: []string{task.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if tu.mutation.ReportedProcessesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -408,7 +490,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -421,7 +503,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -437,7 +519,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -614,17 +696,32 @@ func (tuo *TaskUpdateOne) SetBeacon(b *Beacon) *TaskUpdateOne {
 	return tuo.SetBeaconID(b.ID)
 }
 
-// AddReportedProcessIDs adds the "reported_processes" edge to the Process entity by IDs.
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by IDs.
+func (tuo *TaskUpdateOne) AddReportedFileIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.AddReportedFileIDs(ids...)
+	return tuo
+}
+
+// AddReportedFiles adds the "reported_files" edges to the HostFile entity.
+func (tuo *TaskUpdateOne) AddReportedFiles(h ...*HostFile) *TaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tuo.AddReportedFileIDs(ids...)
+}
+
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
 func (tuo *TaskUpdateOne) AddReportedProcessIDs(ids ...int) *TaskUpdateOne {
 	tuo.mutation.AddReportedProcessIDs(ids...)
 	return tuo
 }
 
-// AddReportedProcesses adds the "reported_processes" edges to the Process entity.
-func (tuo *TaskUpdateOne) AddReportedProcesses(p ...*Process) *TaskUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (tuo *TaskUpdateOne) AddReportedProcesses(h ...*HostProcess) *TaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tuo.AddReportedProcessIDs(ids...)
 }
@@ -646,23 +743,44 @@ func (tuo *TaskUpdateOne) ClearBeacon() *TaskUpdateOne {
 	return tuo
 }
 
-// ClearReportedProcesses clears all "reported_processes" edges to the Process entity.
+// ClearReportedFiles clears all "reported_files" edges to the HostFile entity.
+func (tuo *TaskUpdateOne) ClearReportedFiles() *TaskUpdateOne {
+	tuo.mutation.ClearReportedFiles()
+	return tuo
+}
+
+// RemoveReportedFileIDs removes the "reported_files" edge to HostFile entities by IDs.
+func (tuo *TaskUpdateOne) RemoveReportedFileIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.RemoveReportedFileIDs(ids...)
+	return tuo
+}
+
+// RemoveReportedFiles removes "reported_files" edges to HostFile entities.
+func (tuo *TaskUpdateOne) RemoveReportedFiles(h ...*HostFile) *TaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tuo.RemoveReportedFileIDs(ids...)
+}
+
+// ClearReportedProcesses clears all "reported_processes" edges to the HostProcess entity.
 func (tuo *TaskUpdateOne) ClearReportedProcesses() *TaskUpdateOne {
 	tuo.mutation.ClearReportedProcesses()
 	return tuo
 }
 
-// RemoveReportedProcessIDs removes the "reported_processes" edge to Process entities by IDs.
+// RemoveReportedProcessIDs removes the "reported_processes" edge to HostProcess entities by IDs.
 func (tuo *TaskUpdateOne) RemoveReportedProcessIDs(ids ...int) *TaskUpdateOne {
 	tuo.mutation.RemoveReportedProcessIDs(ids...)
 	return tuo
 }
 
-// RemoveReportedProcesses removes "reported_processes" edges to Process entities.
-func (tuo *TaskUpdateOne) RemoveReportedProcesses(p ...*Process) *TaskUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveReportedProcesses removes "reported_processes" edges to HostProcess entities.
+func (tuo *TaskUpdateOne) RemoveReportedProcesses(h ...*HostProcess) *TaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tuo.RemoveReportedProcessIDs(ids...)
 }
@@ -864,6 +982,51 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tuo.mutation.ReportedFilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedFilesTable,
+			Columns: []string{task.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedReportedFilesIDs(); len(nodes) > 0 && !tuo.mutation.ReportedFilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedFilesTable,
+			Columns: []string{task.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ReportedFilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedFilesTable,
+			Columns: []string{task.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if tuo.mutation.ReportedProcessesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -872,7 +1035,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -885,7 +1048,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -901,7 +1064,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -63,7 +63,7 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatform"))
-			data, err := ec.unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋentᚋhostᚐPlatform(ctx, v)
+			data, err := ec.unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, v)
 			if err != nil {
 				return it, err
 			}

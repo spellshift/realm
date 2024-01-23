@@ -49,15 +49,18 @@ type TaskEdges struct {
 	Quest *Quest `json:"quest,omitempty"`
 	// Beacon holds the value of the beacon edge.
 	Beacon *Beacon `json:"beacon,omitempty"`
+	// Files that have been reported by this task.
+	ReportedFiles []*HostFile `json:"reported_files,omitempty"`
 	// Processes that have been reported by this task.
-	ReportedProcesses []*Process `json:"reported_processes,omitempty"`
+	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
-	namedReportedProcesses map[string][]*Process
+	namedReportedFiles     map[string][]*HostFile
+	namedReportedProcesses map[string][]*HostProcess
 }
 
 // QuestOrErr returns the Quest value or an error if the edge
@@ -86,10 +89,19 @@ func (e TaskEdges) BeaconOrErr() (*Beacon, error) {
 	return nil, &NotLoadedError{edge: "beacon"}
 }
 
+// ReportedFilesOrErr returns the ReportedFiles value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) ReportedFilesOrErr() ([]*HostFile, error) {
+	if e.loadedTypes[2] {
+		return e.ReportedFiles, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_files"}
+}
+
 // ReportedProcessesOrErr returns the ReportedProcesses value or an error if the edge
 // was not loaded in eager-loading.
-func (e TaskEdges) ReportedProcessesOrErr() ([]*Process, error) {
-	if e.loadedTypes[2] {
+func (e TaskEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
+	if e.loadedTypes[3] {
 		return e.ReportedProcesses, nil
 	}
 	return nil, &NotLoadedError{edge: "reported_processes"}
@@ -216,8 +228,13 @@ func (t *Task) QueryBeacon() *BeaconQuery {
 	return NewTaskClient(t.config).QueryBeacon(t)
 }
 
+// QueryReportedFiles queries the "reported_files" edge of the Task entity.
+func (t *Task) QueryReportedFiles() *HostFileQuery {
+	return NewTaskClient(t.config).QueryReportedFiles(t)
+}
+
 // QueryReportedProcesses queries the "reported_processes" edge of the Task entity.
-func (t *Task) QueryReportedProcesses() *ProcessQuery {
+func (t *Task) QueryReportedProcesses() *HostProcessQuery {
 	return NewTaskClient(t.config).QueryReportedProcesses(t)
 }
 
@@ -271,9 +288,33 @@ func (t *Task) String() string {
 	return builder.String()
 }
 
+// NamedReportedFiles returns the ReportedFiles named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Task) NamedReportedFiles(name string) ([]*HostFile, error) {
+	if t.Edges.namedReportedFiles == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedReportedFiles[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Task) appendNamedReportedFiles(name string, edges ...*HostFile) {
+	if t.Edges.namedReportedFiles == nil {
+		t.Edges.namedReportedFiles = make(map[string][]*HostFile)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedReportedFiles[name] = []*HostFile{}
+	} else {
+		t.Edges.namedReportedFiles[name] = append(t.Edges.namedReportedFiles[name], edges...)
+	}
+}
+
 // NamedReportedProcesses returns the ReportedProcesses named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Task) NamedReportedProcesses(name string) ([]*Process, error) {
+func (t *Task) NamedReportedProcesses(name string) ([]*HostProcess, error) {
 	if t.Edges.namedReportedProcesses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
@@ -284,12 +325,12 @@ func (t *Task) NamedReportedProcesses(name string) ([]*Process, error) {
 	return nodes, nil
 }
 
-func (t *Task) appendNamedReportedProcesses(name string, edges ...*Process) {
+func (t *Task) appendNamedReportedProcesses(name string, edges ...*HostProcess) {
 	if t.Edges.namedReportedProcesses == nil {
-		t.Edges.namedReportedProcesses = make(map[string][]*Process)
+		t.Edges.namedReportedProcesses = make(map[string][]*HostProcess)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedReportedProcesses[name] = []*Process{}
+		t.Edges.namedReportedProcesses[name] = []*HostProcess{}
 	} else {
 		t.Edges.namedReportedProcesses[name] = append(t.Edges.namedReportedProcesses[name], edges...)
 	}

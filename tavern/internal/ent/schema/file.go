@@ -38,7 +38,7 @@ func (File) Fields() []ent.Field {
 			Comment("The size of the file in bytes"),
 		field.String("hash").
 			MaxLen(100).
-			Comment("A SHA3 digest of the content field"),
+			Comment("A SHA3-256 digest of the content field"),
 		field.Bytes("content").
 			Annotations(
 				entgql.Skip(), // Don't return file content in GraphQL queries

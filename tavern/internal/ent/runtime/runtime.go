@@ -8,7 +8,8 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/schema"
 	"realm.pub/tavern/internal/ent/tag"
@@ -110,25 +111,56 @@ func init() {
 	hostDescName := hostFields[1].Descriptor()
 	// host.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	host.NameValidator = hostDescName.Validators[0].(func(string) error)
-	processMixin := schema.Process{}.Mixin()
-	processMixinFields0 := processMixin[0].Fields()
-	_ = processMixinFields0
-	processFields := schema.Process{}.Fields()
-	_ = processFields
-	// processDescCreatedAt is the schema descriptor for created_at field.
-	processDescCreatedAt := processMixinFields0[0].Descriptor()
-	// process.DefaultCreatedAt holds the default value on creation for the created_at field.
-	process.DefaultCreatedAt = processDescCreatedAt.Default.(func() time.Time)
-	// processDescLastModifiedAt is the schema descriptor for last_modified_at field.
-	processDescLastModifiedAt := processMixinFields0[1].Descriptor()
-	// process.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
-	process.DefaultLastModifiedAt = processDescLastModifiedAt.Default.(func() time.Time)
-	// process.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
-	process.UpdateDefaultLastModifiedAt = processDescLastModifiedAt.UpdateDefault.(func() time.Time)
-	// processDescPrincipal is the schema descriptor for principal field.
-	processDescPrincipal := processFields[2].Descriptor()
-	// process.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
-	process.PrincipalValidator = processDescPrincipal.Validators[0].(func(string) error)
+	hostfileMixin := schema.HostFile{}.Mixin()
+	hostfileHooks := schema.HostFile{}.Hooks()
+	hostfile.Hooks[0] = hostfileHooks[0]
+	hostfileMixinFields0 := hostfileMixin[0].Fields()
+	_ = hostfileMixinFields0
+	hostfileFields := schema.HostFile{}.Fields()
+	_ = hostfileFields
+	// hostfileDescCreatedAt is the schema descriptor for created_at field.
+	hostfileDescCreatedAt := hostfileMixinFields0[0].Descriptor()
+	// hostfile.DefaultCreatedAt holds the default value on creation for the created_at field.
+	hostfile.DefaultCreatedAt = hostfileDescCreatedAt.Default.(func() time.Time)
+	// hostfileDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	hostfileDescLastModifiedAt := hostfileMixinFields0[1].Descriptor()
+	// hostfile.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	hostfile.DefaultLastModifiedAt = hostfileDescLastModifiedAt.Default.(func() time.Time)
+	// hostfile.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	hostfile.UpdateDefaultLastModifiedAt = hostfileDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// hostfileDescPath is the schema descriptor for path field.
+	hostfileDescPath := hostfileFields[0].Descriptor()
+	// hostfile.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	hostfile.PathValidator = hostfileDescPath.Validators[0].(func(string) error)
+	// hostfileDescSize is the schema descriptor for size field.
+	hostfileDescSize := hostfileFields[4].Descriptor()
+	// hostfile.DefaultSize holds the default value on creation for the size field.
+	hostfile.DefaultSize = hostfileDescSize.Default.(int)
+	// hostfile.SizeValidator is a validator for the "size" field. It is called by the builders before save.
+	hostfile.SizeValidator = hostfileDescSize.Validators[0].(func(int) error)
+	// hostfileDescHash is the schema descriptor for hash field.
+	hostfileDescHash := hostfileFields[5].Descriptor()
+	// hostfile.HashValidator is a validator for the "hash" field. It is called by the builders before save.
+	hostfile.HashValidator = hostfileDescHash.Validators[0].(func(string) error)
+	hostprocessMixin := schema.HostProcess{}.Mixin()
+	hostprocessMixinFields0 := hostprocessMixin[0].Fields()
+	_ = hostprocessMixinFields0
+	hostprocessFields := schema.HostProcess{}.Fields()
+	_ = hostprocessFields
+	// hostprocessDescCreatedAt is the schema descriptor for created_at field.
+	hostprocessDescCreatedAt := hostprocessMixinFields0[0].Descriptor()
+	// hostprocess.DefaultCreatedAt holds the default value on creation for the created_at field.
+	hostprocess.DefaultCreatedAt = hostprocessDescCreatedAt.Default.(func() time.Time)
+	// hostprocessDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	hostprocessDescLastModifiedAt := hostprocessMixinFields0[1].Descriptor()
+	// hostprocess.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	hostprocess.DefaultLastModifiedAt = hostprocessDescLastModifiedAt.Default.(func() time.Time)
+	// hostprocess.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	hostprocess.UpdateDefaultLastModifiedAt = hostprocessDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// hostprocessDescPrincipal is the schema descriptor for principal field.
+	hostprocessDescPrincipal := hostprocessFields[3].Descriptor()
+	// hostprocess.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
+	hostprocess.PrincipalValidator = hostprocessDescPrincipal.Validators[0].(func(string) error)
 	questMixin := schema.Quest{}.Mixin()
 	questMixinFields0 := questMixin[0].Fields()
 	_ = questMixinFields0

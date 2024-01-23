@@ -11,7 +11,8 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -331,16 +332,28 @@ func (h *HostQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			h.WithNamedBeacons(alias, func(wq *BeaconQuery) {
 				*wq = *query
 			})
-		case "processes":
+		case "files":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&ProcessClient{config: h.config}).Query()
+				query = (&HostFileClient{config: h.config}).Query()
 			)
 			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			h.WithNamedProcesses(alias, func(wq *ProcessQuery) {
+			h.WithNamedFiles(alias, func(wq *HostFileQuery) {
+				*wq = *query
+			})
+		case "processes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostProcessClient{config: h.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			h.WithNamedProcesses(alias, func(wq *HostProcessQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -442,23 +455,23 @@ func newHostPaginateArgs(rv map[string]any) *hostPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (pr *ProcessQuery) CollectFields(ctx context.Context, satisfies ...string) (*ProcessQuery, error) {
+func (hf *HostFileQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostFileQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return pr, nil
+		return hf, nil
 	}
-	if err := pr.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := hf.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return pr, nil
+	return hf, nil
 }
 
-func (pr *ProcessQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (hf *HostFileQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
-		fieldSeen      = make(map[string]struct{}, len(process.Columns))
-		selectedFields = []string{process.FieldID}
+		fieldSeen      = make(map[string]struct{}, len(hostfile.Columns))
+		selectedFields = []string{hostfile.FieldID}
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
@@ -466,46 +479,61 @@ func (pr *ProcessQuery) collectField(ctx context.Context, opCtx *graphql.Operati
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostClient{config: pr.config}).Query()
+				query = (&HostClient{config: hf.config}).Query()
 			)
 			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			pr.withHost = query
+			hf.withHost = query
 		case "task":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TaskClient{config: pr.config}).Query()
+				query = (&TaskClient{config: hf.config}).Query()
 			)
 			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			pr.withTask = query
+			hf.withTask = query
 		case "createdAt":
-			if _, ok := fieldSeen[process.FieldCreatedAt]; !ok {
-				selectedFields = append(selectedFields, process.FieldCreatedAt)
-				fieldSeen[process.FieldCreatedAt] = struct{}{}
+			if _, ok := fieldSeen[hostfile.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldCreatedAt)
+				fieldSeen[hostfile.FieldCreatedAt] = struct{}{}
 			}
 		case "lastModifiedAt":
-			if _, ok := fieldSeen[process.FieldLastModifiedAt]; !ok {
-				selectedFields = append(selectedFields, process.FieldLastModifiedAt)
-				fieldSeen[process.FieldLastModifiedAt] = struct{}{}
+			if _, ok := fieldSeen[hostfile.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldLastModifiedAt)
+				fieldSeen[hostfile.FieldLastModifiedAt] = struct{}{}
 			}
-		case "pid":
-			if _, ok := fieldSeen[process.FieldPid]; !ok {
-				selectedFields = append(selectedFields, process.FieldPid)
-				fieldSeen[process.FieldPid] = struct{}{}
+		case "path":
+			if _, ok := fieldSeen[hostfile.FieldPath]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldPath)
+				fieldSeen[hostfile.FieldPath] = struct{}{}
 			}
-		case "name":
-			if _, ok := fieldSeen[process.FieldName]; !ok {
-				selectedFields = append(selectedFields, process.FieldName)
-				fieldSeen[process.FieldName] = struct{}{}
+		case "owner":
+			if _, ok := fieldSeen[hostfile.FieldOwner]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldOwner)
+				fieldSeen[hostfile.FieldOwner] = struct{}{}
 			}
-		case "principal":
-			if _, ok := fieldSeen[process.FieldPrincipal]; !ok {
-				selectedFields = append(selectedFields, process.FieldPrincipal)
-				fieldSeen[process.FieldPrincipal] = struct{}{}
+		case "group":
+			if _, ok := fieldSeen[hostfile.FieldGroup]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldGroup)
+				fieldSeen[hostfile.FieldGroup] = struct{}{}
+			}
+		case "permissions":
+			if _, ok := fieldSeen[hostfile.FieldPermissions]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldPermissions)
+				fieldSeen[hostfile.FieldPermissions] = struct{}{}
+			}
+		case "size":
+			if _, ok := fieldSeen[hostfile.FieldSize]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldSize)
+				fieldSeen[hostfile.FieldSize] = struct{}{}
+			}
+		case "hash":
+			if _, ok := fieldSeen[hostfile.FieldHash]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldHash)
+				fieldSeen[hostfile.FieldHash] = struct{}{}
 			}
 		case "id":
 		case "__typename":
@@ -514,19 +542,19 @@ func (pr *ProcessQuery) collectField(ctx context.Context, opCtx *graphql.Operati
 		}
 	}
 	if !unknownSeen {
-		pr.Select(selectedFields...)
+		hf.Select(selectedFields...)
 	}
 	return nil
 }
 
-type processPaginateArgs struct {
+type hostfilePaginateArgs struct {
 	first, last   *int
 	after, before *Cursor
-	opts          []ProcessPaginateOption
+	opts          []HostFilePaginateOption
 }
 
-func newProcessPaginateArgs(rv map[string]any) *processPaginateArgs {
-	args := &processPaginateArgs{}
+func newHostFilePaginateArgs(rv map[string]any) *hostfilePaginateArgs {
+	args := &hostfilePaginateArgs{}
 	if rv == nil {
 		return args
 	}
@@ -547,7 +575,7 @@ func newProcessPaginateArgs(rv map[string]any) *processPaginateArgs {
 		case map[string]any:
 			var (
 				err1, err2 error
-				order      = &ProcessOrder{Field: &ProcessOrderField{}, Direction: entgql.OrderDirectionAsc}
+				order      = &HostFileOrder{Field: &HostFileOrderField{}, Direction: entgql.OrderDirectionAsc}
 			)
 			if d, ok := v[directionField]; ok {
 				err1 = order.Direction.UnmarshalGQL(d)
@@ -556,16 +584,175 @@ func newProcessPaginateArgs(rv map[string]any) *processPaginateArgs {
 				err2 = order.Field.UnmarshalGQL(f)
 			}
 			if err1 == nil && err2 == nil {
-				args.opts = append(args.opts, WithProcessOrder(order))
+				args.opts = append(args.opts, WithHostFileOrder(order))
 			}
-		case *ProcessOrder:
+		case *HostFileOrder:
 			if v != nil {
-				args.opts = append(args.opts, WithProcessOrder(v))
+				args.opts = append(args.opts, WithHostFileOrder(v))
 			}
 		}
 	}
-	if v, ok := rv[whereField].(*ProcessWhereInput); ok {
-		args.opts = append(args.opts, WithProcessFilter(v.Filter))
+	if v, ok := rv[whereField].(*HostFileWhereInput); ok {
+		args.opts = append(args.opts, WithHostFileFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (hp *HostProcessQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostProcessQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return hp, nil
+	}
+	if err := hp.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return hp, nil
+}
+
+func (hp *HostProcessQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(hostprocess.Columns))
+		selectedFields = []string{hostprocess.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "host":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostClient{config: hp.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			hp.withHost = query
+		case "task":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TaskClient{config: hp.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			hp.withTask = query
+		case "createdAt":
+			if _, ok := fieldSeen[hostprocess.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldCreatedAt)
+				fieldSeen[hostprocess.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[hostprocess.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldLastModifiedAt)
+				fieldSeen[hostprocess.FieldLastModifiedAt] = struct{}{}
+			}
+		case "pid":
+			if _, ok := fieldSeen[hostprocess.FieldPid]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldPid)
+				fieldSeen[hostprocess.FieldPid] = struct{}{}
+			}
+		case "ppid":
+			if _, ok := fieldSeen[hostprocess.FieldPpid]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldPpid)
+				fieldSeen[hostprocess.FieldPpid] = struct{}{}
+			}
+		case "name":
+			if _, ok := fieldSeen[hostprocess.FieldName]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldName)
+				fieldSeen[hostprocess.FieldName] = struct{}{}
+			}
+		case "principal":
+			if _, ok := fieldSeen[hostprocess.FieldPrincipal]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldPrincipal)
+				fieldSeen[hostprocess.FieldPrincipal] = struct{}{}
+			}
+		case "path":
+			if _, ok := fieldSeen[hostprocess.FieldPath]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldPath)
+				fieldSeen[hostprocess.FieldPath] = struct{}{}
+			}
+		case "cmd":
+			if _, ok := fieldSeen[hostprocess.FieldCmd]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldCmd)
+				fieldSeen[hostprocess.FieldCmd] = struct{}{}
+			}
+		case "env":
+			if _, ok := fieldSeen[hostprocess.FieldEnv]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldEnv)
+				fieldSeen[hostprocess.FieldEnv] = struct{}{}
+			}
+		case "cwd":
+			if _, ok := fieldSeen[hostprocess.FieldCwd]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldCwd)
+				fieldSeen[hostprocess.FieldCwd] = struct{}{}
+			}
+		case "status":
+			if _, ok := fieldSeen[hostprocess.FieldStatus]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldStatus)
+				fieldSeen[hostprocess.FieldStatus] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		hp.Select(selectedFields...)
+	}
+	return nil
+}
+
+type hostprocessPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []HostProcessPaginateOption
+}
+
+func newHostProcessPaginateArgs(rv map[string]any) *hostprocessPaginateArgs {
+	args := &hostprocessPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &HostProcessOrder{Field: &HostProcessOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithHostProcessOrder(order))
+			}
+		case *HostProcessOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithHostProcessOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*HostProcessWhereInput); ok {
+		args.opts = append(args.opts, WithHostProcessFilter(v.Filter))
 	}
 	return args
 }
@@ -863,16 +1050,28 @@ func (t *TaskQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				return err
 			}
 			t.withBeacon = query
-		case "reportedProcesses":
+		case "reportedFiles":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&ProcessClient{config: t.config}).Query()
+				query = (&HostFileClient{config: t.config}).Query()
 			)
 			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			t.WithNamedReportedProcesses(alias, func(wq *ProcessQuery) {
+			t.WithNamedReportedFiles(alias, func(wq *HostFileQuery) {
+				*wq = *query
+			})
+		case "reportedProcesses":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostProcessClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
 				*wq = *query
 			})
 		case "createdAt":
