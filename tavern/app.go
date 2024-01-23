@@ -69,6 +69,7 @@ type Server struct {
 
 // Close should always be called to clean up a Tavern server.
 func (srv *Server) Close() error {
+	srv.HTTP.Shutdown(context.Background())
 	return srv.client.Close()
 }
 
@@ -186,7 +187,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Shutdown for Test Run & Exit
 	if cfg.IsTestRunAndExitEnabled() {
 		go func() {
-			tSrv.HTTP.Shutdown(ctx)
+			tSrv.Close()
 		}()
 	}
 
