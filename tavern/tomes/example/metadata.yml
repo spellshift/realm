@@ -1,5 +1,6 @@
 name: Example
 description: An example tome!
+author: kcarretto
 paramdefs:
 - label: Message
   name: msg

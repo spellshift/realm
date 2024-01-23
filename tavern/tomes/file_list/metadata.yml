@@ -1,5 +1,6 @@
 name: List files
 description: List the files and directories found at the path
+author: hulto
 paramdefs:
 - name: path
   type: string

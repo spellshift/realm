@@ -1,5 +1,6 @@
 name: Create Service
 description: Create a service for a specific binary
+author: hulto
 paramdefs:
 - name: executable_url
   type: string

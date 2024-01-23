@@ -192,6 +192,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString},
+		{Name: "author", Type: field.TypeString},
 		{Name: "param_defs", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
@@ -268,6 +269,31 @@ var (
 			},
 		},
 	}
+	// TomeUploaderColumns holds the columns for the "tome_uploader" table.
+	TomeUploaderColumns = []*schema.Column{
+		{Name: "tome_id", Type: field.TypeInt},
+		{Name: "user_id", Type: field.TypeInt},
+	}
+	// TomeUploaderTable holds the schema information for the "tome_uploader" table.
+	TomeUploaderTable = &schema.Table{
+		Name:       "tome_uploader",
+		Columns:    TomeUploaderColumns,
+		PrimaryKey: []*schema.Column{TomeUploaderColumns[0], TomeUploaderColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tome_uploader_tome_id",
+				Columns:    []*schema.Column{TomeUploaderColumns[0]},
+				RefColumns: []*schema.Column{TomesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "tome_uploader_user_id",
+				Columns:    []*schema.Column{TomeUploaderColumns[1]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		BeaconsTable,
@@ -281,6 +307,7 @@ var (
 		UsersTable,
 		HostTagsTable,
 		TomeFilesTable,
+		TomeUploaderTable,
 	}
 )
 
@@ -298,4 +325,6 @@ func init() {
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
 	TomeFilesTable.ForeignKeys[0].RefTable = TomesTable
 	TomeFilesTable.ForeignKeys[1].RefTable = FilesTable
+	TomeUploaderTable.ForeignKeys[0].RefTable = TomesTable
+	TomeUploaderTable.ForeignKeys[1].RefTable = UsersTable
 }

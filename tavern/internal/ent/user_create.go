@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
 
@@ -79,6 +80,21 @@ func (uc *UserCreate) SetNillableIsAdmin(b *bool) *UserCreate {
 		uc.SetIsAdmin(*b)
 	}
 	return uc
+}
+
+// AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
+func (uc *UserCreate) AddTomeIDs(ids ...int) *UserCreate {
+	uc.mutation.AddTomeIDs(ids...)
+	return uc
+}
+
+// AddTomes adds the "tomes" edges to the Tome entity.
+func (uc *UserCreate) AddTomes(t ...*Tome) *UserCreate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uc.AddTomeIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -210,6 +226,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.IsAdmin(); ok {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
 		_node.IsAdmin = value
+	}
+	if nodes := uc.mutation.TomesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.TomesTable,
+			Columns: user.TomesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

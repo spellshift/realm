@@ -21,12 +21,6 @@ type Mutation {
     updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
 
     ###
-    # Task
-    ###
-    claimTasks(input: ClaimTasksInput!,): [Task!]!
-    submitTaskResult(input: SubmitTaskResultInput!,): Task
-
-    ###
     # Tome
     ###
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)

@@ -2888,6 +2888,21 @@ type TomeWhereInput struct {
 	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
 	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
 
+	// "author" field predicates.
+	Author             *string  `json:"author,omitempty"`
+	AuthorNEQ          *string  `json:"authorNEQ,omitempty"`
+	AuthorIn           []string `json:"authorIn,omitempty"`
+	AuthorNotIn        []string `json:"authorNotIn,omitempty"`
+	AuthorGT           *string  `json:"authorGT,omitempty"`
+	AuthorGTE          *string  `json:"authorGTE,omitempty"`
+	AuthorLT           *string  `json:"authorLT,omitempty"`
+	AuthorLTE          *string  `json:"authorLTE,omitempty"`
+	AuthorContains     *string  `json:"authorContains,omitempty"`
+	AuthorHasPrefix    *string  `json:"authorHasPrefix,omitempty"`
+	AuthorHasSuffix    *string  `json:"authorHasSuffix,omitempty"`
+	AuthorEqualFold    *string  `json:"authorEqualFold,omitempty"`
+	AuthorContainsFold *string  `json:"authorContainsFold,omitempty"`
+
 	// "param_defs" field predicates.
 	ParamDefs             *string  `json:"paramDefs,omitempty"`
 	ParamDefsNEQ          *string  `json:"paramDefsNEQ,omitempty"`
@@ -2923,6 +2938,10 @@ type TomeWhereInput struct {
 	// "files" edge predicates.
 	HasFiles     *bool             `json:"hasFiles,omitempty"`
 	HasFilesWith []*FileWhereInput `json:"hasFilesWith,omitempty"`
+
+	// "uploader" edge predicates.
+	HasUploader     *bool             `json:"hasUploader,omitempty"`
+	HasUploaderWith []*UserWhereInput `json:"hasUploaderWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3146,6 +3165,45 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	if i.DescriptionContainsFold != nil {
 		predicates = append(predicates, tome.DescriptionContainsFold(*i.DescriptionContainsFold))
 	}
+	if i.Author != nil {
+		predicates = append(predicates, tome.AuthorEQ(*i.Author))
+	}
+	if i.AuthorNEQ != nil {
+		predicates = append(predicates, tome.AuthorNEQ(*i.AuthorNEQ))
+	}
+	if len(i.AuthorIn) > 0 {
+		predicates = append(predicates, tome.AuthorIn(i.AuthorIn...))
+	}
+	if len(i.AuthorNotIn) > 0 {
+		predicates = append(predicates, tome.AuthorNotIn(i.AuthorNotIn...))
+	}
+	if i.AuthorGT != nil {
+		predicates = append(predicates, tome.AuthorGT(*i.AuthorGT))
+	}
+	if i.AuthorGTE != nil {
+		predicates = append(predicates, tome.AuthorGTE(*i.AuthorGTE))
+	}
+	if i.AuthorLT != nil {
+		predicates = append(predicates, tome.AuthorLT(*i.AuthorLT))
+	}
+	if i.AuthorLTE != nil {
+		predicates = append(predicates, tome.AuthorLTE(*i.AuthorLTE))
+	}
+	if i.AuthorContains != nil {
+		predicates = append(predicates, tome.AuthorContains(*i.AuthorContains))
+	}
+	if i.AuthorHasPrefix != nil {
+		predicates = append(predicates, tome.AuthorHasPrefix(*i.AuthorHasPrefix))
+	}
+	if i.AuthorHasSuffix != nil {
+		predicates = append(predicates, tome.AuthorHasSuffix(*i.AuthorHasSuffix))
+	}
+	if i.AuthorEqualFold != nil {
+		predicates = append(predicates, tome.AuthorEqualFold(*i.AuthorEqualFold))
+	}
+	if i.AuthorContainsFold != nil {
+		predicates = append(predicates, tome.AuthorContainsFold(*i.AuthorContainsFold))
+	}
 	if i.ParamDefs != nil {
 		predicates = append(predicates, tome.ParamDefsEQ(*i.ParamDefs))
 	}
@@ -3249,6 +3307,24 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 		}
 		predicates = append(predicates, tome.HasFilesWith(with...))
 	}
+	if i.HasUploader != nil {
+		p := tome.HasUploader()
+		if !*i.HasUploader {
+			p = tome.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasUploaderWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasUploaderWith))
+		for _, w := range i.HasUploaderWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasUploaderWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, tome.HasUploaderWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyTomeWhereInput
@@ -3328,6 +3404,10 @@ type UserWhereInput struct {
 	// "is_admin" field predicates.
 	IsAdmin    *bool `json:"isAdmin,omitempty"`
 	IsAdminNEQ *bool `json:"isAdminNEQ,omitempty"`
+
+	// "tomes" edge predicates.
+	HasTomes     *bool             `json:"hasTomes,omitempty"`
+	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3555,6 +3635,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 		predicates = append(predicates, user.IsAdminNEQ(*i.IsAdminNEQ))
 	}
 
+	if i.HasTomes != nil {
+		p := user.HasTomes()
+		if !*i.HasTomes {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTomesWith) > 0 {
+		with := make([]predicate.Tome, 0, len(i.HasTomesWith))
+		for _, w := range i.HasTomesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTomesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasTomesWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyUserWhereInput

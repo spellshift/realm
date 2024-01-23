@@ -32,6 +32,8 @@ func (Tome) Fields() []ent.Field {
 			Comment("Name of the tome"),
 		field.String("description").
 			Comment("Information about the tome"),
+		field.String("author").
+			Comment("Name of the author who created the tome."),
 		field.String("param_defs").
 			Validate(validators.NewTomeParameterDefinitions()).
 			Optional().
@@ -58,6 +60,8 @@ func (Tome) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("files", File.Type).
 			Comment("Any files required for tome execution that will be bundled and provided to the agent for download"),
+		edge.To("uploader", User.Type).
+			Comment("User who uploaded the tome (may be null)."),
 	}
 }
 

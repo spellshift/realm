@@ -25,6 +25,8 @@ type Tome struct {
 	Name string `json:"name,omitempty"`
 	// Information about the tome
 	Description string `json:"description,omitempty"`
+	// Name of the author who created the tome.
+	Author string `json:"author,omitempty"`
 	// JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
 	ParamDefs string `json:"param_defs,omitempty"`
 	// A SHA3 digest of the eldritch field
@@ -41,13 +43,16 @@ type Tome struct {
 type TomeEdges struct {
 	// Any files required for tome execution that will be bundled and provided to the agent for download
 	Files []*File `json:"files,omitempty"`
+	// User who uploaded the tome (may be null).
+	Uploader []*User `json:"uploader,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 
-	namedFiles map[string][]*File
+	namedFiles    map[string][]*File
+	namedUploader map[string][]*User
 }
 
 // FilesOrErr returns the Files value or an error if the edge
@@ -59,6 +64,15 @@ func (e TomeEdges) FilesOrErr() ([]*File, error) {
 	return nil, &NotLoadedError{edge: "files"}
 }
 
+// UploaderOrErr returns the Uploader value or an error if the edge
+// was not loaded in eager-loading.
+func (e TomeEdges) UploaderOrErr() ([]*User, error) {
+	if e.loadedTypes[1] {
+		return e.Uploader, nil
+	}
+	return nil, &NotLoadedError{edge: "uploader"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Tome) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -66,7 +80,7 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tome.FieldID:
 			values[i] = new(sql.NullInt64)
-		case tome.FieldName, tome.FieldDescription, tome.FieldParamDefs, tome.FieldHash, tome.FieldEldritch:
+		case tome.FieldName, tome.FieldDescription, tome.FieldAuthor, tome.FieldParamDefs, tome.FieldHash, tome.FieldEldritch:
 			values[i] = new(sql.NullString)
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -115,6 +129,12 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Description = value.String
 			}
+		case tome.FieldAuthor:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field author", values[i])
+			} else if value.Valid {
+				t.Author = value.String
+			}
 		case tome.FieldParamDefs:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field param_defs", values[i])
@@ -149,6 +169,11 @@ func (t *Tome) Value(name string) (ent.Value, error) {
 // QueryFiles queries the "files" edge of the Tome entity.
 func (t *Tome) QueryFiles() *FileQuery {
 	return NewTomeClient(t.config).QueryFiles(t)
+}
+
+// QueryUploader queries the "uploader" edge of the Tome entity.
+func (t *Tome) QueryUploader() *UserQuery {
+	return NewTomeClient(t.config).QueryUploader(t)
 }
 
 // Update returns a builder for updating this Tome.
@@ -186,6 +211,9 @@ func (t *Tome) String() string {
 	builder.WriteString("description=")
 	builder.WriteString(t.Description)
 	builder.WriteString(", ")
+	builder.WriteString("author=")
+	builder.WriteString(t.Author)
+	builder.WriteString(", ")
 	builder.WriteString("param_defs=")
 	builder.WriteString(t.ParamDefs)
 	builder.WriteString(", ")
@@ -219,6 +247,30 @@ func (t *Tome) appendNamedFiles(name string, edges ...*File) {
 		t.Edges.namedFiles[name] = []*File{}
 	} else {
 		t.Edges.namedFiles[name] = append(t.Edges.namedFiles[name], edges...)
+	}
+}
+
+// NamedUploader returns the Uploader named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Tome) NamedUploader(name string) ([]*User, error) {
+	if t.Edges.namedUploader == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedUploader[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Tome) appendNamedUploader(name string, edges ...*User) {
+	if t.Edges.namedUploader == nil {
+		t.Edges.namedUploader = make(map[string][]*User)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedUploader[name] = []*User{}
+	} else {
+		t.Edges.namedUploader[name] = append(t.Edges.namedUploader[name], edges...)
 	}
 }
 

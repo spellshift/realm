@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // TomeUpdate is the builder for updating Tome entities.
@@ -44,6 +45,12 @@ func (tu *TomeUpdate) SetName(s string) *TomeUpdate {
 // SetDescription sets the "description" field.
 func (tu *TomeUpdate) SetDescription(s string) *TomeUpdate {
 	tu.mutation.SetDescription(s)
+	return tu
+}
+
+// SetAuthor sets the "author" field.
+func (tu *TomeUpdate) SetAuthor(s string) *TomeUpdate {
+	tu.mutation.SetAuthor(s)
 	return tu
 }
 
@@ -94,6 +101,21 @@ func (tu *TomeUpdate) AddFiles(f ...*File) *TomeUpdate {
 	return tu.AddFileIDs(ids...)
 }
 
+// AddUploaderIDs adds the "uploader" edge to the User entity by IDs.
+func (tu *TomeUpdate) AddUploaderIDs(ids ...int) *TomeUpdate {
+	tu.mutation.AddUploaderIDs(ids...)
+	return tu
+}
+
+// AddUploader adds the "uploader" edges to the User entity.
+func (tu *TomeUpdate) AddUploader(u ...*User) *TomeUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tu.AddUploaderIDs(ids...)
+}
+
 // Mutation returns the TomeMutation object of the builder.
 func (tu *TomeUpdate) Mutation() *TomeMutation {
 	return tu.mutation
@@ -118,6 +140,27 @@ func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
 		ids[i] = f[i].ID
 	}
 	return tu.RemoveFileIDs(ids...)
+}
+
+// ClearUploader clears all "uploader" edges to the User entity.
+func (tu *TomeUpdate) ClearUploader() *TomeUpdate {
+	tu.mutation.ClearUploader()
+	return tu
+}
+
+// RemoveUploaderIDs removes the "uploader" edge to User entities by IDs.
+func (tu *TomeUpdate) RemoveUploaderIDs(ids ...int) *TomeUpdate {
+	tu.mutation.RemoveUploaderIDs(ids...)
+	return tu
+}
+
+// RemoveUploader removes "uploader" edges to User entities.
+func (tu *TomeUpdate) RemoveUploader(u ...*User) *TomeUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tu.RemoveUploaderIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -203,6 +246,9 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
+	if value, ok := tu.mutation.Author(); ok {
+		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
+	}
 	if value, ok := tu.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
@@ -260,6 +306,51 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.UploaderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: tome.UploaderPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedUploaderIDs(); len(nodes) > 0 && !tu.mutation.UploaderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: tome.UploaderPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.UploaderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: tome.UploaderPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tome.Label}
@@ -295,6 +386,12 @@ func (tuo *TomeUpdateOne) SetName(s string) *TomeUpdateOne {
 // SetDescription sets the "description" field.
 func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
 	tuo.mutation.SetDescription(s)
+	return tuo
+}
+
+// SetAuthor sets the "author" field.
+func (tuo *TomeUpdateOne) SetAuthor(s string) *TomeUpdateOne {
+	tuo.mutation.SetAuthor(s)
 	return tuo
 }
 
@@ -345,6 +442,21 @@ func (tuo *TomeUpdateOne) AddFiles(f ...*File) *TomeUpdateOne {
 	return tuo.AddFileIDs(ids...)
 }
 
+// AddUploaderIDs adds the "uploader" edge to the User entity by IDs.
+func (tuo *TomeUpdateOne) AddUploaderIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.AddUploaderIDs(ids...)
+	return tuo
+}
+
+// AddUploader adds the "uploader" edges to the User entity.
+func (tuo *TomeUpdateOne) AddUploader(u ...*User) *TomeUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tuo.AddUploaderIDs(ids...)
+}
+
 // Mutation returns the TomeMutation object of the builder.
 func (tuo *TomeUpdateOne) Mutation() *TomeMutation {
 	return tuo.mutation
@@ -369,6 +481,27 @@ func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
 		ids[i] = f[i].ID
 	}
 	return tuo.RemoveFileIDs(ids...)
+}
+
+// ClearUploader clears all "uploader" edges to the User entity.
+func (tuo *TomeUpdateOne) ClearUploader() *TomeUpdateOne {
+	tuo.mutation.ClearUploader()
+	return tuo
+}
+
+// RemoveUploaderIDs removes the "uploader" edge to User entities by IDs.
+func (tuo *TomeUpdateOne) RemoveUploaderIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.RemoveUploaderIDs(ids...)
+	return tuo
+}
+
+// RemoveUploader removes "uploader" edges to User entities.
+func (tuo *TomeUpdateOne) RemoveUploader(u ...*User) *TomeUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tuo.RemoveUploaderIDs(ids...)
 }
 
 // Where appends a list predicates to the TomeUpdate builder.
@@ -484,6 +617,9 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
+	if value, ok := tuo.mutation.Author(); ok {
+		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
+	}
 	if value, ok := tuo.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
@@ -534,6 +670,51 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.UploaderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: tome.UploaderPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedUploaderIDs(); len(nodes) > 0 && !tuo.mutation.UploaderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: tome.UploaderPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.UploaderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: tome.UploaderPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

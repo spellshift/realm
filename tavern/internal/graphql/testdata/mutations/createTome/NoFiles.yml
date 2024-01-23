@@ -8,6 +8,7 @@ query: |
     createTome(input: $input) {
         name
         description
+        author
         eldritch
     }
   }
@@ -15,10 +16,12 @@ variables:
   input:
     name: "WonderfulTome"
     description: It's for a test
+    author: kcarretto
     eldritch: print("Hello World")
 
 expected:
   createTome:
     name: "WonderfulTome"
     description: It's for a test
+    author: kcarretto
     eldritch: print("Hello World")

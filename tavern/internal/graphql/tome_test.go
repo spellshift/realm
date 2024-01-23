@@ -68,6 +68,7 @@ mutation newCreateTomeTest($input: CreateTomeInput!) {
 			expected := map[string]any{
 				"name":        "TestTome",
 				"description": "Helps us make sure this all works",
+				"author":      "kcarretto",
 				"eldritch":    `print("hello world")`,
 			}
 			id, err := createTome(expected)
@@ -92,6 +93,7 @@ mutation newCreateTomeTest($input: CreateTomeInput!) {
 			expected := map[string]any{
 				"name":        "TestTomeWithFiles",
 				"description": "Helps us make sure this all works",
+				"author":      "kcarretto",
 				"eldritch":    `print("hello world")`,
 				"fileIDs":     expectedFileIDs,
 			}

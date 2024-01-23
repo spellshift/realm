@@ -179,3 +179,27 @@ func (t *Tome) Files(ctx context.Context) (result []*File, err error) {
 	}
 	return result, err
 }
+
+func (t *Tome) Uploader(ctx context.Context) (result []*User, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = t.NamedUploader(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = t.Edges.UploaderOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = t.QueryUploader().All(ctx)
+	}
+	return result, err
+}
+
+func (u *User) Tomes(ctx context.Context) (result []*Tome, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = u.NamedTomes(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = u.Edges.TomesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = u.QueryTomes().All(ctx)
+	}
+	return result, err
+}

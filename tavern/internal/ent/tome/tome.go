@@ -23,6 +23,8 @@ const (
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
+	// FieldAuthor holds the string denoting the author field in the database.
+	FieldAuthor = "author"
 	// FieldParamDefs holds the string denoting the param_defs field in the database.
 	FieldParamDefs = "param_defs"
 	// FieldHash holds the string denoting the hash field in the database.
@@ -31,6 +33,8 @@ const (
 	FieldEldritch = "eldritch"
 	// EdgeFiles holds the string denoting the files edge name in mutations.
 	EdgeFiles = "files"
+	// EdgeUploader holds the string denoting the uploader edge name in mutations.
+	EdgeUploader = "uploader"
 	// Table holds the table name of the tome in the database.
 	Table = "tomes"
 	// FilesTable is the table that holds the files relation/edge. The primary key declared below.
@@ -38,6 +42,11 @@ const (
 	// FilesInverseTable is the table name for the File entity.
 	// It exists in this package in order to avoid circular dependency with the "file" package.
 	FilesInverseTable = "files"
+	// UploaderTable is the table that holds the uploader relation/edge. The primary key declared below.
+	UploaderTable = "tome_uploader"
+	// UploaderInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	UploaderInverseTable = "users"
 )
 
 // Columns holds all SQL columns for tome fields.
@@ -47,6 +56,7 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldName,
 	FieldDescription,
+	FieldAuthor,
 	FieldParamDefs,
 	FieldHash,
 	FieldEldritch,
@@ -56,6 +66,9 @@ var (
 	// FilesPrimaryKey and FilesColumn2 are the table columns denoting the
 	// primary key for the files relation (M2M).
 	FilesPrimaryKey = []string{"tome_id", "file_id"}
+	// UploaderPrimaryKey and UploaderColumn2 are the table columns denoting the
+	// primary key for the uploader relation (M2M).
+	UploaderPrimaryKey = []string{"tome_id", "user_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -117,6 +130,11 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
 }
 
+// ByAuthor orders the results by the author field.
+func ByAuthor(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAuthor, opts...).ToFunc()
+}
+
 // ByParamDefs orders the results by the param_defs field.
 func ByParamDefs(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldParamDefs, opts...).ToFunc()
@@ -145,10 +163,31 @@ func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByUploaderCount orders the results by uploader count.
+func ByUploaderCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUploaderStep(), opts...)
+	}
+}
+
+// ByUploader orders the results by uploader terms.
+func ByUploader(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUploaderStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newFilesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FilesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, false, FilesTable, FilesPrimaryKey...),
+	)
+}
+func newUploaderStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UploaderInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, UploaderTable, UploaderPrimaryKey...),
 	)
 }

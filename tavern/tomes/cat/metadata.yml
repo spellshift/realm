@@ -1,5 +1,6 @@
 name: cat
 description: Display contents of a file
+author: adm1nPanda
 paramdefs:
 - name: path
   type: string

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // TomeCreate is the builder for creating a Tome entity.
@@ -63,6 +64,12 @@ func (tc *TomeCreate) SetDescription(s string) *TomeCreate {
 	return tc
 }
 
+// SetAuthor sets the "author" field.
+func (tc *TomeCreate) SetAuthor(s string) *TomeCreate {
+	tc.mutation.SetAuthor(s)
+	return tc
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (tc *TomeCreate) SetParamDefs(s string) *TomeCreate {
 	tc.mutation.SetParamDefs(s)
@@ -102,6 +109,21 @@ func (tc *TomeCreate) AddFiles(f ...*File) *TomeCreate {
 		ids[i] = f[i].ID
 	}
 	return tc.AddFileIDs(ids...)
+}
+
+// AddUploaderIDs adds the "uploader" edge to the User entity by IDs.
+func (tc *TomeCreate) AddUploaderIDs(ids ...int) *TomeCreate {
+	tc.mutation.AddUploaderIDs(ids...)
+	return tc
+}
+
+// AddUploader adds the "uploader" edges to the User entity.
+func (tc *TomeCreate) AddUploader(u ...*User) *TomeCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tc.AddUploaderIDs(ids...)
 }
 
 // Mutation returns the TomeMutation object of the builder.
@@ -177,6 +199,9 @@ func (tc *TomeCreate) check() error {
 	if _, ok := tc.mutation.Description(); !ok {
 		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Tome.description"`)}
 	}
+	if _, ok := tc.mutation.Author(); !ok {
+		return &ValidationError{Name: "author", err: errors.New(`ent: missing required field "Tome.author"`)}
+	}
 	if v, ok := tc.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
@@ -236,6 +261,10 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
+	if value, ok := tc.mutation.Author(); ok {
+		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
+		_node.Author = value
+	}
 	if value, ok := tc.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 		_node.ParamDefs = value
@@ -257,6 +286,22 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.UploaderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: tome.UploaderPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -349,6 +394,18 @@ func (u *TomeUpsert) SetDescription(v string) *TomeUpsert {
 // UpdateDescription sets the "description" field to the value that was provided on create.
 func (u *TomeUpsert) UpdateDescription() *TomeUpsert {
 	u.SetExcluded(tome.FieldDescription)
+	return u
+}
+
+// SetAuthor sets the "author" field.
+func (u *TomeUpsert) SetAuthor(v string) *TomeUpsert {
+	u.Set(tome.FieldAuthor, v)
+	return u
+}
+
+// UpdateAuthor sets the "author" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateAuthor() *TomeUpsert {
+	u.SetExcluded(tome.FieldAuthor)
 	return u
 }
 
@@ -478,6 +535,20 @@ func (u *TomeUpsertOne) SetDescription(v string) *TomeUpsertOne {
 func (u *TomeUpsertOne) UpdateDescription() *TomeUpsertOne {
 	return u.Update(func(s *TomeUpsert) {
 		s.UpdateDescription()
+	})
+}
+
+// SetAuthor sets the "author" field.
+func (u *TomeUpsertOne) SetAuthor(v string) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetAuthor(v)
+	})
+}
+
+// UpdateAuthor sets the "author" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateAuthor() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateAuthor()
 	})
 }
 
@@ -780,6 +851,20 @@ func (u *TomeUpsertBulk) SetDescription(v string) *TomeUpsertBulk {
 func (u *TomeUpsertBulk) UpdateDescription() *TomeUpsertBulk {
 	return u.Update(func(s *TomeUpsert) {
 		s.UpdateDescription()
+	})
+}
+
+// SetAuthor sets the "author" field.
+func (u *TomeUpsertBulk) SetAuthor(v string) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetAuthor(v)
+	})
+}
+
+// UpdateAuthor sets the "author" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateAuthor() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateAuthor()
 	})
 }
 

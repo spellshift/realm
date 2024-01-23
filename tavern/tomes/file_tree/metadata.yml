@@ -1,5 +1,6 @@
 name: List file tree
 description: List the files and directories found at the path in tree-like format
+author: adm1nPanda
 paramdefs:
 - name: path
   type: string

@@ -42,6 +42,7 @@ func (paramDef ParamDefinition) Validate() error {
 type metadataDefinition struct {
 	Name        string
 	Description string
+	Author      string
 	ParamDefs   []ParamDefinition
 }
 
@@ -138,6 +139,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 		if _, err := graph.Tome.Create().
 			SetName(entry.Name()).
 			SetDescription(metadata.Description).
+			SetAuthor(metadata.Author).
 			SetParamDefs(string(paramdefs)).
 			SetEldritch(eldritch).
 			AddFiles(tomeFiles...).

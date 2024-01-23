@@ -67,6 +67,7 @@ func TestBeaconMutations(t *testing.T) {
 		SetName("Test Tome").
 		SetDescription("Ensures the world feels greeted").
 		SetEldritch(`print("Hello World!")`).
+		SetAuthor("kcarretto").
 		SaveX(ctx)
 	testQuest := graph.Quest.Create().
 		SetName("howdy-ho").

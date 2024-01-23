@@ -182,21 +182,27 @@ func (c *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
 type CreateTomeInput struct {
 	Name        string
 	Description string
+	Author      string
 	ParamDefs   *string
 	Eldritch    string
 	FileIDs     []int
+	UploaderIDs []int
 }
 
 // Mutate applies the CreateTomeInput on the TomeMutation builder.
 func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 	m.SetName(i.Name)
 	m.SetDescription(i.Description)
+	m.SetAuthor(i.Author)
 	if v := i.ParamDefs; v != nil {
 		m.SetParamDefs(*v)
 	}
 	m.SetEldritch(i.Eldritch)
 	if v := i.FileIDs; len(v) > 0 {
 		m.AddFileIDs(v...)
+	}
+	if v := i.UploaderIDs; len(v) > 0 {
+		m.AddUploaderIDs(v...)
 	}
 }
 
@@ -208,10 +214,13 @@ func (c *TomeCreate) SetInput(i CreateTomeInput) *TomeCreate {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name        *string
-	PhotoURL    *string
-	IsActivated *bool
-	IsAdmin     *bool
+	Name          *string
+	PhotoURL      *string
+	IsActivated   *bool
+	IsAdmin       *bool
+	ClearTomes    bool
+	AddTomeIDs    []int
+	RemoveTomeIDs []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -227,6 +236,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.IsAdmin; v != nil {
 		m.SetIsAdmin(*v)
+	}
+	if i.ClearTomes {
+		m.ClearTomes()
+	}
+	if v := i.AddTomeIDs; len(v) > 0 {
+		m.AddTomeIDs(v...)
+	}
+	if v := i.RemoveTomeIDs; len(v) > 0 {
+		m.RemoveTomeIDs(v...)
 	}
 }
 

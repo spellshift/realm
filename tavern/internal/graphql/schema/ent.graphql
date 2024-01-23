@@ -168,11 +168,14 @@ input CreateTomeInput {
   name: String!
   """Information about the tome"""
   description: String!
+  """Name of the author who created the tome."""
+  author: String!
   """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   fileIDs: [ID!]
+  uploaderIDs: [ID!]
 }
 """
 Define a Relay Cursor type:
@@ -919,12 +922,16 @@ type Tome implements Node {
   name: String!
   """Information about the tome"""
   description: String!
+  """Name of the author who created the tome."""
+  author: String!
   """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   """Any files required for tome execution that will be bundled and provided to the agent for download"""
   files: [File!]
+  """User who uploaded the tome (may be null)."""
+  uploader: [User!]
 }
 """Ordering options for Tome connections"""
 input TomeOrder {
@@ -1002,6 +1009,20 @@ input TomeWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
+  """author field predicates"""
+  author: String
+  authorNEQ: String
+  authorIn: [String!]
+  authorNotIn: [String!]
+  authorGT: String
+  authorGTE: String
+  authorLT: String
+  authorLTE: String
+  authorContains: String
+  authorHasPrefix: String
+  authorHasSuffix: String
+  authorEqualFold: String
+  authorContainsFold: String
   """param_defs field predicates"""
   paramDefs: String
   paramDefsNEQ: String
@@ -1035,6 +1056,9 @@ input TomeWhereInput {
   """files edge predicates"""
   hasFiles: Boolean
   hasFilesWith: [FileWhereInput!]
+  """uploader edge predicates"""
+  hasUploader: Boolean
+  hasUploaderWith: [UserWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -1087,6 +1111,9 @@ input UpdateUserInput {
   isActivated: Boolean
   """True if the user is an Admin"""
   isAdmin: Boolean
+  addTomeIDs: [ID!]
+  removeTomeIDs: [ID!]
+  clearTomes: Boolean
 }
 type User implements Node {
   id: ID!
@@ -1098,6 +1125,8 @@ type User implements Node {
   isActivated: Boolean!
   """True if the user is an Admin"""
   isAdmin: Boolean!
+  """Tomes uploaded by the user."""
+  tomes: [Tome!]
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -1150,4 +1179,7 @@ input UserWhereInput {
   """is_admin field predicates"""
   isAdmin: Boolean
   isAdminNEQ: Boolean
+  """tomes edge predicates"""
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
 }

@@ -1,5 +1,6 @@
 name: Process list
 description: Get a list of running processes
+author: hulto
 paramdefs:
 - name: cmd_substring
   label: Process search string

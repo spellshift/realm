@@ -170,6 +170,7 @@ type ComplexityRoot struct {
 	}
 
 	Tome struct {
+		Author         func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Description    func(childComplexity int) int
 		Eldritch       func(childComplexity int) int
@@ -178,6 +179,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
 		ParamDefs      func(childComplexity int) int
+		Uploader       func(childComplexity int) int
 	}
 
 	User struct {
@@ -186,6 +188,7 @@ type ComplexityRoot struct {
 		IsAdmin     func(childComplexity int) int
 		Name        func(childComplexity int) int
 		PhotoURL    func(childComplexity int) int
+		Tomes       func(childComplexity int) int
 	}
 }
 
@@ -912,6 +915,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TaskEdge.Node(childComplexity), true
 
+	case "Tome.author":
+		if e.complexity.Tome.Author == nil {
+			break
+		}
+
+		return e.complexity.Tome.Author(childComplexity), true
+
 	case "Tome.createdAt":
 		if e.complexity.Tome.CreatedAt == nil {
 			break
@@ -968,6 +978,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.ParamDefs(childComplexity), true
 
+	case "Tome.uploader":
+		if e.complexity.Tome.Uploader == nil {
+			break
+		}
+
+		return e.complexity.Tome.Uploader(childComplexity), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -1002,6 +1019,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.PhotoURL(childComplexity), true
+
+	case "User.tomes":
+		if e.complexity.User.Tomes == nil {
+			break
+		}
+
+		return e.complexity.User.Tomes(childComplexity), true
 
 	}
 	return 0, false
@@ -1310,11 +1334,14 @@ input CreateTomeInput {
   name: String!
   """Information about the tome"""
   description: String!
+  """Name of the author who created the tome."""
+  author: String!
   """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   fileIDs: [ID!]
+  uploaderIDs: [ID!]
 }
 """
 Define a Relay Cursor type:
@@ -2061,12 +2088,16 @@ type Tome implements Node {
   name: String!
   """Information about the tome"""
   description: String!
+  """Name of the author who created the tome."""
+  author: String!
   """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   """Any files required for tome execution that will be bundled and provided to the agent for download"""
   files: [File!]
+  """User who uploaded the tome (may be null)."""
+  uploader: [User!]
 }
 """Ordering options for Tome connections"""
 input TomeOrder {
@@ -2144,6 +2175,20 @@ input TomeWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
+  """author field predicates"""
+  author: String
+  authorNEQ: String
+  authorIn: [String!]
+  authorNotIn: [String!]
+  authorGT: String
+  authorGTE: String
+  authorLT: String
+  authorLTE: String
+  authorContains: String
+  authorHasPrefix: String
+  authorHasSuffix: String
+  authorEqualFold: String
+  authorContainsFold: String
   """param_defs field predicates"""
   paramDefs: String
   paramDefsNEQ: String
@@ -2177,6 +2222,9 @@ input TomeWhereInput {
   """files edge predicates"""
   hasFiles: Boolean
   hasFilesWith: [FileWhereInput!]
+  """uploader edge predicates"""
+  hasUploader: Boolean
+  hasUploaderWith: [UserWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -2229,6 +2277,9 @@ input UpdateUserInput {
   isActivated: Boolean
   """True if the user is an Admin"""
   isAdmin: Boolean
+  addTomeIDs: [ID!]
+  removeTomeIDs: [ID!]
+  clearTomes: Boolean
 }
 type User implements Node {
   id: ID!
@@ -2240,6 +2291,8 @@ type User implements Node {
   isActivated: Boolean!
   """True if the user is an Admin"""
   isAdmin: Boolean!
+  """Tomes uploaded by the user."""
+  tomes: [Tome!]
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -2292,6 +2345,9 @@ input UserWhereInput {
   """is_admin field predicates"""
   isAdmin: Boolean
   isAdminNEQ: Boolean
+  """tomes edge predicates"""
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
