@@ -8,12 +8,36 @@ use anyhow::{Context, Result};
 use c2::pb::c2_manual_client::TavernClient;
 use c2::pb::{
     Agent, Beacon, ClaimTasksRequest, Host, ReportTaskOutputRequest, ReportTaskOutputResponse,
-    Task, TaskOutput,
+    Task, TaskError, TaskOutput,
 };
 use chrono::Utc;
-use std::sync::mpsc::channel;
+use std::sync::mpsc::{channel, Receiver};
 use tokio::task;
 use tonic::Status;
+
+pub fn drain_sender(reciever: &Receiver<String>) -> Result<String> {
+    let mut channel_res: Vec<String> = Vec::new();
+    loop {
+        let new_res_line = match reciever.recv_timeout(Duration::from_millis(100)) {
+            Ok(local_res_string) => local_res_string,
+            Err(local_err) => {
+                match local_err.to_string().as_str() {
+                    "channel is empty and sending half is closed" => {
+                        break;
+                    }
+                    "timed out waiting on channel" => {
+                        break;
+                    }
+                    _ => eprint!("Error: {}", local_err),
+                }
+                break;
+            }
+        };
+        // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
+        channel_res.push(new_res_line);
+    }
+    Ok(channel_res.join(""))
+}
 
 pub async fn get_new_tasks(
     agent_properties: AgentProperties,
@@ -63,8 +87,13 @@ pub async fn start_new_tasks(
         eprintln!("Launching:\n{:?}", task.clone().eldritch);
 
         let (sender, receiver) = channel::<String>();
-        let exec_with_timeout =
-            handle_exec_timeout_and_response(task.clone(), sender.clone(), None);
+        let (error_sender, error_receiver) = channel::<String>();
+        let exec_with_timeout = handle_exec_timeout_and_response(
+            task.clone(),
+            sender.clone(),
+            error_sender.clone(),
+            None,
+        );
 
         #[cfg(debug_assertions)]
         eprintln!(
@@ -80,6 +109,7 @@ pub async fn start_new_tasks(
                 start_time: Utc::now(),
                 grpc_task: task.clone(),
                 print_reciever: receiver,
+                error_reciever: error_receiver,
             },
         ) {
             Some(_old_task) => {
@@ -106,38 +136,9 @@ fn queue_task_output(
     async_task: &AsyncTask,
     task_id: TaskID,
     running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
-    loop_start_time: Instant,
-) {
-    let mut task_channel_output: Vec<String> = Vec::new();
-
-    loop {
-        #[cfg(debug_assertions)]
-        eprintln!(
-            "[{}]: Task # {} recieving output",
-            (Instant::now() - loop_start_time).as_millis(),
-            task_id
-        );
-        let new_res_line = match async_task
-            .print_reciever
-            .recv_timeout(Duration::from_millis(100))
-        {
-            Ok(local_res_string) => local_res_string,
-            Err(local_err) => {
-                match local_err.to_string().as_str() {
-                    "channel is empty and sending half is closed" => {
-                        break;
-                    }
-                    "timed out waiting on channel" => {
-                        break;
-                    }
-                    _ => eprint!("Error: {}", local_err),
-                }
-                break;
-            }
-        };
-        // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-        task_channel_output.push(new_res_line);
-    }
+) -> Result<()> {
+    let task_channel_output = drain_sender(&async_task.print_reciever)?;
+    let task_channel_error = drain_sender(&async_task.error_reciever)?;
 
     let task_is_finished = async_task.future_join_handle.is_finished();
     let task_response_exec_finished_at = match task_is_finished {
@@ -147,6 +148,14 @@ fn queue_task_output(
 
     // If the task is finished or there's new data queue a new task result.
     if task_is_finished || task_channel_output.len() > 0 {
+        let task_error = if task_channel_error.len() > 0 {
+            Some(TaskError {
+                msg: task_channel_error,
+            })
+        } else {
+            None
+        };
+
         let task_response = TaskOutput {
             id: async_task.grpc_task.id.clone(),
             exec_started_at: Some(prost_types::Timestamp {
@@ -160,15 +169,18 @@ fn queue_task_output(
                 }),
                 None => None,
             },
-            output: task_channel_output.join(""),
-            error: None,
+            output: task_channel_output,
+            error: task_error,
         };
 
         running_task_res_map
             .entry(task_id)
-            .and_modify(|cur_list| cur_list.push(task_response.clone()))
+            .and_modify(|cur_list| {
+                cur_list.push(task_response.clone());
+            })
             .or_insert(vec![task_response]);
     }
+    Ok(())
 }
 
 pub async fn submit_task_output(
@@ -189,7 +201,7 @@ pub async fn submit_task_output(
         );
 
         // Loop over each line of output from the task and append it the the channel output.
-        queue_task_output(async_task, *task_id, running_task_res_map, loop_start_time);
+        queue_task_output(async_task, *task_id, running_task_res_map)?;
     }
 
     // Iterate over queued task results and send them back to the server
