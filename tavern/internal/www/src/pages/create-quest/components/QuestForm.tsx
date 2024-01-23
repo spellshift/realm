@@ -1,5 +1,4 @@
 import { useFormik } from "formik";
-import { faker } from '@faker-js/faker';
 import React, { useState } from "react";
 
 import { FormSteps } from "../../../components/form-steps";
@@ -7,11 +6,12 @@ import TomeStepWrapper from "./TomeStepWrapper";
 import FinalizeStep from "./FinalizeStep";
 import BeaconStepWrapper from "./BeaconStepWrapper";
 import { useSubmitQuest } from "../hooks/useSubmitQuest";
+import { getRandomQuestName } from "../../../utils/questNames";
 
 const QuestForm = () => {
     const [currStep, setCurrStep] = useState<number>(0);
     const { submitQuest } = useSubmitQuest();
-    const placeholderTitle = faker.music.songName();
+    const placeholderTitle = getRandomQuestName();
 
 
     const steps = [
