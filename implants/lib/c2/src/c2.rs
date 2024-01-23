@@ -124,6 +124,17 @@ pub struct TaskOutput {
     #[prost(message, optional, tag = "5")]
     pub exec_finished_at: ::core::option::Option<::prost_types::Timestamp>,
 }
+/// Process running on the system.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Process {
+    #[prost(uint64, tag = "1")]
+    pub pid: u64,
+    #[prost(string, tag = "2")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub principal: ::prost::alloc::string::String,
+}
 ///
 /// RPC Messages
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -159,6 +170,17 @@ pub struct DownloadFileResponse {
     #[prost(bytes = "vec", tag = "1")]
     pub chunk: ::prost::alloc::vec::Vec<u8>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportProcessListRequest {
+    #[prost(message, repeated, tag = "1")]
+    pub list: ::prost::alloc::vec::Vec<Process>,
+    #[prost(int64, tag = "2")]
+    pub task_id: i64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportProcessListResponse {}
 /// Generated client implementations.
 pub mod c2_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -286,6 +308,31 @@ pub mod c2_client {
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportTaskOutput");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
+            self.inner.unary(req, path, codec).await
+        }
+        ///
+        /// Report the active list of running processes. This list will replace any previously reported
+        /// lists for the same host.
+        pub async fn report_process_list(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ReportProcessListRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportProcessListResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportProcessList");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
             self.inner.unary(req, path, codec).await
         }
         ///
