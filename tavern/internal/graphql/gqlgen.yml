@@ -59,3 +59,9 @@ models:
   Platform:
     model:
       - realm.pub/tavern/internal/ent/host.Platform
+  SupportModel:
+    model:
+      - realm.pub/tavern/internal/ent/tome.SupportModel
+  Tactic:
+    model:
+      - realm.pub/tavern/internal/ent/tome.Tactic

@@ -1,5 +1,8 @@
 name: Shell command
 description: Execute a shell command in the systems default shell.
+author: hulto
+support_model: FIRST_PARTY
+tactic: EXECUTION
 paramdefs:
 - name: cmd
   label: Command

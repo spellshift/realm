@@ -5509,6 +5509,9 @@ type TomeMutation struct {
 	last_modified_at *time.Time
 	name             *string
 	description      *string
+	author           *string
+	support_model    *tome.SupportModel
+	tactic           *tome.Tactic
 	param_defs       *string
 	hash             *string
 	eldritch         *string
@@ -5516,6 +5519,8 @@ type TomeMutation struct {
 	files            map[int]struct{}
 	removedfiles     map[int]struct{}
 	clearedfiles     bool
+	uploader         *int
+	cleareduploader  bool
 	done             bool
 	oldValue         func(context.Context) (*Tome, error)
 	predicates       []predicate.Tome
@@ -5763,6 +5768,114 @@ func (m *TomeMutation) ResetDescription() {
 	m.description = nil
 }
 
+// SetAuthor sets the "author" field.
+func (m *TomeMutation) SetAuthor(s string) {
+	m.author = &s
+}
+
+// Author returns the value of the "author" field in the mutation.
+func (m *TomeMutation) Author() (r string, exists bool) {
+	v := m.author
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthor returns the old "author" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldAuthor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthor: %w", err)
+	}
+	return oldValue.Author, nil
+}
+
+// ResetAuthor resets all changes to the "author" field.
+func (m *TomeMutation) ResetAuthor() {
+	m.author = nil
+}
+
+// SetSupportModel sets the "support_model" field.
+func (m *TomeMutation) SetSupportModel(tm tome.SupportModel) {
+	m.support_model = &tm
+}
+
+// SupportModel returns the value of the "support_model" field in the mutation.
+func (m *TomeMutation) SupportModel() (r tome.SupportModel, exists bool) {
+	v := m.support_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupportModel returns the old "support_model" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldSupportModel(ctx context.Context) (v tome.SupportModel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupportModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupportModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupportModel: %w", err)
+	}
+	return oldValue.SupportModel, nil
+}
+
+// ResetSupportModel resets all changes to the "support_model" field.
+func (m *TomeMutation) ResetSupportModel() {
+	m.support_model = nil
+}
+
+// SetTactic sets the "tactic" field.
+func (m *TomeMutation) SetTactic(t tome.Tactic) {
+	m.tactic = &t
+}
+
+// Tactic returns the value of the "tactic" field in the mutation.
+func (m *TomeMutation) Tactic() (r tome.Tactic, exists bool) {
+	v := m.tactic
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTactic returns the old "tactic" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldTactic(ctx context.Context) (v tome.Tactic, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTactic is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTactic requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTactic: %w", err)
+	}
+	return oldValue.Tactic, nil
+}
+
+// ResetTactic resets all changes to the "tactic" field.
+func (m *TomeMutation) ResetTactic() {
+	m.tactic = nil
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (m *TomeMutation) SetParamDefs(s string) {
 	m.param_defs = &s
@@ -5938,6 +6051,45 @@ func (m *TomeMutation) ResetFiles() {
 	m.removedfiles = nil
 }
 
+// SetUploaderID sets the "uploader" edge to the User entity by id.
+func (m *TomeMutation) SetUploaderID(id int) {
+	m.uploader = &id
+}
+
+// ClearUploader clears the "uploader" edge to the User entity.
+func (m *TomeMutation) ClearUploader() {
+	m.cleareduploader = true
+}
+
+// UploaderCleared reports if the "uploader" edge to the User entity was cleared.
+func (m *TomeMutation) UploaderCleared() bool {
+	return m.cleareduploader
+}
+
+// UploaderID returns the "uploader" edge ID in the mutation.
+func (m *TomeMutation) UploaderID() (id int, exists bool) {
+	if m.uploader != nil {
+		return *m.uploader, true
+	}
+	return
+}
+
+// UploaderIDs returns the "uploader" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UploaderID instead. It exists only for internal usage by the builders.
+func (m *TomeMutation) UploaderIDs() (ids []int) {
+	if id := m.uploader; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUploader resets all changes to the "uploader" edge.
+func (m *TomeMutation) ResetUploader() {
+	m.uploader = nil
+	m.cleareduploader = false
+}
+
 // Where appends a list predicates to the TomeMutation builder.
 func (m *TomeMutation) Where(ps ...predicate.Tome) {
 	m.predicates = append(m.predicates, ps...)
@@ -5972,7 +6124,7 @@ func (m *TomeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TomeMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, tome.FieldCreatedAt)
 	}
@@ -5984,6 +6136,15 @@ func (m *TomeMutation) Fields() []string {
 	}
 	if m.description != nil {
 		fields = append(fields, tome.FieldDescription)
+	}
+	if m.author != nil {
+		fields = append(fields, tome.FieldAuthor)
+	}
+	if m.support_model != nil {
+		fields = append(fields, tome.FieldSupportModel)
+	}
+	if m.tactic != nil {
+		fields = append(fields, tome.FieldTactic)
 	}
 	if m.param_defs != nil {
 		fields = append(fields, tome.FieldParamDefs)
@@ -6010,6 +6171,12 @@ func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case tome.FieldDescription:
 		return m.Description()
+	case tome.FieldAuthor:
+		return m.Author()
+	case tome.FieldSupportModel:
+		return m.SupportModel()
+	case tome.FieldTactic:
+		return m.Tactic()
 	case tome.FieldParamDefs:
 		return m.ParamDefs()
 	case tome.FieldHash:
@@ -6033,6 +6200,12 @@ func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case tome.FieldDescription:
 		return m.OldDescription(ctx)
+	case tome.FieldAuthor:
+		return m.OldAuthor(ctx)
+	case tome.FieldSupportModel:
+		return m.OldSupportModel(ctx)
+	case tome.FieldTactic:
+		return m.OldTactic(ctx)
 	case tome.FieldParamDefs:
 		return m.OldParamDefs(ctx)
 	case tome.FieldHash:
@@ -6075,6 +6248,27 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDescription(v)
+		return nil
+	case tome.FieldAuthor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthor(v)
+		return nil
+	case tome.FieldSupportModel:
+		v, ok := value.(tome.SupportModel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupportModel(v)
+		return nil
+	case tome.FieldTactic:
+		v, ok := value.(tome.Tactic)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTactic(v)
 		return nil
 	case tome.FieldParamDefs:
 		v, ok := value.(string)
@@ -6167,6 +6361,15 @@ func (m *TomeMutation) ResetField(name string) error {
 	case tome.FieldDescription:
 		m.ResetDescription()
 		return nil
+	case tome.FieldAuthor:
+		m.ResetAuthor()
+		return nil
+	case tome.FieldSupportModel:
+		m.ResetSupportModel()
+		return nil
+	case tome.FieldTactic:
+		m.ResetTactic()
+		return nil
 	case tome.FieldParamDefs:
 		m.ResetParamDefs()
 		return nil
@@ -6182,9 +6385,12 @@ func (m *TomeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TomeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.files != nil {
 		edges = append(edges, tome.EdgeFiles)
+	}
+	if m.uploader != nil {
+		edges = append(edges, tome.EdgeUploader)
 	}
 	return edges
 }
@@ -6199,13 +6405,17 @@ func (m *TomeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case tome.EdgeUploader:
+		if id := m.uploader; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TomeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedfiles != nil {
 		edges = append(edges, tome.EdgeFiles)
 	}
@@ -6228,9 +6438,12 @@ func (m *TomeMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TomeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedfiles {
 		edges = append(edges, tome.EdgeFiles)
+	}
+	if m.cleareduploader {
+		edges = append(edges, tome.EdgeUploader)
 	}
 	return edges
 }
@@ -6241,6 +6454,8 @@ func (m *TomeMutation) EdgeCleared(name string) bool {
 	switch name {
 	case tome.EdgeFiles:
 		return m.clearedfiles
+	case tome.EdgeUploader:
+		return m.cleareduploader
 	}
 	return false
 }
@@ -6249,6 +6464,9 @@ func (m *TomeMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *TomeMutation) ClearEdge(name string) error {
 	switch name {
+	case tome.EdgeUploader:
+		m.ClearUploader()
+		return nil
 	}
 	return fmt.Errorf("unknown Tome unique edge %s", name)
 }
@@ -6259,6 +6477,9 @@ func (m *TomeMutation) ResetEdge(name string) error {
 	switch name {
 	case tome.EdgeFiles:
 		m.ResetFiles()
+		return nil
+	case tome.EdgeUploader:
+		m.ResetUploader()
 		return nil
 	}
 	return fmt.Errorf("unknown Tome edge %s", name)
@@ -6277,6 +6498,9 @@ type UserMutation struct {
 	is_activated  *bool
 	is_admin      *bool
 	clearedFields map[string]struct{}
+	tomes         map[int]struct{}
+	removedtomes  map[int]struct{}
+	clearedtomes  bool
 	done          bool
 	oldValue      func(context.Context) (*User, error)
 	predicates    []predicate.User
@@ -6596,6 +6820,60 @@ func (m *UserMutation) ResetIsAdmin() {
 	m.is_admin = nil
 }
 
+// AddTomeIDs adds the "tomes" edge to the Tome entity by ids.
+func (m *UserMutation) AddTomeIDs(ids ...int) {
+	if m.tomes == nil {
+		m.tomes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tomes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTomes clears the "tomes" edge to the Tome entity.
+func (m *UserMutation) ClearTomes() {
+	m.clearedtomes = true
+}
+
+// TomesCleared reports if the "tomes" edge to the Tome entity was cleared.
+func (m *UserMutation) TomesCleared() bool {
+	return m.clearedtomes
+}
+
+// RemoveTomeIDs removes the "tomes" edge to the Tome entity by IDs.
+func (m *UserMutation) RemoveTomeIDs(ids ...int) {
+	if m.removedtomes == nil {
+		m.removedtomes = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.tomes, ids[i])
+		m.removedtomes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTomes returns the removed IDs of the "tomes" edge to the Tome entity.
+func (m *UserMutation) RemovedTomesIDs() (ids []int) {
+	for id := range m.removedtomes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TomesIDs returns the "tomes" edge IDs in the mutation.
+func (m *UserMutation) TomesIDs() (ids []int) {
+	for id := range m.tomes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTomes resets all changes to the "tomes" edge.
+func (m *UserMutation) ResetTomes() {
+	m.tomes = nil
+	m.clearedtomes = false
+	m.removedtomes = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -6814,48 +7092,84 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.tomes != nil {
+		edges = append(edges, user.EdgeTomes)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeTomes:
+		ids := make([]ent.Value, 0, len(m.tomes))
+		for id := range m.tomes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedtomes != nil {
+		edges = append(edges, user.EdgeTomes)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeTomes:
+		ids := make([]ent.Value, 0, len(m.removedtomes))
+		for id := range m.removedtomes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedtomes {
+		edges = append(edges, user.EdgeTomes)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
+	switch name {
+	case user.EdgeTomes:
+		return m.clearedtomes
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
+	switch name {
+	case user.EdgeTomes:
+		m.ResetTomes()
+		return nil
+	}
 	return fmt.Errorf("unknown User edge %s", name)
 }

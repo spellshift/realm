@@ -27,8 +27,33 @@ type User struct {
 	// True if the user is active and able to authenticate
 	IsActivated bool `json:"is_activated,omitempty"`
 	// True if the user is an Admin
-	IsAdmin      bool `json:"is_admin,omitempty"`
+	IsAdmin bool `json:"is_admin,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges        UserEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// Tomes uploaded by the user.
+	Tomes []*Tome `json:"tomes,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+
+	namedTomes map[string][]*Tome
+}
+
+// TomesOrErr returns the Tomes value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) TomesOrErr() ([]*Tome, error) {
+	if e.loadedTypes[0] {
+		return e.Tomes, nil
+	}
+	return nil, &NotLoadedError{edge: "tomes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -112,6 +137,11 @@ func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
 }
 
+// QueryTomes queries the "tomes" edge of the User entity.
+func (u *User) QueryTomes() *TomeQuery {
+	return NewUserClient(u.config).QueryTomes(u)
+}
+
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -152,6 +182,30 @@ func (u *User) String() string {
 	builder.WriteString(fmt.Sprintf("%v", u.IsAdmin))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedTomes returns the Tomes named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedTomes(name string) ([]*Tome, error) {
+	if u.Edges.namedTomes == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedTomes[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedTomes(name string, edges ...*Tome) {
+	if u.Edges.namedTomes == nil {
+		u.Edges.namedTomes = make(map[string][]*Tome)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedTomes[name] = []*Tome{}
+	} else {
+		u.Edges.namedTomes[name] = append(u.Edges.namedTomes[name], edges...)
+	}
 }
 
 // Users is a parsable slice of User.

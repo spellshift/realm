@@ -997,6 +997,16 @@ func (t *TomeQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			t.WithNamedFiles(alias, func(wq *FileQuery) {
 				*wq = *query
 			})
+		case "uploader":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.withUploader = query
 		case "createdAt":
 			if _, ok := fieldSeen[tome.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, tome.FieldCreatedAt)
@@ -1016,6 +1026,21 @@ func (t *TomeQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			if _, ok := fieldSeen[tome.FieldDescription]; !ok {
 				selectedFields = append(selectedFields, tome.FieldDescription)
 				fieldSeen[tome.FieldDescription] = struct{}{}
+			}
+		case "author":
+			if _, ok := fieldSeen[tome.FieldAuthor]; !ok {
+				selectedFields = append(selectedFields, tome.FieldAuthor)
+				fieldSeen[tome.FieldAuthor] = struct{}{}
+			}
+		case "supportModel":
+			if _, ok := fieldSeen[tome.FieldSupportModel]; !ok {
+				selectedFields = append(selectedFields, tome.FieldSupportModel)
+				fieldSeen[tome.FieldSupportModel] = struct{}{}
+			}
+		case "tactic":
+			if _, ok := fieldSeen[tome.FieldTactic]; !ok {
+				selectedFields = append(selectedFields, tome.FieldTactic)
+				fieldSeen[tome.FieldTactic] = struct{}{}
 			}
 		case "paramDefs":
 			if _, ok := fieldSeen[tome.FieldParamDefs]; !ok {
@@ -1111,6 +1136,18 @@ func (u *UserQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+		case "tomes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TomeClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			u.WithNamedTomes(alias, func(wq *TomeQuery) {
+				*wq = *query
+			})
 		case "name":
 			if _, ok := fieldSeen[user.FieldName]; !ok {
 				selectedFields = append(selectedFields, user.FieldName)

@@ -81,15 +81,15 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ClaimTasks       func(childComplexity int, input models.ClaimTasksInput) int
-		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
-		SubmitTaskResult func(childComplexity int, input models.SubmitTaskResultInput) int
-		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateQuest  func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateTag    func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome   func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteTome   func(childComplexity int, tomeID int) int
+		UpdateBeacon func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost   func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateTag    func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome   func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser   func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -170,6 +170,7 @@ type ComplexityRoot struct {
 	}
 
 	Tome struct {
+		Author         func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Description    func(childComplexity int) int
 		Eldritch       func(childComplexity int) int
@@ -178,6 +179,9 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
 		ParamDefs      func(childComplexity int) int
+		SupportModel   func(childComplexity int) int
+		Tactic         func(childComplexity int) int
+		Uploader       func(childComplexity int) int
 	}
 
 	User struct {
@@ -186,6 +190,7 @@ type ComplexityRoot struct {
 		IsAdmin     func(childComplexity int) int
 		Name        func(childComplexity int) int
 		PhotoURL    func(childComplexity int) int
+		Tomes       func(childComplexity int) int
 	}
 }
 
@@ -383,18 +388,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.Tags(childComplexity), true
 
-	case "Mutation.claimTasks":
-		if e.complexity.Mutation.ClaimTasks == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_claimTasks_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.ClaimTasks(childComplexity, args["input"].(models.ClaimTasksInput)), true
-
 	case "Mutation.createQuest":
 		if e.complexity.Mutation.CreateQuest == nil {
 			break
@@ -431,17 +424,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateTome(childComplexity, args["input"].(ent.CreateTomeInput)), true
 
-	case "Mutation.submitTaskResult":
-		if e.complexity.Mutation.SubmitTaskResult == nil {
+	case "Mutation.deleteTome":
+		if e.complexity.Mutation.DeleteTome == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_submitTaskResult_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deleteTome_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubmitTaskResult(childComplexity, args["input"].(models.SubmitTaskResultInput)), true
+		return e.complexity.Mutation.DeleteTome(childComplexity, args["tomeID"].(int)), true
 
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
@@ -478,6 +471,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateTag(childComplexity, args["tagID"].(int), args["input"].(ent.UpdateTagInput)), true
+
+	case "Mutation.updateTome":
+		if e.complexity.Mutation.UpdateTome == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateTome_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateTome(childComplexity, args["tomeID"].(int), args["input"].(ent.UpdateTomeInput)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -912,6 +917,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TaskEdge.Node(childComplexity), true
 
+	case "Tome.author":
+		if e.complexity.Tome.Author == nil {
+			break
+		}
+
+		return e.complexity.Tome.Author(childComplexity), true
+
 	case "Tome.createdAt":
 		if e.complexity.Tome.CreatedAt == nil {
 			break
@@ -968,6 +980,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.ParamDefs(childComplexity), true
 
+	case "Tome.supportModel":
+		if e.complexity.Tome.SupportModel == nil {
+			break
+		}
+
+		return e.complexity.Tome.SupportModel(childComplexity), true
+
+	case "Tome.tactic":
+		if e.complexity.Tome.Tactic == nil {
+			break
+		}
+
+		return e.complexity.Tome.Tactic(childComplexity), true
+
+	case "Tome.uploader":
+		if e.complexity.Tome.Uploader == nil {
+			break
+		}
+
+		return e.complexity.Tome.Uploader(childComplexity), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -1003,6 +1036,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.PhotoURL(childComplexity), true
 
+	case "User.tomes":
+		if e.complexity.User.Tomes == nil {
+			break
+		}
+
+		return e.complexity.User.Tomes(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1035,6 +1075,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateBeaconInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateTagInput,
+		ec.unmarshalInputUpdateTomeInput,
 		ec.unmarshalInputUpdateUserInput,
 		ec.unmarshalInputUserWhereInput,
 	)
@@ -1310,6 +1351,12 @@ input CreateTomeInput {
   name: String!
   """Information about the tome"""
   description: String!
+  """Name of the author who created the tome."""
+  author: String!
+  """Information about the tomes support model."""
+  supportModel: TomeSupportModel
+  """MITRE ATT&CK tactic provided by the tome."""
+  tactic: TomeTactic
   """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
@@ -2061,12 +2108,20 @@ type Tome implements Node {
   name: String!
   """Information about the tome"""
   description: String!
+  """Name of the author who created the tome."""
+  author: String!
+  """Information about the tomes support model."""
+  supportModel: TomeSupportModel!
+  """MITRE ATT&CK tactic provided by the tome."""
+  tactic: TomeTactic!
   """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   """Any files required for tome execution that will be bundled and provided to the agent for download"""
   files: [File!]
+  """User who uploaded the tome (may be null)."""
+  uploader: User
 }
 """Ordering options for Tome connections"""
 input TomeOrder {
@@ -2080,6 +2135,30 @@ enum TomeOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   NAME
+}
+"""TomeSupportModel is enum for the field support_model"""
+enum TomeSupportModel @goModel(model: "realm.pub/tavern/internal/ent/tome.SupportModel") {
+  UNSPECIFIED
+  FIRST_PARTY
+  COMMUNITY
+}
+"""TomeTactic is enum for the field tactic"""
+enum TomeTactic @goModel(model: "realm.pub/tavern/internal/ent/tome.Tactic") {
+  UNSPECIFIED
+  RECON
+  RESOURCE_DEVELOPMENT
+  INITIAL_ACCESS
+  EXECUTION
+  PERSISTENCE
+  PRIVILEGE_ESCALATION
+  DEFENSE_EVASION
+  CREDENTIAL_ACCESS
+  DISCOVERY
+  LATERAL_MOVEMENT
+  COLLECTION
+  COMMAND_AND_CONTROL
+  EXFILTRATION
+  IMPACT
 }
 """
 TomeWhereInput is used for filtering Tome objects.
@@ -2144,6 +2223,30 @@ input TomeWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
+  """author field predicates"""
+  author: String
+  authorNEQ: String
+  authorIn: [String!]
+  authorNotIn: [String!]
+  authorGT: String
+  authorGTE: String
+  authorLT: String
+  authorLTE: String
+  authorContains: String
+  authorHasPrefix: String
+  authorHasSuffix: String
+  authorEqualFold: String
+  authorContainsFold: String
+  """support_model field predicates"""
+  supportModel: TomeSupportModel
+  supportModelNEQ: TomeSupportModel
+  supportModelIn: [TomeSupportModel!]
+  supportModelNotIn: [TomeSupportModel!]
+  """tactic field predicates"""
+  tactic: TomeTactic
+  tacticNEQ: TomeTactic
+  tacticIn: [TomeTactic!]
+  tacticNotIn: [TomeTactic!]
   """param_defs field predicates"""
   paramDefs: String
   paramDefsNEQ: String
@@ -2177,6 +2280,9 @@ input TomeWhereInput {
   """files edge predicates"""
   hasFiles: Boolean
   hasFilesWith: [FileWhereInput!]
+  """uploader edge predicates"""
+  hasUploader: Boolean
+  hasUploaderWith: [UserWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -2217,6 +2323,32 @@ input UpdateTagInput {
   clearHosts: Boolean
 }
 """
+UpdateTomeInput is used for update Tome object.
+Input was generated by ent.
+"""
+input UpdateTomeInput {
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time
+  """Name of the tome"""
+  name: String
+  """Information about the tome"""
+  description: String
+  """Name of the author who created the tome."""
+  author: String
+  """Information about the tomes support model."""
+  supportModel: TomeSupportModel
+  """MITRE ATT&CK tactic provided by the tome."""
+  tactic: TomeTactic
+  """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
+  paramDefs: String
+  clearParamDefs: Boolean
+  """Eldritch script that will be executed when the tome is run"""
+  eldritch: String
+  addFileIDs: [ID!]
+  removeFileIDs: [ID!]
+  clearFiles: Boolean
+}
+"""
 UpdateUserInput is used for update User object.
 Input was generated by ent.
 """
@@ -2229,6 +2361,9 @@ input UpdateUserInput {
   isActivated: Boolean
   """True if the user is an Admin"""
   isAdmin: Boolean
+  addTomeIDs: [ID!]
+  removeTomeIDs: [ID!]
+  clearTomes: Boolean
 }
 type User implements Node {
   id: ID!
@@ -2240,6 +2375,8 @@ type User implements Node {
   isActivated: Boolean!
   """True if the user is an Admin"""
   isAdmin: Boolean!
+  """Tomes uploaded by the user."""
+  tomes: [Tome!]
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -2292,6 +2429,9 @@ input UserWhereInput {
   """is_admin field predicates"""
   isAdmin: Boolean
   isAdminNEQ: Boolean
+  """tomes edge predicates"""
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -2350,15 +2490,11 @@ scalar Uint64
     updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
 
     ###
-    # Task
-    ###
-    claimTasks(input: ClaimTasksInput!,): [Task!]!
-    submitTaskResult(input: SubmitTaskResultInput!,): Task
-
-    ###
     # Tome
     ###
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
+    updateTome(tomeID: ID!, input: UpdateTomeInput!,): Tome! @requireRole(role: ADMIN)
+    deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # User

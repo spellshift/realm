@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Tome is the model entity for the Tome schema.
@@ -25,6 +26,12 @@ type Tome struct {
 	Name string `json:"name,omitempty"`
 	// Information about the tome
 	Description string `json:"description,omitempty"`
+	// Name of the author who created the tome.
+	Author string `json:"author,omitempty"`
+	// Information about the tomes support model.
+	SupportModel tome.SupportModel `json:"support_model,omitempty"`
+	// MITRE ATT&CK tactic provided by the tome.
+	Tactic tome.Tactic `json:"tactic,omitempty"`
 	// JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
 	ParamDefs string `json:"param_defs,omitempty"`
 	// A SHA3 digest of the eldritch field
@@ -33,19 +40,22 @@ type Tome struct {
 	Eldritch string `json:"eldritch,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TomeQuery when eager-loading is set.
-	Edges        TomeEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges         TomeEdges `json:"edges"`
+	tome_uploader *int
+	selectValues  sql.SelectValues
 }
 
 // TomeEdges holds the relations/edges for other nodes in the graph.
 type TomeEdges struct {
 	// Any files required for tome execution that will be bundled and provided to the agent for download
 	Files []*File `json:"files,omitempty"`
+	// User who uploaded the tome (may be null).
+	Uploader *User `json:"uploader,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 
 	namedFiles map[string][]*File
 }
@@ -59,6 +69,19 @@ func (e TomeEdges) FilesOrErr() ([]*File, error) {
 	return nil, &NotLoadedError{edge: "files"}
 }
 
+// UploaderOrErr returns the Uploader value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TomeEdges) UploaderOrErr() (*User, error) {
+	if e.loadedTypes[1] {
+		if e.Uploader == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: user.Label}
+		}
+		return e.Uploader, nil
+	}
+	return nil, &NotLoadedError{edge: "uploader"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Tome) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -66,10 +89,12 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tome.FieldID:
 			values[i] = new(sql.NullInt64)
-		case tome.FieldName, tome.FieldDescription, tome.FieldParamDefs, tome.FieldHash, tome.FieldEldritch:
+		case tome.FieldName, tome.FieldDescription, tome.FieldAuthor, tome.FieldSupportModel, tome.FieldTactic, tome.FieldParamDefs, tome.FieldHash, tome.FieldEldritch:
 			values[i] = new(sql.NullString)
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
+		case tome.ForeignKeys[0]: // tome_uploader
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -115,6 +140,24 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Description = value.String
 			}
+		case tome.FieldAuthor:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field author", values[i])
+			} else if value.Valid {
+				t.Author = value.String
+			}
+		case tome.FieldSupportModel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field support_model", values[i])
+			} else if value.Valid {
+				t.SupportModel = tome.SupportModel(value.String)
+			}
+		case tome.FieldTactic:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tactic", values[i])
+			} else if value.Valid {
+				t.Tactic = tome.Tactic(value.String)
+			}
 		case tome.FieldParamDefs:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field param_defs", values[i])
@@ -133,6 +176,13 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Eldritch = value.String
 			}
+		case tome.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field tome_uploader", value)
+			} else if value.Valid {
+				t.tome_uploader = new(int)
+				*t.tome_uploader = int(value.Int64)
+			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
 		}
@@ -149,6 +199,11 @@ func (t *Tome) Value(name string) (ent.Value, error) {
 // QueryFiles queries the "files" edge of the Tome entity.
 func (t *Tome) QueryFiles() *FileQuery {
 	return NewTomeClient(t.config).QueryFiles(t)
+}
+
+// QueryUploader queries the "uploader" edge of the Tome entity.
+func (t *Tome) QueryUploader() *UserQuery {
+	return NewTomeClient(t.config).QueryUploader(t)
 }
 
 // Update returns a builder for updating this Tome.
@@ -185,6 +240,15 @@ func (t *Tome) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(t.Description)
+	builder.WriteString(", ")
+	builder.WriteString("author=")
+	builder.WriteString(t.Author)
+	builder.WriteString(", ")
+	builder.WriteString("support_model=")
+	builder.WriteString(fmt.Sprintf("%v", t.SupportModel))
+	builder.WriteString(", ")
+	builder.WriteString("tactic=")
+	builder.WriteString(fmt.Sprintf("%v", t.Tactic))
 	builder.WriteString(", ")
 	builder.WriteString("param_defs=")
 	builder.WriteString(t.ParamDefs)
