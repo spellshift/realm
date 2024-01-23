@@ -186,7 +186,7 @@ type CreateTomeInput struct {
 	ParamDefs   *string
 	Eldritch    string
 	FileIDs     []int
-	UploaderIDs []int
+	UploaderID  *int
 }
 
 // Mutate applies the CreateTomeInput on the TomeMutation builder.
@@ -201,8 +201,8 @@ func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 	if v := i.FileIDs; len(v) > 0 {
 		m.AddFileIDs(v...)
 	}
-	if v := i.UploaderIDs; len(v) > 0 {
-		m.AddUploaderIDs(v...)
+	if v := i.UploaderID; v != nil {
+		m.SetUploaderID(*v)
 	}
 }
 

@@ -42,11 +42,13 @@ const (
 	// FilesInverseTable is the table name for the File entity.
 	// It exists in this package in order to avoid circular dependency with the "file" package.
 	FilesInverseTable = "files"
-	// UploaderTable is the table that holds the uploader relation/edge. The primary key declared below.
-	UploaderTable = "tome_uploader"
+	// UploaderTable is the table that holds the uploader relation/edge.
+	UploaderTable = "tomes"
 	// UploaderInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UploaderInverseTable = "users"
+	// UploaderColumn is the table column denoting the uploader relation/edge.
+	UploaderColumn = "tome_uploader"
 )
 
 // Columns holds all SQL columns for tome fields.
@@ -62,19 +64,27 @@ var Columns = []string{
 	FieldEldritch,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "tomes"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"tome_uploader",
+}
+
 var (
 	// FilesPrimaryKey and FilesColumn2 are the table columns denoting the
 	// primary key for the files relation (M2M).
 	FilesPrimaryKey = []string{"tome_id", "file_id"}
-	// UploaderPrimaryKey and UploaderColumn2 are the table columns denoting the
-	// primary key for the uploader relation (M2M).
-	UploaderPrimaryKey = []string{"tome_id", "user_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -164,17 +174,10 @@ func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByUploaderCount orders the results by uploader count.
-func ByUploaderCount(opts ...sql.OrderTermOption) OrderOption {
+// ByUploaderField orders the results by uploader field.
+func ByUploaderField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newUploaderStep(), opts...)
-	}
-}
-
-// ByUploader orders the results by uploader terms.
-func ByUploader(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newUploaderStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newUploaderStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newFilesStep() *sqlgraph.Step {
@@ -188,6 +191,6 @@ func newUploaderStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UploaderInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2M, false, UploaderTable, UploaderPrimaryKey...),
+		sqlgraph.Edge(sqlgraph.M2O, false, UploaderTable, UploaderColumn),
 	)
 }

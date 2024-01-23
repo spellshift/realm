@@ -175,7 +175,7 @@ input CreateTomeInput {
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   fileIDs: [ID!]
-  uploaderIDs: [ID!]
+  uploaderID: ID
 }
 """
 Define a Relay Cursor type:
@@ -931,7 +931,7 @@ type Tome implements Node {
   """Any files required for tome execution that will be bundled and provided to the agent for download"""
   files: [File!]
   """User who uploaded the tome (may be null)."""
-  uploader: [User!]
+  uploader: User
 }
 """Ordering options for Tome connections"""
 input TomeOrder {

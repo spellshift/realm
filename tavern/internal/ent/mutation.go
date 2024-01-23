@@ -5517,8 +5517,7 @@ type TomeMutation struct {
 	files            map[int]struct{}
 	removedfiles     map[int]struct{}
 	clearedfiles     bool
-	uploader         map[int]struct{}
-	removeduploader  map[int]struct{}
+	uploader         *int
 	cleareduploader  bool
 	done             bool
 	oldValue         func(context.Context) (*Tome, error)
@@ -5978,14 +5977,9 @@ func (m *TomeMutation) ResetFiles() {
 	m.removedfiles = nil
 }
 
-// AddUploaderIDs adds the "uploader" edge to the User entity by ids.
-func (m *TomeMutation) AddUploaderIDs(ids ...int) {
-	if m.uploader == nil {
-		m.uploader = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.uploader[ids[i]] = struct{}{}
-	}
+// SetUploaderID sets the "uploader" edge to the User entity by id.
+func (m *TomeMutation) SetUploaderID(id int) {
+	m.uploader = &id
 }
 
 // ClearUploader clears the "uploader" edge to the User entity.
@@ -5998,29 +5992,20 @@ func (m *TomeMutation) UploaderCleared() bool {
 	return m.cleareduploader
 }
 
-// RemoveUploaderIDs removes the "uploader" edge to the User entity by IDs.
-func (m *TomeMutation) RemoveUploaderIDs(ids ...int) {
-	if m.removeduploader == nil {
-		m.removeduploader = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.uploader, ids[i])
-		m.removeduploader[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedUploader returns the removed IDs of the "uploader" edge to the User entity.
-func (m *TomeMutation) RemovedUploaderIDs() (ids []int) {
-	for id := range m.removeduploader {
-		ids = append(ids, id)
+// UploaderID returns the "uploader" edge ID in the mutation.
+func (m *TomeMutation) UploaderID() (id int, exists bool) {
+	if m.uploader != nil {
+		return *m.uploader, true
 	}
 	return
 }
 
 // UploaderIDs returns the "uploader" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UploaderID instead. It exists only for internal usage by the builders.
 func (m *TomeMutation) UploaderIDs() (ids []int) {
-	for id := range m.uploader {
-		ids = append(ids, id)
+	if id := m.uploader; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -6029,7 +6014,6 @@ func (m *TomeMutation) UploaderIDs() (ids []int) {
 func (m *TomeMutation) ResetUploader() {
 	m.uploader = nil
 	m.cleareduploader = false
-	m.removeduploader = nil
 }
 
 // Where appends a list predicates to the TomeMutation builder.
@@ -6314,11 +6298,9 @@ func (m *TomeMutation) AddedIDs(name string) []ent.Value {
 		}
 		return ids
 	case tome.EdgeUploader:
-		ids := make([]ent.Value, 0, len(m.uploader))
-		for id := range m.uploader {
-			ids = append(ids, id)
+		if id := m.uploader; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	}
 	return nil
 }
@@ -6328,9 +6310,6 @@ func (m *TomeMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.removedfiles != nil {
 		edges = append(edges, tome.EdgeFiles)
-	}
-	if m.removeduploader != nil {
-		edges = append(edges, tome.EdgeUploader)
 	}
 	return edges
 }
@@ -6342,12 +6321,6 @@ func (m *TomeMutation) RemovedIDs(name string) []ent.Value {
 	case tome.EdgeFiles:
 		ids := make([]ent.Value, 0, len(m.removedfiles))
 		for id := range m.removedfiles {
-			ids = append(ids, id)
-		}
-		return ids
-	case tome.EdgeUploader:
-		ids := make([]ent.Value, 0, len(m.removeduploader))
-		for id := range m.removeduploader {
 			ids = append(ids, id)
 		}
 		return ids
@@ -6383,6 +6356,9 @@ func (m *TomeMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *TomeMutation) ClearEdge(name string) error {
 	switch name {
+	case tome.EdgeUploader:
+		m.ClearUploader()
+		return nil
 	}
 	return fmt.Errorf("unknown Tome unique edge %s", name)
 }

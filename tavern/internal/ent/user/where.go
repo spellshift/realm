@@ -368,7 +368,7 @@ func HasTomes() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, TomesTable, TomesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, true, TomesTable, TomesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

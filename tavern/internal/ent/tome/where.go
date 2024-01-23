@@ -603,7 +603,7 @@ func HasUploader() predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, UploaderTable, UploaderPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, UploaderTable, UploaderColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

@@ -4984,9 +4984,9 @@ func (ec *executionContext) _Tome_uploader(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.User)
+	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Tome_uploader(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6285,7 +6285,7 @@ func (ec *executionContext) unmarshalInputCreateTomeInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "author", "paramDefs", "eldritch", "fileIDs", "uploaderIDs"}
+	fieldsInOrder := [...]string{"name", "description", "author", "paramDefs", "eldritch", "fileIDs", "uploaderID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6346,15 +6346,15 @@ func (ec *executionContext) unmarshalInputCreateTomeInput(ctx context.Context, o
 				return it, err
 			}
 			it.FileIDs = data
-		case "uploaderIDs":
+		case "uploaderID":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uploaderIDs"))
-			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uploaderID"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.UploaderIDs = data
+			it.UploaderID = data
 		}
 	}
 
@@ -14180,50 +14180,6 @@ func (ec *executionContext) unmarshalNTagWhereInput2ᚖrealmᚗpubᚋtavernᚋin
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTask2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Task) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx context.Context, sel ast.SelectionSet, v *ent.Task) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -15265,53 +15221,6 @@ func (ec *executionContext) unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋi
 	}
 	res, err := ec.unmarshalInputTomeWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOUser2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.User) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {

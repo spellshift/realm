@@ -61,6 +61,7 @@ func (Tome) Edges() []ent.Edge {
 		edge.To("files", File.Type).
 			Comment("Any files required for tome execution that will be bundled and provided to the agent for download"),
 		edge.To("uploader", User.Type).
+			Unique().
 			Comment("User who uploaded the tome (may be null)."),
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Tome is the model entity for the Tome schema.
@@ -35,8 +36,9 @@ type Tome struct {
 	Eldritch string `json:"eldritch,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TomeQuery when eager-loading is set.
-	Edges        TomeEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges         TomeEdges `json:"edges"`
+	tome_uploader *int
+	selectValues  sql.SelectValues
 }
 
 // TomeEdges holds the relations/edges for other nodes in the graph.
@@ -44,15 +46,14 @@ type TomeEdges struct {
 	// Any files required for tome execution that will be bundled and provided to the agent for download
 	Files []*File `json:"files,omitempty"`
 	// User who uploaded the tome (may be null).
-	Uploader []*User `json:"uploader,omitempty"`
+	Uploader *User `json:"uploader,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
 	totalCount [2]map[string]int
 
-	namedFiles    map[string][]*File
-	namedUploader map[string][]*User
+	namedFiles map[string][]*File
 }
 
 // FilesOrErr returns the Files value or an error if the edge
@@ -65,9 +66,13 @@ func (e TomeEdges) FilesOrErr() ([]*File, error) {
 }
 
 // UploaderOrErr returns the Uploader value or an error if the edge
-// was not loaded in eager-loading.
-func (e TomeEdges) UploaderOrErr() ([]*User, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TomeEdges) UploaderOrErr() (*User, error) {
 	if e.loadedTypes[1] {
+		if e.Uploader == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: user.Label}
+		}
 		return e.Uploader, nil
 	}
 	return nil, &NotLoadedError{edge: "uploader"}
@@ -84,6 +89,8 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
+		case tome.ForeignKeys[0]: // tome_uploader
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -152,6 +159,13 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field eldritch", values[i])
 			} else if value.Valid {
 				t.Eldritch = value.String
+			}
+		case tome.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field tome_uploader", value)
+			} else if value.Valid {
+				t.tome_uploader = new(int)
+				*t.tome_uploader = int(value.Int64)
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
@@ -247,30 +261,6 @@ func (t *Tome) appendNamedFiles(name string, edges ...*File) {
 		t.Edges.namedFiles[name] = []*File{}
 	} else {
 		t.Edges.namedFiles[name] = append(t.Edges.namedFiles[name], edges...)
-	}
-}
-
-// NamedUploader returns the Uploader named value or an error if the edge was not
-// loaded in eager-loading with this name.
-func (t *Tome) NamedUploader(name string) ([]*User, error) {
-	if t.Edges.namedUploader == nil {
-		return nil, &NotLoadedError{edge: name}
-	}
-	nodes, ok := t.Edges.namedUploader[name]
-	if !ok {
-		return nil, &NotLoadedError{edge: name}
-	}
-	return nodes, nil
-}
-
-func (t *Tome) appendNamedUploader(name string, edges ...*User) {
-	if t.Edges.namedUploader == nil {
-		t.Edges.namedUploader = make(map[string][]*User)
-	}
-	if len(edges) == 0 {
-		t.Edges.namedUploader[name] = []*User{}
-	} else {
-		t.Edges.namedUploader[name] = append(t.Edges.namedUploader[name], edges...)
 	}
 }
 

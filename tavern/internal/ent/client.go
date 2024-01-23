@@ -1587,7 +1587,7 @@ func (c *TomeClient) QueryUploader(t *Tome) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tome.Table, tome.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, tome.UploaderTable, tome.UploaderPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, tome.UploaderTable, tome.UploaderColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -1737,7 +1737,7 @@ func (c *UserClient) QueryTomes(u *User) *TomeQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(tome.Table, tome.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, user.TomesTable, user.TomesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.TomesTable, user.TomesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

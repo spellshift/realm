@@ -28,11 +28,13 @@ const (
 	EdgeTomes = "tomes"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// TomesTable is the table that holds the tomes relation/edge. The primary key declared below.
-	TomesTable = "tome_uploader"
+	// TomesTable is the table that holds the tomes relation/edge.
+	TomesTable = "tomes"
 	// TomesInverseTable is the table name for the Tome entity.
 	// It exists in this package in order to avoid circular dependency with the "tome" package.
 	TomesInverseTable = "tomes"
+	// TomesColumn is the table column denoting the tomes relation/edge.
+	TomesColumn = "tome_uploader"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -45,12 +47,6 @@ var Columns = []string{
 	FieldIsActivated,
 	FieldIsAdmin,
 }
-
-var (
-	// TomesPrimaryKey and TomesColumn2 are the table columns denoting the
-	// primary key for the tomes relation (M2M).
-	TomesPrimaryKey = []string{"tome_id", "user_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -130,6 +126,6 @@ func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TomesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2M, true, TomesTable, TomesPrimaryKey...),
+		sqlgraph.Edge(sqlgraph.O2M, true, TomesTable, TomesColumn),
 	)
 }

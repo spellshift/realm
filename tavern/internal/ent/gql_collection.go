@@ -1006,9 +1006,7 @@ func (t *TomeQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
 				return err
 			}
-			t.WithNamedUploader(alias, func(wq *UserQuery) {
-				*wq = *query
-			})
+			t.withUploader = query
 		case "createdAt":
 			if _, ok := fieldSeen[tome.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, tome.FieldCreatedAt)

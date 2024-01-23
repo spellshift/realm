@@ -7,16 +7,11 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
-	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/graphql/generated"
-	"realm.pub/tavern/internal/graphql/models"
 )
 
 // CreateQuest is the resolver for the createQuest field.
@@ -122,120 +117,17 @@ func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.U
 	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
 }
 
-// ClaimTasks is the resolver for the claimTasks field.
-func (r *mutationResolver) ClaimTasks(ctx context.Context, input models.ClaimTasksInput) ([]*ent.Task, error) {
-	now := time.Now()
-
-	// 1. Upsert the host
-	hostID, err := r.client.Host.Create().
-		SetIdentifier(input.HostIdentifier).
-		SetName(input.Hostname).
-		SetPlatform(host.Platform(input.HostPlatform)).
-		SetNillablePrimaryIP(input.HostPrimaryIP).
-		SetLastSeenAt(now).
-		OnConflict().
-		UpdateNewValues().
-		ID(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upsert host entity: %w", err)
-	}
-
-	// 2. Upsert the beacon
-	beaconID, err := r.client.Beacon.Create().
-		SetPrincipal(input.Principal).
-		SetIdentifier(input.BeaconIdentifier).
-		SetAgentIdentifier(input.AgentIdentifier).
-		SetHostID(hostID).
-		SetLastSeenAt(now).
-		OnConflict().
-		UpdateNewValues().
-		ID(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upsert beacon entity: %w", err)
-	}
-
-	// 3. Load Tasks
-	tasks, err := r.client.Task.Query().
-		Where(task.And(
-			task.HasBeaconWith(beacon.ID(beaconID)),
-			task.ClaimedAtIsNil(),
-		)).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query tasks: %w", err)
-	}
-
-	// 4. Prepare Transaction for Claiming Tasks
-	tx, err := r.client.Tx(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
-	}
-	client := tx.Client()
-
-	// 5. Rollback transaction if we panic
-	defer func() {
-		if v := recover(); v != nil {
-			tx.Rollback()
-			panic(v)
-		}
-	}()
-
-	// 6. Update all ClaimedAt timestamps to claim tasks
-	// ** Note: If one fails to update, we roll back the transaction and return the error
-	taskIDs := make([]int, 0, len(tasks))
-	for _, t := range tasks {
-		_, err := client.Task.UpdateOne(t).
-			SetClaimedAt(now).
-			Save(ctx)
-		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to update task %d: %w", t.ID, err))
-		}
-		taskIDs = append(taskIDs, t.ID)
-	}
-
-	// 7. Commit the transaction
-	if err := tx.Commit(); err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
-	}
-
-	// 8. Load the tasks with our non transactional client (cannot use transaction after commit)
-	result := make([]*ent.Task, 0, len(taskIDs))
-	for _, taskID := range taskIDs {
-		updatedTask, err := r.client.Task.Get(ctx, taskID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load updated task (but they were still updated) %d: %w", taskID, err)
-		}
-		result = append(result, updatedTask)
-	}
-
-	// 9. Return claimed tasks
-	return result, nil
-}
-
-// SubmitTaskResult is the resolver for the submitTaskResult field.
-func (r *mutationResolver) SubmitTaskResult(ctx context.Context, input models.SubmitTaskResultInput) (*ent.Task, error) {
-	// 1. Load the task
-	t, err := r.client.Task.Get(ctx, input.TaskID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit task result: %w", err)
-	}
-
-	t, err = t.Update().
-		SetExecStartedAt(input.ExecStartedAt).
-		SetOutput(fmt.Sprintf("%s%s", t.Output, input.Output)).
-		SetNillableExecFinishedAt(input.ExecFinishedAt).
-		SetNillableError(input.Error).
-		Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save submitted task result: %w", err)
-	}
-
-	return t, nil
-}
-
 // CreateTome is the resolver for the createTome field.
 func (r *mutationResolver) CreateTome(ctx context.Context, input ent.CreateTomeInput) (*ent.Tome, error) {
-	return r.client.Tome.Create().SetInput(input).Save(ctx)
+	var uploaderID *int
+	if uploader := auth.UserFromContext(ctx); uploader != nil {
+		uploaderID = &uploader.ID
+	}
+
+	return r.client.Tome.Create().
+		SetNillableUploaderID(uploaderID).
+		SetInput(input).
+		Save(ctx)
 }
 
 // UpdateUser is the resolver for the updateUser field.

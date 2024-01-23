@@ -81,15 +81,13 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ClaimTasks       func(childComplexity int, input models.ClaimTasksInput) int
-		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
-		SubmitTaskResult func(childComplexity int, input models.SubmitTaskResultInput) int
-		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateQuest  func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateTag    func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome   func(childComplexity int, input ent.CreateTomeInput) int
+		UpdateBeacon func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost   func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateTag    func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateUser   func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -386,18 +384,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.Tags(childComplexity), true
 
-	case "Mutation.claimTasks":
-		if e.complexity.Mutation.ClaimTasks == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_claimTasks_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.ClaimTasks(childComplexity, args["input"].(models.ClaimTasksInput)), true
-
 	case "Mutation.createQuest":
 		if e.complexity.Mutation.CreateQuest == nil {
 			break
@@ -433,18 +419,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateTome(childComplexity, args["input"].(ent.CreateTomeInput)), true
-
-	case "Mutation.submitTaskResult":
-		if e.complexity.Mutation.SubmitTaskResult == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_submitTaskResult_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SubmitTaskResult(childComplexity, args["input"].(models.SubmitTaskResultInput)), true
 
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
@@ -1341,7 +1315,7 @@ input CreateTomeInput {
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   fileIDs: [ID!]
-  uploaderIDs: [ID!]
+  uploaderID: ID
 }
 """
 Define a Relay Cursor type:
@@ -2097,7 +2071,7 @@ type Tome implements Node {
   """Any files required for tome execution that will be bundled and provided to the agent for download"""
   files: [File!]
   """User who uploaded the tome (may be null)."""
-  uploader: [User!]
+  uploader: User
 }
 """Ordering options for Tome connections"""
 input TomeOrder {
@@ -2404,12 +2378,6 @@ scalar Uint64
     ###
     createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
     updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
-
-    ###
-    # Task
-    ###
-    claimTasks(input: ClaimTasksInput!,): [Task!]!
-    submitTaskResult(input: SubmitTaskResultInput!,): Task
 
     ###
     # Tome

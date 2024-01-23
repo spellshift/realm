@@ -111,19 +111,23 @@ func (tc *TomeCreate) AddFiles(f ...*File) *TomeCreate {
 	return tc.AddFileIDs(ids...)
 }
 
-// AddUploaderIDs adds the "uploader" edge to the User entity by IDs.
-func (tc *TomeCreate) AddUploaderIDs(ids ...int) *TomeCreate {
-	tc.mutation.AddUploaderIDs(ids...)
+// SetUploaderID sets the "uploader" edge to the User entity by ID.
+func (tc *TomeCreate) SetUploaderID(id int) *TomeCreate {
+	tc.mutation.SetUploaderID(id)
 	return tc
 }
 
-// AddUploader adds the "uploader" edges to the User entity.
-func (tc *TomeCreate) AddUploader(u ...*User) *TomeCreate {
-	ids := make([]int, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
+// SetNillableUploaderID sets the "uploader" edge to the User entity by ID if the given value is not nil.
+func (tc *TomeCreate) SetNillableUploaderID(id *int) *TomeCreate {
+	if id != nil {
+		tc = tc.SetUploaderID(*id)
 	}
-	return tc.AddUploaderIDs(ids...)
+	return tc
+}
+
+// SetUploader sets the "uploader" edge to the User entity.
+func (tc *TomeCreate) SetUploader(u *User) *TomeCreate {
+	return tc.SetUploaderID(u.ID)
 }
 
 // Mutation returns the TomeMutation object of the builder.
@@ -295,10 +299,10 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 	}
 	if nodes := tc.mutation.UploaderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   tome.UploaderTable,
-			Columns: tome.UploaderPrimaryKey,
+			Columns: []string{tome.UploaderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
@@ -307,6 +311,7 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.tome_uploader = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

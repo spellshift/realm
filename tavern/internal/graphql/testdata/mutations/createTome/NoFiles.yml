@@ -10,6 +10,10 @@ query: |
         description
         author
         eldritch
+
+        uploader {
+          id
+        }
     }
   }
 variables:
@@ -25,3 +29,5 @@ expected:
     description: It's for a test
     author: kcarretto
     eldritch: print("Hello World")
+    uploader:
+      id: "5"
