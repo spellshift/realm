@@ -6,10 +6,16 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/graphql/generated"
 )
+
+// Pid is the resolver for the pid field.
+func (r *processResolver) Pid(ctx context.Context, obj *ent.Process) (int, error) {
+	panic(fmt.Errorf("not implemented: Pid - pid"))
+}
 
 // Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
@@ -21,7 +27,57 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, erro
 	return r.client.Noders(ctx, ids)
 }
 
+// Pid is the resolver for the pid field.
+func (r *processWhereInputResolver) Pid(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: Pid - pid"))
+}
+
+// PidNeq is the resolver for the pidNEQ field.
+func (r *processWhereInputResolver) PidNeq(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PidNeq - pidNEQ"))
+}
+
+// PidIn is the resolver for the pidIn field.
+func (r *processWhereInputResolver) PidIn(ctx context.Context, obj *ent.ProcessWhereInput, data []int) error {
+	panic(fmt.Errorf("not implemented: PidIn - pidIn"))
+}
+
+// PidNotIn is the resolver for the pidNotIn field.
+func (r *processWhereInputResolver) PidNotIn(ctx context.Context, obj *ent.ProcessWhereInput, data []int) error {
+	panic(fmt.Errorf("not implemented: PidNotIn - pidNotIn"))
+}
+
+// PidGt is the resolver for the pidGT field.
+func (r *processWhereInputResolver) PidGt(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PidGt - pidGT"))
+}
+
+// PidGte is the resolver for the pidGTE field.
+func (r *processWhereInputResolver) PidGte(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PidGte - pidGTE"))
+}
+
+// PidLt is the resolver for the pidLT field.
+func (r *processWhereInputResolver) PidLt(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PidLt - pidLT"))
+}
+
+// PidLte is the resolver for the pidLTE field.
+func (r *processWhereInputResolver) PidLte(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PidLte - pidLTE"))
+}
+
+// Process returns generated.ProcessResolver implementation.
+func (r *Resolver) Process() generated.ProcessResolver { return &processResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// ProcessWhereInput returns generated.ProcessWhereInputResolver implementation.
+func (r *Resolver) ProcessWhereInput() generated.ProcessWhereInputResolver {
+	return &processWhereInputResolver{r}
+}
+
+type processResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type processWhereInputResolver struct{ *Resolver }

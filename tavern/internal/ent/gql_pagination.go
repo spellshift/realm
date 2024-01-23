@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -1053,6 +1054,353 @@ func (h *Host) ToEdge(order *HostOrder) *HostEdge {
 	return &HostEdge{
 		Node:   h,
 		Cursor: order.Field.toCursor(h),
+	}
+}
+
+// ProcessEdge is the edge representation of Process.
+type ProcessEdge struct {
+	Node   *Process `json:"node"`
+	Cursor Cursor   `json:"cursor"`
+}
+
+// ProcessConnection is the connection containing edges to Process.
+type ProcessConnection struct {
+	Edges      []*ProcessEdge `json:"edges"`
+	PageInfo   PageInfo       `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (c *ProcessConnection) build(nodes []*Process, pager *processPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Process
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Process {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Process {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*ProcessEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &ProcessEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// ProcessPaginateOption enables pagination customization.
+type ProcessPaginateOption func(*processPager) error
+
+// WithProcessOrder configures pagination ordering.
+func WithProcessOrder(order *ProcessOrder) ProcessPaginateOption {
+	if order == nil {
+		order = DefaultProcessOrder
+	}
+	o := *order
+	return func(pager *processPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultProcessOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithProcessFilter configures pagination filter.
+func WithProcessFilter(filter func(*ProcessQuery) (*ProcessQuery, error)) ProcessPaginateOption {
+	return func(pager *processPager) error {
+		if filter == nil {
+			return errors.New("ProcessQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type processPager struct {
+	reverse bool
+	order   *ProcessOrder
+	filter  func(*ProcessQuery) (*ProcessQuery, error)
+}
+
+func newProcessPager(opts []ProcessPaginateOption, reverse bool) (*processPager, error) {
+	pager := &processPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultProcessOrder
+	}
+	return pager, nil
+}
+
+func (p *processPager) applyFilter(query *ProcessQuery) (*ProcessQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *processPager) toCursor(pr *Process) Cursor {
+	return p.order.Field.toCursor(pr)
+}
+
+func (p *processPager) applyCursors(query *ProcessQuery, after, before *Cursor) (*ProcessQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultProcessOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *processPager) applyOrder(query *ProcessQuery) *ProcessQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultProcessOrder.Field {
+		query = query.Order(DefaultProcessOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *processPager) orderExpr(query *ProcessQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultProcessOrder.Field {
+			b.Comma().Ident(DefaultProcessOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Process.
+func (pr *ProcessQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ProcessPaginateOption,
+) (*ProcessConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newProcessPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if pr, err = pager.applyFilter(pr); err != nil {
+		return nil, err
+	}
+	conn := &ProcessConnection{Edges: []*ProcessEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			if conn.TotalCount, err = pr.Clone().Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if pr, err = pager.applyCursors(pr, after, before); err != nil {
+		return nil, err
+	}
+	if limit := paginateLimit(first, last); limit != 0 {
+		pr.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := pr.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	pr = pager.applyOrder(pr)
+	nodes, err := pr.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// ProcessOrderFieldCreatedAt orders Process by created_at.
+	ProcessOrderFieldCreatedAt = &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.CreatedAt, nil
+		},
+		column: process.FieldCreatedAt,
+		toTerm: process.ByCreatedAt,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{
+				ID:    pr.ID,
+				Value: pr.CreatedAt,
+			}
+		},
+	}
+	// ProcessOrderFieldLastModifiedAt orders Process by last_modified_at.
+	ProcessOrderFieldLastModifiedAt = &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.LastModifiedAt, nil
+		},
+		column: process.FieldLastModifiedAt,
+		toTerm: process.ByLastModifiedAt,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{
+				ID:    pr.ID,
+				Value: pr.LastModifiedAt,
+			}
+		},
+	}
+	// ProcessOrderFieldPid orders Process by pid.
+	ProcessOrderFieldPid = &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.Pid, nil
+		},
+		column: process.FieldPid,
+		toTerm: process.ByPid,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{
+				ID:    pr.ID,
+				Value: pr.Pid,
+			}
+		},
+	}
+	// ProcessOrderFieldName orders Process by name.
+	ProcessOrderFieldName = &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.Name, nil
+		},
+		column: process.FieldName,
+		toTerm: process.ByName,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{
+				ID:    pr.ID,
+				Value: pr.Name,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f ProcessOrderField) String() string {
+	var str string
+	switch f.column {
+	case ProcessOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case ProcessOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case ProcessOrderFieldPid.column:
+		str = "PROCESS_ID"
+	case ProcessOrderFieldName.column:
+		str = "NAME"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f ProcessOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *ProcessOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("ProcessOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *ProcessOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *ProcessOrderFieldLastModifiedAt
+	case "PROCESS_ID":
+		*f = *ProcessOrderFieldPid
+	case "NAME":
+		*f = *ProcessOrderFieldName
+	default:
+		return fmt.Errorf("%s is not a valid ProcessOrderField", str)
+	}
+	return nil
+}
+
+// ProcessOrderField defines the ordering field of Process.
+type ProcessOrderField struct {
+	// Value extracts the ordering value from the given Process.
+	Value    func(*Process) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) process.OrderOption
+	toCursor func(*Process) Cursor
+}
+
+// ProcessOrder defines the ordering of Process.
+type ProcessOrder struct {
+	Direction OrderDirection     `json:"direction"`
+	Field     *ProcessOrderField `json:"field"`
+}
+
+// DefaultProcessOrder is the default ordering of Process.
+var DefaultProcessOrder = &ProcessOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.ID, nil
+		},
+		column: process.FieldID,
+		toTerm: process.ByID,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{ID: pr.ID}
+		},
+	},
+}
+
+// ToEdge converts Process into ProcessEdge.
+func (pr *Process) ToEdge(order *ProcessOrder) *ProcessEdge {
+	if order == nil {
+		order = DefaultProcessOrder
+	}
+	return &ProcessEdge{
+		Node:   pr,
+		Cursor: order.Field.toCursor(pr),
 	}
 }
 

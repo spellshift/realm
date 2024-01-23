@@ -406,6 +406,29 @@ func HasBeaconsWith(preds ...predicate.Beacon) predicate.Host {
 	})
 }
 
+// HasProcesses applies the HasEdge predicate on the "processes" edge.
+func HasProcesses() predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProcessesTable, ProcessesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProcessesWith applies the HasEdge predicate on the "processes" edge with a given conditions (other predicates).
+func HasProcessesWith(preds ...predicate.Process) predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := newProcessesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Host) predicate.Host {
 	return predicate.Host(sql.AndPredicates(predicates...))

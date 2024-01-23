@@ -69,6 +69,13 @@ message TaskOutput {
     google.protobuf.Timestamp exec_finished_at = 5;
 }
 
+// Process running on the system.
+message Process {
+    uint64 pid = 1;
+    string name = 2;
+    string principal = 3;
+}
+
 /*
  * RPC Messages
  */
@@ -94,6 +101,13 @@ message DownloadFileResponse {
     bytes chunk = 1;
 }
 
+message ReportProcessListRequest {
+    repeated Process list = 1;
+    int64 task_id = 2;
+}
+
+message ReportProcessListResponse {}
+
 /*
  * Service
  */
@@ -101,6 +115,12 @@ message DownloadFileResponse {
 service C2 {
     rpc ClaimTasks(ClaimTasksRequest) returns (ClaimTasksResponse) {}
     rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
+
+    /*
+     * Report the active list of running processes. This list will replace any previously reported
+     * lists for the same host.
+     */
+    rpc ReportProcessList(ReportProcessListRequest) returns (ReportProcessListResponse);
 
     /*
      * Download a file from the server, returning one or more chunks of data.

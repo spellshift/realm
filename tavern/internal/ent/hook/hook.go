@@ -45,6 +45,18 @@ func (f HostFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HostMutation", m)
 }
 
+// The ProcessFunc type is an adapter to allow the use of ordinary
+// function as Process mutator.
+type ProcessFunc func(context.Context, *ent.ProcessMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProcessFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProcessMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProcessMutation", m)
+}
+
 // The QuestFunc type is an adapter to allow the use of ordinary
 // function as Quest mutator.
 type QuestFunc func(context.Context, *ent.QuestMutation) (ent.Value, error)
