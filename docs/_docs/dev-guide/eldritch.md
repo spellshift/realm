@@ -32,11 +32,14 @@ Want to contribute to Eldritch but aren't sure what to build check our ["good fi
 `docs/_docs/user-guide/eldritch.md`
 Add your function to the docs. Give your function a unique and descriptive name. Assign it to an Eldritch module.
 
-Currently Eldritch has four modules your function can fall under:
+Currently Eldritch has seven modules your function can fall under:
+* `assets`: Is used to interact with files stored natively in the agent.
+* `crypto` Is used to encrypt/decrypt or hash data.
 * `file`: Is used for any on disk file processing.
 * `pivot`: Is used to migrate to identify, and migrate between systems. The pivot module is also responsible for facilitating connectivity within an environment.
 * `process`: Is used to manage running processes on a system.
 * `sys`: Is used to check system specific configurations and start new processes.
+* `time`: Is used for obtaining and formatting time or adding delays into code
 
 If your function does not fall under a specific module reach out to the core developers about adding a new module or finding the right fit.
 
