@@ -11,6 +11,8 @@ var (
 	// BeaconsColumns holds the columns for the "beacons" table.
 	BeaconsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "principal", Type: field.TypeString, Nullable: true},
 		{Name: "identifier", Type: field.TypeString, Unique: true},
@@ -27,7 +29,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "beacons_hosts_host",
-				Columns:    []*schema.Column{BeaconsColumns[7]},
+				Columns:    []*schema.Column{BeaconsColumns[9]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -52,6 +54,8 @@ var (
 	// HostsColumns holds the columns for the "hosts" table.
 	HostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "primary_ip", Type: field.TypeString, Nullable: true},

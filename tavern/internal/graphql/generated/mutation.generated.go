@@ -390,6 +390,10 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Beacon_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Beacon_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Beacon_lastModifiedAt(ctx, field)
 			case "name":
 				return ec.fieldContext_Beacon_name(ctx, field)
 			case "principal":
@@ -489,6 +493,10 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Host_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Host_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Host_lastModifiedAt(ctx, field)
 			case "identifier":
 				return ec.fieldContext_Host_identifier(ctx, field)
 			case "name":

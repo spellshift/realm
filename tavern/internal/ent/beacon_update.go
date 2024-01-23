@@ -30,6 +30,12 @@ func (bu *BeaconUpdate) Where(ps ...predicate.Beacon) *BeaconUpdate {
 	return bu
 }
 
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (bu *BeaconUpdate) SetLastModifiedAt(t time.Time) *BeaconUpdate {
+	bu.mutation.SetLastModifiedAt(t)
+	return bu
+}
+
 // SetPrincipal sets the "principal" field.
 func (bu *BeaconUpdate) SetPrincipal(s string) *BeaconUpdate {
 	bu.mutation.SetPrincipal(s)
@@ -191,6 +197,7 @@ func (bu *BeaconUpdate) RemoveTasks(t ...*Task) *BeaconUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (bu *BeaconUpdate) Save(ctx context.Context) (int, error) {
+	bu.defaults()
 	return withHooks(ctx, bu.sqlSave, bu.mutation, bu.hooks)
 }
 
@@ -213,6 +220,14 @@ func (bu *BeaconUpdate) Exec(ctx context.Context) error {
 func (bu *BeaconUpdate) ExecX(ctx context.Context) {
 	if err := bu.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (bu *BeaconUpdate) defaults() {
+	if _, ok := bu.mutation.LastModifiedAt(); !ok {
+		v := beacon.UpdateDefaultLastModifiedAt()
+		bu.mutation.SetLastModifiedAt(v)
 	}
 }
 
@@ -250,6 +265,9 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := bu.mutation.LastModifiedAt(); ok {
+		_spec.SetField(beacon.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := bu.mutation.Principal(); ok {
 		_spec.SetField(beacon.FieldPrincipal, field.TypeString, value)
@@ -373,6 +391,12 @@ type BeaconUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *BeaconMutation
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (buo *BeaconUpdateOne) SetLastModifiedAt(t time.Time) *BeaconUpdateOne {
+	buo.mutation.SetLastModifiedAt(t)
+	return buo
 }
 
 // SetPrincipal sets the "principal" field.
@@ -549,6 +573,7 @@ func (buo *BeaconUpdateOne) Select(field string, fields ...string) *BeaconUpdate
 
 // Save executes the query and returns the updated Beacon entity.
 func (buo *BeaconUpdateOne) Save(ctx context.Context) (*Beacon, error) {
+	buo.defaults()
 	return withHooks(ctx, buo.sqlSave, buo.mutation, buo.hooks)
 }
 
@@ -571,6 +596,14 @@ func (buo *BeaconUpdateOne) Exec(ctx context.Context) error {
 func (buo *BeaconUpdateOne) ExecX(ctx context.Context) {
 	if err := buo.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (buo *BeaconUpdateOne) defaults() {
+	if _, ok := buo.mutation.LastModifiedAt(); !ok {
+		v := beacon.UpdateDefaultLastModifiedAt()
+		buo.mutation.SetLastModifiedAt(v)
 	}
 }
 
@@ -625,6 +658,9 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := buo.mutation.LastModifiedAt(); ok {
+		_spec.SetField(beacon.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := buo.mutation.Principal(); ok {
 		_spec.SetField(beacon.FieldPrincipal, field.TypeString, value)

@@ -18,6 +18,10 @@ type Beacon struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Timestamp of when this ent was created
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Timestamp of when this ent was last updated
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// A human readable identifier for the beacon.
 	Name string `json:"name,omitempty"`
 	// The identity the beacon is authenticated as (e.g. 'root')
@@ -83,7 +87,7 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldIdentifier, beacon.FieldAgentIdentifier:
 			values[i] = new(sql.NullString)
-		case beacon.FieldLastSeenAt:
+		case beacon.FieldCreatedAt, beacon.FieldLastModifiedAt, beacon.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
 		case beacon.ForeignKeys[0]: // beacon_host
 			values[i] = new(sql.NullInt64)
@@ -108,6 +112,18 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			b.ID = int(value.Int64)
+		case beacon.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				b.CreatedAt = value.Time
+			}
+		case beacon.FieldLastModifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
+			} else if value.Valid {
+				b.LastModifiedAt = value.Time
+			}
 		case beacon.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -197,6 +213,12 @@ func (b *Beacon) String() string {
 	var builder strings.Builder
 	builder.WriteString("Beacon(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", b.ID))
+	builder.WriteString("created_at=")
+	builder.WriteString(b.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("last_modified_at=")
+	builder.WriteString(b.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(b.Name)
 	builder.WriteString(", ")
