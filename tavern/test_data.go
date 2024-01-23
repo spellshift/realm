@@ -44,13 +44,11 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			hostName := fmt.Sprintf("Group %d - %s", groupNum, svcTag.Name)
 			hostID := newRandomIdentifier()
 			hostIP := newRandomIP()
-			platform := c2pb.Host_Platform(i % len(c2pb.Host_Platform_value))
-			fmt.Printf("%d: %s  (%v)\n", i, platform, platform)
 			testHost := client.Host.Create().
 				SetName(hostName).
 				SetIdentifier(hostID).
 				SetPrimaryIP(hostIP).
-				SetPlatform(platform).
+				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)
 
