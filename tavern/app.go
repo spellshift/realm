@@ -69,6 +69,7 @@ type Server struct {
 
 // Close should always be called to clean up a Tavern server.
 func (srv *Server) Close() error {
+	srv.HTTP.Shutdown(context.Background())
 	return srv.client.Close()
 }
 
@@ -177,10 +178,20 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		return nil, fmt.Errorf("failed to configure http/2: %w", err)
 	}
 
-	return &Server{
+	// Initialize Server
+	tSrv := &Server{
 		HTTP:   cfg.srv,
 		client: client,
-	}, nil
+	}
+
+	// Shutdown for Test Run & Exit
+	if cfg.IsTestRunAndExitEnabled() {
+		go func() {
+			tSrv.Close()
+		}()
+	}
+
+	return tSrv, nil
 }
 
 func newGraphQLHandler(client *ent.Client) http.Handler {

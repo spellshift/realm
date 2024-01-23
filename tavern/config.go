@@ -17,7 +17,12 @@ import (
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
-	EnvEnableTestData = EnvString{"ENABLE_TEST_DATA", ""}
+	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
+	EnvEnableTestData       = EnvString{"ENABLE_TEST_DATA", ""}
+	EnvEnableTestRunAndExit = EnvString{"ENABLE_TEST_RUN_AND_EXIT", ""}
+
+	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
+	EnvHTTPListenAddr = EnvString{"HTTP_LISTEN_ADDR", "0.0.0.0:80"}
 
 	// EnvOAuthClientID set to configure OAuth Client ID.
 	// EnvOAuthClientSecret set to configure OAuth Client Secret.
@@ -112,11 +117,16 @@ func (cfg *Config) IsTestDataEnabled() bool {
 	return EnvEnableTestData.String() != ""
 }
 
+// IsTestRunAndExitEnabled returns true if a value for the "ENABLE_TEST_RUN_AND_EXIT" environment variable is set.
+func (cfg *Config) IsTestRunAndExitEnabled() bool {
+	return EnvEnableTestRunAndExit.String() != ""
+}
+
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be
 // overwritten with Tavern's HTTP handler when Tavern is run.
-func ConfigureHTTPServer(address string, options ...func(*http.Server)) func(*Config) {
+func ConfigureHTTPServerFromEnv(options ...func(*http.Server)) func(*Config) {
 	srv := &http.Server{
-		Addr: address,
+		Addr: EnvHTTPListenAddr.String(),
 	}
 	for _, opt := range options {
 		opt(srv)
