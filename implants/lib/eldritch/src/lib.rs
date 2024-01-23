@@ -222,7 +222,7 @@ mod tests {
         a.globals(globals);
         a.all_true(
             r#"
-dir(file) == ["append", "compress", "copy", "download", "exists", "find", "hash", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]
+dir(file) == ["append", "compress", "copy", "download", "exists", "find", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]
 dir(process) == ["info", "kill", "list", "name", "netstat"]
 dir(sys) == ["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]
 dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]

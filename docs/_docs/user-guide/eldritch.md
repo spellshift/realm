@@ -263,12 +263,6 @@ The <b>file.download</b> method downloads a file at the URI specified in `uri` t
 
 The <b>file.exists</b> method checks if a file or directory exists at the path specified.
 
-### file.hash
-
-`file.hash(path: str) -> str`
-
-The <b>file.hash</b> method returns a sha256 hash of the file specified in `path`.
-
 ### file.is_dir
 
 `file.is_dir(path: str) -> bool`
@@ -833,7 +827,7 @@ sys.shell("ls /nofile")
 
 `sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
 
-The <b>sys.write_reg_hex</b> method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument. 
+The <b>sys.write_reg_hex</b> method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument.
 An example is below:
 
 ```python
@@ -851,7 +845,7 @@ $> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG
 True
 $> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK","deadbeef")
 True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","dead,beef") 
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","dead,beef")
 True
 $> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST","deadbeef")
 True
@@ -859,7 +853,7 @@ $> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESO
 True
 $> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST","deadbeef")
 True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD","deadbeefdeadbeef") 
+$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD","deadbeefdeadbeef")
 True
 ```
 
@@ -885,7 +879,7 @@ $> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG
 True
 $> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK",12345678)
 True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ",12345678) 
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ",12345678)
 True
 $> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST",12345678)
 True
@@ -893,7 +887,7 @@ $> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESO
 True
 $> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST",12345678)
 True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD",12345678) 
+$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD",12345678)
 True
 ```
 
@@ -901,7 +895,7 @@ True
 
 `sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
 
-The <b>sys.write_reg_str</b> method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument. 
+The <b>sys.write_reg_str</b> method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.
 An example is below:
 
 ```python
@@ -919,7 +913,7 @@ $> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG
 True
 $> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK","A PLAIN STRING")
 True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3") 
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3")
 True
 $> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST","DEADBEEF")
 True
@@ -927,7 +921,7 @@ $> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESO
 True
 $> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST","DEADBEEF")
 True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD","1234567812345678") 
+$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD","1234567812345678")
 True
 ```
 
@@ -944,7 +938,7 @@ Some common formating methods are:
 - "%Y-%m-%d %H:%M:%S" (24 Hour Time)
 - "%Y-%m-%d %I:%M:%S %P" (AM/PM)
 
-For reference on all available format specifiers, see https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+For reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>
 
 ### time.format_to_readable
 
@@ -957,7 +951,7 @@ Some common formating methods are:
 - "%Y-%m-%d %H:%M:%S" (24 Hour Time)
 - "%Y-%m-%d %I:%M:%S %P" (AM/PM)
 
-For reference on all available format specifiers, see https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+For reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>
 
 ### time.now
 
@@ -970,4 +964,3 @@ The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This
 `time.sleep(secs: float)`
 
 The <b>time.sleep</b> method sleeps the task for the given number of seconds.
-
