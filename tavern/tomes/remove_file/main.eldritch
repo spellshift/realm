@@ -1,6 +1,3 @@
-def remove_file(path):
-    file.remove(path)
-
-remove_file(input_params['path'])
+file.remove(input_params['path'])
 print("\n")
 print("\n")
