@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -36,6 +37,8 @@ type Client struct {
 	File *FileClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
+	// Process is the client for interacting with the Process builders.
+	Process *ProcessClient
 	// Quest is the client for interacting with the Quest builders.
 	Quest *QuestClient
 	// Tag is the client for interacting with the Tag builders.
@@ -64,6 +67,7 @@ func (c *Client) init() {
 	c.Beacon = NewBeaconClient(c.config)
 	c.File = NewFileClient(c.config)
 	c.Host = NewHostClient(c.config)
+	c.Process = NewProcessClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Task = NewTaskClient(c.config)
@@ -152,16 +156,17 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Beacon: NewBeaconClient(cfg),
-		File:   NewFileClient(cfg),
-		Host:   NewHostClient(cfg),
-		Quest:  NewQuestClient(cfg),
-		Tag:    NewTagClient(cfg),
-		Task:   NewTaskClient(cfg),
-		Tome:   NewTomeClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		Beacon:  NewBeaconClient(cfg),
+		File:    NewFileClient(cfg),
+		Host:    NewHostClient(cfg),
+		Process: NewProcessClient(cfg),
+		Quest:   NewQuestClient(cfg),
+		Tag:     NewTagClient(cfg),
+		Task:    NewTaskClient(cfg),
+		Tome:    NewTomeClient(cfg),
+		User:    NewUserClient(cfg),
 	}, nil
 }
 
@@ -179,16 +184,17 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Beacon: NewBeaconClient(cfg),
-		File:   NewFileClient(cfg),
-		Host:   NewHostClient(cfg),
-		Quest:  NewQuestClient(cfg),
-		Tag:    NewTagClient(cfg),
-		Task:   NewTaskClient(cfg),
-		Tome:   NewTomeClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		Beacon:  NewBeaconClient(cfg),
+		File:    NewFileClient(cfg),
+		Host:    NewHostClient(cfg),
+		Process: NewProcessClient(cfg),
+		Quest:   NewQuestClient(cfg),
+		Tag:     NewTagClient(cfg),
+		Task:    NewTaskClient(cfg),
+		Tome:    NewTomeClient(cfg),
+		User:    NewUserClient(cfg),
 	}, nil
 }
 
@@ -218,7 +224,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Beacon, c.File, c.Host, c.Quest, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Host, c.Process, c.Quest, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -228,7 +234,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Beacon, c.File, c.Host, c.Quest, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Host, c.Process, c.Quest, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -243,6 +249,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.File.mutate(ctx, m)
 	case *HostMutation:
 		return c.Host.mutate(ctx, m)
+	case *ProcessMutation:
+		return c.Process.mutate(ctx, m)
 	case *QuestMutation:
 		return c.Quest.mutate(ctx, m)
 	case *TagMutation:
@@ -713,6 +721,22 @@ func (c *HostClient) QueryBeacons(h *Host) *BeaconQuery {
 	return query
 }
 
+// QueryProcesses queries the processes edge of a Host.
+func (c *HostClient) QueryProcesses(h *Host) *ProcessQuery {
+	query := (&ProcessClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(process.Table, process.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, host.ProcessesTable, host.ProcessesColumn),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *HostClient) Hooks() []Hook {
 	return c.hooks.Host
@@ -735,6 +759,171 @@ func (c *HostClient) mutate(ctx context.Context, m *HostMutation) (Value, error)
 		return (&HostDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Host mutation op: %q", m.Op())
+	}
+}
+
+// ProcessClient is a client for the Process schema.
+type ProcessClient struct {
+	config
+}
+
+// NewProcessClient returns a client for the Process from the given config.
+func NewProcessClient(c config) *ProcessClient {
+	return &ProcessClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `process.Hooks(f(g(h())))`.
+func (c *ProcessClient) Use(hooks ...Hook) {
+	c.hooks.Process = append(c.hooks.Process, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `process.Intercept(f(g(h())))`.
+func (c *ProcessClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Process = append(c.inters.Process, interceptors...)
+}
+
+// Create returns a builder for creating a Process entity.
+func (c *ProcessClient) Create() *ProcessCreate {
+	mutation := newProcessMutation(c.config, OpCreate)
+	return &ProcessCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Process entities.
+func (c *ProcessClient) CreateBulk(builders ...*ProcessCreate) *ProcessCreateBulk {
+	return &ProcessCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProcessClient) MapCreateBulk(slice any, setFunc func(*ProcessCreate, int)) *ProcessCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProcessCreateBulk{err: fmt.Errorf("calling to ProcessClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProcessCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProcessCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Process.
+func (c *ProcessClient) Update() *ProcessUpdate {
+	mutation := newProcessMutation(c.config, OpUpdate)
+	return &ProcessUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProcessClient) UpdateOne(pr *Process) *ProcessUpdateOne {
+	mutation := newProcessMutation(c.config, OpUpdateOne, withProcess(pr))
+	return &ProcessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProcessClient) UpdateOneID(id int) *ProcessUpdateOne {
+	mutation := newProcessMutation(c.config, OpUpdateOne, withProcessID(id))
+	return &ProcessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Process.
+func (c *ProcessClient) Delete() *ProcessDelete {
+	mutation := newProcessMutation(c.config, OpDelete)
+	return &ProcessDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProcessClient) DeleteOne(pr *Process) *ProcessDeleteOne {
+	return c.DeleteOneID(pr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProcessClient) DeleteOneID(id int) *ProcessDeleteOne {
+	builder := c.Delete().Where(process.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProcessDeleteOne{builder}
+}
+
+// Query returns a query builder for Process.
+func (c *ProcessClient) Query() *ProcessQuery {
+	return &ProcessQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProcess},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Process entity by its id.
+func (c *ProcessClient) Get(ctx context.Context, id int) (*Process, error) {
+	return c.Query().Where(process.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProcessClient) GetX(ctx context.Context, id int) *Process {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryHost queries the host edge of a Process.
+func (c *ProcessClient) QueryHost(pr *Process) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(process.Table, process.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, process.HostTable, process.HostColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTask queries the task edge of a Process.
+func (c *ProcessClient) QueryTask(pr *Process) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(process.Table, process.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, process.TaskTable, process.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProcessClient) Hooks() []Hook {
+	return c.hooks.Process
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProcessClient) Interceptors() []Interceptor {
+	return c.inters.Process
+}
+
+func (c *ProcessClient) mutate(ctx context.Context, m *ProcessMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProcessCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProcessUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProcessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProcessDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Process mutation op: %q", m.Op())
 	}
 }
 
@@ -1224,6 +1413,22 @@ func (c *TaskClient) QueryBeacon(t *Task) *BeaconQuery {
 	return query
 }
 
+// QueryReportedProcesses queries the reported_processes edge of a Task.
+func (c *TaskClient) QueryReportedProcesses(t *Task) *ProcessQuery {
+	query := (&ProcessClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(process.Table, process.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedProcessesTable, task.ReportedProcessesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TaskClient) Hooks() []Hook {
 	hooks := c.hooks.Task
@@ -1536,9 +1741,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Beacon, File, Host, Quest, Tag, Task, Tome, User []ent.Hook
+		Beacon, File, Host, Process, Quest, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Beacon, File, Host, Quest, Tag, Task, Tome, User []ent.Interceptor
+		Beacon, File, Host, Process, Quest, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

@@ -32,14 +32,17 @@ func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
 
 // UpdateHostInput represents a mutation input for updating hosts.
 type UpdateHostInput struct {
-	ClearName       bool
-	Name            *string
-	ClearTags       bool
-	AddTagIDs       []int
-	RemoveTagIDs    []int
-	ClearBeacons    bool
-	AddBeaconIDs    []int
-	RemoveBeaconIDs []int
+	ClearName        bool
+	Name             *string
+	ClearTags        bool
+	AddTagIDs        []int
+	RemoveTagIDs     []int
+	ClearBeacons     bool
+	AddBeaconIDs     []int
+	RemoveBeaconIDs  []int
+	ClearProcesses   bool
+	AddProcessIDs    []int
+	RemoveProcessIDs []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -67,6 +70,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveBeaconIDs; len(v) > 0 {
 		m.RemoveBeaconIDs(v...)
+	}
+	if i.ClearProcesses {
+		m.ClearProcesses()
+	}
+	if v := i.AddProcessIDs; len(v) > 0 {
+		m.AddProcessIDs(v...)
+	}
+	if v := i.RemoveProcessIDs; len(v) > 0 {
+		m.RemoveProcessIDs(v...)
 	}
 }
 

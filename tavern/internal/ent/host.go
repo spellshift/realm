@@ -39,14 +39,17 @@ type HostEdges struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// Beacons that are present on this host system.
 	Beacons []*Beacon `json:"beacons,omitempty"`
+	// Processes reported as running on this host system.
+	Processes []*Process `json:"processes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
 
-	namedTags    map[string][]*Tag
-	namedBeacons map[string][]*Beacon
+	namedTags      map[string][]*Tag
+	namedBeacons   map[string][]*Beacon
+	namedProcesses map[string][]*Process
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -65,6 +68,15 @@ func (e HostEdges) BeaconsOrErr() ([]*Beacon, error) {
 		return e.Beacons, nil
 	}
 	return nil, &NotLoadedError{edge: "beacons"}
+}
+
+// ProcessesOrErr returns the Processes value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) ProcessesOrErr() ([]*Process, error) {
+	if e.loadedTypes[2] {
+		return e.Processes, nil
+	}
+	return nil, &NotLoadedError{edge: "processes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -150,6 +162,11 @@ func (h *Host) QueryTags() *TagQuery {
 // QueryBeacons queries the "beacons" edge of the Host entity.
 func (h *Host) QueryBeacons() *BeaconQuery {
 	return NewHostClient(h.config).QueryBeacons(h)
+}
+
+// QueryProcesses queries the "processes" edge of the Host entity.
+func (h *Host) QueryProcesses() *ProcessQuery {
+	return NewHostClient(h.config).QueryProcesses(h)
 }
 
 // Update returns a builder for updating this Host.
@@ -238,6 +255,30 @@ func (h *Host) appendNamedBeacons(name string, edges ...*Beacon) {
 		h.Edges.namedBeacons[name] = []*Beacon{}
 	} else {
 		h.Edges.namedBeacons[name] = append(h.Edges.namedBeacons[name], edges...)
+	}
+}
+
+// NamedProcesses returns the Processes named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedProcesses(name string) ([]*Process, error) {
+	if h.Edges.namedProcesses == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedProcesses[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedProcesses(name string, edges ...*Process) {
+	if h.Edges.namedProcesses == nil {
+		h.Edges.namedProcesses = make(map[string][]*Process)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedProcesses[name] = []*Process{}
+	} else {
+		h.Edges.namedProcesses[name] = append(h.Edges.namedProcesses[name], edges...)
 	}
 }
 

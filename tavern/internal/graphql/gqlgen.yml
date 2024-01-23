@@ -33,6 +33,7 @@ autobind:
   - realm.pub/tavern/internal/ent/quest
   - realm.pub/tavern/internal/ent/task
   - realm.pub/tavern/internal/ent/tome
+  - realm.pub/tavern/internal/ent/process
 
 struct_tag: json
 

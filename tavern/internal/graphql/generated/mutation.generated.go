@@ -495,6 +495,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_tags(ctx, field)
 			case "beacons":
 				return ec.fieldContext_Host_beacons(ctx, field)
+			case "processes":
+				return ec.fieldContext_Host_processes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -752,6 +754,8 @@ func (ec *executionContext) fieldContext_Mutation_claimTasks(ctx context.Context
 				return ec.fieldContext_Task_quest(ctx, field)
 			case "beacon":
 				return ec.fieldContext_Task_beacon(ctx, field)
+			case "reportedProcesses":
+				return ec.fieldContext_Task_reportedProcesses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
 		},
@@ -828,6 +832,8 @@ func (ec *executionContext) fieldContext_Mutation_submitTaskResult(ctx context.C
 				return ec.fieldContext_Task_quest(ctx, field)
 			case "beacon":
 				return ec.fieldContext_Task_beacon(ctx, field)
+			case "reportedProcesses":
+				return ec.fieldContext_Task_reportedProcesses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
 		},

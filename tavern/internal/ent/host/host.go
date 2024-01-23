@@ -30,6 +30,8 @@ const (
 	EdgeTags = "tags"
 	// EdgeBeacons holds the string denoting the beacons edge name in mutations.
 	EdgeBeacons = "beacons"
+	// EdgeProcesses holds the string denoting the processes edge name in mutations.
+	EdgeProcesses = "processes"
 	// Table holds the table name of the host in the database.
 	Table = "hosts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -44,6 +46,13 @@ const (
 	BeaconsInverseTable = "beacons"
 	// BeaconsColumn is the table column denoting the beacons relation/edge.
 	BeaconsColumn = "beacon_host"
+	// ProcessesTable is the table that holds the processes relation/edge.
+	ProcessesTable = "processes"
+	// ProcessesInverseTable is the table name for the Process entity.
+	// It exists in this package in order to avoid circular dependency with the "process" package.
+	ProcessesInverseTable = "processes"
+	// ProcessesColumn is the table column denoting the processes relation/edge.
+	ProcessesColumn = "host_processes"
 )
 
 // Columns holds all SQL columns for host fields.
@@ -168,6 +177,20 @@ func ByBeacons(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newBeaconsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByProcessesCount orders the results by processes count.
+func ByProcessesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newProcessesStep(), opts...)
+	}
+}
+
+// ByProcesses orders the results by processes terms.
+func ByProcesses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProcessesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTagsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -180,6 +203,13 @@ func newBeaconsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(BeaconsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, BeaconsTable, BeaconsColumn),
+	)
+}
+func newProcessesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProcessesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ProcessesTable, ProcessesColumn),
 	)
 }
 

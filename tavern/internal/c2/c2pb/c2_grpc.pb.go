@@ -24,6 +24,9 @@ const _ = grpc.SupportPackageIsVersion7
 type C2Client interface {
 	ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts ...grpc.CallOption) (*ClaimTasksResponse, error)
 	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
+	// Report the active list of running processes. This list will replace any previously reported
+	// lists for the same host.
+	ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error)
 	// Download a file from the server, returning one or more chunks of data.
 	// The maximum size of these chunks is determined by the server.
 	// The server should reply with two headers:
@@ -54,6 +57,15 @@ func (c *c2Client) ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts .
 func (c *c2Client) ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error) {
 	out := new(ReportTaskOutputResponse)
 	err := c.cc.Invoke(ctx, "/c2.C2/ReportTaskOutput", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error) {
+	out := new(ReportProcessListResponse)
+	err := c.cc.Invoke(ctx, "/c2.C2/ReportProcessList", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +110,9 @@ func (x *c2DownloadFileClient) Recv() (*DownloadFileResponse, error) {
 type C2Server interface {
 	ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error)
 	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
+	// Report the active list of running processes. This list will replace any previously reported
+	// lists for the same host.
+	ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error)
 	// Download a file from the server, returning one or more chunks of data.
 	// The maximum size of these chunks is determined by the server.
 	// The server should reply with two headers:
@@ -118,6 +133,9 @@ func (UnimplementedC2Server) ClaimTasks(context.Context, *ClaimTasksRequest) (*C
 }
 func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutput not implemented")
+}
+func (UnimplementedC2Server) ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportProcessList not implemented")
 }
 func (UnimplementedC2Server) DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
@@ -171,6 +189,24 @@ func _C2_ReportTaskOutput_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _C2_ReportProcessList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportProcessListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).ReportProcessList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/c2.C2/ReportProcessList",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).ReportProcessList(ctx, req.(*ReportProcessListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _C2_DownloadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(DownloadFileRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -206,6 +242,10 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportTaskOutput",
 			Handler:    _C2_ReportTaskOutput_Handler,
+		},
+		{
+			MethodName: "ReportProcessList",
+			Handler:    _C2_ReportProcessList_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
