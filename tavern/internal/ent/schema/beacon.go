@@ -93,6 +93,13 @@ func (Beacon) Annotations() []schema.Annotation {
 	}
 }
 
+// Mixin defines common shared properties for the ent.
+func (Beacon) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		MixinHistory{}, // created_at, last_modified_at
+	}
+}
+
 func newRandomIdentifier() string {
 	buf := make([]byte, 64)
 	_, err := io.ReadFull(rand.Reader, buf)

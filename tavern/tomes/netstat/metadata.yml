@@ -1,2 +1,5 @@
 name: netstat
 description: List network connections
+author: adm1nPanda
+support_model: FIRST_PARTY
+tactic: RECON

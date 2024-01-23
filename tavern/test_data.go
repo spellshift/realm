@@ -92,6 +92,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 	client.Tome.Create().
 		SetName("ParamDefFormatExample").
 		SetDescription("This tome is an example that takes parameters and has parameter definitions defined (e.g. ParamDefs)").
+		SetAuthor("kcarretto").
 		SetEldritch(``).
 		SetParamDefs(`[
   {
@@ -115,6 +116,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 	printMsgTome := client.Tome.Create().
 		SetName("PrintMessage").
 		SetDescription("Print a message for fun!").
+		SetAuthor("kcarretto").
 		SetEldritch(`print(input_params['msg'])`).
 		SetParamDefs(`[{"name":"msg","label":"Message","type":"string","placeholder":"something to print"}]`).
 		SaveX(ctx)
@@ -356,6 +358,7 @@ func createQuest(ctx context.Context, client *ent.Client, beacons ...*ent.Beacon
 	testTome := client.Tome.Create().
 		SetName(namegen.NewComplex()).
 		SetDescription("Print a message for fun!").
+		SetAuthor("kcarretto").
 		SetEldritch(`print(input_params['msg'])`).
 		SetParamDefs(`[{"name":"msg","label":"Message","type":"string","placeholder":"something to print"}]`).
 		SaveX(ctx)

@@ -36,6 +36,26 @@ type BeaconWhereInput struct {
 	IDLT    *int  `json:"idLT,omitempty"`
 	IDLTE   *int  `json:"idLTE,omitempty"`
 
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
 	// "name" field predicates.
 	Name             *string  `json:"name,omitempty"`
 	NameNEQ          *string  `json:"nameNEQ,omitempty"`
@@ -227,6 +247,54 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 	}
 	if i.IDLTE != nil {
 		predicates = append(predicates, beacon.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, beacon.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, beacon.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, beacon.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, beacon.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, beacon.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, beacon.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, beacon.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, beacon.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, beacon.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, beacon.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, beacon.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, beacon.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, beacon.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, beacon.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, beacon.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, beacon.LastModifiedAtLTE(*i.LastModifiedAtLTE))
 	}
 	if i.Name != nil {
 		predicates = append(predicates, beacon.NameEQ(*i.Name))
@@ -876,6 +944,26 @@ type HostWhereInput struct {
 	IDLT    *int  `json:"idLT,omitempty"`
 	IDLTE   *int  `json:"idLTE,omitempty"`
 
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
 	// "identifier" field predicates.
 	Identifier             *string  `json:"identifier,omitempty"`
 	IdentifierNEQ          *string  `json:"identifierNEQ,omitempty"`
@@ -1050,6 +1138,54 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 	}
 	if i.IDLTE != nil {
 		predicates = append(predicates, host.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, host.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, host.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, host.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, host.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, host.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, host.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, host.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, host.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, host.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, host.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, host.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, host.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, host.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, host.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, host.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, host.LastModifiedAtLTE(*i.LastModifiedAtLTE))
 	}
 	if i.Identifier != nil {
 		predicates = append(predicates, host.IdentifierEQ(*i.Identifier))
@@ -2888,6 +3024,33 @@ type TomeWhereInput struct {
 	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
 	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
 
+	// "author" field predicates.
+	Author             *string  `json:"author,omitempty"`
+	AuthorNEQ          *string  `json:"authorNEQ,omitempty"`
+	AuthorIn           []string `json:"authorIn,omitempty"`
+	AuthorNotIn        []string `json:"authorNotIn,omitempty"`
+	AuthorGT           *string  `json:"authorGT,omitempty"`
+	AuthorGTE          *string  `json:"authorGTE,omitempty"`
+	AuthorLT           *string  `json:"authorLT,omitempty"`
+	AuthorLTE          *string  `json:"authorLTE,omitempty"`
+	AuthorContains     *string  `json:"authorContains,omitempty"`
+	AuthorHasPrefix    *string  `json:"authorHasPrefix,omitempty"`
+	AuthorHasSuffix    *string  `json:"authorHasSuffix,omitempty"`
+	AuthorEqualFold    *string  `json:"authorEqualFold,omitempty"`
+	AuthorContainsFold *string  `json:"authorContainsFold,omitempty"`
+
+	// "support_model" field predicates.
+	SupportModel      *tome.SupportModel  `json:"supportModel,omitempty"`
+	SupportModelNEQ   *tome.SupportModel  `json:"supportModelNEQ,omitempty"`
+	SupportModelIn    []tome.SupportModel `json:"supportModelIn,omitempty"`
+	SupportModelNotIn []tome.SupportModel `json:"supportModelNotIn,omitempty"`
+
+	// "tactic" field predicates.
+	Tactic      *tome.Tactic  `json:"tactic,omitempty"`
+	TacticNEQ   *tome.Tactic  `json:"tacticNEQ,omitempty"`
+	TacticIn    []tome.Tactic `json:"tacticIn,omitempty"`
+	TacticNotIn []tome.Tactic `json:"tacticNotIn,omitempty"`
+
 	// "param_defs" field predicates.
 	ParamDefs             *string  `json:"paramDefs,omitempty"`
 	ParamDefsNEQ          *string  `json:"paramDefsNEQ,omitempty"`
@@ -2923,6 +3086,10 @@ type TomeWhereInput struct {
 	// "files" edge predicates.
 	HasFiles     *bool             `json:"hasFiles,omitempty"`
 	HasFilesWith []*FileWhereInput `json:"hasFilesWith,omitempty"`
+
+	// "uploader" edge predicates.
+	HasUploader     *bool             `json:"hasUploader,omitempty"`
+	HasUploaderWith []*UserWhereInput `json:"hasUploaderWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3146,6 +3313,69 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	if i.DescriptionContainsFold != nil {
 		predicates = append(predicates, tome.DescriptionContainsFold(*i.DescriptionContainsFold))
 	}
+	if i.Author != nil {
+		predicates = append(predicates, tome.AuthorEQ(*i.Author))
+	}
+	if i.AuthorNEQ != nil {
+		predicates = append(predicates, tome.AuthorNEQ(*i.AuthorNEQ))
+	}
+	if len(i.AuthorIn) > 0 {
+		predicates = append(predicates, tome.AuthorIn(i.AuthorIn...))
+	}
+	if len(i.AuthorNotIn) > 0 {
+		predicates = append(predicates, tome.AuthorNotIn(i.AuthorNotIn...))
+	}
+	if i.AuthorGT != nil {
+		predicates = append(predicates, tome.AuthorGT(*i.AuthorGT))
+	}
+	if i.AuthorGTE != nil {
+		predicates = append(predicates, tome.AuthorGTE(*i.AuthorGTE))
+	}
+	if i.AuthorLT != nil {
+		predicates = append(predicates, tome.AuthorLT(*i.AuthorLT))
+	}
+	if i.AuthorLTE != nil {
+		predicates = append(predicates, tome.AuthorLTE(*i.AuthorLTE))
+	}
+	if i.AuthorContains != nil {
+		predicates = append(predicates, tome.AuthorContains(*i.AuthorContains))
+	}
+	if i.AuthorHasPrefix != nil {
+		predicates = append(predicates, tome.AuthorHasPrefix(*i.AuthorHasPrefix))
+	}
+	if i.AuthorHasSuffix != nil {
+		predicates = append(predicates, tome.AuthorHasSuffix(*i.AuthorHasSuffix))
+	}
+	if i.AuthorEqualFold != nil {
+		predicates = append(predicates, tome.AuthorEqualFold(*i.AuthorEqualFold))
+	}
+	if i.AuthorContainsFold != nil {
+		predicates = append(predicates, tome.AuthorContainsFold(*i.AuthorContainsFold))
+	}
+	if i.SupportModel != nil {
+		predicates = append(predicates, tome.SupportModelEQ(*i.SupportModel))
+	}
+	if i.SupportModelNEQ != nil {
+		predicates = append(predicates, tome.SupportModelNEQ(*i.SupportModelNEQ))
+	}
+	if len(i.SupportModelIn) > 0 {
+		predicates = append(predicates, tome.SupportModelIn(i.SupportModelIn...))
+	}
+	if len(i.SupportModelNotIn) > 0 {
+		predicates = append(predicates, tome.SupportModelNotIn(i.SupportModelNotIn...))
+	}
+	if i.Tactic != nil {
+		predicates = append(predicates, tome.TacticEQ(*i.Tactic))
+	}
+	if i.TacticNEQ != nil {
+		predicates = append(predicates, tome.TacticNEQ(*i.TacticNEQ))
+	}
+	if len(i.TacticIn) > 0 {
+		predicates = append(predicates, tome.TacticIn(i.TacticIn...))
+	}
+	if len(i.TacticNotIn) > 0 {
+		predicates = append(predicates, tome.TacticNotIn(i.TacticNotIn...))
+	}
 	if i.ParamDefs != nil {
 		predicates = append(predicates, tome.ParamDefsEQ(*i.ParamDefs))
 	}
@@ -3249,6 +3479,24 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 		}
 		predicates = append(predicates, tome.HasFilesWith(with...))
 	}
+	if i.HasUploader != nil {
+		p := tome.HasUploader()
+		if !*i.HasUploader {
+			p = tome.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasUploaderWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasUploaderWith))
+		for _, w := range i.HasUploaderWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasUploaderWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, tome.HasUploaderWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyTomeWhereInput
@@ -3328,6 +3576,10 @@ type UserWhereInput struct {
 	// "is_admin" field predicates.
 	IsAdmin    *bool `json:"isAdmin,omitempty"`
 	IsAdminNEQ *bool `json:"isAdminNEQ,omitempty"`
+
+	// "tomes" edge predicates.
+	HasTomes     *bool             `json:"hasTomes,omitempty"`
+	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3555,6 +3807,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 		predicates = append(predicates, user.IsAdminNEQ(*i.IsAdminNEQ))
 	}
 
+	if i.HasTomes != nil {
+		p := user.HasTomes()
+		if !*i.HasTomes {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTomesWith) > 0 {
+		with := make([]predicate.Tome, 0, len(i.HasTomesWith))
+		for _, w := range i.HasTomesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTomesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasTomesWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyUserWhereInput

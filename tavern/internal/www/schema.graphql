@@ -7,6 +7,10 @@ enum Role {
 directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 type Beacon implements Node {
   id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
   """A human readable identifier for the beacon."""
   name: String!
   """The identity the beacon is authenticated as (e.g. 'root')"""
@@ -33,6 +37,8 @@ input BeaconOrder {
 }
 """Properties by which Beacon connections can be ordered."""
 enum BeaconOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
   LAST_SEEN_AT
   INTERVAL
 }
@@ -53,6 +59,24 @@ input BeaconWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -173,6 +197,12 @@ input CreateTomeInput {
   name: String!
   """Information about the tome"""
   description: String!
+  """Name of the author who created the tome."""
+  author: String!
+  """Information about the tomes support model."""
+  supportModel: TomeSupportModel
+  """MITRE ATT&CK tactic provided by the tome."""
+  tactic: TomeTactic
   """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
@@ -290,6 +320,10 @@ input FileWhereInput {
 }
 type Host implements Node {
   id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
   """Unique identifier for the host. Unique to each host."""
   identifier: String!
   """A human readable identifier for the host."""
@@ -316,6 +350,8 @@ input HostOrder {
 }
 """Properties by which Host connections can be ordered."""
 enum HostOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
   LAST_SEEN_AT
 }
 """HostPlatform is enum for the field platform"""
@@ -343,6 +379,24 @@ input HostWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
   """identifier field predicates"""
   identifier: String
   identifierNEQ: String
@@ -924,12 +978,20 @@ type Tome implements Node {
   name: String!
   """Information about the tome"""
   description: String!
+  """Name of the author who created the tome."""
+  author: String!
+  """Information about the tomes support model."""
+  supportModel: TomeSupportModel!
+  """MITRE ATT&CK tactic provided by the tome."""
+  tactic: TomeTactic!
   """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
   paramDefs: String
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   """Any files required for tome execution that will be bundled and provided to the agent for download"""
   files: [File!]
+  """User who uploaded the tome (may be null)."""
+  uploader: User
 }
 """Ordering options for Tome connections"""
 input TomeOrder {
@@ -943,6 +1005,30 @@ enum TomeOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   NAME
+}
+"""TomeSupportModel is enum for the field support_model"""
+enum TomeSupportModel @goModel(model: "realm.pub/tavern/internal/ent/tome.SupportModel") {
+  UNSPECIFIED
+  FIRST_PARTY
+  COMMUNITY
+}
+"""TomeTactic is enum for the field tactic"""
+enum TomeTactic @goModel(model: "realm.pub/tavern/internal/ent/tome.Tactic") {
+  UNSPECIFIED
+  RECON
+  RESOURCE_DEVELOPMENT
+  INITIAL_ACCESS
+  EXECUTION
+  PERSISTENCE
+  PRIVILEGE_ESCALATION
+  DEFENSE_EVASION
+  CREDENTIAL_ACCESS
+  DISCOVERY
+  LATERAL_MOVEMENT
+  COLLECTION
+  COMMAND_AND_CONTROL
+  EXFILTRATION
+  IMPACT
 }
 """
 TomeWhereInput is used for filtering Tome objects.
@@ -1007,6 +1093,30 @@ input TomeWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
+  """author field predicates"""
+  author: String
+  authorNEQ: String
+  authorIn: [String!]
+  authorNotIn: [String!]
+  authorGT: String
+  authorGTE: String
+  authorLT: String
+  authorLTE: String
+  authorContains: String
+  authorHasPrefix: String
+  authorHasSuffix: String
+  authorEqualFold: String
+  authorContainsFold: String
+  """support_model field predicates"""
+  supportModel: TomeSupportModel
+  supportModelNEQ: TomeSupportModel
+  supportModelIn: [TomeSupportModel!]
+  supportModelNotIn: [TomeSupportModel!]
+  """tactic field predicates"""
+  tactic: TomeTactic
+  tacticNEQ: TomeTactic
+  tacticIn: [TomeTactic!]
+  tacticNotIn: [TomeTactic!]
   """param_defs field predicates"""
   paramDefs: String
   paramDefsNEQ: String
@@ -1040,12 +1150,17 @@ input TomeWhereInput {
   """files edge predicates"""
   hasFiles: Boolean
   hasFilesWith: [FileWhereInput!]
+  """uploader edge predicates"""
+  hasUploader: Boolean
+  hasUploaderWith: [UserWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
 Input was generated by ent.
 """
 input UpdateBeaconInput {
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time
   hostID: ID
 }
 """
@@ -1053,6 +1168,8 @@ UpdateHostInput is used for update Host object.
 Input was generated by ent.
 """
 input UpdateHostInput {
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time
   """A human readable identifier for the host."""
   name: String
   clearName: Boolean
@@ -1080,6 +1197,32 @@ input UpdateTagInput {
   clearHosts: Boolean
 }
 """
+UpdateTomeInput is used for update Tome object.
+Input was generated by ent.
+"""
+input UpdateTomeInput {
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time
+  """Name of the tome"""
+  name: String
+  """Information about the tome"""
+  description: String
+  """Name of the author who created the tome."""
+  author: String
+  """Information about the tomes support model."""
+  supportModel: TomeSupportModel
+  """MITRE ATT&CK tactic provided by the tome."""
+  tactic: TomeTactic
+  """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
+  paramDefs: String
+  clearParamDefs: Boolean
+  """Eldritch script that will be executed when the tome is run"""
+  eldritch: String
+  addFileIDs: [ID!]
+  removeFileIDs: [ID!]
+  clearFiles: Boolean
+}
+"""
 UpdateUserInput is used for update User object.
 Input was generated by ent.
 """
@@ -1092,6 +1235,9 @@ input UpdateUserInput {
   isActivated: Boolean
   """True if the user is an Admin"""
   isAdmin: Boolean
+  addTomeIDs: [ID!]
+  removeTomeIDs: [ID!]
+  clearTomes: Boolean
 }
 type User implements Node {
   id: ID!
@@ -1103,6 +1249,8 @@ type User implements Node {
   isActivated: Boolean!
   """True if the user is an Admin"""
   isAdmin: Boolean!
+  """Tomes uploaded by the user."""
+  tomes: [Tome!]
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -1155,6 +1303,9 @@ input UserWhereInput {
   """is_admin field predicates"""
   isAdmin: Boolean
   isAdminNEQ: Boolean
+  """tomes edge predicates"""
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
 }
 input ClaimTasksInput {
   """The identity the beacon is authenticated as (e.g. 'root')"""
@@ -1221,15 +1372,11 @@ type Mutation {
     updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
 
     ###
-    # Task
-    ###
-    claimTasks(input: ClaimTasksInput!,): [Task!]!
-    submitTaskResult(input: SubmitTaskResultInput!,): Task
-
-    ###
     # Tome
     ###
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
+    updateTome(tomeID: ID!, input: UpdateTomeInput!,): Tome! @requireRole(role: ADMIN)
+    deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # User

@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // TomeUpdate is the builder for updating Tome entities.
@@ -44,6 +45,40 @@ func (tu *TomeUpdate) SetName(s string) *TomeUpdate {
 // SetDescription sets the "description" field.
 func (tu *TomeUpdate) SetDescription(s string) *TomeUpdate {
 	tu.mutation.SetDescription(s)
+	return tu
+}
+
+// SetAuthor sets the "author" field.
+func (tu *TomeUpdate) SetAuthor(s string) *TomeUpdate {
+	tu.mutation.SetAuthor(s)
+	return tu
+}
+
+// SetSupportModel sets the "support_model" field.
+func (tu *TomeUpdate) SetSupportModel(tm tome.SupportModel) *TomeUpdate {
+	tu.mutation.SetSupportModel(tm)
+	return tu
+}
+
+// SetNillableSupportModel sets the "support_model" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableSupportModel(tm *tome.SupportModel) *TomeUpdate {
+	if tm != nil {
+		tu.SetSupportModel(*tm)
+	}
+	return tu
+}
+
+// SetTactic sets the "tactic" field.
+func (tu *TomeUpdate) SetTactic(t tome.Tactic) *TomeUpdate {
+	tu.mutation.SetTactic(t)
+	return tu
+}
+
+// SetNillableTactic sets the "tactic" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableTactic(t *tome.Tactic) *TomeUpdate {
+	if t != nil {
+		tu.SetTactic(*t)
+	}
 	return tu
 }
 
@@ -94,6 +129,25 @@ func (tu *TomeUpdate) AddFiles(f ...*File) *TomeUpdate {
 	return tu.AddFileIDs(ids...)
 }
 
+// SetUploaderID sets the "uploader" edge to the User entity by ID.
+func (tu *TomeUpdate) SetUploaderID(id int) *TomeUpdate {
+	tu.mutation.SetUploaderID(id)
+	return tu
+}
+
+// SetNillableUploaderID sets the "uploader" edge to the User entity by ID if the given value is not nil.
+func (tu *TomeUpdate) SetNillableUploaderID(id *int) *TomeUpdate {
+	if id != nil {
+		tu = tu.SetUploaderID(*id)
+	}
+	return tu
+}
+
+// SetUploader sets the "uploader" edge to the User entity.
+func (tu *TomeUpdate) SetUploader(u *User) *TomeUpdate {
+	return tu.SetUploaderID(u.ID)
+}
+
 // Mutation returns the TomeMutation object of the builder.
 func (tu *TomeUpdate) Mutation() *TomeMutation {
 	return tu.mutation
@@ -118,6 +172,12 @@ func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
 		ids[i] = f[i].ID
 	}
 	return tu.RemoveFileIDs(ids...)
+}
+
+// ClearUploader clears the "uploader" edge to the User entity.
+func (tu *TomeUpdate) ClearUploader() *TomeUpdate {
+	tu.mutation.ClearUploader()
+	return tu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -169,6 +229,16 @@ func (tu *TomeUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
 		}
 	}
+	if v, ok := tu.mutation.SupportModel(); ok {
+		if err := tome.SupportModelValidator(v); err != nil {
+			return &ValidationError{Name: "support_model", err: fmt.Errorf(`ent: validator failed for field "Tome.support_model": %w`, err)}
+		}
+	}
+	if v, ok := tu.mutation.Tactic(); ok {
+		if err := tome.TacticValidator(v); err != nil {
+			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
+		}
+	}
 	if v, ok := tu.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
@@ -202,6 +272,15 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
+	}
+	if value, ok := tu.mutation.Author(); ok {
+		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
+	}
+	if value, ok := tu.mutation.SupportModel(); ok {
+		_spec.SetField(tome.FieldSupportModel, field.TypeEnum, value)
+	}
+	if value, ok := tu.mutation.Tactic(); ok {
+		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 	}
 	if value, ok := tu.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
@@ -260,6 +339,35 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.UploaderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: []string{tome.UploaderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.UploaderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: []string{tome.UploaderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tome.Label}
@@ -295,6 +403,40 @@ func (tuo *TomeUpdateOne) SetName(s string) *TomeUpdateOne {
 // SetDescription sets the "description" field.
 func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
 	tuo.mutation.SetDescription(s)
+	return tuo
+}
+
+// SetAuthor sets the "author" field.
+func (tuo *TomeUpdateOne) SetAuthor(s string) *TomeUpdateOne {
+	tuo.mutation.SetAuthor(s)
+	return tuo
+}
+
+// SetSupportModel sets the "support_model" field.
+func (tuo *TomeUpdateOne) SetSupportModel(tm tome.SupportModel) *TomeUpdateOne {
+	tuo.mutation.SetSupportModel(tm)
+	return tuo
+}
+
+// SetNillableSupportModel sets the "support_model" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableSupportModel(tm *tome.SupportModel) *TomeUpdateOne {
+	if tm != nil {
+		tuo.SetSupportModel(*tm)
+	}
+	return tuo
+}
+
+// SetTactic sets the "tactic" field.
+func (tuo *TomeUpdateOne) SetTactic(t tome.Tactic) *TomeUpdateOne {
+	tuo.mutation.SetTactic(t)
+	return tuo
+}
+
+// SetNillableTactic sets the "tactic" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableTactic(t *tome.Tactic) *TomeUpdateOne {
+	if t != nil {
+		tuo.SetTactic(*t)
+	}
 	return tuo
 }
 
@@ -345,6 +487,25 @@ func (tuo *TomeUpdateOne) AddFiles(f ...*File) *TomeUpdateOne {
 	return tuo.AddFileIDs(ids...)
 }
 
+// SetUploaderID sets the "uploader" edge to the User entity by ID.
+func (tuo *TomeUpdateOne) SetUploaderID(id int) *TomeUpdateOne {
+	tuo.mutation.SetUploaderID(id)
+	return tuo
+}
+
+// SetNillableUploaderID sets the "uploader" edge to the User entity by ID if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableUploaderID(id *int) *TomeUpdateOne {
+	if id != nil {
+		tuo = tuo.SetUploaderID(*id)
+	}
+	return tuo
+}
+
+// SetUploader sets the "uploader" edge to the User entity.
+func (tuo *TomeUpdateOne) SetUploader(u *User) *TomeUpdateOne {
+	return tuo.SetUploaderID(u.ID)
+}
+
 // Mutation returns the TomeMutation object of the builder.
 func (tuo *TomeUpdateOne) Mutation() *TomeMutation {
 	return tuo.mutation
@@ -369,6 +530,12 @@ func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
 		ids[i] = f[i].ID
 	}
 	return tuo.RemoveFileIDs(ids...)
+}
+
+// ClearUploader clears the "uploader" edge to the User entity.
+func (tuo *TomeUpdateOne) ClearUploader() *TomeUpdateOne {
+	tuo.mutation.ClearUploader()
+	return tuo
 }
 
 // Where appends a list predicates to the TomeUpdate builder.
@@ -433,6 +600,16 @@ func (tuo *TomeUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
 		}
 	}
+	if v, ok := tuo.mutation.SupportModel(); ok {
+		if err := tome.SupportModelValidator(v); err != nil {
+			return &ValidationError{Name: "support_model", err: fmt.Errorf(`ent: validator failed for field "Tome.support_model": %w`, err)}
+		}
+	}
+	if v, ok := tuo.mutation.Tactic(); ok {
+		if err := tome.TacticValidator(v); err != nil {
+			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
+		}
+	}
 	if v, ok := tuo.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
@@ -484,6 +661,15 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
+	if value, ok := tuo.mutation.Author(); ok {
+		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
+	}
+	if value, ok := tuo.mutation.SupportModel(); ok {
+		_spec.SetField(tome.FieldSupportModel, field.TypeEnum, value)
+	}
+	if value, ok := tuo.mutation.Tactic(); ok {
+		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
+	}
 	if value, ok := tuo.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
@@ -534,6 +720,35 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.UploaderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: []string{tome.UploaderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.UploaderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: []string{tome.UploaderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

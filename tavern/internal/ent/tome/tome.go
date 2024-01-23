@@ -3,6 +3,9 @@
 package tome
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"entgo.io/ent"
@@ -23,6 +26,12 @@ const (
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
+	// FieldAuthor holds the string denoting the author field in the database.
+	FieldAuthor = "author"
+	// FieldSupportModel holds the string denoting the support_model field in the database.
+	FieldSupportModel = "support_model"
+	// FieldTactic holds the string denoting the tactic field in the database.
+	FieldTactic = "tactic"
 	// FieldParamDefs holds the string denoting the param_defs field in the database.
 	FieldParamDefs = "param_defs"
 	// FieldHash holds the string denoting the hash field in the database.
@@ -31,6 +40,8 @@ const (
 	FieldEldritch = "eldritch"
 	// EdgeFiles holds the string denoting the files edge name in mutations.
 	EdgeFiles = "files"
+	// EdgeUploader holds the string denoting the uploader edge name in mutations.
+	EdgeUploader = "uploader"
 	// Table holds the table name of the tome in the database.
 	Table = "tomes"
 	// FilesTable is the table that holds the files relation/edge. The primary key declared below.
@@ -38,6 +49,13 @@ const (
 	// FilesInverseTable is the table name for the File entity.
 	// It exists in this package in order to avoid circular dependency with the "file" package.
 	FilesInverseTable = "files"
+	// UploaderTable is the table that holds the uploader relation/edge.
+	UploaderTable = "tomes"
+	// UploaderInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	UploaderInverseTable = "users"
+	// UploaderColumn is the table column denoting the uploader relation/edge.
+	UploaderColumn = "tome_uploader"
 )
 
 // Columns holds all SQL columns for tome fields.
@@ -47,9 +65,18 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldName,
 	FieldDescription,
+	FieldAuthor,
+	FieldSupportModel,
+	FieldTactic,
 	FieldParamDefs,
 	FieldHash,
 	FieldEldritch,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "tomes"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"tome_uploader",
 }
 
 var (
@@ -62,6 +89,11 @@ var (
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -89,6 +121,72 @@ var (
 	HashValidator func(string) error
 )
 
+// SupportModel defines the type for the "support_model" enum field.
+type SupportModel string
+
+// SupportModelUNSPECIFIED is the default value of the SupportModel enum.
+const DefaultSupportModel = SupportModelUNSPECIFIED
+
+// SupportModel values.
+const (
+	SupportModelUNSPECIFIED SupportModel = "UNSPECIFIED"
+	SupportModelFIRST_PARTY SupportModel = "FIRST_PARTY"
+	SupportModelCOMMUNITY   SupportModel = "COMMUNITY"
+)
+
+func (sm SupportModel) String() string {
+	return string(sm)
+}
+
+// SupportModelValidator is a validator for the "support_model" field enum values. It is called by the builders before save.
+func SupportModelValidator(sm SupportModel) error {
+	switch sm {
+	case SupportModelUNSPECIFIED, SupportModelFIRST_PARTY, SupportModelCOMMUNITY:
+		return nil
+	default:
+		return fmt.Errorf("tome: invalid enum value for support_model field: %q", sm)
+	}
+}
+
+// Tactic defines the type for the "tactic" enum field.
+type Tactic string
+
+// TacticUNSPECIFIED is the default value of the Tactic enum.
+const DefaultTactic = TacticUNSPECIFIED
+
+// Tactic values.
+const (
+	TacticUNSPECIFIED          Tactic = "UNSPECIFIED"
+	TacticRECON                Tactic = "RECON"
+	TacticRESOURCE_DEVELOPMENT Tactic = "RESOURCE_DEVELOPMENT"
+	TacticINITIAL_ACCESS       Tactic = "INITIAL_ACCESS"
+	TacticEXECUTION            Tactic = "EXECUTION"
+	TacticPERSISTENCE          Tactic = "PERSISTENCE"
+	TacticPRIVILEGE_ESCALATION Tactic = "PRIVILEGE_ESCALATION"
+	TacticDEFENSE_EVASION      Tactic = "DEFENSE_EVASION"
+	TacticCREDENTIAL_ACCESS    Tactic = "CREDENTIAL_ACCESS"
+	TacticDISCOVERY            Tactic = "DISCOVERY"
+	TacticLATERAL_MOVEMENT     Tactic = "LATERAL_MOVEMENT"
+	TacticCOLLECTION           Tactic = "COLLECTION"
+	TacticCOMMAND_AND_CONTROL  Tactic = "COMMAND_AND_CONTROL"
+	TacticEXFILTRATION         Tactic = "EXFILTRATION"
+	TacticIMPACT               Tactic = "IMPACT"
+)
+
+func (t Tactic) String() string {
+	return string(t)
+}
+
+// TacticValidator is a validator for the "tactic" field enum values. It is called by the builders before save.
+func TacticValidator(t Tactic) error {
+	switch t {
+	case TacticUNSPECIFIED, TacticRECON, TacticRESOURCE_DEVELOPMENT, TacticINITIAL_ACCESS, TacticEXECUTION, TacticPERSISTENCE, TacticPRIVILEGE_ESCALATION, TacticDEFENSE_EVASION, TacticCREDENTIAL_ACCESS, TacticDISCOVERY, TacticLATERAL_MOVEMENT, TacticCOLLECTION, TacticCOMMAND_AND_CONTROL, TacticEXFILTRATION, TacticIMPACT:
+		return nil
+	default:
+		return fmt.Errorf("tome: invalid enum value for tactic field: %q", t)
+	}
+}
+
 // OrderOption defines the ordering options for the Tome queries.
 type OrderOption func(*sql.Selector)
 
@@ -115,6 +213,21 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// ByAuthor orders the results by the author field.
+func ByAuthor(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAuthor, opts...).ToFunc()
+}
+
+// BySupportModel orders the results by the support_model field.
+func BySupportModel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupportModel, opts...).ToFunc()
+}
+
+// ByTactic orders the results by the tactic field.
+func ByTactic(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTactic, opts...).ToFunc()
 }
 
 // ByParamDefs orders the results by the param_defs field.
@@ -145,10 +258,60 @@ func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByUploaderField orders the results by uploader field.
+func ByUploaderField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUploaderStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newFilesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FilesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, false, FilesTable, FilesPrimaryKey...),
 	)
+}
+func newUploaderStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UploaderInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, UploaderTable, UploaderColumn),
+	)
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e SupportModel) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *SupportModel) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = SupportModel(str)
+	if err := SupportModelValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid SupportModel", str)
+	}
+	return nil
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e Tactic) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *Tactic) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = Tactic(str)
+	if err := TacticValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid Tactic", str)
+	}
+	return nil
 }

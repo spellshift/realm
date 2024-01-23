@@ -31,6 +31,12 @@ func (hu *HostUpdate) Where(ps ...predicate.Host) *HostUpdate {
 	return hu
 }
 
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (hu *HostUpdate) SetLastModifiedAt(t time.Time) *HostUpdate {
+	hu.mutation.SetLastModifiedAt(t)
+	return hu
+}
+
 // SetIdentifier sets the "identifier" field.
 func (hu *HostUpdate) SetIdentifier(s string) *HostUpdate {
 	hu.mutation.SetIdentifier(s)
@@ -226,6 +232,7 @@ func (hu *HostUpdate) RemoveProcesses(p ...*Process) *HostUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (hu *HostUpdate) Save(ctx context.Context) (int, error) {
+	hu.defaults()
 	return withHooks(ctx, hu.sqlSave, hu.mutation, hu.hooks)
 }
 
@@ -248,6 +255,14 @@ func (hu *HostUpdate) Exec(ctx context.Context) error {
 func (hu *HostUpdate) ExecX(ctx context.Context) {
 	if err := hu.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (hu *HostUpdate) defaults() {
+	if _, ok := hu.mutation.LastModifiedAt(); !ok {
+		v := host.UpdateDefaultLastModifiedAt()
+		hu.mutation.SetLastModifiedAt(v)
 	}
 }
 
@@ -282,6 +297,9 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := hu.mutation.LastModifiedAt(); ok {
+		_spec.SetField(host.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := hu.mutation.Identifier(); ok {
 		_spec.SetField(host.FieldIdentifier, field.TypeString, value)
@@ -460,6 +478,12 @@ type HostUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *HostMutation
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (huo *HostUpdateOne) SetLastModifiedAt(t time.Time) *HostUpdateOne {
+	huo.mutation.SetLastModifiedAt(t)
+	return huo
 }
 
 // SetIdentifier sets the "identifier" field.
@@ -670,6 +694,7 @@ func (huo *HostUpdateOne) Select(field string, fields ...string) *HostUpdateOne 
 
 // Save executes the query and returns the updated Host entity.
 func (huo *HostUpdateOne) Save(ctx context.Context) (*Host, error) {
+	huo.defaults()
 	return withHooks(ctx, huo.sqlSave, huo.mutation, huo.hooks)
 }
 
@@ -692,6 +717,14 @@ func (huo *HostUpdateOne) Exec(ctx context.Context) error {
 func (huo *HostUpdateOne) ExecX(ctx context.Context) {
 	if err := huo.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (huo *HostUpdateOne) defaults() {
+	if _, ok := huo.mutation.LastModifiedAt(); !ok {
+		v := host.UpdateDefaultLastModifiedAt()
+		huo.mutation.SetLastModifiedAt(v)
 	}
 }
 
@@ -743,6 +776,9 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := huo.mutation.LastModifiedAt(); ok {
+		_spec.SetField(host.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := huo.mutation.Identifier(); ok {
 		_spec.SetField(host.FieldIdentifier, field.TypeString, value)

@@ -21,8 +21,21 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	beaconMixin := schema.Beacon{}.Mixin()
+	beaconMixinFields0 := beaconMixin[0].Fields()
+	_ = beaconMixinFields0
 	beaconFields := schema.Beacon{}.Fields()
 	_ = beaconFields
+	// beaconDescCreatedAt is the schema descriptor for created_at field.
+	beaconDescCreatedAt := beaconMixinFields0[0].Descriptor()
+	// beacon.DefaultCreatedAt holds the default value on creation for the created_at field.
+	beacon.DefaultCreatedAt = beaconDescCreatedAt.Default.(func() time.Time)
+	// beaconDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	beaconDescLastModifiedAt := beaconMixinFields0[1].Descriptor()
+	// beacon.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	beacon.DefaultLastModifiedAt = beaconDescLastModifiedAt.Default.(func() time.Time)
+	// beacon.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	beacon.UpdateDefaultLastModifiedAt = beaconDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// beaconDescName is the schema descriptor for name field.
 	beaconDescName := beaconFields[0].Descriptor()
 	// beacon.DefaultName holds the default value on creation for the name field.
@@ -74,8 +87,21 @@ func init() {
 	fileDescHash := fileFields[2].Descriptor()
 	// file.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	file.HashValidator = fileDescHash.Validators[0].(func(string) error)
+	hostMixin := schema.Host{}.Mixin()
+	hostMixinFields0 := hostMixin[0].Fields()
+	_ = hostMixinFields0
 	hostFields := schema.Host{}.Fields()
 	_ = hostFields
+	// hostDescCreatedAt is the schema descriptor for created_at field.
+	hostDescCreatedAt := hostMixinFields0[0].Descriptor()
+	// host.DefaultCreatedAt holds the default value on creation for the created_at field.
+	host.DefaultCreatedAt = hostDescCreatedAt.Default.(func() time.Time)
+	// hostDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	hostDescLastModifiedAt := hostMixinFields0[1].Descriptor()
+	// host.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	host.DefaultLastModifiedAt = hostDescLastModifiedAt.Default.(func() time.Time)
+	// host.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	host.UpdateDefaultLastModifiedAt = hostDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// hostDescIdentifier is the schema descriptor for identifier field.
 	hostDescIdentifier := hostFields[0].Descriptor()
 	// host.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
@@ -177,11 +203,11 @@ func init() {
 	// tome.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tome.NameValidator = tomeDescName.Validators[0].(func(string) error)
 	// tomeDescParamDefs is the schema descriptor for param_defs field.
-	tomeDescParamDefs := tomeFields[2].Descriptor()
+	tomeDescParamDefs := tomeFields[5].Descriptor()
 	// tome.ParamDefsValidator is a validator for the "param_defs" field. It is called by the builders before save.
 	tome.ParamDefsValidator = tomeDescParamDefs.Validators[0].(func(string) error)
 	// tomeDescHash is the schema descriptor for hash field.
-	tomeDescHash := tomeFields[3].Descriptor()
+	tomeDescHash := tomeFields[6].Descriptor()
 	// tome.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	tome.HashValidator = tomeDescHash.Validators[0].(func(string) error)
 	userFields := schema.User{}.Fields()
