@@ -85,9 +85,7 @@ pub async fn handle_exec_timeout_and_response(
     print_channel_sender // Temporary - pending UI updates
         .clone()
         .send(format!("---[ERROR]----\n{}\n--------", tome_result.1))?;
-    error_channel_sender
-        .clone()
-        .send(format!("---[ERROR]----\n{}\n--------", tome_result.1))?;
+    error_channel_sender.clone().send(tome_result.1)?;
     Ok(())
 }
 
@@ -139,10 +137,10 @@ print(sys.shell(input_params["cmd"])["stdout"])
         let res = handle_exec_timeout_and_response(
             Task {
                 id: 123,
-                eldritch: r#""#.to_string(),
+                eldritch: r#"print('okay')"#.to_string(),
                 parameters: HashMap::from([]),
                 file_names: Vec::from([]),
-                quest_name: "Yeet Yeet".to_string(),
+                quest_name: "Poggers".to_string(),
             },
             print_sender,
             error_sender,
@@ -170,6 +168,7 @@ print(sys.shell(input_params["cmd"])["stdout"])
             task_channel_error.push(new_res_line);
         }
 
+        assert_eq!(task_channel_error.join(""), "".to_string());
         Ok(())
     }
 
