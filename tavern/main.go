@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
+	"net/http"
 	"os"
 
 	_ "realm.pub/tavern/internal/ent/runtime"
@@ -17,7 +19,7 @@ func main() {
 		ConfigureMySQLFromEnv(),
 		ConfigureOAuthFromEnv("/oauth/authorize"),
 	)
-	if err := app.Run(os.Args); err != nil {
+	if err := app.Run(os.Args); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("fatal error: %v", err)
 	}
 }

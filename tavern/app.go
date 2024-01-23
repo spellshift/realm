@@ -177,10 +177,20 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		return nil, fmt.Errorf("failed to configure http/2: %w", err)
 	}
 
-	return &Server{
+	// Initialize Server
+	tSrv := &Server{
 		HTTP:   cfg.srv,
 		client: client,
-	}, nil
+	}
+
+	// Shutdown for Test Run & Exit
+	if cfg.IsTestRunAndExitEnabled() {
+		go func() {
+			tSrv.HTTP.Shutdown(ctx)
+		}()
+	}
+
+	return tSrv, nil
 }
 
 func newGraphQLHandler(client *ent.Client) http.Handler {

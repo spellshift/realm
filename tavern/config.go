@@ -17,7 +17,9 @@ import (
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
-	EnvEnableTestData = EnvString{"ENABLE_TEST_DATA", ""}
+	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
+	EnvEnableTestData       = EnvString{"ENABLE_TEST_DATA", ""}
+	EnvEnableTestRunAndExit = EnvString{"ENABLE_TEST_RUN_AND_EXIT", ""}
 
 	// EnvOAuthClientID set to configure OAuth Client ID.
 	// EnvOAuthClientSecret set to configure OAuth Client Secret.
@@ -110,6 +112,11 @@ func (cfg *Config) IsPProfEnabled() bool {
 // IsTestDataEnabled returns true if a value for the "ENABLE_TEST_DATA" environment variable is set.
 func (cfg *Config) IsTestDataEnabled() bool {
 	return EnvEnableTestData.String() != ""
+}
+
+// IsTestRunAndExitEnabled returns true if a value for the "ENABLE_TEST_RUN_AND_EXIT" environment variable is set.
+func (cfg *Config) IsTestRunAndExitEnabled() bool {
+	return EnvEnableTestRunAndExit.String() != ""
 }
 
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be
