@@ -47,6 +47,7 @@ func TestCreateQuest(t *testing.T) {
 	testTome := graph.Tome.Create().
 		SetName("Test Tome").
 		SetDescription("Ensures the world feels greeted").
+		SetAuthor("kcarretto").
 		SetEldritch(`print("Hello World!")`).
 		SaveX(ctx)
 
@@ -63,6 +64,7 @@ func TestCreateQuest(t *testing.T) {
 	testTomeWithFiles := graph.Tome.Create().
 		SetName("Test Tome With Files").
 		SetDescription("Ensures the world feels greeted").
+		SetAuthor("kcarretto").
 		SetEldritch(`print("Hello World!")`).
 		AddFiles(testFiles...).
 		SaveX(ctx)

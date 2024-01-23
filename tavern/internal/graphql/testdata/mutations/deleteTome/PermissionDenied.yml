@@ -1,6 +1,6 @@
 state: |
   INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
-    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,true);
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,false);
   INSERT INTO `hosts` (id, name, identifier)
     VALUES (1010,"db1","EXISTING-HOST");
   INSERT INTO `beacons` (id, name, identifier, beacon_host)
@@ -18,49 +18,10 @@ state: |
 requestor:
   session_token: secretToken
 query: |
-  mutation CreateQuestWithFiles($beaconIDs: [ID!]!, $input: CreateQuestInput!) {
-    createQuest(beaconIDs:$beaconIDs, input:$input) {
-      name
-      tome {
-        id
-        name
-        files {
-          id
-        }
-      }
-      tasks {
-      beacon {
-          id
-        }
-        quest {
-          name
-        }
-      }
-      bundle {
-        hash
-      }
-    }
+  mutation DeleteTome($tomeID: ID!) {
+    deleteTome(tomeID:$tomeID)
   }
 variables:
-  beaconIDs:
-    - 1337
-  input:
-    name: "WonderfulQuest"
-    tomeID: "2000"
+  tomeID: 2000
 
-expected:
-  createQuest:
-    name: "WonderfulQuest"
-    tome:
-      id: "2000"
-      name: "Test Tome"
-      files:
-        - id: "3000"
-        - id: "3001"
-    tasks:
-      - beacon:
-          id: "1337"
-        quest:
-          name: "WonderfulQuest"
-    bundle:
-      hash: "4469e68357aa4abc056aa32c248c0912c9f921aba75a960725b2070bc1fad130"
+expected_error: "permission denied"

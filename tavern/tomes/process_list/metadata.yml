@@ -1,5 +1,8 @@
 name: Process list
 description: Get a list of running processes
+author: hulto
+support_model: FIRST_PARTY
+tactic: RECON
 paramdefs:
 - name: cmd_substring
   label: Process search string

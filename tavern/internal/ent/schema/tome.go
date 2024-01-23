@@ -32,6 +32,32 @@ func (Tome) Fields() []ent.Field {
 			Comment("Name of the tome"),
 		field.String("description").
 			Comment("Information about the tome"),
+		field.String("author").
+			Comment("Name of the author who created the tome."),
+		field.Enum("support_model").
+			Values("UNSPECIFIED", "FIRST_PARTY", "COMMUNITY").
+			Default("UNSPECIFIED").
+			Comment("Information about the tomes support model."),
+		field.Enum("tactic").
+			Values(
+				"UNSPECIFIED",
+				"RECON",
+				"RESOURCE_DEVELOPMENT",
+				"INITIAL_ACCESS",
+				"EXECUTION",
+				"PERSISTENCE",
+				"PRIVILEGE_ESCALATION",
+				"DEFENSE_EVASION",
+				"CREDENTIAL_ACCESS",
+				"DISCOVERY",
+				"LATERAL_MOVEMENT",
+				"COLLECTION",
+				"COMMAND_AND_CONTROL",
+				"EXFILTRATION",
+				"IMPACT",
+			).
+			Default("UNSPECIFIED").
+			Comment("MITRE ATT&CK tactic provided by the tome."),
 		field.String("param_defs").
 			Validate(validators.NewTomeParameterDefinitions()).
 			Optional().
@@ -58,6 +84,12 @@ func (Tome) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("files", File.Type).
 			Comment("Any files required for tome execution that will be bundled and provided to the agent for download"),
+		edge.To("uploader", User.Type).
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("User who uploaded the tome (may be null)."),
 	}
 }
 
@@ -66,6 +98,7 @@ func (Tome) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.Mutations(
 			entgql.MutationCreate(),
+			entgql.MutationUpdate(),
 		),
 	}
 }

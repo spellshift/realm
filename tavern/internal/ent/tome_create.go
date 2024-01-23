@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // TomeCreate is the builder for creating a Tome entity.
@@ -63,6 +64,40 @@ func (tc *TomeCreate) SetDescription(s string) *TomeCreate {
 	return tc
 }
 
+// SetAuthor sets the "author" field.
+func (tc *TomeCreate) SetAuthor(s string) *TomeCreate {
+	tc.mutation.SetAuthor(s)
+	return tc
+}
+
+// SetSupportModel sets the "support_model" field.
+func (tc *TomeCreate) SetSupportModel(tm tome.SupportModel) *TomeCreate {
+	tc.mutation.SetSupportModel(tm)
+	return tc
+}
+
+// SetNillableSupportModel sets the "support_model" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableSupportModel(tm *tome.SupportModel) *TomeCreate {
+	if tm != nil {
+		tc.SetSupportModel(*tm)
+	}
+	return tc
+}
+
+// SetTactic sets the "tactic" field.
+func (tc *TomeCreate) SetTactic(t tome.Tactic) *TomeCreate {
+	tc.mutation.SetTactic(t)
+	return tc
+}
+
+// SetNillableTactic sets the "tactic" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableTactic(t *tome.Tactic) *TomeCreate {
+	if t != nil {
+		tc.SetTactic(*t)
+	}
+	return tc
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (tc *TomeCreate) SetParamDefs(s string) *TomeCreate {
 	tc.mutation.SetParamDefs(s)
@@ -102,6 +137,25 @@ func (tc *TomeCreate) AddFiles(f ...*File) *TomeCreate {
 		ids[i] = f[i].ID
 	}
 	return tc.AddFileIDs(ids...)
+}
+
+// SetUploaderID sets the "uploader" edge to the User entity by ID.
+func (tc *TomeCreate) SetUploaderID(id int) *TomeCreate {
+	tc.mutation.SetUploaderID(id)
+	return tc
+}
+
+// SetNillableUploaderID sets the "uploader" edge to the User entity by ID if the given value is not nil.
+func (tc *TomeCreate) SetNillableUploaderID(id *int) *TomeCreate {
+	if id != nil {
+		tc = tc.SetUploaderID(*id)
+	}
+	return tc
+}
+
+// SetUploader sets the "uploader" edge to the User entity.
+func (tc *TomeCreate) SetUploader(u *User) *TomeCreate {
+	return tc.SetUploaderID(u.ID)
 }
 
 // Mutation returns the TomeMutation object of the builder.
@@ -155,6 +209,14 @@ func (tc *TomeCreate) defaults() error {
 		v := tome.DefaultLastModifiedAt()
 		tc.mutation.SetLastModifiedAt(v)
 	}
+	if _, ok := tc.mutation.SupportModel(); !ok {
+		v := tome.DefaultSupportModel
+		tc.mutation.SetSupportModel(v)
+	}
+	if _, ok := tc.mutation.Tactic(); !ok {
+		v := tome.DefaultTactic
+		tc.mutation.SetTactic(v)
+	}
 	return nil
 }
 
@@ -176,6 +238,25 @@ func (tc *TomeCreate) check() error {
 	}
 	if _, ok := tc.mutation.Description(); !ok {
 		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Tome.description"`)}
+	}
+	if _, ok := tc.mutation.Author(); !ok {
+		return &ValidationError{Name: "author", err: errors.New(`ent: missing required field "Tome.author"`)}
+	}
+	if _, ok := tc.mutation.SupportModel(); !ok {
+		return &ValidationError{Name: "support_model", err: errors.New(`ent: missing required field "Tome.support_model"`)}
+	}
+	if v, ok := tc.mutation.SupportModel(); ok {
+		if err := tome.SupportModelValidator(v); err != nil {
+			return &ValidationError{Name: "support_model", err: fmt.Errorf(`ent: validator failed for field "Tome.support_model": %w`, err)}
+		}
+	}
+	if _, ok := tc.mutation.Tactic(); !ok {
+		return &ValidationError{Name: "tactic", err: errors.New(`ent: missing required field "Tome.tactic"`)}
+	}
+	if v, ok := tc.mutation.Tactic(); ok {
+		if err := tome.TacticValidator(v); err != nil {
+			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
+		}
 	}
 	if v, ok := tc.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
@@ -236,6 +317,18 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
+	if value, ok := tc.mutation.Author(); ok {
+		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
+		_node.Author = value
+	}
+	if value, ok := tc.mutation.SupportModel(); ok {
+		_spec.SetField(tome.FieldSupportModel, field.TypeEnum, value)
+		_node.SupportModel = value
+	}
+	if value, ok := tc.mutation.Tactic(); ok {
+		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
+		_node.Tactic = value
+	}
 	if value, ok := tc.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 		_node.ParamDefs = value
@@ -262,6 +355,23 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.UploaderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.UploaderTable,
+			Columns: []string{tome.UploaderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.tome_uploader = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -349,6 +459,42 @@ func (u *TomeUpsert) SetDescription(v string) *TomeUpsert {
 // UpdateDescription sets the "description" field to the value that was provided on create.
 func (u *TomeUpsert) UpdateDescription() *TomeUpsert {
 	u.SetExcluded(tome.FieldDescription)
+	return u
+}
+
+// SetAuthor sets the "author" field.
+func (u *TomeUpsert) SetAuthor(v string) *TomeUpsert {
+	u.Set(tome.FieldAuthor, v)
+	return u
+}
+
+// UpdateAuthor sets the "author" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateAuthor() *TomeUpsert {
+	u.SetExcluded(tome.FieldAuthor)
+	return u
+}
+
+// SetSupportModel sets the "support_model" field.
+func (u *TomeUpsert) SetSupportModel(v tome.SupportModel) *TomeUpsert {
+	u.Set(tome.FieldSupportModel, v)
+	return u
+}
+
+// UpdateSupportModel sets the "support_model" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateSupportModel() *TomeUpsert {
+	u.SetExcluded(tome.FieldSupportModel)
+	return u
+}
+
+// SetTactic sets the "tactic" field.
+func (u *TomeUpsert) SetTactic(v tome.Tactic) *TomeUpsert {
+	u.Set(tome.FieldTactic, v)
+	return u
+}
+
+// UpdateTactic sets the "tactic" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateTactic() *TomeUpsert {
+	u.SetExcluded(tome.FieldTactic)
 	return u
 }
 
@@ -478,6 +624,48 @@ func (u *TomeUpsertOne) SetDescription(v string) *TomeUpsertOne {
 func (u *TomeUpsertOne) UpdateDescription() *TomeUpsertOne {
 	return u.Update(func(s *TomeUpsert) {
 		s.UpdateDescription()
+	})
+}
+
+// SetAuthor sets the "author" field.
+func (u *TomeUpsertOne) SetAuthor(v string) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetAuthor(v)
+	})
+}
+
+// UpdateAuthor sets the "author" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateAuthor() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateAuthor()
+	})
+}
+
+// SetSupportModel sets the "support_model" field.
+func (u *TomeUpsertOne) SetSupportModel(v tome.SupportModel) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetSupportModel(v)
+	})
+}
+
+// UpdateSupportModel sets the "support_model" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateSupportModel() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateSupportModel()
+	})
+}
+
+// SetTactic sets the "tactic" field.
+func (u *TomeUpsertOne) SetTactic(v tome.Tactic) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetTactic(v)
+	})
+}
+
+// UpdateTactic sets the "tactic" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateTactic() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateTactic()
 	})
 }
 
@@ -780,6 +968,48 @@ func (u *TomeUpsertBulk) SetDescription(v string) *TomeUpsertBulk {
 func (u *TomeUpsertBulk) UpdateDescription() *TomeUpsertBulk {
 	return u.Update(func(s *TomeUpsert) {
 		s.UpdateDescription()
+	})
+}
+
+// SetAuthor sets the "author" field.
+func (u *TomeUpsertBulk) SetAuthor(v string) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetAuthor(v)
+	})
+}
+
+// UpdateAuthor sets the "author" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateAuthor() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateAuthor()
+	})
+}
+
+// SetSupportModel sets the "support_model" field.
+func (u *TomeUpsertBulk) SetSupportModel(v tome.SupportModel) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetSupportModel(v)
+	})
+}
+
+// UpdateSupportModel sets the "support_model" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateSupportModel() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateSupportModel()
+	})
+}
+
+// SetTactic sets the "tactic" field.
+func (u *TomeUpsertBulk) SetTactic(v tome.Tactic) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetTactic(v)
+	})
+}
+
+// UpdateTactic sets the "tactic" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateTactic() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateTactic()
 	})
 }
 
