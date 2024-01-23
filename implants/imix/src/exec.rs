@@ -13,6 +13,7 @@ pub struct AsyncTask {
     pub start_time: DateTime<Utc>,
     pub grpc_task: Task,
     pub print_reciever: Receiver<String>,
+    pub error_reciever: Receiver<String>,
 }
 
 async fn handle_exec_tome(
@@ -54,6 +55,7 @@ async fn handle_exec_tome(
 pub async fn handle_exec_timeout_and_response(
     task: Task,
     print_channel_sender: Sender<String>,
+    error_channel_sender: Sender<String>,
     timeout: Option<Duration>,
 ) -> Result<(), Error> {
     // Tasks will be forcebly stopped after 1 week.
@@ -80,15 +82,18 @@ pub async fn handle_exec_timeout_and_response(
     print_channel_sender
         .clone()
         .send(format!("---[RESULT]----\n{}\n---------", tome_result.0))?;
-    print_channel_sender
+    print_channel_sender // Temporary - pending UI updates
         .clone()
         .send(format!("---[ERROR]----\n{}\n--------", tome_result.1))?;
+    error_channel_sender.clone().send(tome_result.1)?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::handle_exec_tome;
+    use crate::tasks::drain_sender;
+
+    use super::{handle_exec_timeout_and_response, handle_exec_tome};
     use anyhow::Result;
     use c2::pb::Task;
     use std::collections::HashMap;
@@ -125,51 +130,30 @@ print(sys.shell(input_params["cmd"])["stdout"])
         Ok(())
     }
 
-    #[test]
-    fn imix_handle_exec_tome_error() -> Result<()> {
-        let test_tome_input = Task {
-            id: 123,
-            eldritch: r#"
-aoeu
+    #[tokio::test]
+    async fn imix_handle_exec_tome_error() -> Result<()> {
+        let (print_sender, print_reciever) = channel::<String>();
+        let (error_sender, error_reciever) = channel::<String>();
+        let _res = handle_exec_timeout_and_response(
+            Task {
+                id: 123,
+                eldritch: r#"print(no_var)
 "#
-            .to_string(),
-            parameters: HashMap::new(),
-            file_names: Vec::new(),
-            quest_name: "test_quest".to_string(),
-        };
+                .to_string(),
+                parameters: HashMap::from([]),
+                file_names: Vec::from([]),
+                quest_name: "Poggers".to_string(),
+            },
+            print_sender,
+            error_sender,
+            None,
+        )
+        .await?;
 
-        let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap();
+        let task_channel_error = drain_sender(&error_reciever)?;
+        let _task_channel_output = drain_sender(&print_reciever)?;
 
-        let (sender, receiver) = channel::<String>();
-
-        let exec_future = handle_exec_tome(test_tome_input, sender.clone());
-        let (eld_output, eld_error) = runtime.block_on(exec_future)?;
-
-        let mut index = 0;
-        loop {
-            let cmd_output = match receiver.recv_timeout(Duration::from_millis(500)) {
-                Ok(local_res_string) => local_res_string,
-                Err(local_err) => {
-                    match local_err.to_string().as_str() {
-                        "channel is empty and sending half is closed" => {
-                            break;
-                        }
-                        "timed out waiting on channel" => break,
-                        _ => eprint!("Error: {}", local_err),
-                    }
-                    break;
-                }
-            };
-            assert_eq!(cmd_output, "".to_string());
-
-            index = index + 1;
-        }
-
-        assert_eq!(eld_output, "".to_string());
-        assert_eq!(eld_error, "[eldritch] Eldritch eval_module failed:\nerror: Variable `aoeu` not found\n --> 123:2:1\n  |\n2 | aoeu\n  | ^^^^\n  |\n".to_string());
+        assert!(task_channel_error.contains(&"Variable `no_var` not found".to_string()));
         Ok(())
     }
 
