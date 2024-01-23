@@ -24,6 +24,34 @@ type BeaconCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (bc *BeaconCreate) SetCreatedAt(t time.Time) *BeaconCreate {
+	bc.mutation.SetCreatedAt(t)
+	return bc
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (bc *BeaconCreate) SetNillableCreatedAt(t *time.Time) *BeaconCreate {
+	if t != nil {
+		bc.SetCreatedAt(*t)
+	}
+	return bc
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (bc *BeaconCreate) SetLastModifiedAt(t time.Time) *BeaconCreate {
+	bc.mutation.SetLastModifiedAt(t)
+	return bc
+}
+
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
+func (bc *BeaconCreate) SetNillableLastModifiedAt(t *time.Time) *BeaconCreate {
+	if t != nil {
+		bc.SetLastModifiedAt(*t)
+	}
+	return bc
+}
+
 // SetName sets the "name" field.
 func (bc *BeaconCreate) SetName(s string) *BeaconCreate {
 	bc.mutation.SetName(s)
@@ -169,6 +197,14 @@ func (bc *BeaconCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (bc *BeaconCreate) defaults() {
+	if _, ok := bc.mutation.CreatedAt(); !ok {
+		v := beacon.DefaultCreatedAt()
+		bc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := bc.mutation.LastModifiedAt(); !ok {
+		v := beacon.DefaultLastModifiedAt()
+		bc.mutation.SetLastModifiedAt(v)
+	}
 	if _, ok := bc.mutation.Name(); !ok {
 		v := beacon.DefaultName()
 		bc.mutation.SetName(v)
@@ -181,6 +217,12 @@ func (bc *BeaconCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (bc *BeaconCreate) check() error {
+	if _, ok := bc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Beacon.created_at"`)}
+	}
+	if _, ok := bc.mutation.LastModifiedAt(); !ok {
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Beacon.last_modified_at"`)}
+	}
 	if _, ok := bc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Beacon.name"`)}
 	}
@@ -237,6 +279,14 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 		_spec = sqlgraph.NewCreateSpec(beacon.Table, sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = bc.conflict
+	if value, ok := bc.mutation.CreatedAt(); ok {
+		_spec.SetField(beacon.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := bc.mutation.LastModifiedAt(); ok {
+		_spec.SetField(beacon.FieldLastModifiedAt, field.TypeTime, value)
+		_node.LastModifiedAt = value
+	}
 	if value, ok := bc.mutation.Name(); ok {
 		_spec.SetField(beacon.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -301,7 +351,7 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Beacon.Create().
-//		SetName(v).
+//		SetCreatedAt(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -310,7 +360,7 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.BeaconUpsert) {
-//			SetName(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (bc *BeaconCreate) OnConflict(opts ...sql.ConflictOption) *BeaconUpsertOne {
@@ -345,6 +395,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *BeaconUpsert) SetLastModifiedAt(v time.Time) *BeaconUpsert {
+	u.Set(beacon.FieldLastModifiedAt, v)
+	return u
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *BeaconUpsert) UpdateLastModifiedAt() *BeaconUpsert {
+	u.SetExcluded(beacon.FieldLastModifiedAt)
+	return u
+}
 
 // SetPrincipal sets the "principal" field.
 func (u *BeaconUpsert) SetPrincipal(v string) *BeaconUpsert {
@@ -447,6 +509,9 @@ func (u *BeaconUpsert) ClearInterval() *BeaconUpsert {
 func (u *BeaconUpsertOne) UpdateNewValues() *BeaconUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(beacon.FieldCreatedAt)
+		}
 		if _, exists := u.create.mutation.Name(); exists {
 			s.SetIgnore(beacon.FieldName)
 		}
@@ -479,6 +544,20 @@ func (u *BeaconUpsertOne) Update(set func(*BeaconUpsert)) *BeaconUpsertOne {
 		set(&BeaconUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *BeaconUpsertOne) SetLastModifiedAt(v time.Time) *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *BeaconUpsertOne) UpdateLastModifiedAt() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateLastModifiedAt()
+	})
 }
 
 // SetPrincipal sets the "principal" field.
@@ -721,7 +800,7 @@ func (bcb *BeaconCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.BeaconUpsert) {
-//			SetName(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (bcb *BeaconCreateBulk) OnConflict(opts ...sql.ConflictOption) *BeaconUpsertBulk {
@@ -762,6 +841,9 @@ func (u *BeaconUpsertBulk) UpdateNewValues() *BeaconUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		for _, b := range u.create.builders {
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(beacon.FieldCreatedAt)
+			}
 			if _, exists := b.mutation.Name(); exists {
 				s.SetIgnore(beacon.FieldName)
 			}
@@ -795,6 +877,20 @@ func (u *BeaconUpsertBulk) Update(set func(*BeaconUpsert)) *BeaconUpsertBulk {
 		set(&BeaconUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *BeaconUpsertBulk) SetLastModifiedAt(v time.Time) *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *BeaconUpsertBulk) UpdateLastModifiedAt() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateLastModifiedAt()
+	})
 }
 
 // SetPrincipal sets the "principal" field.

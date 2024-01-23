@@ -11,11 +11,15 @@ import (
 
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
-	HostID *int
+	LastModifiedAt *time.Time
+	HostID         *int
 }
 
 // Mutate applies the UpdateBeaconInput on the BeaconMutation builder.
 func (i *UpdateBeaconInput) Mutate(m *BeaconMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
 	if v := i.HostID; v != nil {
 		m.SetHostID(*v)
 	}
@@ -35,6 +39,7 @@ func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
 
 // UpdateHostInput represents a mutation input for updating hosts.
 type UpdateHostInput struct {
+	LastModifiedAt   *time.Time
 	ClearName        bool
 	Name             *string
 	ClearTags        bool
@@ -50,6 +55,9 @@ type UpdateHostInput struct {
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
 func (i *UpdateHostInput) Mutate(m *HostMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
 	if i.ClearName {
 		m.ClearName()
 	}

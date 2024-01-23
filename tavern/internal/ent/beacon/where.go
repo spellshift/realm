@@ -55,6 +55,16 @@ func IDLTE(id int) predicate.Beacon {
 	return predicate.Beacon(sql.FieldLTE(FieldID, id))
 }
 
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// LastModifiedAt applies equality check predicate on the "last_modified_at" field. It's identical to LastModifiedAtEQ.
+func LastModifiedAt(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldLastModifiedAt, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldName, v))
@@ -83,6 +93,86 @@ func LastSeenAt(v time.Time) predicate.Beacon {
 // Interval applies equality check predicate on the "interval" field. It's identical to IntervalEQ.
 func Interval(v uint64) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldInterval, v))
+}
+
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldGT(FieldCreatedAt, v))
+}
+
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldGTE(FieldCreatedAt, v))
+}
+
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldLT(FieldCreatedAt, v))
+}
+
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// LastModifiedAtEQ applies the EQ predicate on the "last_modified_at" field.
+func LastModifiedAtEQ(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtNEQ applies the NEQ predicate on the "last_modified_at" field.
+func LastModifiedAtNEQ(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNEQ(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtIn applies the In predicate on the "last_modified_at" field.
+func LastModifiedAtIn(vs ...time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldIn(FieldLastModifiedAt, vs...))
+}
+
+// LastModifiedAtNotIn applies the NotIn predicate on the "last_modified_at" field.
+func LastModifiedAtNotIn(vs ...time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotIn(FieldLastModifiedAt, vs...))
+}
+
+// LastModifiedAtGT applies the GT predicate on the "last_modified_at" field.
+func LastModifiedAtGT(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldGT(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtGTE applies the GTE predicate on the "last_modified_at" field.
+func LastModifiedAtGTE(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldGTE(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtLT applies the LT predicate on the "last_modified_at" field.
+func LastModifiedAtLT(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldLT(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtLTE applies the LTE predicate on the "last_modified_at" field.
+func LastModifiedAtLTE(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldLTE(FieldLastModifiedAt, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

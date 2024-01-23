@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -16,6 +17,10 @@ const (
 	Label = "host"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldLastModifiedAt holds the string denoting the last_modified_at field in the database.
+	FieldLastModifiedAt = "last_modified_at"
 	// FieldIdentifier holds the string denoting the identifier field in the database.
 	FieldIdentifier = "identifier"
 	// FieldName holds the string denoting the name field in the database.
@@ -58,6 +63,8 @@ const (
 // Columns holds all SQL columns for host fields.
 var Columns = []string{
 	FieldID,
+	FieldCreatedAt,
+	FieldLastModifiedAt,
 	FieldIdentifier,
 	FieldName,
 	FieldPrimaryIP,
@@ -82,6 +89,12 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
+	DefaultCreatedAt func() time.Time
+	// DefaultLastModifiedAt holds the default value on creation for the "last_modified_at" field.
+	DefaultLastModifiedAt func() time.Time
+	// UpdateDefaultLastModifiedAt holds the default value on update for the "last_modified_at" field.
+	UpdateDefaultLastModifiedAt func() time.Time
 	// IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	IdentifierValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -123,6 +136,16 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByLastModifiedAt orders the results by the last_modified_at field.
+func ByLastModifiedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastModifiedAt, opts...).ToFunc()
 }
 
 // ByIdentifier orders the results by the identifier field.

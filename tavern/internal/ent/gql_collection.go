@@ -62,6 +62,16 @@ func (b *BeaconQuery) collectField(ctx context.Context, opCtx *graphql.Operation
 			b.WithNamedTasks(alias, func(wq *TaskQuery) {
 				*wq = *query
 			})
+		case "createdAt":
+			if _, ok := fieldSeen[beacon.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, beacon.FieldCreatedAt)
+				fieldSeen[beacon.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[beacon.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, beacon.FieldLastModifiedAt)
+				fieldSeen[beacon.FieldLastModifiedAt] = struct{}{}
+			}
 		case "name":
 			if _, ok := fieldSeen[beacon.FieldName]; !ok {
 				selectedFields = append(selectedFields, beacon.FieldName)
@@ -333,6 +343,16 @@ func (h *HostQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			h.WithNamedProcesses(alias, func(wq *ProcessQuery) {
 				*wq = *query
 			})
+		case "createdAt":
+			if _, ok := fieldSeen[host.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, host.FieldCreatedAt)
+				fieldSeen[host.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[host.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, host.FieldLastModifiedAt)
+				fieldSeen[host.FieldLastModifiedAt] = struct{}{}
+			}
 		case "identifier":
 			if _, ok := fieldSeen[host.FieldIdentifier]; !ok {
 				selectedFields = append(selectedFields, host.FieldIdentifier)
