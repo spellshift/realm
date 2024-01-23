@@ -2,3 +2,5 @@ codecov:
   notify:
     wait_for_ci: yes
     after_n_builds: 6
+ignore:
+  - "**/*.pb.go" # Ignore Generated Protobufs
