@@ -76,6 +76,7 @@ type ComplexityRoot struct {
 		Name       func(childComplexity int) int
 		Platform   func(childComplexity int) int
 		PrimaryIP  func(childComplexity int) int
+		Processes  func(childComplexity int) int
 		Tags       func(childComplexity int) int
 	}
 
@@ -99,10 +100,14 @@ type ComplexityRoot struct {
 	}
 
 	Process struct {
-		ID        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Pid       func(childComplexity int) int
-		Principal func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Pid            func(childComplexity int) int
+		Principal      func(childComplexity int) int
+		Task           func(childComplexity int) int
 	}
 
 	Query struct {
@@ -364,6 +369,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.PrimaryIP(childComplexity), true
 
+	case "Host.processes":
+		if e.complexity.Host.Processes == nil {
+			break
+		}
+
+		return e.complexity.Host.Processes(childComplexity), true
+
 	case "Host.tags":
 		if e.complexity.Host.Tags == nil {
 			break
@@ -507,12 +519,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "Process.createdAt":
+		if e.complexity.Process.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Process.CreatedAt(childComplexity), true
+
+	case "Process.host":
+		if e.complexity.Process.Host == nil {
+			break
+		}
+
+		return e.complexity.Process.Host(childComplexity), true
+
 	case "Process.id":
 		if e.complexity.Process.ID == nil {
 			break
 		}
 
 		return e.complexity.Process.ID(childComplexity), true
+
+	case "Process.lastModifiedAt":
+		if e.complexity.Process.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Process.LastModifiedAt(childComplexity), true
 
 	case "Process.name":
 		if e.complexity.Process.Name == nil {
@@ -534,6 +567,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Process.Principal(childComplexity), true
+
+	case "Process.task":
+		if e.complexity.Process.Task == nil {
+			break
+		}
+
+		return e.complexity.Process.Task(childComplexity), true
 
 	case "Query.beacons":
 		if e.complexity.Query.Beacons == nil {
@@ -981,6 +1021,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFileWhereInput,
 		ec.unmarshalInputHostOrder,
 		ec.unmarshalInputHostWhereInput,
+		ec.unmarshalInputProcessOrder,
 		ec.unmarshalInputProcessWhereInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
@@ -1400,6 +1441,8 @@ type Host implements Node {
   tags: [Tag!]
   """Beacons that are present on this host system."""
   beacons: [Beacon!]
+  """Processes reported as running on this host system."""
+  processes: [Process!]
 }
 """Ordering options for Host connections"""
 input HostOrder {
@@ -1505,6 +1548,9 @@ input HostWhereInput {
   """beacons edge predicates"""
   hasBeacons: Boolean
   hasBeaconsWith: [BeaconWhereInput!]
+  """processes edge predicates"""
+  hasProcesses: Boolean
+  hasProcessesWith: [ProcessWhereInput!]
 }
 """
 An object with an ID.
@@ -1537,12 +1583,34 @@ type PageInfo {
 }
 type Process implements Node {
   id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
   """ID of the process."""
   pid: Int!
   """The name of the process."""
   name: String!
   """The user the process is running as."""
   principal: String!
+  """Host the process was reported on."""
+  host: Host!
+  """Task that reported this process."""
+  task: Task!
+}
+"""Ordering options for Process connections"""
+input ProcessOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Processes."""
+  field: ProcessOrderField!
+}
+"""Properties by which Process connections can be ordered."""
+enum ProcessOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  PROCESS_ID
+  NAME
 }
 """
 ProcessWhereInput is used for filtering Process objects.
@@ -1561,6 +1629,24 @@ input ProcessWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
   """pid field predicates"""
   pid: Int
   pidNEQ: Int
@@ -1598,6 +1684,12 @@ input ProcessWhereInput {
   principalHasSuffix: String
   principalEqualFold: String
   principalContainsFold: String
+  """host edge predicates"""
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """task edge predicates"""
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
 }
 type Query {
   """Fetches an object given its ID."""
@@ -2107,6 +2199,9 @@ input UpdateHostInput {
   addBeaconIDs: [ID!]
   removeBeaconIDs: [ID!]
   clearBeacons: Boolean
+  addProcessIDs: [ID!]
+  removeProcessIDs: [ID!]
+  clearProcesses: Boolean
 }
 """
 UpdateTagInput is used for update Tag object.

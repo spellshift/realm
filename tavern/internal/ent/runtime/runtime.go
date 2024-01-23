@@ -84,8 +84,21 @@ func init() {
 	hostDescName := hostFields[1].Descriptor()
 	// host.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	host.NameValidator = hostDescName.Validators[0].(func(string) error)
+	processMixin := schema.Process{}.Mixin()
+	processMixinFields0 := processMixin[0].Fields()
+	_ = processMixinFields0
 	processFields := schema.Process{}.Fields()
 	_ = processFields
+	// processDescCreatedAt is the schema descriptor for created_at field.
+	processDescCreatedAt := processMixinFields0[0].Descriptor()
+	// process.DefaultCreatedAt holds the default value on creation for the created_at field.
+	process.DefaultCreatedAt = processDescCreatedAt.Default.(func() time.Time)
+	// processDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	processDescLastModifiedAt := processMixinFields0[1].Descriptor()
+	// process.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	process.DefaultLastModifiedAt = processDescLastModifiedAt.Default.(func() time.Time)
+	// process.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	process.UpdateDefaultLastModifiedAt = processDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// processDescPrincipal is the schema descriptor for principal field.
 	processDescPrincipal := processFields[2].Descriptor()
 	// process.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.

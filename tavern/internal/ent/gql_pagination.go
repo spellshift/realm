@@ -1262,6 +1262,107 @@ func (pr *ProcessQuery) Paginate(
 	return conn, nil
 }
 
+var (
+	// ProcessOrderFieldCreatedAt orders Process by created_at.
+	ProcessOrderFieldCreatedAt = &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.CreatedAt, nil
+		},
+		column: process.FieldCreatedAt,
+		toTerm: process.ByCreatedAt,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{
+				ID:    pr.ID,
+				Value: pr.CreatedAt,
+			}
+		},
+	}
+	// ProcessOrderFieldLastModifiedAt orders Process by last_modified_at.
+	ProcessOrderFieldLastModifiedAt = &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.LastModifiedAt, nil
+		},
+		column: process.FieldLastModifiedAt,
+		toTerm: process.ByLastModifiedAt,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{
+				ID:    pr.ID,
+				Value: pr.LastModifiedAt,
+			}
+		},
+	}
+	// ProcessOrderFieldPid orders Process by pid.
+	ProcessOrderFieldPid = &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.Pid, nil
+		},
+		column: process.FieldPid,
+		toTerm: process.ByPid,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{
+				ID:    pr.ID,
+				Value: pr.Pid,
+			}
+		},
+	}
+	// ProcessOrderFieldName orders Process by name.
+	ProcessOrderFieldName = &ProcessOrderField{
+		Value: func(pr *Process) (ent.Value, error) {
+			return pr.Name, nil
+		},
+		column: process.FieldName,
+		toTerm: process.ByName,
+		toCursor: func(pr *Process) Cursor {
+			return Cursor{
+				ID:    pr.ID,
+				Value: pr.Name,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f ProcessOrderField) String() string {
+	var str string
+	switch f.column {
+	case ProcessOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case ProcessOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case ProcessOrderFieldPid.column:
+		str = "PROCESS_ID"
+	case ProcessOrderFieldName.column:
+		str = "NAME"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f ProcessOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *ProcessOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("ProcessOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *ProcessOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *ProcessOrderFieldLastModifiedAt
+	case "PROCESS_ID":
+		*f = *ProcessOrderFieldPid
+	case "NAME":
+		*f = *ProcessOrderFieldName
+	default:
+		return fmt.Errorf("%s is not a valid ProcessOrderField", str)
+	}
+	return nil
+}
+
 // ProcessOrderField defines the ordering field of Process.
 type ProcessOrderField struct {
 	// Value extracts the ordering value from the given Process.

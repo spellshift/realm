@@ -3,7 +3,10 @@
 package process
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -52,6 +55,16 @@ func IDLTE(id int) predicate.Process {
 	return predicate.Process(sql.FieldLTE(FieldID, id))
 }
 
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// LastModifiedAt applies equality check predicate on the "last_modified_at" field. It's identical to LastModifiedAtEQ.
+func LastModifiedAt(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldEQ(FieldLastModifiedAt, v))
+}
+
 // Pid applies equality check predicate on the "pid" field. It's identical to PidEQ.
 func Pid(v uint64) predicate.Process {
 	return predicate.Process(sql.FieldEQ(FieldPid, v))
@@ -65,6 +78,86 @@ func Name(v string) predicate.Process {
 // Principal applies equality check predicate on the "principal" field. It's identical to PrincipalEQ.
 func Principal(v string) predicate.Process {
 	return predicate.Process(sql.FieldEQ(FieldPrincipal, v))
+}
+
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldNEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.Process {
+	return predicate.Process(sql.FieldIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.Process {
+	return predicate.Process(sql.FieldNotIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldGT(FieldCreatedAt, v))
+}
+
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldGTE(FieldCreatedAt, v))
+}
+
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldLT(FieldCreatedAt, v))
+}
+
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// LastModifiedAtEQ applies the EQ predicate on the "last_modified_at" field.
+func LastModifiedAtEQ(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldEQ(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtNEQ applies the NEQ predicate on the "last_modified_at" field.
+func LastModifiedAtNEQ(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldNEQ(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtIn applies the In predicate on the "last_modified_at" field.
+func LastModifiedAtIn(vs ...time.Time) predicate.Process {
+	return predicate.Process(sql.FieldIn(FieldLastModifiedAt, vs...))
+}
+
+// LastModifiedAtNotIn applies the NotIn predicate on the "last_modified_at" field.
+func LastModifiedAtNotIn(vs ...time.Time) predicate.Process {
+	return predicate.Process(sql.FieldNotIn(FieldLastModifiedAt, vs...))
+}
+
+// LastModifiedAtGT applies the GT predicate on the "last_modified_at" field.
+func LastModifiedAtGT(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldGT(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtGTE applies the GTE predicate on the "last_modified_at" field.
+func LastModifiedAtGTE(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldGTE(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtLT applies the LT predicate on the "last_modified_at" field.
+func LastModifiedAtLT(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldLT(FieldLastModifiedAt, v))
+}
+
+// LastModifiedAtLTE applies the LTE predicate on the "last_modified_at" field.
+func LastModifiedAtLTE(v time.Time) predicate.Process {
+	return predicate.Process(sql.FieldLTE(FieldLastModifiedAt, v))
 }
 
 // PidEQ applies the EQ predicate on the "pid" field.
@@ -235,6 +328,52 @@ func PrincipalEqualFold(v string) predicate.Process {
 // PrincipalContainsFold applies the ContainsFold predicate on the "principal" field.
 func PrincipalContainsFold(v string) predicate.Process {
 	return predicate.Process(sql.FieldContainsFold(FieldPrincipal, v))
+}
+
+// HasHost applies the HasEdge predicate on the "host" edge.
+func HasHost() predicate.Process {
+	return predicate.Process(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, HostTable, HostColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasHostWith applies the HasEdge predicate on the "host" edge with a given conditions (other predicates).
+func HasHostWith(preds ...predicate.Host) predicate.Process {
+	return predicate.Process(func(s *sql.Selector) {
+		step := newHostStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasTask applies the HasEdge predicate on the "task" edge.
+func HasTask() predicate.Process {
+	return predicate.Process(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTaskWith applies the HasEdge predicate on the "task" edge with a given conditions (other predicates).
+func HasTaskWith(preds ...predicate.Task) predicate.Process {
+	return predicate.Process(func(s *sql.Selector) {
+		step := newTaskStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

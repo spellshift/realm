@@ -321,6 +321,18 @@ func (h *HostQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			h.WithNamedBeacons(alias, func(wq *BeaconQuery) {
 				*wq = *query
 			})
+		case "processes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ProcessClient{config: h.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			h.WithNamedProcesses(alias, func(wq *ProcessQuery) {
+				*wq = *query
+			})
 		case "identifier":
 			if _, ok := fieldSeen[host.FieldIdentifier]; !ok {
 				selectedFields = append(selectedFields, host.FieldIdentifier)
@@ -430,6 +442,36 @@ func (pr *ProcessQuery) collectField(ctx context.Context, opCtx *graphql.Operati
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+		case "host":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostClient{config: pr.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			pr.withHost = query
+		case "task":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TaskClient{config: pr.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			pr.withTask = query
+		case "createdAt":
+			if _, ok := fieldSeen[process.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, process.FieldCreatedAt)
+				fieldSeen[process.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[process.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, process.FieldLastModifiedAt)
+				fieldSeen[process.FieldLastModifiedAt] = struct{}{}
+			}
 		case "pid":
 			if _, ok := fieldSeen[process.FieldPid]; !ok {
 				selectedFields = append(selectedFields, process.FieldPid)
@@ -479,6 +521,28 @@ func newProcessPaginateArgs(rv map[string]any) *processPaginateArgs {
 	}
 	if v := rv[beforeField]; v != nil {
 		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &ProcessOrder{Field: &ProcessOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithProcessOrder(order))
+			}
+		case *ProcessOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithProcessOrder(v))
+			}
+		}
 	}
 	if v, ok := rv[whereField].(*ProcessWhereInput); ok {
 		args.opts = append(args.opts, WithProcessFilter(v.Filter))

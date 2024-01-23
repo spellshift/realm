@@ -5,10 +5,13 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/task"
 )
 
 // Process is the model entity for the Process schema.
@@ -16,14 +19,62 @@ type Process struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Timestamp of when this ent was created
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Timestamp of when this ent was last updated
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// ID of the process.
 	Pid uint64 `json:"pid,omitempty"`
 	// The name of the process.
 	Name string `json:"name,omitempty"`
 	// The user the process is running as.
-	Principal               string `json:"principal,omitempty"`
+	Principal string `json:"principal,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the ProcessQuery when eager-loading is set.
+	Edges                   ProcessEdges `json:"edges"`
+	host_processes          *int
+	process_host            *int
 	task_reported_processes *int
 	selectValues            sql.SelectValues
+}
+
+// ProcessEdges holds the relations/edges for other nodes in the graph.
+type ProcessEdges struct {
+	// Host the process was reported on.
+	Host *Host `json:"host,omitempty"`
+	// Task that reported this process.
+	Task *Task `json:"task,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+	// totalCount holds the count of the edges above.
+	totalCount [2]map[string]int
+}
+
+// HostOrErr returns the Host value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProcessEdges) HostOrErr() (*Host, error) {
+	if e.loadedTypes[0] {
+		if e.Host == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: host.Label}
+		}
+		return e.Host, nil
+	}
+	return nil, &NotLoadedError{edge: "host"}
+}
+
+// TaskOrErr returns the Task value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProcessEdges) TaskOrErr() (*Task, error) {
+	if e.loadedTypes[1] {
+		if e.Task == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: task.Label}
+		}
+		return e.Task, nil
+	}
+	return nil, &NotLoadedError{edge: "task"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -35,7 +86,13 @@ func (*Process) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case process.FieldName, process.FieldPrincipal:
 			values[i] = new(sql.NullString)
-		case process.ForeignKeys[0]: // task_reported_processes
+		case process.FieldCreatedAt, process.FieldLastModifiedAt:
+			values[i] = new(sql.NullTime)
+		case process.ForeignKeys[0]: // host_processes
+			values[i] = new(sql.NullInt64)
+		case process.ForeignKeys[1]: // process_host
+			values[i] = new(sql.NullInt64)
+		case process.ForeignKeys[2]: // task_reported_processes
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -58,6 +115,18 @@ func (pr *Process) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			pr.ID = int(value.Int64)
+		case process.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				pr.CreatedAt = value.Time
+			}
+		case process.FieldLastModifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
+			} else if value.Valid {
+				pr.LastModifiedAt = value.Time
+			}
 		case process.FieldPid:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field pid", values[i])
@@ -78,6 +147,20 @@ func (pr *Process) assignValues(columns []string, values []any) error {
 			}
 		case process.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field host_processes", value)
+			} else if value.Valid {
+				pr.host_processes = new(int)
+				*pr.host_processes = int(value.Int64)
+			}
+		case process.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field process_host", value)
+			} else if value.Valid {
+				pr.process_host = new(int)
+				*pr.process_host = int(value.Int64)
+			}
+		case process.ForeignKeys[2]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_processes", value)
 			} else if value.Valid {
 				pr.task_reported_processes = new(int)
@@ -94,6 +177,16 @@ func (pr *Process) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (pr *Process) Value(name string) (ent.Value, error) {
 	return pr.selectValues.Get(name)
+}
+
+// QueryHost queries the "host" edge of the Process entity.
+func (pr *Process) QueryHost() *HostQuery {
+	return NewProcessClient(pr.config).QueryHost(pr)
+}
+
+// QueryTask queries the "task" edge of the Process entity.
+func (pr *Process) QueryTask() *TaskQuery {
+	return NewProcessClient(pr.config).QueryTask(pr)
 }
 
 // Update returns a builder for updating this Process.
@@ -119,6 +212,12 @@ func (pr *Process) String() string {
 	var builder strings.Builder
 	builder.WriteString("Process(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", pr.ID))
+	builder.WriteString("created_at=")
+	builder.WriteString(pr.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("last_modified_at=")
+	builder.WriteString(pr.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("pid=")
 	builder.WriteString(fmt.Sprintf("%v", pr.Pid))
 	builder.WriteString(", ")

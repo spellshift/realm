@@ -1,0 +1,84 @@
+package c2
+
+import (
+	"context"
+	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
+)
+
+func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProcessListRequest) (*c2pb.ReportProcessListResponse, error) {
+	// Validate Arguments
+	if req.TaskId == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
+	}
+	if len(req.List) < 1 {
+		return nil, status.Errorf(codes.InvalidArgument, "must provide process list")
+	}
+
+	// Load Task
+	task, err := srv.graph.Task.Get(ctx, int(req.TaskId))
+	if ent.IsNotFound(err) {
+		return nil, status.Errorf(codes.NotFound, "no task found")
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to load task")
+	}
+
+	// Load Host
+	host, err := task.QueryBeacon().QueryHost().Only(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to load host")
+	}
+
+	// 	Prepare Transaction
+	tx, err := srv.graph.Tx(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to initialize transaction: %v", err)
+	}
+	txGraph := tx.Client()
+
+	// Rollback transaction if we panic
+	defer func() {
+		if v := recover(); v != nil {
+			tx.Rollback()
+			panic(v)
+		}
+	}()
+
+	// Create Processes
+	builders := make([]*ent.ProcessCreate, 0, len(req.List))
+	for _, proc := range req.List {
+		builders = append(builders,
+			txGraph.Process.Create().
+				SetHostID(host.ID).
+				SetTaskID(task.ID).
+				SetPid(proc.Pid).
+				SetName(proc.Name).
+				SetPrincipal(proc.Principal),
+		)
+	}
+	processList, err := txGraph.Process.CreateBulk(builders...).Save(ctx)
+	if err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to create process list: %w", err))
+	}
+
+	// Set new process list for host
+	_, err = txGraph.Host.UpdateOne(host).
+		ClearProcesses().
+		AddProcesses(processList...).
+		Save(ctx)
+	if err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to set new host process list: %w", err))
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+	}
+
+	return &c2pb.ReportProcessListResponse{}, nil
+}

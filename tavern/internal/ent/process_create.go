@@ -6,11 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/task"
 )
 
 // ProcessCreate is the builder for creating a Process entity.
@@ -19,6 +22,34 @@ type ProcessCreate struct {
 	mutation *ProcessMutation
 	hooks    []Hook
 	conflict []sql.ConflictOption
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (pc *ProcessCreate) SetCreatedAt(t time.Time) *ProcessCreate {
+	pc.mutation.SetCreatedAt(t)
+	return pc
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (pc *ProcessCreate) SetNillableCreatedAt(t *time.Time) *ProcessCreate {
+	if t != nil {
+		pc.SetCreatedAt(*t)
+	}
+	return pc
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (pc *ProcessCreate) SetLastModifiedAt(t time.Time) *ProcessCreate {
+	pc.mutation.SetLastModifiedAt(t)
+	return pc
+}
+
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
+func (pc *ProcessCreate) SetNillableLastModifiedAt(t *time.Time) *ProcessCreate {
+	if t != nil {
+		pc.SetLastModifiedAt(*t)
+	}
+	return pc
 }
 
 // SetPid sets the "pid" field.
@@ -39,6 +70,28 @@ func (pc *ProcessCreate) SetPrincipal(s string) *ProcessCreate {
 	return pc
 }
 
+// SetHostID sets the "host" edge to the Host entity by ID.
+func (pc *ProcessCreate) SetHostID(id int) *ProcessCreate {
+	pc.mutation.SetHostID(id)
+	return pc
+}
+
+// SetHost sets the "host" edge to the Host entity.
+func (pc *ProcessCreate) SetHost(h *Host) *ProcessCreate {
+	return pc.SetHostID(h.ID)
+}
+
+// SetTaskID sets the "task" edge to the Task entity by ID.
+func (pc *ProcessCreate) SetTaskID(id int) *ProcessCreate {
+	pc.mutation.SetTaskID(id)
+	return pc
+}
+
+// SetTask sets the "task" edge to the Task entity.
+func (pc *ProcessCreate) SetTask(t *Task) *ProcessCreate {
+	return pc.SetTaskID(t.ID)
+}
+
 // Mutation returns the ProcessMutation object of the builder.
 func (pc *ProcessCreate) Mutation() *ProcessMutation {
 	return pc.mutation
@@ -46,6 +99,7 @@ func (pc *ProcessCreate) Mutation() *ProcessMutation {
 
 // Save creates the Process in the database.
 func (pc *ProcessCreate) Save(ctx context.Context) (*Process, error) {
+	pc.defaults()
 	return withHooks(ctx, pc.sqlSave, pc.mutation, pc.hooks)
 }
 
@@ -71,8 +125,26 @@ func (pc *ProcessCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (pc *ProcessCreate) defaults() {
+	if _, ok := pc.mutation.CreatedAt(); !ok {
+		v := process.DefaultCreatedAt()
+		pc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := pc.mutation.LastModifiedAt(); !ok {
+		v := process.DefaultLastModifiedAt()
+		pc.mutation.SetLastModifiedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (pc *ProcessCreate) check() error {
+	if _, ok := pc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Process.created_at"`)}
+	}
+	if _, ok := pc.mutation.LastModifiedAt(); !ok {
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Process.last_modified_at"`)}
+	}
 	if _, ok := pc.mutation.Pid(); !ok {
 		return &ValidationError{Name: "pid", err: errors.New(`ent: missing required field "Process.pid"`)}
 	}
@@ -86,6 +158,12 @@ func (pc *ProcessCreate) check() error {
 		if err := process.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Process.principal": %w`, err)}
 		}
+	}
+	if _, ok := pc.mutation.HostID(); !ok {
+		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "Process.host"`)}
+	}
+	if _, ok := pc.mutation.TaskID(); !ok {
+		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "Process.task"`)}
 	}
 	return nil
 }
@@ -114,6 +192,14 @@ func (pc *ProcessCreate) createSpec() (*Process, *sqlgraph.CreateSpec) {
 		_spec = sqlgraph.NewCreateSpec(process.Table, sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = pc.conflict
+	if value, ok := pc.mutation.CreatedAt(); ok {
+		_spec.SetField(process.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := pc.mutation.LastModifiedAt(); ok {
+		_spec.SetField(process.FieldLastModifiedAt, field.TypeTime, value)
+		_node.LastModifiedAt = value
+	}
 	if value, ok := pc.mutation.Pid(); ok {
 		_spec.SetField(process.FieldPid, field.TypeUint64, value)
 		_node.Pid = value
@@ -126,6 +212,40 @@ func (pc *ProcessCreate) createSpec() (*Process, *sqlgraph.CreateSpec) {
 		_spec.SetField(process.FieldPrincipal, field.TypeString, value)
 		_node.Principal = value
 	}
+	if nodes := pc.mutation.HostIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   process.HostTable,
+			Columns: []string{process.HostColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.process_host = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.TaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   process.TaskTable,
+			Columns: []string{process.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.task_reported_processes = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -133,7 +253,7 @@ func (pc *ProcessCreate) createSpec() (*Process, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Process.Create().
-//		SetPid(v).
+//		SetCreatedAt(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -142,7 +262,7 @@ func (pc *ProcessCreate) createSpec() (*Process, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ProcessUpsert) {
-//			SetPid(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (pc *ProcessCreate) OnConflict(opts ...sql.ConflictOption) *ProcessUpsertOne {
@@ -177,6 +297,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *ProcessUpsert) SetLastModifiedAt(v time.Time) *ProcessUpsert {
+	u.Set(process.FieldLastModifiedAt, v)
+	return u
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *ProcessUpsert) UpdateLastModifiedAt() *ProcessUpsert {
+	u.SetExcluded(process.FieldLastModifiedAt)
+	return u
+}
 
 // SetPid sets the "pid" field.
 func (u *ProcessUpsert) SetPid(v uint64) *ProcessUpsert {
@@ -230,6 +362,11 @@ func (u *ProcessUpsert) UpdatePrincipal() *ProcessUpsert {
 //		Exec(ctx)
 func (u *ProcessUpsertOne) UpdateNewValues() *ProcessUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(process.FieldCreatedAt)
+		}
+	}))
 	return u
 }
 
@@ -258,6 +395,20 @@ func (u *ProcessUpsertOne) Update(set func(*ProcessUpsert)) *ProcessUpsertOne {
 		set(&ProcessUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *ProcessUpsertOne) SetLastModifiedAt(v time.Time) *ProcessUpsertOne {
+	return u.Update(func(s *ProcessUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *ProcessUpsertOne) UpdateLastModifiedAt() *ProcessUpsertOne {
+	return u.Update(func(s *ProcessUpsert) {
+		s.UpdateLastModifiedAt()
+	})
 }
 
 // SetPid sets the "pid" field.
@@ -361,6 +512,7 @@ func (pcb *ProcessCreateBulk) Save(ctx context.Context) ([]*Process, error) {
 	for i := range pcb.builders {
 		func(i int, root context.Context) {
 			builder := pcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*ProcessMutation)
 				if !ok {
@@ -443,7 +595,7 @@ func (pcb *ProcessCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ProcessUpsert) {
-//			SetPid(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (pcb *ProcessCreateBulk) OnConflict(opts ...sql.ConflictOption) *ProcessUpsertBulk {
@@ -482,6 +634,13 @@ type ProcessUpsertBulk struct {
 //		Exec(ctx)
 func (u *ProcessUpsertBulk) UpdateNewValues() *ProcessUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(process.FieldCreatedAt)
+			}
+		}
+	}))
 	return u
 }
 
@@ -510,6 +669,20 @@ func (u *ProcessUpsertBulk) Update(set func(*ProcessUpsert)) *ProcessUpsertBulk 
 		set(&ProcessUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *ProcessUpsertBulk) SetLastModifiedAt(v time.Time) *ProcessUpsertBulk {
+	return u.Update(func(s *ProcessUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *ProcessUpsertBulk) UpdateLastModifiedAt() *ProcessUpsertBulk {
+	return u.Update(func(s *ProcessUpsert) {
+		s.UpdateLastModifiedAt()
+	})
 }
 
 // SetPid sets the "pid" field.

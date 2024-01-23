@@ -10,8 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/task"
 )
 
 // ProcessQuery is the builder for querying Process entities.
@@ -21,6 +23,8 @@ type ProcessQuery struct {
 	order      []process.OrderOption
 	inters     []Interceptor
 	predicates []predicate.Process
+	withHost   *HostQuery
+	withTask   *TaskQuery
 	withFKs    bool
 	modifiers  []func(*sql.Selector)
 	loadTotal  []func(context.Context, []*Process) error
@@ -58,6 +62,50 @@ func (pq *ProcessQuery) Unique(unique bool) *ProcessQuery {
 func (pq *ProcessQuery) Order(o ...process.OrderOption) *ProcessQuery {
 	pq.order = append(pq.order, o...)
 	return pq
+}
+
+// QueryHost chains the current query on the "host" edge.
+func (pq *ProcessQuery) QueryHost() *HostQuery {
+	query := (&HostClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(process.Table, process.FieldID, selector),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, process.HostTable, process.HostColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTask chains the current query on the "task" edge.
+func (pq *ProcessQuery) QueryTask() *TaskQuery {
+	query := (&TaskClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(process.Table, process.FieldID, selector),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, process.TaskTable, process.TaskColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Process entity from the query.
@@ -252,10 +300,34 @@ func (pq *ProcessQuery) Clone() *ProcessQuery {
 		order:      append([]process.OrderOption{}, pq.order...),
 		inters:     append([]Interceptor{}, pq.inters...),
 		predicates: append([]predicate.Process{}, pq.predicates...),
+		withHost:   pq.withHost.Clone(),
+		withTask:   pq.withTask.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
 	}
+}
+
+// WithHost tells the query-builder to eager-load the nodes that are connected to
+// the "host" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProcessQuery) WithHost(opts ...func(*HostQuery)) *ProcessQuery {
+	query := (&HostClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withHost = query
+	return pq
+}
+
+// WithTask tells the query-builder to eager-load the nodes that are connected to
+// the "task" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProcessQuery) WithTask(opts ...func(*TaskQuery)) *ProcessQuery {
+	query := (&TaskClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withTask = query
+	return pq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -264,12 +336,12 @@ func (pq *ProcessQuery) Clone() *ProcessQuery {
 // Example:
 //
 //	var v []struct {
-//		Pid uint64 `json:"pid,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Process.Query().
-//		GroupBy(process.FieldPid).
+//		GroupBy(process.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (pq *ProcessQuery) GroupBy(field string, fields ...string) *ProcessGroupBy {
@@ -287,11 +359,11 @@ func (pq *ProcessQuery) GroupBy(field string, fields ...string) *ProcessGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Pid uint64 `json:"pid,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Process.Query().
-//		Select(process.FieldPid).
+//		Select(process.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (pq *ProcessQuery) Select(fields ...string) *ProcessSelect {
 	pq.ctx.Fields = append(pq.ctx.Fields, fields...)
@@ -334,10 +406,17 @@ func (pq *ProcessQuery) prepareQuery(ctx context.Context) error {
 
 func (pq *ProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Process, error) {
 	var (
-		nodes   = []*Process{}
-		withFKs = pq.withFKs
-		_spec   = pq.querySpec()
+		nodes       = []*Process{}
+		withFKs     = pq.withFKs
+		_spec       = pq.querySpec()
+		loadedTypes = [2]bool{
+			pq.withHost != nil,
+			pq.withTask != nil,
+		}
 	)
+	if pq.withHost != nil || pq.withTask != nil {
+		withFKs = true
+	}
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, process.ForeignKeys...)
 	}
@@ -347,6 +426,7 @@ func (pq *ProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proc
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Process{config: pq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(pq.modifiers) > 0 {
@@ -361,12 +441,89 @@ func (pq *ProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proc
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := pq.withHost; query != nil {
+		if err := pq.loadHost(ctx, query, nodes, nil,
+			func(n *Process, e *Host) { n.Edges.Host = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withTask; query != nil {
+		if err := pq.loadTask(ctx, query, nodes, nil,
+			func(n *Process, e *Task) { n.Edges.Task = e }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range pq.loadTotal {
 		if err := pq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (pq *ProcessQuery) loadHost(ctx context.Context, query *HostQuery, nodes []*Process, init func(*Process), assign func(*Process, *Host)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Process)
+	for i := range nodes {
+		if nodes[i].process_host == nil {
+			continue
+		}
+		fk := *nodes[i].process_host
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(host.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "process_host" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (pq *ProcessQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*Process, init func(*Process), assign func(*Process, *Task)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Process)
+	for i := range nodes {
+		if nodes[i].task_reported_processes == nil {
+			continue
+		}
+		fk := *nodes[i].task_reported_processes
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(task.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "task_reported_processes" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (pq *ProcessQuery) sqlCount(ctx context.Context) (int, error) {

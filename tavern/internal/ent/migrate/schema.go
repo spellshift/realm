@@ -67,10 +67,14 @@ var (
 	// ProcessesColumns holds the columns for the "processes" table.
 	ProcessesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "pid", Type: field.TypeUint64},
 		{Name: "name", Type: field.TypeString},
 		{Name: "principal", Type: field.TypeString},
-		{Name: "task_reported_processes", Type: field.TypeInt, Nullable: true},
+		{Name: "host_processes", Type: field.TypeInt, Nullable: true},
+		{Name: "process_host", Type: field.TypeInt},
+		{Name: "task_reported_processes", Type: field.TypeInt},
 	}
 	// ProcessesTable holds the schema information for the "processes" table.
 	ProcessesTable = &schema.Table{
@@ -79,10 +83,22 @@ var (
 		PrimaryKey: []*schema.Column{ProcessesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "processes_tasks_reported_processes",
-				Columns:    []*schema.Column{ProcessesColumns[4]},
-				RefColumns: []*schema.Column{TasksColumns[0]},
+				Symbol:     "processes_hosts_processes",
+				Columns:    []*schema.Column{ProcessesColumns[6]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "processes_hosts_host",
+				Columns:    []*schema.Column{ProcessesColumns[7]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "processes_tasks_reported_processes",
+				Columns:    []*schema.Column{ProcessesColumns[8]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -270,7 +286,9 @@ var (
 
 func init() {
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
-	ProcessesTable.ForeignKeys[0].RefTable = TasksTable
+	ProcessesTable.ForeignKeys[0].RefTable = HostsTable
+	ProcessesTable.ForeignKeys[1].RefTable = HostsTable
+	ProcessesTable.ForeignKeys[2].RefTable = TasksTable
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = FilesTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable

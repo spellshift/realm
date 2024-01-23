@@ -1635,24 +1635,27 @@ func (m *FileMutation) ResetEdge(name string) error {
 // HostMutation represents an operation that mutates the Host nodes in the graph.
 type HostMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	identifier     *string
-	name           *string
-	primary_ip     *string
-	platform       *host.Platform
-	last_seen_at   *time.Time
-	clearedFields  map[string]struct{}
-	tags           map[int]struct{}
-	removedtags    map[int]struct{}
-	clearedtags    bool
-	beacons        map[int]struct{}
-	removedbeacons map[int]struct{}
-	clearedbeacons bool
-	done           bool
-	oldValue       func(context.Context) (*Host, error)
-	predicates     []predicate.Host
+	op               Op
+	typ              string
+	id               *int
+	identifier       *string
+	name             *string
+	primary_ip       *string
+	platform         *host.Platform
+	last_seen_at     *time.Time
+	clearedFields    map[string]struct{}
+	tags             map[int]struct{}
+	removedtags      map[int]struct{}
+	clearedtags      bool
+	beacons          map[int]struct{}
+	removedbeacons   map[int]struct{}
+	clearedbeacons   bool
+	processes        map[int]struct{}
+	removedprocesses map[int]struct{}
+	clearedprocesses bool
+	done             bool
+	oldValue         func(context.Context) (*Host, error)
+	predicates       []predicate.Host
 }
 
 var _ ent.Mutation = (*HostMutation)(nil)
@@ -2080,6 +2083,60 @@ func (m *HostMutation) ResetBeacons() {
 	m.removedbeacons = nil
 }
 
+// AddProcessIDs adds the "processes" edge to the Process entity by ids.
+func (m *HostMutation) AddProcessIDs(ids ...int) {
+	if m.processes == nil {
+		m.processes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.processes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProcesses clears the "processes" edge to the Process entity.
+func (m *HostMutation) ClearProcesses() {
+	m.clearedprocesses = true
+}
+
+// ProcessesCleared reports if the "processes" edge to the Process entity was cleared.
+func (m *HostMutation) ProcessesCleared() bool {
+	return m.clearedprocesses
+}
+
+// RemoveProcessIDs removes the "processes" edge to the Process entity by IDs.
+func (m *HostMutation) RemoveProcessIDs(ids ...int) {
+	if m.removedprocesses == nil {
+		m.removedprocesses = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.processes, ids[i])
+		m.removedprocesses[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProcesses returns the removed IDs of the "processes" edge to the Process entity.
+func (m *HostMutation) RemovedProcessesIDs() (ids []int) {
+	for id := range m.removedprocesses {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProcessesIDs returns the "processes" edge IDs in the mutation.
+func (m *HostMutation) ProcessesIDs() (ids []int) {
+	for id := range m.processes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProcesses resets all changes to the "processes" edge.
+func (m *HostMutation) ResetProcesses() {
+	m.processes = nil
+	m.clearedprocesses = false
+	m.removedprocesses = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -2302,12 +2359,15 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.beacons != nil {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.processes != nil {
+		edges = append(edges, host.EdgeProcesses)
 	}
 	return edges
 }
@@ -2328,18 +2388,27 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeProcesses:
+		ids := make([]ent.Value, 0, len(m.processes))
+		for id := range m.processes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.removedbeacons != nil {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.removedprocesses != nil {
+		edges = append(edges, host.EdgeProcesses)
 	}
 	return edges
 }
@@ -2360,18 +2429,27 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeProcesses:
+		ids := make([]ent.Value, 0, len(m.removedprocesses))
+		for id := range m.removedprocesses {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.clearedbeacons {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.clearedprocesses {
+		edges = append(edges, host.EdgeProcesses)
 	}
 	return edges
 }
@@ -2384,6 +2462,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedtags
 	case host.EdgeBeacons:
 		return m.clearedbeacons
+	case host.EdgeProcesses:
+		return m.clearedprocesses
 	}
 	return false
 }
@@ -2406,6 +2486,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 	case host.EdgeBeacons:
 		m.ResetBeacons()
 		return nil
+	case host.EdgeProcesses:
+		m.ResetProcesses()
+		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)
 }
@@ -2413,17 +2496,23 @@ func (m *HostMutation) ResetEdge(name string) error {
 // ProcessMutation represents an operation that mutates the Process nodes in the graph.
 type ProcessMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	pid           *uint64
-	addpid        *int64
-	name          *string
-	principal     *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Process, error)
-	predicates    []predicate.Process
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	pid              *uint64
+	addpid           *int64
+	name             *string
+	principal        *string
+	clearedFields    map[string]struct{}
+	host             *int
+	clearedhost      bool
+	task             *int
+	clearedtask      bool
+	done             bool
+	oldValue         func(context.Context) (*Process, error)
+	predicates       []predicate.Process
 }
 
 var _ ent.Mutation = (*ProcessMutation)(nil)
@@ -2522,6 +2611,78 @@ func (m *ProcessMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProcessMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProcessMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Process entity.
+// If the Process object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProcessMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProcessMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *ProcessMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *ProcessMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Process entity.
+// If the Process object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProcessMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *ProcessMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
 }
 
 // SetPid sets the "pid" field.
@@ -2652,6 +2813,84 @@ func (m *ProcessMutation) ResetPrincipal() {
 	m.principal = nil
 }
 
+// SetHostID sets the "host" edge to the Host entity by id.
+func (m *ProcessMutation) SetHostID(id int) {
+	m.host = &id
+}
+
+// ClearHost clears the "host" edge to the Host entity.
+func (m *ProcessMutation) ClearHost() {
+	m.clearedhost = true
+}
+
+// HostCleared reports if the "host" edge to the Host entity was cleared.
+func (m *ProcessMutation) HostCleared() bool {
+	return m.clearedhost
+}
+
+// HostID returns the "host" edge ID in the mutation.
+func (m *ProcessMutation) HostID() (id int, exists bool) {
+	if m.host != nil {
+		return *m.host, true
+	}
+	return
+}
+
+// HostIDs returns the "host" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HostID instead. It exists only for internal usage by the builders.
+func (m *ProcessMutation) HostIDs() (ids []int) {
+	if id := m.host; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHost resets all changes to the "host" edge.
+func (m *ProcessMutation) ResetHost() {
+	m.host = nil
+	m.clearedhost = false
+}
+
+// SetTaskID sets the "task" edge to the Task entity by id.
+func (m *ProcessMutation) SetTaskID(id int) {
+	m.task = &id
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (m *ProcessMutation) ClearTask() {
+	m.clearedtask = true
+}
+
+// TaskCleared reports if the "task" edge to the Task entity was cleared.
+func (m *ProcessMutation) TaskCleared() bool {
+	return m.clearedtask
+}
+
+// TaskID returns the "task" edge ID in the mutation.
+func (m *ProcessMutation) TaskID() (id int, exists bool) {
+	if m.task != nil {
+		return *m.task, true
+	}
+	return
+}
+
+// TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
+func (m *ProcessMutation) TaskIDs() (ids []int) {
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTask resets all changes to the "task" edge.
+func (m *ProcessMutation) ResetTask() {
+	m.task = nil
+	m.clearedtask = false
+}
+
 // Where appends a list predicates to the ProcessMutation builder.
 func (m *ProcessMutation) Where(ps ...predicate.Process) {
 	m.predicates = append(m.predicates, ps...)
@@ -2686,7 +2925,13 @@ func (m *ProcessMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProcessMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, process.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, process.FieldLastModifiedAt)
+	}
 	if m.pid != nil {
 		fields = append(fields, process.FieldPid)
 	}
@@ -2704,6 +2949,10 @@ func (m *ProcessMutation) Fields() []string {
 // schema.
 func (m *ProcessMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case process.FieldCreatedAt:
+		return m.CreatedAt()
+	case process.FieldLastModifiedAt:
+		return m.LastModifiedAt()
 	case process.FieldPid:
 		return m.Pid()
 	case process.FieldName:
@@ -2719,6 +2968,10 @@ func (m *ProcessMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *ProcessMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case process.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case process.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
 	case process.FieldPid:
 		return m.OldPid(ctx)
 	case process.FieldName:
@@ -2734,6 +2987,20 @@ func (m *ProcessMutation) OldField(ctx context.Context, name string) (ent.Value,
 // type.
 func (m *ProcessMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case process.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case process.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
 	case process.FieldPid:
 		v, ok := value.(uint64)
 		if !ok {
@@ -2819,6 +3086,12 @@ func (m *ProcessMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *ProcessMutation) ResetField(name string) error {
 	switch name {
+	case process.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case process.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
 	case process.FieldPid:
 		m.ResetPid()
 		return nil
@@ -2834,19 +3107,35 @@ func (m *ProcessMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ProcessMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.host != nil {
+		edges = append(edges, process.EdgeHost)
+	}
+	if m.task != nil {
+		edges = append(edges, process.EdgeTask)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *ProcessMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case process.EdgeHost:
+		if id := m.host; id != nil {
+			return []ent.Value{*id}
+		}
+	case process.EdgeTask:
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ProcessMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -2858,25 +3147,53 @@ func (m *ProcessMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ProcessMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.clearedhost {
+		edges = append(edges, process.EdgeHost)
+	}
+	if m.clearedtask {
+		edges = append(edges, process.EdgeTask)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *ProcessMutation) EdgeCleared(name string) bool {
+	switch name {
+	case process.EdgeHost:
+		return m.clearedhost
+	case process.EdgeTask:
+		return m.clearedtask
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *ProcessMutation) ClearEdge(name string) error {
+	switch name {
+	case process.EdgeHost:
+		m.ClearHost()
+		return nil
+	case process.EdgeTask:
+		m.ClearTask()
+		return nil
+	}
 	return fmt.Errorf("unknown Process unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *ProcessMutation) ResetEdge(name string) error {
+	switch name {
+	case process.EdgeHost:
+		m.ResetHost()
+		return nil
+	case process.EdgeTask:
+		m.ResetTask()
+		return nil
+	}
 	return fmt.Errorf("unknown Process edge %s", name)
 }
 

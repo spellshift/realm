@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/tag"
 )
 
@@ -114,6 +115,21 @@ func (hc *HostCreate) AddBeacons(b ...*Beacon) *HostCreate {
 		ids[i] = b[i].ID
 	}
 	return hc.AddBeaconIDs(ids...)
+}
+
+// AddProcessIDs adds the "processes" edge to the Process entity by IDs.
+func (hc *HostCreate) AddProcessIDs(ids ...int) *HostCreate {
+	hc.mutation.AddProcessIDs(ids...)
+	return hc
+}
+
+// AddProcesses adds the "processes" edges to the Process entity.
+func (hc *HostCreate) AddProcesses(p ...*Process) *HostCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return hc.AddProcessIDs(ids...)
 }
 
 // Mutation returns the HostMutation object of the builder.
@@ -252,6 +268,22 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.ProcessesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.ProcessesTable,
+			Columns: []string{host.ProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

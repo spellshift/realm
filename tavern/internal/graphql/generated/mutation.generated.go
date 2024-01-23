@@ -495,6 +495,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_tags(ctx, field)
 			case "beacons":
 				return ec.fieldContext_Host_beacons(ctx, field)
+			case "processes":
+				return ec.fieldContext_Host_processes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
