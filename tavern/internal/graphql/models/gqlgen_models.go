@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 type ClaimTasksInput struct {
@@ -17,7 +17,7 @@ type ClaimTasksInput struct {
 	// The hostname of the system the beacon is running on.
 	Hostname string `json:"hostname"`
 	// The platform the agent is operating on.
-	HostPlatform host.Platform `json:"hostPlatform"`
+	HostPlatform c2pb.Host_Platform `json:"hostPlatform"`
 	// The IP address of the hosts primary interface (if available).
 	HostPrimaryIP *string `json:"hostPrimaryIP,omitempty"`
 	// Unique identifier of the beacon, each running instance will be different.

@@ -12,6 +12,7 @@ import (
 	"net"
 	"time"
 
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/namegen"
@@ -39,15 +40,15 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			SetName(fmt.Sprintf("Group-%d", groupNum)).
 			SaveX(ctx)
 
-		for _, svcTag := range svcTags {
+		for i, svcTag := range svcTags {
 			hostName := fmt.Sprintf("Group %d - %s", groupNum, svcTag.Name)
 			hostID := newRandomIdentifier()
 			hostIP := newRandomIP()
-
 			testHost := client.Host.Create().
 				SetName(hostName).
 				SetIdentifier(hostID).
 				SetPrimaryIP(hostIP).
+				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)
 

@@ -48,6 +48,9 @@ type UpdateHostInput struct {
 	ClearBeacons     bool
 	AddBeaconIDs     []int
 	RemoveBeaconIDs  []int
+	ClearFiles       bool
+	AddFileIDs       []int
+	RemoveFileIDs    []int
 	ClearProcesses   bool
 	AddProcessIDs    []int
 	RemoveProcessIDs []int
@@ -81,6 +84,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveBeaconIDs; len(v) > 0 {
 		m.RemoveBeaconIDs(v...)
+	}
+	if i.ClearFiles {
+		m.ClearFiles()
+	}
+	if v := i.AddFileIDs; len(v) > 0 {
+		m.AddFileIDs(v...)
+	}
+	if v := i.RemoveFileIDs; len(v) > 0 {
+		m.RemoveFileIDs(v...)
 	}
 	if i.ClearProcesses {
 		m.ClearProcesses()

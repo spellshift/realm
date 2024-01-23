@@ -59,7 +59,7 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "primary_ip", Type: field.TypeString, Nullable: true},
-		{Name: "platform", Type: field.TypeEnum, Enums: []string{"Windows", "Linux", "MacOS", "BSD", "Unknown"}, Default: "Unknown"},
+		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS"}},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// HostsTable holds the schema information for the "hosts" table.
@@ -68,39 +68,87 @@ var (
 		Columns:    HostsColumns,
 		PrimaryKey: []*schema.Column{HostsColumns[0]},
 	}
-	// ProcessesColumns holds the columns for the "processes" table.
-	ProcessesColumns = []*schema.Column{
+	// HostFilesColumns holds the columns for the "host_files" table.
+	HostFilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
-		{Name: "pid", Type: field.TypeUint64},
-		{Name: "name", Type: field.TypeString},
-		{Name: "principal", Type: field.TypeString},
-		{Name: "host_processes", Type: field.TypeInt, Nullable: true},
-		{Name: "process_host", Type: field.TypeInt},
-		{Name: "task_reported_processes", Type: field.TypeInt},
+		{Name: "path", Type: field.TypeString},
+		{Name: "owner", Type: field.TypeString, Nullable: true},
+		{Name: "group", Type: field.TypeString, Nullable: true},
+		{Name: "permissions", Type: field.TypeString, Nullable: true},
+		{Name: "size", Type: field.TypeInt, Default: 0},
+		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "content", Type: field.TypeBytes, Nullable: true},
+		{Name: "host_files", Type: field.TypeInt, Nullable: true},
+		{Name: "host_file_host", Type: field.TypeInt},
+		{Name: "task_reported_files", Type: field.TypeInt},
 	}
-	// ProcessesTable holds the schema information for the "processes" table.
-	ProcessesTable = &schema.Table{
-		Name:       "processes",
-		Columns:    ProcessesColumns,
-		PrimaryKey: []*schema.Column{ProcessesColumns[0]},
+	// HostFilesTable holds the schema information for the "host_files" table.
+	HostFilesTable = &schema.Table{
+		Name:       "host_files",
+		Columns:    HostFilesColumns,
+		PrimaryKey: []*schema.Column{HostFilesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "processes_hosts_processes",
-				Columns:    []*schema.Column{ProcessesColumns[6]},
+				Symbol:     "host_files_hosts_files",
+				Columns:    []*schema.Column{HostFilesColumns[10]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "processes_hosts_host",
-				Columns:    []*schema.Column{ProcessesColumns[7]},
+				Symbol:     "host_files_hosts_host",
+				Columns:    []*schema.Column{HostFilesColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "processes_tasks_reported_processes",
-				Columns:    []*schema.Column{ProcessesColumns[8]},
+				Symbol:     "host_files_tasks_reported_files",
+				Columns:    []*schema.Column{HostFilesColumns[12]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// HostProcessesColumns holds the columns for the "host_processes" table.
+	HostProcessesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "pid", Type: field.TypeUint64},
+		{Name: "ppid", Type: field.TypeUint64},
+		{Name: "name", Type: field.TypeString},
+		{Name: "principal", Type: field.TypeString},
+		{Name: "path", Type: field.TypeString, Nullable: true},
+		{Name: "cmd", Type: field.TypeString, Nullable: true},
+		{Name: "env", Type: field.TypeString, Nullable: true},
+		{Name: "cwd", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_STOP", "STATUS_TRACING", "STATUS_WAKE_KILL", "STATUS_UNKNOWN", "STATUS_IDLE", "STATUS_SLEEP", "STATUS_WAKING", "STATUS_UNSPECIFIED", "STATUS_PARKED", "STATUS_LOCK_BLOCKED", "STATUS_DEAD", "STATUS_ZOMBIE", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_RUN"}},
+		{Name: "host_processes", Type: field.TypeInt, Nullable: true},
+		{Name: "host_process_host", Type: field.TypeInt},
+		{Name: "task_reported_processes", Type: field.TypeInt},
+	}
+	// HostProcessesTable holds the schema information for the "host_processes" table.
+	HostProcessesTable = &schema.Table{
+		Name:       "host_processes",
+		Columns:    HostProcessesColumns,
+		PrimaryKey: []*schema.Column{HostProcessesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "host_processes_hosts_processes",
+				Columns:    []*schema.Column{HostProcessesColumns[12]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "host_processes_hosts_host",
+				Columns:    []*schema.Column{HostProcessesColumns[13]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "host_processes_tasks_reported_processes",
+				Columns:    []*schema.Column{HostProcessesColumns[14]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -289,7 +337,8 @@ var (
 		BeaconsTable,
 		FilesTable,
 		HostsTable,
-		ProcessesTable,
+		HostFilesTable,
+		HostProcessesTable,
 		QuestsTable,
 		TagsTable,
 		TasksTable,
@@ -302,9 +351,12 @@ var (
 
 func init() {
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
-	ProcessesTable.ForeignKeys[0].RefTable = HostsTable
-	ProcessesTable.ForeignKeys[1].RefTable = HostsTable
-	ProcessesTable.ForeignKeys[2].RefTable = TasksTable
+	HostFilesTable.ForeignKeys[0].RefTable = HostsTable
+	HostFilesTable.ForeignKeys[1].RefTable = HostsTable
+	HostFilesTable.ForeignKeys[2].RefTable = TasksTable
+	HostProcessesTable.ForeignKeys[0].RefTable = HostsTable
+	HostProcessesTable.ForeignKeys[1].RefTable = HostsTable
+	HostProcessesTable.ForeignKeys[2].RefTable = TasksTable
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = FilesTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable

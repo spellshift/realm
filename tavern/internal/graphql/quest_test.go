@@ -13,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
@@ -35,7 +36,10 @@ func TestCreateQuest(t *testing.T) {
 	gqlClient := client.New(srv, client.Path("/graphql"))
 
 	// Initialize sample data
-	testHost := graph.Host.Create().SetIdentifier("ABCDEFG").SaveX(ctx)
+	testHost := graph.Host.Create().
+		SetIdentifier("ABCDEFG").
+		SetPlatform(c2pb.Host_PLATFORM_UNSPECIFIED).
+		SaveX(ctx)
 	testBeacons := []*ent.Beacon{
 		graph.Beacon.Create().
 			SetHost(testHost).

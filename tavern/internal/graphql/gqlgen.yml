@@ -30,10 +30,10 @@ autobind:
   - realm.pub/tavern/internal/ent/tag
   - realm.pub/tavern/internal/ent/beacon
   - realm.pub/tavern/internal/ent/host
+  - realm.pub/tavern/internal/ent/hostprocess
   - realm.pub/tavern/internal/ent/quest
   - realm.pub/tavern/internal/ent/task
   - realm.pub/tavern/internal/ent/tome
-  - realm.pub/tavern/internal/ent/process
 
 struct_tag: json
 
@@ -58,10 +58,13 @@ models:
       - realm.pub/tavern/internal/ent/tag.Kind
   Platform:
     model:
-      - realm.pub/tavern/internal/ent/host.Platform
+      - realm.pub/tavern/internal/c2/c2pb.Host_Platform
   SupportModel:
     model:
       - realm.pub/tavern/internal/ent/tome.SupportModel
   Tactic:
     model:
       - realm.pub/tavern/internal/ent/tome.Tactic
+  Status:
+     model:
+      - realm.pub/tavern/internal/c2/c2pb.Process_Status

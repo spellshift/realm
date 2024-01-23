@@ -12,8 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -27,11 +28,13 @@ type TaskQuery struct {
 	predicates                 []predicate.Task
 	withQuest                  *QuestQuery
 	withBeacon                 *BeaconQuery
-	withReportedProcesses      *ProcessQuery
+	withReportedFiles          *HostFileQuery
+	withReportedProcesses      *HostProcessQuery
 	withFKs                    bool
 	modifiers                  []func(*sql.Selector)
 	loadTotal                  []func(context.Context, []*Task) error
-	withNamedReportedProcesses map[string]*ProcessQuery
+	withNamedReportedFiles     map[string]*HostFileQuery
+	withNamedReportedProcesses map[string]*HostProcessQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -112,9 +115,9 @@ func (tq *TaskQuery) QueryBeacon() *BeaconQuery {
 	return query
 }
 
-// QueryReportedProcesses chains the current query on the "reported_processes" edge.
-func (tq *TaskQuery) QueryReportedProcesses() *ProcessQuery {
-	query := (&ProcessClient{config: tq.config}).Query()
+// QueryReportedFiles chains the current query on the "reported_files" edge.
+func (tq *TaskQuery) QueryReportedFiles() *HostFileQuery {
+	query := (&HostFileClient{config: tq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -125,7 +128,29 @@ func (tq *TaskQuery) QueryReportedProcesses() *ProcessQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(task.Table, task.FieldID, selector),
-			sqlgraph.To(process.Table, process.FieldID),
+			sqlgraph.To(hostfile.Table, hostfile.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedFilesTable, task.ReportedFilesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedProcesses chains the current query on the "reported_processes" edge.
+func (tq *TaskQuery) QueryReportedProcesses() *HostProcessQuery {
+	query := (&HostProcessClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedProcessesTable, task.ReportedProcessesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
@@ -328,6 +353,7 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		predicates:            append([]predicate.Task{}, tq.predicates...),
 		withQuest:             tq.withQuest.Clone(),
 		withBeacon:            tq.withBeacon.Clone(),
+		withReportedFiles:     tq.withReportedFiles.Clone(),
 		withReportedProcesses: tq.withReportedProcesses.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
@@ -357,10 +383,21 @@ func (tq *TaskQuery) WithBeacon(opts ...func(*BeaconQuery)) *TaskQuery {
 	return tq
 }
 
+// WithReportedFiles tells the query-builder to eager-load the nodes that are connected to
+// the "reported_files" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithReportedFiles(opts ...func(*HostFileQuery)) *TaskQuery {
+	query := (&HostFileClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withReportedFiles = query
+	return tq
+}
+
 // WithReportedProcesses tells the query-builder to eager-load the nodes that are connected to
 // the "reported_processes" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TaskQuery) WithReportedProcesses(opts ...func(*ProcessQuery)) *TaskQuery {
-	query := (&ProcessClient{config: tq.config}).Query()
+func (tq *TaskQuery) WithReportedProcesses(opts ...func(*HostProcessQuery)) *TaskQuery {
+	query := (&HostProcessClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -447,9 +484,10 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		nodes       = []*Task{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			tq.withQuest != nil,
 			tq.withBeacon != nil,
+			tq.withReportedFiles != nil,
 			tq.withReportedProcesses != nil,
 		}
 	)
@@ -492,17 +530,31 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 			return nil, err
 		}
 	}
+	if query := tq.withReportedFiles; query != nil {
+		if err := tq.loadReportedFiles(ctx, query, nodes,
+			func(n *Task) { n.Edges.ReportedFiles = []*HostFile{} },
+			func(n *Task, e *HostFile) { n.Edges.ReportedFiles = append(n.Edges.ReportedFiles, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := tq.withReportedProcesses; query != nil {
 		if err := tq.loadReportedProcesses(ctx, query, nodes,
-			func(n *Task) { n.Edges.ReportedProcesses = []*Process{} },
-			func(n *Task, e *Process) { n.Edges.ReportedProcesses = append(n.Edges.ReportedProcesses, e) }); err != nil {
+			func(n *Task) { n.Edges.ReportedProcesses = []*HostProcess{} },
+			func(n *Task, e *HostProcess) { n.Edges.ReportedProcesses = append(n.Edges.ReportedProcesses, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedReportedFiles {
+		if err := tq.loadReportedFiles(ctx, query, nodes,
+			func(n *Task) { n.appendNamedReportedFiles(name) },
+			func(n *Task, e *HostFile) { n.appendNamedReportedFiles(name, e) }); err != nil {
 			return nil, err
 		}
 	}
 	for name, query := range tq.withNamedReportedProcesses {
 		if err := tq.loadReportedProcesses(ctx, query, nodes,
 			func(n *Task) { n.appendNamedReportedProcesses(name) },
-			func(n *Task, e *Process) { n.appendNamedReportedProcesses(name, e) }); err != nil {
+			func(n *Task, e *HostProcess) { n.appendNamedReportedProcesses(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -578,7 +630,7 @@ func (tq *TaskQuery) loadBeacon(ctx context.Context, query *BeaconQuery, nodes [
 	}
 	return nil
 }
-func (tq *TaskQuery) loadReportedProcesses(ctx context.Context, query *ProcessQuery, nodes []*Task, init func(*Task), assign func(*Task, *Process)) error {
+func (tq *TaskQuery) loadReportedFiles(ctx context.Context, query *HostFileQuery, nodes []*Task, init func(*Task), assign func(*Task, *HostFile)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Task)
 	for i := range nodes {
@@ -589,7 +641,38 @@ func (tq *TaskQuery) loadReportedProcesses(ctx context.Context, query *ProcessQu
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.Process(func(s *sql.Selector) {
+	query.Where(predicate.HostFile(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(task.ReportedFilesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.task_reported_files
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "task_reported_files" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "task_reported_files" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tq *TaskQuery) loadReportedProcesses(ctx context.Context, query *HostProcessQuery, nodes []*Task, init func(*Task), assign func(*Task, *HostProcess)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Task)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostProcess(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(task.ReportedProcessesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
@@ -694,15 +777,29 @@ func (tq *TaskQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
+// WithNamedReportedFiles tells the query-builder to eager-load the nodes that are connected to the "reported_files"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithNamedReportedFiles(name string, opts ...func(*HostFileQuery)) *TaskQuery {
+	query := (&HostFileClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedReportedFiles == nil {
+		tq.withNamedReportedFiles = make(map[string]*HostFileQuery)
+	}
+	tq.withNamedReportedFiles[name] = query
+	return tq
+}
+
 // WithNamedReportedProcesses tells the query-builder to eager-load the nodes that are connected to the "reported_processes"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (tq *TaskQuery) WithNamedReportedProcesses(name string, opts ...func(*ProcessQuery)) *TaskQuery {
-	query := (&ProcessClient{config: tq.config}).Query()
+func (tq *TaskQuery) WithNamedReportedProcesses(name string, opts ...func(*HostProcessQuery)) *TaskQuery {
+	query := (&HostProcessClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
 	if tq.withNamedReportedProcesses == nil {
-		tq.withNamedReportedProcesses = make(map[string]*ProcessQuery)
+		tq.withNamedReportedProcesses = make(map[string]*HostProcessQuery)
 	}
 	tq.withNamedReportedProcesses[name] = query
 	return tq
