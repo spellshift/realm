@@ -1,6 +1,8 @@
 name: List file tree
 description: List the files and directories found at the path in tree-like format
 author: adm1nPanda
+support_model: FIRST_PARTY
+tactic: RECON
 paramdefs:
 - name: path
   type: string

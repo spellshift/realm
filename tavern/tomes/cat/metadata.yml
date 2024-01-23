@@ -1,6 +1,8 @@
 name: cat
 description: Display contents of a file
 author: adm1nPanda
+support_model: FIRST_PARTY
+tactic: RECON
 paramdefs:
 - name: path
   type: string

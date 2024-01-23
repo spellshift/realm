@@ -40,10 +40,12 @@ func (paramDef ParamDefinition) Validate() error {
 }
 
 type metadataDefinition struct {
-	Name        string
-	Description string
-	Author      string
-	ParamDefs   []ParamDefinition
+	Name         string `yaml:"name"`
+	Description  string `yaml:"description"`
+	Author       string `yaml:"author"`
+	SupportModel string `yaml:"support_model"`
+	Tactic       string `yaml:"tactic"`
+	ParamDefs    []ParamDefinition
 }
 
 // UploadTomes traverses the provided filesystem and creates tomes using the provided graph.
@@ -141,6 +143,8 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			SetDescription(metadata.Description).
 			SetAuthor(metadata.Author).
 			SetParamDefs(string(paramdefs)).
+			SetSupportModel(tome.SupportModel(metadata.SupportModel)).
+			SetTactic(tome.Tactic(metadata.Tactic)).
 			SetEldritch(eldritch).
 			AddFiles(tomeFiles...).
 			Save(ctx); err != nil {

@@ -1,6 +1,8 @@
 name: Process tree
 description: Get a tree view of running processes
 author: arunjohnkuruvilla
+support_model: FIRST_PARTY
+tactic: RECON
 paramdefs:
 - name: cmd_substring
   label: Process search string

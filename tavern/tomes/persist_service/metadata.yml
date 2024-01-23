@@ -1,6 +1,8 @@
 name: Create Service
 description: Create a service for a specific binary
 author: hulto
+support_model: FIRST_PARTY
+tactic: PERSISTENCE
 paramdefs:
 - name: executable_url
   type: string

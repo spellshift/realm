@@ -1,6 +1,8 @@
 name: Port scan
 description: Scan a list of ports in a list of CIDRs.
 author: hulto
+support_model: FIRST_PARTY
+tactic: DISCOVERY
 paramdefs:
 - name: cidrs
   type: list

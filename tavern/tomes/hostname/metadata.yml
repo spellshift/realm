@@ -1,3 +1,5 @@
 name: Hostname
 description: Get the hostname of the system
 author: hulto
+support_model: FIRST_PARTY
+tactic: RECON
