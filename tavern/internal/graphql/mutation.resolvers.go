@@ -130,6 +130,19 @@ func (r *mutationResolver) CreateTome(ctx context.Context, input ent.CreateTomeI
 		Save(ctx)
 }
 
+// UpdateTome is the resolver for the updateTome field.
+func (r *mutationResolver) UpdateTome(ctx context.Context, tomeID int, input ent.UpdateTomeInput) (*ent.Tome, error) {
+	return r.client.Tome.UpdateOneID(tomeID).SetInput(input).Save(ctx)
+}
+
+// DeleteTome is the resolver for the deleteTome field.
+func (r *mutationResolver) DeleteTome(ctx context.Context, tomeID int) (int, error) {
+	if err := r.client.Tome.DeleteOneID(tomeID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return tomeID, nil
+}
+
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error) {
 	return r.client.User.UpdateOneID(userID).SetInput(input).Save(ctx)

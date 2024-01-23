@@ -177,11 +177,11 @@ func init() {
 	// tome.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tome.NameValidator = tomeDescName.Validators[0].(func(string) error)
 	// tomeDescParamDefs is the schema descriptor for param_defs field.
-	tomeDescParamDefs := tomeFields[3].Descriptor()
+	tomeDescParamDefs := tomeFields[5].Descriptor()
 	// tome.ParamDefsValidator is a validator for the "param_defs" field. It is called by the builders before save.
 	tome.ParamDefsValidator = tomeDescParamDefs.Validators[0].(func(string) error)
 	// tomeDescHash is the schema descriptor for hash field.
-	tomeDescHash := tomeFields[4].Descriptor()
+	tomeDescHash := tomeFields[6].Descriptor()
 	// tome.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	tome.HashValidator = tomeDescHash.Validators[0].(func(string) error)
 	userFields := schema.User{}.Fields()

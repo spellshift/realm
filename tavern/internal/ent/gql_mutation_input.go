@@ -3,7 +3,10 @@
 package ent
 
 import (
+	"time"
+
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // UpdateBeaconInput represents a mutation input for updating beacons.
@@ -180,13 +183,15 @@ func (c *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
 
 // CreateTomeInput represents a mutation input for creating tomes.
 type CreateTomeInput struct {
-	Name        string
-	Description string
-	Author      string
-	ParamDefs   *string
-	Eldritch    string
-	FileIDs     []int
-	UploaderID  *int
+	Name         string
+	Description  string
+	Author       string
+	SupportModel *tome.SupportModel
+	Tactic       *tome.Tactic
+	ParamDefs    *string
+	Eldritch     string
+	FileIDs      []int
+	UploaderID   *int
 }
 
 // Mutate applies the CreateTomeInput on the TomeMutation builder.
@@ -194,6 +199,12 @@ func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 	m.SetName(i.Name)
 	m.SetDescription(i.Description)
 	m.SetAuthor(i.Author)
+	if v := i.SupportModel; v != nil {
+		m.SetSupportModel(*v)
+	}
+	if v := i.Tactic; v != nil {
+		m.SetTactic(*v)
+	}
 	if v := i.ParamDefs; v != nil {
 		m.SetParamDefs(*v)
 	}
@@ -208,6 +219,82 @@ func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 
 // SetInput applies the change-set in the CreateTomeInput on the TomeCreate builder.
 func (c *TomeCreate) SetInput(i CreateTomeInput) *TomeCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateTomeInput represents a mutation input for updating tomes.
+type UpdateTomeInput struct {
+	LastModifiedAt *time.Time
+	Name           *string
+	Description    *string
+	Author         *string
+	SupportModel   *tome.SupportModel
+	Tactic         *tome.Tactic
+	ClearParamDefs bool
+	ParamDefs      *string
+	Eldritch       *string
+	ClearFiles     bool
+	AddFileIDs     []int
+	RemoveFileIDs  []int
+	ClearUploader  bool
+	UploaderID     *int
+}
+
+// Mutate applies the UpdateTomeInput on the TomeMutation builder.
+func (i *UpdateTomeInput) Mutate(m *TomeMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if v := i.Author; v != nil {
+		m.SetAuthor(*v)
+	}
+	if v := i.SupportModel; v != nil {
+		m.SetSupportModel(*v)
+	}
+	if v := i.Tactic; v != nil {
+		m.SetTactic(*v)
+	}
+	if i.ClearParamDefs {
+		m.ClearParamDefs()
+	}
+	if v := i.ParamDefs; v != nil {
+		m.SetParamDefs(*v)
+	}
+	if v := i.Eldritch; v != nil {
+		m.SetEldritch(*v)
+	}
+	if i.ClearFiles {
+		m.ClearFiles()
+	}
+	if v := i.AddFileIDs; len(v) > 0 {
+		m.AddFileIDs(v...)
+	}
+	if v := i.RemoveFileIDs; len(v) > 0 {
+		m.RemoveFileIDs(v...)
+	}
+	if i.ClearUploader {
+		m.ClearUploader()
+	}
+	if v := i.UploaderID; v != nil {
+		m.SetUploaderID(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateTomeInput on the TomeUpdate builder.
+func (c *TomeUpdate) SetInput(i UpdateTomeInput) *TomeUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateTomeInput on the TomeUpdateOne builder.
+func (c *TomeUpdateOne) SetInput(i UpdateTomeInput) *TomeUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }

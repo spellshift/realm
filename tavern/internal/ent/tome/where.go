@@ -370,6 +370,46 @@ func AuthorContainsFold(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldContainsFold(FieldAuthor, v))
 }
 
+// SupportModelEQ applies the EQ predicate on the "support_model" field.
+func SupportModelEQ(v SupportModel) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldSupportModel, v))
+}
+
+// SupportModelNEQ applies the NEQ predicate on the "support_model" field.
+func SupportModelNEQ(v SupportModel) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldSupportModel, v))
+}
+
+// SupportModelIn applies the In predicate on the "support_model" field.
+func SupportModelIn(vs ...SupportModel) predicate.Tome {
+	return predicate.Tome(sql.FieldIn(FieldSupportModel, vs...))
+}
+
+// SupportModelNotIn applies the NotIn predicate on the "support_model" field.
+func SupportModelNotIn(vs ...SupportModel) predicate.Tome {
+	return predicate.Tome(sql.FieldNotIn(FieldSupportModel, vs...))
+}
+
+// TacticEQ applies the EQ predicate on the "tactic" field.
+func TacticEQ(v Tactic) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldTactic, v))
+}
+
+// TacticNEQ applies the NEQ predicate on the "tactic" field.
+func TacticNEQ(v Tactic) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldTactic, v))
+}
+
+// TacticIn applies the In predicate on the "tactic" field.
+func TacticIn(vs ...Tactic) predicate.Tome {
+	return predicate.Tome(sql.FieldIn(FieldTactic, vs...))
+}
+
+// TacticNotIn applies the NotIn predicate on the "tactic" field.
+func TacticNotIn(vs ...Tactic) predicate.Tome {
+	return predicate.Tome(sql.FieldNotIn(FieldTactic, vs...))
+}
+
 // ParamDefsEQ applies the EQ predicate on the "param_defs" field.
 func ParamDefsEQ(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldParamDefs, v))

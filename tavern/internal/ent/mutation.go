@@ -5510,6 +5510,8 @@ type TomeMutation struct {
 	name             *string
 	description      *string
 	author           *string
+	support_model    *tome.SupportModel
+	tactic           *tome.Tactic
 	param_defs       *string
 	hash             *string
 	eldritch         *string
@@ -5802,6 +5804,78 @@ func (m *TomeMutation) ResetAuthor() {
 	m.author = nil
 }
 
+// SetSupportModel sets the "support_model" field.
+func (m *TomeMutation) SetSupportModel(tm tome.SupportModel) {
+	m.support_model = &tm
+}
+
+// SupportModel returns the value of the "support_model" field in the mutation.
+func (m *TomeMutation) SupportModel() (r tome.SupportModel, exists bool) {
+	v := m.support_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupportModel returns the old "support_model" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldSupportModel(ctx context.Context) (v tome.SupportModel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupportModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupportModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupportModel: %w", err)
+	}
+	return oldValue.SupportModel, nil
+}
+
+// ResetSupportModel resets all changes to the "support_model" field.
+func (m *TomeMutation) ResetSupportModel() {
+	m.support_model = nil
+}
+
+// SetTactic sets the "tactic" field.
+func (m *TomeMutation) SetTactic(t tome.Tactic) {
+	m.tactic = &t
+}
+
+// Tactic returns the value of the "tactic" field in the mutation.
+func (m *TomeMutation) Tactic() (r tome.Tactic, exists bool) {
+	v := m.tactic
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTactic returns the old "tactic" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldTactic(ctx context.Context) (v tome.Tactic, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTactic is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTactic requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTactic: %w", err)
+	}
+	return oldValue.Tactic, nil
+}
+
+// ResetTactic resets all changes to the "tactic" field.
+func (m *TomeMutation) ResetTactic() {
+	m.tactic = nil
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (m *TomeMutation) SetParamDefs(s string) {
 	m.param_defs = &s
@@ -6050,7 +6124,7 @@ func (m *TomeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TomeMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, tome.FieldCreatedAt)
 	}
@@ -6065,6 +6139,12 @@ func (m *TomeMutation) Fields() []string {
 	}
 	if m.author != nil {
 		fields = append(fields, tome.FieldAuthor)
+	}
+	if m.support_model != nil {
+		fields = append(fields, tome.FieldSupportModel)
+	}
+	if m.tactic != nil {
+		fields = append(fields, tome.FieldTactic)
 	}
 	if m.param_defs != nil {
 		fields = append(fields, tome.FieldParamDefs)
@@ -6093,6 +6173,10 @@ func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case tome.FieldAuthor:
 		return m.Author()
+	case tome.FieldSupportModel:
+		return m.SupportModel()
+	case tome.FieldTactic:
+		return m.Tactic()
 	case tome.FieldParamDefs:
 		return m.ParamDefs()
 	case tome.FieldHash:
@@ -6118,6 +6202,10 @@ func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldDescription(ctx)
 	case tome.FieldAuthor:
 		return m.OldAuthor(ctx)
+	case tome.FieldSupportModel:
+		return m.OldSupportModel(ctx)
+	case tome.FieldTactic:
+		return m.OldTactic(ctx)
 	case tome.FieldParamDefs:
 		return m.OldParamDefs(ctx)
 	case tome.FieldHash:
@@ -6167,6 +6255,20 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAuthor(v)
+		return nil
+	case tome.FieldSupportModel:
+		v, ok := value.(tome.SupportModel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupportModel(v)
+		return nil
+	case tome.FieldTactic:
+		v, ok := value.(tome.Tactic)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTactic(v)
 		return nil
 	case tome.FieldParamDefs:
 		v, ok := value.(string)
@@ -6261,6 +6363,12 @@ func (m *TomeMutation) ResetField(name string) error {
 		return nil
 	case tome.FieldAuthor:
 		m.ResetAuthor()
+		return nil
+	case tome.FieldSupportModel:
+		m.ResetSupportModel()
+		return nil
+	case tome.FieldTactic:
+		m.ResetTactic()
 		return nil
 	case tome.FieldParamDefs:
 		m.ResetParamDefs()

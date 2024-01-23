@@ -2903,6 +2903,18 @@ type TomeWhereInput struct {
 	AuthorEqualFold    *string  `json:"authorEqualFold,omitempty"`
 	AuthorContainsFold *string  `json:"authorContainsFold,omitempty"`
 
+	// "support_model" field predicates.
+	SupportModel      *tome.SupportModel  `json:"supportModel,omitempty"`
+	SupportModelNEQ   *tome.SupportModel  `json:"supportModelNEQ,omitempty"`
+	SupportModelIn    []tome.SupportModel `json:"supportModelIn,omitempty"`
+	SupportModelNotIn []tome.SupportModel `json:"supportModelNotIn,omitempty"`
+
+	// "tactic" field predicates.
+	Tactic      *tome.Tactic  `json:"tactic,omitempty"`
+	TacticNEQ   *tome.Tactic  `json:"tacticNEQ,omitempty"`
+	TacticIn    []tome.Tactic `json:"tacticIn,omitempty"`
+	TacticNotIn []tome.Tactic `json:"tacticNotIn,omitempty"`
+
 	// "param_defs" field predicates.
 	ParamDefs             *string  `json:"paramDefs,omitempty"`
 	ParamDefsNEQ          *string  `json:"paramDefsNEQ,omitempty"`
@@ -3203,6 +3215,30 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	}
 	if i.AuthorContainsFold != nil {
 		predicates = append(predicates, tome.AuthorContainsFold(*i.AuthorContainsFold))
+	}
+	if i.SupportModel != nil {
+		predicates = append(predicates, tome.SupportModelEQ(*i.SupportModel))
+	}
+	if i.SupportModelNEQ != nil {
+		predicates = append(predicates, tome.SupportModelNEQ(*i.SupportModelNEQ))
+	}
+	if len(i.SupportModelIn) > 0 {
+		predicates = append(predicates, tome.SupportModelIn(i.SupportModelIn...))
+	}
+	if len(i.SupportModelNotIn) > 0 {
+		predicates = append(predicates, tome.SupportModelNotIn(i.SupportModelNotIn...))
+	}
+	if i.Tactic != nil {
+		predicates = append(predicates, tome.TacticEQ(*i.Tactic))
+	}
+	if i.TacticNEQ != nil {
+		predicates = append(predicates, tome.TacticNEQ(*i.TacticNEQ))
+	}
+	if len(i.TacticIn) > 0 {
+		predicates = append(predicates, tome.TacticIn(i.TacticIn...))
+	}
+	if len(i.TacticNotIn) > 0 {
+		predicates = append(predicates, tome.TacticNotIn(i.TacticNotIn...))
 	}
 	if i.ParamDefs != nil {
 		predicates = append(predicates, tome.ParamDefsEQ(*i.ParamDefs))

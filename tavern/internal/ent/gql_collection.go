@@ -1032,6 +1032,16 @@ func (t *TomeQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				selectedFields = append(selectedFields, tome.FieldAuthor)
 				fieldSeen[tome.FieldAuthor] = struct{}{}
 			}
+		case "supportModel":
+			if _, ok := fieldSeen[tome.FieldSupportModel]; !ok {
+				selectedFields = append(selectedFields, tome.FieldSupportModel)
+				fieldSeen[tome.FieldSupportModel] = struct{}{}
+			}
+		case "tactic":
+			if _, ok := fieldSeen[tome.FieldTactic]; !ok {
+				selectedFields = append(selectedFields, tome.FieldTactic)
+				fieldSeen[tome.FieldTactic] = struct{}{}
+			}
 		case "paramDefs":
 			if _, ok := fieldSeen[tome.FieldParamDefs]; !ok {
 				selectedFields = append(selectedFields, tome.FieldParamDefs)

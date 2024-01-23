@@ -1,0 +1,33 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken",true,false);
+  INSERT INTO `hosts` (id, name, identifier)
+    VALUES (1010,"db1","EXISTING-HOST");
+  INSERT INTO `beacons` (id, name, identifier, beacon_host)
+    VALUES (1337,"delightful-lich","ABCDEFG-123456",1010);
+  INSERT INTO `tomes` (id, name, description, author, eldritch, hash, created_at, last_modified_at)
+    VALUES (2000,"Test Tome","Used in a unit test :D", "kcarretto", "print('Hello World!')", "abcdefg", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `files` (id, name, content, hash, created_at, last_modified_at)
+    VALUES (3000, "TestFile1", "hello world", "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `files` (id, name, content, hash, created_at, last_modified_at)
+    VALUES (3001, "TestFile2", "some test", "a9d9e8df0488c7e7e9236e43fe0c9385d7ea6920700db55d305f55dca76ddb0b", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `tome_files` (tome_id, file_id)
+    VALUES (2000, 3000);
+  INSERT INTO `tome_files` (tome_id, file_id)
+    VALUES (2000, 3001);
+requestor:
+  session_token: secretToken
+query: |
+  mutation UpdateTome($tomeID: ID!, $input: UpdateTomeInput!) {
+    updateTome(tomeID:$tomeID, input:$input) {
+      supportModel
+      tactic
+    }
+  }
+variables:
+  tomeID: 2000
+  input:
+    supportModel: FIRST_PARTY
+    tactic: RECON
+
+expected_error: "permission denied"

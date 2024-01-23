@@ -54,6 +54,34 @@ func (tu *TomeUpdate) SetAuthor(s string) *TomeUpdate {
 	return tu
 }
 
+// SetSupportModel sets the "support_model" field.
+func (tu *TomeUpdate) SetSupportModel(tm tome.SupportModel) *TomeUpdate {
+	tu.mutation.SetSupportModel(tm)
+	return tu
+}
+
+// SetNillableSupportModel sets the "support_model" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableSupportModel(tm *tome.SupportModel) *TomeUpdate {
+	if tm != nil {
+		tu.SetSupportModel(*tm)
+	}
+	return tu
+}
+
+// SetTactic sets the "tactic" field.
+func (tu *TomeUpdate) SetTactic(t tome.Tactic) *TomeUpdate {
+	tu.mutation.SetTactic(t)
+	return tu
+}
+
+// SetNillableTactic sets the "tactic" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableTactic(t *tome.Tactic) *TomeUpdate {
+	if t != nil {
+		tu.SetTactic(*t)
+	}
+	return tu
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (tu *TomeUpdate) SetParamDefs(s string) *TomeUpdate {
 	tu.mutation.SetParamDefs(s)
@@ -201,6 +229,16 @@ func (tu *TomeUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
 		}
 	}
+	if v, ok := tu.mutation.SupportModel(); ok {
+		if err := tome.SupportModelValidator(v); err != nil {
+			return &ValidationError{Name: "support_model", err: fmt.Errorf(`ent: validator failed for field "Tome.support_model": %w`, err)}
+		}
+	}
+	if v, ok := tu.mutation.Tactic(); ok {
+		if err := tome.TacticValidator(v); err != nil {
+			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
+		}
+	}
 	if v, ok := tu.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
@@ -237,6 +275,12 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.Author(); ok {
 		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
+	}
+	if value, ok := tu.mutation.SupportModel(); ok {
+		_spec.SetField(tome.FieldSupportModel, field.TypeEnum, value)
+	}
+	if value, ok := tu.mutation.Tactic(); ok {
+		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 	}
 	if value, ok := tu.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
@@ -365,6 +409,34 @@ func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
 // SetAuthor sets the "author" field.
 func (tuo *TomeUpdateOne) SetAuthor(s string) *TomeUpdateOne {
 	tuo.mutation.SetAuthor(s)
+	return tuo
+}
+
+// SetSupportModel sets the "support_model" field.
+func (tuo *TomeUpdateOne) SetSupportModel(tm tome.SupportModel) *TomeUpdateOne {
+	tuo.mutation.SetSupportModel(tm)
+	return tuo
+}
+
+// SetNillableSupportModel sets the "support_model" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableSupportModel(tm *tome.SupportModel) *TomeUpdateOne {
+	if tm != nil {
+		tuo.SetSupportModel(*tm)
+	}
+	return tuo
+}
+
+// SetTactic sets the "tactic" field.
+func (tuo *TomeUpdateOne) SetTactic(t tome.Tactic) *TomeUpdateOne {
+	tuo.mutation.SetTactic(t)
+	return tuo
+}
+
+// SetNillableTactic sets the "tactic" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableTactic(t *tome.Tactic) *TomeUpdateOne {
+	if t != nil {
+		tuo.SetTactic(*t)
+	}
 	return tuo
 }
 
@@ -528,6 +600,16 @@ func (tuo *TomeUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
 		}
 	}
+	if v, ok := tuo.mutation.SupportModel(); ok {
+		if err := tome.SupportModelValidator(v); err != nil {
+			return &ValidationError{Name: "support_model", err: fmt.Errorf(`ent: validator failed for field "Tome.support_model": %w`, err)}
+		}
+	}
+	if v, ok := tuo.mutation.Tactic(); ok {
+		if err := tome.TacticValidator(v); err != nil {
+			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
+		}
+	}
 	if v, ok := tuo.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
@@ -581,6 +663,12 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	}
 	if value, ok := tuo.mutation.Author(); ok {
 		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
+	}
+	if value, ok := tuo.mutation.SupportModel(); ok {
+		_spec.SetField(tome.FieldSupportModel, field.TypeEnum, value)
+	}
+	if value, ok := tuo.mutation.Tactic(); ok {
+		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 	}
 	if value, ok := tuo.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
