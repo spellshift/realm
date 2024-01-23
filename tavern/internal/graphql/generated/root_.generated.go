@@ -48,10 +48,12 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Beacon struct {
 		AgentIdentifier func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
 		Host            func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Identifier      func(childComplexity int) int
 		Interval        func(childComplexity int) int
+		LastModifiedAt  func(childComplexity int) int
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Principal       func(childComplexity int) int
@@ -69,15 +71,17 @@ type ComplexityRoot struct {
 	}
 
 	Host struct {
-		Beacons    func(childComplexity int) int
-		ID         func(childComplexity int) int
-		Identifier func(childComplexity int) int
-		LastSeenAt func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Platform   func(childComplexity int) int
-		PrimaryIP  func(childComplexity int) int
-		Processes  func(childComplexity int) int
-		Tags       func(childComplexity int) int
+		Beacons        func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Identifier     func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		LastSeenAt     func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Platform       func(childComplexity int) int
+		PrimaryIP      func(childComplexity int) int
+		Processes      func(childComplexity int) int
+		Tags           func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -220,6 +224,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Beacon.AgentIdentifier(childComplexity), true
 
+	case "Beacon.createdAt":
+		if e.complexity.Beacon.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Beacon.CreatedAt(childComplexity), true
+
 	case "Beacon.host":
 		if e.complexity.Beacon.Host == nil {
 			break
@@ -247,6 +258,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Beacon.Interval(childComplexity), true
+
+	case "Beacon.lastModifiedAt":
+		if e.complexity.Beacon.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Beacon.LastModifiedAt(childComplexity), true
 
 	case "Beacon.lastSeenAt":
 		if e.complexity.Beacon.LastSeenAt == nil {
@@ -332,6 +350,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.Beacons(childComplexity), true
 
+	case "Host.createdAt":
+		if e.complexity.Host.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Host.CreatedAt(childComplexity), true
+
 	case "Host.id":
 		if e.complexity.Host.ID == nil {
 			break
@@ -345,6 +370,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Host.Identifier(childComplexity), true
+
+	case "Host.lastModifiedAt":
+		if e.complexity.Host.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Host.LastModifiedAt(childComplexity), true
 
 	case "Host.lastSeenAt":
 		if e.complexity.Host.LastSeenAt == nil {
@@ -1185,6 +1217,10 @@ enum Role {
 directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 type Beacon implements Node {
   id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
   """A human readable identifier for the beacon."""
   name: String!
   """The identity the beacon is authenticated as (e.g. 'root')"""
@@ -1211,6 +1247,8 @@ input BeaconOrder {
 }
 """Properties by which Beacon connections can be ordered."""
 enum BeaconOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
   LAST_SEEN_AT
   INTERVAL
 }
@@ -1231,6 +1269,24 @@ input BeaconWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -1474,6 +1530,10 @@ input FileWhereInput {
 }
 type Host implements Node {
   id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
   """Unique identifier for the host. Unique to each host."""
   identifier: String!
   """A human readable identifier for the host."""
@@ -1500,6 +1560,8 @@ input HostOrder {
 }
 """Properties by which Host connections can be ordered."""
 enum HostOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
   LAST_SEEN_AT
 }
 """HostPlatform is enum for the field platform"""
@@ -1527,6 +1589,24 @@ input HostWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
   """identifier field predicates"""
   identifier: String
   identifierNEQ: String
@@ -2289,6 +2369,8 @@ UpdateBeaconInput is used for update Beacon object.
 Input was generated by ent.
 """
 input UpdateBeaconInput {
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time
   hostID: ID
 }
 """
@@ -2296,6 +2378,8 @@ UpdateHostInput is used for update Host object.
 Input was generated by ent.
 """
 input UpdateHostInput {
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time
   """A human readable identifier for the host."""
   name: String
   clearName: Boolean

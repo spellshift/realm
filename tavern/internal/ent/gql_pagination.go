@@ -312,6 +312,34 @@ func (b *BeaconQuery) Paginate(
 }
 
 var (
+	// BeaconOrderFieldCreatedAt orders Beacon by created_at.
+	BeaconOrderFieldCreatedAt = &BeaconOrderField{
+		Value: func(b *Beacon) (ent.Value, error) {
+			return b.CreatedAt, nil
+		},
+		column: beacon.FieldCreatedAt,
+		toTerm: beacon.ByCreatedAt,
+		toCursor: func(b *Beacon) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.CreatedAt,
+			}
+		},
+	}
+	// BeaconOrderFieldLastModifiedAt orders Beacon by last_modified_at.
+	BeaconOrderFieldLastModifiedAt = &BeaconOrderField{
+		Value: func(b *Beacon) (ent.Value, error) {
+			return b.LastModifiedAt, nil
+		},
+		column: beacon.FieldLastModifiedAt,
+		toTerm: beacon.ByLastModifiedAt,
+		toCursor: func(b *Beacon) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.LastModifiedAt,
+			}
+		},
+	}
 	// BeaconOrderFieldLastSeenAt orders Beacon by last_seen_at.
 	BeaconOrderFieldLastSeenAt = &BeaconOrderField{
 		Value: func(b *Beacon) (ent.Value, error) {
@@ -346,6 +374,10 @@ var (
 func (f BeaconOrderField) String() string {
 	var str string
 	switch f.column {
+	case BeaconOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case BeaconOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
 	case BeaconOrderFieldLastSeenAt.column:
 		str = "LAST_SEEN_AT"
 	case BeaconOrderFieldInterval.column:
@@ -366,6 +398,10 @@ func (f *BeaconOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("BeaconOrderField %T must be a string", v)
 	}
 	switch str {
+	case "CREATED_AT":
+		*f = *BeaconOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *BeaconOrderFieldLastModifiedAt
 	case "LAST_SEEN_AT":
 		*f = *BeaconOrderFieldLastSeenAt
 	case "INTERVAL":
@@ -970,6 +1006,34 @@ func (h *HostQuery) Paginate(
 }
 
 var (
+	// HostOrderFieldCreatedAt orders Host by created_at.
+	HostOrderFieldCreatedAt = &HostOrderField{
+		Value: func(h *Host) (ent.Value, error) {
+			return h.CreatedAt, nil
+		},
+		column: host.FieldCreatedAt,
+		toTerm: host.ByCreatedAt,
+		toCursor: func(h *Host) Cursor {
+			return Cursor{
+				ID:    h.ID,
+				Value: h.CreatedAt,
+			}
+		},
+	}
+	// HostOrderFieldLastModifiedAt orders Host by last_modified_at.
+	HostOrderFieldLastModifiedAt = &HostOrderField{
+		Value: func(h *Host) (ent.Value, error) {
+			return h.LastModifiedAt, nil
+		},
+		column: host.FieldLastModifiedAt,
+		toTerm: host.ByLastModifiedAt,
+		toCursor: func(h *Host) Cursor {
+			return Cursor{
+				ID:    h.ID,
+				Value: h.LastModifiedAt,
+			}
+		},
+	}
 	// HostOrderFieldLastSeenAt orders Host by last_seen_at.
 	HostOrderFieldLastSeenAt = &HostOrderField{
 		Value: func(h *Host) (ent.Value, error) {
@@ -990,6 +1054,10 @@ var (
 func (f HostOrderField) String() string {
 	var str string
 	switch f.column {
+	case HostOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case HostOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
 	case HostOrderFieldLastSeenAt.column:
 		str = "LAST_SEEN_AT"
 	}
@@ -1008,6 +1076,10 @@ func (f *HostOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("HostOrderField %T must be a string", v)
 	}
 	switch str {
+	case "CREATED_AT":
+		*f = *HostOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *HostOrderFieldLastModifiedAt
 	case "LAST_SEEN_AT":
 		*f = *HostOrderFieldLastSeenAt
 	default:

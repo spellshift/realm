@@ -25,6 +25,34 @@ type HostCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (hc *HostCreate) SetCreatedAt(t time.Time) *HostCreate {
+	hc.mutation.SetCreatedAt(t)
+	return hc
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (hc *HostCreate) SetNillableCreatedAt(t *time.Time) *HostCreate {
+	if t != nil {
+		hc.SetCreatedAt(*t)
+	}
+	return hc
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (hc *HostCreate) SetLastModifiedAt(t time.Time) *HostCreate {
+	hc.mutation.SetLastModifiedAt(t)
+	return hc
+}
+
+// SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
+func (hc *HostCreate) SetNillableLastModifiedAt(t *time.Time) *HostCreate {
+	if t != nil {
+		hc.SetLastModifiedAt(*t)
+	}
+	return hc
+}
+
 // SetIdentifier sets the "identifier" field.
 func (hc *HostCreate) SetIdentifier(s string) *HostCreate {
 	hc.mutation.SetIdentifier(s)
@@ -167,6 +195,14 @@ func (hc *HostCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (hc *HostCreate) defaults() {
+	if _, ok := hc.mutation.CreatedAt(); !ok {
+		v := host.DefaultCreatedAt()
+		hc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := hc.mutation.LastModifiedAt(); !ok {
+		v := host.DefaultLastModifiedAt()
+		hc.mutation.SetLastModifiedAt(v)
+	}
 	if _, ok := hc.mutation.Platform(); !ok {
 		v := host.DefaultPlatform
 		hc.mutation.SetPlatform(v)
@@ -175,6 +211,12 @@ func (hc *HostCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (hc *HostCreate) check() error {
+	if _, ok := hc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Host.created_at"`)}
+	}
+	if _, ok := hc.mutation.LastModifiedAt(); !ok {
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Host.last_modified_at"`)}
+	}
 	if _, ok := hc.mutation.Identifier(); !ok {
 		return &ValidationError{Name: "identifier", err: errors.New(`ent: missing required field "Host.identifier"`)}
 	}
@@ -223,6 +265,14 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		_spec = sqlgraph.NewCreateSpec(host.Table, sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = hc.conflict
+	if value, ok := hc.mutation.CreatedAt(); ok {
+		_spec.SetField(host.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := hc.mutation.LastModifiedAt(); ok {
+		_spec.SetField(host.FieldLastModifiedAt, field.TypeTime, value)
+		_node.LastModifiedAt = value
+	}
 	if value, ok := hc.mutation.Identifier(); ok {
 		_spec.SetField(host.FieldIdentifier, field.TypeString, value)
 		_node.Identifier = value
@@ -298,7 +348,7 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Host.Create().
-//		SetIdentifier(v).
+//		SetCreatedAt(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -307,7 +357,7 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.HostUpsert) {
-//			SetIdentifier(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (hc *HostCreate) OnConflict(opts ...sql.ConflictOption) *HostUpsertOne {
@@ -342,6 +392,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *HostUpsert) SetLastModifiedAt(v time.Time) *HostUpsert {
+	u.Set(host.FieldLastModifiedAt, v)
+	return u
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *HostUpsert) UpdateLastModifiedAt() *HostUpsert {
+	u.SetExcluded(host.FieldLastModifiedAt)
+	return u
+}
 
 // SetIdentifier sets the "identifier" field.
 func (u *HostUpsert) SetIdentifier(v string) *HostUpsert {
@@ -431,6 +493,11 @@ func (u *HostUpsert) ClearLastSeenAt() *HostUpsert {
 //		Exec(ctx)
 func (u *HostUpsertOne) UpdateNewValues() *HostUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(host.FieldCreatedAt)
+		}
+	}))
 	return u
 }
 
@@ -459,6 +526,20 @@ func (u *HostUpsertOne) Update(set func(*HostUpsert)) *HostUpsertOne {
 		set(&HostUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *HostUpsertOne) SetLastModifiedAt(v time.Time) *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *HostUpsertOne) UpdateLastModifiedAt() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateLastModifiedAt()
+	})
 }
 
 // SetIdentifier sets the "identifier" field.
@@ -687,7 +768,7 @@ func (hcb *HostCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.HostUpsert) {
-//			SetIdentifier(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (hcb *HostCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostUpsertBulk {
@@ -726,6 +807,13 @@ type HostUpsertBulk struct {
 //		Exec(ctx)
 func (u *HostUpsertBulk) UpdateNewValues() *HostUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(host.FieldCreatedAt)
+			}
+		}
+	}))
 	return u
 }
 
@@ -754,6 +842,20 @@ func (u *HostUpsertBulk) Update(set func(*HostUpsert)) *HostUpsertBulk {
 		set(&HostUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (u *HostUpsertBulk) SetLastModifiedAt(v time.Time) *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.SetLastModifiedAt(v)
+	})
+}
+
+// UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
+func (u *HostUpsertBulk) UpdateLastModifiedAt() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateLastModifiedAt()
+	})
 }
 
 // SetIdentifier sets the "identifier" field.

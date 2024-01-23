@@ -375,12 +375,12 @@ func (hq *HostQuery) WithProcesses(opts ...func(*ProcessQuery)) *HostQuery {
 // Example:
 //
 //	var v []struct {
-//		Identifier string `json:"identifier,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Host.Query().
-//		GroupBy(host.FieldIdentifier).
+//		GroupBy(host.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (hq *HostQuery) GroupBy(field string, fields ...string) *HostGroupBy {
@@ -398,11 +398,11 @@ func (hq *HostQuery) GroupBy(field string, fields ...string) *HostGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Identifier string `json:"identifier,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Host.Query().
-//		Select(host.FieldIdentifier).
+//		Select(host.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (hq *HostQuery) Select(fields ...string) *HostSelect {
 	hq.ctx.Fields = append(hq.ctx.Fields, fields...)
