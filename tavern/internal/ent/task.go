@@ -50,14 +50,14 @@ type TaskEdges struct {
 	// Beacon holds the value of the beacon edge.
 	Beacon *Beacon `json:"beacon,omitempty"`
 	// Processes that have been reported by this task.
-	ReportedProcesses []*Process `json:"reported_processes,omitempty"`
+	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
 	totalCount [3]map[string]int
 
-	namedReportedProcesses map[string][]*Process
+	namedReportedProcesses map[string][]*HostProcess
 }
 
 // QuestOrErr returns the Quest value or an error if the edge
@@ -88,7 +88,7 @@ func (e TaskEdges) BeaconOrErr() (*Beacon, error) {
 
 // ReportedProcessesOrErr returns the ReportedProcesses value or an error if the edge
 // was not loaded in eager-loading.
-func (e TaskEdges) ReportedProcessesOrErr() ([]*Process, error) {
+func (e TaskEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
 	if e.loadedTypes[2] {
 		return e.ReportedProcesses, nil
 	}
@@ -217,7 +217,7 @@ func (t *Task) QueryBeacon() *BeaconQuery {
 }
 
 // QueryReportedProcesses queries the "reported_processes" edge of the Task entity.
-func (t *Task) QueryReportedProcesses() *ProcessQuery {
+func (t *Task) QueryReportedProcesses() *HostProcessQuery {
 	return NewTaskClient(t.config).QueryReportedProcesses(t)
 }
 
@@ -273,7 +273,7 @@ func (t *Task) String() string {
 
 // NamedReportedProcesses returns the ReportedProcesses named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Task) NamedReportedProcesses(name string) ([]*Process, error) {
+func (t *Task) NamedReportedProcesses(name string) ([]*HostProcess, error) {
 	if t.Edges.namedReportedProcesses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
@@ -284,12 +284,12 @@ func (t *Task) NamedReportedProcesses(name string) ([]*Process, error) {
 	return nodes, nil
 }
 
-func (t *Task) appendNamedReportedProcesses(name string, edges ...*Process) {
+func (t *Task) appendNamedReportedProcesses(name string, edges ...*HostProcess) {
 	if t.Edges.namedReportedProcesses == nil {
-		t.Edges.namedReportedProcesses = make(map[string][]*Process)
+		t.Edges.namedReportedProcesses = make(map[string][]*HostProcess)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedReportedProcesses[name] = []*Process{}
+		t.Edges.namedReportedProcesses[name] = []*HostProcess{}
 	} else {
 		t.Edges.namedReportedProcesses[name] = append(t.Edges.namedReportedProcesses[name], edges...)
 	}

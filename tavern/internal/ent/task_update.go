@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -180,17 +180,17 @@ func (tu *TaskUpdate) SetBeacon(b *Beacon) *TaskUpdate {
 	return tu.SetBeaconID(b.ID)
 }
 
-// AddReportedProcessIDs adds the "reported_processes" edge to the Process entity by IDs.
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
 func (tu *TaskUpdate) AddReportedProcessIDs(ids ...int) *TaskUpdate {
 	tu.mutation.AddReportedProcessIDs(ids...)
 	return tu
 }
 
-// AddReportedProcesses adds the "reported_processes" edges to the Process entity.
-func (tu *TaskUpdate) AddReportedProcesses(p ...*Process) *TaskUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (tu *TaskUpdate) AddReportedProcesses(h ...*HostProcess) *TaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tu.AddReportedProcessIDs(ids...)
 }
@@ -212,23 +212,23 @@ func (tu *TaskUpdate) ClearBeacon() *TaskUpdate {
 	return tu
 }
 
-// ClearReportedProcesses clears all "reported_processes" edges to the Process entity.
+// ClearReportedProcesses clears all "reported_processes" edges to the HostProcess entity.
 func (tu *TaskUpdate) ClearReportedProcesses() *TaskUpdate {
 	tu.mutation.ClearReportedProcesses()
 	return tu
 }
 
-// RemoveReportedProcessIDs removes the "reported_processes" edge to Process entities by IDs.
+// RemoveReportedProcessIDs removes the "reported_processes" edge to HostProcess entities by IDs.
 func (tu *TaskUpdate) RemoveReportedProcessIDs(ids ...int) *TaskUpdate {
 	tu.mutation.RemoveReportedProcessIDs(ids...)
 	return tu
 }
 
-// RemoveReportedProcesses removes "reported_processes" edges to Process entities.
-func (tu *TaskUpdate) RemoveReportedProcesses(p ...*Process) *TaskUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveReportedProcesses removes "reported_processes" edges to HostProcess entities.
+func (tu *TaskUpdate) RemoveReportedProcesses(h ...*HostProcess) *TaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tu.RemoveReportedProcessIDs(ids...)
 }
@@ -408,7 +408,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -421,7 +421,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -437,7 +437,7 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -614,17 +614,17 @@ func (tuo *TaskUpdateOne) SetBeacon(b *Beacon) *TaskUpdateOne {
 	return tuo.SetBeaconID(b.ID)
 }
 
-// AddReportedProcessIDs adds the "reported_processes" edge to the Process entity by IDs.
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
 func (tuo *TaskUpdateOne) AddReportedProcessIDs(ids ...int) *TaskUpdateOne {
 	tuo.mutation.AddReportedProcessIDs(ids...)
 	return tuo
 }
 
-// AddReportedProcesses adds the "reported_processes" edges to the Process entity.
-func (tuo *TaskUpdateOne) AddReportedProcesses(p ...*Process) *TaskUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (tuo *TaskUpdateOne) AddReportedProcesses(h ...*HostProcess) *TaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tuo.AddReportedProcessIDs(ids...)
 }
@@ -646,23 +646,23 @@ func (tuo *TaskUpdateOne) ClearBeacon() *TaskUpdateOne {
 	return tuo
 }
 
-// ClearReportedProcesses clears all "reported_processes" edges to the Process entity.
+// ClearReportedProcesses clears all "reported_processes" edges to the HostProcess entity.
 func (tuo *TaskUpdateOne) ClearReportedProcesses() *TaskUpdateOne {
 	tuo.mutation.ClearReportedProcesses()
 	return tuo
 }
 
-// RemoveReportedProcessIDs removes the "reported_processes" edge to Process entities by IDs.
+// RemoveReportedProcessIDs removes the "reported_processes" edge to HostProcess entities by IDs.
 func (tuo *TaskUpdateOne) RemoveReportedProcessIDs(ids ...int) *TaskUpdateOne {
 	tuo.mutation.RemoveReportedProcessIDs(ids...)
 	return tuo
 }
 
-// RemoveReportedProcesses removes "reported_processes" edges to Process entities.
-func (tuo *TaskUpdateOne) RemoveReportedProcesses(p ...*Process) *TaskUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveReportedProcesses removes "reported_processes" edges to HostProcess entities.
+func (tuo *TaskUpdateOne) RemoveReportedProcesses(h ...*HostProcess) *TaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tuo.RemoveReportedProcessIDs(ids...)
 }
@@ -872,7 +872,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -885,7 +885,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -901,7 +901,7 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

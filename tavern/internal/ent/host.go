@@ -44,7 +44,7 @@ type HostEdges struct {
 	// Beacons that are present on this host system.
 	Beacons []*Beacon `json:"beacons,omitempty"`
 	// Processes reported as running on this host system.
-	Processes []*Process `json:"processes,omitempty"`
+	Processes []*HostProcess `json:"processes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
@@ -53,7 +53,7 @@ type HostEdges struct {
 
 	namedTags      map[string][]*Tag
 	namedBeacons   map[string][]*Beacon
-	namedProcesses map[string][]*Process
+	namedProcesses map[string][]*HostProcess
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -76,7 +76,7 @@ func (e HostEdges) BeaconsOrErr() ([]*Beacon, error) {
 
 // ProcessesOrErr returns the Processes value or an error if the edge
 // was not loaded in eager-loading.
-func (e HostEdges) ProcessesOrErr() ([]*Process, error) {
+func (e HostEdges) ProcessesOrErr() ([]*HostProcess, error) {
 	if e.loadedTypes[2] {
 		return e.Processes, nil
 	}
@@ -181,7 +181,7 @@ func (h *Host) QueryBeacons() *BeaconQuery {
 }
 
 // QueryProcesses queries the "processes" edge of the Host entity.
-func (h *Host) QueryProcesses() *ProcessQuery {
+func (h *Host) QueryProcesses() *HostProcessQuery {
 	return NewHostClient(h.config).QueryProcesses(h)
 }
 
@@ -282,7 +282,7 @@ func (h *Host) appendNamedBeacons(name string, edges ...*Beacon) {
 
 // NamedProcesses returns the Processes named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (h *Host) NamedProcesses(name string) ([]*Process, error) {
+func (h *Host) NamedProcesses(name string) ([]*HostProcess, error) {
 	if h.Edges.namedProcesses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
@@ -293,12 +293,12 @@ func (h *Host) NamedProcesses(name string) ([]*Process, error) {
 	return nodes, nil
 }
 
-func (h *Host) appendNamedProcesses(name string, edges ...*Process) {
+func (h *Host) appendNamedProcesses(name string, edges ...*HostProcess) {
 	if h.Edges.namedProcesses == nil {
-		h.Edges.namedProcesses = make(map[string][]*Process)
+		h.Edges.namedProcesses = make(map[string][]*HostProcess)
 	}
 	if len(edges) == 0 {
-		h.Edges.namedProcesses[name] = []*Process{}
+		h.Edges.namedProcesses[name] = []*HostProcess{}
 	} else {
 		h.Edges.namedProcesses[name] = append(h.Edges.namedProcesses[name], edges...)
 	}

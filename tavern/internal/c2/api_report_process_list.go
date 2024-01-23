@@ -63,8 +63,8 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 				SetPath(proc.Path).
 				SetCmd(proc.Cmd).
 				SetEnv(proc.Env).
-				SetCwd(proc.Cwd),
-			// SetStatus(proc.Status),
+				SetCwd(proc.Cwd).
+				SetStatus(proc.Status),
 		)
 	}
 	processList, err := txGraph.HostProcess.CreateBulk(builders...).Save(ctx)

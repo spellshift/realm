@@ -573,7 +573,7 @@ func HasReportedProcesses() predicate.Task {
 }
 
 // HasReportedProcessesWith applies the HasEdge predicate on the "reported_processes" edge with a given conditions (other predicates).
-func HasReportedProcessesWith(preds ...predicate.Process) predicate.Task {
+func HasReportedProcessesWith(preds ...predicate.HostProcess) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := newReportedProcessesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {

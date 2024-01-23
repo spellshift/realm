@@ -35,10 +35,10 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	HostProcess() HostProcessResolver
 	Mutation() MutationResolver
-	Process() ProcessResolver
 	Query() QueryResolver
-	ProcessWhereInput() ProcessWhereInputResolver
+	HostProcessWhereInput() HostProcessWhereInputResolver
 }
 
 type DirectiveRoot struct {
@@ -84,6 +84,23 @@ type ComplexityRoot struct {
 		Tags           func(childComplexity int) int
 	}
 
+	HostProcess struct {
+		Cmd            func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Cwd            func(childComplexity int) int
+		Env            func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Path           func(childComplexity int) int
+		Pid            func(childComplexity int) int
+		Ppid           func(childComplexity int) int
+		Principal      func(childComplexity int) int
+		Status         func(childComplexity int) int
+		Task           func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateQuest  func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
 		CreateTag    func(childComplexity int, input ent.CreateTagInput) int
@@ -101,17 +118,6 @@ type ComplexityRoot struct {
 		HasNextPage     func(childComplexity int) int
 		HasPreviousPage func(childComplexity int) int
 		StartCursor     func(childComplexity int) int
-	}
-
-	Process struct {
-		CreatedAt      func(childComplexity int) int
-		Host           func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Name           func(childComplexity int) int
-		Pid            func(childComplexity int) int
-		Principal      func(childComplexity int) int
-		Task           func(childComplexity int) int
 	}
 
 	Query struct {
@@ -420,6 +426,104 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.Tags(childComplexity), true
 
+	case "HostProcess.cmd":
+		if e.complexity.HostProcess.Cmd == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Cmd(childComplexity), true
+
+	case "HostProcess.createdAt":
+		if e.complexity.HostProcess.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.CreatedAt(childComplexity), true
+
+	case "HostProcess.cwd":
+		if e.complexity.HostProcess.Cwd == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Cwd(childComplexity), true
+
+	case "HostProcess.env":
+		if e.complexity.HostProcess.Env == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Env(childComplexity), true
+
+	case "HostProcess.host":
+		if e.complexity.HostProcess.Host == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Host(childComplexity), true
+
+	case "HostProcess.id":
+		if e.complexity.HostProcess.ID == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.ID(childComplexity), true
+
+	case "HostProcess.lastModifiedAt":
+		if e.complexity.HostProcess.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.LastModifiedAt(childComplexity), true
+
+	case "HostProcess.name":
+		if e.complexity.HostProcess.Name == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Name(childComplexity), true
+
+	case "HostProcess.path":
+		if e.complexity.HostProcess.Path == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Path(childComplexity), true
+
+	case "HostProcess.pid":
+		if e.complexity.HostProcess.Pid == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Pid(childComplexity), true
+
+	case "HostProcess.ppid":
+		if e.complexity.HostProcess.Ppid == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Ppid(childComplexity), true
+
+	case "HostProcess.principal":
+		if e.complexity.HostProcess.Principal == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Principal(childComplexity), true
+
+	case "HostProcess.status":
+		if e.complexity.HostProcess.Status == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Status(childComplexity), true
+
+	case "HostProcess.task":
+		if e.complexity.HostProcess.Task == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Task(childComplexity), true
+
 	case "Mutation.createQuest":
 		if e.complexity.Mutation.CreateQuest == nil {
 			break
@@ -555,62 +659,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
-
-	case "Process.createdAt":
-		if e.complexity.Process.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.Process.CreatedAt(childComplexity), true
-
-	case "Process.host":
-		if e.complexity.Process.Host == nil {
-			break
-		}
-
-		return e.complexity.Process.Host(childComplexity), true
-
-	case "Process.id":
-		if e.complexity.Process.ID == nil {
-			break
-		}
-
-		return e.complexity.Process.ID(childComplexity), true
-
-	case "Process.lastModifiedAt":
-		if e.complexity.Process.LastModifiedAt == nil {
-			break
-		}
-
-		return e.complexity.Process.LastModifiedAt(childComplexity), true
-
-	case "Process.name":
-		if e.complexity.Process.Name == nil {
-			break
-		}
-
-		return e.complexity.Process.Name(childComplexity), true
-
-	case "Process.pid":
-		if e.complexity.Process.Pid == nil {
-			break
-		}
-
-		return e.complexity.Process.Pid(childComplexity), true
-
-	case "Process.principal":
-		if e.complexity.Process.Principal == nil {
-			break
-		}
-
-		return e.complexity.Process.Principal(childComplexity), true
-
-	case "Process.task":
-		if e.complexity.Process.Task == nil {
-			break
-		}
-
-		return e.complexity.Process.Task(childComplexity), true
 
 	case "Query.beacons":
 		if e.complexity.Query.Beacons == nil {
@@ -1092,9 +1140,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
 		ec.unmarshalInputHostOrder,
+		ec.unmarshalInputHostProcessOrder,
+		ec.unmarshalInputHostProcessWhereInput,
 		ec.unmarshalInputHostWhereInput,
-		ec.unmarshalInputProcessOrder,
-		ec.unmarshalInputProcessWhereInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
@@ -1549,7 +1597,7 @@ type Host implements Node {
   """Beacons that are present on this host system."""
   beacons: [Beacon!]
   """Processes reported as running on this host system."""
-  processes: [Process!]
+  processes: [HostProcess!]
 }
 """Ordering options for Host connections"""
 input HostOrder {
@@ -1571,6 +1619,224 @@ enum HostPlatform @goModel(model: "realm.pub/tavern/internal/ent/host.Platform")
   MacOS
   BSD
   Unknown
+}
+type HostProcess implements Node {
+  id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
+  """ID of the process."""
+  pid: Int!
+  """ID of the parent process."""
+  ppid: Int!
+  """The name of the process."""
+  name: String!
+  """The user the process is running as."""
+  principal: String!
+  """The path to the process executable."""
+  path: String
+  """The command used to execute the process."""
+  cmd: String
+  """The environment variables set for the process."""
+  env: String
+  """The current working directory for the process."""
+  cwd: String
+  """Current process status."""
+  status: HostProcessStatus!
+  """Host the process was reported on."""
+  host: Host!
+  """Task that reported this process."""
+  task: Task!
+}
+"""Ordering options for HostProcess connections"""
+input HostProcessOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order HostProcesses."""
+  field: HostProcessOrderField!
+}
+"""Properties by which HostProcess connections can be ordered."""
+enum HostProcessOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  PROCESS_ID
+  PARENT_PROCESS_ID
+  NAME
+}
+"""HostProcessStatus is enum for the field status"""
+enum HostProcessStatus @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Process_Status") {
+  STATUS_ZOMBIE
+  STATUS_TRACING
+  STATUS_WAKE_KILL
+  STATUS_RUN
+  STATUS_DEAD
+  STATUS_UNSPECIFIED
+  STATUS_UNKNOWN
+  STATUS_SLEEP
+  STATUS_PARKED
+  STATUS_UNINTERUPTIBLE_DISK_SLEEP
+  STATUS_IDLE
+  STATUS_STOP
+  STATUS_WAKING
+  STATUS_LOCK_BLOCKED
+}
+"""
+HostProcessWhereInput is used for filtering HostProcess objects.
+Input was generated by ent.
+"""
+input HostProcessWhereInput {
+  not: HostProcessWhereInput
+  and: [HostProcessWhereInput!]
+  or: [HostProcessWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """pid field predicates"""
+  pid: Int
+  pidNEQ: Int
+  pidIn: [Int!]
+  pidNotIn: [Int!]
+  pidGT: Int
+  pidGTE: Int
+  pidLT: Int
+  pidLTE: Int
+  """ppid field predicates"""
+  ppid: Int
+  ppidNEQ: Int
+  ppidIn: [Int!]
+  ppidNotIn: [Int!]
+  ppidGT: Int
+  ppidGTE: Int
+  ppidLT: Int
+  ppidLTE: Int
+  """name field predicates"""
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """principal field predicates"""
+  principal: String
+  principalNEQ: String
+  principalIn: [String!]
+  principalNotIn: [String!]
+  principalGT: String
+  principalGTE: String
+  principalLT: String
+  principalLTE: String
+  principalContains: String
+  principalHasPrefix: String
+  principalHasSuffix: String
+  principalEqualFold: String
+  principalContainsFold: String
+  """path field predicates"""
+  path: String
+  pathNEQ: String
+  pathIn: [String!]
+  pathNotIn: [String!]
+  pathGT: String
+  pathGTE: String
+  pathLT: String
+  pathLTE: String
+  pathContains: String
+  pathHasPrefix: String
+  pathHasSuffix: String
+  pathIsNil: Boolean
+  pathNotNil: Boolean
+  pathEqualFold: String
+  pathContainsFold: String
+  """cmd field predicates"""
+  cmd: String
+  cmdNEQ: String
+  cmdIn: [String!]
+  cmdNotIn: [String!]
+  cmdGT: String
+  cmdGTE: String
+  cmdLT: String
+  cmdLTE: String
+  cmdContains: String
+  cmdHasPrefix: String
+  cmdHasSuffix: String
+  cmdIsNil: Boolean
+  cmdNotNil: Boolean
+  cmdEqualFold: String
+  cmdContainsFold: String
+  """env field predicates"""
+  env: String
+  envNEQ: String
+  envIn: [String!]
+  envNotIn: [String!]
+  envGT: String
+  envGTE: String
+  envLT: String
+  envLTE: String
+  envContains: String
+  envHasPrefix: String
+  envHasSuffix: String
+  envIsNil: Boolean
+  envNotNil: Boolean
+  envEqualFold: String
+  envContainsFold: String
+  """cwd field predicates"""
+  cwd: String
+  cwdNEQ: String
+  cwdIn: [String!]
+  cwdNotIn: [String!]
+  cwdGT: String
+  cwdGTE: String
+  cwdLT: String
+  cwdLTE: String
+  cwdContains: String
+  cwdHasPrefix: String
+  cwdHasSuffix: String
+  cwdIsNil: Boolean
+  cwdNotNil: Boolean
+  cwdEqualFold: String
+  cwdContainsFold: String
+  """status field predicates"""
+  status: HostProcessStatus
+  statusNEQ: HostProcessStatus
+  statusIn: [HostProcessStatus!]
+  statusNotIn: [HostProcessStatus!]
+  """host edge predicates"""
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """task edge predicates"""
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
 }
 """
 HostWhereInput is used for filtering Host objects.
@@ -1677,7 +1943,7 @@ input HostWhereInput {
   hasBeaconsWith: [BeaconWhereInput!]
   """processes edge predicates"""
   hasProcesses: Boolean
-  hasProcessesWith: [ProcessWhereInput!]
+  hasProcessesWith: [HostProcessWhereInput!]
 }
 """
 An object with an ID.
@@ -1707,116 +1973,6 @@ type PageInfo {
   startCursor: Cursor
   """When paginating forwards, the cursor to continue."""
   endCursor: Cursor
-}
-type Process implements Node {
-  id: ID!
-  """Timestamp of when this ent was created"""
-  createdAt: Time!
-  """Timestamp of when this ent was last updated"""
-  lastModifiedAt: Time!
-  """ID of the process."""
-  pid: Int!
-  """The name of the process."""
-  name: String!
-  """The user the process is running as."""
-  principal: String!
-  """Host the process was reported on."""
-  host: Host!
-  """Task that reported this process."""
-  task: Task!
-}
-"""Ordering options for Process connections"""
-input ProcessOrder {
-  """The ordering direction."""
-  direction: OrderDirection! = ASC
-  """The field by which to order Processes."""
-  field: ProcessOrderField!
-}
-"""Properties by which Process connections can be ordered."""
-enum ProcessOrderField {
-  CREATED_AT
-  LAST_MODIFIED_AT
-  PROCESS_ID
-  NAME
-}
-"""
-ProcessWhereInput is used for filtering Process objects.
-Input was generated by ent.
-"""
-input ProcessWhereInput {
-  not: ProcessWhereInput
-  and: [ProcessWhereInput!]
-  or: [ProcessWhereInput!]
-  """id field predicates"""
-  id: ID
-  idNEQ: ID
-  idIn: [ID!]
-  idNotIn: [ID!]
-  idGT: ID
-  idGTE: ID
-  idLT: ID
-  idLTE: ID
-  """created_at field predicates"""
-  createdAt: Time
-  createdAtNEQ: Time
-  createdAtIn: [Time!]
-  createdAtNotIn: [Time!]
-  createdAtGT: Time
-  createdAtGTE: Time
-  createdAtLT: Time
-  createdAtLTE: Time
-  """last_modified_at field predicates"""
-  lastModifiedAt: Time
-  lastModifiedAtNEQ: Time
-  lastModifiedAtIn: [Time!]
-  lastModifiedAtNotIn: [Time!]
-  lastModifiedAtGT: Time
-  lastModifiedAtGTE: Time
-  lastModifiedAtLT: Time
-  lastModifiedAtLTE: Time
-  """pid field predicates"""
-  pid: Int
-  pidNEQ: Int
-  pidIn: [Int!]
-  pidNotIn: [Int!]
-  pidGT: Int
-  pidGTE: Int
-  pidLT: Int
-  pidLTE: Int
-  """name field predicates"""
-  name: String
-  nameNEQ: String
-  nameIn: [String!]
-  nameNotIn: [String!]
-  nameGT: String
-  nameGTE: String
-  nameLT: String
-  nameLTE: String
-  nameContains: String
-  nameHasPrefix: String
-  nameHasSuffix: String
-  nameEqualFold: String
-  nameContainsFold: String
-  """principal field predicates"""
-  principal: String
-  principalNEQ: String
-  principalIn: [String!]
-  principalNotIn: [String!]
-  principalGT: String
-  principalGTE: String
-  principalLT: String
-  principalLTE: String
-  principalContains: String
-  principalHasPrefix: String
-  principalHasSuffix: String
-  principalEqualFold: String
-  principalContainsFold: String
-  """host edge predicates"""
-  hasHost: Boolean
-  hasHostWith: [HostWhereInput!]
-  """task edge predicates"""
-  hasTask: Boolean
-  hasTaskWith: [TaskWhereInput!]
 }
 type Query {
   """Fetches an object given its ID."""
@@ -2025,7 +2181,7 @@ type Task implements Node {
   quest: Quest!
   beacon: Beacon!
   """Processes that have been reported by this task."""
-  reportedProcesses: [Process!]
+  reportedProcesses: [HostProcess!]
 }
 """A connection to a list of items."""
 type TaskConnection {
@@ -2176,7 +2332,7 @@ input TaskWhereInput {
   hasBeaconWith: [BeaconWhereInput!]
   """reported_processes edge predicates"""
   hasReportedProcesses: Boolean
-  hasReportedProcessesWith: [ProcessWhereInput!]
+  hasReportedProcessesWith: [HostProcessWhereInput!]
 }
 type Tome implements Node {
   id: ID!

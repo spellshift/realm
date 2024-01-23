@@ -64,7 +64,7 @@ func (h *Host) Beacons(ctx context.Context) (result []*Beacon, err error) {
 	return result, err
 }
 
-func (h *Host) Processes(ctx context.Context) (result []*Process, err error) {
+func (h *Host) Processes(ctx context.Context) (result []*HostProcess, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = h.NamedProcesses(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
@@ -76,18 +76,18 @@ func (h *Host) Processes(ctx context.Context) (result []*Process, err error) {
 	return result, err
 }
 
-func (pr *Process) Host(ctx context.Context) (*Host, error) {
-	result, err := pr.Edges.HostOrErr()
+func (hp *HostProcess) Host(ctx context.Context) (*Host, error) {
+	result, err := hp.Edges.HostOrErr()
 	if IsNotLoaded(err) {
-		result, err = pr.QueryHost().Only(ctx)
+		result, err = hp.QueryHost().Only(ctx)
 	}
 	return result, err
 }
 
-func (pr *Process) Task(ctx context.Context) (*Task, error) {
-	result, err := pr.Edges.TaskOrErr()
+func (hp *HostProcess) Task(ctx context.Context) (*Task, error) {
+	result, err := hp.Edges.TaskOrErr()
 	if IsNotLoaded(err) {
-		result, err = pr.QueryTask().Only(ctx)
+		result, err = hp.QueryTask().Only(ctx)
 	}
 	return result, err
 }
@@ -156,7 +156,7 @@ func (t *Task) Beacon(ctx context.Context) (*Beacon, error) {
 	return result, err
 }
 
-func (t *Task) ReportedProcesses(ctx context.Context) (result []*Process, err error) {
+func (t *Task) ReportedProcesses(ctx context.Context) (result []*HostProcess, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = t.NamedReportedProcesses(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {

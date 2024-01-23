@@ -47,7 +47,7 @@ func (p *Process_Status) Scan(val any) error {
 }
 
 // MarshalGQL writes a formatted string value for GraphQL.
-func (p *Process_Status) MarshalGQL(w io.Writer) {
+func (p Process_Status) MarshalGQL(w io.Writer) {
 	graphql.MarshalString(p.String()).MarshalGQL(w)
 }
 

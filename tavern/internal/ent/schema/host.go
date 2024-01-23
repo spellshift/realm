@@ -58,7 +58,7 @@ func (Host) Edges() []ent.Edge {
 		edge.From("beacons", Beacon.Type).
 			Ref("host").
 			Comment("Beacons that are present on this host system."),
-		edge.To("processes", Process.Type).
+		edge.To("processes", HostProcess.Type).
 			Comment("Processes reported as running on this host system."),
 	}
 }

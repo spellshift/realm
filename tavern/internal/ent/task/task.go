@@ -54,10 +54,10 @@ const (
 	// BeaconColumn is the table column denoting the beacon relation/edge.
 	BeaconColumn = "task_beacon"
 	// ReportedProcessesTable is the table that holds the reported_processes relation/edge.
-	ReportedProcessesTable = "processes"
-	// ReportedProcessesInverseTable is the table name for the Process entity.
-	// It exists in this package in order to avoid circular dependency with the "process" package.
-	ReportedProcessesInverseTable = "processes"
+	ReportedProcessesTable = "host_processes"
+	// ReportedProcessesInverseTable is the table name for the HostProcess entity.
+	// It exists in this package in order to avoid circular dependency with the "hostprocess" package.
+	ReportedProcessesInverseTable = "host_processes"
 	// ReportedProcessesColumn is the table column denoting the reported_processes relation/edge.
 	ReportedProcessesColumn = "task_reported_processes"
 )

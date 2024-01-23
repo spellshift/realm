@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -159,17 +159,17 @@ func (tc *TaskCreate) SetBeacon(b *Beacon) *TaskCreate {
 	return tc.SetBeaconID(b.ID)
 }
 
-// AddReportedProcessIDs adds the "reported_processes" edge to the Process entity by IDs.
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
 func (tc *TaskCreate) AddReportedProcessIDs(ids ...int) *TaskCreate {
 	tc.mutation.AddReportedProcessIDs(ids...)
 	return tc
 }
 
-// AddReportedProcesses adds the "reported_processes" edges to the Process entity.
-func (tc *TaskCreate) AddReportedProcesses(p ...*Process) *TaskCreate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (tc *TaskCreate) AddReportedProcesses(h ...*HostProcess) *TaskCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return tc.AddReportedProcessIDs(ids...)
 }
@@ -355,7 +355,7 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			Columns: []string{task.ReportedProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

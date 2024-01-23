@@ -13,71 +13,116 @@ import (
 )
 
 // Pid is the resolver for the pid field.
-func (r *processResolver) Pid(ctx context.Context, obj *ent.Process) (int, error) {
+func (r *hostProcessResolver) Pid(ctx context.Context, obj *ent.HostProcess) (int, error) {
 	panic(fmt.Errorf("not implemented: Pid - pid"))
+}
+
+// Ppid is the resolver for the ppid field.
+func (r *hostProcessResolver) Ppid(ctx context.Context, obj *ent.HostProcess) (int, error) {
+	panic(fmt.Errorf("not implemented: Ppid - ppid"))
 }
 
 // Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
-	return r.client.Noder(ctx, id)
+	panic(fmt.Errorf("not implemented: Node - node"))
 }
 
 // Nodes is the resolver for the nodes field.
 func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
-	return r.client.Noders(ctx, ids)
+	panic(fmt.Errorf("not implemented: Nodes - nodes"))
 }
 
 // Pid is the resolver for the pid field.
-func (r *processWhereInputResolver) Pid(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+func (r *hostProcessWhereInputResolver) Pid(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
 	panic(fmt.Errorf("not implemented: Pid - pid"))
 }
 
 // PidNeq is the resolver for the pidNEQ field.
-func (r *processWhereInputResolver) PidNeq(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+func (r *hostProcessWhereInputResolver) PidNeq(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
 	panic(fmt.Errorf("not implemented: PidNeq - pidNEQ"))
 }
 
 // PidIn is the resolver for the pidIn field.
-func (r *processWhereInputResolver) PidIn(ctx context.Context, obj *ent.ProcessWhereInput, data []int) error {
+func (r *hostProcessWhereInputResolver) PidIn(ctx context.Context, obj *ent.HostProcessWhereInput, data []int) error {
 	panic(fmt.Errorf("not implemented: PidIn - pidIn"))
 }
 
 // PidNotIn is the resolver for the pidNotIn field.
-func (r *processWhereInputResolver) PidNotIn(ctx context.Context, obj *ent.ProcessWhereInput, data []int) error {
+func (r *hostProcessWhereInputResolver) PidNotIn(ctx context.Context, obj *ent.HostProcessWhereInput, data []int) error {
 	panic(fmt.Errorf("not implemented: PidNotIn - pidNotIn"))
 }
 
 // PidGt is the resolver for the pidGT field.
-func (r *processWhereInputResolver) PidGt(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+func (r *hostProcessWhereInputResolver) PidGt(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
 	panic(fmt.Errorf("not implemented: PidGt - pidGT"))
 }
 
 // PidGte is the resolver for the pidGTE field.
-func (r *processWhereInputResolver) PidGte(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+func (r *hostProcessWhereInputResolver) PidGte(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
 	panic(fmt.Errorf("not implemented: PidGte - pidGTE"))
 }
 
 // PidLt is the resolver for the pidLT field.
-func (r *processWhereInputResolver) PidLt(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+func (r *hostProcessWhereInputResolver) PidLt(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
 	panic(fmt.Errorf("not implemented: PidLt - pidLT"))
 }
 
 // PidLte is the resolver for the pidLTE field.
-func (r *processWhereInputResolver) PidLte(ctx context.Context, obj *ent.ProcessWhereInput, data *int) error {
+func (r *hostProcessWhereInputResolver) PidLte(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
 	panic(fmt.Errorf("not implemented: PidLte - pidLTE"))
 }
 
-// Process returns generated.ProcessResolver implementation.
-func (r *Resolver) Process() generated.ProcessResolver { return &processResolver{r} }
+// Ppid is the resolver for the ppid field.
+func (r *hostProcessWhereInputResolver) Ppid(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: Ppid - ppid"))
+}
+
+// PpidNeq is the resolver for the ppidNEQ field.
+func (r *hostProcessWhereInputResolver) PpidNeq(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PpidNeq - ppidNEQ"))
+}
+
+// PpidIn is the resolver for the ppidIn field.
+func (r *hostProcessWhereInputResolver) PpidIn(ctx context.Context, obj *ent.HostProcessWhereInput, data []int) error {
+	panic(fmt.Errorf("not implemented: PpidIn - ppidIn"))
+}
+
+// PpidNotIn is the resolver for the ppidNotIn field.
+func (r *hostProcessWhereInputResolver) PpidNotIn(ctx context.Context, obj *ent.HostProcessWhereInput, data []int) error {
+	panic(fmt.Errorf("not implemented: PpidNotIn - ppidNotIn"))
+}
+
+// PpidGt is the resolver for the ppidGT field.
+func (r *hostProcessWhereInputResolver) PpidGt(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PpidGt - ppidGT"))
+}
+
+// PpidGte is the resolver for the ppidGTE field.
+func (r *hostProcessWhereInputResolver) PpidGte(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PpidGte - ppidGTE"))
+}
+
+// PpidLt is the resolver for the ppidLT field.
+func (r *hostProcessWhereInputResolver) PpidLt(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PpidLt - ppidLT"))
+}
+
+// PpidLte is the resolver for the ppidLTE field.
+func (r *hostProcessWhereInputResolver) PpidLte(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PpidLte - ppidLTE"))
+}
+
+// HostProcess returns generated.HostProcessResolver implementation.
+func (r *Resolver) HostProcess() generated.HostProcessResolver { return &hostProcessResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// ProcessWhereInput returns generated.ProcessWhereInputResolver implementation.
-func (r *Resolver) ProcessWhereInput() generated.ProcessWhereInputResolver {
-	return &processWhereInputResolver{r}
+// HostProcessWhereInput returns generated.HostProcessWhereInputResolver implementation.
+func (r *Resolver) HostProcessWhereInput() generated.HostProcessWhereInputResolver {
+	return &hostProcessWhereInputResolver{r}
 }
 
-type processResolver struct{ *Resolver }
+type hostProcessResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-type processWhereInputResolver struct{ *Resolver }
+type hostProcessWhereInputResolver struct{ *Resolver }

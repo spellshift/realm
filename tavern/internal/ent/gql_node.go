@@ -18,7 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -41,7 +41,7 @@ func (n *File) IsNode() {}
 func (n *Host) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Process) IsNode() {}
+func (n *HostProcess) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Quest) IsNode() {}
@@ -152,10 +152,10 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			return nil, err
 		}
 		return n, nil
-	case process.Table:
-		query := c.Process.Query().
-			Where(process.ID(id))
-		query, err := query.CollectFields(ctx, "Process")
+	case hostprocess.Table:
+		query := c.HostProcess.Query().
+			Where(hostprocess.ID(id))
+		query, err := query.CollectFields(ctx, "HostProcess")
 		if err != nil {
 			return nil, err
 		}
@@ -345,10 +345,10 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 				*noder = node
 			}
 		}
-	case process.Table:
-		query := c.Process.Query().
-			Where(process.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Process")
+	case hostprocess.Table:
+		query := c.HostProcess.Query().
+			Where(hostprocess.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "HostProcess")
 		if err != nil {
 			return nil, err
 		}

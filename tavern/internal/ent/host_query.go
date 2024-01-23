@@ -13,8 +13,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/process"
 	"realm.pub/tavern/internal/ent/tag"
 )
 
@@ -27,12 +27,12 @@ type HostQuery struct {
 	predicates         []predicate.Host
 	withTags           *TagQuery
 	withBeacons        *BeaconQuery
-	withProcesses      *ProcessQuery
+	withProcesses      *HostProcessQuery
 	modifiers          []func(*sql.Selector)
 	loadTotal          []func(context.Context, []*Host) error
 	withNamedTags      map[string]*TagQuery
 	withNamedBeacons   map[string]*BeaconQuery
-	withNamedProcesses map[string]*ProcessQuery
+	withNamedProcesses map[string]*HostProcessQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -114,8 +114,8 @@ func (hq *HostQuery) QueryBeacons() *BeaconQuery {
 }
 
 // QueryProcesses chains the current query on the "processes" edge.
-func (hq *HostQuery) QueryProcesses() *ProcessQuery {
-	query := (&ProcessClient{config: hq.config}).Query()
+func (hq *HostQuery) QueryProcesses() *HostProcessQuery {
+	query := (&HostProcessClient{config: hq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := hq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -126,7 +126,7 @@ func (hq *HostQuery) QueryProcesses() *ProcessQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(host.Table, host.FieldID, selector),
-			sqlgraph.To(process.Table, process.FieldID),
+			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, host.ProcessesTable, host.ProcessesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
@@ -360,8 +360,8 @@ func (hq *HostQuery) WithBeacons(opts ...func(*BeaconQuery)) *HostQuery {
 
 // WithProcesses tells the query-builder to eager-load the nodes that are connected to
 // the "processes" edge. The optional arguments are used to configure the query builder of the edge.
-func (hq *HostQuery) WithProcesses(opts ...func(*ProcessQuery)) *HostQuery {
-	query := (&ProcessClient{config: hq.config}).Query()
+func (hq *HostQuery) WithProcesses(opts ...func(*HostProcessQuery)) *HostQuery {
+	query := (&HostProcessClient{config: hq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -490,8 +490,8 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 	}
 	if query := hq.withProcesses; query != nil {
 		if err := hq.loadProcesses(ctx, query, nodes,
-			func(n *Host) { n.Edges.Processes = []*Process{} },
-			func(n *Host, e *Process) { n.Edges.Processes = append(n.Edges.Processes, e) }); err != nil {
+			func(n *Host) { n.Edges.Processes = []*HostProcess{} },
+			func(n *Host, e *HostProcess) { n.Edges.Processes = append(n.Edges.Processes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -512,7 +512,7 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 	for name, query := range hq.withNamedProcesses {
 		if err := hq.loadProcesses(ctx, query, nodes,
 			func(n *Host) { n.appendNamedProcesses(name) },
-			func(n *Host, e *Process) { n.appendNamedProcesses(name, e) }); err != nil {
+			func(n *Host, e *HostProcess) { n.appendNamedProcesses(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -616,7 +616,7 @@ func (hq *HostQuery) loadBeacons(ctx context.Context, query *BeaconQuery, nodes 
 	}
 	return nil
 }
-func (hq *HostQuery) loadProcesses(ctx context.Context, query *ProcessQuery, nodes []*Host, init func(*Host), assign func(*Host, *Process)) error {
+func (hq *HostQuery) loadProcesses(ctx context.Context, query *HostProcessQuery, nodes []*Host, init func(*Host), assign func(*Host, *HostProcess)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Host)
 	for i := range nodes {
@@ -627,7 +627,7 @@ func (hq *HostQuery) loadProcesses(ctx context.Context, query *ProcessQuery, nod
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.Process(func(s *sql.Selector) {
+	query.Where(predicate.HostProcess(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(host.ProcessesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
@@ -762,13 +762,13 @@ func (hq *HostQuery) WithNamedBeacons(name string, opts ...func(*BeaconQuery)) *
 
 // WithNamedProcesses tells the query-builder to eager-load the nodes that are connected to the "processes"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (hq *HostQuery) WithNamedProcesses(name string, opts ...func(*ProcessQuery)) *HostQuery {
-	query := (&ProcessClient{config: hq.config}).Query()
+func (hq *HostQuery) WithNamedProcesses(name string, opts ...func(*HostProcessQuery)) *HostQuery {
+	query := (&HostProcessClient{config: hq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
 	if hq.withNamedProcesses == nil {
-		hq.withNamedProcesses = make(map[string]*ProcessQuery)
+		hq.withNamedProcesses = make(map[string]*HostProcessQuery)
 	}
 	hq.withNamedProcesses[name] = query
 	return hq

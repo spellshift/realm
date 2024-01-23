@@ -13,7 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/process"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/tag"
 )
 
@@ -145,17 +145,17 @@ func (hc *HostCreate) AddBeacons(b ...*Beacon) *HostCreate {
 	return hc.AddBeaconIDs(ids...)
 }
 
-// AddProcessIDs adds the "processes" edge to the Process entity by IDs.
+// AddProcessIDs adds the "processes" edge to the HostProcess entity by IDs.
 func (hc *HostCreate) AddProcessIDs(ids ...int) *HostCreate {
 	hc.mutation.AddProcessIDs(ids...)
 	return hc
 }
 
-// AddProcesses adds the "processes" edges to the Process entity.
-func (hc *HostCreate) AddProcesses(p ...*Process) *HostCreate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddProcesses adds the "processes" edges to the HostProcess entity.
+func (hc *HostCreate) AddProcesses(h ...*HostProcess) *HostCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
 	return hc.AddProcessIDs(ids...)
 }
@@ -333,7 +333,7 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Columns: []string{host.ProcessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(process.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -52,10 +52,10 @@ const (
 	// BeaconsColumn is the table column denoting the beacons relation/edge.
 	BeaconsColumn = "beacon_host"
 	// ProcessesTable is the table that holds the processes relation/edge.
-	ProcessesTable = "processes"
-	// ProcessesInverseTable is the table name for the Process entity.
-	// It exists in this package in order to avoid circular dependency with the "process" package.
-	ProcessesInverseTable = "processes"
+	ProcessesTable = "host_processes"
+	// ProcessesInverseTable is the table name for the HostProcess entity.
+	// It exists in this package in order to avoid circular dependency with the "hostprocess" package.
+	ProcessesInverseTable = "host_processes"
 	// ProcessesColumn is the table column denoting the processes relation/edge.
 	ProcessesColumn = "host_processes"
 )
