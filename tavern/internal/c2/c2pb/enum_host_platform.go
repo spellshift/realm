@@ -36,7 +36,7 @@ func (p *Host_Platform) Scan(val any) error {
 		return nil
 	}
 
-	status, ok := Process_Status_value[name]
+	status, ok := Host_Platform_value[name]
 	if !ok {
 		*p = Host_PLATFORM_UNSPECIFIED
 		return nil

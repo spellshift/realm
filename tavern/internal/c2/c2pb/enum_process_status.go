@@ -36,6 +36,11 @@ func (p *Process_Status) Scan(val any) error {
 		return nil
 	}
 
+	if name == "" {
+		*p = Process_STATUS_UNSPECIFIED
+		return nil
+	}
+
 	status, ok := Process_Status_value[name]
 	if !ok {
 		*p = Process_STATUS_UNKNOWN
