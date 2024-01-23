@@ -511,6 +511,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_tags(ctx, field)
 			case "beacons":
 				return ec.fieldContext_Host_beacons(ctx, field)
+			case "files":
+				return ec.fieldContext_Host_files(ctx, field)
 			case "processes":
 				return ec.fieldContext_Host_processes(ctx, field)
 			}

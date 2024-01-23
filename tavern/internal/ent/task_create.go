@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
@@ -157,6 +158,21 @@ func (tc *TaskCreate) SetBeaconID(id int) *TaskCreate {
 // SetBeacon sets the "beacon" edge to the Beacon entity.
 func (tc *TaskCreate) SetBeacon(b *Beacon) *TaskCreate {
 	return tc.SetBeaconID(b.ID)
+}
+
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by IDs.
+func (tc *TaskCreate) AddReportedFileIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddReportedFileIDs(ids...)
+	return tc
+}
+
+// AddReportedFiles adds the "reported_files" edges to the HostFile entity.
+func (tc *TaskCreate) AddReportedFiles(h ...*HostFile) *TaskCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tc.AddReportedFileIDs(ids...)
 }
 
 // AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
@@ -345,6 +361,22 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.task_beacon = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ReportedFilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedFilesTable,
+			Columns: []string{task.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := tc.mutation.ReportedProcessesIDs(); len(nodes) > 0 {

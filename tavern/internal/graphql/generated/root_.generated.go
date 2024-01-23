@@ -73,6 +73,7 @@ type ComplexityRoot struct {
 	Host struct {
 		Beacons        func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
+		Files          func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
@@ -82,6 +83,20 @@ type ComplexityRoot struct {
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int) int
 		Tags           func(childComplexity int) int
+	}
+
+	HostFile struct {
+		CreatedAt      func(childComplexity int) int
+		Group          func(childComplexity int) int
+		Hash           func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		Path           func(childComplexity int) int
+		Permissions    func(childComplexity int) int
+		Size           func(childComplexity int) int
+		Task           func(childComplexity int) int
 	}
 
 	HostProcess struct {
@@ -165,6 +180,7 @@ type ComplexityRoot struct {
 		Output            func(childComplexity int) int
 		OutputSize        func(childComplexity int) int
 		Quest             func(childComplexity int) int
+		ReportedFiles     func(childComplexity int) int
 		ReportedProcesses func(childComplexity int) int
 	}
 
@@ -363,6 +379,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.CreatedAt(childComplexity), true
 
+	case "Host.files":
+		if e.complexity.Host.Files == nil {
+			break
+		}
+
+		return e.complexity.Host.Files(childComplexity), true
+
 	case "Host.id":
 		if e.complexity.Host.ID == nil {
 			break
@@ -425,6 +448,83 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Host.Tags(childComplexity), true
+
+	case "HostFile.createdAt":
+		if e.complexity.HostFile.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.HostFile.CreatedAt(childComplexity), true
+
+	case "HostFile.group":
+		if e.complexity.HostFile.Group == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Group(childComplexity), true
+
+	case "HostFile.hash":
+		if e.complexity.HostFile.Hash == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Hash(childComplexity), true
+
+	case "HostFile.host":
+		if e.complexity.HostFile.Host == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Host(childComplexity), true
+
+	case "HostFile.id":
+		if e.complexity.HostFile.ID == nil {
+			break
+		}
+
+		return e.complexity.HostFile.ID(childComplexity), true
+
+	case "HostFile.lastModifiedAt":
+		if e.complexity.HostFile.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.HostFile.LastModifiedAt(childComplexity), true
+
+	case "HostFile.owner":
+		if e.complexity.HostFile.Owner == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Owner(childComplexity), true
+
+	case "HostFile.path":
+		if e.complexity.HostFile.Path == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Path(childComplexity), true
+
+	case "HostFile.permissions":
+		if e.complexity.HostFile.Permissions == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Permissions(childComplexity), true
+
+	case "HostFile.size":
+		if e.complexity.HostFile.Size == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Size(childComplexity), true
+
+	case "HostFile.task":
+		if e.complexity.HostFile.Task == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Task(childComplexity), true
 
 	case "HostProcess.cmd":
 		if e.complexity.HostProcess.Cmd == nil {
@@ -955,6 +1055,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Quest(childComplexity), true
 
+	case "Task.reportedFiles":
+		if e.complexity.Task.ReportedFiles == nil {
+			break
+		}
+
+		return e.complexity.Task.ReportedFiles(childComplexity), true
+
 	case "Task.reportedProcesses":
 		if e.complexity.Task.ReportedProcesses == nil {
 			break
@@ -1139,6 +1246,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
+		ec.unmarshalInputHostFileOrder,
+		ec.unmarshalInputHostFileWhereInput,
 		ec.unmarshalInputHostOrder,
 		ec.unmarshalInputHostProcessOrder,
 		ec.unmarshalInputHostProcessWhereInput,
@@ -1482,7 +1591,7 @@ type File implements Node {
   name: String!
   """The size of the file in bytes"""
   size: Int!
-  """A SHA3 digest of the content field"""
+  """A SHA3-256 digest of the content field"""
   hash: String!
   tomes: [Tome!]
 }
@@ -1596,8 +1705,176 @@ type Host implements Node {
   tags: [Tag!]
   """Beacons that are present on this host system."""
   beacons: [Beacon!]
+  """Files reported on this host system."""
+  files: [HostFile!]
   """Processes reported as running on this host system."""
   processes: [HostProcess!]
+}
+type HostFile implements Node {
+  id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
+  """Path to the file on the host system."""
+  path: String!
+  """User who owns the file on the host system."""
+  owner: String
+  """Group who owns the file on the host system."""
+  group: String
+  """Permissions for the file on the host system."""
+  permissions: String
+  """The size of the file in bytes"""
+  size: Int!
+  """A SHA3-256 digest of the content field"""
+  hash: String
+  """Host the file was reported on."""
+  host: Host!
+  """Task that reported this file."""
+  task: Task!
+}
+"""Ordering options for HostFile connections"""
+input HostFileOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order HostFiles."""
+  field: HostFileOrderField!
+}
+"""Properties by which HostFile connections can be ordered."""
+enum HostFileOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+  SIZE
+}
+"""
+HostFileWhereInput is used for filtering HostFile objects.
+Input was generated by ent.
+"""
+input HostFileWhereInput {
+  not: HostFileWhereInput
+  and: [HostFileWhereInput!]
+  or: [HostFileWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """path field predicates"""
+  path: String
+  pathNEQ: String
+  pathIn: [String!]
+  pathNotIn: [String!]
+  pathGT: String
+  pathGTE: String
+  pathLT: String
+  pathLTE: String
+  pathContains: String
+  pathHasPrefix: String
+  pathHasSuffix: String
+  pathEqualFold: String
+  pathContainsFold: String
+  """owner field predicates"""
+  owner: String
+  ownerNEQ: String
+  ownerIn: [String!]
+  ownerNotIn: [String!]
+  ownerGT: String
+  ownerGTE: String
+  ownerLT: String
+  ownerLTE: String
+  ownerContains: String
+  ownerHasPrefix: String
+  ownerHasSuffix: String
+  ownerIsNil: Boolean
+  ownerNotNil: Boolean
+  ownerEqualFold: String
+  ownerContainsFold: String
+  """group field predicates"""
+  group: String
+  groupNEQ: String
+  groupIn: [String!]
+  groupNotIn: [String!]
+  groupGT: String
+  groupGTE: String
+  groupLT: String
+  groupLTE: String
+  groupContains: String
+  groupHasPrefix: String
+  groupHasSuffix: String
+  groupIsNil: Boolean
+  groupNotNil: Boolean
+  groupEqualFold: String
+  groupContainsFold: String
+  """permissions field predicates"""
+  permissions: String
+  permissionsNEQ: String
+  permissionsIn: [String!]
+  permissionsNotIn: [String!]
+  permissionsGT: String
+  permissionsGTE: String
+  permissionsLT: String
+  permissionsLTE: String
+  permissionsContains: String
+  permissionsHasPrefix: String
+  permissionsHasSuffix: String
+  permissionsIsNil: Boolean
+  permissionsNotNil: Boolean
+  permissionsEqualFold: String
+  permissionsContainsFold: String
+  """size field predicates"""
+  size: Int
+  sizeNEQ: Int
+  sizeIn: [Int!]
+  sizeNotIn: [Int!]
+  sizeGT: Int
+  sizeGTE: Int
+  sizeLT: Int
+  sizeLTE: Int
+  """hash field predicates"""
+  hash: String
+  hashNEQ: String
+  hashIn: [String!]
+  hashNotIn: [String!]
+  hashGT: String
+  hashGTE: String
+  hashLT: String
+  hashLTE: String
+  hashContains: String
+  hashHasPrefix: String
+  hashHasSuffix: String
+  hashIsNil: Boolean
+  hashNotNil: Boolean
+  hashEqualFold: String
+  hashContainsFold: String
+  """host edge predicates"""
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """task edge predicates"""
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
 }
 """Ordering options for Host connections"""
 input HostOrder {
@@ -1614,11 +1891,11 @@ enum HostOrderField {
 }
 """HostPlatform is enum for the field platform"""
 enum HostPlatform @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Host_Platform") {
-  PLATFORM_MACOS
   PLATFORM_BSD
   PLATFORM_UNSPECIFIED
   PLATFORM_WINDOWS
   PLATFORM_LINUX
+  PLATFORM_MACOS
 }
 type HostProcess implements Node {
   id: ID!
@@ -1666,20 +1943,20 @@ enum HostProcessOrderField {
 }
 """HostProcessStatus is enum for the field status"""
 enum HostProcessStatus @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Process_Status") {
-  STATUS_DEAD
-  STATUS_PARKED
+  STATUS_STOP
+  STATUS_TRACING
+  STATUS_WAKE_KILL
   STATUS_UNKNOWN
   STATUS_IDLE
-  STATUS_RUN
   STATUS_SLEEP
-  STATUS_ZOMBIE
-  STATUS_TRACING
-  STATUS_LOCK_BLOCKED
-  STATUS_UNINTERUPTIBLE_DISK_SLEEP
-  STATUS_UNSPECIFIED
-  STATUS_STOP
-  STATUS_WAKE_KILL
   STATUS_WAKING
+  STATUS_UNSPECIFIED
+  STATUS_PARKED
+  STATUS_LOCK_BLOCKED
+  STATUS_DEAD
+  STATUS_ZOMBIE
+  STATUS_UNINTERUPTIBLE_DISK_SLEEP
+  STATUS_RUN
 }
 """
 HostProcessWhereInput is used for filtering HostProcess objects.
@@ -1941,6 +2218,9 @@ input HostWhereInput {
   """beacons edge predicates"""
   hasBeacons: Boolean
   hasBeaconsWith: [BeaconWhereInput!]
+  """files edge predicates"""
+  hasFiles: Boolean
+  hasFilesWith: [HostFileWhereInput!]
   """processes edge predicates"""
   hasProcesses: Boolean
   hasProcessesWith: [HostProcessWhereInput!]
@@ -2180,6 +2460,8 @@ type Task implements Node {
   error: String
   quest: Quest!
   beacon: Beacon!
+  """Files that have been reported by this task."""
+  reportedFiles: [HostFile!]
   """Processes that have been reported by this task."""
   reportedProcesses: [HostProcess!]
 }
@@ -2330,6 +2612,9 @@ input TaskWhereInput {
   """beacon edge predicates"""
   hasBeacon: Boolean
   hasBeaconWith: [BeaconWhereInput!]
+  """reported_files edge predicates"""
+  hasReportedFiles: Boolean
+  hasReportedFilesWith: [HostFileWhereInput!]
   """reported_processes edge predicates"""
   hasReportedProcesses: Boolean
   hasReportedProcessesWith: [HostProcessWhereInput!]
@@ -2545,6 +2830,9 @@ input UpdateHostInput {
   addBeaconIDs: [ID!]
   removeBeaconIDs: [ID!]
   clearBeacons: Boolean
+  addFileIDs: [ID!]
+  removeFileIDs: [ID!]
+  clearFiles: Boolean
   addProcessIDs: [ID!]
   removeProcessIDs: [ID!]
   clearProcesses: Boolean

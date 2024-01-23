@@ -45,6 +45,18 @@ func (f HostFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HostMutation", m)
 }
 
+// The HostFileFunc type is an adapter to allow the use of ordinary
+// function as HostFile mutator.
+type HostFileFunc func(context.Context, *ent.HostFileMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f HostFileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.HostFileMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HostFileMutation", m)
+}
+
 // The HostProcessFunc type is an adapter to allow the use of ordinary
 // function as HostProcess mutator.
 type HostProcessFunc func(context.Context, *ent.HostProcessMutation) (ent.Value, error)

@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
@@ -331,6 +332,18 @@ func (h *HostQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			h.WithNamedBeacons(alias, func(wq *BeaconQuery) {
 				*wq = *query
 			})
+		case "files":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostFileClient{config: h.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			h.WithNamedFiles(alias, func(wq *HostFileQuery) {
+				*wq = *query
+			})
 		case "processes":
 			var (
 				alias = field.Alias
@@ -437,6 +450,150 @@ func newHostPaginateArgs(rv map[string]any) *hostPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*HostWhereInput); ok {
 		args.opts = append(args.opts, WithHostFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (hf *HostFileQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostFileQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return hf, nil
+	}
+	if err := hf.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return hf, nil
+}
+
+func (hf *HostFileQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(hostfile.Columns))
+		selectedFields = []string{hostfile.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "host":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostClient{config: hf.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			hf.withHost = query
+		case "task":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TaskClient{config: hf.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			hf.withTask = query
+		case "createdAt":
+			if _, ok := fieldSeen[hostfile.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldCreatedAt)
+				fieldSeen[hostfile.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[hostfile.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldLastModifiedAt)
+				fieldSeen[hostfile.FieldLastModifiedAt] = struct{}{}
+			}
+		case "path":
+			if _, ok := fieldSeen[hostfile.FieldPath]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldPath)
+				fieldSeen[hostfile.FieldPath] = struct{}{}
+			}
+		case "owner":
+			if _, ok := fieldSeen[hostfile.FieldOwner]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldOwner)
+				fieldSeen[hostfile.FieldOwner] = struct{}{}
+			}
+		case "group":
+			if _, ok := fieldSeen[hostfile.FieldGroup]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldGroup)
+				fieldSeen[hostfile.FieldGroup] = struct{}{}
+			}
+		case "permissions":
+			if _, ok := fieldSeen[hostfile.FieldPermissions]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldPermissions)
+				fieldSeen[hostfile.FieldPermissions] = struct{}{}
+			}
+		case "size":
+			if _, ok := fieldSeen[hostfile.FieldSize]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldSize)
+				fieldSeen[hostfile.FieldSize] = struct{}{}
+			}
+		case "hash":
+			if _, ok := fieldSeen[hostfile.FieldHash]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldHash)
+				fieldSeen[hostfile.FieldHash] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		hf.Select(selectedFields...)
+	}
+	return nil
+}
+
+type hostfilePaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []HostFilePaginateOption
+}
+
+func newHostFilePaginateArgs(rv map[string]any) *hostfilePaginateArgs {
+	args := &hostfilePaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &HostFileOrder{Field: &HostFileOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithHostFileOrder(order))
+			}
+		case *HostFileOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithHostFileOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*HostFileWhereInput); ok {
+		args.opts = append(args.opts, WithHostFileFilter(v.Filter))
 	}
 	return args
 }
@@ -893,6 +1050,18 @@ func (t *TaskQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				return err
 			}
 			t.withBeacon = query
+		case "reportedFiles":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostFileClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedReportedFiles(alias, func(wq *HostFileQuery) {
+				*wq = *query
+			})
 		case "reportedProcesses":
 			var (
 				alias = field.Alias

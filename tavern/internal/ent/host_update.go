@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/tag"
@@ -140,6 +141,21 @@ func (hu *HostUpdate) AddBeacons(b ...*Beacon) *HostUpdate {
 	return hu.AddBeaconIDs(ids...)
 }
 
+// AddFileIDs adds the "files" edge to the HostFile entity by IDs.
+func (hu *HostUpdate) AddFileIDs(ids ...int) *HostUpdate {
+	hu.mutation.AddFileIDs(ids...)
+	return hu
+}
+
+// AddFiles adds the "files" edges to the HostFile entity.
+func (hu *HostUpdate) AddFiles(h ...*HostFile) *HostUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hu.AddFileIDs(ids...)
+}
+
 // AddProcessIDs adds the "processes" edge to the HostProcess entity by IDs.
 func (hu *HostUpdate) AddProcessIDs(ids ...int) *HostUpdate {
 	hu.mutation.AddProcessIDs(ids...)
@@ -200,6 +216,27 @@ func (hu *HostUpdate) RemoveBeacons(b ...*Beacon) *HostUpdate {
 		ids[i] = b[i].ID
 	}
 	return hu.RemoveBeaconIDs(ids...)
+}
+
+// ClearFiles clears all "files" edges to the HostFile entity.
+func (hu *HostUpdate) ClearFiles() *HostUpdate {
+	hu.mutation.ClearFiles()
+	return hu
+}
+
+// RemoveFileIDs removes the "files" edge to HostFile entities by IDs.
+func (hu *HostUpdate) RemoveFileIDs(ids ...int) *HostUpdate {
+	hu.mutation.RemoveFileIDs(ids...)
+	return hu
+}
+
+// RemoveFiles removes "files" edges to HostFile entities.
+func (hu *HostUpdate) RemoveFiles(h ...*HostFile) *HostUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hu.RemoveFileIDs(ids...)
 }
 
 // ClearProcesses clears all "processes" edges to the HostProcess entity.
@@ -408,6 +445,51 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if hu.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.FilesTable,
+			Columns: []string{host.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.RemovedFilesIDs(); len(nodes) > 0 && !hu.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.FilesTable,
+			Columns: []string{host.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.FilesTable,
+			Columns: []string{host.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if hu.mutation.ProcessesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -581,6 +663,21 @@ func (huo *HostUpdateOne) AddBeacons(b ...*Beacon) *HostUpdateOne {
 	return huo.AddBeaconIDs(ids...)
 }
 
+// AddFileIDs adds the "files" edge to the HostFile entity by IDs.
+func (huo *HostUpdateOne) AddFileIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.AddFileIDs(ids...)
+	return huo
+}
+
+// AddFiles adds the "files" edges to the HostFile entity.
+func (huo *HostUpdateOne) AddFiles(h ...*HostFile) *HostUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return huo.AddFileIDs(ids...)
+}
+
 // AddProcessIDs adds the "processes" edge to the HostProcess entity by IDs.
 func (huo *HostUpdateOne) AddProcessIDs(ids ...int) *HostUpdateOne {
 	huo.mutation.AddProcessIDs(ids...)
@@ -641,6 +738,27 @@ func (huo *HostUpdateOne) RemoveBeacons(b ...*Beacon) *HostUpdateOne {
 		ids[i] = b[i].ID
 	}
 	return huo.RemoveBeaconIDs(ids...)
+}
+
+// ClearFiles clears all "files" edges to the HostFile entity.
+func (huo *HostUpdateOne) ClearFiles() *HostUpdateOne {
+	huo.mutation.ClearFiles()
+	return huo
+}
+
+// RemoveFileIDs removes the "files" edge to HostFile entities by IDs.
+func (huo *HostUpdateOne) RemoveFileIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.RemoveFileIDs(ids...)
+	return huo
+}
+
+// RemoveFiles removes "files" edges to HostFile entities.
+func (huo *HostUpdateOne) RemoveFiles(h ...*HostFile) *HostUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return huo.RemoveFileIDs(ids...)
 }
 
 // ClearProcesses clears all "processes" edges to the HostProcess entity.
@@ -872,6 +990,51 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if huo.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.FilesTable,
+			Columns: []string{host.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.RemovedFilesIDs(); len(nodes) > 0 && !huo.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.FilesTable,
+			Columns: []string{host.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.FilesTable,
+			Columns: []string{host.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

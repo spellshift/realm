@@ -64,6 +64,18 @@ func (h *Host) Beacons(ctx context.Context) (result []*Beacon, err error) {
 	return result, err
 }
 
+func (h *Host) Files(ctx context.Context) (result []*HostFile, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = h.NamedFiles(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = h.Edges.FilesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = h.QueryFiles().All(ctx)
+	}
+	return result, err
+}
+
 func (h *Host) Processes(ctx context.Context) (result []*HostProcess, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = h.NamedProcesses(graphql.GetFieldContext(ctx).Field.Alias)
@@ -72,6 +84,22 @@ func (h *Host) Processes(ctx context.Context) (result []*HostProcess, err error)
 	}
 	if IsNotLoaded(err) {
 		result, err = h.QueryProcesses().All(ctx)
+	}
+	return result, err
+}
+
+func (hf *HostFile) Host(ctx context.Context) (*Host, error) {
+	result, err := hf.Edges.HostOrErr()
+	if IsNotLoaded(err) {
+		result, err = hf.QueryHost().Only(ctx)
+	}
+	return result, err
+}
+
+func (hf *HostFile) Task(ctx context.Context) (*Task, error) {
+	result, err := hf.Edges.TaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hf.QueryTask().Only(ctx)
 	}
 	return result, err
 }
@@ -152,6 +180,18 @@ func (t *Task) Beacon(ctx context.Context) (*Beacon, error) {
 	result, err := t.Edges.BeaconOrErr()
 	if IsNotLoaded(err) {
 		result, err = t.QueryBeacon().Only(ctx)
+	}
+	return result, err
+}
+
+func (t *Task) ReportedFiles(ctx context.Context) (result []*HostFile, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = t.NamedReportedFiles(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = t.Edges.ReportedFilesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = t.QueryReportedFiles().All(ctx)
 	}
 	return result, err
 }

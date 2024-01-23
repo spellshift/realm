@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
@@ -36,6 +37,7 @@ const (
 	TypeBeacon      = "Beacon"
 	TypeFile        = "File"
 	TypeHost        = "Host"
+	TypeHostFile    = "HostFile"
 	TypeHostProcess = "HostProcess"
 	TypeQuest       = "Quest"
 	TypeTag         = "Tag"
@@ -1761,6 +1763,9 @@ type HostMutation struct {
 	beacons          map[int]struct{}
 	removedbeacons   map[int]struct{}
 	clearedbeacons   bool
+	files            map[int]struct{}
+	removedfiles     map[int]struct{}
+	clearedfiles     bool
 	processes        map[int]struct{}
 	removedprocesses map[int]struct{}
 	clearedprocesses bool
@@ -2266,6 +2271,60 @@ func (m *HostMutation) ResetBeacons() {
 	m.removedbeacons = nil
 }
 
+// AddFileIDs adds the "files" edge to the HostFile entity by ids.
+func (m *HostMutation) AddFileIDs(ids ...int) {
+	if m.files == nil {
+		m.files = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.files[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFiles clears the "files" edge to the HostFile entity.
+func (m *HostMutation) ClearFiles() {
+	m.clearedfiles = true
+}
+
+// FilesCleared reports if the "files" edge to the HostFile entity was cleared.
+func (m *HostMutation) FilesCleared() bool {
+	return m.clearedfiles
+}
+
+// RemoveFileIDs removes the "files" edge to the HostFile entity by IDs.
+func (m *HostMutation) RemoveFileIDs(ids ...int) {
+	if m.removedfiles == nil {
+		m.removedfiles = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.files, ids[i])
+		m.removedfiles[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFiles returns the removed IDs of the "files" edge to the HostFile entity.
+func (m *HostMutation) RemovedFilesIDs() (ids []int) {
+	for id := range m.removedfiles {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FilesIDs returns the "files" edge IDs in the mutation.
+func (m *HostMutation) FilesIDs() (ids []int) {
+	for id := range m.files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFiles resets all changes to the "files" edge.
+func (m *HostMutation) ResetFiles() {
+	m.files = nil
+	m.clearedfiles = false
+	m.removedfiles = nil
+}
+
 // AddProcessIDs adds the "processes" edge to the HostProcess entity by ids.
 func (m *HostMutation) AddProcessIDs(ids ...int) {
 	if m.processes == nil {
@@ -2576,12 +2635,15 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.beacons != nil {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.files != nil {
+		edges = append(edges, host.EdgeFiles)
 	}
 	if m.processes != nil {
 		edges = append(edges, host.EdgeProcesses)
@@ -2605,6 +2667,12 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeFiles:
+		ids := make([]ent.Value, 0, len(m.files))
+		for id := range m.files {
+			ids = append(ids, id)
+		}
+		return ids
 	case host.EdgeProcesses:
 		ids := make([]ent.Value, 0, len(m.processes))
 		for id := range m.processes {
@@ -2617,12 +2685,15 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.removedbeacons != nil {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.removedfiles != nil {
+		edges = append(edges, host.EdgeFiles)
 	}
 	if m.removedprocesses != nil {
 		edges = append(edges, host.EdgeProcesses)
@@ -2646,6 +2717,12 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeFiles:
+		ids := make([]ent.Value, 0, len(m.removedfiles))
+		for id := range m.removedfiles {
+			ids = append(ids, id)
+		}
+		return ids
 	case host.EdgeProcesses:
 		ids := make([]ent.Value, 0, len(m.removedprocesses))
 		for id := range m.removedprocesses {
@@ -2658,12 +2735,15 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
 	if m.clearedbeacons {
 		edges = append(edges, host.EdgeBeacons)
+	}
+	if m.clearedfiles {
+		edges = append(edges, host.EdgeFiles)
 	}
 	if m.clearedprocesses {
 		edges = append(edges, host.EdgeProcesses)
@@ -2679,6 +2759,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedtags
 	case host.EdgeBeacons:
 		return m.clearedbeacons
+	case host.EdgeFiles:
+		return m.clearedfiles
 	case host.EdgeProcesses:
 		return m.clearedprocesses
 	}
@@ -2703,11 +2785,1032 @@ func (m *HostMutation) ResetEdge(name string) error {
 	case host.EdgeBeacons:
 		m.ResetBeacons()
 		return nil
+	case host.EdgeFiles:
+		m.ResetFiles()
+		return nil
 	case host.EdgeProcesses:
 		m.ResetProcesses()
 		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)
+}
+
+// HostFileMutation represents an operation that mutates the HostFile nodes in the graph.
+type HostFileMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	_path            *string
+	owner            *string
+	group            *string
+	permissions      *string
+	size             *int
+	addsize          *int
+	hash             *string
+	content          *[]byte
+	clearedFields    map[string]struct{}
+	host             *int
+	clearedhost      bool
+	task             *int
+	clearedtask      bool
+	done             bool
+	oldValue         func(context.Context) (*HostFile, error)
+	predicates       []predicate.HostFile
+}
+
+var _ ent.Mutation = (*HostFileMutation)(nil)
+
+// hostfileOption allows management of the mutation configuration using functional options.
+type hostfileOption func(*HostFileMutation)
+
+// newHostFileMutation creates new mutation for the HostFile entity.
+func newHostFileMutation(c config, op Op, opts ...hostfileOption) *HostFileMutation {
+	m := &HostFileMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeHostFile,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withHostFileID sets the ID field of the mutation.
+func withHostFileID(id int) hostfileOption {
+	return func(m *HostFileMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *HostFile
+		)
+		m.oldValue = func(ctx context.Context) (*HostFile, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().HostFile.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withHostFile sets the old HostFile of the mutation.
+func withHostFile(node *HostFile) hostfileOption {
+	return func(m *HostFileMutation) {
+		m.oldValue = func(context.Context) (*HostFile, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m HostFileMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m HostFileMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *HostFileMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *HostFileMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().HostFile.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *HostFileMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *HostFileMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *HostFileMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *HostFileMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *HostFileMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *HostFileMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetPath sets the "path" field.
+func (m *HostFileMutation) SetPath(s string) {
+	m._path = &s
+}
+
+// Path returns the value of the "path" field in the mutation.
+func (m *HostFileMutation) Path() (r string, exists bool) {
+	v := m._path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPath returns the old "path" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+	}
+	return oldValue.Path, nil
+}
+
+// ResetPath resets all changes to the "path" field.
+func (m *HostFileMutation) ResetPath() {
+	m._path = nil
+}
+
+// SetOwner sets the "owner" field.
+func (m *HostFileMutation) SetOwner(s string) {
+	m.owner = &s
+}
+
+// Owner returns the value of the "owner" field in the mutation.
+func (m *HostFileMutation) Owner() (r string, exists bool) {
+	v := m.owner
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwner returns the old "owner" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldOwner(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwner is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwner requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwner: %w", err)
+	}
+	return oldValue.Owner, nil
+}
+
+// ClearOwner clears the value of the "owner" field.
+func (m *HostFileMutation) ClearOwner() {
+	m.owner = nil
+	m.clearedFields[hostfile.FieldOwner] = struct{}{}
+}
+
+// OwnerCleared returns if the "owner" field was cleared in this mutation.
+func (m *HostFileMutation) OwnerCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldOwner]
+	return ok
+}
+
+// ResetOwner resets all changes to the "owner" field.
+func (m *HostFileMutation) ResetOwner() {
+	m.owner = nil
+	delete(m.clearedFields, hostfile.FieldOwner)
+}
+
+// SetGroup sets the "group" field.
+func (m *HostFileMutation) SetGroup(s string) {
+	m.group = &s
+}
+
+// Group returns the value of the "group" field in the mutation.
+func (m *HostFileMutation) Group() (r string, exists bool) {
+	v := m.group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroup returns the old "group" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldGroup(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroup is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroup requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroup: %w", err)
+	}
+	return oldValue.Group, nil
+}
+
+// ClearGroup clears the value of the "group" field.
+func (m *HostFileMutation) ClearGroup() {
+	m.group = nil
+	m.clearedFields[hostfile.FieldGroup] = struct{}{}
+}
+
+// GroupCleared returns if the "group" field was cleared in this mutation.
+func (m *HostFileMutation) GroupCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldGroup]
+	return ok
+}
+
+// ResetGroup resets all changes to the "group" field.
+func (m *HostFileMutation) ResetGroup() {
+	m.group = nil
+	delete(m.clearedFields, hostfile.FieldGroup)
+}
+
+// SetPermissions sets the "permissions" field.
+func (m *HostFileMutation) SetPermissions(s string) {
+	m.permissions = &s
+}
+
+// Permissions returns the value of the "permissions" field in the mutation.
+func (m *HostFileMutation) Permissions() (r string, exists bool) {
+	v := m.permissions
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPermissions returns the old "permissions" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldPermissions(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPermissions is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPermissions requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPermissions: %w", err)
+	}
+	return oldValue.Permissions, nil
+}
+
+// ClearPermissions clears the value of the "permissions" field.
+func (m *HostFileMutation) ClearPermissions() {
+	m.permissions = nil
+	m.clearedFields[hostfile.FieldPermissions] = struct{}{}
+}
+
+// PermissionsCleared returns if the "permissions" field was cleared in this mutation.
+func (m *HostFileMutation) PermissionsCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldPermissions]
+	return ok
+}
+
+// ResetPermissions resets all changes to the "permissions" field.
+func (m *HostFileMutation) ResetPermissions() {
+	m.permissions = nil
+	delete(m.clearedFields, hostfile.FieldPermissions)
+}
+
+// SetSize sets the "size" field.
+func (m *HostFileMutation) SetSize(i int) {
+	m.size = &i
+	m.addsize = nil
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *HostFileMutation) Size() (r int, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldSize(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// AddSize adds i to the "size" field.
+func (m *HostFileMutation) AddSize(i int) {
+	if m.addsize != nil {
+		*m.addsize += i
+	} else {
+		m.addsize = &i
+	}
+}
+
+// AddedSize returns the value that was added to the "size" field in this mutation.
+func (m *HostFileMutation) AddedSize() (r int, exists bool) {
+	v := m.addsize
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *HostFileMutation) ResetSize() {
+	m.size = nil
+	m.addsize = nil
+}
+
+// SetHash sets the "hash" field.
+func (m *HostFileMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *HostFileMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ClearHash clears the value of the "hash" field.
+func (m *HostFileMutation) ClearHash() {
+	m.hash = nil
+	m.clearedFields[hostfile.FieldHash] = struct{}{}
+}
+
+// HashCleared returns if the "hash" field was cleared in this mutation.
+func (m *HostFileMutation) HashCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldHash]
+	return ok
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *HostFileMutation) ResetHash() {
+	m.hash = nil
+	delete(m.clearedFields, hostfile.FieldHash)
+}
+
+// SetContent sets the "content" field.
+func (m *HostFileMutation) SetContent(b []byte) {
+	m.content = &b
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *HostFileMutation) Content() (r []byte, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldContent(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ClearContent clears the value of the "content" field.
+func (m *HostFileMutation) ClearContent() {
+	m.content = nil
+	m.clearedFields[hostfile.FieldContent] = struct{}{}
+}
+
+// ContentCleared returns if the "content" field was cleared in this mutation.
+func (m *HostFileMutation) ContentCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldContent]
+	return ok
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *HostFileMutation) ResetContent() {
+	m.content = nil
+	delete(m.clearedFields, hostfile.FieldContent)
+}
+
+// SetHostID sets the "host" edge to the Host entity by id.
+func (m *HostFileMutation) SetHostID(id int) {
+	m.host = &id
+}
+
+// ClearHost clears the "host" edge to the Host entity.
+func (m *HostFileMutation) ClearHost() {
+	m.clearedhost = true
+}
+
+// HostCleared reports if the "host" edge to the Host entity was cleared.
+func (m *HostFileMutation) HostCleared() bool {
+	return m.clearedhost
+}
+
+// HostID returns the "host" edge ID in the mutation.
+func (m *HostFileMutation) HostID() (id int, exists bool) {
+	if m.host != nil {
+		return *m.host, true
+	}
+	return
+}
+
+// HostIDs returns the "host" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HostID instead. It exists only for internal usage by the builders.
+func (m *HostFileMutation) HostIDs() (ids []int) {
+	if id := m.host; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHost resets all changes to the "host" edge.
+func (m *HostFileMutation) ResetHost() {
+	m.host = nil
+	m.clearedhost = false
+}
+
+// SetTaskID sets the "task" edge to the Task entity by id.
+func (m *HostFileMutation) SetTaskID(id int) {
+	m.task = &id
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (m *HostFileMutation) ClearTask() {
+	m.clearedtask = true
+}
+
+// TaskCleared reports if the "task" edge to the Task entity was cleared.
+func (m *HostFileMutation) TaskCleared() bool {
+	return m.clearedtask
+}
+
+// TaskID returns the "task" edge ID in the mutation.
+func (m *HostFileMutation) TaskID() (id int, exists bool) {
+	if m.task != nil {
+		return *m.task, true
+	}
+	return
+}
+
+// TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
+func (m *HostFileMutation) TaskIDs() (ids []int) {
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTask resets all changes to the "task" edge.
+func (m *HostFileMutation) ResetTask() {
+	m.task = nil
+	m.clearedtask = false
+}
+
+// Where appends a list predicates to the HostFileMutation builder.
+func (m *HostFileMutation) Where(ps ...predicate.HostFile) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the HostFileMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *HostFileMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.HostFile, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *HostFileMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *HostFileMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (HostFile).
+func (m *HostFileMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *HostFileMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, hostfile.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, hostfile.FieldLastModifiedAt)
+	}
+	if m._path != nil {
+		fields = append(fields, hostfile.FieldPath)
+	}
+	if m.owner != nil {
+		fields = append(fields, hostfile.FieldOwner)
+	}
+	if m.group != nil {
+		fields = append(fields, hostfile.FieldGroup)
+	}
+	if m.permissions != nil {
+		fields = append(fields, hostfile.FieldPermissions)
+	}
+	if m.size != nil {
+		fields = append(fields, hostfile.FieldSize)
+	}
+	if m.hash != nil {
+		fields = append(fields, hostfile.FieldHash)
+	}
+	if m.content != nil {
+		fields = append(fields, hostfile.FieldContent)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *HostFileMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case hostfile.FieldCreatedAt:
+		return m.CreatedAt()
+	case hostfile.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case hostfile.FieldPath:
+		return m.Path()
+	case hostfile.FieldOwner:
+		return m.Owner()
+	case hostfile.FieldGroup:
+		return m.Group()
+	case hostfile.FieldPermissions:
+		return m.Permissions()
+	case hostfile.FieldSize:
+		return m.Size()
+	case hostfile.FieldHash:
+		return m.Hash()
+	case hostfile.FieldContent:
+		return m.Content()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *HostFileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case hostfile.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case hostfile.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case hostfile.FieldPath:
+		return m.OldPath(ctx)
+	case hostfile.FieldOwner:
+		return m.OldOwner(ctx)
+	case hostfile.FieldGroup:
+		return m.OldGroup(ctx)
+	case hostfile.FieldPermissions:
+		return m.OldPermissions(ctx)
+	case hostfile.FieldSize:
+		return m.OldSize(ctx)
+	case hostfile.FieldHash:
+		return m.OldHash(ctx)
+	case hostfile.FieldContent:
+		return m.OldContent(ctx)
+	}
+	return nil, fmt.Errorf("unknown HostFile field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostFileMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case hostfile.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case hostfile.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case hostfile.FieldPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPath(v)
+		return nil
+	case hostfile.FieldOwner:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwner(v)
+		return nil
+	case hostfile.FieldGroup:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroup(v)
+		return nil
+	case hostfile.FieldPermissions:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPermissions(v)
+		return nil
+	case hostfile.FieldSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	case hostfile.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case hostfile.FieldContent:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *HostFileMutation) AddedFields() []string {
+	var fields []string
+	if m.addsize != nil {
+		fields = append(fields, hostfile.FieldSize)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *HostFileMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case hostfile.FieldSize:
+		return m.AddedSize()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostFileMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case hostfile.FieldSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *HostFileMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(hostfile.FieldOwner) {
+		fields = append(fields, hostfile.FieldOwner)
+	}
+	if m.FieldCleared(hostfile.FieldGroup) {
+		fields = append(fields, hostfile.FieldGroup)
+	}
+	if m.FieldCleared(hostfile.FieldPermissions) {
+		fields = append(fields, hostfile.FieldPermissions)
+	}
+	if m.FieldCleared(hostfile.FieldHash) {
+		fields = append(fields, hostfile.FieldHash)
+	}
+	if m.FieldCleared(hostfile.FieldContent) {
+		fields = append(fields, hostfile.FieldContent)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *HostFileMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *HostFileMutation) ClearField(name string) error {
+	switch name {
+	case hostfile.FieldOwner:
+		m.ClearOwner()
+		return nil
+	case hostfile.FieldGroup:
+		m.ClearGroup()
+		return nil
+	case hostfile.FieldPermissions:
+		m.ClearPermissions()
+		return nil
+	case hostfile.FieldHash:
+		m.ClearHash()
+		return nil
+	case hostfile.FieldContent:
+		m.ClearContent()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *HostFileMutation) ResetField(name string) error {
+	switch name {
+	case hostfile.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case hostfile.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case hostfile.FieldPath:
+		m.ResetPath()
+		return nil
+	case hostfile.FieldOwner:
+		m.ResetOwner()
+		return nil
+	case hostfile.FieldGroup:
+		m.ResetGroup()
+		return nil
+	case hostfile.FieldPermissions:
+		m.ResetPermissions()
+		return nil
+	case hostfile.FieldSize:
+		m.ResetSize()
+		return nil
+	case hostfile.FieldHash:
+		m.ResetHash()
+		return nil
+	case hostfile.FieldContent:
+		m.ResetContent()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *HostFileMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.host != nil {
+		edges = append(edges, hostfile.EdgeHost)
+	}
+	if m.task != nil {
+		edges = append(edges, hostfile.EdgeTask)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *HostFileMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case hostfile.EdgeHost:
+		if id := m.host; id != nil {
+			return []ent.Value{*id}
+		}
+	case hostfile.EdgeTask:
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *HostFileMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *HostFileMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *HostFileMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedhost {
+		edges = append(edges, hostfile.EdgeHost)
+	}
+	if m.clearedtask {
+		edges = append(edges, hostfile.EdgeTask)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *HostFileMutation) EdgeCleared(name string) bool {
+	switch name {
+	case hostfile.EdgeHost:
+		return m.clearedhost
+	case hostfile.EdgeTask:
+		return m.clearedtask
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *HostFileMutation) ClearEdge(name string) error {
+	switch name {
+	case hostfile.EdgeHost:
+		m.ClearHost()
+		return nil
+	case hostfile.EdgeTask:
+		m.ClearTask()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *HostFileMutation) ResetEdge(name string) error {
+	switch name {
+	case hostfile.EdgeHost:
+		m.ResetHost()
+		return nil
+	case hostfile.EdgeTask:
+		m.ResetTask()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFile edge %s", name)
 }
 
 // HostProcessMutation represents an operation that mutates the HostProcess nodes in the graph.
@@ -5123,6 +6226,9 @@ type TaskMutation struct {
 	clearedquest              bool
 	beacon                    *int
 	clearedbeacon             bool
+	reported_files            map[int]struct{}
+	removedreported_files     map[int]struct{}
+	clearedreported_files     bool
 	reported_processes        map[int]struct{}
 	removedreported_processes map[int]struct{}
 	clearedreported_processes bool
@@ -5680,6 +6786,60 @@ func (m *TaskMutation) ResetBeacon() {
 	m.clearedbeacon = false
 }
 
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by ids.
+func (m *TaskMutation) AddReportedFileIDs(ids ...int) {
+	if m.reported_files == nil {
+		m.reported_files = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.reported_files[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReportedFiles clears the "reported_files" edge to the HostFile entity.
+func (m *TaskMutation) ClearReportedFiles() {
+	m.clearedreported_files = true
+}
+
+// ReportedFilesCleared reports if the "reported_files" edge to the HostFile entity was cleared.
+func (m *TaskMutation) ReportedFilesCleared() bool {
+	return m.clearedreported_files
+}
+
+// RemoveReportedFileIDs removes the "reported_files" edge to the HostFile entity by IDs.
+func (m *TaskMutation) RemoveReportedFileIDs(ids ...int) {
+	if m.removedreported_files == nil {
+		m.removedreported_files = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.reported_files, ids[i])
+		m.removedreported_files[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReportedFiles returns the removed IDs of the "reported_files" edge to the HostFile entity.
+func (m *TaskMutation) RemovedReportedFilesIDs() (ids []int) {
+	for id := range m.removedreported_files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReportedFilesIDs returns the "reported_files" edge IDs in the mutation.
+func (m *TaskMutation) ReportedFilesIDs() (ids []int) {
+	for id := range m.reported_files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReportedFiles resets all changes to the "reported_files" edge.
+func (m *TaskMutation) ResetReportedFiles() {
+	m.reported_files = nil
+	m.clearedreported_files = false
+	m.removedreported_files = nil
+}
+
 // AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by ids.
 func (m *TaskMutation) AddReportedProcessIDs(ids ...int) {
 	if m.reported_processes == nil {
@@ -6034,12 +7194,15 @@ func (m *TaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.quest != nil {
 		edges = append(edges, task.EdgeQuest)
 	}
 	if m.beacon != nil {
 		edges = append(edges, task.EdgeBeacon)
+	}
+	if m.reported_files != nil {
+		edges = append(edges, task.EdgeReportedFiles)
 	}
 	if m.reported_processes != nil {
 		edges = append(edges, task.EdgeReportedProcesses)
@@ -6059,6 +7222,12 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 		if id := m.beacon; id != nil {
 			return []ent.Value{*id}
 		}
+	case task.EdgeReportedFiles:
+		ids := make([]ent.Value, 0, len(m.reported_files))
+		for id := range m.reported_files {
+			ids = append(ids, id)
+		}
+		return ids
 	case task.EdgeReportedProcesses:
 		ids := make([]ent.Value, 0, len(m.reported_processes))
 		for id := range m.reported_processes {
@@ -6071,7 +7240,10 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.removedreported_files != nil {
+		edges = append(edges, task.EdgeReportedFiles)
+	}
 	if m.removedreported_processes != nil {
 		edges = append(edges, task.EdgeReportedProcesses)
 	}
@@ -6082,6 +7254,12 @@ func (m *TaskMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case task.EdgeReportedFiles:
+		ids := make([]ent.Value, 0, len(m.removedreported_files))
+		for id := range m.removedreported_files {
+			ids = append(ids, id)
+		}
+		return ids
 	case task.EdgeReportedProcesses:
 		ids := make([]ent.Value, 0, len(m.removedreported_processes))
 		for id := range m.removedreported_processes {
@@ -6094,12 +7272,15 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedquest {
 		edges = append(edges, task.EdgeQuest)
 	}
 	if m.clearedbeacon {
 		edges = append(edges, task.EdgeBeacon)
+	}
+	if m.clearedreported_files {
+		edges = append(edges, task.EdgeReportedFiles)
 	}
 	if m.clearedreported_processes {
 		edges = append(edges, task.EdgeReportedProcesses)
@@ -6115,6 +7296,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 		return m.clearedquest
 	case task.EdgeBeacon:
 		return m.clearedbeacon
+	case task.EdgeReportedFiles:
+		return m.clearedreported_files
 	case task.EdgeReportedProcesses:
 		return m.clearedreported_processes
 	}
@@ -6144,6 +7327,9 @@ func (m *TaskMutation) ResetEdge(name string) error {
 		return nil
 	case task.EdgeBeacon:
 		m.ResetBeacon()
+		return nil
+	case task.EdgeReportedFiles:
+		m.ResetReportedFiles()
 		return nil
 	case task.EdgeReportedProcesses:
 		m.ResetReportedProcesses()

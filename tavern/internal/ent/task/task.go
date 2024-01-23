@@ -35,6 +35,8 @@ const (
 	EdgeQuest = "quest"
 	// EdgeBeacon holds the string denoting the beacon edge name in mutations.
 	EdgeBeacon = "beacon"
+	// EdgeReportedFiles holds the string denoting the reported_files edge name in mutations.
+	EdgeReportedFiles = "reported_files"
 	// EdgeReportedProcesses holds the string denoting the reported_processes edge name in mutations.
 	EdgeReportedProcesses = "reported_processes"
 	// Table holds the table name of the task in the database.
@@ -53,6 +55,13 @@ const (
 	BeaconInverseTable = "beacons"
 	// BeaconColumn is the table column denoting the beacon relation/edge.
 	BeaconColumn = "task_beacon"
+	// ReportedFilesTable is the table that holds the reported_files relation/edge.
+	ReportedFilesTable = "host_files"
+	// ReportedFilesInverseTable is the table name for the HostFile entity.
+	// It exists in this package in order to avoid circular dependency with the "hostfile" package.
+	ReportedFilesInverseTable = "host_files"
+	// ReportedFilesColumn is the table column denoting the reported_files relation/edge.
+	ReportedFilesColumn = "task_reported_files"
 	// ReportedProcessesTable is the table that holds the reported_processes relation/edge.
 	ReportedProcessesTable = "host_processes"
 	// ReportedProcessesInverseTable is the table name for the HostProcess entity.
@@ -178,6 +187,20 @@ func ByBeaconField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByReportedFilesCount orders the results by reported_files count.
+func ByReportedFilesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReportedFilesStep(), opts...)
+	}
+}
+
+// ByReportedFiles orders the results by reported_files terms.
+func ByReportedFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReportedFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByReportedProcessesCount orders the results by reported_processes count.
 func ByReportedProcessesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -203,6 +226,13 @@ func newBeaconStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(BeaconInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, BeaconTable, BeaconColumn),
+	)
+}
+func newReportedFilesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReportedFilesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReportedFilesTable, ReportedFilesColumn),
 	)
 }
 func newReportedProcessesStep() *sqlgraph.Step {

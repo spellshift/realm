@@ -44,16 +44,19 @@ type HostEdges struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// Beacons that are present on this host system.
 	Beacons []*Beacon `json:"beacons,omitempty"`
+	// Files reported on this host system.
+	Files []*HostFile `json:"files,omitempty"`
 	// Processes reported as running on this host system.
 	Processes []*HostProcess `json:"processes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedTags      map[string][]*Tag
 	namedBeacons   map[string][]*Beacon
+	namedFiles     map[string][]*HostFile
 	namedProcesses map[string][]*HostProcess
 }
 
@@ -75,10 +78,19 @@ func (e HostEdges) BeaconsOrErr() ([]*Beacon, error) {
 	return nil, &NotLoadedError{edge: "beacons"}
 }
 
+// FilesOrErr returns the Files value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) FilesOrErr() ([]*HostFile, error) {
+	if e.loadedTypes[2] {
+		return e.Files, nil
+	}
+	return nil, &NotLoadedError{edge: "files"}
+}
+
 // ProcessesOrErr returns the Processes value or an error if the edge
 // was not loaded in eager-loading.
 func (e HostEdges) ProcessesOrErr() ([]*HostProcess, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Processes, nil
 	}
 	return nil, &NotLoadedError{edge: "processes"}
@@ -183,6 +195,11 @@ func (h *Host) QueryBeacons() *BeaconQuery {
 	return NewHostClient(h.config).QueryBeacons(h)
 }
 
+// QueryFiles queries the "files" edge of the Host entity.
+func (h *Host) QueryFiles() *HostFileQuery {
+	return NewHostClient(h.config).QueryFiles(h)
+}
+
 // QueryProcesses queries the "processes" edge of the Host entity.
 func (h *Host) QueryProcesses() *HostProcessQuery {
 	return NewHostClient(h.config).QueryProcesses(h)
@@ -280,6 +297,30 @@ func (h *Host) appendNamedBeacons(name string, edges ...*Beacon) {
 		h.Edges.namedBeacons[name] = []*Beacon{}
 	} else {
 		h.Edges.namedBeacons[name] = append(h.Edges.namedBeacons[name], edges...)
+	}
+}
+
+// NamedFiles returns the Files named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedFiles(name string) ([]*HostFile, error) {
+	if h.Edges.namedFiles == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedFiles[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedFiles(name string, edges ...*HostFile) {
+	if h.Edges.namedFiles == nil {
+		h.Edges.namedFiles = make(map[string][]*HostFile)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedFiles[name] = []*HostFile{}
+	} else {
+		h.Edges.namedFiles[name] = append(h.Edges.namedFiles[name], edges...)
 	}
 }
 

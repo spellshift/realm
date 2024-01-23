@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
@@ -37,6 +38,8 @@ type Client struct {
 	File *FileClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
+	// HostFile is the client for interacting with the HostFile builders.
+	HostFile *HostFileClient
 	// HostProcess is the client for interacting with the HostProcess builders.
 	HostProcess *HostProcessClient
 	// Quest is the client for interacting with the Quest builders.
@@ -67,6 +70,7 @@ func (c *Client) init() {
 	c.Beacon = NewBeaconClient(c.config)
 	c.File = NewFileClient(c.config)
 	c.Host = NewHostClient(c.config)
+	c.HostFile = NewHostFileClient(c.config)
 	c.HostProcess = NewHostProcessClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Tag = NewTagClient(c.config)
@@ -161,6 +165,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Beacon:      NewBeaconClient(cfg),
 		File:        NewFileClient(cfg),
 		Host:        NewHostClient(cfg),
+		HostFile:    NewHostFileClient(cfg),
 		HostProcess: NewHostProcessClient(cfg),
 		Quest:       NewQuestClient(cfg),
 		Tag:         NewTagClient(cfg),
@@ -189,6 +194,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Beacon:      NewBeaconClient(cfg),
 		File:        NewFileClient(cfg),
 		Host:        NewHostClient(cfg),
+		HostFile:    NewHostFileClient(cfg),
 		HostProcess: NewHostProcessClient(cfg),
 		Quest:       NewQuestClient(cfg),
 		Tag:         NewTagClient(cfg),
@@ -224,7 +230,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Beacon, c.File, c.Host, c.HostProcess, c.Quest, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Host, c.HostFile, c.HostProcess, c.Quest, c.Tag, c.Task,
+		c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -234,7 +241,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Beacon, c.File, c.Host, c.HostProcess, c.Quest, c.Tag, c.Task, c.Tome, c.User,
+		c.Beacon, c.File, c.Host, c.HostFile, c.HostProcess, c.Quest, c.Tag, c.Task,
+		c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -249,6 +257,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.File.mutate(ctx, m)
 	case *HostMutation:
 		return c.Host.mutate(ctx, m)
+	case *HostFileMutation:
+		return c.HostFile.mutate(ctx, m)
 	case *HostProcessMutation:
 		return c.HostProcess.mutate(ctx, m)
 	case *QuestMutation:
@@ -721,6 +731,22 @@ func (c *HostClient) QueryBeacons(h *Host) *BeaconQuery {
 	return query
 }
 
+// QueryFiles queries the files edge of a Host.
+func (c *HostClient) QueryFiles(h *Host) *HostFileQuery {
+	query := (&HostFileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(hostfile.Table, hostfile.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, host.FilesTable, host.FilesColumn),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryProcesses queries the processes edge of a Host.
 func (c *HostClient) QueryProcesses(h *Host) *HostProcessQuery {
 	query := (&HostProcessClient{config: c.config}).Query()
@@ -759,6 +785,172 @@ func (c *HostClient) mutate(ctx context.Context, m *HostMutation) (Value, error)
 		return (&HostDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Host mutation op: %q", m.Op())
+	}
+}
+
+// HostFileClient is a client for the HostFile schema.
+type HostFileClient struct {
+	config
+}
+
+// NewHostFileClient returns a client for the HostFile from the given config.
+func NewHostFileClient(c config) *HostFileClient {
+	return &HostFileClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `hostfile.Hooks(f(g(h())))`.
+func (c *HostFileClient) Use(hooks ...Hook) {
+	c.hooks.HostFile = append(c.hooks.HostFile, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `hostfile.Intercept(f(g(h())))`.
+func (c *HostFileClient) Intercept(interceptors ...Interceptor) {
+	c.inters.HostFile = append(c.inters.HostFile, interceptors...)
+}
+
+// Create returns a builder for creating a HostFile entity.
+func (c *HostFileClient) Create() *HostFileCreate {
+	mutation := newHostFileMutation(c.config, OpCreate)
+	return &HostFileCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of HostFile entities.
+func (c *HostFileClient) CreateBulk(builders ...*HostFileCreate) *HostFileCreateBulk {
+	return &HostFileCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *HostFileClient) MapCreateBulk(slice any, setFunc func(*HostFileCreate, int)) *HostFileCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &HostFileCreateBulk{err: fmt.Errorf("calling to HostFileClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*HostFileCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &HostFileCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for HostFile.
+func (c *HostFileClient) Update() *HostFileUpdate {
+	mutation := newHostFileMutation(c.config, OpUpdate)
+	return &HostFileUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *HostFileClient) UpdateOne(hf *HostFile) *HostFileUpdateOne {
+	mutation := newHostFileMutation(c.config, OpUpdateOne, withHostFile(hf))
+	return &HostFileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *HostFileClient) UpdateOneID(id int) *HostFileUpdateOne {
+	mutation := newHostFileMutation(c.config, OpUpdateOne, withHostFileID(id))
+	return &HostFileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for HostFile.
+func (c *HostFileClient) Delete() *HostFileDelete {
+	mutation := newHostFileMutation(c.config, OpDelete)
+	return &HostFileDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *HostFileClient) DeleteOne(hf *HostFile) *HostFileDeleteOne {
+	return c.DeleteOneID(hf.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *HostFileClient) DeleteOneID(id int) *HostFileDeleteOne {
+	builder := c.Delete().Where(hostfile.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &HostFileDeleteOne{builder}
+}
+
+// Query returns a query builder for HostFile.
+func (c *HostFileClient) Query() *HostFileQuery {
+	return &HostFileQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeHostFile},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a HostFile entity by its id.
+func (c *HostFileClient) Get(ctx context.Context, id int) (*HostFile, error) {
+	return c.Query().Where(hostfile.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *HostFileClient) GetX(ctx context.Context, id int) *HostFile {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryHost queries the host edge of a HostFile.
+func (c *HostFileClient) QueryHost(hf *HostFile) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hf.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostfile.Table, hostfile.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, hostfile.HostTable, hostfile.HostColumn),
+		)
+		fromV = sqlgraph.Neighbors(hf.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTask queries the task edge of a HostFile.
+func (c *HostFileClient) QueryTask(hf *HostFile) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hf.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostfile.Table, hostfile.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostfile.TaskTable, hostfile.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(hf.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *HostFileClient) Hooks() []Hook {
+	hooks := c.hooks.HostFile
+	return append(hooks[:len(hooks):len(hooks)], hostfile.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *HostFileClient) Interceptors() []Interceptor {
+	return c.inters.HostFile
+}
+
+func (c *HostFileClient) mutate(ctx context.Context, m *HostFileMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&HostFileCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&HostFileUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&HostFileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&HostFileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown HostFile mutation op: %q", m.Op())
 	}
 }
 
@@ -1413,6 +1605,22 @@ func (c *TaskClient) QueryBeacon(t *Task) *BeaconQuery {
 	return query
 }
 
+// QueryReportedFiles queries the reported_files edge of a Task.
+func (c *TaskClient) QueryReportedFiles(t *Task) *HostFileQuery {
+	query := (&HostFileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(hostfile.Table, hostfile.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedFilesTable, task.ReportedFilesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryReportedProcesses queries the reported_processes edge of a Task.
 func (c *TaskClient) QueryReportedProcesses(t *Task) *HostProcessQuery {
 	query := (&HostProcessClient{config: c.config}).Query()
@@ -1773,9 +1981,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Beacon, File, Host, HostProcess, Quest, Tag, Task, Tome, User []ent.Hook
+		Beacon, File, Host, HostFile, HostProcess, Quest, Tag, Task, Tome,
+		User []ent.Hook
 	}
 	inters struct {
-		Beacon, File, Host, HostProcess, Quest, Tag, Task, Tome, User []ent.Interceptor
+		Beacon, File, Host, HostFile, HostProcess, Quest, Tag, Task, Tome,
+		User []ent.Interceptor
 	}
 )

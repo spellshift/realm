@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/tag"
@@ -27,11 +28,13 @@ type HostQuery struct {
 	predicates         []predicate.Host
 	withTags           *TagQuery
 	withBeacons        *BeaconQuery
+	withFiles          *HostFileQuery
 	withProcesses      *HostProcessQuery
 	modifiers          []func(*sql.Selector)
 	loadTotal          []func(context.Context, []*Host) error
 	withNamedTags      map[string]*TagQuery
 	withNamedBeacons   map[string]*BeaconQuery
+	withNamedFiles     map[string]*HostFileQuery
 	withNamedProcesses map[string]*HostProcessQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -106,6 +109,28 @@ func (hq *HostQuery) QueryBeacons() *BeaconQuery {
 			sqlgraph.From(host.Table, host.FieldID, selector),
 			sqlgraph.To(beacon.Table, beacon.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, host.BeaconsTable, host.BeaconsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFiles chains the current query on the "files" edge.
+func (hq *HostQuery) QueryFiles() *HostFileQuery {
+	query := (&HostFileClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, selector),
+			sqlgraph.To(hostfile.Table, hostfile.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, host.FilesTable, host.FilesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
 		return fromU, nil
@@ -329,6 +354,7 @@ func (hq *HostQuery) Clone() *HostQuery {
 		predicates:    append([]predicate.Host{}, hq.predicates...),
 		withTags:      hq.withTags.Clone(),
 		withBeacons:   hq.withBeacons.Clone(),
+		withFiles:     hq.withFiles.Clone(),
 		withProcesses: hq.withProcesses.Clone(),
 		// clone intermediate query.
 		sql:  hq.sql.Clone(),
@@ -355,6 +381,17 @@ func (hq *HostQuery) WithBeacons(opts ...func(*BeaconQuery)) *HostQuery {
 		opt(query)
 	}
 	hq.withBeacons = query
+	return hq
+}
+
+// WithFiles tells the query-builder to eager-load the nodes that are connected to
+// the "files" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithFiles(opts ...func(*HostFileQuery)) *HostQuery {
+	query := (&HostFileClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withFiles = query
 	return hq
 }
 
@@ -447,9 +484,10 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 	var (
 		nodes       = []*Host{}
 		_spec       = hq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			hq.withTags != nil,
 			hq.withBeacons != nil,
+			hq.withFiles != nil,
 			hq.withProcesses != nil,
 		}
 	)
@@ -488,6 +526,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			return nil, err
 		}
 	}
+	if query := hq.withFiles; query != nil {
+		if err := hq.loadFiles(ctx, query, nodes,
+			func(n *Host) { n.Edges.Files = []*HostFile{} },
+			func(n *Host, e *HostFile) { n.Edges.Files = append(n.Edges.Files, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := hq.withProcesses; query != nil {
 		if err := hq.loadProcesses(ctx, query, nodes,
 			func(n *Host) { n.Edges.Processes = []*HostProcess{} },
@@ -506,6 +551,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		if err := hq.loadBeacons(ctx, query, nodes,
 			func(n *Host) { n.appendNamedBeacons(name) },
 			func(n *Host, e *Beacon) { n.appendNamedBeacons(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hq.withNamedFiles {
+		if err := hq.loadFiles(ctx, query, nodes,
+			func(n *Host) { n.appendNamedFiles(name) },
+			func(n *Host, e *HostFile) { n.appendNamedFiles(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -611,6 +663,37 @@ func (hq *HostQuery) loadBeacons(ctx context.Context, query *BeaconQuery, nodes 
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "beacon_host" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (hq *HostQuery) loadFiles(ctx context.Context, query *HostFileQuery, nodes []*Host, init func(*Host), assign func(*Host, *HostFile)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Host)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostFile(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(host.FilesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.host_files
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "host_files" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "host_files" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -757,6 +840,20 @@ func (hq *HostQuery) WithNamedBeacons(name string, opts ...func(*BeaconQuery)) *
 		hq.withNamedBeacons = make(map[string]*BeaconQuery)
 	}
 	hq.withNamedBeacons[name] = query
+	return hq
+}
+
+// WithNamedFiles tells the query-builder to eager-load the nodes that are connected to the "files"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNamedFiles(name string, opts ...func(*HostFileQuery)) *HostQuery {
+	query := (&HostFileClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hq.withNamedFiles == nil {
+		hq.withNamedFiles = make(map[string]*HostFileQuery)
+	}
+	hq.withNamedFiles[name] = query
 	return hq
 }
 

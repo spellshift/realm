@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/tag"
 )
@@ -136,6 +137,21 @@ func (hc *HostCreate) AddBeacons(b ...*Beacon) *HostCreate {
 		ids[i] = b[i].ID
 	}
 	return hc.AddBeaconIDs(ids...)
+}
+
+// AddFileIDs adds the "files" edge to the HostFile entity by IDs.
+func (hc *HostCreate) AddFileIDs(ids ...int) *HostCreate {
+	hc.mutation.AddFileIDs(ids...)
+	return hc
+}
+
+// AddFiles adds the "files" edges to the HostFile entity.
+func (hc *HostCreate) AddFiles(h ...*HostFile) *HostCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hc.AddFileIDs(ids...)
 }
 
 // AddProcessIDs adds the "processes" edge to the HostProcess entity by IDs.
@@ -307,6 +323,22 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.FilesTable,
+			Columns: []string{host.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

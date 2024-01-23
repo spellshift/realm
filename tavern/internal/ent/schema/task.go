@@ -64,6 +64,8 @@ func (Task) Edges() []ent.Edge {
 		edge.To("beacon", Beacon.Type).
 			Required().
 			Unique(),
+		edge.To("reported_files", HostFile.Type).
+			Comment("Files that have been reported by this task."),
 		edge.To("reported_processes", HostProcess.Type).
 			Comment("Processes that have been reported by this task."),
 	}

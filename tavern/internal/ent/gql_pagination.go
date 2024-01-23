@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tag"
@@ -1126,6 +1127,353 @@ func (h *Host) ToEdge(order *HostOrder) *HostEdge {
 	return &HostEdge{
 		Node:   h,
 		Cursor: order.Field.toCursor(h),
+	}
+}
+
+// HostFileEdge is the edge representation of HostFile.
+type HostFileEdge struct {
+	Node   *HostFile `json:"node"`
+	Cursor Cursor    `json:"cursor"`
+}
+
+// HostFileConnection is the connection containing edges to HostFile.
+type HostFileConnection struct {
+	Edges      []*HostFileEdge `json:"edges"`
+	PageInfo   PageInfo        `json:"pageInfo"`
+	TotalCount int             `json:"totalCount"`
+}
+
+func (c *HostFileConnection) build(nodes []*HostFile, pager *hostfilePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *HostFile
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *HostFile {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *HostFile {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*HostFileEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &HostFileEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// HostFilePaginateOption enables pagination customization.
+type HostFilePaginateOption func(*hostfilePager) error
+
+// WithHostFileOrder configures pagination ordering.
+func WithHostFileOrder(order *HostFileOrder) HostFilePaginateOption {
+	if order == nil {
+		order = DefaultHostFileOrder
+	}
+	o := *order
+	return func(pager *hostfilePager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultHostFileOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithHostFileFilter configures pagination filter.
+func WithHostFileFilter(filter func(*HostFileQuery) (*HostFileQuery, error)) HostFilePaginateOption {
+	return func(pager *hostfilePager) error {
+		if filter == nil {
+			return errors.New("HostFileQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type hostfilePager struct {
+	reverse bool
+	order   *HostFileOrder
+	filter  func(*HostFileQuery) (*HostFileQuery, error)
+}
+
+func newHostFilePager(opts []HostFilePaginateOption, reverse bool) (*hostfilePager, error) {
+	pager := &hostfilePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultHostFileOrder
+	}
+	return pager, nil
+}
+
+func (p *hostfilePager) applyFilter(query *HostFileQuery) (*HostFileQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *hostfilePager) toCursor(hf *HostFile) Cursor {
+	return p.order.Field.toCursor(hf)
+}
+
+func (p *hostfilePager) applyCursors(query *HostFileQuery, after, before *Cursor) (*HostFileQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultHostFileOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *hostfilePager) applyOrder(query *HostFileQuery) *HostFileQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultHostFileOrder.Field {
+		query = query.Order(DefaultHostFileOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *hostfilePager) orderExpr(query *HostFileQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultHostFileOrder.Field {
+			b.Comma().Ident(DefaultHostFileOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to HostFile.
+func (hf *HostFileQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...HostFilePaginateOption,
+) (*HostFileConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newHostFilePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if hf, err = pager.applyFilter(hf); err != nil {
+		return nil, err
+	}
+	conn := &HostFileConnection{Edges: []*HostFileEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			if conn.TotalCount, err = hf.Clone().Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if hf, err = pager.applyCursors(hf, after, before); err != nil {
+		return nil, err
+	}
+	if limit := paginateLimit(first, last); limit != 0 {
+		hf.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := hf.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	hf = pager.applyOrder(hf)
+	nodes, err := hf.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// HostFileOrderFieldCreatedAt orders HostFile by created_at.
+	HostFileOrderFieldCreatedAt = &HostFileOrderField{
+		Value: func(hf *HostFile) (ent.Value, error) {
+			return hf.CreatedAt, nil
+		},
+		column: hostfile.FieldCreatedAt,
+		toTerm: hostfile.ByCreatedAt,
+		toCursor: func(hf *HostFile) Cursor {
+			return Cursor{
+				ID:    hf.ID,
+				Value: hf.CreatedAt,
+			}
+		},
+	}
+	// HostFileOrderFieldLastModifiedAt orders HostFile by last_modified_at.
+	HostFileOrderFieldLastModifiedAt = &HostFileOrderField{
+		Value: func(hf *HostFile) (ent.Value, error) {
+			return hf.LastModifiedAt, nil
+		},
+		column: hostfile.FieldLastModifiedAt,
+		toTerm: hostfile.ByLastModifiedAt,
+		toCursor: func(hf *HostFile) Cursor {
+			return Cursor{
+				ID:    hf.ID,
+				Value: hf.LastModifiedAt,
+			}
+		},
+	}
+	// HostFileOrderFieldPath orders HostFile by path.
+	HostFileOrderFieldPath = &HostFileOrderField{
+		Value: func(hf *HostFile) (ent.Value, error) {
+			return hf.Path, nil
+		},
+		column: hostfile.FieldPath,
+		toTerm: hostfile.ByPath,
+		toCursor: func(hf *HostFile) Cursor {
+			return Cursor{
+				ID:    hf.ID,
+				Value: hf.Path,
+			}
+		},
+	}
+	// HostFileOrderFieldSize orders HostFile by size.
+	HostFileOrderFieldSize = &HostFileOrderField{
+		Value: func(hf *HostFile) (ent.Value, error) {
+			return hf.Size, nil
+		},
+		column: hostfile.FieldSize,
+		toTerm: hostfile.BySize,
+		toCursor: func(hf *HostFile) Cursor {
+			return Cursor{
+				ID:    hf.ID,
+				Value: hf.Size,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f HostFileOrderField) String() string {
+	var str string
+	switch f.column {
+	case HostFileOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case HostFileOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case HostFileOrderFieldPath.column:
+		str = "NAME"
+	case HostFileOrderFieldSize.column:
+		str = "SIZE"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f HostFileOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *HostFileOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("HostFileOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *HostFileOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *HostFileOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *HostFileOrderFieldPath
+	case "SIZE":
+		*f = *HostFileOrderFieldSize
+	default:
+		return fmt.Errorf("%s is not a valid HostFileOrderField", str)
+	}
+	return nil
+}
+
+// HostFileOrderField defines the ordering field of HostFile.
+type HostFileOrderField struct {
+	// Value extracts the ordering value from the given HostFile.
+	Value    func(*HostFile) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) hostfile.OrderOption
+	toCursor func(*HostFile) Cursor
+}
+
+// HostFileOrder defines the ordering of HostFile.
+type HostFileOrder struct {
+	Direction OrderDirection      `json:"direction"`
+	Field     *HostFileOrderField `json:"field"`
+}
+
+// DefaultHostFileOrder is the default ordering of HostFile.
+var DefaultHostFileOrder = &HostFileOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &HostFileOrderField{
+		Value: func(hf *HostFile) (ent.Value, error) {
+			return hf.ID, nil
+		},
+		column: hostfile.FieldID,
+		toTerm: hostfile.ByID,
+		toCursor: func(hf *HostFile) Cursor {
+			return Cursor{ID: hf.ID}
+		},
+	},
+}
+
+// ToEdge converts HostFile into HostFileEdge.
+func (hf *HostFile) ToEdge(order *HostFileOrder) *HostFileEdge {
+	if order == nil {
+		order = DefaultHostFileOrder
+	}
+	return &HostFileEdge{
+		Node:   hf,
+		Cursor: order.Field.toCursor(hf),
 	}
 }
 

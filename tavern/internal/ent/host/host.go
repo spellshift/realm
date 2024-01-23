@@ -35,6 +35,8 @@ const (
 	EdgeTags = "tags"
 	// EdgeBeacons holds the string denoting the beacons edge name in mutations.
 	EdgeBeacons = "beacons"
+	// EdgeFiles holds the string denoting the files edge name in mutations.
+	EdgeFiles = "files"
 	// EdgeProcesses holds the string denoting the processes edge name in mutations.
 	EdgeProcesses = "processes"
 	// Table holds the table name of the host in the database.
@@ -51,6 +53,13 @@ const (
 	BeaconsInverseTable = "beacons"
 	// BeaconsColumn is the table column denoting the beacons relation/edge.
 	BeaconsColumn = "beacon_host"
+	// FilesTable is the table that holds the files relation/edge.
+	FilesTable = "host_files"
+	// FilesInverseTable is the table name for the HostFile entity.
+	// It exists in this package in order to avoid circular dependency with the "hostfile" package.
+	FilesInverseTable = "host_files"
+	// FilesColumn is the table column denoting the files relation/edge.
+	FilesColumn = "host_files"
 	// ProcessesTable is the table that holds the processes relation/edge.
 	ProcessesTable = "host_processes"
 	// ProcessesInverseTable is the table name for the HostProcess entity.
@@ -104,7 +113,7 @@ var (
 // PlatformValidator is a validator for the "platform" field enum values. It is called by the builders before save.
 func PlatformValidator(pl c2pb.Host_Platform) error {
 	switch pl.String() {
-	case "PLATFORM_MACOS", "PLATFORM_BSD", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX":
+	case "PLATFORM_BSD", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS":
 		return nil
 	default:
 		return fmt.Errorf("host: invalid enum value for platform field: %q", pl)
@@ -182,6 +191,20 @@ func ByBeacons(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByFilesCount orders the results by files count.
+func ByFilesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFilesStep(), opts...)
+	}
+}
+
+// ByFiles orders the results by files terms.
+func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByProcessesCount orders the results by processes count.
 func ByProcessesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -207,6 +230,13 @@ func newBeaconsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(BeaconsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, BeaconsTable, BeaconsColumn),
+	)
+}
+func newFilesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FilesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
 	)
 }
 func newProcessesStep() *sqlgraph.Step {

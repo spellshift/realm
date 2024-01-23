@@ -22,11 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type C2Client interface {
+	// Contact the server for new tasks to execute.
 	ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts ...grpc.CallOption) (*ClaimTasksResponse, error)
-	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
-	// Report the active list of running processes. This list will replace any previously reported
-	// lists for the same host.
-	ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error)
 	// Download a file from the server, returning one or more chunks of data.
 	// The maximum size of these chunks is determined by the server.
 	// The server should reply with two headers:
@@ -35,6 +32,19 @@ type C2Client interface {
 	//
 	// If no associated file can be found, a NotFound status error is returned.
 	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error)
+	// Report a file from the host to the server.
+	// Providing content of the file is optional. If content is provided:
+	//   - Hash will automatically be calculated and the provided hash will be ignored.
+	//   - Size will automatically be calculated and the provided size will be ignored.
+	//
+	// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
+	// Any existing files at the provided path for the host are replaced.
+	ReportFile(ctx context.Context, opts ...grpc.CallOption) (C2_ReportFileClient, error)
+	// Report the active list of running processes. This list will replace any previously reported
+	// lists for the same host.
+	ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error)
+	// Report execution output for a task.
+	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
 }
 
 type c2Client struct {
@@ -48,24 +58,6 @@ func NewC2Client(cc grpc.ClientConnInterface) C2Client {
 func (c *c2Client) ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts ...grpc.CallOption) (*ClaimTasksResponse, error) {
 	out := new(ClaimTasksResponse)
 	err := c.cc.Invoke(ctx, "/c2.C2/ClaimTasks", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *c2Client) ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error) {
-	out := new(ReportTaskOutputResponse)
-	err := c.cc.Invoke(ctx, "/c2.C2/ReportTaskOutput", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *c2Client) ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error) {
-	out := new(ReportProcessListResponse)
-	err := c.cc.Invoke(ctx, "/c2.C2/ReportProcessList", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,15 +96,64 @@ func (x *c2DownloadFileClient) Recv() (*DownloadFileResponse, error) {
 	return m, nil
 }
 
+func (c *c2Client) ReportFile(ctx context.Context, opts ...grpc.CallOption) (C2_ReportFileClient, error) {
+	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[1], "/c2.C2/ReportFile", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &c2ReportFileClient{stream}
+	return x, nil
+}
+
+type C2_ReportFileClient interface {
+	Send(*ReportFileRequest) error
+	CloseAndRecv() (*ReportFileResponse, error)
+	grpc.ClientStream
+}
+
+type c2ReportFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2ReportFileClient) Send(m *ReportFileRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *c2ReportFileClient) CloseAndRecv() (*ReportFileResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(ReportFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *c2Client) ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error) {
+	out := new(ReportProcessListResponse)
+	err := c.cc.Invoke(ctx, "/c2.C2/ReportProcessList", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *c2Client) ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error) {
+	out := new(ReportTaskOutputResponse)
+	err := c.cc.Invoke(ctx, "/c2.C2/ReportTaskOutput", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // C2Server is the server API for C2 service.
 // All implementations must embed UnimplementedC2Server
 // for forward compatibility
 type C2Server interface {
+	// Contact the server for new tasks to execute.
 	ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error)
-	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
-	// Report the active list of running processes. This list will replace any previously reported
-	// lists for the same host.
-	ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error)
 	// Download a file from the server, returning one or more chunks of data.
 	// The maximum size of these chunks is determined by the server.
 	// The server should reply with two headers:
@@ -121,6 +162,19 @@ type C2Server interface {
 	//
 	// If no associated file can be found, a NotFound status error is returned.
 	DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error
+	// Report a file from the host to the server.
+	// Providing content of the file is optional. If content is provided:
+	//   - Hash will automatically be calculated and the provided hash will be ignored.
+	//   - Size will automatically be calculated and the provided size will be ignored.
+	//
+	// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
+	// Any existing files at the provided path for the host are replaced.
+	ReportFile(C2_ReportFileServer) error
+	// Report the active list of running processes. This list will replace any previously reported
+	// lists for the same host.
+	ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error)
+	// Report execution output for a task.
+	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
 	mustEmbedUnimplementedC2Server()
 }
 
@@ -131,14 +185,17 @@ type UnimplementedC2Server struct {
 func (UnimplementedC2Server) ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimTasks not implemented")
 }
-func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutput not implemented")
+func (UnimplementedC2Server) DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
+}
+func (UnimplementedC2Server) ReportFile(C2_ReportFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReportFile not implemented")
 }
 func (UnimplementedC2Server) ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportProcessList not implemented")
 }
-func (UnimplementedC2Server) DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error {
-	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
+func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutput not implemented")
 }
 func (UnimplementedC2Server) mustEmbedUnimplementedC2Server() {}
 
@@ -171,42 +228,6 @@ func _C2_ClaimTasks_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _C2_ReportTaskOutput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportTaskOutputRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(C2Server).ReportTaskOutput(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/c2.C2/ReportTaskOutput",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(C2Server).ReportTaskOutput(ctx, req.(*ReportTaskOutputRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _C2_ReportProcessList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportProcessListRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(C2Server).ReportProcessList(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/c2.C2/ReportProcessList",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(C2Server).ReportProcessList(ctx, req.(*ReportProcessListRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _C2_DownloadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(DownloadFileRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -228,6 +249,68 @@ func (x *c2DownloadFileServer) Send(m *DownloadFileResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _C2_ReportFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(C2Server).ReportFile(&c2ReportFileServer{stream})
+}
+
+type C2_ReportFileServer interface {
+	SendAndClose(*ReportFileResponse) error
+	Recv() (*ReportFileRequest, error)
+	grpc.ServerStream
+}
+
+type c2ReportFileServer struct {
+	grpc.ServerStream
+}
+
+func (x *c2ReportFileServer) SendAndClose(m *ReportFileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *c2ReportFileServer) Recv() (*ReportFileRequest, error) {
+	m := new(ReportFileRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _C2_ReportProcessList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportProcessListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).ReportProcessList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/c2.C2/ReportProcessList",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).ReportProcessList(ctx, req.(*ReportProcessListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _C2_ReportTaskOutput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportTaskOutputRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).ReportTaskOutput(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/c2.C2/ReportTaskOutput",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).ReportTaskOutput(ctx, req.(*ReportTaskOutputRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // C2_ServiceDesc is the grpc.ServiceDesc for C2 service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,12 +323,12 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _C2_ClaimTasks_Handler,
 		},
 		{
-			MethodName: "ReportTaskOutput",
-			Handler:    _C2_ReportTaskOutput_Handler,
-		},
-		{
 			MethodName: "ReportProcessList",
 			Handler:    _C2_ReportProcessList_Handler,
+		},
+		{
+			MethodName: "ReportTaskOutput",
+			Handler:    _C2_ReportTaskOutput_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -253,6 +336,11 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "DownloadFile",
 			Handler:       _C2_DownloadFile_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "ReportFile",
+			Handler:       _C2_ReportFile_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "c2.proto",

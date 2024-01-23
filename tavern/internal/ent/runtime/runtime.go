@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/schema"
@@ -110,6 +111,37 @@ func init() {
 	hostDescName := hostFields[1].Descriptor()
 	// host.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	host.NameValidator = hostDescName.Validators[0].(func(string) error)
+	hostfileMixin := schema.HostFile{}.Mixin()
+	hostfileHooks := schema.HostFile{}.Hooks()
+	hostfile.Hooks[0] = hostfileHooks[0]
+	hostfileMixinFields0 := hostfileMixin[0].Fields()
+	_ = hostfileMixinFields0
+	hostfileFields := schema.HostFile{}.Fields()
+	_ = hostfileFields
+	// hostfileDescCreatedAt is the schema descriptor for created_at field.
+	hostfileDescCreatedAt := hostfileMixinFields0[0].Descriptor()
+	// hostfile.DefaultCreatedAt holds the default value on creation for the created_at field.
+	hostfile.DefaultCreatedAt = hostfileDescCreatedAt.Default.(func() time.Time)
+	// hostfileDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	hostfileDescLastModifiedAt := hostfileMixinFields0[1].Descriptor()
+	// hostfile.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	hostfile.DefaultLastModifiedAt = hostfileDescLastModifiedAt.Default.(func() time.Time)
+	// hostfile.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	hostfile.UpdateDefaultLastModifiedAt = hostfileDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// hostfileDescPath is the schema descriptor for path field.
+	hostfileDescPath := hostfileFields[0].Descriptor()
+	// hostfile.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	hostfile.PathValidator = hostfileDescPath.Validators[0].(func(string) error)
+	// hostfileDescSize is the schema descriptor for size field.
+	hostfileDescSize := hostfileFields[4].Descriptor()
+	// hostfile.DefaultSize holds the default value on creation for the size field.
+	hostfile.DefaultSize = hostfileDescSize.Default.(int)
+	// hostfile.SizeValidator is a validator for the "size" field. It is called by the builders before save.
+	hostfile.SizeValidator = hostfileDescSize.Validators[0].(func(int) error)
+	// hostfileDescHash is the schema descriptor for hash field.
+	hostfileDescHash := hostfileFields[5].Descriptor()
+	// hostfile.HashValidator is a validator for the "hash" field. It is called by the builders before save.
+	hostfile.HashValidator = hostfileDescHash.Validators[0].(func(string) error)
 	hostprocessMixin := schema.HostProcess{}.Mixin()
 	hostprocessMixinFields0 := hostprocessMixin[0].Fields()
 	_ = hostprocessMixinFields0

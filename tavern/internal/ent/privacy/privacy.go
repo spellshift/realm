@@ -182,6 +182,30 @@ func (f HostMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) 
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.HostMutation", m)
 }
 
+// The HostFileQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type HostFileQueryRuleFunc func(context.Context, *ent.HostFileQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f HostFileQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.HostFileQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.HostFileQuery", q)
+}
+
+// The HostFileMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type HostFileMutationRuleFunc func(context.Context, *ent.HostFileMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f HostFileMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.HostFileMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.HostFileMutation", m)
+}
+
 // The HostProcessQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type HostProcessQueryRuleFunc func(context.Context, *ent.HostProcessQuery) error

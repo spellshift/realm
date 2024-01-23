@@ -561,6 +561,29 @@ func HasBeaconWith(preds ...predicate.Beacon) predicate.Task {
 	})
 }
 
+// HasReportedFiles applies the HasEdge predicate on the "reported_files" edge.
+func HasReportedFiles() predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ReportedFilesTable, ReportedFilesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasReportedFilesWith applies the HasEdge predicate on the "reported_files" edge with a given conditions (other predicates).
+func HasReportedFilesWith(preds ...predicate.HostFile) predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := newReportedFilesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasReportedProcesses applies the HasEdge predicate on the "reported_processes" edge.
 func HasReportedProcesses() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
