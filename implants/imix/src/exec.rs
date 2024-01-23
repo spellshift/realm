@@ -91,11 +91,13 @@ pub async fn handle_exec_timeout_and_response(
 
 #[cfg(test)]
 mod tests {
+    use crate::tasks::drain_sender;
+
     use super::{handle_exec_timeout_and_response, handle_exec_tome};
     use anyhow::Result;
     use c2::pb::Task;
     use std::collections::HashMap;
-    use std::sync::mpsc::{channel, Sender};
+    use std::sync::mpsc::channel;
     use std::time::Duration;
 
     #[test]
@@ -130,14 +132,14 @@ print(sys.shell(input_params["cmd"])["stdout"])
 
     #[tokio::test]
     async fn imix_handle_exec_tome_error() -> Result<()> {
-        let mut task_channel_error: Vec<String> = Vec::new();
-
         let (print_sender, print_reciever) = channel::<String>();
         let (error_sender, error_reciever) = channel::<String>();
-        let res = handle_exec_timeout_and_response(
+        let _res = handle_exec_timeout_and_response(
             Task {
                 id: 123,
-                eldritch: r#"print('okay')"#.to_string(),
+                eldritch: r#"print(no_var)
+"#
+                .to_string(),
                 parameters: HashMap::from([]),
                 file_names: Vec::from([]),
                 quest_name: "Poggers".to_string(),
@@ -148,27 +150,10 @@ print(sys.shell(input_params["cmd"])["stdout"])
         )
         .await?;
 
-        loop {
-            let new_res_line = match error_reciever.recv_timeout(Duration::from_millis(100)) {
-                Ok(local_res_string) => local_res_string,
-                Err(local_err) => {
-                    match local_err.to_string().as_str() {
-                        "channel is empty and sending half is closed" => {
-                            break;
-                        }
-                        "timed out waiting on channel" => {
-                            break;
-                        }
-                        _ => eprint!("Error: {}", local_err),
-                    }
-                    break;
-                }
-            };
-            // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-            task_channel_error.push(new_res_line);
-        }
+        let task_channel_error = drain_sender(&error_reciever)?;
+        let _task_channel_output = drain_sender(&print_reciever)?;
 
-        assert_eq!(task_channel_error.join(""), "".to_string());
+        assert!(task_channel_error.contains(&"Variable `no_var` not found".to_string()));
         Ok(())
     }
 

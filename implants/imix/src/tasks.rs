@@ -11,9 +11,33 @@ use c2::pb::{
     Task, TaskError, TaskOutput,
 };
 use chrono::Utc;
-use std::sync::mpsc::channel;
+use std::sync::mpsc::{channel, Receiver};
 use tokio::task;
 use tonic::Status;
+
+pub fn drain_sender(reciever: &Receiver<String>) -> Result<String> {
+    let mut channel_res: Vec<String> = Vec::new();
+    loop {
+        let new_res_line = match reciever.recv_timeout(Duration::from_millis(100)) {
+            Ok(local_res_string) => local_res_string,
+            Err(local_err) => {
+                match local_err.to_string().as_str() {
+                    "channel is empty and sending half is closed" => {
+                        break;
+                    }
+                    "timed out waiting on channel" => {
+                        break;
+                    }
+                    _ => eprint!("Error: {}", local_err),
+                }
+                break;
+            }
+        };
+        // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
+        channel_res.push(new_res_line);
+    }
+    Ok(channel_res.join(""))
+}
 
 pub async fn get_new_tasks(
     agent_properties: AgentProperties,
@@ -112,68 +136,9 @@ fn queue_task_output(
     async_task: &AsyncTask,
     task_id: TaskID,
     running_task_res_map: &mut HashMap<TaskID, Vec<TaskOutput>>,
-    loop_start_time: Instant,
-) {
-    let mut task_channel_output: Vec<String> = Vec::new();
-    let mut task_channel_error: Vec<String> = Vec::new();
-
-    loop {
-        #[cfg(debug_assertions)]
-        eprintln!(
-            "[{}]: Task # {} recieving output",
-            (Instant::now() - loop_start_time).as_millis(),
-            task_id
-        );
-        let new_res_line = match async_task
-            .print_reciever
-            .recv_timeout(Duration::from_millis(100))
-        {
-            Ok(local_res_string) => local_res_string,
-            Err(local_err) => {
-                match local_err.to_string().as_str() {
-                    "channel is empty and sending half is closed" => {
-                        break;
-                    }
-                    "timed out waiting on channel" => {
-                        break;
-                    }
-                    _ => eprint!("Error: {}", local_err),
-                }
-                break;
-            }
-        };
-        // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-        task_channel_output.push(new_res_line);
-    }
-
-    loop {
-        #[cfg(debug_assertions)]
-        eprintln!(
-            "[{}]: Task # {} recieving output",
-            (Instant::now() - loop_start_time).as_millis(),
-            task_id
-        );
-        let new_res_line = match async_task
-            .error_reciever
-            .recv_timeout(Duration::from_millis(100))
-        {
-            Ok(local_res_string) => local_res_string,
-            Err(local_err) => {
-                match local_err.to_string().as_str() {
-                    "channel is empty and sending half is closed" => {
-                        break;
-                    }
-                    "timed out waiting on channel" => {
-                        break;
-                    }
-                    _ => eprint!("Error: {}", local_err),
-                }
-                break;
-            }
-        };
-        // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-        task_channel_error.push(new_res_line);
-    }
+) -> Result<()> {
+    let task_channel_output = drain_sender(&async_task.print_reciever)?;
+    let task_channel_error = drain_sender(&async_task.error_reciever)?;
 
     let task_is_finished = async_task.future_join_handle.is_finished();
     let task_response_exec_finished_at = match task_is_finished {
@@ -185,7 +150,7 @@ fn queue_task_output(
     if task_is_finished || task_channel_output.len() > 0 {
         let task_error = if task_channel_error.len() > 0 {
             Some(TaskError {
-                msg: task_channel_error.join(""),
+                msg: task_channel_error,
             })
         } else {
             None
@@ -204,7 +169,7 @@ fn queue_task_output(
                 }),
                 None => None,
             },
-            output: task_channel_output.join(""),
+            output: task_channel_output,
             error: task_error,
         };
 
@@ -215,6 +180,7 @@ fn queue_task_output(
             })
             .or_insert(vec![task_response]);
     }
+    Ok(())
 }
 
 pub async fn submit_task_output(
@@ -235,7 +201,7 @@ pub async fn submit_task_output(
         );
 
         // Loop over each line of output from the task and append it the the channel output.
-        queue_task_output(async_task, *task_id, running_task_res_map, loop_start_time);
+        let _ = queue_task_output(async_task, *task_id, running_task_res_map);
     }
 
     // Iterate over queued task results and send them back to the server
