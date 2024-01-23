@@ -187,14 +187,4 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNClaimTasksInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐClaimTasksInput(ctx context.Context, v interface{}) (models.ClaimTasksInput, error) {
-	res, err := ec.unmarshalInputClaimTasksInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalNSubmitTaskResultInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐSubmitTaskResultInput(ctx context.Context, v interface{}) (models.SubmitTaskResultInput, error) {
-	res, err := ec.unmarshalInputSubmitTaskResultInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 // endregion ***************************** type.gotpl *****************************

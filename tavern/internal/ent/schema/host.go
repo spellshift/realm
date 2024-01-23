@@ -71,3 +71,10 @@ func (Host) Annotations() []schema.Annotation {
 		),
 	}
 }
+
+// Mixin defines common shared properties for the ent.
+func (Host) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		MixinHistory{}, // created_at, last_modified_at
+	}
+}

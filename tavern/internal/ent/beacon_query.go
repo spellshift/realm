@@ -338,12 +338,12 @@ func (bq *BeaconQuery) WithTasks(opts ...func(*TaskQuery)) *BeaconQuery {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Beacon.Query().
-//		GroupBy(beacon.FieldName).
+//		GroupBy(beacon.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (bq *BeaconQuery) GroupBy(field string, fields ...string) *BeaconGroupBy {
@@ -361,11 +361,11 @@ func (bq *BeaconQuery) GroupBy(field string, fields ...string) *BeaconGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Beacon.Query().
-//		Select(beacon.FieldName).
+//		Select(beacon.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (bq *BeaconQuery) Select(fields ...string) *BeaconSelect {
 	bq.ctx.Fields = append(bq.ctx.Fields, fields...)

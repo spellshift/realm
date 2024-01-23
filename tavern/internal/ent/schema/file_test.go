@@ -47,12 +47,14 @@ func TestMultipleTomes(t *testing.T) {
 		SetName("TestTome001").
 		SetEldritch(`print("hello world")`).
 		SetDescription("Hello World").
+		SetAuthor("kcarretto").
 		AddFiles(files...).
 		SaveX(ctx)
 	graph.Tome.Create().
 		SetName("TestTome002").
 		SetEldritch(`print("hello world")`).
 		SetDescription("Hello World").
+		SetAuthor("kcarretto").
 		AddFiles(files...).
 		SaveX(ctx)
 }

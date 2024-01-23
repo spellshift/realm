@@ -75,6 +75,11 @@ func Description(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldDescription, v))
 }
 
+// Author applies equality check predicate on the "author" field. It's identical to AuthorEQ.
+func Author(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldAuthor, v))
+}
+
 // ParamDefs applies equality check predicate on the "param_defs" field. It's identical to ParamDefsEQ.
 func ParamDefs(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldParamDefs, v))
@@ -300,6 +305,111 @@ func DescriptionContainsFold(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldContainsFold(FieldDescription, v))
 }
 
+// AuthorEQ applies the EQ predicate on the "author" field.
+func AuthorEQ(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldAuthor, v))
+}
+
+// AuthorNEQ applies the NEQ predicate on the "author" field.
+func AuthorNEQ(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldAuthor, v))
+}
+
+// AuthorIn applies the In predicate on the "author" field.
+func AuthorIn(vs ...string) predicate.Tome {
+	return predicate.Tome(sql.FieldIn(FieldAuthor, vs...))
+}
+
+// AuthorNotIn applies the NotIn predicate on the "author" field.
+func AuthorNotIn(vs ...string) predicate.Tome {
+	return predicate.Tome(sql.FieldNotIn(FieldAuthor, vs...))
+}
+
+// AuthorGT applies the GT predicate on the "author" field.
+func AuthorGT(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldGT(FieldAuthor, v))
+}
+
+// AuthorGTE applies the GTE predicate on the "author" field.
+func AuthorGTE(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldGTE(FieldAuthor, v))
+}
+
+// AuthorLT applies the LT predicate on the "author" field.
+func AuthorLT(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldLT(FieldAuthor, v))
+}
+
+// AuthorLTE applies the LTE predicate on the "author" field.
+func AuthorLTE(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldLTE(FieldAuthor, v))
+}
+
+// AuthorContains applies the Contains predicate on the "author" field.
+func AuthorContains(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldContains(FieldAuthor, v))
+}
+
+// AuthorHasPrefix applies the HasPrefix predicate on the "author" field.
+func AuthorHasPrefix(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldHasPrefix(FieldAuthor, v))
+}
+
+// AuthorHasSuffix applies the HasSuffix predicate on the "author" field.
+func AuthorHasSuffix(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldHasSuffix(FieldAuthor, v))
+}
+
+// AuthorEqualFold applies the EqualFold predicate on the "author" field.
+func AuthorEqualFold(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEqualFold(FieldAuthor, v))
+}
+
+// AuthorContainsFold applies the ContainsFold predicate on the "author" field.
+func AuthorContainsFold(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldContainsFold(FieldAuthor, v))
+}
+
+// SupportModelEQ applies the EQ predicate on the "support_model" field.
+func SupportModelEQ(v SupportModel) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldSupportModel, v))
+}
+
+// SupportModelNEQ applies the NEQ predicate on the "support_model" field.
+func SupportModelNEQ(v SupportModel) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldSupportModel, v))
+}
+
+// SupportModelIn applies the In predicate on the "support_model" field.
+func SupportModelIn(vs ...SupportModel) predicate.Tome {
+	return predicate.Tome(sql.FieldIn(FieldSupportModel, vs...))
+}
+
+// SupportModelNotIn applies the NotIn predicate on the "support_model" field.
+func SupportModelNotIn(vs ...SupportModel) predicate.Tome {
+	return predicate.Tome(sql.FieldNotIn(FieldSupportModel, vs...))
+}
+
+// TacticEQ applies the EQ predicate on the "tactic" field.
+func TacticEQ(v Tactic) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldTactic, v))
+}
+
+// TacticNEQ applies the NEQ predicate on the "tactic" field.
+func TacticNEQ(v Tactic) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldTactic, v))
+}
+
+// TacticIn applies the In predicate on the "tactic" field.
+func TacticIn(vs ...Tactic) predicate.Tome {
+	return predicate.Tome(sql.FieldIn(FieldTactic, vs...))
+}
+
+// TacticNotIn applies the NotIn predicate on the "tactic" field.
+func TacticNotIn(vs ...Tactic) predicate.Tome {
+	return predicate.Tome(sql.FieldNotIn(FieldTactic, vs...))
+}
+
 // ParamDefsEQ applies the EQ predicate on the "param_defs" field.
 func ParamDefsEQ(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldParamDefs, v))
@@ -520,6 +630,29 @@ func HasFiles() predicate.Tome {
 func HasFilesWith(preds ...predicate.File) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
 		step := newFilesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUploader applies the HasEdge predicate on the "uploader" edge.
+func HasUploader() predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, UploaderTable, UploaderColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUploaderWith applies the HasEdge predicate on the "uploader" edge with a given conditions (other predicates).
+func HasUploaderWith(preds ...predicate.User) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		step := newUploaderStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
