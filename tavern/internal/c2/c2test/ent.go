@@ -98,6 +98,7 @@ func NewRandomAssignedTask(ctx context.Context, graph *ent.Client, beaconIdentif
 		SetName(namegen.NewComplex()).
 		SetEldritch(fmt.Sprintf(`print("%s")`, namegen.NewComplex())).
 		SetDescription(string(newRandomBytes(120))).
+		SetAuthor("kcarretto").
 		SetParamDefs(`[{"name":"test-param","label":"Test","type":"string","placeholder":"Enter text..."}]`).
 		AddFiles(files...).
 		SaveX(ctx)

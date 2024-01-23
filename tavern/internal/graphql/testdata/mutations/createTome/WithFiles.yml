@@ -16,6 +16,7 @@ query: |
     createTome(input: $input) {
         name
         description
+        author
         eldritch
         files {
           id
@@ -26,6 +27,7 @@ variables:
   input:
     name: "WonderfulTome"
     description: So we can test things
+    author: kcarretto
     eldritch: print("yay!")
     fileIDs:
       - 3000
@@ -35,6 +37,7 @@ expected:
   createTome:
     name: "WonderfulTome"
     description: So we can test things
+    author: kcarretto
     eldritch: print("yay!")
     files:
       - id: "3000"

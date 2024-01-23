@@ -3,7 +3,10 @@
 package ent
 
 import (
+	"time"
+
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // UpdateBeaconInput represents a mutation input for updating beacons.
@@ -180,17 +183,27 @@ func (c *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
 
 // CreateTomeInput represents a mutation input for creating tomes.
 type CreateTomeInput struct {
-	Name        string
-	Description string
-	ParamDefs   *string
-	Eldritch    string
-	FileIDs     []int
+	Name         string
+	Description  string
+	Author       string
+	SupportModel *tome.SupportModel
+	Tactic       *tome.Tactic
+	ParamDefs    *string
+	Eldritch     string
+	FileIDs      []int
 }
 
 // Mutate applies the CreateTomeInput on the TomeMutation builder.
 func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 	m.SetName(i.Name)
 	m.SetDescription(i.Description)
+	m.SetAuthor(i.Author)
+	if v := i.SupportModel; v != nil {
+		m.SetSupportModel(*v)
+	}
+	if v := i.Tactic; v != nil {
+		m.SetTactic(*v)
+	}
 	if v := i.ParamDefs; v != nil {
 		m.SetParamDefs(*v)
 	}
@@ -206,12 +219,83 @@ func (c *TomeCreate) SetInput(i CreateTomeInput) *TomeCreate {
 	return c
 }
 
+// UpdateTomeInput represents a mutation input for updating tomes.
+type UpdateTomeInput struct {
+	LastModifiedAt *time.Time
+	Name           *string
+	Description    *string
+	Author         *string
+	SupportModel   *tome.SupportModel
+	Tactic         *tome.Tactic
+	ClearParamDefs bool
+	ParamDefs      *string
+	Eldritch       *string
+	ClearFiles     bool
+	AddFileIDs     []int
+	RemoveFileIDs  []int
+}
+
+// Mutate applies the UpdateTomeInput on the TomeMutation builder.
+func (i *UpdateTomeInput) Mutate(m *TomeMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if v := i.Author; v != nil {
+		m.SetAuthor(*v)
+	}
+	if v := i.SupportModel; v != nil {
+		m.SetSupportModel(*v)
+	}
+	if v := i.Tactic; v != nil {
+		m.SetTactic(*v)
+	}
+	if i.ClearParamDefs {
+		m.ClearParamDefs()
+	}
+	if v := i.ParamDefs; v != nil {
+		m.SetParamDefs(*v)
+	}
+	if v := i.Eldritch; v != nil {
+		m.SetEldritch(*v)
+	}
+	if i.ClearFiles {
+		m.ClearFiles()
+	}
+	if v := i.AddFileIDs; len(v) > 0 {
+		m.AddFileIDs(v...)
+	}
+	if v := i.RemoveFileIDs; len(v) > 0 {
+		m.RemoveFileIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateTomeInput on the TomeUpdate builder.
+func (c *TomeUpdate) SetInput(i UpdateTomeInput) *TomeUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateTomeInput on the TomeUpdateOne builder.
+func (c *TomeUpdateOne) SetInput(i UpdateTomeInput) *TomeUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name        *string
-	PhotoURL    *string
-	IsActivated *bool
-	IsAdmin     *bool
+	Name          *string
+	PhotoURL      *string
+	IsActivated   *bool
+	IsAdmin       *bool
+	ClearTomes    bool
+	AddTomeIDs    []int
+	RemoveTomeIDs []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -227,6 +311,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.IsAdmin; v != nil {
 		m.SetIsAdmin(*v)
+	}
+	if i.ClearTomes {
+		m.ClearTomes()
+	}
+	if v := i.AddTomeIDs; len(v) > 0 {
+		m.AddTomeIDs(v...)
+	}
+	if v := i.RemoveTomeIDs; len(v) > 0 {
+		m.RemoveTomeIDs(v...)
 	}
 }
 
