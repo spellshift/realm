@@ -1362,7 +1362,6 @@ input CreateTomeInput {
   """Eldritch script that will be executed when the tome is run"""
   eldritch: String!
   fileIDs: [ID!]
-  uploaderID: ID
 }
 """
 Define a Relay Cursor type:
@@ -2348,8 +2347,6 @@ input UpdateTomeInput {
   addFileIDs: [ID!]
   removeFileIDs: [ID!]
   clearFiles: Boolean
-  uploaderID: ID
-  clearUploader: Boolean
 }
 """
 UpdateUserInput is used for update User object.

@@ -86,6 +86,9 @@ func (Tome) Edges() []ent.Edge {
 			Comment("Any files required for tome execution that will be bundled and provided to the agent for download"),
 		edge.To("uploader", User.Type).
 			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
 			Comment("User who uploaded the tome (may be null)."),
 	}
 }

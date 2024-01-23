@@ -191,7 +191,6 @@ type CreateTomeInput struct {
 	ParamDefs    *string
 	Eldritch     string
 	FileIDs      []int
-	UploaderID   *int
 }
 
 // Mutate applies the CreateTomeInput on the TomeMutation builder.
@@ -211,9 +210,6 @@ func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 	m.SetEldritch(i.Eldritch)
 	if v := i.FileIDs; len(v) > 0 {
 		m.AddFileIDs(v...)
-	}
-	if v := i.UploaderID; v != nil {
-		m.SetUploaderID(*v)
 	}
 }
 
@@ -237,8 +233,6 @@ type UpdateTomeInput struct {
 	ClearFiles     bool
 	AddFileIDs     []int
 	RemoveFileIDs  []int
-	ClearUploader  bool
-	UploaderID     *int
 }
 
 // Mutate applies the UpdateTomeInput on the TomeMutation builder.
@@ -278,12 +272,6 @@ func (i *UpdateTomeInput) Mutate(m *TomeMutation) {
 	}
 	if v := i.RemoveFileIDs; len(v) > 0 {
 		m.RemoveFileIDs(v...)
-	}
-	if i.ClearUploader {
-		m.ClearUploader()
-	}
-	if v := i.UploaderID; v != nil {
-		m.SetUploaderID(*v)
 	}
 }
 

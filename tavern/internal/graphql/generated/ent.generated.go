@@ -6390,7 +6390,7 @@ func (ec *executionContext) unmarshalInputCreateTomeInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "author", "supportModel", "tactic", "paramDefs", "eldritch", "fileIDs", "uploaderID"}
+	fieldsInOrder := [...]string{"name", "description", "author", "supportModel", "tactic", "paramDefs", "eldritch", "fileIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6469,15 +6469,6 @@ func (ec *executionContext) unmarshalInputCreateTomeInput(ctx context.Context, o
 				return it, err
 			}
 			it.FileIDs = data
-		case "uploaderID":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uploaderID"))
-			data, err := ec.unmarshalOID2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UploaderID = data
 		}
 	}
 
@@ -11672,7 +11663,7 @@ func (ec *executionContext) unmarshalInputUpdateTomeInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "name", "description", "author", "supportModel", "tactic", "paramDefs", "clearParamDefs", "eldritch", "addFileIDs", "removeFileIDs", "clearFiles", "uploaderID", "clearUploader"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "name", "description", "author", "supportModel", "tactic", "paramDefs", "clearParamDefs", "eldritch", "addFileIDs", "removeFileIDs", "clearFiles"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -11787,24 +11778,6 @@ func (ec *executionContext) unmarshalInputUpdateTomeInput(ctx context.Context, o
 				return it, err
 			}
 			it.ClearFiles = data
-		case "uploaderID":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uploaderID"))
-			data, err := ec.unmarshalOID2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UploaderID = data
-		case "clearUploader":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearUploader"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearUploader = data
 		}
 	}
 
