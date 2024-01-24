@@ -19,17 +19,9 @@ var (
 		},
 		[]string{"request_uri", "method"},
 	)
-
-	metricHTTPErrors = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "tavern_http_request_errors",
-			Help: "Total number of errors.",
-		},
-		[]string{"request_uri", "method"},
-	)
 )
 
 func init() {
 	// Register metrics with Prometheus
-	prometheus.MustRegister(metricHTTPRequests, metricHTTPLatency, metricHTTPErrors)
+	prometheus.MustRegister(metricHTTPRequests, metricHTTPLatency)
 }

@@ -42,11 +42,6 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Record the latency
 		metricHTTPLatency.WithLabelValues(r.RequestURI, r.Method).Observe(time.Since(start).Seconds())
-
-		// Record if there was an error
-		if err != nil {
-			metricHTTPErrors.WithLabelValues(r.RequestURI, r.Method).Inc()
-		}
 	}()
 
 	// Log Request
