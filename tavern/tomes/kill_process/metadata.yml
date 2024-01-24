@@ -1,0 +1,10 @@
+name: Kill process
+description: Kill a process by PID
+author: Alextibtab
+support_model: FIRST_PARTY
+tactic: IMPACT
+paramdefs:
+- name: pid
+  label: Process ID
+  type: int
+  placeholder: process id eg. 245
