@@ -1,0 +1,10 @@
+name: Remove file
+description: delete a file or directory
+author: Alextibtab
+support_model: FIRST_PARTY
+tactic: IMPACT
+paramdefs:
+- name: path
+  label: Path of file/directory to remove
+  type: string
+  placeholder: /var/log/auth.log, /home/foo/
