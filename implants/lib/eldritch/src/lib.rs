@@ -6,6 +6,7 @@ pub mod process;
 pub mod sys;
 pub mod time;
 
+use c2::pb::c2_manual_client::TavernClient;
 use starlark::collections::SmallMap;
 #[allow(unused_imports)]
 use starlark::const_frozen_string;
@@ -67,14 +68,14 @@ macro_rules! insert_dict_kv {
 }
 pub(crate) use insert_dict_kv;
 
-pub fn get_eldritch() -> anyhow::Result<Globals> {
+pub fn get_eldritch(tav_client: TavernClient) -> anyhow::Result<Globals> {
     #[starlark_module]
     fn eldritch(builder: &mut GlobalsBuilder) {
         const file: FileLibrary = FileLibrary();
         const process: ProcessLibrary = ProcessLibrary();
         const sys: SysLibrary = SysLibrary();
         const pivot: PivotLibrary = PivotLibrary();
-        const assets: AssetsLibrary = AssetsLibrary("test".to_string());
+        const assets: AssetsLibrary = AssetsLibrary();
         const crypto: CryptoLibrary = CryptoLibrary();
         const time: TimeLibrary = TimeLibrary();
     }

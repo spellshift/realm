@@ -6,6 +6,7 @@ mod read_impl;
 use allocative::Allocative;
 use derive_more::Display;
 
+use c2::pb::c2_manual_client::TavernClient;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
 use starlark::values::{
@@ -35,7 +36,7 @@ pub struct Asset;
 
 #[derive(Debug, Display, Clone, ProvidesStaticType, NoSerialize, Allocative)]
 #[display(fmt = "AssetsLibrary")]
-pub(crate) struct AssetsLibrary(pub String);
+pub(crate) struct AssetsLibrary(#[allocative(skip)] pub TavernClient);
 starlark_simple_value!(AssetsLibrary);
 
 // #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
@@ -63,7 +64,7 @@ impl<'v> UnpackValue<'v> for AssetsLibrary {
     fn unpack_value(value: Value<'v>) -> Option<Self> {
         match AssetsLibrary::from_value(value) {
             Some(x) => Some(x.clone()),
-            None => Some(AssetsLibrary(UnpackValue::unpack_value(value)?)),
+            None => None,
         }
     }
 }
