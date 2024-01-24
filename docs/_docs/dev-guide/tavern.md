@@ -14,6 +14,15 @@ If you would like to help contribute to Tavern, please take a look at our [open 
 
 ## Configuration
 
+### Metrics
+
+By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server such that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| ENABLE_METRICS | Set to any value to enable the "/metrics" endpoint. | Disabled | No |
+| HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8080` | No |
+
 ### MySQL
 
 By default, Tavern operates an in-memory SQLite database. To persist data, a MySQL backend is supported. In order to configure Tavern to use MySQL, the `MYSQL_ADDR` environment variable must be set to the `host[:port]` of the database (e.g. `127.0.0.1`, `mydb.com`, or `mydb.com:3306`). You can reference the [mysql.Config](https://pkg.go.dev/github.com/go-sql-driver/mysql#Config) for additional information about Tavern's MySQL configuration.
