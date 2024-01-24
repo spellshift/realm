@@ -1,0 +1,3 @@
+file.remove(input_params['path'])
+print("\n")
+print("\n")
