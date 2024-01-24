@@ -9,7 +9,7 @@ use derive_more::Display;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::values::none::NoneType;
 use starlark::values::{
-    starlark_value, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+    starlark_value, NoSerialize, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
 };
 use starlark::{starlark_module, starlark_simple_value};
 
@@ -33,10 +33,18 @@ pub struct Asset;
 #[folder = "../../../implants/imix/install_scripts"]
 pub struct Asset;
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
+#[derive(Debug, Display, Clone, ProvidesStaticType, NoSerialize, Allocative)]
 #[display(fmt = "AssetsLibrary")]
-pub struct AssetsLibrary();
+pub(crate) struct AssetsLibrary(pub String);
 starlark_simple_value!(AssetsLibrary);
+
+// #[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
+// #[display(fmt = "AssetsLibrary")]
+// pub struct AssetsLibrary {
+//     #[allocative(skip)]
+//     pub embedded_assets: String,
+// }
+// starlark_simple_value!(AssetsLibrary);
 
 #[allow(non_upper_case_globals)]
 #[starlark_value(type = "assets_library")]
@@ -47,22 +55,16 @@ impl<'v> StarlarkValue<'v> for AssetsLibrary {
     }
 }
 
-impl Serialize for AssetsLibrary {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_none()
-    }
-}
-
 impl<'v> UnpackValue<'v> for AssetsLibrary {
     fn expected() -> String {
         AssetsLibrary::get_type_value_static().as_str().to_owned()
     }
 
     fn unpack_value(value: Value<'v>) -> Option<Self> {
-        Some(*value.downcast_ref::<AssetsLibrary>().unwrap())
+        match AssetsLibrary::from_value(value) {
+            Some(x) => Some(x.clone()),
+            None => Some(AssetsLibrary(UnpackValue::unpack_value(value)?)),
+        }
     }
 }
 
@@ -77,7 +79,7 @@ fn methods(builder: &mut MethodsBuilder) {
     }
     fn list(this: AssetsLibrary) -> anyhow::Result<Vec<String>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        list_impl::list()
+        list_impl::list(this)
     }
     fn read_binary(this: AssetsLibrary, src: String) -> anyhow::Result<Vec<u32>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

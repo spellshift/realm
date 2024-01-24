@@ -74,7 +74,7 @@ pub fn get_eldritch() -> anyhow::Result<Globals> {
         const process: ProcessLibrary = ProcessLibrary();
         const sys: SysLibrary = SysLibrary();
         const pivot: PivotLibrary = PivotLibrary();
-        const assets: AssetsLibrary = AssetsLibrary();
+        const assets: AssetsLibrary = AssetsLibrary("test".to_string());
         const crypto: CryptoLibrary = CryptoLibrary();
         const time: TimeLibrary = TimeLibrary();
     }

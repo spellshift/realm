@@ -1,6 +1,9 @@
 use anyhow::Result;
 
-pub fn list() -> Result<Vec<String>> {
+use super::AssetsLibrary;
+
+pub fn list(this: AssetsLibrary) -> Result<Vec<String>> {
+    println!("this:{}", this.0);
     let mut res: Vec<String> = Vec::new();
     for file_path in super::Asset::iter() {
         res.push(file_path.to_string());
@@ -15,7 +18,7 @@ mod tests {
 
     #[test]
     fn test_assets_list() -> anyhow::Result<()> {
-        let res_all_embedded_files = list()?;
+        let res_all_embedded_files = list(AssetsLibrary("test123".to_string()))?;
 
         assert_eq!(
             res_all_embedded_files,
