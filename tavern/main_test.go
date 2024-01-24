@@ -10,12 +10,16 @@ import (
 func TestMainFunc(t *testing.T) {
 	os.Setenv(EnvEnableTestRunAndExit.Key, "1")
 	os.Setenv(EnvHTTPListenAddr.Key, "127.0.0.1:8080")
+	os.Setenv(EnvHTTPMetricsListenAddr.Key, "127.0.0.1:8081")
 	os.Setenv(EnvEnablePProf.Key, "1")
+	os.Setenv(EnvEnableMetrics.Key, "1")
 	defer func() {
 		unsetList := []string{
 			EnvEnableTestRunAndExit.Key,
 			EnvHTTPListenAddr.Key,
+			EnvHTTPMetricsListenAddr.Key,
 			EnvEnablePProf.Key,
+			EnvEnableMetrics.Key,
 		}
 		for _, unset := range unsetList {
 			if err := os.Unsetenv(unset); err != nil {

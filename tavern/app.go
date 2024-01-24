@@ -8,29 +8,29 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	pprof "net/http/pprof"
+	"net/http/pprof"
 	"os"
 	"strings"
 
 	"entgo.io/contrib/entgql"
-	"google.golang.org/grpc"
-	"realm.pub/tavern/internal/c2"
-	"realm.pub/tavern/internal/c2/c2pb"
-	"realm.pub/tavern/internal/graphql"
-	"realm.pub/tavern/tomes"
-
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/cli"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/c2"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
+	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/www"
+	"realm.pub/tavern/tomes"
 )
 
 func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
@@ -50,7 +50,24 @@ func run(ctx context.Context, options ...func(*Config)) error {
 	if err != nil {
 		return err
 	}
-	defer srv.client.Close()
+	defer srv.Close()
+
+	// Start Metrics Server (if configured)
+	if srv.MetricsHTTP != nil {
+		if srv.HTTP.Addr == srv.MetricsHTTP.Addr {
+			return fmt.Errorf(
+				"tavern and metrics http must have different listen configurations (tavern=%q, metrics=%q)",
+				srv.HTTP.Addr,
+				srv.MetricsHTTP.Addr,
+			)
+		}
+		go func() {
+			log.Printf("Metrics HTTP Server started on %s", srv.MetricsHTTP.Addr)
+			if err := srv.MetricsHTTP.ListenAndServe(); err != nil {
+				log.Printf("[WARN] stopped metrics http server: %v", err)
+			}
+		}()
+	}
 
 	// Listen & Serve HTTP Traffic
 	log.Printf("Starting HTTP server on %s", srv.HTTP.Addr)
@@ -63,13 +80,15 @@ func run(ctx context.Context, options ...func(*Config)) error {
 
 // Server responsible for handling Tavern requests.
 type Server struct {
-	HTTP   *http.Server
-	client *ent.Client
+	HTTP        *http.Server
+	MetricsHTTP *http.Server
+	client      *ent.Client
 }
 
 // Close should always be called to clean up a Tavern server.
 func (srv *Server) Close() error {
 	srv.HTTP.Shutdown(context.Background())
+	srv.MetricsHTTP.Shutdown(context.Background())
 	return srv.client.Close()
 }
 
@@ -184,6 +203,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		client: client,
 	}
 
+	// Setup Metrics
+	if cfg.IsMetricsEnabled() {
+		log.Printf("[WARN] Metrics reporting is enabled, unauthenticated /metrics endpoint will be available at %q", EnvHTTPMetricsListenAddr.String())
+		tSrv.MetricsHTTP = newMetricsServer()
+	}
+
 	// Shutdown for Test Run & Exit
 	if cfg.IsTestRunAndExitEnabled() {
 		go func() {
@@ -227,7 +252,10 @@ func newGraphQLHandler(client *ent.Client) http.Handler {
 
 func newGRPCHandler(client *ent.Client) http.Handler {
 	c2srv := c2.New(client)
-	grpcSrv := grpc.NewServer()
+	grpcSrv := grpc.NewServer(
+		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
+		grpc.StreamInterceptor(grpcWithStreamMetrics),
+	)
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor != 2 {
@@ -242,6 +270,15 @@ func newGRPCHandler(client *ent.Client) http.Handler {
 
 		grpcSrv.ServeHTTP(w, r)
 	})
+}
+
+func newMetricsServer() *http.Server {
+	router := http.NewServeMux()
+	router.Handle("/metrics", promhttp.Handler())
+	return &http.Server{
+		Addr:    EnvHTTPMetricsListenAddr.String(),
+		Handler: router,
+	}
 }
 
 func registerProfiler(router tavernhttp.RouteMap) {
