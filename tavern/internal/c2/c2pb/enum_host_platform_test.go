@@ -1,11 +1,35 @@
 package c2pb_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
 )
+
+func TestHostPlatformValues(t *testing.T) {
+	assert.NotEmpty(t, c2pb.Host_Platform(0).Values())
+}
+
+func TestHostPlatformValue(t *testing.T) {
+	val, err := c2pb.Host_Platform(0).Value()
+	require.NoError(t, err)
+	require.NotNil(t, val)
+}
+
+func TestHostPlatformMarshalGraphQL(t *testing.T) {
+	var buf bytes.Buffer
+	c2pb.Host_Platform(0).MarshalGQL(&buf)
+	assert.Equal(t, `"PLATFORM_UNSPECIFIED"`, buf.String())
+}
+
+func TestHostPlatformUnmarshalGraphQL(t *testing.T) {
+	var platform c2pb.Host_Platform
+	assert.NoError(t, (*c2pb.Host_Platform).UnmarshalGQL(&platform, `PLATFORM_LINUX`))
+	assert.Equal(t, c2pb.Host_PLATFORM_LINUX, platform)
+}
 
 func TestHostPlatformScan(t *testing.T) {
 	tests := []struct {
