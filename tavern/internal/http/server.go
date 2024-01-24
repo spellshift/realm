@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"time"
 )
 
 // A Server for Tavern HTTP traffic.
@@ -12,6 +13,8 @@ type Server struct {
 }
 
 func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+
 	// Authenticate Request (if possible)
 	ctx, err := srv.Authenticate(r)
 	if err != nil {
@@ -31,6 +34,15 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	r = r.WithContext(ctx)
+
+	// Metrics
+	defer func() {
+		// Increment total requests counter
+		metricHTTPRequests.WithLabelValues(r.RequestURI, r.Method).Inc()
+
+		// Record the latency
+		metricHTTPLatency.WithLabelValues(r.RequestURI, r.Method).Observe(time.Since(start).Seconds())
+	}()
 
 	// Log Request
 	if srv.Logger != nil {
