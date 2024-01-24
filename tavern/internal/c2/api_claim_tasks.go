@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -13,6 +14,20 @@ import (
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/namegen"
 )
+
+var (
+	metricHostCallbacksTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "tavern_host_callbacks_total",
+			Help: "The total number of ClaimTasks gRPC calls, provided with host labeling",
+		},
+		[]string{"host_identifier"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(metricHostCallbacksTotal)
+}
 
 func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) (*c2pb.ClaimTasksResponse, error) {
 	now := time.Now()
@@ -39,6 +54,11 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if req.Beacon.Agent.Identifier == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide agent identifier")
 	}
+
+	// Metrics
+	defer func() {
+		metricHostCallbacksTotal.WithLabelValues(req.Beacon.Identifier).Inc()
+	}()
 
 	// Upsert the host
 	hostID, err := srv.graph.Host.Create().

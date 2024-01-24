@@ -22,7 +22,9 @@ var (
 	EnvEnableTestRunAndExit = EnvString{"ENABLE_TEST_RUN_AND_EXIT", ""}
 
 	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
-	EnvHTTPListenAddr = EnvString{"HTTP_LISTEN_ADDR", "0.0.0.0:80"}
+	// EnvHTTPMetricsAddr sets the address (ip:port) for the HTTP metrics server to bind to.
+	EnvHTTPListenAddr        = EnvString{"HTTP_LISTEN_ADDR", "0.0.0.0:80"}
+	EnvHTTPMetricsListenAddr = EnvString{"HTTP_METRICS_LISTEN_ADDR", "127.0.0.1:8080"}
 
 	// EnvOAuthClientID set to configure OAuth Client ID.
 	// EnvOAuthClientSecret set to configure OAuth Client Secret.
@@ -50,7 +52,9 @@ var (
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
 
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
-	EnvEnablePProf = EnvString{"ENABLE_PPROF", ""}
+	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
+	EnvEnablePProf   = EnvString{"ENABLE_PPROF", ""}
+	EnvEnableMetrics = EnvString{"ENABLE_METRICS", ""}
 )
 
 // Config holds information that controls the behaviour of Tavern
@@ -105,6 +109,11 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+}
+
+// IsMetricsEnabled returns true if the /metrics http endpoint has been enabled.
+func (cfg *Config) IsMetricsEnabled() bool {
+	return EnvEnableMetrics.String() != ""
 }
 
 // IsPProfEnabled returns true if performance profiling has been enabled.
