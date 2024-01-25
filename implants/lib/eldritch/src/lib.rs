@@ -6,6 +6,8 @@ pub mod process;
 pub mod sys;
 pub mod time;
 
+use c2::pb::c2_manual_client::TavernClient;
+use c2::pb::ClaimTasksRequest;
 use starlark::collections::SmallMap;
 #[allow(unused_imports)]
 use starlark::const_frozen_string;
@@ -13,9 +15,13 @@ use starlark::environment::{Globals, GlobalsBuilder, LibraryExtension, Module};
 use starlark::eval::Evaluator;
 use starlark::syntax::{AstModule, Dialect};
 use starlark::values::dict::Dict;
-use starlark::values::{AllocValue, Value};
+use starlark::values::none::NoneType;
+use starlark::values::{AllocValue, ProvidesStaticType, Value};
 use starlark::{starlark_module, PrintHandler};
+use std::borrow::{Borrow, BorrowMut};
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::mpsc::Sender;
 
 use crate::crypto::CryptoLibrary;
@@ -206,6 +212,53 @@ pub fn eldritch_run(
     Ok(res.to_str())
 }
 
+/*
+ * TEST CODE
+ */
+
+#[derive(Debug)]
+pub struct GRPCClient();
+impl GRPCClient {
+    pub fn something(&self) {}
+}
+
+#[derive(Debug, ProvidesStaticType)]
+pub struct Runtime {
+    client: GRPCClient,
+    tavern: RefCell<TavernClient>,
+}
+impl Runtime {
+    pub fn emit(&self, x: String) {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        self.client.something();
+        runtime
+            .block_on(
+                self.tavern
+                    .borrow_mut()
+                    .claim_tasks(ClaimTasksRequest { beacon: None }),
+            )
+            .unwrap();
+    }
+}
+
+#[starlark_module]
+fn starlark_emit(builder: &mut GlobalsBuilder) {
+    fn emit(x: Value, eval: &mut Evaluator) -> anyhow::Result<NoneType> {
+        // We modify extra (which we know is a Store) and add the JSON of the
+        // value the user gave.
+
+        let extra = eval.extra.unwrap();
+        let runtime = extra.downcast_ref::<Runtime>().unwrap();
+        runtime.emit(x.to_string());
+
+        Ok(NoneType)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{sync::mpsc::channel, thread, time::Duration};
@@ -213,6 +266,37 @@ mod tests {
     use super::*;
     use starlark::assert::Assert;
     use tempfile::NamedTempFile;
+
+    #[test]
+    fn do_a_thing() {
+        let content = r#"
+emit(1)
+emit(["test"])
+emit({"x": "y"})
+"#;
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let client = runtime
+            .block_on(TavernClient::connect("http://127.0.0.1/grpc".to_string()))
+            .unwrap();
+
+        let ast = AstModule::parse("json.star", content.to_owned(), &Dialect::Standard).unwrap();
+        // We build our globals adding some functions we wrote
+        let globals = GlobalsBuilder::new().with(starlark_emit).build();
+        let module = Module::new();
+        let mut runtime = Runtime {
+            client: GRPCClient(),
+            tavern: RefCell::new(client),
+        };
+        {
+            let mut eval = Evaluator::new(&module);
+            // We add a reference to our store
+            eval.extra = Some(&mut runtime);
+            eval.eval_module(ast, &globals).unwrap();
+        }
+    }
 
     // just checks dir...
     #[test]

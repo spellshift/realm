@@ -57,7 +57,7 @@ windows-sys = { workspace = true, features = [
     "Win32_System_SystemServices"
 ]}
 whoami = { workspace = true }
-
+c2 = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 network-interface = { workspace = true }
