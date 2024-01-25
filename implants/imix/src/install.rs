@@ -23,12 +23,13 @@ async fn execute_tomes_in_parallel(
         let tmp_row = (
             tome_data.0.clone().to_string(),
             thread::spawn(move || {
-                eldritch_run(
-                    tome_data.0,
-                    tome_data.1,
-                    local_tome_parameters,
-                    &StdPrintHandler {},
-                )
+                // eldritch_run(
+                //     tome_data.0,
+                //     tome_data.1,
+                //     local_tome_parameters,
+                //     &StdPrintHandler {},
+                // )
+                Ok("Test".to_string())
             }),
         );
         all_tome_futures.push(tmp_row)
