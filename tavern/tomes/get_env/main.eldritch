@@ -1,0 +1,10 @@
+def get_env():
+    envs = sys.get_env()
+    for key, value in envs.items():
+        print("{}={}\n".format(key, value))
+
+    return
+
+get_env()
+print("\n")
+print("\n")
