@@ -1,0 +1,5 @@
+name: Get env
+description: Get a list of all environment variables
+author: Alextibtab
+support_model: FIRST_PARTY
+tactic: RECON
