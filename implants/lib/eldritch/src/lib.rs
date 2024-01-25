@@ -7,6 +7,7 @@ pub mod sys;
 pub mod time;
 
 use c2::pb::c2_manual_client::TavernClient;
+use object::File;
 use starlark::collections::SmallMap;
 #[allow(unused_imports)]
 use starlark::const_frozen_string;
@@ -68,9 +69,14 @@ macro_rules! insert_dict_kv {
 }
 pub(crate) use insert_dict_kv;
 
-pub fn get_eldritch(tav_client: TavernClient) -> anyhow::Result<Globals> {
+pub struct EldritchRuntime {
+    tav_client: TavernClient,
+    asset_library: AssetsLibrary,
+}
+
+impl EldritchRuntime {
     #[starlark_module]
-    fn eldritch(builder: &mut GlobalsBuilder) {
+    fn get_eldritch(builder: &mut GlobalsBuilder) {
         const file: FileLibrary = FileLibrary();
         const process: ProcessLibrary = ProcessLibrary();
         const sys: SysLibrary = SysLibrary();
@@ -79,6 +85,14 @@ pub fn get_eldritch(tav_client: TavernClient) -> anyhow::Result<Globals> {
         const crypto: CryptoLibrary = CryptoLibrary();
         const time: TimeLibrary = TimeLibrary();
     }
+}
+
+pub fn get_eldritch(tav_client: TavernClient) -> anyhow::Result<Globals> {
+    fn gen_Assets(tav_client: TavernClient) -> AssetsLibrary {
+        return AssetsLibrary(tav_client);
+    }
+
+    let tmp_asset = gen_Assets(tav_client);
 
     let globals = GlobalsBuilder::extended_by(&[
         LibraryExtension::StructType,
