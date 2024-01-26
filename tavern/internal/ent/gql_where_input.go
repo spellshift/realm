@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
@@ -2175,10 +2176,10 @@ type HostProcessWhereInput struct {
 	CwdContainsFold *string  `json:"cwdContainsFold,omitempty"`
 
 	// "status" field predicates.
-	Status      *c2pb.Process_Status  `json:"status,omitempty"`
-	StatusNEQ   *c2pb.Process_Status  `json:"statusNEQ,omitempty"`
-	StatusIn    []c2pb.Process_Status `json:"statusIn,omitempty"`
-	StatusNotIn []c2pb.Process_Status `json:"statusNotIn,omitempty"`
+	Status      *epb.Process_Status  `json:"status,omitempty"`
+	StatusNEQ   *epb.Process_Status  `json:"statusNEQ,omitempty"`
+	StatusIn    []epb.Process_Status `json:"statusIn,omitempty"`
+	StatusNotIn []epb.Process_Status `json:"statusNotIn,omitempty"`
 
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`

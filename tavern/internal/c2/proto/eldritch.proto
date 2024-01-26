@@ -1,0 +1,61 @@
+syntax = "proto3";
+// edition = "2023";
+
+package eldritch;
+
+option go_package = "realm.pub/tavern/internal/c2/epb";
+
+// Tome for eldritch to execute.
+message Tome {
+    string eldritch = 1;
+    map<string, string> parameters = 2;
+    repeated string file_names = 3;
+}
+
+// Process running on the host system.
+message Process {
+    uint64 pid = 1;
+    uint64 ppid = 2;
+    string name = 3;
+    string principal = 4;
+
+    string path = 5;
+    string cmd = 6;
+    string env = 7;
+    string cwd = 8;
+
+    enum Status {
+        STATUS_UNSPECIFIED = 0;
+        STATUS_UNKNOWN = 1;
+        STATUS_IDLE = 2;
+        STATUS_RUN = 3;
+        STATUS_SLEEP = 4;
+        STATUS_STOP = 5;
+        STATUS_ZOMBIE = 6;
+        STATUS_TRACING = 7;
+        STATUS_DEAD = 8;
+        STATUS_WAKE_KILL = 9;
+        STATUS_WAKING = 10;
+        STATUS_PARKED = 11;
+        STATUS_LOCK_BLOCKED = 12;
+        STATUS_UNINTERUPTIBLE_DISK_SLEEP = 13;
+    }
+    Status status = 9;
+}
+
+// ProcessList of running processes on the host system.
+message ProcessList {
+    repeated Process list = 1;
+}
+
+// File on the host system.
+message File {
+    string path = 1;
+    string owner = 2;
+    string group = 3;
+    string permissions = 4;
+    int64 size = 5;
+    string sha3_256_hash = 6;
+
+    bytes chunk = 7;
+}

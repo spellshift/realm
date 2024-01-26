@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/task"
@@ -41,7 +41,7 @@ type HostProcess struct {
 	// The current working directory for the process.
 	Cwd string `json:"cwd,omitempty"`
 	// Current process status.
-	Status c2pb.Process_Status `json:"status,omitempty"`
+	Status epb.Process_Status `json:"status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostProcessQuery when eager-loading is set.
 	Edges                   HostProcessEdges `json:"edges"`
@@ -96,7 +96,7 @@ func (*HostProcess) scanValues(columns []string) ([]any, error) {
 	for i := range columns {
 		switch columns[i] {
 		case hostprocess.FieldStatus:
-			values[i] = new(c2pb.Process_Status)
+			values[i] = new(epb.Process_Status)
 		case hostprocess.FieldID, hostprocess.FieldPid, hostprocess.FieldPpid:
 			values[i] = new(sql.NullInt64)
 		case hostprocess.FieldName, hostprocess.FieldPrincipal, hostprocess.FieldPath, hostprocess.FieldCmd, hostprocess.FieldEnv, hostprocess.FieldCwd:
@@ -191,7 +191,7 @@ func (hp *HostProcess) assignValues(columns []string, values []any) error {
 				hp.Cwd = value.String
 			}
 		case hostprocess.FieldStatus:
-			if value, ok := values[i].(*c2pb.Process_Status); !ok {
+			if value, ok := values[i].(*epb.Process_Status); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value != nil {
 				hp.Status = *value

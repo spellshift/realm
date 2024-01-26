@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
@@ -61,13 +62,15 @@ func ConvertTaskToC2PB(t *testing.T, ctx context.Context, task *ent.Task) *c2pb.
 
 	return &c2pb.Task{
 		Id: int64(task.ID),
-		Eldritch: task.
-			QueryQuest().
-			QueryTome().
-			OnlyX(ctx).
-			Eldritch,
-		Parameters: params,
-		FileNames:  fileNames,
+		Tome: &epb.Tome{
+			Eldritch: task.
+				QueryQuest().
+				QueryTome().
+				OnlyX(ctx).
+				Eldritch,
+			Parameters: params,
+			FileNames:  fileNames,
+		},
 		QuestName: task.
 			QueryQuest().
 			OnlyX(ctx).

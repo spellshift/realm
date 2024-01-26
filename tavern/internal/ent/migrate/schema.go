@@ -59,7 +59,7 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "primary_ip", Type: field.TypeString, Nullable: true},
-		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS"}},
+		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_BSD"}},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// HostsTable holds the schema information for the "hosts" table.
@@ -123,7 +123,7 @@ var (
 		{Name: "cmd", Type: field.TypeString, Nullable: true},
 		{Name: "env", Type: field.TypeString, Nullable: true},
 		{Name: "cwd", Type: field.TypeString, Nullable: true},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_STOP", "STATUS_TRACING", "STATUS_WAKE_KILL", "STATUS_UNKNOWN", "STATUS_IDLE", "STATUS_SLEEP", "STATUS_WAKING", "STATUS_UNSPECIFIED", "STATUS_PARKED", "STATUS_LOCK_BLOCKED", "STATUS_DEAD", "STATUS_ZOMBIE", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_RUN"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_IDLE", "STATUS_STOP", "STATUS_ZOMBIE", "STATUS_LOCK_BLOCKED", "STATUS_UNSPECIFIED", "STATUS_PARKED", "STATUS_RUN", "STATUS_DEAD", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNKNOWN", "STATUS_SLEEP", "STATUS_TRACING", "STATUS_WAKE_KILL", "STATUS_WAKING"}},
 		{Name: "host_processes", Type: field.TypeInt, Nullable: true},
 		{Name: "host_process_host", Type: field.TypeInt},
 		{Name: "task_reported_processes", Type: field.TypeInt},

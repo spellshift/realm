@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/c2test"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 )
 
@@ -85,7 +86,9 @@ func TestReportFile(t *testing.T) {
 			name: "MissingTaskID",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Path: "/test",
+					Chunk: &epb.File{
+						Path: "/test",
+					},
 				},
 			},
 			wantCode: codes.InvalidArgument,
@@ -103,14 +106,16 @@ func TestReportFile(t *testing.T) {
 			name: "NewFile_Single",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					TaskId:       int64(existingTasks[2].ID),
-					Path:         "/new/file",
-					Owner:        "root",
-					Group:        "wheel",
-					Permissions:  "0664",
-					Size:         999999,
-					Sha3_256Hash: "I_AM_IGNORED",
-					Chunk:        []byte("death"),
+					TaskId: int64(existingTasks[2].ID),
+					Chunk: &epb.File{
+						Path:         "/new/file",
+						Owner:        "root",
+						Group:        "wheel",
+						Permissions:  "0664",
+						Size:         999999,
+						Sha3_256Hash: "I_AM_IGNORED",
+						Chunk:        []byte("death"),
+					},
 				},
 			},
 			host:     existingHosts[0],
@@ -134,11 +139,15 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					TaskId: int64(existingTasks[2].ID),
-					Path:   "/another/new/file",
-					Chunk:  []byte("death"),
+					Chunk: &epb.File{
+						Chunk: []byte("death"),
+						Path:  "/another/new/file",
+					},
 				},
 				{
-					Chunk: []byte("note"),
+					Chunk: &epb.File{
+						Chunk: []byte("note"),
+					},
 				},
 			},
 			host:     existingHosts[0],
@@ -160,8 +169,10 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					TaskId: int64(existingTasks[2].ID),
-					Path:   "/another/new/file",
-					Chunk:  []byte("replaced"),
+					Chunk: &epb.File{
+						Path:  "/another/new/file",
+						Chunk: []byte("replaced"),
+					},
 				},
 			},
 			host:     existingHosts[0],
@@ -183,8 +194,10 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					TaskId: int64(existingTasks[3].ID),
-					Path:   "/no/other/files",
-					Chunk:  []byte("meow"),
+					Chunk: &epb.File{
+						Path:  "/no/other/files",
+						Chunk: []byte("meow"),
+					},
 				},
 			},
 			host:          existingHosts[1],

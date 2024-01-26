@@ -36,28 +36,31 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 
 		// Collect args
+		if req.Chunk == nil {
+			continue
+		}
 		if taskID == 0 {
 			taskID = req.GetTaskId()
 		}
 		if path == "" {
-			path = req.GetPath()
+			path = req.Chunk.GetPath()
 		}
 		if owner == "" {
-			owner = req.GetOwner()
+			owner = req.Chunk.GetOwner()
 		}
 		if group == "" {
-			group = req.GetGroup()
+			group = req.Chunk.GetGroup()
 		}
 		if permissions == "" {
-			permissions = req.GetPermissions()
+			permissions = req.Chunk.GetPermissions()
 		}
 		if size == 0 {
-			size = int(req.GetSize())
+			size = int(req.Chunk.GetSize())
 		}
 		if hash == "" {
-			hash = req.GetSha3_256Hash()
+			hash = req.Chunk.GetSha3_256Hash()
 		}
-		content = append(content, req.GetChunk()...)
+		content = append(content, req.Chunk.GetChunk()...)
 	}
 
 	// Input Validation
