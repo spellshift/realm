@@ -1,0 +1,15 @@
+def get_net_info():
+    print("Interfaces:\n\n")
+    for interface in sys.get_ip():
+        for key, value in interface.items():
+            if key == "ips":
+                for ip in value:
+                    print("ip: {}\n".format(ip))
+            else:
+                print("{}: {}\n".format(key, value))
+        print("\n")
+    print("Hostname: " + sys.hostname())
+
+get_net_info()
+print("\n")
+print("\n")
