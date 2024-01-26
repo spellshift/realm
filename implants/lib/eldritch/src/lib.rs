@@ -11,8 +11,7 @@ pub mod pb {
     include!("eldritch.rs");
 }
 
-pub use runtime::Runtime;
-pub mod channel;
+pub use runtime::{Output, Runtime};
 
 #[allow(unused_imports)]
 use starlark::const_frozen_string;

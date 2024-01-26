@@ -1,9 +1,11 @@
-use crate::channel::Sender;
+use crate::pb::{File, ProcessList};
 use crate::{
     assets::AssetsLibrary, crypto::CryptoLibrary, file::FileLibrary, pb::Tome, pivot::PivotLibrary,
     process::ProcessLibrary, sys::SysLibrary, time::TimeLibrary,
 };
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
+use chrono::Utc;
+use prost_types::Timestamp;
 use starlark::{
     collections::SmallMap,
     environment::{Globals, GlobalsBuilder, LibraryExtension, Module},
@@ -14,6 +16,8 @@ use starlark::{
     values::{AllocValue, ProvidesStaticType},
     PrintHandler,
 };
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::time::Duration;
 
 /*
  * Eldritch Runtime
@@ -25,18 +29,46 @@ use starlark::{
 #[derive(ProvidesStaticType)]
 pub struct Runtime {
     stdout_reporting: bool,
-    sender: Sender,
+
+    ch_exec_started_at: Sender<Timestamp>,
+    ch_exec_finished_at: Sender<Timestamp>,
+    ch_output: Sender<String>,
+    ch_error: Sender<Error>,
+    ch_process_list: Sender<ProcessList>,
+    ch_file: Sender<File>,
 }
 
 impl Runtime {
     /*
      * Prepare a new Runtime for execution of a single tome.
      */
-    pub fn new(sender: Sender) -> Runtime {
-        Runtime {
-            stdout_reporting: false,
-            sender,
-        }
+    pub fn new() -> (Runtime, Output) {
+        let (ch_exec_started_at, exec_started_at) = channel::<Timestamp>();
+        let (ch_exec_finished_at, exec_finished_at) = channel::<Timestamp>();
+        let (ch_error, errors) = channel::<Error>();
+        let (ch_output, outputs) = channel::<String>();
+        let (ch_process_list, process_lists) = channel::<ProcessList>();
+        let (ch_file, files) = channel::<File>();
+
+        return (
+            Runtime {
+                stdout_reporting: false,
+                ch_exec_started_at,
+                ch_exec_finished_at,
+                ch_output,
+                ch_error,
+                ch_process_list,
+                ch_file,
+            },
+            Output {
+                exec_started_at,
+                exec_finished_at,
+                outputs,
+                errors,
+                process_lists,
+                files,
+            },
+        );
     }
 
     /*
@@ -53,7 +85,22 @@ impl Runtime {
      * Run an Eldritch tome, returning an error if it fails.
      * Output from the tome is exposed via channels, see `reported_output`, `reported_process_list`, and `reported_files`.
      */
-    pub fn run(&self, tome: Tome) -> Result<()> {
+    pub fn run(&self, tome: Tome) {
+        match self.run_impl(tome) {
+            Ok(_) => {}
+            Err(err) => match self.report_error(err) {
+                Ok(_) => {}
+                Err(_send_err) => {
+                    #[cfg(debug_assertions)]
+                    eprintln!("failed to report error: {}", _send_err);
+                }
+            },
+        }
+    }
+
+    fn run_impl(&self, tome: Tome) -> Result<()> {
+        self.report_exec_started_at()?;
+
         let ast = Runtime::parse(&tome)?;
         let module = Runtime::alloc_module(&tome)?;
         let globals = Runtime::globals();
@@ -65,6 +112,7 @@ impl Runtime {
         eval.eval_module(ast, &globals)
             .context("tome execution failed")?;
 
+        self.report_exec_finished_at()?;
         Ok(())
     }
 
@@ -149,8 +197,64 @@ impl Runtime {
     /*
      * Print execution results to stdout as they become available.
      */
-    pub fn with_stdout_reporting(mut self) {
+    pub fn with_stdout_reporting(&mut self) {
         self.stdout_reporting = true;
+    }
+
+    /*
+     * Send exec_started_at timestamp.
+     */
+    fn report_exec_started_at(&self) -> Result<()> {
+        let now = Utc::now();
+        self.ch_exec_started_at.send(Timestamp {
+            seconds: now.timestamp(),
+            nanos: now.timestamp_subsec_nanos() as i32,
+        })?;
+        Ok(())
+    }
+
+    /*
+     * Send exec_finished_at timestamp.
+     */
+    fn report_exec_finished_at(&self) -> Result<()> {
+        let now = Utc::now();
+        self.ch_exec_finished_at.send(Timestamp {
+            seconds: now.timestamp(),
+            nanos: now.timestamp_subsec_nanos() as i32,
+        })?;
+        Ok(())
+    }
+
+    /*
+     * Report output of the tome execution.
+     */
+    pub fn report_output(&self, output: String) -> Result<()> {
+        self.ch_output.send(output)?;
+        Ok(())
+    }
+
+    /*
+     * Report error of the tome execution.
+     */
+    pub fn report_error(&self, err: anyhow::Error) -> Result<()> {
+        self.ch_error.send(err)?;
+        Ok(())
+    }
+
+    /*
+     * Report a process list that was collected by the tome.
+     */
+    pub fn report_process_list(&self, processes: ProcessList) -> Result<()> {
+        self.ch_process_list.send(processes)?;
+        Ok(())
+    }
+
+    /*
+     * Report a file that was collected by the tome.
+     */
+    pub fn report_file(&self, f: File) -> Result<()> {
+        self.ch_file.send(f)?;
+        Ok(())
     }
 }
 
@@ -159,7 +263,7 @@ impl Runtime {
  */
 impl PrintHandler for Runtime {
     fn println(&self, text: &str) -> anyhow::Result<()> {
-        self.sender.report_output(text.to_string())?;
+        self.report_output(text.to_string())?;
         if self.stdout_reporting {
             print!("{}", text);
         }
@@ -167,88 +271,232 @@ impl PrintHandler for Runtime {
     }
 }
 
+/*
+ * Output enables callers to listen for various types of output from the runtime.
+ * Each of the `collect` methods will return lists of all currently available data.
+ */
+pub struct Output {
+    exec_started_at: Receiver<Timestamp>,
+    exec_finished_at: Receiver<Timestamp>,
+    outputs: Receiver<String>,
+    errors: Receiver<Error>,
+    process_lists: Receiver<ProcessList>,
+    files: Receiver<File>,
+}
+
+impl Output {
+    /*
+     * Returns the timestamp of when execution started, if available.
+     */
+    pub fn get_exec_started_at(&self) -> Option<Timestamp> {
+        drain_last(&self.exec_started_at)
+    }
+
+    /*
+     * Returns the timestamp of when execution finished, if available.
+     */
+    pub fn get_exec_finished_at(&self) -> Option<Timestamp> {
+        drain_last(&self.exec_finished_at)
+    }
+
+    /*
+     * Collects all currently available reported text output.
+     */
+    pub fn collect(&self) -> Vec<String> {
+        drain(&self.outputs)
+    }
+
+    /*
+     * Collects all currently available reported errors, if any.
+     */
+    pub fn collect_errors(&self) -> Vec<Error> {
+        drain(&self.errors)
+    }
+
+    /*
+     * Returns all currently available reported process lists, if any.
+     */
+    pub fn collect_process_lists(&self) -> Vec<ProcessList> {
+        drain(&self.process_lists)
+    }
+
+    /*
+     * Returns all currently available reported files, if any.
+     */
+    pub fn collect_files(&self) -> Vec<File> {
+        drain(&self.files)
+    }
+}
+
+/*
+ * Drain a receiver, returning only the last currently available result.
+ */
+fn drain_last<T>(receiver: &Receiver<T>) -> Option<T> {
+    drain(receiver).pop()
+}
+
+/*
+ * Drain a receiver, returning all currently available results as a Vec.
+ */
+fn drain<T>(reciever: &Receiver<T>) -> Vec<T> {
+    let mut result: Vec<T> = Vec::new();
+    loop {
+        let val = match reciever.recv_timeout(Duration::from_millis(100)) {
+            Ok(v) => v,
+            Err(err) => {
+                match err.to_string().as_str() {
+                    "channel is empty and sending half is closed" => {
+                        break;
+                    }
+                    "timed out waiting on channel" => {
+                        break;
+                    }
+                    _ => {
+                        #[cfg(debug_assertions)]
+                        eprint!("failed to drain channel: {}", err)
+                    }
+                }
+                break;
+            }
+        };
+        // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
+        result.push(val);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
-    use anyhow::Result;
-    use starlark::assert::Assert;
+    use crate::{pb::Tome, Runtime};
+    use anyhow::Error;
     use std::{collections::HashMap, thread};
     use tempfile::NamedTempFile;
 
-    use crate::{channel::channel, pb::Tome, Runtime};
+    macro_rules! runtime_tests {
+        ($($name:ident: $value:expr,)*) => {
+        $(
+            #[test]
+            fn $name() {
+                let tc: TestCase = $value;
+                let (runtime, output) = Runtime::new();
+                runtime.run(tc.tome);
 
-    #[test]
-    fn test_run() -> Result<()> {
-        let (sender, recv) = channel();
-        let runtime = Runtime::new(sender);
-        let result = runtime
-            .run(Tome {
-                eldritch: "print(1+1)".to_string(),
+                let want_err_str = match tc.want_error {
+                    Some(err) => err.to_string(),
+                    None => "".to_string(),
+                };
+                let err_str = match output.collect_errors().pop() {
+                    Some(err) => err.to_string(),
+                    None => "".to_string(),
+                };
+                assert_eq!(want_err_str, err_str);
+                assert_eq!(tc.want_output, output.collect().join(""));
+            }
+        )*
+        }
+    }
+
+    struct TestCase {
+        pub tome: Tome,
+        pub want_output: String,
+        pub want_error: Option<Error>,
+    }
+
+    runtime_tests! {
+        simple_run: TestCase{
+            tome: Tome{
+                eldritch: String::from("print(1+1)"),
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
-            })
-            .is_ok();
-        assert!(result);
-        let output = recv.collect_output()?;
-        assert_eq!("2", output.join(""));
-        Ok(())
-    }
-
-    #[test]
-    fn test_library_bindings() {
-        let globals = Runtime::globals();
-        let mut a = Assert::new();
-        a.globals(globals);
-        a.all_true(
-            r#"
-dir(file) == ["append", "compress", "copy", "download", "exists", "find", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]
-dir(process) == ["info", "kill", "list", "name", "netstat"]
-dir(sys) == ["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]
-dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]
-dir(assets) == ["copy","list","read","read_binary"]
-dir(crypto) == ["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]
-dir(time) == ["format_to_epoch", "format_to_readable", "now", "sleep"]
-"#,
-        );
-    }
-
-    #[test]
-    fn test_collect_output() -> Result<()> {
-        let (sender, recv) = channel();
-        let runtime = Runtime::new(sender);
-        let result = runtime
-            .run(Tome {
-                eldritch: r#"print("hello_world"); print("goodbye")"#.to_string(),
+            },
+            want_output: String::from("2"),
+            want_error: None,
+        },
+        multi_print: TestCase {
+            tome: Tome{
+                eldritch: String::from(r#"print("oceans "); print("rise, "); print("empires "); print("fall")"#),
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
-            })
-            .is_ok();
-        assert!(result);
-        let output = recv.collect_output()?;
-        assert_eq!("hello_world\ngoodbye", output.join("\n"));
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_input_params() -> Result<()> {
-        let (sender, recv) = channel();
-        let runtime = Runtime::new(sender);
-        let result = runtime
-            .run(Tome {
-                eldritch: r#"print(sys.shell(input_params['cmd2'])["stdout"])"#.to_string(),
-                parameters: HashMap::from([
-                    ("cmd".to_string(), "id".to_string()),
-                    ("cmd2".to_string(), "echo hello_world".to_string()),
-                    ("cmd3".to_string(), "ls -lah /tmp/".to_string()),
-                ]),
+            },
+            want_output: String::from(r#"oceans rise, empires fall"#),
+            want_error: None,
+        },
+        input_params: TestCase{
+            tome: Tome {
+                            eldritch: r#"print(sys.shell(input_params['cmd2'])["stdout"])"#.to_string(),
+                            parameters: HashMap::from([
+                                ("cmd".to_string(), "id".to_string()),
+                                ("cmd2".to_string(), "echo hello_world".to_string()),
+                                ("cmd3".to_string(), "ls -lah /tmp/".to_string()),
+                            ]),
+                            file_names: Vec::new(),
+                        },
+                        want_output: String::from("hello_world\n"),
+                        want_error: None,
+        },
+        file_bindings: TestCase {
+            tome: Tome {
+                eldritch: String::from("print(dir(file))"),
+                parameters: HashMap::new(),
                 file_names: Vec::new(),
-            })
-            .is_ok();
-        assert!(result);
-
-        let output = recv.collect_output()?;
-        assert_eq!("hello_world\n", output.join(""));
-        Ok(())
+            },
+            want_output: String::from(r#"["append", "compress", "copy", "download", "exists", "find", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
+            want_error: None,
+        },
+        process_bindings: TestCase {
+            tome: Tome{
+                eldritch: String::from("print(dir(process))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_output: String::from(r#"["info", "kill", "list", "name", "netstat"]"#),
+            want_error: None,
+        },
+        sys_bindings: TestCase {
+            tome: Tome{
+                eldritch: String::from("print(dir(sys))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_output: String::from(r#"["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]"#),
+            want_error: None,
+        },
+        pivot_bindings: TestCase {
+            tome: Tome {
+                eldritch: String::from("print(dir(pivot))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_output: String::from(r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]"#),
+            want_error: None,
+        },
+        assets_bindings: TestCase {
+            tome: Tome {
+                eldritch: String::from("print(dir(assets))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_output: String::from(r#"["copy", "list", "read", "read_binary"]"#),
+            want_error: None,
+        },
+        crypto_bindings: TestCase {
+            tome: Tome {
+                eldritch: String::from("print(dir(crypto))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_output: String::from(r#"["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]"#),
+            want_error: None,
+        },
+        time_bindings: TestCase {
+            tome: Tome {
+                eldritch: String::from("print(dir(time))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_output: String::from(r#"["format_to_epoch", "format_to_readable", "now", "sleep"]"#),
+            want_error: None,
+        },
     }
 
     #[tokio::test]
@@ -258,29 +506,27 @@ dir(time) == ["format_to_epoch", "format_to_readable", "now", "sleep"]
         let path = String::from(tmp_file.path().to_str().unwrap())
             .clone()
             .replace("\\", "\\\\");
-        let eldritch = format!(
-            r#"
-file.download("https://www.google.com/", "{path}")
-print("ok")
-"#
-        );
-        let (sender, recv) = channel();
-        let t = thread::spawn(|| {
-            let runtime = Runtime::new(sender);
-
-            let result = runtime
-                .run(Tome {
-                    eldritch,
-                    parameters: HashMap::new(),
-                    file_names: Vec::new(),
-                })
-                .is_ok();
-            assert!(result);
+        let eldritch =
+            format!(r#"file.download("https://www.google.com/", "{path}"); print("ok")"#);
+        let (runtime, output) = Runtime::new();
+        let t = thread::spawn(move || {
+            runtime.run(Tome {
+                eldritch,
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            });
         });
         assert!(t.join().is_ok());
+
+        let out = output.collect();
+        let err = output.collect_errors().pop();
+        assert!(
+            err.is_none(),
+            "failed with err {}",
+            err.unwrap().to_string()
+        );
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
-        let output = recv.collect_output()?;
-        assert_eq!("ok", output.join(""));
+        assert_eq!("ok", out.join(""));
         Ok(())
     }
 }

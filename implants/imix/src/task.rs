@@ -1,37 +1,57 @@
 use anyhow::Result;
 use c2::{
-    pb::{ReportFileRequest, ReportProcessListRequest, ReportTaskOutputRequest, TaskOutput},
+    pb::{ReportProcessListRequest, ReportTaskOutputRequest, TaskError, TaskOutput},
     TavernClient,
 };
-use eldritch::{channel::Receiver, Runtime};
+use eldritch::Output;
 use tokio::task::JoinHandle;
 
 pub struct TaskHandle {
-    pub id: i64,
-    pub recv: Receiver,
-    pub handle: JoinHandle<()>,
+    id: i64,
+    handle: JoinHandle<()>,
+    output: Output,
 }
 
 impl TaskHandle {
-    pub async fn report(&self, tavern: &mut TavernClient) -> Result<()> {
+    pub fn new(id: i64, output: Output, handle: JoinHandle<()>) -> TaskHandle {
+        TaskHandle { id, handle, output }
+    }
+
+    pub fn is_finished(&self) -> bool {
+        self.handle.is_finished()
+    }
+
+    pub async fn report(&mut self, tavern: &mut TavernClient) -> Result<()> {
         // Report Task Output
-        let output = self.recv.collect_output()?;
-        if output.len() > 0 {
+        let exec_started_at = self.output.get_exec_started_at();
+        let exec_finished_at = self.output.get_exec_finished_at();
+        let err = match self.output.collect_errors().pop() {
+            Some(err) => Some(TaskError {
+                msg: err.to_string(),
+            }),
+            None => None,
+        };
+        let text = self.output.collect();
+        if text.len() > 0
+            || err.is_some()
+            || exec_started_at.is_some()
+            || exec_finished_at.is_some()
+        {
             tavern
                 .report_task_output(ReportTaskOutputRequest {
                     output: Some(TaskOutput {
                         id: self.id,
-                        output: output.join(""),
-                        error: None,
-                        exec_started_at: None,
-                        exec_finished_at: None,
+                        output: text.join(""),
+                        error: err,
+                        exec_started_at: exec_started_at,
+                        exec_finished_at: exec_finished_at,
                     }),
                 })
                 .await?;
         }
 
         // Report Process Lists
-        let process_lists = self.recv.collect_process_lists()?;
+        let process_lists = self.output.collect_process_lists();
         for list in process_lists {
             tavern
                 .report_process_list(ReportProcessListRequest {
@@ -42,7 +62,7 @@ impl TaskHandle {
         }
 
         // Report Files TODO
-        // let files = self.runtime.collect_files();
+        // let files = self.output.collect_files();
         // for f in files {
         //     tavern
         //         .report_file(ReportFileRequest {
@@ -55,30 +75,3 @@ impl TaskHandle {
         Ok(())
     }
 }
-
-// fn drain<T>(reciever: &Receiver<T>) -> Result<Vec<T>> {
-//     let mut result: Vec<T> = Vec::new();
-//     loop {
-//         let val = match reciever.recv_timeout(Duration::from_millis(100)) {
-//             Ok(v) => v,
-//             Err(err) => {
-//                 match err.to_string().as_str() {
-//                     "channel is empty and sending half is closed" => {
-//                         break;
-//                     }
-//                     "timed out waiting on channel" => {
-//                         break;
-//                     }
-//                     _ => {
-//                         #[cfg(debug_assertions)]
-//                         eprint!("Error draining channel: {}", err)
-//                     }
-//                 }
-//                 break;
-//             }
-//         };
-//         // let appended_line = format!("{}{}", res.to_owned(), new_res_line);
-//         result.push(val);
-//     }
-//     Ok(result)
-// }

