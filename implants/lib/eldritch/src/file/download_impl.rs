@@ -1,6 +1,6 @@
 use anyhow::Result;
 use std::path::PathBuf;
-use tokio::{fs::File, io::AsyncWriteExt, sync::futures};
+use tokio::{fs::File, io::AsyncWriteExt};
 use tokio_stream::StreamExt;
 
 async fn handle_download(uri: String, dst: String) -> Result<()> {
@@ -26,9 +26,6 @@ async fn handle_download(uri: String, dst: String) -> Result<()> {
 }
 
 pub fn download(uri: String, dst: String) -> Result<()> {
-    // let handle = tokio::runtime::Handle::current();
-    // let _guard = handle.enter();
-    // let response = handle.block_on(async { handle_download(uri, dst).await });
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;

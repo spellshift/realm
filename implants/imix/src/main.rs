@@ -3,12 +3,15 @@ use imix::{Agent, Config};
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
 async fn main() {
+    #[cfg(debug_assertions)]
+    pretty_env_logger::init();
+
     loop {
         match run().await {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
-                eprint!("callback loop fatal error: {}", _err)
+                log::error!("callback loop fatal error: {_err}");
             }
         }
     }

@@ -1,5 +1,3 @@
-use std::time::{Duration, Instant};
-
 use crate::{config::Config, task::TaskHandle};
 use anyhow::Result;
 use c2::{
@@ -7,6 +5,7 @@ use c2::{
     TavernClient,
 };
 use eldritch::Runtime;
+use std::time::{Duration, Instant};
 
 pub struct Agent {
     info: Beacon,
@@ -36,6 +35,9 @@ impl Agent {
         // TODO: This
         let tasks = resp.get_ref().tasks.clone();
 
+        #[cfg(debug_assertions)]
+        log::info!("claimed {} tasks", tasks.len());
+
         for task in tasks {
             let tome = match task.tome {
                 Some(t) => t,
@@ -45,9 +47,11 @@ impl Agent {
             };
 
             let (runtime, output) = Runtime::new();
-            let handle = tokio::spawn(async move { runtime.run(tome) });
-
+            let handle = tokio::task::spawn_blocking(move || runtime.run(tome));
             self.handles.push(TaskHandle::new(task.id, output, handle));
+
+            #[cfg(debug_assertions)]
+            log::info!("spawned task execution for id={}", task.id);
         }
         Ok(())
     }
@@ -99,6 +103,13 @@ impl Agent {
                 Some(secs) => Duration::from_secs(secs),
                 None => Duration::from_secs(0),
             };
+
+            #[cfg(debug_assertions)]
+            log::debug!(
+                "completed callback in {}s, sleeping for {}s",
+                start.elapsed().as_secs(),
+                delay.as_secs()
+            );
 
             std::thread::sleep(delay);
         }

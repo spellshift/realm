@@ -24,5 +24,7 @@ uuid = { workspace = true, features = ["v4","fast-rng"] }
 whoami = { workspace = true }
 
 [dev-dependencies]
+log = {workspace = true}
+pretty_env_logger = {workspace = true}
 httptest = { workspace = true }
 tempfile = { workspace = true }
