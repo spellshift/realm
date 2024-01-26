@@ -369,7 +369,7 @@ fn drain<T>(reciever: &Receiver<T>) -> Vec<T> {
 mod tests {
     use crate::{pb::Tome, Runtime};
     use anyhow::Error;
-    use std::{collections::HashMap, thread};
+    use std::collections::HashMap;
     use tempfile::NamedTempFile;
 
     macro_rules! runtime_tests {
@@ -499,7 +499,7 @@ mod tests {
         },
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 128)]
     async fn test_library_async() -> anyhow::Result<()> {
         // just using a temp file for its path
         let tmp_file = NamedTempFile::new()?;
@@ -509,14 +509,14 @@ mod tests {
         let eldritch =
             format!(r#"file.download("https://www.google.com/", "{path}"); print("ok")"#);
         let (runtime, output) = Runtime::new();
-        let t = thread::spawn(move || {
+        let t = tokio::task::spawn_blocking(move || {
             runtime.run(Tome {
                 eldritch,
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             });
         });
-        assert!(t.join().is_ok());
+        assert!(t.await.is_ok());
 
         let out = output.collect();
         let err = output.collect_errors().pop();
