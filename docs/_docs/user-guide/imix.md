@@ -67,10 +67,10 @@ The imix config is as follows:
 ## Installation
 
 The install subcommand executes embedded tomes similar to golem.
-It will loop through all embedded files looking for main.eldritch
+It will loop through all embedded files looking for main.eldritch.
 Each main.eldritch will execute in a new thread. This is done to allow imix to install redundantly or install additional (non dependent) tools.
 
-The install subcommand makes allows some variables to be passed form the user into the tomes through the -c flag.
+The install subcommand allows some variables to be passed from the user into the tomes through the -c flag.
 When specified input_params['custom_config'] is set to the file path of the config specified Eg.
 ./imix install -c /tmp/imix-config.json will result in input_params['custom_config'] = "/tmp/imix-config.json
 
@@ -85,7 +85,7 @@ def main():
 main()
 ```
 
-Installation scripts are specified in the `realm/implants/imix/install_scripts` directeroy.
+Installation scripts are specified in the `realm/implants/imix/install_scripts` directory.
 
 ## Functionality
 
@@ -97,7 +97,7 @@ See the [Eldritch User Guide](/user-guide/eldritch) for more information.
 Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
 Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running tasks will report their status as new data comes in.
 
-## Static cross compiliation
+## Static cross compilation
 
 ### Linux
 
