@@ -21,7 +21,7 @@ Quests by default are group actions so scaling your activity is easy and built-i
 Each quest is made up of three main parts:
 - Beacons - What you'll be executing on
 - Tomes - What you'll be executing
-- Input parameters - arguments passed to the tome and eldritch interpret as `input_params{}`
+- Input parameters - arguments passed to the tome and eldritch interpreter as `input_params{}`
 
 #### To start click "Create new quest"
 
