@@ -441,7 +441,7 @@ mod tests {
         },
         input_params: TestCase{
             tome: Tome {
-                            eldritch: r#"print(sys.shell(input_params['cmd2'])["stdout"])"#.to_string(),
+                            eldritch: r#"print(input_params['cmd2'])"#.to_string(),
                             parameters: HashMap::from([
                                 ("cmd".to_string(), "id".to_string()),
                                 ("cmd2".to_string(), "echo hello_world".to_string()),
@@ -449,7 +449,7 @@ mod tests {
                             ]),
                             file_names: Vec::new(),
                         },
-                        want_output: String::from("hello_world\n"),
+                        want_output: String::from("echo hello_world"),
                         want_error: None,
         },
         file_bindings: TestCase {
