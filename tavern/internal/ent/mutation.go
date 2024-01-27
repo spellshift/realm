@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
@@ -3831,7 +3832,7 @@ type HostProcessMutation struct {
 	cmd              *string
 	env              *string
 	cwd              *string
-	status           *c2pb.Process_Status
+	status           *epb.Process_Status
 	clearedFields    map[string]struct{}
 	host             *int
 	clearedhost      bool
@@ -4393,12 +4394,12 @@ func (m *HostProcessMutation) ResetCwd() {
 }
 
 // SetStatus sets the "status" field.
-func (m *HostProcessMutation) SetStatus(cs c2pb.Process_Status) {
-	m.status = &cs
+func (m *HostProcessMutation) SetStatus(es epb.Process_Status) {
+	m.status = &es
 }
 
 // Status returns the value of the "status" field in the mutation.
-func (m *HostProcessMutation) Status() (r c2pb.Process_Status, exists bool) {
+func (m *HostProcessMutation) Status() (r epb.Process_Status, exists bool) {
 	v := m.status
 	if v == nil {
 		return
@@ -4409,7 +4410,7 @@ func (m *HostProcessMutation) Status() (r c2pb.Process_Status, exists bool) {
 // OldStatus returns the old "status" field's value of the HostProcess entity.
 // If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HostProcessMutation) OldStatus(ctx context.Context) (v c2pb.Process_Status, err error) {
+func (m *HostProcessMutation) OldStatus(ctx context.Context) (v epb.Process_Status, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
 	}
@@ -4715,7 +4716,7 @@ func (m *HostProcessMutation) SetField(name string, value ent.Value) error {
 		m.SetCwd(v)
 		return nil
 	case hostprocess.FieldStatus:
-		v, ok := value.(c2pb.Process_Status)
+		v, ok := value.(epb.Process_Status)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

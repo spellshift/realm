@@ -7,7 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -697,22 +697,22 @@ func CwdContainsFold(v string) predicate.HostProcess {
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.
-func StatusEQ(v c2pb.Process_Status) predicate.HostProcess {
+func StatusEQ(v epb.Process_Status) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldEQ(FieldStatus, v))
 }
 
 // StatusNEQ applies the NEQ predicate on the "status" field.
-func StatusNEQ(v c2pb.Process_Status) predicate.HostProcess {
+func StatusNEQ(v epb.Process_Status) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldNEQ(FieldStatus, v))
 }
 
 // StatusIn applies the In predicate on the "status" field.
-func StatusIn(vs ...c2pb.Process_Status) predicate.HostProcess {
+func StatusIn(vs ...epb.Process_Status) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldIn(FieldStatus, vs...))
 }
 
 // StatusNotIn applies the NotIn predicate on the "status" field.
-func StatusNotIn(vs ...c2pb.Process_Status) predicate.HostProcess {
+func StatusNotIn(vs ...epb.Process_Status) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldNotIn(FieldStatus, vs...))
 }
 

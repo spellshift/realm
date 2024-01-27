@@ -15,7 +15,7 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 	if req.TaskId == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
 	}
-	if len(req.List) < 1 {
+	if req.List == nil || len(req.List.List) < 1 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide process list")
 	}
 
@@ -50,8 +50,8 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 	}()
 
 	// Create Processes
-	builders := make([]*ent.HostProcessCreate, 0, len(req.List))
-	for _, proc := range req.List {
+	builders := make([]*ent.HostProcessCreate, 0, len(req.List.List))
+	for _, proc := range req.List.List {
 		builders = append(builders,
 			txGraph.HostProcess.Create().
 				SetHostID(host.ID).

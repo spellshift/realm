@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/task"
@@ -134,8 +134,8 @@ func (hpc *HostProcessCreate) SetNillableCwd(s *string) *HostProcessCreate {
 }
 
 // SetStatus sets the "status" field.
-func (hpc *HostProcessCreate) SetStatus(cs c2pb.Process_Status) *HostProcessCreate {
-	hpc.mutation.SetStatus(cs)
+func (hpc *HostProcessCreate) SetStatus(es epb.Process_Status) *HostProcessCreate {
+	hpc.mutation.SetStatus(es)
 	return hpc
 }
 
@@ -547,7 +547,7 @@ func (u *HostProcessUpsert) ClearCwd() *HostProcessUpsert {
 }
 
 // SetStatus sets the "status" field.
-func (u *HostProcessUpsert) SetStatus(v c2pb.Process_Status) *HostProcessUpsert {
+func (u *HostProcessUpsert) SetStatus(v epb.Process_Status) *HostProcessUpsert {
 	u.Set(hostprocess.FieldStatus, v)
 	return u
 }
@@ -772,7 +772,7 @@ func (u *HostProcessUpsertOne) ClearCwd() *HostProcessUpsertOne {
 }
 
 // SetStatus sets the "status" field.
-func (u *HostProcessUpsertOne) SetStatus(v c2pb.Process_Status) *HostProcessUpsertOne {
+func (u *HostProcessUpsertOne) SetStatus(v epb.Process_Status) *HostProcessUpsertOne {
 	return u.Update(func(s *HostProcessUpsert) {
 		s.SetStatus(v)
 	})
@@ -1165,7 +1165,7 @@ func (u *HostProcessUpsertBulk) ClearCwd() *HostProcessUpsertBulk {
 }
 
 // SetStatus sets the "status" field.
-func (u *HostProcessUpsertBulk) SetStatus(v c2pb.Process_Status) *HostProcessUpsertBulk {
+func (u *HostProcessUpsertBulk) SetStatus(v epb.Process_Status) *HostProcessUpsertBulk {
 	return u.Update(func(s *HostProcessUpsert) {
 		s.SetStatus(v)
 	})

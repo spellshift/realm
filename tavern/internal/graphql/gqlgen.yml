@@ -67,4 +67,4 @@ models:
       - realm.pub/tavern/internal/ent/tome.Tactic
   Status:
      model:
-      - realm.pub/tavern/internal/c2/c2pb.Process_Status
+      - realm.pub/tavern/internal/c2/epb.Process_Status

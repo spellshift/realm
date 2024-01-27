@@ -60,29 +60,7 @@ ENABLE_TEST_DATA=1 go run ./tavern
 
 ```bash
 git clone https://github.com/spellshift/realm.git
-cd realm/implants/imix
-
-# Create the config file
-cat <<EOF > /tmp/imix-config.json
-{
-    "service_configs": [],
-    "target_forward_connect_ip": "127.0.0.1",
-    "target_name": "test1234",
-    "callback_config": {
-        "interval": 4,
-        "jitter": 1,
-        "timeout": 4,
-        "c2_configs": [
-        {
-            "priority": 1,
-            "uri": "http://127.0.0.1/grpc/"
-        }
-        ]
-    }
-}
-EOF
-
-cargo run -- -c /tmp/imix-config.json
+cd realm/implants/imix && cargo run
 
 ```
 

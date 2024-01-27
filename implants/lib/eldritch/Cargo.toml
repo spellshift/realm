@@ -1,6 +1,6 @@
 [package]
 name = "eldritch"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 
 [features]
@@ -23,11 +23,14 @@ gazebo = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
 ipnetwork = { workspace = true }
+log = { workspace = true }
 md5 = { workspace = true }
 netstat2 = { workspace = true }
 nix = { workspace = true }
 object = { workspace = true }
 openssl = { workspace = true, features = ["vendored"] }
+prost = { workspace = true}
+prost-types = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "stream"] }
 russh = { workspace = true }
@@ -46,6 +49,7 @@ tempfile = { workspace = true }
 tera = { workspace = true }
 tokio = { workspace = true , features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
+tonic = { workspace = true, features = ["tls-roots"] }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
@@ -58,7 +62,6 @@ windows-sys = { workspace = true, features = [
 ]}
 whoami = { workspace = true }
 
-
 [target.'cfg(windows)'.dependencies]
 network-interface = { workspace = true }
 winreg = { workspace = true }
@@ -69,3 +72,8 @@ pnet = { workspace = true }
 [dev-dependencies]
 httptest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+anyhow = { workspace = true }
+which =  { workspace = true }

@@ -4,4 +4,4 @@ def test():
         res = res + i
     return res
 
-str(test())
+print(test())

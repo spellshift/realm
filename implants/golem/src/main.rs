@@ -1,50 +1,68 @@
 extern crate eldritch;
 extern crate golem;
 
+use anyhow::{anyhow, Result};
 use clap::{Arg, Command};
+use eldritch::pb::Tome;
+use eldritch::{Output, Runtime};
+use std::collections::HashMap;
 use std::fs;
 use std::process;
-use std::thread;
-
-use eldritch::{eldritch_run, StdPrintHandler};
+use tokio::task::JoinHandle;
 
 mod inter;
 
-async fn execute_tomes_in_parallel(
-    tome_name_and_content: Vec<(String, String)>,
-) -> anyhow::Result<(i32, Vec<String>)> {
-    // Queue async tasks
-    let mut all_tome_futures: Vec<(String, _)> = vec![];
-    for tome_data in tome_name_and_content {
-        let tmp_row = (
-            tome_data.0.clone().to_string(),
-            thread::spawn(|| eldritch_run(tome_data.0, tome_data.1, None, &StdPrintHandler {})),
-        );
-        all_tome_futures.push(tmp_row)
+struct ParsedTome {
+    pub path: String,
+    pub eldritch: String,
+}
+
+struct Handle {
+    handle: JoinHandle<()>,
+    path: String,
+    output: Output,
+}
+
+async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
+    let mut handles = Vec::new();
+    for tome in tomes {
+        let (runtime, output) = Runtime::new();
+        let handle = tokio::task::spawn_blocking(move || {
+            runtime.run(Tome {
+                eldritch: tome.eldritch,
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            });
+        });
+        handles.push(Handle {
+            handle,
+            path: tome.path,
+            output,
+        });
     }
 
-    let mut error_code = 0;
-    let mut result: Vec<String> = Vec::new();
-    for tome_task in all_tome_futures {
-        let tome_name: String = tome_task.0;
-        // Join our
-        let tome_result_thread_join = match tome_task.1.join() {
-            Ok(local_thread_join_res) => local_thread_join_res,
-            Err(_) => {
-                error_code = 1;
-                Err(anyhow::anyhow!("An error occured waiting for the tome thread to complete while executing {tome_name}."))
+    let mut result = Vec::new();
+    for handle in handles {
+        match handle.handle.await {
+            Ok(_) => {}
+            Err(err) => {
+                eprintln!(
+                    "error waiting for tome to complete: {} {}",
+                    handle.path, err
+                );
+                continue;
             }
         };
-
-        match tome_result_thread_join {
-            Ok(local_tome_result) => result.push(local_tome_result),
-            Err(task_error) => {
-                error_code = 1;
-                eprintln!("[TASK ERROR] {tome_name}: {task_error}");
-            }
+        let mut out = handle.output.collect();
+        let errors = handle.output.collect_errors();
+        if errors.len() > 0 {
+            return Err(anyhow!("tome execution failed: {:?}", errors));
         }
+        println!("OUTPUT: {:?}", out);
+        result.append(&mut out);
     }
-    Ok((error_code, result))
+
+    Ok(result)
 }
 
 fn main() -> anyhow::Result<()> {
@@ -65,14 +83,16 @@ fn main() -> anyhow::Result<()> {
         .get_matches();
 
     if matches.contains_id("INPUT") {
-        // Get list of files
+        // Read Tomes
         let tome_files = matches.try_get_many::<String>("INPUT").unwrap().unwrap();
-
-        let mut tome_files_and_content: Vec<(String, String)> = Vec::new();
+        let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
         for tome in tome_files {
             let tome_path = tome.to_string().clone();
             let tome_contents = fs::read_to_string(tome_path.clone())?;
-            tome_files_and_content.push((tome_path, tome_contents))
+            parsed_tomes.push(ParsedTome {
+                path: tome_path,
+                eldritch: tome_contents,
+            });
         }
 
         let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -80,14 +100,13 @@ fn main() -> anyhow::Result<()> {
             .build()
             .unwrap();
 
-        let (error_code, result) =
-            match runtime.block_on(execute_tomes_in_parallel(tome_files_and_content)) {
-                Ok(response) => response,
-                Err(error) => {
-                    println!("Error executing tomes {:?}", error);
-                    (-1, Vec::new())
-                }
-            };
+        let (error_code, result) = match runtime.block_on(run_tomes(parsed_tomes)) {
+            Ok(response) => (0, response),
+            Err(error) => {
+                eprint!("failed to execute tome {:?}", error);
+                (-1, Vec::new())
+            }
+        };
 
         if result.len() > 0 {
             println!("{:?}", result);
@@ -96,7 +115,7 @@ fn main() -> anyhow::Result<()> {
     } else if matches.contains_id("interactive") {
         inter::interactive_main()?;
     } else {
-        let mut tome_files_and_content: Vec<(String, String)> = Vec::new();
+        let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
         for embedded_file_path in eldritch::assets::Asset::iter() {
             let filename = match embedded_file_path.split(r#"/"#).last() {
                 Some(local_filename) => local_filename,
@@ -123,7 +142,10 @@ fn main() -> anyhow::Result<()> {
                         "".to_string()
                     }
                 };
-                tome_files_and_content.push((tome_path, tome_contents))
+                parsed_tomes.push(ParsedTome {
+                    path: tome_path,
+                    eldritch: tome_contents,
+                });
             }
         }
         let runtime = tokio::runtime::Builder::new_current_thread()
@@ -131,14 +153,13 @@ fn main() -> anyhow::Result<()> {
             .build()
             .unwrap();
 
-        let (error_code, result) =
-            match runtime.block_on(execute_tomes_in_parallel(tome_files_and_content)) {
-                Ok(response) => response,
-                Err(error) => {
-                    println!("Error executing tomes {:?}", error);
-                    (-1, Vec::new())
-                }
-            };
+        let (error_code, result) = match runtime.block_on(run_tomes(parsed_tomes)) {
+            Ok(response) => (0, response),
+            Err(error) => {
+                eprint!("error executing tomes {:?}", error);
+                (-1, Vec::new())
+            }
+        };
 
         if result.len() > 0 {
             println!("{:?}", result);
@@ -154,14 +175,13 @@ mod tests {
     use super::*;
     #[tokio::test]
     async fn test_golem_execute_tomes_in_parallel() -> anyhow::Result<()> {
-        let tome_files_and_content = [(
-            "test_hello.eldritch".to_string(),
-            "'hello world'".to_string(),
-        )];
-        let (error_code, result) =
-            execute_tomes_in_parallel(tome_files_and_content.to_vec()).await?;
-        assert_eq!(error_code, 0);
-        assert!(result.contains(&"hello world".to_string()));
+        let parsed_tomes = Vec::from([ParsedTome {
+            path: "test_hello.eldritch".to_string(),
+            eldritch: r#"print("hello world")"#.to_string(),
+        }]);
+
+        let out = run_tomes(parsed_tomes).await?;
+        assert_eq!("hello world".to_string(), out.join(""));
         Ok(())
     }
 }
