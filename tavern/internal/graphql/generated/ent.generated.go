@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/vektah/gqlparser/v2/ast"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
@@ -2755,9 +2756,9 @@ func (ec *executionContext) _HostProcess_status(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(c2pb.Process_Status)
+	res := resTmp.(epb.Process_Status)
 	fc.Result = res
-	return ec.marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx, field.Selections, res)
+	return ec.marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10774,7 +10775,7 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
-			data, err := ec.unmarshalOHostProcessStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx, v)
+			data, err := ec.unmarshalOHostProcessStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10783,7 +10784,7 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusNEQ"))
-			data, err := ec.unmarshalOHostProcessStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx, v)
+			data, err := ec.unmarshalOHostProcessStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10792,7 +10793,7 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusIn"))
-			data, err := ec.unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Statusᚄ(ctx, v)
+			data, err := ec.unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Statusᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10801,7 +10802,7 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusNotIn"))
-			data, err := ec.unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Statusᚄ(ctx, v)
+			data, err := ec.unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Statusᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -17852,13 +17853,13 @@ func (ec *executionContext) marshalNHostProcessOrderField2ᚖrealmᚗpubᚋtaver
 	return v
 }
 
-func (ec *executionContext) unmarshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx context.Context, v interface{}) (c2pb.Process_Status, error) {
-	var res c2pb.Process_Status
+func (ec *executionContext) unmarshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx context.Context, v interface{}) (epb.Process_Status, error) {
+	var res epb.Process_Status
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx context.Context, sel ast.SelectionSet, v c2pb.Process_Status) graphql.Marshaler {
+func (ec *executionContext) marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx context.Context, sel ast.SelectionSet, v epb.Process_Status) graphql.Marshaler {
 	return v
 }
 
@@ -18750,7 +18751,7 @@ func (ec *executionContext) marshalOHostProcess2ᚕᚖrealmᚗpubᚋtavernᚋint
 	return ret
 }
 
-func (ec *executionContext) unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Statusᚄ(ctx context.Context, v interface{}) ([]c2pb.Process_Status, error) {
+func (ec *executionContext) unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Statusᚄ(ctx context.Context, v interface{}) ([]epb.Process_Status, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18759,10 +18760,10 @@ func (ec *executionContext) unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavern�
 		vSlice = graphql.CoerceList(v)
 	}
 	var err error
-	res := make([]c2pb.Process_Status, len(vSlice))
+	res := make([]epb.Process_Status, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -18770,7 +18771,7 @@ func (ec *executionContext) unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavern�
 	return res, nil
 }
 
-func (ec *executionContext) marshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Statusᚄ(ctx context.Context, sel ast.SelectionSet, v []c2pb.Process_Status) graphql.Marshaler {
+func (ec *executionContext) marshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Statusᚄ(ctx context.Context, sel ast.SelectionSet, v []epb.Process_Status) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -18797,7 +18798,7 @@ func (ec *executionContext) marshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx, sel, v[i])
+			ret[i] = ec.marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -18817,16 +18818,16 @@ func (ec *executionContext) marshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋ
 	return ret
 }
 
-func (ec *executionContext) unmarshalOHostProcessStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx context.Context, v interface{}) (*c2pb.Process_Status, error) {
+func (ec *executionContext) unmarshalOHostProcessStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx context.Context, v interface{}) (*epb.Process_Status, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(c2pb.Process_Status)
+	var res = new(epb.Process_Status)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOHostProcessStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐProcess_Status(ctx context.Context, sel ast.SelectionSet, v *c2pb.Process_Status) graphql.Marshaler {
+func (ec *executionContext) marshalOHostProcessStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx context.Context, sel ast.SelectionSet, v *epb.Process_Status) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

@@ -1,1 +1,1 @@
-str(dir(file))
+print(dir(file))

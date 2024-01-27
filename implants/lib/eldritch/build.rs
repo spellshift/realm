@@ -1,3 +1,8 @@
+use anyhow::Result;
+use std::env;
+use std::path::PathBuf;
+use which::which;
+
 #[cfg(target_os = "windows")]
 fn build_bin_create_file_dll() {
     use std::{
@@ -97,10 +102,40 @@ fn set_host_family() {
     println!("cargo:rustc-cfg=host_family=\"{}\"", HOST_FAMILY);
 }
 
-fn main() {
+fn build_proto() -> Result<()> {
+    match env::var_os("PROTOC")
+        .map(PathBuf::from)
+        .or_else(|| which("protoc").ok())
+    {
+        Some(_) => println!("Found protoc, protos will be generated"),
+        None => {
+            println!("WARNING: Failed to locate protoc, protos will not be generated");
+            return Ok(());
+        }
+    }
+
+    match tonic_build::configure()
+        .out_dir("./src")
+        .protoc_arg("--rust_out=./src/pb.rs")
+        .build_client(false)
+        .build_server(false)
+        .compile(&["eldritch.proto"], &["../../../tavern/internal/c2/proto"])
+    {
+        Err(err) => {
+            println!("WARNING: Failed to compile protos: {}", err);
+        }
+        Ok(_) => println!("Generating protos"),
+    }
+    Ok(())
+}
+
+fn main() -> Result<()> {
     set_host_family();
+    build_proto()?;
     #[cfg(target_os = "windows")]
     build_bin_create_file_dll();
     #[cfg(target_os = "windows")]
     build_bin_reflective_loader();
+
+    Ok(())
 }

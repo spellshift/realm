@@ -8,61 +8,21 @@ permalink: user-guide/imix
 ## What is Imix
 
 Imix is the default agent for realm.
-Imix currently only supports http callbacks which interact directly with the graphql API.
+Imix currently only supports http(s) callbacks to Tavern's gRPC API.
 
 ## Configuration
 
-By default Imix is configured using a JSON file at run time.
+Imix has compile-time configuration, that may be specified using environment variables during `cargo build`.
 
-The config is specified at run time with the `-c` flag.
-For example:
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:80` | No |
+| IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
+| IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 
-```bash
-./imix -c /tmp/imix-config.json
-```
+## Logging
 
-The imix config is as follows:
-
-```json
-{
-    "service_configs": [
-        {
-            "name": "imix",
-            "description": "Imix c2 agent",
-            "executable_name": "imix",
-            "executable_args": ""
-        }
-    ],
-    "target_forward_connect_ip": "127.0.0.1",
-    "target_name": "test1234",
-    "callback_config": {
-        "interval": 4,
-        "jitter": 1,
-        "timeout": 4,
-        "c2_configs": [
-        {
-            "priority": 1,
-            "uri": "http://127.0.0.1/grpc"
-        }
-        ]
-    }
-}
-```
-
-- `service_configs`: Defining persistence variables.
-  - `name`: The name of the service to install as.
-  - `description`: If possible set a description for the service.
-  - `executable_name`: What imix should be named Eg. `not-supicious-serviced`.
-  - `executable_args`: Args to append after the executable.
-- `target_forward_connect_ip`: The IP address that you the red teamer would interact with the host through. This is to help keep track of agents when a hosts internal IP is different from the one you interact with in the case of a host behind a proxy.
-- `target_name`: Currently unused.
-- `callback_config`: Define where and when the agent should callback.
-  - `interval`: Number of seconds between callbacks.
-  - `jitter`: Currently unused.
-  - `timeout`: The number of seconds to wait before aborting a connection attempt.
-  - `c2_config` Define where the c2 should callback to.
-    - `priority`: The index that a domain should have.
-    - `uri`: The full URI of the callback endpoint.
+At runtime, you may use the `IMIX_LOG` environment variable to control log levels and verbosity. See [these docs](https://docs.rs/pretty_env_logger/latest/pretty_env_logger/) for more information. When building a release version of imix, logging is disabled and is not included in the released binary.
 
 ## Installation
 

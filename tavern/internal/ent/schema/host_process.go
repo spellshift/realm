@@ -6,7 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 )
 
 // HostProcess holds the schema definition for the HostProcess entity.
@@ -48,7 +48,7 @@ func (HostProcess) Fields() []ent.Field {
 			Optional().
 			Comment("The current working directory for the process."),
 		field.Enum("status").
-			GoType(c2pb.Process_Status(0)).
+			GoType(epb.Process_Status(0)).
 			Comment("Current process status."),
 	}
 }

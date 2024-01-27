@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/namegen"
@@ -207,11 +208,13 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			claimedFileNames = append(claimedFileNames, f.Name)
 		}
 		resp.Tasks = append(resp.Tasks, &c2pb.Task{
-			Id:         int64(claimedTask.ID),
-			Eldritch:   claimedTome.Eldritch,
-			Parameters: params,
-			FileNames:  claimedFileNames,
-			QuestName:  claimedQuest.Name,
+			Id:        int64(claimedTask.ID),
+			QuestName: claimedQuest.Name,
+			Tome: &epb.Tome{
+				Eldritch:   claimedTome.Eldritch,
+				Parameters: params,
+				FileNames:  claimedFileNames,
+			},
 		})
 	}
 
