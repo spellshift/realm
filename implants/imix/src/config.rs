@@ -19,7 +19,7 @@ macro_rules! callback_uri {
  * Compile-time constant for the agent callback URI, derived from the IMIX_CALLBACK_URI environment variable during compilation.
  * Defaults to "http://127.0.0.1:80/grpc" if this is unset.
  */
-pub const CALLBACK_URI: &'static str = callback_uri!();
+pub const CALLBACK_URI: &str = callback_uri!();
 
 macro_rules! callback_interval {
     () => {
@@ -32,7 +32,7 @@ macro_rules! callback_interval {
 /* Compile-time constant for the agent retry interval, derived from the IMIX_RETRY_INTERVAL environment variable during compilation.
  * Defaults to 5 if unset.
  */
-pub const CALLBACK_INTERVAL: &'static str = callback_interval!();
+pub const CALLBACK_INTERVAL: &str = callback_interval!();
 
 macro_rules! retry_interval {
     () => {
@@ -45,7 +45,7 @@ macro_rules! retry_interval {
 /* Compile-time constant for the agent callback interval, derived from the IMIX_CALLBACK_INTERVAL environment variable during compilation.
  * Defaults to 5 if unset.
  */
-pub const RETRY_INTERVAL: &'static str = retry_interval!();
+pub const RETRY_INTERVAL: &str = retry_interval!();
 
 /*
  * Config holds values necessary to configure an Agent.
@@ -82,7 +82,7 @@ impl Default for Config {
                     #[cfg(debug_assertions)]
                     log::error!("failed to parse callback interval constant, defaulting to 5 seconds: {_err}");
 
-                    5 as u64
+                    5_u64
                 }
             },
             host: Some(host),
@@ -100,7 +100,7 @@ impl Default for Config {
                         "failed to parse retry interval constant, defaulting to 5 seconds: {_err}"
                     );
 
-                    5 as u64
+                    5_u64
                 }
             },
         }
@@ -179,7 +179,7 @@ fn get_host_id(file_path: String) -> String {
         }
     };
 
-    return host_id;
+    host_id
 }
 
 /*

@@ -8,10 +8,7 @@ pub async fn install() {
 
     // Iterate through all embedded files
     for embedded_file_path in eldritch::assets::Asset::iter() {
-        let filename = match embedded_file_path.split(r#"/"#).last() {
-            Some(local_filename) => local_filename,
-            None => "",
-        };
+        let filename = embedded_file_path.split('/').last().unwrap_or("");
 
         #[cfg(debug_assertions)]
         log::debug!("checking asset {embedded_file_path}");
@@ -75,7 +72,7 @@ fn load_embedded_eldritch(path: String) -> Result<String> {
             #[cfg(debug_assertions)]
             log::error!("no asset file at {}", path);
 
-            return Err(anyhow!("no asset file at {}", path));
+            Err(anyhow!("no asset file at {}", path))
         }
     }
 }

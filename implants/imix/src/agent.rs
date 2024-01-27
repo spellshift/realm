@@ -108,7 +108,7 @@ impl Agent {
                 }
             };
 
-            let interval = self.info.interval.clone();
+            let interval = self.info.interval;
             let delay = match interval.checked_sub(start.elapsed().as_secs()) {
                 Some(secs) => Duration::from_secs(secs),
                 None => Duration::from_secs(0),

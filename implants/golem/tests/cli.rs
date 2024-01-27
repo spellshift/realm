@@ -32,9 +32,7 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}syntax_fail.tome"));
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains(format!(
-            r#"Parse error: unexpected string literal "win" here"#
-        )));
+        .stderr(predicate::str::contains(r#"Parse error: unexpected string literal "win" here"#.to_string()));
 
     Ok(())
 }
