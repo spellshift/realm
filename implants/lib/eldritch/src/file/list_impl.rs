@@ -111,7 +111,7 @@ fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {
 
     Ok(File {
         name: file_name,
-        file_type: file_type,
+        file_type,
         size: file_size,
         owner: owner_username,
         group: group_id.to_string(),

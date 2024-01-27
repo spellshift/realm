@@ -44,7 +44,7 @@ mod tests {
 
         let mut sys = System::new();
         sys.refresh_processes();
-        for (pid, _) in sys.processes() {
+        for pid in sys.processes().keys() {
             if pid.as_u32() == child.id() {
                 let i32_pid = pid.as_u32() as i32;
                 kill(i32_pid)?;
@@ -64,6 +64,6 @@ mod tests {
                 }
             }
         }
-        return Ok(());
+        Ok(())
     }
 }

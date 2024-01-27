@@ -1,7 +1,7 @@
-mod sleep_impl;
-mod now_impl;
 mod format_to_epoch_impl;
 mod format_to_readable_impl;
+mod now_impl;
+mod sleep_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -50,6 +50,7 @@ impl<'v> UnpackValue<'v> for TimeLibrary {
 // This is where all of the "Time.X" impl methods are bound
 #[starlark_module]
 #[rustfmt::skip]
+#[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     fn now<'v>(this: TimeLibrary) -> anyhow::Result<u64> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

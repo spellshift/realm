@@ -3,7 +3,7 @@ use std::path::Path;
 
 pub fn is_dir(path: String) -> Result<bool> {
     let res = Path::new(&path);
-    return Ok(res.is_dir());
+    Ok(res.is_dir())
 }
 
 #[cfg(test)]
@@ -20,7 +20,7 @@ mod tests {
 
         let res = is_dir(path)?;
 
-        assert_eq!(res, true);
+        assert!(res);
         Ok(())
     }
     #[test]
@@ -34,7 +34,7 @@ mod tests {
         // Run our code
         let res = is_dir(path)?;
 
-        assert_eq!(res, false);
+        assert!(!res);
         Ok(())
     }
     // Make sure non-existent error is thrown
@@ -53,7 +53,7 @@ mod tests {
 
         let res = is_dir(path)?;
 
-        assert_eq!(res, false);
+        assert!(!res);
         Ok(())
     }
 }

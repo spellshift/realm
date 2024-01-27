@@ -34,7 +34,7 @@ pub fn download(uri: String, dst: String) -> Result<()> {
 
     match response {
         Ok(_) => Ok(()),
-        Err(_) => return response,
+        Err(_) => response,
     }
 }
 

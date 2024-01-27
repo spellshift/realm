@@ -3,9 +3,9 @@ use std::fs;
 
 pub fn mkdir(path: String) -> Result<()> {
     match fs::create_dir(&path) {
-        Ok(_) => return Ok(()),
+        Ok(_) => Ok(()),
         Err(_) => {
-            return Err(anyhow::anyhow!(format!(
+            Err(anyhow::anyhow!(format!(
                 "Failed to create directory at path: {}",
                 path
             )))
@@ -49,7 +49,7 @@ mod tests {
         let path_dir = String::from(tmp_dir_parent.path().to_str().unwrap()).clone();
         tmp_dir_parent.close()?;
 
-        let result = mkdir(format!("{}/{}", path_dir, "dir".to_string()));
+        let result = mkdir(format!("{}/{}", path_dir, "dir"));
 
         assert!(
             result.is_err(),

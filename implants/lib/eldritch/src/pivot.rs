@@ -63,6 +63,7 @@ impl<'v> UnpackValue<'v> for PivotLibrary {
 // This is where all of the "file.X" impl methods are bound
 #[starlark_module]
 #[rustfmt::skip]
+#[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     fn ssh_exec<'v>(this: PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -150,30 +151,25 @@ impl Session {
         let mut session = client::connect(config, addrs.clone(), sh).await?;
 
         // Try key auth first
-        match key {
-            Some(local_key) => {
-                let key_pair = decode_secret_key(&local_key, key_password)?;
-                let _auth_res: bool = session
-                    .authenticate_publickey(user, Arc::new(key_pair))
-                    .await?;
-                return Ok(Self { session });
-            }
-            None => {}
+        if let Some(local_key) = key {
+            let key_pair = decode_secret_key(&local_key, key_password)?;
+            let _auth_res: bool = session
+                .authenticate_publickey(user, Arc::new(key_pair))
+                .await?;
+            return Ok(Self { session });
         }
 
         // If key auth doesn't work try password auth
-        match password {
-            Some(local_pass) => {
-                let _auth_res: bool = session.authenticate_password(user, local_pass).await?;
-                return Ok(Self { session });
-            }
-            None => {}
+        if let Some(local_pass) = password {
+            let _auth_res: bool = session.authenticate_password(user, local_pass).await?;
+            return Ok(Self { session });
         }
-        return Err(anyhow::anyhow!(
+
+        Err(anyhow::anyhow!(
             "Failed to authenticate to host {}@{}",
             user,
             addrs.clone()
-        ));
+        ))
     }
 
     async fn copy(&mut self, src: &str, dst: &str) -> anyhow::Result<()> {

@@ -25,15 +25,12 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
     let command_string: &str;
     let command_args: Vec<&str>;
 
-    if cfg!(target_os = "macos") {
+    if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
         command_string = "bash";
         command_args = ["-c", cmd.as_str()].to_vec();
     } else if cfg!(target_os = "windows") {
         command_string = "cmd";
         command_args = ["/c", cmd.as_str()].to_vec();
-    } else if cfg!(target_os = "linux") {
-        command_string = "bash";
-        command_args = ["-c", cmd.as_str()].to_vec();
     } else {
         // linux and such
         command_string = "bash";
@@ -42,14 +39,14 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
 
     let tmp_res = Command::new(command_string).args(command_args).output()?;
 
-    return Ok(CommandOutput {
+    Ok(CommandOutput {
         stdout: String::from_utf8(tmp_res.stdout)?,
         stderr: String::from_utf8(tmp_res.stderr)?,
         status: tmp_res
             .status
             .code()
             .context("Failed to retrieve status code")?,
-    });
+    })
 }
 
 #[cfg(test)]
@@ -109,20 +106,20 @@ mod tests {
     #[test]
     fn test_sys_shell_from_interpreter() -> anyhow::Result<()> {
         // Create test script
-        let test_content = format!(
-            r#"
+        let test_content = r#"
 func_shell("whoami")
 "#
-        );
+        .to_string();
 
         // Setup starlark interpreter with handle to our function
-        let ast: AstModule;
-        match AstModule::parse("test.eldritch", test_content.to_owned(), &Dialect::Standard) {
-            Ok(res) => ast = res,
-            Err(err) => return Err(err),
-        }
+        let ast =
+            match AstModule::parse("test.eldritch", test_content.to_owned(), &Dialect::Standard) {
+                Ok(res) => res,
+                Err(err) => return Err(err),
+            };
 
         #[starlark_module]
+        #[allow(clippy::needless_lifetimes)]
         fn func_shell(builder: &mut GlobalsBuilder) {
             fn func_shell<'v>(starlark_heap: &'v Heap, cmd: String) -> anyhow::Result<Dict<'v>> {
                 shell(starlark_heap, cmd)

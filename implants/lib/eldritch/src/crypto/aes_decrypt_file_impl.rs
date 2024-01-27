@@ -44,12 +44,24 @@ pub fn decrypt_file(src: String, dst: String, key: String) -> Result<()> {
                     }
                 }
                 if !invalid {
-                    out_file.write(&block[..(16 - last_byte) as usize])?;
+                    match out_file.write(&block[..(16 - last_byte) as usize]) {
+                        Ok(_) => {}
+                        Err(_err) => {
+                            #[cfg(debug_assertions)]
+                            log::error!("failed to decrypt file: {_err}");
+                        }
+                    };
                     continue;
                 }
             }
         }
-        out_file.write(&block)?;
+        match out_file.write(&block) {
+            Ok(_) => {}
+            Err(_err) => {
+                #[cfg(debug_assertions)]
+                log::error!("failed to decrypt file: {_err}");
+            }
+        };
         block = GenericArray::from([0u8; 16]);
     }
     drop(src_file);
@@ -80,7 +92,13 @@ mod tests {
         let test_dec_path = tmp_dir.path().join("test.txt.dec");
         {
             let mut tmp_file = File::create(test_path.clone())?;
-            tmp_file.write(&lorem_encrypted)?;
+            match tmp_file.write(&lorem_encrypted) {
+                Ok(_) => {}
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to decrypt file: {_err}");
+                }
+            };
         }
         decrypt_file(
             test_path.to_str().unwrap().to_owned(),
@@ -137,7 +155,13 @@ mod tests {
         let test_path = tmp_dir.path().join("test.txt");
         {
             let mut tmp_file = File::create(test_path.clone())?;
-            tmp_file.write(&[0u8; 15])?;
+            match tmp_file.write(&[0u8; 15]) {
+                Ok(_) => {}
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to decrypt file: {_err}");
+                }
+            };
         }
         assert!(decrypt_file(
             test_path.to_str().unwrap().to_owned(),

@@ -12,9 +12,9 @@ mod is_linux_impl;
 mod is_macos_impl;
 mod is_windows_impl;
 mod shell_impl;
-mod write_reg_str_impl;
-mod write_reg_int_impl;
 mod write_reg_hex_impl;
+mod write_reg_int_impl;
+mod write_reg_str_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
@@ -71,6 +71,7 @@ impl<'v> UnpackValue<'v> for SysLibrary {
 // This is where all of the "sys.X" impl methods are bound
 #[starlark_module]
 #[rustfmt::skip]
+#[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
