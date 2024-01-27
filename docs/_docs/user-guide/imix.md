@@ -30,22 +30,9 @@ The install subcommand executes embedded tomes similar to golem.
 It will loop through all embedded files looking for main.eldritch.
 Each main.eldritch will execute in a new thread. This is done to allow imix to install redundantly or install additional (non dependent) tools.
 
-The install subcommand allows some variables to be passed from the user into the tomes through the -c flag.
-When specified input_params['custom_config'] is set to the file path of the config specified Eg.
-./imix install -c /tmp/imix-config.json will result in input_params['custom_config'] = "/tmp/imix-config.json
-
-Tomes can parse this with the following:
-
-```python
-def main():
-    if 'custom_config' in input_params:
-        config_data = crypto.from_json(file.read(input_params['custom_config']))
-        print(config_data)
-
-main()
-```
-
 Installation scripts are specified in the `realm/implants/imix/install_scripts` directory.
+
+This feature is currently under active development, and may change. We'll do our best to keep these docs updates in the meantime.
 
 ## Functionality
 
