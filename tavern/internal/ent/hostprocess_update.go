@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -156,8 +156,8 @@ func (hpu *HostProcessUpdate) ClearCwd() *HostProcessUpdate {
 }
 
 // SetStatus sets the "status" field.
-func (hpu *HostProcessUpdate) SetStatus(cs c2pb.Process_Status) *HostProcessUpdate {
-	hpu.mutation.SetStatus(cs)
+func (hpu *HostProcessUpdate) SetStatus(es epb.Process_Status) *HostProcessUpdate {
+	hpu.mutation.SetStatus(es)
 	return hpu
 }
 
@@ -520,8 +520,8 @@ func (hpuo *HostProcessUpdateOne) ClearCwd() *HostProcessUpdateOne {
 }
 
 // SetStatus sets the "status" field.
-func (hpuo *HostProcessUpdateOne) SetStatus(cs c2pb.Process_Status) *HostProcessUpdateOne {
-	hpuo.mutation.SetStatus(cs)
+func (hpuo *HostProcessUpdateOne) SetStatus(es epb.Process_Status) *HostProcessUpdateOne {
+	hpuo.mutation.SetStatus(es)
 	return hpuo
 }
 

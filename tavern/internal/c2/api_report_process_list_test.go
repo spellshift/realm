@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/c2test"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 )
 
@@ -44,10 +45,12 @@ func TestReportProcessList(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
 				TaskId: int64(existingTask.ID),
-				List: []*c2pb.Process{
-					{Pid: 1, Name: "systemd", Principal: "root"},
-					{Pid: 2321, Name: "/bin/sh", Principal: "root"},
-					{Pid: 4505, Name: "/usr/bin/sshd", Principal: "root"},
+				List: &epb.ProcessList{
+					List: []*epb.Process{
+						{Pid: 1, Name: "systemd", Principal: "root"},
+						{Pid: 2321, Name: "/bin/sh", Principal: "root"},
+						{Pid: 4505, Name: "/usr/bin/sshd", Principal: "root"},
+					},
 				},
 			},
 			wantResp:     &c2pb.ReportProcessListResponse{},
@@ -61,10 +64,12 @@ func TestReportProcessList(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
 				TaskId: int64(existingTask.ID),
-				List: []*c2pb.Process{
-					{Pid: 1, Name: "systemd", Principal: "root"},
-					{Pid: 4505, Name: "/usr/bin/sshd", Principal: "root"},
-					{Pid: 4809, Name: "/usr/bin/nginx", Principal: "root"},
+				List: &epb.ProcessList{
+					List: []*epb.Process{
+						{Pid: 1, Name: "systemd", Principal: "root"},
+						{Pid: 4505, Name: "/usr/bin/sshd", Principal: "root"},
+						{Pid: 4809, Name: "/usr/bin/nginx", Principal: "root"},
+					},
 				},
 			},
 			wantResp:     &c2pb.ReportProcessListResponse{},
@@ -77,8 +82,10 @@ func TestReportProcessList(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
-				List: []*c2pb.Process{
-					{Pid: 1, Name: "systemd", Principal: "root"},
+				List: &epb.ProcessList{
+					List: []*epb.Process{
+						{Pid: 1, Name: "systemd", Principal: "root"},
+					},
 				},
 			},
 			wantResp: nil,
@@ -90,7 +97,9 @@ func TestReportProcessList(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
 				TaskId: int64(existingTask.ID),
-				List:   []*c2pb.Process{},
+				List: &epb.ProcessList{
+					List: []*epb.Process{},
+				},
 			},
 			wantResp: nil,
 			wantCode: codes.InvalidArgument,
@@ -99,8 +108,10 @@ func TestReportProcessList(t *testing.T) {
 			name: "Not_Found",
 			req: &c2pb.ReportProcessListRequest{
 				TaskId: 99888777776666,
-				List: []*c2pb.Process{
-					{Pid: 1, Name: "systemd", Principal: "root"},
+				List: &epb.ProcessList{
+					List: []*epb.Process{
+						{Pid: 1, Name: "systemd", Principal: "root"},
+					},
 				},
 			},
 			wantResp: nil,

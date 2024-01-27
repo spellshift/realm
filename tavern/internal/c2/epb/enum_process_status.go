@@ -1,4 +1,4 @@
-package c2pb
+package epb
 
 import (
 	"database/sql/driver"

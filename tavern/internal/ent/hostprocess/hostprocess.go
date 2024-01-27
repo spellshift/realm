@@ -9,7 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/99designs/gqlgen/graphql"
-	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 )
 
 const (
@@ -112,9 +112,9 @@ var (
 )
 
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
-func StatusValidator(s c2pb.Process_Status) error {
+func StatusValidator(s epb.Process_Status) error {
 	switch s.String() {
-	case "STATUS_STOP", "STATUS_TRACING", "STATUS_WAKE_KILL", "STATUS_UNKNOWN", "STATUS_IDLE", "STATUS_SLEEP", "STATUS_WAKING", "STATUS_UNSPECIFIED", "STATUS_PARKED", "STATUS_LOCK_BLOCKED", "STATUS_DEAD", "STATUS_ZOMBIE", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_RUN":
+	case "STATUS_IDLE", "STATUS_STOP", "STATUS_ZOMBIE", "STATUS_LOCK_BLOCKED", "STATUS_UNSPECIFIED", "STATUS_PARKED", "STATUS_RUN", "STATUS_DEAD", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNKNOWN", "STATUS_SLEEP", "STATUS_TRACING", "STATUS_WAKE_KILL", "STATUS_WAKING":
 		return nil
 	default:
 		return fmt.Errorf("hostprocess: invalid enum value for status field: %q", s)
@@ -213,8 +213,8 @@ func newTaskStep() *sqlgraph.Step {
 }
 
 var (
-	// c2pb.Process_Status must implement graphql.Marshaler.
-	_ graphql.Marshaler = (*c2pb.Process_Status)(nil)
-	// c2pb.Process_Status must implement graphql.Unmarshaler.
-	_ graphql.Unmarshaler = (*c2pb.Process_Status)(nil)
+	// epb.Process_Status must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*epb.Process_Status)(nil)
+	// epb.Process_Status must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*epb.Process_Status)(nil)
 )

@@ -369,7 +369,7 @@ impl LspContext for Context {
 }
 
 pub(crate) fn globals() -> Globals {
-    eldritch::get_eldritch().unwrap()
+    eldritch::Runtime::globals()
 }
 
 pub(crate) fn dialect() -> Dialect {
