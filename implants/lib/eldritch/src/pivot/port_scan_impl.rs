@@ -36,7 +36,7 @@ fn int_to_string(ip_int: u32) -> Result<String> {
     let mut i = 0;
     while i < 4 {
         ip_vec[i] = ((ip_int >> (i * 8)) as u8).to_string();
-        i = i + 1;
+        i += 1;
     }
     ip_vec.reverse();
     Ok(ip_vec.join("."))
@@ -49,9 +49,9 @@ fn vec_to_int(ip_vec: Vec<u32>) -> Result<u32> {
 
     for (i, val) in ip_vec.iter().enumerate() {
         if i != 0 {
-            res = res << 8;
+            res <<= 8;
         }
-        res = res + val.clone();
+        res += *val;
     }
     Ok(res)
 }
@@ -62,8 +62,8 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     // Ty! @vndmtrx.
 
     // Split on / to get host and cidr bits.
-    let tmpvec: Vec<&str> = target_cidr.split("/").collect();
-    let host = tmpvec.get(0).context("Index 0 not found")?.to_string();
+    let tmpvec: Vec<&str> = target_cidr.split('/').collect();
+    let host = tmpvec.first().context("Index 0 not found")?.to_string();
     let bits: u32 = tmpvec
         .get(1)
         .context("Index 1 not found")?
@@ -93,12 +93,12 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     // Calculate broadcast store as vector.
     let v2: Vec<usize> = vec![0, 1, 2, 3];
     for (i, val) in v2.iter().enumerate() {
-        bcas[val.clone()] = ((addr[i] & mask[i]) | (255 ^ mask[i])) as u32;
+        bcas[*val] = ((addr[i] & mask[i]) | (255 ^ mask[i])) as u32;
     }
 
     // Calculate network address as vector.
     for (i, val) in v2.iter().enumerate() {
-        netw[val.clone()] = (addr[i] & mask[i]) as u32;
+        netw[*val] = (addr[i] & mask[i]) as u32;
     }
 
     // Return network address and broadcast address
@@ -121,14 +121,14 @@ fn parse_cidr(target_cidrs: Vec<String>) -> Result<Vec<String>> {
 
         // Handle weird /31 cidr edge case
         if host_u32 == (broadcast_u32 - 1) {
-            host_u32 = host_u32 + 1;
+            host_u32 += 1;
             result.push(int_to_string(host_u32)?);
         }
 
         // broadcast_u32-1 will not add the broadcast address for the net. Eg. 255.
         while host_u32 < (broadcast_u32 - 1) {
             // Skip network address Eg. 10.10.0.0
-            host_u32 = host_u32 + 1;
+            host_u32 += 1;
             let host_ip_address = int_to_string(host_u32)?;
             if !result.contains(&host_ip_address) {
                 result.push(host_ip_address);
@@ -150,19 +150,19 @@ async fn tcp_connect_scan_socket(
         Err(err) => {
             match err.to_string().as_str() {
                 "Connection refused (os error 111)" if cfg!(target_os = "linux") => {
-                    return Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()));
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 "No connection could be made because the target machine actively refused it. (os error 10061)" if cfg!(target_os = "windows") => {
-                    return Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()));
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 "Connection refused (os error 61)" if cfg!(target_os = "macos") => {
-                    return Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()));
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
-                    return Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()));
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 _ => {
-                    return Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err));
+                    Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err))
                 },
 
             }
@@ -191,25 +191,21 @@ async fn udp_scan_socket(
     // Handle the outcome of our recv.
     match sock.recv_from(&mut response_buffer).await {
         // If okay and we recieved bytes then we connected and the port  is open.
-        Ok((bytes_copied, _addr)) => {
-            if bytes_copied > 0 {
-                return Ok((target_host, target_port, UDP.to_string(), OPEN.to_string()));
-            } else {
-                return Ok((target_host, target_port, UDP.to_string(), OPEN.to_string()));
-            }
+        Ok((_bytes_copied, _addr)) => {
+            Ok((target_host, target_port, UDP.to_string(), OPEN.to_string()))
         }
         Err(err) => {
-            match String::from(format!("{}", err.to_string())).as_str() {
+            match format!("{}", err.to_string()).as_str() {
                 // Windows throws a weird error when scanning on localhost.
                 // Considering the port closed.
                 "An existing connection was forcibly closed by the remote host. (os error 10054)" if cfg!(target_os = "windows") => {
-                    return Ok((target_host, target_port, UDP.to_string(), CLOSED.to_string()));
+                    Ok((target_host, target_port, UDP.to_string(), CLOSED.to_string()))
                 },
                 "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
-                    return Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()));
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 _ => {
-                    return Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err));
+                    Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err))
                 },
             }
         }
@@ -226,10 +222,10 @@ async fn handle_scan(
     let result: (String, i32, String, String);
     match protocol.as_str() {
         UDP => {
-            match udp_scan_socket(target_host.clone(), port.clone()).await {
+            match udp_scan_socket(target_host.clone(), port).await {
                 Ok(res) => result = res,
                 Err(err) => {
-                    let err_str = String::from(format!("{}", err.to_string()));
+                    let err_str = format!("{}", err.to_string());
                     match err_str.as_str() {
                         // If OS runs out source ports of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
@@ -251,11 +247,11 @@ async fn handle_scan(
         }
         TCP => {
             // TCP connect scan sucks but should work regardless of environment.
-            match tcp_connect_scan_socket(target_host.clone(), port.clone()).await {
+            match tcp_connect_scan_socket(target_host.clone(), port).await {
                 Ok(res) => result = res,
                 Err(err) => {
                     // let err_str = String::from(format!("{}", err.to_string())).as_str();
-                    let err_str = String::from(format!("{}", err.to_string()));
+                    let err_str = format!("{}", err.to_string());
                     match  err_str.as_str() {
                         // If OS runs out file handles of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
@@ -302,7 +298,7 @@ async fn handle_port_scan_timeout(
     let timeout_duration = Duration::from_secs(timeout as u64);
 
     // Define our scan future.
-    let scan = handle_scan(target.clone(), port.clone(), protocol.clone());
+    let scan = handle_scan(target.clone(), port, protocol.clone());
 
     // Execute that future with a timeout defined by the timeout argument.
     // open for connected to port, closed for rejected, timeout for tokio timeout expiring.
@@ -310,26 +306,21 @@ async fn handle_port_scan_timeout(
         Ok(res) => {
             match res {
                 Ok(scan_res) => return Ok(scan_res),
-                Err(scan_err) => match String::from(format!("{}", scan_err.to_string())).as_str() {
+                Err(scan_err) => match format!("{}", scan_err.to_string()).as_str() {
                     // If the OS is running out of resources wait and then try again.
                     "Low resources try again" => {
                         sleep(Duration::from_secs(3)).await;
-                        return Ok(handle_port_scan_timeout(target, port, protocol, timeout).await?);
+                        return handle_port_scan_timeout(target, port, protocol, timeout).await;
                     }
                     _ => {
-                        return Err(anyhow::Error::from(scan_err));
+                        return Err(scan_err);
                     }
                 },
             }
         }
         // If our timeout timer has expired set the port state to timeout and return.
         Err(_timer_elapsed) => {
-            return Ok((
-                target.clone(),
-                port.clone(),
-                protocol.clone(),
-                TIMEOUT.to_string(),
-            ))
+            return Ok((target.clone(), port, protocol.clone(), TIMEOUT.to_string()))
         }
     }
 }
@@ -349,7 +340,7 @@ async fn handle_port_scan(
         for port in &ports {
             // Add scanning job to the queue.
             let scan_with_timeout =
-                handle_port_scan_timeout(target.clone(), port.clone(), protocol.clone(), timeout);
+                handle_port_scan_timeout(target.clone(), *port, protocol.clone(), timeout);
             all_scan_futures.push(task::spawn(scan_with_timeout));
         }
     }
@@ -409,9 +400,9 @@ pub fn port_scan(
                 final_res.push(tmp_res);
             }
 
-            return Ok(final_res);
+            Ok(final_res)
         }
-        Err(err) => return Err(anyhow::anyhow!("The port_scan command failed: {:?}", err)),
+        Err(err) => Err(anyhow::anyhow!("The port_scan command failed: {:?}", err)),
     }
 }
 
@@ -524,8 +515,7 @@ mod tests {
 
     async fn local_bind_tcp() -> TcpListener {
         // Try three times to bind to a port
-        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        return listener;
+        TcpListener::bind("127.0.0.1:0").await.unwrap()
     }
 
     async fn local_accept_tcp(listener: TcpListener) -> Result<()> {
@@ -537,9 +527,9 @@ mod tests {
         let bytes_copied = copy(&mut reader, &mut writer).await?;
         // If message sent break loop
         if bytes_copied > 1 {
-            return Ok(());
+            Ok(())
         } else {
-            return Err(anyhow::anyhow!("Failed to copy any bytes"));
+            Err(anyhow::anyhow!("Failed to copy any bytes"))
         }
     }
 
@@ -601,8 +591,7 @@ mod tests {
 
         let host = "127.0.0.1".to_string();
         let proto = TCP.to_string();
-        let expected_response: Vec<(String, i32, String, String)>;
-        expected_response = vec![
+        let expected_response: Vec<(String, i32, String, String)> = vec![
             (host.clone(), test_ports[0], proto.clone(), OPEN.to_string()),
             (host.clone(), test_ports[1], proto.clone(), OPEN.to_string()),
             (host.clone(), test_ports[2], proto.clone(), OPEN.to_string()),
@@ -704,13 +693,14 @@ res
         );
 
         // Setup starlark interpreter with handle to our function
-        let ast: AstModule;
-        match AstModule::parse("test.eldritch", test_content.to_owned(), &Dialect::Extended) {
-            Ok(res) => ast = res,
-            Err(err) => return Err(err),
-        }
+        let ast =
+            match AstModule::parse("test.eldritch", test_content.to_owned(), &Dialect::Extended) {
+                Ok(res) => res,
+                Err(err) => return Err(err),
+            };
 
         #[starlark_module]
+        #[allow(clippy::needless_lifetimes)]
         fn func_port_scan(builder: &mut GlobalsBuilder) {
             fn func_port_scan<'v>(
                 ports: Vec<i32>,
@@ -728,7 +718,6 @@ res
         let res: Value = eval.eval_module(ast, &globals)?;
         let _res_string = res.to_string();
         // Didn't panic yay!
-        assert!(true);
         Ok(())
     }
 }

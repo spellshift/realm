@@ -18,6 +18,7 @@ use starlark::const_frozen_string;
 
 macro_rules! insert_dict_kv {
     ($dict:expr, $heap:expr, $key:expr, $val:expr, String) => {
+        #[allow(clippy::unnecessary_to_owned)]
         let val_val = $heap.alloc_str(&$val);
         $dict.insert_hashed(
             const_frozen_string!($key).to_value().get_hashed()?,

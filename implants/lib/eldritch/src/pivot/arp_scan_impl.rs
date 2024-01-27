@@ -320,9 +320,7 @@ mod tests {
         let loopback = {
             let interfaces = interfaces();
             interfaces
-                .iter()
-                .filter(|x| x.is_loopback())
-                .next()
+                .iter().find(|x| x.is_loopback())
                 .unwrap()
                 .clone()
         };

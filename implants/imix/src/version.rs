@@ -4,4 +4,4 @@ macro_rules! crate_version {
     };
 }
 
-pub const VERSION: &'static str = crate_version!();
+pub const VERSION: &str = crate_version!();

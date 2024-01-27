@@ -39,12 +39,12 @@ pub fn get_os(starlark_heap: &Heap) -> Result<Dict> {
 }
 
 fn handle_get_os() -> Result<OsInfo> {
-    return Ok(OsInfo {
+    Ok(OsInfo {
         arch: whoami::arch().to_string(),
         desktop_env: whoami::desktop_env().to_string(),
         distro: whoami::distro().to_string(),
         platform: whoami::platform().to_string(),
-    });
+    })
 }
 
 #[cfg(test)]
@@ -55,7 +55,7 @@ mod tests {
     fn test_sys_get_os() -> anyhow::Result<()> {
         let test_heap = Heap::new();
         let res = get_os(&test_heap)?;
-        println!("{}", res.to_string());
+        println!("{}", res);
         assert!(res.to_string().contains(r#""arch": "x86_64""#));
         Ok(())
     }

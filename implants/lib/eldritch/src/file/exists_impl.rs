@@ -24,7 +24,7 @@ mod tests {
         // Run our code
         let res = exists(path)?;
 
-        assert_eq!(res, true);
+        assert!(res);
 
         Ok(())
     }
@@ -38,7 +38,7 @@ mod tests {
         // Run our code
         let res = exists(path)?;
 
-        assert_eq!(res, false);
+        assert!(!res);
 
         Ok(())
     }
@@ -51,7 +51,7 @@ mod tests {
         // Run our code
         let res = exists(path)?;
 
-        assert_eq!(res, true);
+        assert!(res);
         Ok(())
     }
     #[test]
@@ -64,7 +64,7 @@ mod tests {
         // Run our code
         let res = exists(path)?;
 
-        assert_eq!(res, false);
+        assert!(!res);
         Ok(())
     }
 }

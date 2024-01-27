@@ -97,8 +97,7 @@ mod tests {
 
     async fn local_bind_tcp() -> TcpListener {
         // Try three times to bind to a port
-        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        return listener;
+        TcpListener::bind("127.0.0.1:0").await.unwrap()
     }
 
     async fn local_accept_tcp(listener: TcpListener) -> Result<()> {
@@ -110,9 +109,9 @@ mod tests {
         let bytes_copied = copy(&mut reader, &mut writer).await?;
         // If message sent break loop
         if bytes_copied > 1 {
-            return Ok(());
+            Ok(())
         } else {
-            return Err(anyhow::anyhow!("Failed to copy any bytes"));
+            Err(anyhow::anyhow!("Failed to copy any bytes"))
         }
     }
 
@@ -160,7 +159,7 @@ mod tests {
             if let Some(Some(pids)) = socket
                 .get(const_frozen_string!("pids").to_value())
                 .unwrap()
-                .map(|val| Vec::<i32>::unpack_value(val))
+                .map(Vec::<i32>::unpack_value)
             {
                 if pids.contains(&pid) {
                     return Ok(());

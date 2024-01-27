@@ -5,9 +5,9 @@ use starlark::{collections::SmallMap, values::Value};
 
 #[cfg(not(target_os = "windows"))]
 pub fn get_reg(_starlark_heap: &Heap, _reghive: String, _regpath: String) -> Result<Dict> {
-    return Err(anyhow::anyhow!(
+    Err(anyhow::anyhow!(
         "This OS isn't supported by the get_reg function. Only windows systems are supported"
-    ));
+    ))
 }
 
 #[cfg(target_os = "windows")]
