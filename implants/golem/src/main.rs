@@ -65,52 +65,6 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     Ok(result)
 }
 
-// async fn execute_tomes_in_parallel(
-//     tome_name_and_content: Vec<(String, String)>,
-// ) -> anyhow::Result<(i32, Vec<String>)> {
-//     // Queue async tasks
-//     let mut all_tome_futures: Vec<(String, _)> = vec![];
-//     for tome_data in tome_name_and_content {
-//         let (mut runtime, output) = Runtime::new();
-//         runtime.with_stdout_reporting();
-
-//         let tmp_row = (
-//             tome_data.0.clone().to_string(),
-//             tokio::task::spawn_blocking(move || {
-//                 runtime.run(Tome {
-//                     eldritch: tome_data.1,
-//                     parameters: HashMap::new(),
-//                     file_names: Vec::new(),
-//                 });
-//             }),
-//         );
-//         all_tome_futures.push(tmp_row)
-//     }
-
-//     let mut error_code = 0;
-//     let mut result: Vec<String> = Vec::new();
-//     for tome_task in all_tome_futures {
-//         let tome_name: String = tome_task.0;
-//         // Join our
-//         let tome_result_thread_join: Result<()> = match tome_task.1.await {
-//             Ok(local_thread_join_res) => Ok(()),
-//             Err(_) => {
-//                 error_code = 1;
-//                 Err(anyhow::anyhow!("An error occured waiting for the tome thread to complete while executing {tome_name}."))
-//             }
-//         };
-
-//         match tome_result_thread_join {
-//             Ok(local_tome_result) => result.push(local_tome_result),
-//             Err(task_error) => {
-//                 error_code = 1;
-//                 eprintln!("[TASK ERROR] {tome_name}: {task_error}");
-//             }
-//         }
-//     }
-//     Ok((error_code, result))
-// }
-
 fn main() -> anyhow::Result<()> {
     let matches = Command::new("golem")
         .arg(
