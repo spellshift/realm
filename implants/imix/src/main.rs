@@ -1,12 +1,24 @@
-use std::time::Duration;
-
 use anyhow::Result;
+use clap::Command;
 use imix::{Agent, Config};
+use std::time::Duration;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
 async fn main() {
     #[cfg(debug_assertions)]
     init_logging();
+
+    match Command::new("imix")
+        .subcommand(Command::new("install").about("Install imix"))
+        .get_matches()
+        .subcommand()
+    {
+        Some(("install", _)) => {
+            imix::install().await;
+            return;
+        }
+        _ => {}
+    }
 
     loop {
         let cfg = Config::default();
