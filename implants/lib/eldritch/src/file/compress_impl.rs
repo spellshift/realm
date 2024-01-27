@@ -103,7 +103,7 @@ pub fn compress(src: String, dst: String) -> Result<()> {
     while bytes_read != 0 {
         let mut buffer: Vec<u8> = vec![0; read_buffer_size];
         bytes_read = deflater.read(&mut buffer)?;
-        f_dst.write_all(&buffer[0..bytes_read]);
+        let _ = f_dst.write_all(&buffer[0..bytes_read]);
     }
 
     Ok(())
