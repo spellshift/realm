@@ -33,8 +33,8 @@ mod tests {
 
         moveto(path_old.clone(), path_new.clone())?;
 
-        assert_eq!(Path::new(&path_old).is_dir(), false);
-        assert_eq!(Path::new(&path_new).is_dir(), true);
+        assert!(!Path::new(&path_old).is_dir());
+        assert!(Path::new(&path_new).is_dir());
         Ok(())
     }
     #[test]
@@ -48,8 +48,8 @@ mod tests {
 
         moveto(path_old.clone(), path_new.clone())?;
 
-        assert_eq!(Path::new(&path_old).is_file(), false);
-        assert_eq!(Path::new(&path_new).is_file(), true);
+        assert!(!Path::new(&path_old).is_file());
+        assert!(Path::new(&path_new).is_file());
         Ok(())
     }
     #[test]
@@ -62,8 +62,8 @@ mod tests {
 
         moveto(path_old.clone(), path_new.clone())?;
 
-        assert_eq!(Path::new(&path_old).is_file(), false);
-        assert_eq!(Path::new(&path_new).is_file(), true);
+        assert!(!Path::new(&path_old).is_file());
+        assert!(Path::new(&path_new).is_file());
         Ok(())
     }
     #[test]
@@ -91,10 +91,10 @@ mod tests {
         moveto(path_old.clone(), path_new.clone())?;
 
         // Assert
-        assert_eq!(Path::new(&path_old).is_dir(), false);
-        assert_eq!(Path::new(&path_new_file_win).is_file(), true);
-        assert_eq!(Path::new(&path_new_file).is_file(), false);
-        assert_eq!(Path::new(&path_new).is_dir(), true);
+        assert!(!Path::new(&path_old).is_dir());
+        assert!(Path::new(&path_new_file_win).is_file());
+        assert!(!Path::new(&path_new_file).is_file());
+        assert!(Path::new(&path_new).is_dir());
         Ok(())
     }
 }

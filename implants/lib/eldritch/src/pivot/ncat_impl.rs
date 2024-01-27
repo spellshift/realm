@@ -25,9 +25,8 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
-        result_string = String::from(
-            String::from_utf8((&response_buffer).to_vec())?.trim_matches(char::from(0)),
-        );
+        result_string =
+            String::from(String::from_utf8(response_buffer.to_vec())?.trim_matches(char::from(0)));
         Ok(result_string)
     } else if protocol == "udp" {
         // Connect to remote host
@@ -47,9 +46,8 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
-        result_string = String::from(
-            String::from_utf8((&response_buffer).to_vec())?.trim_matches(char::from(0)),
-        );
+        result_string =
+            String::from(String::from_utf8(response_buffer.to_vec())?.trim_matches(char::from(0)));
         Ok(result_string)
     } else {
         return Err(anyhow::anyhow!(
@@ -68,8 +66,8 @@ pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Resul
     let response = runtime.block_on(handle_ncat(address, port, data, protocol));
 
     match response {
-        Ok(_) => Ok(String::from(response.unwrap())),
-        Err(_) => return response,
+        Ok(_) => Ok(response.unwrap()),
+        Err(_) => response,
     }
 }
 
@@ -90,7 +88,7 @@ mod tests {
         let mut i = 0;
         let mut res: Vec<i32> = vec![];
         while i < count {
-            i = i + 1;
+            i += 1;
             if protocol == "tcp" {
                 let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
                 res.push(listener.local_addr().unwrap().port().into());
@@ -121,7 +119,7 @@ mod tests {
                 if bytes_copied > 1 {
                     break;
                 }
-                i = i + 1;
+                i += 1;
             }
         } else if protocol == "udp" {
             let sock = UdpSocket::bind(format!("{}:{}", address, port)).await?;
@@ -136,7 +134,7 @@ mod tests {
                 if bytes_copied > 1 {
                     break;
                 }
-                i = i + 1;
+                i += 1;
             }
         } else {
             println!("Unrecognized protocol");
@@ -147,11 +145,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_ncat_send_tcp() -> anyhow::Result<()> {
-        let test_port = allocate_localhost_unused_ports(1, "tcp".to_string())
+        let test_port = *allocate_localhost_unused_ports(1, "tcp".to_string())
             .await?
-            .get(0)
-            .context("Unable to allocate port")?
-            .clone();
+            .first()
+            .context("Unable to allocate port")?;
         // Setup a test echo server
         let expected_response = String::from("Hello world!");
         let listen_task = task::spawn(setup_test_listener(

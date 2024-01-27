@@ -28,7 +28,7 @@ mod tests {
 
         // Verify that file has been removed
         let res = Path::new(&path).exists();
-        assert_eq!(res, false);
+        assert!(!res);
         Ok(())
     }
     #[test]
@@ -42,7 +42,7 @@ mod tests {
 
         // Verify that file has been removed
         let res = Path::new(&path).exists();
-        assert_eq!(res, false);
+        assert!(!res);
         Ok(())
     }
 }

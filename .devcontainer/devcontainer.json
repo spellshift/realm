@@ -24,6 +24,17 @@
 				"go.useLanguageServer": true,
 				"go.gopath": "/go",
 				"go.goroot": "/usr/local/go",
+				// RUST
+				"rust-analyzer.check.command": "clippy",
+				"rust-analyzer.checkOnSave.overrideCommand": [
+					"cargo",
+					"clippy",
+					"--fix",
+					"--workspace",
+					"--message-format=json",
+					"--all-targets",
+					"--allow-dirty"
+				],
 				// Formatting
 				"editor.formatOnSave": true,
 				"files.trimTrailingWhitespace": true,

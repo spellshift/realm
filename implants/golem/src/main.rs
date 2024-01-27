@@ -55,7 +55,7 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
         };
         let mut out = handle.output.collect();
         let errors = handle.output.collect_errors();
-        if errors.len() > 0 {
+        if !errors.is_empty() {
             return Err(anyhow!("tome execution failed: {:?}", errors));
         }
         println!("OUTPUT: {:?}", out);
@@ -108,7 +108,7 @@ fn main() -> anyhow::Result<()> {
             }
         };
 
-        if result.len() > 0 {
+        if !result.is_empty() {
             println!("{:?}", result);
         }
         process::exit(error_code);
@@ -117,10 +117,7 @@ fn main() -> anyhow::Result<()> {
     } else {
         let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
         for embedded_file_path in eldritch::assets::Asset::iter() {
-            let filename = match embedded_file_path.split(r#"/"#).last() {
-                Some(local_filename) => local_filename,
-                None => "",
-            };
+            let filename = embedded_file_path.split('/').last().unwrap_or("");
             println!("{}", embedded_file_path);
             if filename == "main.eldritch" {
                 let tome_path = embedded_file_path.to_string().clone();
@@ -161,7 +158,7 @@ fn main() -> anyhow::Result<()> {
             }
         };
 
-        if result.len() > 0 {
+        if !result.is_empty() {
             println!("{:?}", result);
         }
         process::exit(error_code);

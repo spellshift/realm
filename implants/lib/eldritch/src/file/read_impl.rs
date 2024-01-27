@@ -3,7 +3,7 @@ use std::fs;
 
 pub fn read(path: String) -> Result<String> {
     let data = fs::read_to_string(path)?;
-    return Ok(data);
+    Ok(data)
 }
 
 #[cfg(test)]
@@ -52,7 +52,7 @@ mod tests {
         tmp_file.close()?;
 
         let res = read(path);
-        assert_eq!(res.is_err(), true);
+        assert!(res.is_err());
         Ok(())
     }
 }

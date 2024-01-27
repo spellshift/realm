@@ -50,7 +50,7 @@ impl Runtime {
         let (ch_process_list, process_lists) = channel::<ProcessList>();
         let (ch_file, files) = channel::<File>();
 
-        return (
+        (
             Runtime {
                 stdout_reporting: false,
                 ch_exec_started_at,
@@ -68,7 +68,7 @@ impl Runtime {
                 process_lists,
                 files,
             },
-        );
+        )
     }
 
     /*
@@ -175,7 +175,7 @@ impl Runtime {
         match AstModule::parse("main", tome.eldritch.to_string(), &Dialect::Extended) {
             Ok(res) => Ok(res),
             Err(err) => {
-                return Err(anyhow::anyhow!(
+                Err(anyhow::anyhow!(
                     "[eldritch] Unable to parse eldritch tome: {}: {}",
                     err.to_string(),
                     tome.eldritch.to_string(),
@@ -192,7 +192,7 @@ impl Runtime {
         let mut input_params: Dict = Dict::new(SmallMap::new());
 
         for (key, value) in &tome.parameters {
-            let new_key = module.heap().alloc_str(&key);
+            let new_key = module.heap().alloc_str(key);
             let new_value = module.heap().alloc_str(value.as_str()).to_value();
             let hashed_key = match new_key.to_value().get_hashed() {
                 Ok(local_hashed_key) => local_hashed_key,
@@ -523,7 +523,7 @@ mod tests {
         let tmp_file = NamedTempFile::new()?;
         let path = String::from(tmp_file.path().to_str().unwrap())
             .clone()
-            .replace("\\", "\\\\");
+            .replace('\\', "\\\\");
         let eldritch =
             format!(r#"file.download("https://www.google.com/", "{path}"); print("ok")"#);
         let (runtime, output) = Runtime::new();
