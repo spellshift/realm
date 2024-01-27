@@ -37,6 +37,7 @@ pub const CALLBACK_INTERVAL: &'static str = callback_interval!();
 /*
  * Config holds values necessary to configure an Agent.
  */
+#[derive(Debug, Clone)]
 pub struct Config {
     pub info: c2::pb::Beacon,
     pub callback_uri: String,

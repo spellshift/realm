@@ -10,7 +10,9 @@ clap = { workspace = true }
 default-net = { workspace = true }
 eldritch = { workspace = true, features = ["imix"] }
 hyper = { workspace = true }
+log = {workspace = true}
 openssl = { workspace = true, features = ["vendored"] }
+pretty_env_logger = {workspace = true}
 prost-types = { workspace = true }
 rand = {workspace = true}
 reqwest = { workspace = true, features = ["blocking", "stream", "json"] }
@@ -24,7 +26,5 @@ uuid = { workspace = true, features = ["v4","fast-rng"] }
 whoami = { workspace = true }
 
 [dev-dependencies]
-log = {workspace = true}
-pretty_env_logger = {workspace = true}
 httptest = { workspace = true }
 tempfile = { workspace = true }

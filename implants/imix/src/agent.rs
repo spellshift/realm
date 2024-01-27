@@ -94,7 +94,7 @@ impl Agent {
                 Ok(_) => {}
                 Err(_err) => {
                     #[cfg(debug_assertions)]
-                    eprint!("Error draining channel: {}", _err)
+                    log::error!("Error draining channel: {}", _err)
                 }
             };
 

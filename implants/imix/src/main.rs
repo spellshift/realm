@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anyhow::Result;
 use imix::{Agent, Config};
 
@@ -12,6 +14,9 @@ async fn main() {
             Err(_err) => {
                 #[cfg(debug_assertions)]
                 log::error!("callback loop fatal error: {_err}");
+
+                // TODO: This
+                tokio::time::sleep(Duration::from_secs(1)).await;
             }
         }
     }
@@ -19,6 +24,9 @@ async fn main() {
 
 async fn run() -> Result<()> {
     let cfg = Config::default();
+    #[cfg(debug_assertions)]
+    log::info!("agent config initialized {:#?}", cfg.clone());
+
     let mut agent = Agent::gen_from_config(cfg).await?;
 
     agent.callback_loop().await;
