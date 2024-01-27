@@ -29,10 +29,23 @@ macro_rules! callback_interval {
         }
     };
 }
-/* Compile-time constant for the agent callback interval, derived from the IMIX_CALLBACK_INTERVAL environment variable during compilation.
+/* Compile-time constant for the agent retry interval, derived from the IMIX_RETRY_INTERVAL environment variable during compilation.
  * Defaults to 5 if unset.
  */
 pub const CALLBACK_INTERVAL: &'static str = callback_interval!();
+
+macro_rules! retry_interval {
+    () => {
+        match option_env!("IMIX_RETRY_INTERVAL") {
+            Some(interval) => interval,
+            None => "5",
+        }
+    };
+}
+/* Compile-time constant for the agent callback interval, derived from the IMIX_CALLBACK_INTERVAL environment variable during compilation.
+ * Defaults to 5 if unset.
+ */
+pub const RETRY_INTERVAL: &'static str = retry_interval!();
 
 /*
  * Config holds values necessary to configure an Agent.
@@ -41,6 +54,7 @@ pub const CALLBACK_INTERVAL: &'static str = callback_interval!();
 pub struct Config {
     pub info: c2::pb::Beacon,
     pub callback_uri: String,
+    pub retry_interval: u64,
 }
 
 /*
@@ -66,7 +80,7 @@ impl Default for Config {
                 Ok(i) => i,
                 Err(_err) => {
                     #[cfg(debug_assertions)]
-                    eprintln!("failed to parse callback interval constant, defaulting to 60 seconds: {_err}");
+                    log::error!("failed to parse callback interval constant, defaulting to 5 seconds: {_err}");
 
                     5 as u64
                 }
@@ -78,6 +92,17 @@ impl Default for Config {
         Config {
             info,
             callback_uri: String::from(CALLBACK_URI),
+            retry_interval: match RETRY_INTERVAL.parse::<u64>() {
+                Ok(i) => i,
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "failed to parse retry interval constant, defaulting to 5 seconds: {_err}"
+                    );
+
+                    5 as u64
+                }
+            },
         }
     }
 }
@@ -145,12 +170,12 @@ fn get_host_id(file_path: String) -> String {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
-                eprintln!("failed to write host id file: {_err}");
+                log::error!("failed to write host id file: {_err}");
             }
         },
         Err(_err) => {
             #[cfg(debug_assertions)]
-            eprintln!("failed to create host id file: {_err}");
+            log::error!("failed to create host id file: {_err}");
         }
     };
 
@@ -169,7 +194,7 @@ fn get_primary_ip() -> String {
         },
         Err(_err) => {
             #[cfg(debug_assertions)]
-            eprintln!("failed to get primary ip: {_err}");
+            log::error!("failed to get primary ip: {_err}");
 
             String::from("")
         }

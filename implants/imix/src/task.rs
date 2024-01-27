@@ -6,6 +6,9 @@ use c2::{
 use eldritch::Output;
 use tokio::task::JoinHandle;
 
+/*
+ * Task handle is responsible for tracking a running task and reporting it's output.
+ */
 pub struct TaskHandle {
     id: i64,
     handle: JoinHandle<()>,
@@ -13,14 +16,17 @@ pub struct TaskHandle {
 }
 
 impl TaskHandle {
+    // Track a new task handle.
     pub fn new(id: i64, output: Output, handle: JoinHandle<()>) -> TaskHandle {
         TaskHandle { id, handle, output }
     }
 
+    // Returns true if the task has been completed, false otherwise.
     pub fn is_finished(&self) -> bool {
         self.handle.is_finished()
     }
 
+    // Report any available task output.
     pub async fn report(&mut self, tavern: &mut TavernClient) -> Result<()> {
         let exec_started_at = self.output.get_exec_started_at();
         let exec_finished_at = self.output.get_exec_finished_at();
@@ -85,17 +91,6 @@ impl TaskHandle {
                 })
                 .await?;
         }
-
-        // Report Files TODO
-        // let files = self.output.collect_files();
-        // for f in files {
-        //     tavern
-        //         .report_file(ReportFileRequest {
-        //             task_id: self.id,
-        //             chunk: Some(f),
-        //         })
-        //         .await?;
-        // }
 
         Ok(())
     }

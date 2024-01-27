@@ -86,21 +86,35 @@ impl Runtime {
      * Output from the tome is exposed via channels, see `reported_output`, `reported_process_list`, and `reported_files`.
      */
     pub fn run(&self, tome: Tome) {
+        match self.report_exec_started_at() {
+            Ok(_) => {}
+            Err(_err) => {
+                #[cfg(debug_assertions)]
+                log::error!("failed to send exec_started_at: {_err}");
+            }
+        }
+
         match self.run_impl(tome) {
             Ok(_) => {}
             Err(err) => match self.report_error(err) {
                 Ok(_) => {}
                 Err(_send_err) => {
                     #[cfg(debug_assertions)]
-                    eprintln!("failed to report error: {}", _send_err);
+                    log::error!("failed to send error: {_send_err}");
                 }
             },
+        }
+
+        match self.report_exec_finished_at() {
+            Ok(_) => {}
+            Err(_err) => {
+                #[cfg(debug_assertions)]
+                log::error!("failed to send exec_finished_at: {_err}");
+            }
         }
     }
 
     fn run_impl(&self, tome: Tome) -> Result<()> {
-        self.report_exec_started_at()?;
-
         let ast = Runtime::parse(&tome)?;
         let module = Runtime::alloc_module(&tome)?;
         let globals = Runtime::globals();
@@ -109,11 +123,14 @@ impl Runtime {
         eval.extra = Some(self);
         eval.set_print_handler(self);
 
-        eval.eval_module(ast, &globals)
-            .context("tome execution failed")?;
-
-        self.report_exec_finished_at()?;
-        Ok(())
+        match eval.eval_module(ast, &globals) {
+            Ok(_) => Ok(()),
+            Err(_err) => {
+                #[cfg(debug_assertions)]
+                log::error!("tome execution failed: {_err}");
+                Err(_err)
+            }
+        }
     }
 
     /*

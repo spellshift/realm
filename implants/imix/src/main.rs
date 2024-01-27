@@ -6,29 +6,37 @@ use imix::{Agent, Config};
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
 async fn main() {
     #[cfg(debug_assertions)]
-    pretty_env_logger::init();
+    init_logging();
 
     loop {
-        match run().await {
+        let cfg = Config::default();
+        let retry_interval = cfg.retry_interval;
+        #[cfg(debug_assertions)]
+        log::info!("agent config initialized {:#?}", cfg.clone());
+
+        match run(cfg).await {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
-                log::error!("callback loop fatal error: {_err}");
+                log::error!("callback loop fatal: {_err}");
 
-                // TODO: This
-                tokio::time::sleep(Duration::from_secs(1)).await;
+                tokio::time::sleep(Duration::from_secs(retry_interval)).await;
             }
         }
     }
 }
 
-async fn run() -> Result<()> {
-    let cfg = Config::default();
-    #[cfg(debug_assertions)]
-    log::info!("agent config initialized {:#?}", cfg.clone());
-
+async fn run(cfg: Config) -> Result<()> {
     let mut agent = Agent::gen_from_config(cfg).await?;
 
     agent.callback_loop().await;
     Ok(())
+}
+
+#[cfg(debug_assertions)]
+fn init_logging() {
+    pretty_env_logger::formatted_timed_builder()
+        .filter_level(log::LevelFilter::Info)
+        .parse_env("IMIX_LOG")
+        .init();
 }

