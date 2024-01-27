@@ -155,10 +155,7 @@ fn get_host_id(file_path: String) -> String {
     // Read Existing Host ID
     let path = Path::new(file_path.as_str());
     if path.exists() {
-        match fs::read_to_string(path) {
-            Ok(host_id) => return host_id.trim().to_string(),
-            Err(_) => {}
-        }
+        if let Ok(host_id) = fs::read_to_string(path) { return host_id.trim().to_string() }
     }
 
     // Generate New
