@@ -137,7 +137,7 @@ impl Runtime {
      * Globals available to eldritch code.
      * This provides all of our starlark standard libraries.
      */
-    fn globals() -> Globals {
+    pub fn globals() -> Globals {
         #[starlark_module]
         fn eldritch(builder: &mut GlobalsBuilder) {
             const file: FileLibrary = FileLibrary();
@@ -214,8 +214,9 @@ impl Runtime {
     /*
      * Print execution results to stdout as they become available.
      */
-    pub fn with_stdout_reporting(&mut self) {
+    pub fn with_stdout_reporting(&mut self) -> &mut Self {
         self.stdout_reporting = true;
+        self
     }
 
     /*
