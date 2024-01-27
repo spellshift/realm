@@ -2,7 +2,7 @@ use anyhow::Result;
 use whoami::hostname as whoHostname;
 
 pub fn hostname() -> Result<String> {
-    return Ok(whoHostname());
+    Ok(whoHostname())
 }
 
 #[cfg(test)]

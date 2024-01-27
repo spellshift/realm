@@ -34,10 +34,7 @@ pub fn exec(
 }
 
 fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<CommandOutput> {
-    let should_disown = match disown {
-        Some(disown_option) => disown_option,
-        None => false,
-    };
+    let should_disown = disown.unwrap_or(false);
 
     if !should_disown {
         let res = Command::new(path).args(args).output()?;
@@ -50,7 +47,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
                 .code()
                 .context("Failed to retrieve status code")?,
         };
-        return Ok(res);
+        Ok(res)
     } else {
         #[cfg(target_os = "windows")]
         return Err(anyhow::anyhow!(
@@ -62,11 +59,11 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
             ForkResult::Parent { child } => {
                 // Wait for intermediate process to exit.
                 waitpid(Some(child), None)?;
-                return Ok(CommandOutput {
+                Ok(CommandOutput {
                     stdout: "".to_string(),
                     stderr: "".to_string(),
                     status: 0,
-                });
+                })
             }
 
             ForkResult::Child => match unsafe { fork()? } {
@@ -112,7 +109,7 @@ mod tests {
             if res == "1001\n" || res == "0\n" {
                 bool_res = true;
             }
-            assert_eq!(bool_res, true);
+            assert!(bool_res);
         } else if cfg!(target_os = "macos") {
             let res = handle_exec(
                 String::from("/bin/echo"),
@@ -133,7 +130,7 @@ mod tests {
             {
                 bool_res = true;
             }
-            assert_eq!(bool_res, true);
+            assert!(bool_res);
         }
         Ok(())
     }
@@ -176,7 +173,7 @@ mod tests {
                 String::from("/bin/sh"),
                 vec![
                     String::from("-c"),
-                    String::from(format!("touch {}", path.clone())),
+                    format!("touch {}", path.clone()),
                 ],
                 Some(true),
             )?;

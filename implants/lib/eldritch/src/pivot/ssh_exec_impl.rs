@@ -13,6 +13,7 @@ struct SSHExecOutput {
     status: i32,
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn handle_ssh_exec(
     target: String,
     port: u16,
@@ -43,6 +44,7 @@ async fn handle_ssh_exec(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn ssh_exec(
     starlark_heap: &Heap,
     target: String,
@@ -104,6 +106,7 @@ mod tests {
     // SSH Server utils
     #[derive(Clone)]
     #[allow(dead_code)]
+    #[allow(clippy::type_complexity)]
     struct Server {
         client_pubkey: Arc<russh_keys::key::PublicKey>,
         clients: Arc<Mutex<HashMap<(usize, ChannelId), Channel<Msg>>>>,
@@ -147,15 +150,12 @@ mod tests {
             let command_string: &str;
             let command_args: Vec<&str>;
 
-            if cfg!(target_os = "macos") {
+            if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
                 command_string = "bash";
                 command_args = ["-c", cmd].to_vec();
             } else if cfg!(target_os = "windows") {
                 command_string = "cmd";
                 command_args = ["/c", cmd].to_vec();
-            } else if cfg!(target_os = "linux") {
-                command_string = "bash";
-                command_args = ["-c", cmd].to_vec();
             } else {
                 // linux and such
                 command_string = "bash";
@@ -204,13 +204,12 @@ mod tests {
     async fn test_ssh_server(address: String, port: u16) {
         let client_key = russh_keys::key::KeyPair::generate_ed25519().unwrap();
         let client_pubkey = Arc::new(client_key.clone_public_key().unwrap());
-        let mut config = russh::server::Config::default();
-        config.connection_timeout = Some(std::time::Duration::from_secs(3));
-        config.auth_rejection_time = std::time::Duration::from_secs(3);
-        config
-            .keys
-            .push(russh_keys::key::KeyPair::generate_ed25519().unwrap());
-        let config = Arc::new(config);
+        let config = Arc::new(russh::server::Config {
+            connection_timeout: Some(std::time::Duration::from_secs(3)),
+            auth_rejection_time: std::time::Duration::from_secs(3),
+            keys: vec![russh_keys::key::KeyPair::generate_ed25519().unwrap()],
+            ..Default::default()
+        });
         let sh = Server {
             client_pubkey,
             clients: Arc::new(Mutex::new(HashMap::new())),
@@ -239,7 +238,7 @@ mod tests {
 
         let key_pass = "test123";
         let ssh_client_task = task::spawn(
-            handle_ssh_exec(ssh_host.clone(), ssh_port.into(), ssh_command, "root".to_string(), Some("some_password".to_string()), Some(String::from("-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----")), Some(key_pass), Some(2))
+            handle_ssh_exec(ssh_host.clone(), ssh_port, ssh_command, "root".to_string(), Some("some_password".to_string()), Some(String::from("-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----")), Some(key_pass), Some(2))
         );
 
         let (_a, actual_response) = tokio::join!(test_server_task, ssh_client_task);

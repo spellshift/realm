@@ -65,6 +65,6 @@ mod tests {
             assert_eq!(pname, "timeout.exe")
         }
 
-        return Ok(());
+        Ok(())
     }
 }

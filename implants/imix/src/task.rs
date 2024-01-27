@@ -31,12 +31,9 @@ impl TaskHandle {
         let exec_started_at = self.output.get_exec_started_at();
         let exec_finished_at = self.output.get_exec_finished_at();
         let text = self.output.collect();
-        let err = match self.output.collect_errors().pop() {
-            Some(err) => Some(TaskError {
+        let err = self.output.collect_errors().pop().map(|err| TaskError {
                 msg: err.to_string(),
-            }),
-            None => None,
-        };
+            });
 
         #[cfg(debug_assertions)]
         log::info!(
@@ -57,7 +54,7 @@ impl TaskHandle {
             }
         );
 
-        if text.len() > 0
+        if !text.is_empty()
             || err.is_some()
             || exec_started_at.is_some()
             || exec_finished_at.is_some()
@@ -71,8 +68,8 @@ impl TaskHandle {
                         id: self.id,
                         output: text.join(""),
                         error: err,
-                        exec_started_at: exec_started_at,
-                        exec_finished_at: exec_finished_at,
+                        exec_started_at,
+                        exec_finished_at,
                     }),
                 })
                 .await?;

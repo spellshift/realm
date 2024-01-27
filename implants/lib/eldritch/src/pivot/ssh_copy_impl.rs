@@ -2,6 +2,7 @@ use anyhow::Result;
 
 use super::Session;
 
+#[allow(clippy::too_many_arguments)]
 async fn handle_ssh_copy(
     target: String,
     port: u16,
@@ -24,12 +25,13 @@ async fn handle_ssh_copy(
         ),
     )
     .await??;
-    let _ = ssh.copy(&src, &dst).await?;
+    ssh.copy(&src, &dst).await?;
     ssh.close().await?;
 
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn ssh_copy(
     target: String,
     port: i32,
@@ -48,7 +50,7 @@ pub fn ssh_copy(
     let key_password_ref = key_password.as_deref();
     let local_port: u16 = port.try_into()?;
 
-    let _ = match runtime.block_on(handle_ssh_copy(
+    match runtime.block_on(handle_ssh_copy(
         target,
         local_port,
         src,
@@ -172,18 +174,10 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
     struct SftpSession {
         version: Option<u32>,
         root_dir_read_done: bool,
-    }
-
-    impl Default for SftpSession {
-        fn default() -> Self {
-            Self {
-                version: None,
-                root_dir_read_done: false,
-            }
-        }
     }
 
     #[allow(unused_variables)]
@@ -257,7 +251,7 @@ mod tests {
             let tmp_data = String::from_utf8(data).unwrap();
             fs::write(handle, tmp_data.trim_end_matches(char::from(0))).unwrap();
             Ok(Status {
-                id: id,
+                id,
                 status_code: StatusCode::Ok,
                 error_message: "".to_string(),
                 language_tag: "".to_string(),
@@ -302,13 +296,12 @@ mod tests {
     async fn test_ssh_server(address: String, port: u16) {
         let client_key = russh_keys::key::KeyPair::generate_ed25519().unwrap();
         let client_pubkey = Arc::new(client_key.clone_public_key().unwrap());
-        let mut config = russh::server::Config::default();
-        config.connection_timeout = Some(std::time::Duration::from_secs(3));
-        config.auth_rejection_time = std::time::Duration::from_secs(3);
-        config
-            .keys
-            .push(russh_keys::key::KeyPair::generate_ed25519().unwrap());
-        let config = Arc::new(config);
+        let config = Arc::new(russh::server::Config {
+            connection_timeout: Some(std::time::Duration::from_secs(3)),
+            auth_rejection_time: std::time::Duration::from_secs(3),
+            keys: vec![russh_keys::key::KeyPair::generate_ed25519().unwrap()],
+            ..Default::default()
+        });
         let sh = Server {};
         let _res: std::result::Result<(), std::io::Error> = tokio::time::timeout(
             std::time::Duration::from_secs(2),
@@ -343,11 +336,11 @@ mod tests {
 
         let key_pass = "test123";
         let ssh_client_task = task::spawn(
-            handle_ssh_copy(ssh_host.clone(), ssh_port.into(), path_src, path_dst.clone(), "root".to_string(), Some("some_password".to_string()), Some(String::from("-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----")), Some(key_pass), Some(2))
+            handle_ssh_copy(ssh_host.clone(), ssh_port, path_src, path_dst.clone(), "root".to_string(), Some("some_password".to_string()), Some(String::from("-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----")), Some(key_pass), Some(2))
         );
 
         let (_a, actual_response) = tokio::join!(test_server_task, ssh_client_task);
-        let _ = actual_response??;
+        actual_response??;
 
         let res_buf = fs::read_to_string(path_dst);
         assert_eq!(TEST_STRING, res_buf?.as_bytes());

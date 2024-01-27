@@ -364,9 +364,9 @@ pub fn dll_reflect(
     _pid: u32,
     _function_name: String,
 ) -> anyhow::Result<NoneType> {
-    return Err(anyhow::anyhow!(
+    Err(anyhow::anyhow!(
         "This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"
-    ));
+    ))
 }
 
 #[cfg(target_os = "windows")]

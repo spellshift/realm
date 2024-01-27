@@ -24,7 +24,7 @@ pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 
     for (pid, process) in sys.processes() {
         let mut tmp_ppid = 0;
-        if process.parent() != None {
+        if process.parent().is_some() {
             tmp_ppid = process
                 .parent()
                 .context(format!("Failed to get parent process for {}", pid))?
@@ -113,12 +113,9 @@ mod tests {
         let res = list(&binding)?;
         for proc in res {
             println!(
-                "{}",
-                format!(
-                    "{:?}",
-                    proc.get(const_frozen_string!("pid").to_value())?
-                        .context("Fail")?
-                )
+                "{:?}",
+                proc.get(const_frozen_string!("pid").to_value())?
+                    .context("Fail")?
             );
             let cur_pid = match proc.get(const_frozen_string!("pid").to_value())? {
                 Some(local_cur_pid) => local_cur_pid
@@ -133,6 +130,6 @@ mod tests {
         }
         println!("PID: {}", child.id());
         assert_eq!(true, false);
-        return Ok(());
+        Ok(())
     }
 }

@@ -8,16 +8,12 @@ async fn main() {
     #[cfg(debug_assertions)]
     init_logging();
 
-    match Command::new("imix")
+    if let Some(("install", _)) = Command::new("imix")
         .subcommand(Command::new("install").about("Install imix"))
         .get_matches()
-        .subcommand()
-    {
-        Some(("install", _)) => {
-            imix::install().await;
-            return;
-        }
-        _ => {}
+        .subcommand() {
+        imix::install().await;
+        return;
     }
 
     loop {

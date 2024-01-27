@@ -36,7 +36,13 @@ pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
             block = GenericArray::from_iter(short_buffer);
         }
         cipher.encrypt_block(&mut block);
-        out_file.write(&block)?;
+        match out_file.write(&block) {
+            Ok(_) => {}
+            Err(_err) => {
+                #[cfg(debug_assertions)]
+                log::error!("failed to encrypt file: {_err}");
+            }
+        };
         block = GenericArray::from([0u8; 16]);
     }
     drop(src_file);

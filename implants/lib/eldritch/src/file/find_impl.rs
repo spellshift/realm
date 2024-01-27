@@ -2,13 +2,10 @@ use anyhow::{anyhow, Result};
 use std::fs::canonicalize;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
-use std::{
-    path::{Path, PathBuf},
-    time::UNIX_EPOCH,
-};
+use std::{path::Path, time::UNIX_EPOCH};
 
 fn check_path(
-    path: &PathBuf,
+    path: &Path,
     name: Option<String>,
     file_type: Option<String>,
     permissions: Option<u64>,
@@ -104,22 +101,20 @@ fn search_dir(
                     modified_time,
                     create_time,
                 )?);
-            } else {
-                if check_path(
-                    &path,
-                    name.clone(),
-                    file_type.clone(),
-                    permissions,
-                    modified_time,
-                    create_time,
-                )? {
-                    out.push(
-                        canonicalize(path)?
-                            .to_str()
-                            .ok_or(anyhow!("Failed to convert path to str"))?
-                            .to_owned(),
-                    );
-                }
+            } else if check_path(
+                &path,
+                name.clone(),
+                file_type.clone(),
+                permissions,
+                modified_time,
+                create_time,
+            )? {
+                out.push(
+                    canonicalize(path)?
+                        .to_str()
+                        .ok_or(anyhow!("Failed to convert path to str"))?
+                        .to_owned(),
+                );
             }
         }
     }

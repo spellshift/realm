@@ -3,7 +3,7 @@ use std::path::Path;
 
 pub fn is_file(path: String) -> Result<bool> {
     let res = Path::new(&path);
-    return Ok(res.is_file());
+    Ok(res.is_file())
 }
 
 #[cfg(test)]
@@ -24,7 +24,7 @@ mod tests {
         // Run our code
         let res = is_file(path)?;
 
-        assert_eq!(res, true);
+        assert!(res);
 
         Ok(())
     }
@@ -39,7 +39,7 @@ mod tests {
         // Run our code
         let res = is_file(path)?;
 
-        assert_eq!(res, false);
+        assert!(!res);
 
         Ok(())
     }
@@ -53,7 +53,7 @@ mod tests {
         // Run our code
         let res = is_file(path)?;
 
-        assert_eq!(res, false);
+        assert!(!res);
         Ok(())
     }
 }

@@ -69,6 +69,7 @@ impl<'v> UnpackValue<'v> for AssetsLibrary {
 // This is where all of the "assets.X" impl methods are bound
 #[starlark_module]
 #[rustfmt::skip]
+#[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     fn copy(this: AssetsLibrary, src: String, dest: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
