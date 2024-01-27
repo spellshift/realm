@@ -80,7 +80,7 @@ if ! type rustup > /dev/null 2>&1; then
     mkdir -p "${CARGO_HOME}" "${RUSTUP_HOME}"
     chown ${USERNAME} "${CARGO_HOME}" "${RUSTUP_HOME}"
     su ${USERNAME} -c "curl --tlsv1.2 https://sh.rustup.rs -sSf | bash -s -- -y --no-modify-path --profile minimal 2>&1"
-else 
+else
     echo "Rust already installed. Skipping."
 fi
 
@@ -95,6 +95,7 @@ su ${USERNAME} -c "$(cat << EOF
     rustup component add rls rust-analysis rust-src clippy 2>&1
     rustup toolchain install nightly-2023-09-04
     rustup component add rustfmt --toolchain nightly-2023-09-04
+    rustup component add clippy --toolchain nightly-2023-09-04
 EOF
 )"
 
