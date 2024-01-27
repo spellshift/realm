@@ -201,7 +201,7 @@ For all non supported OSes return an error with a message explaining which OSes 
 ---
 The `Dict` type requires dynamic memory allocation in starlark. In order to achieve this we can leverage the `starlark::Heap` and push entries onto it. It's pretty simple to implement and starlark does some magic to streamline the process. To make the heap available to your function simply add it as an argument to your function.
 
-## Different function decelerations
+## Different function declarations
 `implants/lib/eldritch/src/module.rs`
 
 ```rust

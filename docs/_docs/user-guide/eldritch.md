@@ -49,7 +49,7 @@ Eldritch currently only supports the [default starlark data types.](https://gith
 
 Eldritch doesn't implement any form of error handling. If a function fails it will stop the tome from completing execution. There is no way to recover after a function has errored.
 
-If you're using a functions that has a chance to error (functions that do file / network IO) test preemptively with function like `is_file`, `is_dir`, `is_windows`, etc.
+If you're using a function that has a chance to error (functions that do file / network IO) test preemptively with function like `is_file`, `is_dir`, `is_windows`, etc.
 
 For example:
 
@@ -124,7 +124,7 @@ for user_home_dir in file.list("/home/"):
 `assets.copy(src: str, dst: str) -> None`
 
 The <b>assets.copy</b> method copies an embedded file from the agent to disk.
-The `srt` variable will be the path from the `embed_files_golem_prod` as the root dir.
+The `src` variable will be the path from the `embed_files_golem_prod` as the root dir.
 For example `embed_files_golem_prod/sliver/agent-x64` can be referenced as `sliver/agent-x64`.
 If `dst` exists it will be overwritten. If it doesn't exist the function will fail.
 
@@ -239,7 +239,7 @@ crypto.to_json({"foo": "bar"})
 
 `file.append(path: str, content: str) -> None`
 
-The <b>file.append</b> method appends the `content` to file at `path`. If no file exists at path create the file with the contents content.
+The <b>file.append</b> method appends the `content` to file at `path`. If no file exists at path create the file with the content.
 
 ### file.compress
 
@@ -321,13 +321,13 @@ Here is an example of the Dict layout:
 
 `file.mkdir(path: str) -> None`
 
-The <b>file.mkdir</b> method is make a new dirctory at `path`. If the parent directory does not exist or the directory cannot be otherwise be created, it will creat an error.
+The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error.
 
 ### file.moveto
 
 `file.moveto(src: str, dst: str) -> None`
 
-The <b>file.moveto</b> method moves a file or directory from src to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.read
 
@@ -378,7 +378,7 @@ If a file or directory already exists at this path, the method will fail.
 
 `file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> Vec<str>`
 
-The <b>file.find</b> method finds all files matching the used paramters. Returns file path for all matching items.
+The <b>file.find</b> method finds all files matching the used parameters. Returns file path for all matching items.
 
 - name: Checks if file name contains provided input
 - file_type: Checks for 'file' or 'dir' for files or directories, respectively.
@@ -394,7 +394,7 @@ The <b>file.find</b> method finds all files matching the used paramters. Returns
 
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
 
-The <b>pivot.arp_scan</b> method is being proposed to allow users to enumerate hosts on their network without using TCP connect or ping.
+The <b>pivot.arp_scan</b> method is for enumerating hosts on the agent network without using TCP connect or ping.
 
 - `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
 - Must be running as `root` to use.
@@ -473,7 +473,7 @@ A ports status can be open, closed, or timeout:
 | timeout | udp        | Connection was refused, dropped, or didn't respond.  |
 
 Each IP in the specified CIDR will be returned regardless of if it returns any open ports.
-Be mindful of this when scanning large CIDRs as it may create largo return objects.
+Be mindful of this when scanning large CIDRs as it may create large return objects.
 
 NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely.
 
@@ -489,9 +489,9 @@ The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move 
 
 The <b>pivot.ssh_copy</b> method copies a local file to a remote system. If no password or key is specified the function will error out with:
 `Failed to run handle_ssh_exec: Failed to authenticate to host`
-If the connection is successful but the copy writes a file error will be returend.
+If the connection is successful but the copy writes a file error will be returned.
 
-ssh_copy will first delete the remote file and then write to it's location.
+ssh_copy will first delete the remote file and then write to its location.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
 
 ### pivot.ssh_exec
@@ -635,10 +635,10 @@ The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a rem
 
 `sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None`
 
-The <b>sys.dll_reflcet</b> method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
+The <b>sys.dll_reflect</b> method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
 
 The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
-If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark be sure careful of the u8::MAX bound for each byte.
+If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
 
 ### sys.exec
 
@@ -935,7 +935,7 @@ True
 
 The <b>time.format_to_epoch</b> method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
 
-Some common formating methods are:
+Some common formatting methods are:
 
 - "%Y-%m-%d %H:%M:%S" (24 Hour Time)
 - "%Y-%m-%d %I:%M:%S %P" (AM/PM)
@@ -948,7 +948,7 @@ For reference on all available format specifiers, see <https://docs.rs/chrono/la
 
 The <b>time.format_to_readable</b> method returns the timestamp in the provided format of the provided UTC timestamp.
 
-Some common formating methods are:
+Some common formatting methods are:
 
 - "%Y-%m-%d %H:%M:%S" (24 Hour Time)
 - "%Y-%m-%d %I:%M:%S %P" (AM/PM)

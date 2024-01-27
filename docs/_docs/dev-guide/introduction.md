@@ -36,8 +36,8 @@ All code changes to Tavern must be tested. Below are some standards for test wri
 * Conventionally, please colocate your test code with the code it is testing and include it in the `<packagename>_test` package
 * We rely on the standard [testify](https://github.com/stretchr/testify) assert & require libraries for ensuring expected values (or errors) are returned
 * To enable a variety of inputs for a test case, we rely on closure-driven testing for Golang, you can read more about it [here](https://medium.com/@cep21/closure-driven-tests-an-alternative-style-to-table-driven-tests-in-go-628a41497e5e)
-* Reuseable test code should go in a sub-package suffixed with test
-    * For example, reuseable test code for the `ent` package would be located in the `ent/enttest` package
+* Reusable test code should go in a sub-package suffixed with test
+    * For example, reusable test code for the `ent` package would be located in the `ent/enttest` package
     * This convention is even used in the Golang standard library (e.g. [net/http](https://pkg.go.dev/net/http/httptest))
 * Please use existing tests as a reference for writing new tests
 
@@ -71,7 +71,7 @@ A Task represents a set of instructions for an Agent to perform. For example, li
 Eldritch is our Pythonic Domain Specific Language (DSL), which can be used to progammatically define red team operations. Many of the language's built-in features do not rely on system binaries. For more information, please see the [Eldritch section](/user-guide/eldritch) of the documentation.
 
 ### Tome
-A Tome is a prebuilt Eldritch bundle, which provides execution instructions to a Beacon. Tomes can embed files and accept parameters to change their behaviour at runtime. Tavern's built-in Tomes are defined [here](https://github.com/spellshift/realm/tree/main/tavern/tomes).
+A Tome is a prebuilt Eldritch bundle, which provides execution instructions to a Beacon. Tomes can embed files and accept parameters to change their behavior at runtime. Tavern's built-in Tomes are defined [here](https://github.com/spellshift/realm/tree/main/tavern/tomes).
 
 # Project Structure
 * **[.devcontainer](https://github.com/spellshift/realm/tree/main/.devcontainer)** contains settings required for configuring a VSCode dev container that can be used for Realm development
