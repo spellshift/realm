@@ -1,0 +1,10 @@
+name: Process info
+description: Get information about process with specified PID or -1 for current process
+author: Alextibtab
+support_model: FIRST_PARTY
+tactic: DISCOVERY
+paramdefs:
+- name: pid
+  label: Process ID
+  type: int
+  placeholder: process id eg. 245
