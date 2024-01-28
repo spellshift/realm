@@ -1,0 +1,17 @@
+def process_info(pid):
+    info = process.info(sys.get_pid() if pid == -1 else pid)
+    for key, value in info.items():
+        if key == "cmd":
+            print("cmd_args=\n")
+            for nested_value in value.split(" "):
+                print("\t- {}\n".format(nested_value))
+        elif key == "environ":
+             print("env_variables=\n")
+             for nested_value in value.split(","):
+                print("\t- {}\n".format(nested_value))
+        else:
+            print("{}={}\n".format(key, value))
+
+process_info(int(input_params['pid']))
+print("\n")
+print("\n")
