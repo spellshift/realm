@@ -26,7 +26,8 @@ struct Handle {
 async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     let mut handles = Vec::new();
     for tome in tomes {
-        let (runtime, output) = Runtime::new();
+        let (mut runtime, output) = Runtime::new();
+        runtime.stdout_reporting = true;
         let handle = tokio::task::spawn_blocking(move || {
             runtime.run(Tome {
                 eldritch: tome.eldritch,
@@ -58,7 +59,7 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
         if !errors.is_empty() {
             return Err(anyhow!("tome execution failed: {:?}", errors));
         }
-        println!("OUTPUT: {:?}", out);
+        println!("OUTPUT:\n{}", out.join(""));
         result.append(&mut out);
     }
 
