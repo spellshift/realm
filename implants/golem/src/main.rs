@@ -100,7 +100,7 @@ fn main() -> anyhow::Result<()> {
             .build()
             .unwrap();
 
-        let (error_code, result) = match runtime.block_on(run_tomes(parsed_tomes)) {
+        let (error_code, _result) = match runtime.block_on(run_tomes(parsed_tomes)) {
             Ok(response) => (0, response),
             Err(error) => {
                 eprint!("failed to execute tome {:?}", error);
