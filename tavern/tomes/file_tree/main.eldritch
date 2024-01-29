@@ -28,7 +28,6 @@ def main(path):
     elif file.is_file(path):
         print("Error: Invalid Path ("+path+")\n")
 
-input_params['path']="/"
 main(input_params['path'])
 print("\n")
 print("\n")
