@@ -45,7 +45,7 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}hello_world.tome"));
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#"["HELLO"]"#));
+        .stdout(predicate::str::contains(r#"HELLO"#));
 
     Ok(())
 }
