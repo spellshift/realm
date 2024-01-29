@@ -108,9 +108,6 @@ fn main() -> anyhow::Result<()> {
             }
         };
 
-        if !result.is_empty() {
-            println!("{:?}", result);
-        }
         process::exit(error_code);
     } else if matches.contains_id("interactive") {
         inter::interactive_main()?;
