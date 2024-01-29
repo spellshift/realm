@@ -59,7 +59,6 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
         if !errors.is_empty() {
             return Err(anyhow!("tome execution failed: {:?}", errors));
         }
-        println!("OUTPUT:\n{}", out.join(""));
         result.append(&mut out);
     }
 
