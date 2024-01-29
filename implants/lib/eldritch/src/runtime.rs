@@ -28,7 +28,7 @@ use std::time::Duration;
  */
 #[derive(ProvidesStaticType)]
 pub struct Runtime {
-    stdout_reporting: bool,
+    pub stdout_reporting: bool,
 
     ch_exec_started_at: Sender<Timestamp>,
     ch_exec_finished_at: Sender<Timestamp>,
@@ -174,13 +174,11 @@ impl Runtime {
     fn parse(tome: &Tome) -> Result<AstModule> {
         match AstModule::parse("main", tome.eldritch.to_string(), &Dialect::Extended) {
             Ok(res) => Ok(res),
-            Err(err) => {
-                Err(anyhow::anyhow!(
-                    "[eldritch] Unable to parse eldritch tome: {}: {}",
-                    err.to_string(),
-                    tome.eldritch.to_string(),
-                ))
-            }
+            Err(err) => Err(anyhow::anyhow!(
+                "[eldritch] Unable to parse eldritch tome: {}: {}",
+                err.to_string(),
+                tome.eldritch.to_string(),
+            )),
         }
     }
 
