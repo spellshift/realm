@@ -30,9 +30,9 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}syntax_fail.tome"));
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains(r#"Parse error: unexpected string literal "win" here"#.to_string()));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        r#"Parse error: unexpected string literal "win" here"#.to_string(),
+    ));
 
     Ok(())
 }
@@ -45,7 +45,7 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}hello_world.tome"));
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("[\"HELLO\"]"));
+        .stdout(predicate::str::contains(r#"["HELLO"]"#));
 
     Ok(())
 }
@@ -58,7 +58,7 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}eldritch_test.tome"));
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#"[\"append\", \"compress\""#));
+        .stdout(predicate::str::contains(r#"["append", "compress""#));
 
     Ok(())
 }
