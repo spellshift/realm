@@ -24,6 +24,107 @@ cargo build --release && \
     ../target/debug/golem ../../tests/golem_cli_test/tomes/hello_world.tome
 ```
 
+## Creating and testing tomes
+
+Golem is a great way to create and test tomes without deploying the entire Realm project.
+Golem operates in three different modes:
+
+- Interactive `-i`
+- With embedded tomes _no args_
+- On a specific tome `/path/to/tome/eldritch.main`
+
+In this guide we'll leverage the last one.
+
+### Tome structure
+
+Copy an existing tome and rename it to your desired name.
+
+```bash
+[~/realm]$ cd tavern/tomes/
+[./tomes]$ cp -r ./file_list ./new_tome
+```
+
+This will setup the boiler plate.
+A tome file structure should look like this:
+
+```
+./new_tome/
+├── files
+│   └── test-file
+├── main.eldritch
+└── metadata.yml
+```
+
+_If you have no files associated with your tome you can ommit the `files` dir_
+
+- main.eldritch - Defines our actual eldritch functionality and what will be executed on the agent.
+- metadata.yaml - Defines information that tavern will use to prepare your tome including prompting users for input.
+
+### Tome Metadata
+
+Your tome Metadata should look like this:
+
+```yaml
+name: List files # The name of your tome.
+description: List the files and directories found at the path # A description to help users understand what your tome does.
+author: hulto # Your Github username.
+support_model: FIRST_PARTY # Is this a tome that ships with Realm or not?
+tactic: RECON # What stage of the MITRE ATT&CK chain does this tome fall into?
+paramdefs: # A list of inputs the tome requires.
+- name: path # The name of the input parameter `input_params['path']`.
+  type: string # The type of the input parameter.
+  label: File path # A Label that will be displayed in the UI to help users understand the purpose.
+  placeholder: "/etc/" # A placeholder to give users an idea of how their input should be formatted.
+```
+
+### Building your eldritch script
+
+Eldritch while it looks like python is distinct and many features in python do not exist in Eldritch.
+
+For an almost complete list of syntax checkout the starlark (DSL which eldritch is based on) docs <https://bazel.build/rules/language>
+*Note: The docs may be incorrect in some places as we're using the starlark-rust implementation which doesn't always adhere to the starlark spec.*
+
+```python
+# Define our function for the tome and any inputs
+def file_list(path):
+    # make sure you proactively check the state of the system.
+    # Users may pass bad data in or the system may be in an
+    # unexpected state so always check if something is a dir
+    # before treatingi it like one.
+    if file.is_dir(path):
+        files = file.list(path)
+        for f in files:
+            type_str = ""
+            if f['type'] == "Directory":
+                type_str = "Dir"
+            if f['type'] == "Link":
+                type_str = "Link"
+            if f['type'] == "File":
+                type_str = "File"
+            # Formatting - By default eldritch will print data as a JSON Dictionary which is easy for scripts to read but
+            # not great for humans to make your tome more usable make sure you print data in a readable way.
+            print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name']+"\n")
+    else:
+        print("Error: Invalid Path ("+path+")\n")
+
+# Call our tomes function.
+file_list(input_params['path'])
+# `input_params` is a dictionary that's implicitly passed into the eldritch runtime.
+# The key value pairs in input_params is defined by the users answers to the paramdefs in the UI.
+# For example if you specify `name: path` in your `metadata.yml` file the UI will ask the user for
+# a path and then populate the `path` key in `input_params` when the tome runs.
+# Input params is unique to each task so setting a var in one task won't affect others.
+print("\n")
+print("\n")
+```
+
+### Design ideology
+
+Tomes are designed to accomplish specific workflows.
+Some small tomes have been created to accomplish basic sysadmin tasks like reading, writing files, checking processes etc.
+Ideally though if you have a specific workflow you'll define it as a tome.
+We want to avoid queueing multiple questst to accomplish a workflow.
+
 ## Golem embedded files
 
 The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in eldritch. In addition to programmatic access the embedded files can be automatically executed at run time. If no other option is specified `-i` or a file path, golem will iterate over every instance of `main.eldritch` in the embedded assets launching each one as a separate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
