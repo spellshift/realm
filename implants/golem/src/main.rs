@@ -27,7 +27,7 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     let mut handles = Vec::new();
     for tome in tomes {
         let (mut runtime, output) = Runtime::new();
-        runtime.stdout_reporting = true;
+        runtime.with_stdout_reporting();
         let handle = tokio::task::spawn_blocking(move || {
             runtime.run(Tome {
                 eldritch: tome.eldritch,

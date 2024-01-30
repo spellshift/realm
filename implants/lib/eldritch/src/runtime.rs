@@ -28,7 +28,7 @@ use std::time::Duration;
  */
 #[derive(ProvidesStaticType)]
 pub struct Runtime {
-    pub stdout_reporting: bool,
+    stdout_reporting: bool,
 
     ch_exec_started_at: Sender<Timestamp>,
     ch_exec_finished_at: Sender<Timestamp>,
