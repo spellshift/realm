@@ -26,7 +26,7 @@ cargo build --release && \
 
 ## Creating and testing tomes
 
-Golem is a great way to create and test tomes without deploying the entire Realm project.
+Golem is a great way to quickly develop and iterate tomes without needing to deploy an agent and wait for callbacks. It enables a more interactive experience for Eldritch, which helps tome developers move quickly.
 Golem operates in three different modes:
 
 - Interactive `-i`
@@ -57,7 +57,7 @@ A tome file structure should look like this:
 
 _If you have no files associated with your tome you can ommit the `files` dir_
 
-- main.eldritch - Defines our actual eldritch functionality and what will be executed on the agent.
+- main.eldritch - Defines our actual Eldritch functionality and what will be executed on the agent.
 - metadata.yaml - Defines information that tavern will use to prepare your tome including prompting users for input.
 
 ### Tome Metadata
@@ -69,7 +69,7 @@ name: List files # The name of your tome.
 description: List the files and directories found at the path # A description to help users understand what your tome does.
 author: hulto # Your Github username.
 support_model: FIRST_PARTY # Is this a tome that ships with Realm or not?
-tactic: RECON # What stage of the MITRE ATT&CK chain does this tome fall into?
+tactic: RECON # Which MTIRE ATT&CK Tactic best describes this tome?
 paramdefs: # A list of inputs the tome requires.
 - name: path # The name of the input parameter `input_params['path']`.
   type: string # The type of the input parameter.
@@ -77,11 +77,11 @@ paramdefs: # A list of inputs the tome requires.
   placeholder: "/etc/" # A placeholder to give users an idea of how their input should be formatted.
 ```
 
-### Building your eldritch script
+### Building your Eldritch script
 
 Eldritch while it looks like python is distinct and many features in python do not exist in Eldritch.
 
-For an almost complete list of syntax checkout the starlark (DSL which eldritch is based on) docs <https://bazel.build/rules/language>
+For an almost complete list of syntax checkout the starlark (DSL which Eldritch is based on) docs <https://bazel.build/rules/language>
 *Note: The docs may be incorrect in some places as we're using the starlark-rust implementation which doesn't always adhere to the starlark spec.*
 
 ```python
@@ -101,7 +101,7 @@ def file_list(path):
                 type_str = "Link"
             if f['type'] == "File":
                 type_str = "File"
-            # Formatting - By default eldritch will print data as a JSON Dictionary which is easy for scripts to read but
+            # Formatting - By default Eldritch will print data as a JSON Dictionary which is easy for scripts to read but
             # not great for humans to make your tome more usable make sure you print data in a readable way.
             print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name']+"\n")
     else:
@@ -109,7 +109,7 @@ def file_list(path):
 
 # Call our tomes function.
 file_list(input_params['path'])
-# `input_params` is a dictionary that's implicitly passed into the eldritch runtime.
+# `input_params` is a dictionary that's implicitly passed into the Eldritch runtime.
 # The key value pairs in input_params is defined by the users answers to the paramdefs in the UI.
 # For example if you specify `name: path` in your `metadata.yml` file the UI will ask the user for
 # a path and then populate the `path` key in `input_params` when the tome runs.
@@ -146,7 +146,7 @@ file_list(input_params['path'])
 
 ## Golem embedded files
 
-The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in eldritch. In addition to programmatic access the embedded files can be automatically executed at run time. If no other option is specified `-i` or a file path, golem will iterate over every instance of `main.eldritch` in the embedded assets launching each one as a separate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
+The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in Eldritch. In addition to programmatic access the embedded files can be automatically executed at run time. If no other option is specified `-i` or a file path, golem will iterate over every instance of `main.eldritch` in the embedded assets launching each one as a separate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
 
 ## Golem as a stage 0
 

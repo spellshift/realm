@@ -14,7 +14,7 @@ By embedding the interpreter into the agent conditional logic can be quickly eva
 
 Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
-**Trying to create a new tome check out the guide in [Golem](/user-guide/golem)**
+**Trying to create a tome? Check out the guide in [Golem](/user-guide/golem).**
 
 ## Examples
 
