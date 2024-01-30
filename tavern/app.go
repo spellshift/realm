@@ -88,6 +88,9 @@ type Server struct {
 // Close should always be called to clean up a Tavern server.
 func (srv *Server) Close() error {
 	srv.HTTP.Shutdown(context.Background())
+	if srv.MetricsHTTP == nil {
+		return srv.client.Close()
+	}
 	srv.MetricsHTTP.Shutdown(context.Background())
 	return srv.client.Close()
 }
