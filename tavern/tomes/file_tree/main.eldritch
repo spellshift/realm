@@ -1,21 +1,33 @@
+block_list = ["/proc","/sys","/lib","/libx32","/lib32","/lib64","/boot","/srv","/usr","/snap","/run","/dev","/cores"]
+
+
 def file_list(path,tree):
-    tree="|\t\t"+tree
+    tree="|\t"+tree
+    files = file.list(path)
+    for f in files:
+        if path+f['file_name'] in block_list:
+            print("Skipping: "+path+f['file_name']+"\n")
+            continue
+        if f['type'] == "Directory":
+            print(tree+"|---"+path+"/"+f['file_name']+"\n")
+            file_list(path+"/"+f['file_name'],tree)
+        if f['type'] == "Link":
+            print(tree+"|---"+f['file_name']+"\n")
+        if f['type'] == "File":
+            print(tree+"|---"+f['file_name']+"\n")
+
+def main(path):
+    tree=""
     if file.is_dir(path):
-        files = file.list(path)
-        for f in files:
-            type_str = ""
-            if f['type'] == "Directory":
-                print(tree+"|---"+path+"/"+f['file_name']+"\n")
-                file_list(path+"/"+f['file_name'],tree)
-            if f['type'] == "Link":
-                print(tree+"|---"+f['file_name']+"\n")
-            if f['type'] == "File":
-                print(tree+"|---"+f['file_name']+"\n")
-    else:
+        print(path+"\n")
+        if path == "/":
+            print("It looks like you're trying to list every file on the system.\n")
+            print("This generates a lot of data so I'm going to exclude less helpful directories\n")
+            print("If you really really want everything including /proc and /sys specify \"//\"\n")
+        file_list(path,tree)
+    elif file.is_file(path):
         print("Error: Invalid Path ("+path+")\n")
 
-tree=""
-print(input_params['path']+"\n")
-file_list(input_params['path'],tree)
+main(input_params['path'])
 print("\n")
 print("\n")
