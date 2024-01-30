@@ -14,6 +14,8 @@ By embedding the interpreter into the agent conditional logic can be quickly eva
 
 Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
+**Trying to create a tome? Check out the guide in [Golem](/user-guide/golem).**
+
 ## Examples
 
 _Kill a specific process name_
@@ -90,7 +92,6 @@ It currently contains seven modules:
 - `process` - Used to interact with processes on the system.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
-
 
 Functions fall into one of these seven modules. This is done to improve clarity about function use.
 
