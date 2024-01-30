@@ -123,11 +123,11 @@ print("\n")
 Tomes are designed to accomplish specific workflows.
 Some small tomes have been created to accomplish basic sysadmin tasks like reading, writing files, checking processes etc.
 Ideally though if you have a specific workflow you'll define it as a tome.
-We want to avoid queueing multiple questst to accomplish a workflow.
+We want to avoid queueing multiple quests to accomplish a workflow.
 
 ### Testing your tome
 
-Now that your tome is created lets test it locally.
+Now that your tome is created let's test it locally.
 
 ```bash
 [~]$ cd realm/implants/golem
