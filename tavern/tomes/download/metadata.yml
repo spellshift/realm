@@ -1,0 +1,10 @@
+name: Download
+description: Download a file.
+author: Alextibtab
+support_model: FIRST_PARTY
+tactic: EXECUTION
+paramdefs:
+- name: url
+  type: string
+  label: file's URL
+  placeholder: "https://example.com/downloadable_file"

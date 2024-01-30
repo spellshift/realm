@@ -1,0 +1,8 @@
+def download(url):
+    if sys.is_linux() or sys.is_macos():
+        file.download(url, "./tmp")
+
+
+download(input_params['url'])
+print("\n")
+print("\n")
