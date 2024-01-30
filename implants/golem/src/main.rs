@@ -26,7 +26,8 @@ struct Handle {
 async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     let mut handles = Vec::new();
     for tome in tomes {
-        let (runtime, output) = Runtime::new();
+        let (mut runtime, output) = Runtime::new();
+        runtime.with_stdout_reporting();
         let handle = tokio::task::spawn_blocking(move || {
             runtime.run(Tome {
                 eldritch: tome.eldritch,
@@ -58,7 +59,6 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
         if !errors.is_empty() {
             return Err(anyhow!("tome execution failed: {:?}", errors));
         }
-        println!("OUTPUT: {:?}", out);
         result.append(&mut out);
     }
 
@@ -100,7 +100,7 @@ fn main() -> anyhow::Result<()> {
             .build()
             .unwrap();
 
-        let (error_code, result) = match runtime.block_on(run_tomes(parsed_tomes)) {
+        let (error_code, _result) = match runtime.block_on(run_tomes(parsed_tomes)) {
             Ok(response) => (0, response),
             Err(error) => {
                 eprint!("failed to execute tome {:?}", error);
@@ -108,9 +108,6 @@ fn main() -> anyhow::Result<()> {
             }
         };
 
-        if !result.is_empty() {
-            println!("{:?}", result);
-        }
         process::exit(error_code);
     } else if matches.contains_id("interactive") {
         inter::interactive_main()?;
