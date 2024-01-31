@@ -20,7 +20,7 @@ resource "random_password" "defaultmysql" {
 variable "tavern_container_image" {
   type = string
   description = "Docker container to deploy"
-  default = "kcarretto/tavern:latest"
+  default = "spellshift/tavern:latest"
 }
 
 variable "gcp_project" {
