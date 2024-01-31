@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { HostType } from "../../../utils/consts";
 
 export const useHostsFilter = (hosts: Array<HostType>) => {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [filteredHosts, setFilteredHosts] = useState(hosts);
 
     const [typeFilters, setTypeFilters] = useState([]) as Array<any>;
