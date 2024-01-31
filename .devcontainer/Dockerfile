@@ -36,7 +36,8 @@ RUN bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "$
 RUN apt update -y \
     && apt install -y protobuf-compiler libprotobuf-dev \
     && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 \
-    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2 \
+    cargo install protobuf-codegen
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
 ARG NODE_VERSION="lts/*"
