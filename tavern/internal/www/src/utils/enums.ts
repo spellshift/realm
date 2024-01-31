@@ -17,11 +17,11 @@ export enum PageNavItem {
     hosts="Hosts"
 }
 export enum SupportedPlatforms {
-    Windows="Windows",
-    Linux='Linux',
-    MacOS='MacOS',
-    BSD='BSD',
-    Unknown='Unknown'
+    Windows="PLATFORM_WINDOWS",
+    Linux='PLATFORM_LINUX',
+    MacOS='PLATFORM_MACOS',
+    BSD='PLATFORM_BSD',
+    Unknown='PLATFORM_UNSPECIFIED'
 }
 export enum TableRowLimit {
     TaskRowLimit=8
