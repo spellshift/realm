@@ -714,7 +714,7 @@ An example is below:
     "arch": "x86_64",
     "desktop_env": "Unknown: Unknown",
     "distro": "Debian GNU/Linux 10 (buster)",
-    "platform": "Linux"
+    "platform": "PLATFORM_LINUX"
 }
 ```
 
