@@ -1,8 +1,13 @@
-*.png filter=lfs diff=lfs merge=lfs -text
-*.pdf filter=lfs diff=lfs merge=lfs -text
-*.jpg filter=lfs diff=lfs merge=lfs -text
-*.mp3 filter=lfs diff=lfs merge=lfs -text
-*.mp4 filter=lfs diff=lfs merge=lfs -text
-*.mov filter=lfs diff=lfs merge=lfs -text
-*.svg filter=lfs diff=lfs merge=lfs -text
+**/*.pb.go linguist-generated=true
+tavern/internal/ent/*.go linguist-generated=true
+tavern/internal/ent/enttest/*.go linguist-generated=true
+tavern/internal/ent/hook/*.go linguist-generated=true
+tavern/internal/ent/migrate/*.go linguist-generated=true
+tavern/internal/ent/predicate/*.go linguist-generated=true
+tavern/internal/ent/privacy/*.go linguist-generated=true
+tavern/internal/ent/runtime/*.go linguist-generated=true
+tavern/internal/ent/**/where.go linguist-generated=true
+tavern/internal/graphql/generated/**generated.go linguist-generated=true
+tavern/internal/graphql/models/gqlgen_models.go linguist-generated=true
+implants/lib/c2/src/c2.rs linguist-generated=true
 . text !filter !merge !diff
