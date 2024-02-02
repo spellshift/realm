@@ -577,19 +577,19 @@ enum HostProcessOrderField {
 """HostProcessStatus is enum for the field status"""
 enum HostProcessStatus @goModel(model: "realm.pub/tavern/internal/c2/epb.Process_Status") {
   STATUS_IDLE
+  STATUS_RUN
   STATUS_STOP
   STATUS_ZOMBIE
+  STATUS_WAKE_KILL
+  STATUS_TRACING
+  STATUS_DEAD
+  STATUS_SLEEP
+  STATUS_WAKING
+  STATUS_PARKED
   STATUS_LOCK_BLOCKED
   STATUS_UNSPECIFIED
-  STATUS_PARKED
-  STATUS_RUN
-  STATUS_DEAD
-  STATUS_UNINTERUPTIBLE_DISK_SLEEP
   STATUS_UNKNOWN
-  STATUS_SLEEP
-  STATUS_TRACING
-  STATUS_WAKE_KILL
-  STATUS_WAKING
+  STATUS_UNINTERUPTIBLE_DISK_SLEEP
 }
 """
 HostProcessWhereInput is used for filtering HostProcess objects.

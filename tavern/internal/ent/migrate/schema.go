@@ -123,7 +123,7 @@ var (
 		{Name: "cmd", Type: field.TypeString, Nullable: true},
 		{Name: "env", Type: field.TypeString, Nullable: true},
 		{Name: "cwd", Type: field.TypeString, Nullable: true},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_IDLE", "STATUS_STOP", "STATUS_ZOMBIE", "STATUS_LOCK_BLOCKED", "STATUS_UNSPECIFIED", "STATUS_PARKED", "STATUS_RUN", "STATUS_DEAD", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNKNOWN", "STATUS_SLEEP", "STATUS_TRACING", "STATUS_WAKE_KILL", "STATUS_WAKING"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_IDLE", "STATUS_RUN", "STATUS_STOP", "STATUS_ZOMBIE", "STATUS_WAKE_KILL", "STATUS_TRACING", "STATUS_DEAD", "STATUS_SLEEP", "STATUS_WAKING", "STATUS_PARKED", "STATUS_LOCK_BLOCKED", "STATUS_UNSPECIFIED", "STATUS_UNKNOWN", "STATUS_UNINTERUPTIBLE_DISK_SLEEP"}},
 		{Name: "host_processes", Type: field.TypeInt, Nullable: true},
 		{Name: "host_process_host", Type: field.TypeInt},
 		{Name: "task_reported_processes", Type: field.TypeInt},
@@ -273,6 +273,7 @@ var (
 		{Name: "oauth_id", Type: field.TypeString, Unique: true},
 		{Name: "photo_url", Type: field.TypeString, SchemaType: map[string]string{"mysql": "MEDIUMTEXT"}},
 		{Name: "session_token", Type: field.TypeString, Size: 200},
+		{Name: "personal_access_token", Type: field.TypeString, Size: 200},
 		{Name: "is_activated", Type: field.TypeBool, Default: false},
 		{Name: "is_admin", Type: field.TypeBool, Default: false},
 	}

@@ -30,7 +30,7 @@ func NewServer(routes RouteMap, options ...Option) *Server {
 // WithAuthenticationCookie enables cookie authentication for the server.
 func WithAuthenticationCookie(graph *ent.Client) Option {
 	return Option(func(server *Server) {
-		server.Authenticator = &cookieAuthenticator{graph}
+		server.Authenticator = &requestAuthenticator{graph}
 	})
 }
 

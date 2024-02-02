@@ -44,6 +44,14 @@ func (User) Fields() []ent.Field {
 				entgql.Skip(),
 			).
 			Comment("The session token currently authenticating the user"),
+		field.String("personal_access_token").
+			DefaultFunc(newSessionToken).
+			Sensitive().
+			MaxLen(200).
+			Annotations(
+				entgql.Skip(),
+			).
+			Comment("The token used by applications to authenticate as the user"),
 		field.Bool("is_activated").
 			Default(false).
 			Comment("True if the user is active and able to authenticate"),

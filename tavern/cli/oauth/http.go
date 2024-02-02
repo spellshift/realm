@@ -26,11 +26,24 @@ func (Token) String() string {
 	return RedactedToken
 }
 
+// Authenticate the provided http request, using this token to authenticate to the Tavern API.
+// It is recommended to use this method instead of manually configuring the request, such that
+// if authentication implementation details are changed, the request will still be properly authenticated.
+func (token Token) Authenticate(r *http.Request) {
+	r.Header.Set(auth.HeaderAPIAccessToken, string(token))
+}
+
 // Browser that will be opened to the Tavern OAuth consent flow.
 type Browser interface {
 	OpenURL(url string) error
 }
 
+// Authenticate the user to the tavern API using the provided browser.
+// This will open the browser to a login URL, which will redirect to an http server (hosted locally)
+// with authentication credentials. This prevents the need for copy pasting tokens manually.
+//
+// After authenticating, the resulting Token may be used to authenticate to Tavern for HTTP requests.
+// This should be done by calling the `Authenticate(request)` method on the returned token.
 func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token, error) {
 	// Create Listener
 	conn, err := net.Listen("tcp", ":0")

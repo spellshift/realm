@@ -83,6 +83,18 @@ func ContextFromSessionToken(ctx context.Context, graph *ent.Client, token strin
 	return contextFromIdentity(ctx, &userIdentity{true, u}), nil
 }
 
+// ContextFromAccessToken returns a copy of parent context with a user Identity associated with it (if it exists).
+func ContextFromAccessToken(ctx context.Context, graph *ent.Client, token string) (context.Context, error) {
+	u, err := graph.User.Query().
+		Where(user.PersonalAccessToken(token)).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return contextFromIdentity(ctx, &userIdentity{true, u}), nil
+}
+
 // IdentityFromContext returns the identity associated with the provided context, or nil if no identity is associated.
 func IdentityFromContext(ctx context.Context) Identity {
 	val := ctx.Value(ctxKey{})

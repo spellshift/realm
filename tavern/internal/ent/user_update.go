@@ -54,6 +54,20 @@ func (uu *UserUpdate) SetNillableSessionToken(s *string) *UserUpdate {
 	return uu
 }
 
+// SetPersonalAccessToken sets the "personal_access_token" field.
+func (uu *UserUpdate) SetPersonalAccessToken(s string) *UserUpdate {
+	uu.mutation.SetPersonalAccessToken(s)
+	return uu
+}
+
+// SetNillablePersonalAccessToken sets the "personal_access_token" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePersonalAccessToken(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPersonalAccessToken(*s)
+	}
+	return uu
+}
+
 // SetIsActivated sets the "is_activated" field.
 func (uu *UserUpdate) SetIsActivated(b bool) *UserUpdate {
 	uu.mutation.SetIsActivated(b)
@@ -162,6 +176,11 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
+	if v, ok := uu.mutation.PersonalAccessToken(); ok {
+		if err := user.PersonalAccessTokenValidator(v); err != nil {
+			return &ValidationError{Name: "personal_access_token", err: fmt.Errorf(`ent: validator failed for field "User.personal_access_token": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -185,6 +204,9 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.SessionToken(); ok {
 		_spec.SetField(user.FieldSessionToken, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.PersonalAccessToken(); ok {
+		_spec.SetField(user.FieldPersonalAccessToken, field.TypeString, value)
 	}
 	if value, ok := uu.mutation.IsActivated(); ok {
 		_spec.SetField(user.FieldIsActivated, field.TypeBool, value)
@@ -279,6 +301,20 @@ func (uuo *UserUpdateOne) SetSessionToken(s string) *UserUpdateOne {
 func (uuo *UserUpdateOne) SetNillableSessionToken(s *string) *UserUpdateOne {
 	if s != nil {
 		uuo.SetSessionToken(*s)
+	}
+	return uuo
+}
+
+// SetPersonalAccessToken sets the "personal_access_token" field.
+func (uuo *UserUpdateOne) SetPersonalAccessToken(s string) *UserUpdateOne {
+	uuo.mutation.SetPersonalAccessToken(s)
+	return uuo
+}
+
+// SetNillablePersonalAccessToken sets the "personal_access_token" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePersonalAccessToken(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPersonalAccessToken(*s)
 	}
 	return uuo
 }
@@ -404,6 +440,11 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
+	if v, ok := uuo.mutation.PersonalAccessToken(); ok {
+		if err := user.PersonalAccessTokenValidator(v); err != nil {
+			return &ValidationError{Name: "personal_access_token", err: fmt.Errorf(`ent: validator failed for field "User.personal_access_token": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -444,6 +485,9 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.SessionToken(); ok {
 		_spec.SetField(user.FieldSessionToken, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.PersonalAccessToken(); ok {
+		_spec.SetField(user.FieldPersonalAccessToken, field.TypeString, value)
 	}
 	if value, ok := uuo.mutation.IsActivated(); ok {
 		_spec.SetField(user.FieldIsActivated, field.TypeBool, value)

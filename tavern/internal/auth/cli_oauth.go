@@ -13,8 +13,11 @@ import (
 const CLIRedirPortParamName = "redir_port"
 
 // CLIRedirAPITokenParamName is the name of the query parameter CLI OAuth http servers should parse to receive the
-// Tavern API token.
-const CLIRedirAPITokenParamName = "tavern_api_token"
+// Tavern API personal access token.
+const CLIRedirAPITokenParamName = "access_token"
+
+// HeaderAPIAccessToken is the name of the header clients should set to authenticate with personal access tokens.
+const HeaderAPIAccessToken = "X-Tavern-Access-Token"
 
 // NewOAuthCLILoginHandler returns a new http endpoint that redirects the requestor to 127.0.0.1 at the port specified
 // in the query parameters. This method requires an authenticated session, and will set an API key in the redirected
@@ -38,9 +41,12 @@ func NewOAuthCLILoginHandler() http.HandlerFunc {
 		}
 
 		user := UserFromContext(r.Context())
-
+		if user == nil {
+			http.Error(w, "must be authenticated", http.StatusUnauthorized)
+			return
+		}
 		redirParams := url.Values{
-			CLIRedirAPITokenParamName: []string{user.SessionToken},
+			CLIRedirAPITokenParamName: []string{user.PersonalAccessToken},
 		}
 
 		redirUrl := url.URL{
