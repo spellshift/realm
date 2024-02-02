@@ -19,6 +19,19 @@ import (
 	tavernhttp "realm.pub/tavern/internal/http"
 )
 
+func TestTokenAuthenticate(t *testing.T) {
+	// Build Request
+	req, err := http.NewRequest(http.MethodGet, "http://127.0.0.1/test", nil)
+	require.NoError(t, err)
+
+	// Authenticate Request
+	token := auth.Token("test")
+	token.Authenticate(req)
+
+	// Ensure Header Set
+	assert.Equal(t, string(token), req.Header.Get(tavernauth.HeaderAPIAccessToken))
+}
+
 func TestAuthenticate(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
