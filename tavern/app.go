@@ -147,8 +147,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Route Map
 	routes := tavernhttp.RouteMap{
-		"/status":      tavernhttp.Endpoint{Handler: newStatusHandler()},
-		"/oauth/login": tavernhttp.Endpoint{Handler: auth.NewOAuthLoginHandler(cfg.oauth, privKey)},
+		"/status":          tavernhttp.Endpoint{Handler: newStatusHandler()},
+		"/oauth/cli/login": tavernhttp.Endpoint{Handler: auth.NewOAuthCLILoginHandler()},
+		"/oauth/login":     tavernhttp.Endpoint{Handler: auth.NewOAuthLoginHandler(cfg.oauth, privKey)},
 		"/oauth/authorize": tavernhttp.Endpoint{Handler: auth.NewOAuthAuthorizationHandler(
 			cfg.oauth,
 			pubKey,
