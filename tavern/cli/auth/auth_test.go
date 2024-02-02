@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/cli/auth"
 	tavernauth "realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent/enttest"
@@ -27,26 +30,45 @@ func TestAuthenticate(t *testing.T) {
 
 	// Create Test User
 	existingAdmin := graph.User.Create().
-		SetName("test_user").
-		SetOauthID("test_user").
+		SetName("test_admin").
+		SetOauthID("test_admin").
 		SetPhotoURL("http://google.com/").
 		SetIsActivated(true).
 		SetIsAdmin(true).
 		SaveX(ctx)
+	existingUser := graph.User.Create().
+		SetName("test_user").
+		SetOauthID("test_user").
+		SetPhotoURL("http://google.com/").
+		SetIsActivated(true).
+		SetIsAdmin(false).
+		SaveX(ctx)
 
 	// Test Cases
 	tests := []struct {
-		name string
-
-		sessionToken string
-
+		name            string
+		sessionToken    string
+		tavernURL       string
 		wantAccessToken string
 		wantError       error
 	}{
 		{
-			name:            "AuthenticatedAdmin",
+			name:            "Admin",
 			sessionToken:    existingAdmin.SessionToken,
+			tavernURL:       "http://127.0.0.1",
 			wantAccessToken: existingAdmin.AccessToken,
+		},
+		{
+			name:            "User",
+			sessionToken:    existingUser.SessionToken,
+			tavernURL:       "http://127.0.0.1",
+			wantAccessToken: existingUser.AccessToken,
+		},
+		{
+			name:         "InvalidURL",
+			sessionToken: existingUser.SessionToken,
+			tavernURL:    "💩://invalid",
+			wantError:    auth.ErrInvalidURL,
 		},
 	}
 
@@ -62,13 +84,24 @@ func TestAuthenticate(t *testing.T) {
 
 			// Setup Browser
 			browser := auth.BrowserFunc(func(tavernURL string) error {
-				// Setup CLI Login Handler
-				srv := tavernhttp.NewServer(tavernhttp.RouteMap{
-					"/access_token/redirect": tavernhttp.Endpoint{
-						Handler:          tavernauth.NewTokenRedirectHandler(),
-						LoginRedirectURI: "/oauth/login",
+				// Assert Redirect Port Set
+				u, err := url.Parse(tavernURL)
+				require.NoError(t, err)
+				redirPort, err := strconv.Atoi(u.Query().Get(tavernauth.ParamTokenRedirPort))
+				require.NoError(t, err)
+				assert.LessOrEqual(t, redirPort, 65535)
+				assert.Greater(t, redirPort, 0)
+
+				// Setup Access Token Redirect Handler
+				srv := tavernhttp.NewServer(
+					tavernhttp.RouteMap{
+						"/access_token/redirect": tavernhttp.Endpoint{
+							Handler:          tavernauth.NewTokenRedirectHandler(),
+							LoginRedirectURI: "/oauth/login",
+						},
 					},
-				}, tavernhttp.WithAuthentication(graph))
+					tavernhttp.WithAuthentication(graph),
+				)
 
 				// Set Session Token (if configured)
 				r, err := http.NewRequest(http.MethodGet, tavernURL, nil)
@@ -88,15 +121,16 @@ func TestAuthenticate(t *testing.T) {
 				// Handle HTTP Request
 				w := httptest.NewRecorder()
 				srv.ServeHTTP(w, r)
-
 				assert.Equal(t, http.StatusFound, w.Result().StatusCode)
+
+				// Parse Redirect URL
 				redirURL := w.Result().Header.Get("Location")
-				t.Logf("Redir URL: %s\n", redirURL)
 				assert.NotEmpty(t, redirURL)
 				if redirURL == "" {
 					return fmt.Errorf("no redirect url was found")
 				}
 
+				// Follow Redirect
 				redirReq, err := http.NewRequest(http.MethodGet, redirURL, nil)
 				if err != nil {
 					return err
@@ -106,7 +140,7 @@ func TestAuthenticate(t *testing.T) {
 			})
 
 			// Authenticate
-			token, err := auth.Authenticate(ctx, browser, "http://127.0.0.1")
+			token, err := auth.Authenticate(ctx, browser, tc.tavernURL)
 
 			// Assertions
 			assert.Equal(t, tc.wantAccessToken, string(token))

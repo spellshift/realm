@@ -64,11 +64,11 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 	// Build OAuth Endpoint
 	oauthLoginURL, err := url.Parse(tavernURL)
 	if err != nil {
-		return Token(""), fmt.Errorf("failed to parse tavern url: %w", err)
+		return Token(""), fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
 	_, redirPort, err := net.SplitHostPort(conn.Addr().String())
 	if err != nil {
-		return Token(""), fmt.Errorf("failed to parse redirect port from listener addr: %q: %w", conn.Addr().String(), err)
+		return Token(""), fmt.Errorf("%w: %q: %v", ErrInvalidURL, conn.Addr().String(), err)
 	}
 	oauthLoginURL.RawQuery = url.Values{
 		auth.ParamTokenRedirPort: []string{redirPort},
@@ -76,8 +76,8 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 	oauthLoginURL.Path = "/access_token/redirect"
 
 	// Log TLS Warning
-	if oauthLoginURL.Scheme != "https" {
-		log.Printf("[WARN] Using insecure OAuth URL (http), this may leak sensitive information")
+	if oauthLoginURL.Scheme == "http" {
+		log.Printf("[WARN] Using insecure access token URL (http), this may leak sensitive information")
 	}
 
 	// Create Channels
@@ -112,7 +112,7 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 
 	// Open Browser
 	if err := browser.OpenURL(oauthLoginURL.String()); err != nil {
-		return Token(""), fmt.Errorf("failed to open browser for oauth flow: %w", err)
+		return Token(""), fmt.Errorf("failed to open browser for authentication flow: %w", err)
 	}
 
 	// Wait for Token, Error, or Cancellation
