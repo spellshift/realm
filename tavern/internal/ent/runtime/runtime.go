@@ -268,12 +268,12 @@ func init() {
 	user.DefaultSessionToken = userDescSessionToken.Default.(func() string)
 	// user.SessionTokenValidator is a validator for the "session_token" field. It is called by the builders before save.
 	user.SessionTokenValidator = userDescSessionToken.Validators[0].(func(string) error)
-	// userDescPersonalAccessToken is the schema descriptor for personal_access_token field.
-	userDescPersonalAccessToken := userFields[4].Descriptor()
-	// user.DefaultPersonalAccessToken holds the default value on creation for the personal_access_token field.
-	user.DefaultPersonalAccessToken = userDescPersonalAccessToken.Default.(func() string)
-	// user.PersonalAccessTokenValidator is a validator for the "personal_access_token" field. It is called by the builders before save.
-	user.PersonalAccessTokenValidator = userDescPersonalAccessToken.Validators[0].(func(string) error)
+	// userDescAccessToken is the schema descriptor for access_token field.
+	userDescAccessToken := userFields[4].Descriptor()
+	// user.DefaultAccessToken holds the default value on creation for the access_token field.
+	user.DefaultAccessToken = userDescAccessToken.Default.(func() string)
+	// user.AccessTokenValidator is a validator for the "access_token" field. It is called by the builders before save.
+	user.AccessTokenValidator = userDescAccessToken.Validators[0].(func(string) error)
 	// userDescIsActivated is the schema descriptor for is_activated field.
 	userDescIsActivated := userFields[5].Descriptor()
 	// user.DefaultIsActivated holds the default value on creation for the is_activated field.

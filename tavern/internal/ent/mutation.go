@@ -8328,23 +8328,23 @@ func (m *TomeMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *int
-	name                  *string
-	oauth_id              *string
-	photo_url             *string
-	session_token         *string
-	personal_access_token *string
-	is_activated          *bool
-	is_admin              *bool
-	clearedFields         map[string]struct{}
-	tomes                 map[int]struct{}
-	removedtomes          map[int]struct{}
-	clearedtomes          bool
-	done                  bool
-	oldValue              func(context.Context) (*User, error)
-	predicates            []predicate.User
+	op            Op
+	typ           string
+	id            *int
+	name          *string
+	oauth_id      *string
+	photo_url     *string
+	session_token *string
+	access_token  *string
+	is_activated  *bool
+	is_admin      *bool
+	clearedFields map[string]struct{}
+	tomes         map[int]struct{}
+	removedtomes  map[int]struct{}
+	clearedtomes  bool
+	done          bool
+	oldValue      func(context.Context) (*User, error)
+	predicates    []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -8589,40 +8589,40 @@ func (m *UserMutation) ResetSessionToken() {
 	m.session_token = nil
 }
 
-// SetPersonalAccessToken sets the "personal_access_token" field.
-func (m *UserMutation) SetPersonalAccessToken(s string) {
-	m.personal_access_token = &s
+// SetAccessToken sets the "access_token" field.
+func (m *UserMutation) SetAccessToken(s string) {
+	m.access_token = &s
 }
 
-// PersonalAccessToken returns the value of the "personal_access_token" field in the mutation.
-func (m *UserMutation) PersonalAccessToken() (r string, exists bool) {
-	v := m.personal_access_token
+// AccessToken returns the value of the "access_token" field in the mutation.
+func (m *UserMutation) AccessToken() (r string, exists bool) {
+	v := m.access_token
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldPersonalAccessToken returns the old "personal_access_token" field's value of the User entity.
+// OldAccessToken returns the old "access_token" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldPersonalAccessToken(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldAccessToken(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPersonalAccessToken is only allowed on UpdateOne operations")
+		return v, errors.New("OldAccessToken is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPersonalAccessToken requires an ID field in the mutation")
+		return v, errors.New("OldAccessToken requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPersonalAccessToken: %w", err)
+		return v, fmt.Errorf("querying old value for OldAccessToken: %w", err)
 	}
-	return oldValue.PersonalAccessToken, nil
+	return oldValue.AccessToken, nil
 }
 
-// ResetPersonalAccessToken resets all changes to the "personal_access_token" field.
-func (m *UserMutation) ResetPersonalAccessToken() {
-	m.personal_access_token = nil
+// ResetAccessToken resets all changes to the "access_token" field.
+func (m *UserMutation) ResetAccessToken() {
+	m.access_token = nil
 }
 
 // SetIsActivated sets the "is_activated" field.
@@ -8798,8 +8798,8 @@ func (m *UserMutation) Fields() []string {
 	if m.session_token != nil {
 		fields = append(fields, user.FieldSessionToken)
 	}
-	if m.personal_access_token != nil {
-		fields = append(fields, user.FieldPersonalAccessToken)
+	if m.access_token != nil {
+		fields = append(fields, user.FieldAccessToken)
 	}
 	if m.is_activated != nil {
 		fields = append(fields, user.FieldIsActivated)
@@ -8823,8 +8823,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.PhotoURL()
 	case user.FieldSessionToken:
 		return m.SessionToken()
-	case user.FieldPersonalAccessToken:
-		return m.PersonalAccessToken()
+	case user.FieldAccessToken:
+		return m.AccessToken()
 	case user.FieldIsActivated:
 		return m.IsActivated()
 	case user.FieldIsAdmin:
@@ -8846,8 +8846,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPhotoURL(ctx)
 	case user.FieldSessionToken:
 		return m.OldSessionToken(ctx)
-	case user.FieldPersonalAccessToken:
-		return m.OldPersonalAccessToken(ctx)
+	case user.FieldAccessToken:
+		return m.OldAccessToken(ctx)
 	case user.FieldIsActivated:
 		return m.OldIsActivated(ctx)
 	case user.FieldIsAdmin:
@@ -8889,12 +8889,12 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSessionToken(v)
 		return nil
-	case user.FieldPersonalAccessToken:
+	case user.FieldAccessToken:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetPersonalAccessToken(v)
+		m.SetAccessToken(v)
 		return nil
 	case user.FieldIsActivated:
 		v, ok := value.(bool)
@@ -8971,8 +8971,8 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldSessionToken:
 		m.ResetSessionToken()
 		return nil
-	case user.FieldPersonalAccessToken:
-		m.ResetPersonalAccessToken()
+	case user.FieldAccessToken:
+		m.ResetAccessToken()
 		return nil
 	case user.FieldIsActivated:
 		m.ResetIsActivated()

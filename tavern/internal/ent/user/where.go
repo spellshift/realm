@@ -73,9 +73,9 @@ func SessionToken(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSessionToken, v))
 }
 
-// PersonalAccessToken applies equality check predicate on the "personal_access_token" field. It's identical to PersonalAccessTokenEQ.
-func PersonalAccessToken(v string) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldPersonalAccessToken, v))
+// AccessToken applies equality check predicate on the "access_token" field. It's identical to AccessTokenEQ.
+func AccessToken(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldAccessToken, v))
 }
 
 // IsActivated applies equality check predicate on the "is_activated" field. It's identical to IsActivatedEQ.
@@ -348,69 +348,69 @@ func SessionTokenContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldSessionToken, v))
 }
 
-// PersonalAccessTokenEQ applies the EQ predicate on the "personal_access_token" field.
-func PersonalAccessTokenEQ(v string) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldPersonalAccessToken, v))
+// AccessTokenEQ applies the EQ predicate on the "access_token" field.
+func AccessTokenEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenNEQ applies the NEQ predicate on the "personal_access_token" field.
-func PersonalAccessTokenNEQ(v string) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldPersonalAccessToken, v))
+// AccessTokenNEQ applies the NEQ predicate on the "access_token" field.
+func AccessTokenNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenIn applies the In predicate on the "personal_access_token" field.
-func PersonalAccessTokenIn(vs ...string) predicate.User {
-	return predicate.User(sql.FieldIn(FieldPersonalAccessToken, vs...))
+// AccessTokenIn applies the In predicate on the "access_token" field.
+func AccessTokenIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldAccessToken, vs...))
 }
 
-// PersonalAccessTokenNotIn applies the NotIn predicate on the "personal_access_token" field.
-func PersonalAccessTokenNotIn(vs ...string) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldPersonalAccessToken, vs...))
+// AccessTokenNotIn applies the NotIn predicate on the "access_token" field.
+func AccessTokenNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldAccessToken, vs...))
 }
 
-// PersonalAccessTokenGT applies the GT predicate on the "personal_access_token" field.
-func PersonalAccessTokenGT(v string) predicate.User {
-	return predicate.User(sql.FieldGT(FieldPersonalAccessToken, v))
+// AccessTokenGT applies the GT predicate on the "access_token" field.
+func AccessTokenGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenGTE applies the GTE predicate on the "personal_access_token" field.
-func PersonalAccessTokenGTE(v string) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldPersonalAccessToken, v))
+// AccessTokenGTE applies the GTE predicate on the "access_token" field.
+func AccessTokenGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenLT applies the LT predicate on the "personal_access_token" field.
-func PersonalAccessTokenLT(v string) predicate.User {
-	return predicate.User(sql.FieldLT(FieldPersonalAccessToken, v))
+// AccessTokenLT applies the LT predicate on the "access_token" field.
+func AccessTokenLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenLTE applies the LTE predicate on the "personal_access_token" field.
-func PersonalAccessTokenLTE(v string) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldPersonalAccessToken, v))
+// AccessTokenLTE applies the LTE predicate on the "access_token" field.
+func AccessTokenLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenContains applies the Contains predicate on the "personal_access_token" field.
-func PersonalAccessTokenContains(v string) predicate.User {
-	return predicate.User(sql.FieldContains(FieldPersonalAccessToken, v))
+// AccessTokenContains applies the Contains predicate on the "access_token" field.
+func AccessTokenContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenHasPrefix applies the HasPrefix predicate on the "personal_access_token" field.
-func PersonalAccessTokenHasPrefix(v string) predicate.User {
-	return predicate.User(sql.FieldHasPrefix(FieldPersonalAccessToken, v))
+// AccessTokenHasPrefix applies the HasPrefix predicate on the "access_token" field.
+func AccessTokenHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenHasSuffix applies the HasSuffix predicate on the "personal_access_token" field.
-func PersonalAccessTokenHasSuffix(v string) predicate.User {
-	return predicate.User(sql.FieldHasSuffix(FieldPersonalAccessToken, v))
+// AccessTokenHasSuffix applies the HasSuffix predicate on the "access_token" field.
+func AccessTokenHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenEqualFold applies the EqualFold predicate on the "personal_access_token" field.
-func PersonalAccessTokenEqualFold(v string) predicate.User {
-	return predicate.User(sql.FieldEqualFold(FieldPersonalAccessToken, v))
+// AccessTokenEqualFold applies the EqualFold predicate on the "access_token" field.
+func AccessTokenEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldAccessToken, v))
 }
 
-// PersonalAccessTokenContainsFold applies the ContainsFold predicate on the "personal_access_token" field.
-func PersonalAccessTokenContainsFold(v string) predicate.User {
-	return predicate.User(sql.FieldContainsFold(FieldPersonalAccessToken, v))
+// AccessTokenContainsFold applies the ContainsFold predicate on the "access_token" field.
+func AccessTokenContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldAccessToken, v))
 }
 
 // IsActivatedEQ applies the EQ predicate on the "is_activated" field.

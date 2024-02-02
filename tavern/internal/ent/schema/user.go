@@ -37,15 +37,15 @@ func (User) Fields() []ent.Field {
 				dialect.MySQL: "MEDIUMTEXT", // Override MySQL, improve length maximum
 			}),
 		field.String("session_token").
-			DefaultFunc(newSessionToken).
+			DefaultFunc(newSecureToken).
 			Sensitive().
 			MaxLen(200).
 			Annotations(
 				entgql.Skip(),
 			).
 			Comment("The session token currently authenticating the user"),
-		field.String("personal_access_token").
-			DefaultFunc(newSessionToken).
+		field.String("access_token").
+			DefaultFunc(newSecureToken).
 			Sensitive().
 			MaxLen(200).
 			Annotations(
@@ -79,11 +79,11 @@ func (User) Annotations() []schema.Annotation {
 	}
 }
 
-func newSessionToken() string {
+func newSecureToken() string {
 	buf := make([]byte, 64)
 	_, err := io.ReadFull(rand.Reader, buf)
 	if err != nil {
-		panic(fmt.Errorf("failed to generate session token: %w", err))
+		panic(fmt.Errorf("failed to generate random token: %w", err))
 	}
 	return base64.StdEncoding.EncodeToString(buf)
 }

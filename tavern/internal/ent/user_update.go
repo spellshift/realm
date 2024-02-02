@@ -54,16 +54,16 @@ func (uu *UserUpdate) SetNillableSessionToken(s *string) *UserUpdate {
 	return uu
 }
 
-// SetPersonalAccessToken sets the "personal_access_token" field.
-func (uu *UserUpdate) SetPersonalAccessToken(s string) *UserUpdate {
-	uu.mutation.SetPersonalAccessToken(s)
+// SetAccessToken sets the "access_token" field.
+func (uu *UserUpdate) SetAccessToken(s string) *UserUpdate {
+	uu.mutation.SetAccessToken(s)
 	return uu
 }
 
-// SetNillablePersonalAccessToken sets the "personal_access_token" field if the given value is not nil.
-func (uu *UserUpdate) SetNillablePersonalAccessToken(s *string) *UserUpdate {
+// SetNillableAccessToken sets the "access_token" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableAccessToken(s *string) *UserUpdate {
 	if s != nil {
-		uu.SetPersonalAccessToken(*s)
+		uu.SetAccessToken(*s)
 	}
 	return uu
 }
@@ -176,9 +176,9 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
-	if v, ok := uu.mutation.PersonalAccessToken(); ok {
-		if err := user.PersonalAccessTokenValidator(v); err != nil {
-			return &ValidationError{Name: "personal_access_token", err: fmt.Errorf(`ent: validator failed for field "User.personal_access_token": %w`, err)}
+	if v, ok := uu.mutation.AccessToken(); ok {
+		if err := user.AccessTokenValidator(v); err != nil {
+			return &ValidationError{Name: "access_token", err: fmt.Errorf(`ent: validator failed for field "User.access_token": %w`, err)}
 		}
 	}
 	return nil
@@ -205,8 +205,8 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.SessionToken(); ok {
 		_spec.SetField(user.FieldSessionToken, field.TypeString, value)
 	}
-	if value, ok := uu.mutation.PersonalAccessToken(); ok {
-		_spec.SetField(user.FieldPersonalAccessToken, field.TypeString, value)
+	if value, ok := uu.mutation.AccessToken(); ok {
+		_spec.SetField(user.FieldAccessToken, field.TypeString, value)
 	}
 	if value, ok := uu.mutation.IsActivated(); ok {
 		_spec.SetField(user.FieldIsActivated, field.TypeBool, value)
@@ -305,16 +305,16 @@ func (uuo *UserUpdateOne) SetNillableSessionToken(s *string) *UserUpdateOne {
 	return uuo
 }
 
-// SetPersonalAccessToken sets the "personal_access_token" field.
-func (uuo *UserUpdateOne) SetPersonalAccessToken(s string) *UserUpdateOne {
-	uuo.mutation.SetPersonalAccessToken(s)
+// SetAccessToken sets the "access_token" field.
+func (uuo *UserUpdateOne) SetAccessToken(s string) *UserUpdateOne {
+	uuo.mutation.SetAccessToken(s)
 	return uuo
 }
 
-// SetNillablePersonalAccessToken sets the "personal_access_token" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillablePersonalAccessToken(s *string) *UserUpdateOne {
+// SetNillableAccessToken sets the "access_token" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableAccessToken(s *string) *UserUpdateOne {
 	if s != nil {
-		uuo.SetPersonalAccessToken(*s)
+		uuo.SetAccessToken(*s)
 	}
 	return uuo
 }
@@ -440,9 +440,9 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
-	if v, ok := uuo.mutation.PersonalAccessToken(); ok {
-		if err := user.PersonalAccessTokenValidator(v); err != nil {
-			return &ValidationError{Name: "personal_access_token", err: fmt.Errorf(`ent: validator failed for field "User.personal_access_token": %w`, err)}
+	if v, ok := uuo.mutation.AccessToken(); ok {
+		if err := user.AccessTokenValidator(v); err != nil {
+			return &ValidationError{Name: "access_token", err: fmt.Errorf(`ent: validator failed for field "User.access_token": %w`, err)}
 		}
 	}
 	return nil
@@ -486,8 +486,8 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if value, ok := uuo.mutation.SessionToken(); ok {
 		_spec.SetField(user.FieldSessionToken, field.TypeString, value)
 	}
-	if value, ok := uuo.mutation.PersonalAccessToken(); ok {
-		_spec.SetField(user.FieldPersonalAccessToken, field.TypeString, value)
+	if value, ok := uuo.mutation.AccessToken(); ok {
+		_spec.SetField(user.FieldAccessToken, field.TypeString, value)
 	}
 	if value, ok := uuo.mutation.IsActivated(); ok {
 		_spec.SetField(user.FieldIsActivated, field.TypeBool, value)

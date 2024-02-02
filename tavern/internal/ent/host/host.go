@@ -113,7 +113,7 @@ var (
 // PlatformValidator is a validator for the "platform" field enum values. It is called by the builders before save.
 func PlatformValidator(pl c2pb.Host_Platform) error {
 	switch pl.String() {
-	case "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_BSD":
+	case "PLATFORM_BSD", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS":
 		return nil
 	default:
 		return fmt.Errorf("host: invalid enum value for platform field: %q", pl)

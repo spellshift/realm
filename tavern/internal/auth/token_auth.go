@@ -46,7 +46,7 @@ func NewTokenRedirectHandler() http.HandlerFunc {
 			return
 		}
 		redirParams := url.Values{
-			ParamTokenRedirToken: []string{user.PersonalAccessToken},
+			ParamTokenRedirToken: []string{user.AccessToken},
 		}
 
 		redirUrl := url.URL{

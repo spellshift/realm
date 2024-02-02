@@ -35,6 +35,8 @@ type testCase struct {
 }
 
 func runTestCase(t *testing.T, path string) {
+	t.Helper()
+
 	// TestDB Config
 	var (
 		driverName     = "sqlite3"
@@ -115,6 +117,8 @@ func TestAPI(t *testing.T) {
 }
 
 func runTestsInDir(t *testing.T, root string) {
+	t.Helper()
+
 	files, err := os.ReadDir(root)
 	require.NoError(t, err)
 

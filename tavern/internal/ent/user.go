@@ -25,7 +25,7 @@ type User struct {
 	// The session token currently authenticating the user
 	SessionToken string `json:"-"`
 	// The token used by applications to authenticate as the user
-	PersonalAccessToken string `json:"-"`
+	AccessToken string `json:"-"`
 	// True if the user is active and able to authenticate
 	IsActivated bool `json:"is_activated,omitempty"`
 	// True if the user is an Admin
@@ -67,7 +67,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case user.FieldID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldName, user.FieldOauthID, user.FieldPhotoURL, user.FieldSessionToken, user.FieldPersonalAccessToken:
+		case user.FieldName, user.FieldOauthID, user.FieldPhotoURL, user.FieldSessionToken, user.FieldAccessToken:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -114,11 +114,11 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.SessionToken = value.String
 			}
-		case user.FieldPersonalAccessToken:
+		case user.FieldAccessToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field personal_access_token", values[i])
+				return fmt.Errorf("unexpected type %T for field access_token", values[i])
 			} else if value.Valid {
-				u.PersonalAccessToken = value.String
+				u.AccessToken = value.String
 			}
 		case user.FieldIsActivated:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -183,7 +183,7 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("session_token=<sensitive>")
 	builder.WriteString(", ")
-	builder.WriteString("personal_access_token=<sensitive>")
+	builder.WriteString("access_token=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("is_activated=")
 	builder.WriteString(fmt.Sprintf("%v", u.IsActivated))

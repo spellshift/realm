@@ -46,7 +46,7 @@ func TestAuthenticate(t *testing.T) {
 		{
 			name:            "AuthenticatedAdmin",
 			sessionToken:    existingAdmin.SessionToken,
-			wantAccessToken: existingAdmin.PersonalAccessToken,
+			wantAccessToken: existingAdmin.AccessToken,
 		},
 	}
 

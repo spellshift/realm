@@ -54,16 +54,16 @@ func (uc *UserCreate) SetNillableSessionToken(s *string) *UserCreate {
 	return uc
 }
 
-// SetPersonalAccessToken sets the "personal_access_token" field.
-func (uc *UserCreate) SetPersonalAccessToken(s string) *UserCreate {
-	uc.mutation.SetPersonalAccessToken(s)
+// SetAccessToken sets the "access_token" field.
+func (uc *UserCreate) SetAccessToken(s string) *UserCreate {
+	uc.mutation.SetAccessToken(s)
 	return uc
 }
 
-// SetNillablePersonalAccessToken sets the "personal_access_token" field if the given value is not nil.
-func (uc *UserCreate) SetNillablePersonalAccessToken(s *string) *UserCreate {
+// SetNillableAccessToken sets the "access_token" field if the given value is not nil.
+func (uc *UserCreate) SetNillableAccessToken(s *string) *UserCreate {
 	if s != nil {
-		uc.SetPersonalAccessToken(*s)
+		uc.SetAccessToken(*s)
 	}
 	return uc
 }
@@ -150,9 +150,9 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultSessionToken()
 		uc.mutation.SetSessionToken(v)
 	}
-	if _, ok := uc.mutation.PersonalAccessToken(); !ok {
-		v := user.DefaultPersonalAccessToken()
-		uc.mutation.SetPersonalAccessToken(v)
+	if _, ok := uc.mutation.AccessToken(); !ok {
+		v := user.DefaultAccessToken()
+		uc.mutation.SetAccessToken(v)
 	}
 	if _, ok := uc.mutation.IsActivated(); !ok {
 		v := user.DefaultIsActivated
@@ -188,12 +188,12 @@ func (uc *UserCreate) check() error {
 			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
-	if _, ok := uc.mutation.PersonalAccessToken(); !ok {
-		return &ValidationError{Name: "personal_access_token", err: errors.New(`ent: missing required field "User.personal_access_token"`)}
+	if _, ok := uc.mutation.AccessToken(); !ok {
+		return &ValidationError{Name: "access_token", err: errors.New(`ent: missing required field "User.access_token"`)}
 	}
-	if v, ok := uc.mutation.PersonalAccessToken(); ok {
-		if err := user.PersonalAccessTokenValidator(v); err != nil {
-			return &ValidationError{Name: "personal_access_token", err: fmt.Errorf(`ent: validator failed for field "User.personal_access_token": %w`, err)}
+	if v, ok := uc.mutation.AccessToken(); ok {
+		if err := user.AccessTokenValidator(v); err != nil {
+			return &ValidationError{Name: "access_token", err: fmt.Errorf(`ent: validator failed for field "User.access_token": %w`, err)}
 		}
 	}
 	if _, ok := uc.mutation.IsActivated(); !ok {
@@ -245,9 +245,9 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldSessionToken, field.TypeString, value)
 		_node.SessionToken = value
 	}
-	if value, ok := uc.mutation.PersonalAccessToken(); ok {
-		_spec.SetField(user.FieldPersonalAccessToken, field.TypeString, value)
-		_node.PersonalAccessToken = value
+	if value, ok := uc.mutation.AccessToken(); ok {
+		_spec.SetField(user.FieldAccessToken, field.TypeString, value)
+		_node.AccessToken = value
 	}
 	if value, ok := uc.mutation.IsActivated(); ok {
 		_spec.SetField(user.FieldIsActivated, field.TypeBool, value)
@@ -361,15 +361,15 @@ func (u *UserUpsert) UpdateSessionToken() *UserUpsert {
 	return u
 }
 
-// SetPersonalAccessToken sets the "personal_access_token" field.
-func (u *UserUpsert) SetPersonalAccessToken(v string) *UserUpsert {
-	u.Set(user.FieldPersonalAccessToken, v)
+// SetAccessToken sets the "access_token" field.
+func (u *UserUpsert) SetAccessToken(v string) *UserUpsert {
+	u.Set(user.FieldAccessToken, v)
 	return u
 }
 
-// UpdatePersonalAccessToken sets the "personal_access_token" field to the value that was provided on create.
-func (u *UserUpsert) UpdatePersonalAccessToken() *UserUpsert {
-	u.SetExcluded(user.FieldPersonalAccessToken)
+// UpdateAccessToken sets the "access_token" field to the value that was provided on create.
+func (u *UserUpsert) UpdateAccessToken() *UserUpsert {
+	u.SetExcluded(user.FieldAccessToken)
 	return u
 }
 
@@ -484,17 +484,17 @@ func (u *UserUpsertOne) UpdateSessionToken() *UserUpsertOne {
 	})
 }
 
-// SetPersonalAccessToken sets the "personal_access_token" field.
-func (u *UserUpsertOne) SetPersonalAccessToken(v string) *UserUpsertOne {
+// SetAccessToken sets the "access_token" field.
+func (u *UserUpsertOne) SetAccessToken(v string) *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
-		s.SetPersonalAccessToken(v)
+		s.SetAccessToken(v)
 	})
 }
 
-// UpdatePersonalAccessToken sets the "personal_access_token" field to the value that was provided on create.
-func (u *UserUpsertOne) UpdatePersonalAccessToken() *UserUpsertOne {
+// UpdateAccessToken sets the "access_token" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateAccessToken() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
-		s.UpdatePersonalAccessToken()
+		s.UpdateAccessToken()
 	})
 }
 
@@ -779,17 +779,17 @@ func (u *UserUpsertBulk) UpdateSessionToken() *UserUpsertBulk {
 	})
 }
 
-// SetPersonalAccessToken sets the "personal_access_token" field.
-func (u *UserUpsertBulk) SetPersonalAccessToken(v string) *UserUpsertBulk {
+// SetAccessToken sets the "access_token" field.
+func (u *UserUpsertBulk) SetAccessToken(v string) *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
-		s.SetPersonalAccessToken(v)
+		s.SetAccessToken(v)
 	})
 }
 
-// UpdatePersonalAccessToken sets the "personal_access_token" field to the value that was provided on create.
-func (u *UserUpsertBulk) UpdatePersonalAccessToken() *UserUpsertBulk {
+// UpdateAccessToken sets the "access_token" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateAccessToken() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
-		s.UpdatePersonalAccessToken()
+		s.UpdateAccessToken()
 	})
 }
 
