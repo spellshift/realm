@@ -70,7 +70,7 @@ func runTestCase(t *testing.T, path string) {
 		tavernhttp.RouteMap{
 			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph)),
 		},
-		tavernhttp.WithAuthenticationCookie(graph),
+		tavernhttp.WithAuthentication(graph),
 	)
 	gqlClient := client.New(srv, client.Path("/graphql"))
 

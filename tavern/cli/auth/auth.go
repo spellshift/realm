@@ -1,4 +1,4 @@
-package oauth
+package auth
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"realm.pub/tavern/internal/auth"
 )
 
-// RedactedToken is value returned by calling String() on a Token.
+// RedactedToken is the value returned by calling String() on a Token.
 const RedactedToken = "--REDACTED--"
 
 // Token is a type alias for string that prevents sensitive information from being displayed.
@@ -33,12 +33,21 @@ func (token Token) Authenticate(r *http.Request) {
 	r.Header.Set(auth.HeaderAPIAccessToken, string(token))
 }
 
-// Browser that will be opened to the Tavern OAuth consent flow.
+// Browser that will be opened to the Tavern authentication flow.
 type Browser interface {
 	OpenURL(url string) error
 }
 
-// Authenticate the user to the tavern API using the provided browser.
+// The BrowserFunc type is an adapter to allow the use of ordinary functions as browsers.
+// If f is a function with the appropriate signature, then BrowserFunc(f) is a Browser that calls f.
+type BrowserFunc func(tavernURL string) error
+
+// OpenURL calls f(tavernURL).
+func (f BrowserFunc) OpenURL(tavernURL string) error {
+	return f(tavernURL)
+}
+
+// Authenticate the user to the Tavern API using the provided browser.
 // This will open the browser to a login URL, which will redirect to an http server (hosted locally)
 // with authentication credentials. This prevents the need for copy pasting tokens manually.
 //
@@ -62,9 +71,9 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 		return Token(""), fmt.Errorf("failed to parse redirect port from listener addr: %q: %w", conn.Addr().String(), err)
 	}
 	oauthLoginURL.RawQuery = url.Values{
-		auth.CLIRedirPortParamName: []string{redirPort},
+		auth.ParamTokenRedirPort: []string{redirPort},
 	}.Encode()
-	oauthLoginURL.Path = "/oauth/cli/login"
+	oauthLoginURL.Path = "/access_token/redirect"
 
 	// Log TLS Warning
 	if oauthLoginURL.Scheme != "https" {
@@ -128,10 +137,10 @@ func newTokenHandler(tokenCh chan<- Token, errCh chan<- error) http.HandlerFunc 
 			errCh <- err
 			return
 		}
-		token := params.Get(auth.CLIRedirAPITokenParamName)
+		token := params.Get(auth.ParamTokenRedirToken)
 		if token == "" {
-			http.Error(w, fmt.Sprintf("must set '%q' query param", auth.CLIRedirPortParamName), http.StatusBadRequest)
-			errCh <- fmt.Errorf("must provide '%q' query parameter", auth.CLIRedirPortParamName)
+			http.Error(w, fmt.Sprintf("must set '%q' query param", auth.ParamTokenRedirToken), http.StatusBadRequest)
+			errCh <- fmt.Errorf("must provide '%q' query parameter", auth.ParamTokenRedirToken)
 			return
 		}
 
