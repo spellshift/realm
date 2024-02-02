@@ -28,7 +28,7 @@ type ParamDef struct {
 	Name        string `yaml:"name" json:"name"`
 	Type        string `yaml:"type" json:"type"`
 	Label       string `yaml:"label" json:"label"`
-	Placeholder string `yaml:"placeholder" json:"placeholder`
+	Placeholder string `yaml:"placeholder" json:"placeholder"`
 }
 
 // Define a struct to represent a file.
@@ -40,8 +40,10 @@ type File struct {
 // main function to run the application.
 func main() {
 	// Setup
-
-	fileSystem, _ := os.ReadDir("test")
+	basedir := os.Getenv("basedir")
+	if basedir == "" {
+		basedir = "tomes"
+	}
 	endpoint := os.Getenv("endpoint")
 	cookie := os.Getenv("cookie")
 	graphqlEndpoint := ""
@@ -52,14 +54,14 @@ func main() {
 	}
 
 	// Call the function to upload tomes
-	if err := UploadTomesGraphQL(fileSystem, graphqlEndpoint, cookie); err != nil {
+	if err := UploadTomesGraphQL(basedir, graphqlEndpoint, cookie); err != nil {
 		fmt.Println("Error:", err)
 	}
 }
 
 // UploadTomesGraphQL uploads tomes using GraphQL.
-func UploadTomesGraphQL(dir []fs.DirEntry, graphqlEndpoint string, cookie string) error {
-	basedir := "test"
+func UploadTomesGraphQL(basedir string, graphqlEndpoint string, cookie string) error {
+	dir, _ := os.ReadDir(basedir)
 	entries, err := os.ReadDir(basedir)
 	if err != nil {
 		return fmt.Errorf("failed to read filesystem: %w", err)
@@ -120,13 +122,13 @@ func checkTomeExists(endpoint, tomeName string, cookie string) (bool, error) {
 	// Extract the 'exists' field from the response
 	var result struct {
 		Data struct {
-			tomes []string `json:"tomes"`
+			Tomes []string `json:"tomes"`
 		}
 	}
 	if err := json.Unmarshal(response, &result); err != nil {
 		return false, fmt.Errorf("failed to parse GraphQL response: %w", err)
 	}
-	if len(result.Data.tomes) > 0 {
+	if len(result.Data.Tomes) > 0 {
 		return true, nil
 	}
 	return false, nil
