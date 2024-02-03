@@ -33,6 +33,8 @@ RUN bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "$
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install gRPC tools
+ENV CARGO_HOME="/usr/local/cargo"
+ENV RUSTUP_HOME="/usr/local/rustup"
 ENV CARGO_DIR=/usr/local/cargo
 ENV PATH=${CARGO_DIR}/bin:${PATH}
 RUN apt update -y \
