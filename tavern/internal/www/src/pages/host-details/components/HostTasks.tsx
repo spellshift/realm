@@ -36,7 +36,7 @@ const HostTasks = () => {
             <AccordionItem>
                 <AccordionButton>
                     <Box as="span" flex='1' textAlign='left'>
-                        <h2 className="text-2xl font-semibold text-gray-900">Tasks</h2>
+                        <h2 className="text-lg font-semibold text-gray-900">Tasks</h2>
                     </Box>
                     <AccordionIcon />
                 </AccordionButton>

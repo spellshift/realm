@@ -1,16 +1,19 @@
-import { Badge } from "@chakra-ui/react";
+import { Badge, Button } from "@chakra-ui/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
+import { useNavigate } from 'react-router-dom';
+
 import Table from "../../../components/tavern-base-ui/Table";
 import { BeaconType } from "../../../utils/consts";
 import { PrincipalAdminTypes } from "../../../utils/enums";
-import { checkIfBeaconOnline } from "../../../utils/utils";
+import { checkIfBeaconOffline } from "../../../utils/utils";
 
 type Props = {
     beacons: Array<BeaconType>
 }
 const BeaconTable = (props: Props) => {
     const { beacons } = props;
+    const nav = useNavigate();
     const currentDate = new Date();
     const princialColors = Object.values(PrincipalAdminTypes);
 
@@ -28,6 +31,7 @@ const BeaconTable = (props: Props) => {
             accessorFn: row => row?.principal,
             footer: props => props.column.id,
             enableSorting: true,
+            maxSize: 100,
             sortingFn: (
                 rowA,
                 rowB,
@@ -53,11 +57,12 @@ const BeaconTable = (props: Props) => {
             accessorFn: row => row,
             footer: props => props.column.id,
             enableSorting: false,
+            maxSize: 80,
             cell: (cellData: any) => {
                 const beaconData = cellData.getValue();
-                const status = checkIfBeaconOnline(beaconData);
-                const color = status === false ? "red" : "gray";
-                const text = status === false ? "Offline" : "Online"
+                const beaconOffline = checkIfBeaconOffline(beaconData);
+                const color = beaconOffline ? "red" : "gray";
+                const text = beaconOffline ? "Offline" : "Online"
                 return (
                     <Badge colorScheme={color} >
                         {text}
@@ -70,7 +75,7 @@ const BeaconTable = (props: Props) => {
             header: 'Last callback',
             accessorFn: row => formatDistance(new Date(row.lastSeenAt), currentDate),
             footer: props => props.column.id,
-            maxSize: 100,
+            maxSize: 120,
             sortingFn: (
                 rowA,
                 rowB,
@@ -81,6 +86,36 @@ const BeaconTable = (props: Props) => {
                 return numA < numB ? 1 : numA > numB ? -1 : 0;
             }
         },
+        {
+            id: "Create quest",
+            header: "",
+            accessorFn: row => row,
+            footer: props => props.column.id,
+            enableSorting: false,
+            maxSize: 100,
+            cell: (cellData: any) => {
+                const beaconData = cellData.getValue();
+                const isOffline = checkIfBeaconOffline(beaconData);
+                const id = beaconData.id;
+                return (
+                    <div className="flex flex-row justify-end">
+                        {!isOffline &&
+                            <Button size={"sm"} onClick={() =>
+                                nav("/createQuest", {
+                                    state: {
+                                        step: 1,
+                                        beacons: [id]
+                                    }
+                                })
+                            }>
+                                New quest
+                            </Button>
+                        }
+                    </div>
+                )
+            }
+
+        }
     ]
     return (
         <Table columns={columns} data={beacons} />

@@ -12,13 +12,12 @@ type Props = {
 }
 const BeaconAccordion = (props: Props) => {
     const { loading, error, host } = props;
-    console.log(host);
     return (
         <Accordion allowToggle className='w-full'>
             <AccordionItem>
                 <AccordionButton>
                     <Box as="span" flex='1' textAlign='left'>
-                        <h2 className="text-2xl font-semibold text-gray-900">Beacons</h2>
+                        <h2 className="text-lg font-semibold text-gray-900">Beacons</h2>
                     </Box>
                     <AccordionIcon />
                 </AccordionButton>

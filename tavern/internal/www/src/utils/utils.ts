@@ -52,7 +52,7 @@ export function getFilterNameByTypes(typeFilters: Array<any>){
 export const getOfflineOnlineStatus = (beacons: any) => {
     return beacons.reduce(
     (accumulator: any, currentValue: any) => {
-        const beaconOffline = checkIfBeaconOnline(currentValue);
+        const beaconOffline = checkIfBeaconOffline(currentValue);
         if(beaconOffline){
             accumulator.offline += 1;
         }
@@ -72,7 +72,7 @@ export function getOnlineBeacons(beacons: Array<BeaconType>) : Array<BeaconType>
     const currentDate = new Date();
     return beacons.filter((beacon: BeaconType)=> add(new Date(beacon.lastSeenAt),{seconds: beacon.interval, minutes: 1}) >= currentDate);
 }
-export function checkIfBeaconOnline(beacon: {lastSeenAt: string, interval: number}) : boolean{
+export function checkIfBeaconOffline(beacon: {lastSeenAt: string, interval: number}) : boolean{
     const currentDate = new Date();
     return add(new Date(beacon.lastSeenAt),{seconds: beacon.interval, minutes: 1}) < currentDate;
 }
