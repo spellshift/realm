@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use anyhow::Result;
 use clap::Command;
 use imix::{Agent, Config};
@@ -6,10 +8,6 @@ use std::time::Duration;
 #[cfg(target_os = "windows")]
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
 async fn main() {
-    #[cfg(target_os = "windows")]
-    unsafe {
-        FreeConsole()
-    }
 
     #[cfg(debug_assertions)]
     init_logging();

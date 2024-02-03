@@ -42,7 +42,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            kcarretto/tavern
+            spellshift/tavern
             ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
 
       - name: Build and push Docker image
