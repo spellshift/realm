@@ -3,15 +3,22 @@ use clap::Command;
 use imix::{Agent, Config};
 use std::time::Duration;
 
+#[cfg(target_os = "windows")]
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
 async fn main() {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        FreeConsole()
+    }
+
     #[cfg(debug_assertions)]
     init_logging();
 
     if let Some(("install", _)) = Command::new("imix")
         .subcommand(Command::new("install").about("Install imix"))
         .get_matches()
-        .subcommand() {
+        .subcommand()
+    {
         imix::install().await;
         return;
     }
