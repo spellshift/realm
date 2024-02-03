@@ -11,6 +11,7 @@ import {
   BugAntIcon
 } from '@heroicons/react/24/outline'
 
+import altLogo from "../../assets/realm_icon.png";
 import logo from '../../assets/eldrich.png';
 import { PageNavItem } from '../../utils/enums';
 import { Link } from 'react-router-dom';
@@ -142,13 +143,13 @@ export const PageWrapper = (props: Props) => {
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6">
             <a href='/'>
-              <div className="flex h-32 shrink-0 items-center gap-4">
+              <div className="flex h-32 shrink-0 items-center gap-2">
                 <img
-                  className="h-12 w-auto"
+                  className="h-14 w-auto"
                   src={logo}
-                  alt="Your Company"
+                  alt="Realm"
                 />
-                <div className="text-white text-2xl leading-6 font-semibold tracking-wide">Tavern</div>
+                <div className="text-white text-3xl leading-6 font-semibold tracking-wide">Realm</div>
               </div>
             </a>
             <nav className="flex flex-1 flex-col">
@@ -199,7 +200,7 @@ export const PageWrapper = (props: Props) => {
             <span className="sr-only">Open sidebar</span>
             <Bars3Icon className="h-6 w-6" aria-hidden="true" />
           </button>
-          <div className="flex-1 text-sm font-semibold leading-6 text-white">Tavern</div>
+          <div className="flex-1 text-sm font-semibold leading-6 text-white">Realm</div>
           <div className='text-sm font-semibold leading-6 text-white'>Logout</div>
         </div>
 
