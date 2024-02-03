@@ -35,8 +35,7 @@ RUN bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "$
 # Install gRPC tools
 ENV CARGO_HOME="/usr/local/cargo"
 ENV RUSTUP_HOME="/usr/local/rustup"
-ENV CARGO_DIR=/usr/local/cargo
-ENV PATH=${CARGO_DIR}/bin:${PATH}
+ENV PATH=${CARGO_HOME}/bin:${PATH}
 RUN apt update -y \
     && apt install -y protobuf-compiler libprotobuf-dev \
     && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 \
