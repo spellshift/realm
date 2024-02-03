@@ -2,6 +2,7 @@ import { useQuery } from "@apollo/client";
 import { useParams } from "react-router-dom";
 import { HostType } from "../../../utils/consts";
 import { GET_HOST_QUERY, GET_HOST_TASK_SUMMARY } from "../../../utils/queries";
+import BeaconAccordion from "./BeaconAccordion";
 import EditableHostHeader from "./EditableHostHeader";
 import HostStatistics from "./HostStatistics";
 
@@ -37,6 +38,9 @@ const HostContent = () => {
             </div>
             <div className="my-2">
                 <HostStatistics host={host} taskLoading={taskLoading} taskError={taskError} taskData={taskData} />
+            </div>
+            <div className="my-2">
+                <BeaconAccordion loading={loading} error={error} host={host} />
             </div>
         </>
     );
