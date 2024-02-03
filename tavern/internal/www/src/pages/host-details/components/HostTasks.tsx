@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { TaskOutput } from "../../../components/task-output";
+import { TaskOutput } from "../../../features/task-output";
 import TaskTable from "../../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../../components/tavern-base-ui/TablePagination";
@@ -15,7 +15,6 @@ const HostTasks = () => {
         loading: taskLoading,
         error: taskError,
         page,
-        filtersSelected,
         setPage,
         setSearch,
         updateTaskList
