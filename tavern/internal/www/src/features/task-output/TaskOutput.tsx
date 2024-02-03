@@ -2,11 +2,11 @@ import React from "react";
 import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { CopyBlock, tomorrow } from "react-code-blocks";
-import TaskStatusBadge from "../TaskStatusBadge";
-import BeaconTile from "../BeaconTile";
-import TomeAccordion from "../TomeAccordion";
+import TaskStatusBadge from "../../components/TaskStatusBadge";
+import BeaconTile from "../../components/BeaconTile";
+import TomeAccordion from "../../components/TomeAccordion";
 import { Image } from "@chakra-ui/react";
+import OutputWrapper from "./OutputWrapper";
 
 type Props = {
   isOpen: boolean,
@@ -16,6 +16,7 @@ type Props = {
 
 export const TaskOutput = (props: Props) => {
   const { isOpen, setOpen, selectedTask } = props;
+  console.log(selectedTask);
   const createdTime = new Date(selectedTask?.createdAt || "");
   const finishTime = new Date(selectedTask?.execFinishedAt || "");
   const startTime = new Date(selectedTask?.execStartedAt || "");
@@ -113,18 +114,7 @@ export const TaskOutput = (props: Props) => {
                           </div>
                         </div>
                       )}
-                      <div className="flex flex-col gap-2">
-                        <h3 className="text-2xl text-gray-800">Output</h3>
-                        <div className="bg-gray-200 rounded-md p-0.5 ">
-                          <CopyBlock
-                            text={selectedTask?.output ? selectedTask?.output : "No output available"}
-                            language={""}
-                            showLineNumbers={false}
-                            theme={tomorrow}
-                            codeBlock
-                          />
-                        </div>
-                      </div>
+                      {selectedTask && selectedTask?.id && <OutputWrapper id={selectedTask.id} />}
                     </div>
                   </div>
                 </Dialog.Panel>
