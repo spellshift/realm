@@ -1,5 +1,5 @@
 import { Badge } from "@chakra-ui/react";
-import { checkIfBeaconOnline } from "../utils/utils";
+import { checkIfBeaconOffline } from "../utils/utils";
 
 type Props = {
     beaconData: {
@@ -18,7 +18,7 @@ type Props = {
 }
 const BeaconTile = (props: Props) => {
     const { beaconData } = props;
-    const beaconOffline = checkIfBeaconOnline(beaconData);
+    const beaconOffline = checkIfBeaconOffline(beaconData);
     return (
         <div className="flex flex-col gap-1">
             <div className="flex flex-row gap-4">{beaconData.name}</div>

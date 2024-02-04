@@ -4,6 +4,7 @@ import { PageNavItem } from "../../utils/enums";
 import { TagContext } from "../../context/TagContext";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import QuestForm from "./components/QuestForm";
+import EmptyStateNoBeacon from "../../components/empty-states/EmptyStateNoBeacon";
 
 export const CreateQuest = () => {
     const { data, isLoading, error } = useContext(TagContext);
@@ -20,15 +21,7 @@ export const CreateQuest = () => {
             ) : data?.beacons && data?.beacons?.length > 0 ? (
                 <QuestForm />
             ) : (
-                <EmptyState type={EmptyStateType.noData} label="No beacons found" details="Get started by deploying an imix agent on your target system.">
-                    <button
-                        type="button"
-                        className="inline-flex items-center rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-700"
-                        onClick={() => window.open("https://docs.realm.pub/user-guide/getting-started#start-the-agent", '_blank')}
-                    >
-                        See imix docs
-                    </button>
-                </EmptyState>
+                <EmptyStateNoBeacon />
             )}
         </PageWrapper>
     );
