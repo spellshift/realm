@@ -20,12 +20,15 @@ use {
     },
 };
 
+#[cfg(feature = "injection")]
 #[cfg(all(host_family = "windows", target_os = "windows"))]
 macro_rules! win_target {
     () => {
         r"x86_64-pc-windows-msvc"
     };
 }
+
+#[cfg(feature = "injection")]
 #[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! win_target {
     () => {
@@ -33,6 +36,7 @@ macro_rules! win_target {
     };
 }
 
+#[cfg(feature = "injection")]
 #[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! sep {
     () => {
@@ -40,6 +44,7 @@ macro_rules! sep {
     };
 }
 
+#[cfg(feature = "injection")]
 #[cfg(host_family = "windows")]
 macro_rules! sep {
     () => {
@@ -47,6 +52,7 @@ macro_rules! sep {
     };
 }
 
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     "..",
@@ -73,6 +79,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
 ));
 // const LOADER_BYTES: &[u8] = include_bytes!("../../../../../bin/reflective_loader/target/x86_64-pc-windows-gnu/release/reflective_loader.dll");
 
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     let mut should_err = false;
@@ -95,6 +102,7 @@ fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     Ok(res_u8_vec)
 }
 
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 // pub unsafe fn OpenProcess(dwdesiredaccess: PROCESS_ACCESS_RIGHTS, binherithandle: super::super::Foundation::BOOL, dwprocessid: u32) -> super::super::Foundation::HANDLE
 fn open_process(
@@ -117,6 +125,7 @@ fn open_process(
     Ok(process_handle)
 }
 
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 // pub unsafe fn VirtualAllocEx(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
 fn virtual_alloc_ex(
@@ -140,6 +149,7 @@ fn virtual_alloc_ex(
     Ok(buffer_handle)
 }
 
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 // pub unsafe fn WriteProcessMemory(hprocess: super::super::super::Foundation::HANDLE, lpbaseaddress: *const ::core::ffi::c_void, lpbuffer: *const ::core::ffi::c_void, nsize: usize, lpnumberofbyteswritten: *mut usize) -> super::super::super::Foundation::BOOL
 fn write_process_memory(
@@ -170,6 +180,7 @@ fn write_process_memory(
     Ok(lpnumberofbyteswritten)
 }
 
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 // fn CreateRemoteThread(hprocess: isize, lpthreadattributes: *const SECURITY_ATTRIBUTES, dwstacksize: usize, lpstartaddress: Option<fn(*mut c_void) -> u32>, lpparameter: *const c_void, dwcreationflags: u32, lpthreadid: *mut u32) -> isize
 fn create_remote_thread(
@@ -207,6 +218,8 @@ fn create_remote_thread(
     }
     Ok(res)
 }
+
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 fn get_export_address_by_name(
     pe_bytes: &[u8],
@@ -253,11 +266,13 @@ fn get_export_address_by_name(
     Err(anyhow::anyhow!("Function {} not found", export_name))
 }
 
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 struct UserData {
     function_offset: u64,
 }
 
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 fn handle_dll_reflect(
     target_dll_bytes: Vec<u8>,
@@ -369,6 +384,18 @@ pub fn dll_reflect(
     ))
 }
 
+#[cfg(not(feature = "injection"))]
+pub fn dll_reflect(
+    _dll_bytes: Vec<u32>,
+    _pid: u32,
+    _function_name: String,
+) -> anyhow::Result<NoneType> {
+    return Err(anyhow::anyhow!(
+        "This function has been disabled recompile with the `injection` feature enabled"
+    ));
+}
+
+#[cfg(feature = "injection")]
 #[cfg(target_os = "windows")]
 pub fn dll_reflect(
     dll_bytes: Vec<u32>,

@@ -6,6 +6,8 @@ edition = "2021"
 [features]
 # Check if compiled by imix
 imix = []
+injection = []
+default = ["injection"]
 
 [dependencies]
 aes = { workspace = true }

@@ -14,6 +14,14 @@ use windows_sys::Win32::{
     },
 };
 
+#[cfg(not(feature = "injection"))]
+pub fn dll_inject(_dll_path: String, _pid: u32) -> Result<NoneType> {
+    return Err(anyhow::anyhow!(
+        "This function has been disabled recompile with the `injection` feature enabled"
+    ));
+}
+
+#[cfg(feature = "injection")]
 pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
     if false {
         println!("Ignore unused vars dll_path: {}, pid: {}", dll_path, pid);
