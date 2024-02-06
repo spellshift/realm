@@ -117,27 +117,28 @@ func UserFromContext(ctx context.Context) *ent.User {
 
 // IsAuthenticatedContext returns true if the context is associated with an authenticated identity, false otherwise.
 func IsAuthenticatedContext(ctx context.Context) bool {
-	v, ok := ctx.Value(ctxKey{}).(Identity)
-	if !ok || v == nil {
+	id := IdentityFromContext(ctx)
+	if id == nil {
 		return false
 	}
-	return v.IsAuthenticated()
+
+	return id.IsAuthenticated()
 }
 
 // IsActivatedContext returns true if the context is associated with an activated identity, false otherwise.
 func IsActivatedContext(ctx context.Context) bool {
-	v, ok := ctx.Value(ctxKey{}).(Identity)
-	if !ok || v == nil {
+	id := IdentityFromContext(ctx)
+	if id == nil {
 		return false
 	}
-	return v.IsActivated()
+	return id.IsActivated()
 }
 
 // IsAdminContext returns true if the context is associated with an admin identity, false otherwise.
 func IsAdminContext(ctx context.Context) bool {
-	v, ok := ctx.Value(ctxKey{}).(Identity)
-	if !ok || v == nil {
+	id := IdentityFromContext(ctx)
+	if id == nil {
 		return false
 	}
-	return v.IsAdmin()
+	return id.IsAdmin()
 }

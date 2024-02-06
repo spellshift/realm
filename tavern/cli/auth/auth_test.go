@@ -40,6 +40,7 @@ func TestAuthenticate(t *testing.T) {
 		dataSourceName = "file:ent?mode=memory&cache=shared&_fk=1"
 	)
 	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
+	defer graph.Close()
 
 	// Create Test User
 	existingAdmin := graph.User.Create().

@@ -35,7 +35,7 @@ func NewTokenRedirectHandler() http.HandlerFunc {
 			return
 		}
 		redirPort, err := strconv.Atoi(redirPortStr)
-		if err != nil {
+		if err != nil || redirPort < 1 || redirPort > 65535 {
 			http.Error(w, fmt.Sprintf("invalid value provided for '%q': %v", ParamTokenRedirPort, err), http.StatusBadRequest)
 			return
 		}
