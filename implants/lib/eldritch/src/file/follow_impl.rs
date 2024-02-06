@@ -16,27 +16,22 @@ pub fn follow<'v>(path: String, f: Value<'v>, eval: &mut Evaluator<'v, '_>) -> R
     watcher.watch(path.as_ref(), RecursiveMode::NonRecursive)?;
 
     // watch
-    for res in rx {
-        match res {
-            Ok(_event) => {
-                // ignore any event that didn't change the pos
-                if file.metadata()?.len() == pos {
-                    continue;
-                }
+    for _event in rx.into_iter().flatten() {
+        // ignore any event that didn't change the pos
+        if file.metadata()?.len() == pos {
+            continue;
+        }
 
-                // read from pos to end of file
-                file.seek(std::io::SeekFrom::Start(pos))?;
+        // read from pos to end of file
+        file.seek(std::io::SeekFrom::Start(pos))?;
 
-                // update post to end of file
-                pos = file.metadata()?.len();
+        // update post to end of file
+        pos = file.metadata()?.len();
 
-                let reader = BufReader::new(&file);
-                for line in reader.lines() {
-                    let val = starlark_heap.alloc(line?.to_string());
-                    eval.eval_function(f, &[val], &[])?;
-                }
-            }
-            Err(_) => continue,
+        let reader = BufReader::new(&file);
+        for line in reader.lines() {
+            let val = starlark_heap.alloc(line?.to_string());
+            eval.eval_function(f, &[val], &[])?;
         }
     }
     Ok(())
