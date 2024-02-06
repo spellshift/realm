@@ -64,7 +64,7 @@ The following environment variables are required for OAuth Configuration:
 | Env Var | Description |
 | ------- | ----------- |
 | OAUTH_CLIENT_ID | The [OAuth client_id](https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/) Tavern will use to communicate with an identity provider (Google) |
-| OAUTH_CLIENT_SECRET | The [OAuth client_secret](https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/) Tavern will use to authenticate to an identity provider (Google)
+| OAUTH_CLIENT_SECRET | The [OAuth client_secret](https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/) Tavern will use to authenticate to an identity provider (Google) |
 | OAUTH_DOMAIN | The domain Tavern is being hosted at, that the identity provider (Google) should redirect users to after completing the consent flow |
 
 Here is an example of running Tavern locally with OAuth configured:
@@ -92,6 +92,69 @@ OAUTH_CLIENT_ID=123 go run ./tavern
 exit status 1
 ```
 
+#### How it Works
+
+Tavern hosts two endpoints to support OAuth:
+
+* A login handler (`/oauth/login`) which redirects users to Google's OAuth consent flow
+  * This endpoint sets a JWT cookie for the user, such that the [OAuth state parameter](https://auth0.com/docs/secure/attack-protection/state-parameters#csrf-attacks) can safely be verified later to prevent against CSRF attacks
+  * Currently the keys used to sign and verify JWTs are generated at server start, meaning if the server is restarted while a user is in the middle of an OAuth flow, it will fail and the user will need to restart the flow
+* An authorization handler (`/oauth/authorize`) which users are redirected to by Google after completing Google's OAuth consent flow
+  * This handler is responsible for obtaining a user's profile information from Google using an OAuth access token, and creates the user's account if it does not exist yet
+
+##### Trust on First Use
+
+Tavern supports a Trust on First Use (TOFU) authentication model, meaning the first user to successfully authenticate will be granted admin permissions. Subsequent users that login will have accounts created, but will require activation before they can interact with any Tavern APIs. Only admin users may activate other users.
+
+##### CLI Application Authentication
+
+Tavern supports `access_tokens` in place of a session cookie for authentication, intended for use by CLI applications that require authenticated access to the Tavern API. Currently, we only support Golang clients via the provided `realm.pub/tavern/cli/auth` package. This package relies on the user's existing browser session (requiring OAuth) to relay authentication credentials (an `access_token`) to the application. Your CLI package may wish to cache these credentials securely to avoid unnecessary reauthentication. Here is an example of using this package:
+
+```golang
+package main
+
+import (
+ "context"
+ "fmt"
+ "net/http"
+ "time"
+
+ "github.com/pkg/browser"
+ "realm.pub/tavern/cli/auth"
+)
+
+func main() {
+ // Set Timeout (includes time for user login via browser)
+ ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+ defer cancel()
+
+ // Setup your Tavern URL (e.g. from env vars)
+ tavernURL := "http://127.0.0.1"
+
+ // Configure Browser (uses the default system browser)
+ browser := auth.BrowserFunc(browser.OpenURL)
+
+ // Open Browser and Obtain Access Token (via 127.0.0.1 redirect)
+ token, err := auth.Authenticate(ctx, browser, tavernURL)
+ if err != nil {
+  panic(err)
+ }
+
+ // Example Tavern HTTP Request
+ req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/status", tavernURL), nil)
+ if err != nil {
+  panic(err)
+ }
+
+ // Authenticate Request
+ token.Authenticate(req)
+
+ // Send the request etc...
+}
+```
+
+If you require authenticated access to the Tavern API outside of Golang, you may implement something similar to what this package does under the hood. **THIS IS NOT SUPPORTED**. We highly recommend relying on the provided Golang package instead, as our Authentication API may change and cause outages for your application.
+
 ### Test Data
 
 Running Tavern with the `ENABLE_TEST_DATA` environment variable set will populate the database with test data. This is useful for UI development, testing, or just interacting with Tavern and seeing how it works.
@@ -107,20 +170,6 @@ ENABLE_TEST_DATA=1 go run ./tavern
 ### PPROF
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern under the [Performance Profiling](#performance-profiling) section of this guide.
-
-#### How it Works
-
-Tavern hosts two endpoints to support OAuth:
-
-* A login handler (`/oauth/login`) which redirects users to Google's OAuth consent flow
-  * This endpoint sets a JWT cookie for the user, such that the [OAuth state parameter](https://auth0.com/docs/secure/attack-protection/state-parameters#csrf-attacks) can safely be verified later to prevent against CSRF attacks
-  * Currently the keys used to sign and verify JWTs are generated at server start, meaning if the server is restarted while a user is in the middle of an OAuth flow, it will fail and the user will need to restart the flow
-* An authorization handler (`/oauth/authorize`) which users are redirected to by Google after completing Google's OAuth consent flow
-  * This handler is responsible for obtaining a user's profile information from Google using an OAuth access token, and creates the user's account if it does not exist yet
-
-##### Trust on First Use
-
-Tavern supports a Trust on First Use (TOFU) authentication model, meaning the first user to successfully authenticate will be granted admin permissions. Subsequent users that login will have accounts created, but will require activation before they can interact with any Tavern APIs. Only admin users may activate other users.
 
 ## Build and publish tavern container
 

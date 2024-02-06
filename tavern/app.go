@@ -137,7 +137,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Authentication
 	var withAuthentication tavernhttp.Option
 	if cfg.oauth.ClientID != "" {
-		withAuthentication = tavernhttp.WithAuthenticationCookie(client)
+		withAuthentication = tavernhttp.WithAuthentication(client)
 	} else {
 		withAuthentication = tavernhttp.WithAuthenticationBypass(client)
 	}
@@ -147,7 +147,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Route Map
 	routes := tavernhttp.RouteMap{
-		"/status":      tavernhttp.Endpoint{Handler: newStatusHandler()},
+		"/status": tavernhttp.Endpoint{Handler: newStatusHandler()},
+		"/access_token/redirect": tavernhttp.Endpoint{
+			Handler:          auth.NewTokenRedirectHandler(),
+			LoginRedirectURI: "/oauth/login",
+		},
 		"/oauth/login": tavernhttp.Endpoint{Handler: auth.NewOAuthLoginHandler(cfg.oauth, privKey)},
 		"/oauth/authorize": tavernhttp.Endpoint{Handler: auth.NewOAuthAuthorizationHandler(
 			cfg.oauth,

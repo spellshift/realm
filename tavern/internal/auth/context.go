@@ -83,6 +83,18 @@ func ContextFromSessionToken(ctx context.Context, graph *ent.Client, token strin
 	return contextFromIdentity(ctx, &userIdentity{true, u}), nil
 }
 
+// ContextFromAccessToken returns a copy of parent context with a user Identity associated with it (if it exists).
+func ContextFromAccessToken(ctx context.Context, graph *ent.Client, token string) (context.Context, error) {
+	u, err := graph.User.Query().
+		Where(user.AccessToken(token)).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return contextFromIdentity(ctx, &userIdentity{true, u}), nil
+}
+
 // IdentityFromContext returns the identity associated with the provided context, or nil if no identity is associated.
 func IdentityFromContext(ctx context.Context) Identity {
 	val := ctx.Value(ctxKey{})
@@ -105,27 +117,28 @@ func UserFromContext(ctx context.Context) *ent.User {
 
 // IsAuthenticatedContext returns true if the context is associated with an authenticated identity, false otherwise.
 func IsAuthenticatedContext(ctx context.Context) bool {
-	v, ok := ctx.Value(ctxKey{}).(Identity)
-	if !ok || v == nil {
+	id := IdentityFromContext(ctx)
+	if id == nil {
 		return false
 	}
-	return v.IsAuthenticated()
+
+	return id.IsAuthenticated()
 }
 
 // IsActivatedContext returns true if the context is associated with an activated identity, false otherwise.
 func IsActivatedContext(ctx context.Context) bool {
-	v, ok := ctx.Value(ctxKey{}).(Identity)
-	if !ok || v == nil {
+	id := IdentityFromContext(ctx)
+	if id == nil {
 		return false
 	}
-	return v.IsActivated()
+	return id.IsActivated()
 }
 
 // IsAdminContext returns true if the context is associated with an admin identity, false otherwise.
 func IsAdminContext(ctx context.Context) bool {
-	v, ok := ctx.Value(ctxKey{}).(Identity)
-	if !ok || v == nil {
+	id := IdentityFromContext(ctx)
+	if id == nil {
 		return false
 	}
-	return v.IsAdmin()
+	return id.IsAdmin()
 }
