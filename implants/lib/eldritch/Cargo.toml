@@ -27,6 +27,7 @@ log = { workspace = true }
 md5 = { workspace = true }
 netstat2 = { workspace = true }
 nix = { workspace = true }
+notify = { workspace = true }
 object = { workspace = true }
 openssl = { workspace = true, features = ["vendored"] }
 prost = { workspace = true}

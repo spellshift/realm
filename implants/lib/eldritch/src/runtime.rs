@@ -456,7 +456,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_output: String::from(r#"["append", "compress", "copy", "download", "exists", "find", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
+            want_output: String::from(r#"["append", "compress", "copy", "download", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
             want_error: None,
         },
         process_bindings: TestCase {
