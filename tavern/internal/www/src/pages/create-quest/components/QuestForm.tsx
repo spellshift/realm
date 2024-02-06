@@ -7,9 +7,13 @@ import FinalizeStep from "./FinalizeStep";
 import BeaconStepWrapper from "./BeaconStepWrapper";
 import { useSubmitQuest } from "../hooks/useSubmitQuest";
 import { getRandomQuestName } from "../../../utils/questNames";
+import { useLocation } from "react-router-dom";
 
 const QuestForm = () => {
-    const [currStep, setCurrStep] = useState<number>(0);
+    const location = useLocation();
+    //the data here will be an object since an object was
+    const data = location.state;
+    const [currStep, setCurrStep] = useState<number>(data?.step || 0);
     const { submitQuest } = useSubmitQuest();
     const placeholderTitle = getRandomQuestName();
 
@@ -25,7 +29,7 @@ const QuestForm = () => {
             name: placeholderTitle,
             tome: null,
             params: [],
-            beacons: [],
+            beacons: data?.beacons || [],
         },
         onSubmit: (values: any) => submitQuest(values),
     });
@@ -49,10 +53,10 @@ const QuestForm = () => {
             className="py-6"
         >
             <div className="grid grid-cols-12">
-                <div className=" col-span-3">
+                <div className="hidden md:flex col-span-3">
                     <FormSteps currStep={currStep} steps={steps} />
                 </div>
-                <div className="col-span-9">
+                <div className="col-span-12 md:col-span-9">
                     {getStepView(currStep)}
                 </div>
             </div>

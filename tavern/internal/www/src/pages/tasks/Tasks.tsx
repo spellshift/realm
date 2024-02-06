@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageWrapper } from "../../components/page-wrapper";
-import { TaskOutput } from "../../components/task-output";
+import { TaskOutput } from "../../features/task-output";
 import TaskTable from "../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
