@@ -270,7 +270,12 @@ The <b>file.exists</b> method checks if a file or directory exists at the path s
 
 `file.follow(path: str, fn: function(str)) -> None`
 
-The <b>file.follow</b> method recursively call `fn(x)` for all items in the given path. If a file is given, the function will only be called using the file path itself.
+The <b>file.follow</b> method will call `fn(line)` for any new `line` that is added to the file (such as from `bash_history` and other logs).
+
+```python
+# Print every line added to bob's bash history
+file.follow('/home/bob/.bash_history', print)
+```
 
 ### file.is_dir
 
