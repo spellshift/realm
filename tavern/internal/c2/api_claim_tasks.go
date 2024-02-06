@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,6 +14,8 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/namegen"
 )
@@ -22,7 +26,7 @@ var (
 			Name: "tavern_host_callbacks_total",
 			Help: "The total number of ClaimTasks gRPC calls, provided with host labeling",
 		},
-		[]string{"host_identifier"},
+		[]string{"host_identifier", "host_tags"},
 	)
 )
 
@@ -56,11 +60,6 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, status.Errorf(codes.InvalidArgument, "must provide agent identifier")
 	}
 
-	// Metrics
-	defer func() {
-		metricHostCallbacksTotal.WithLabelValues(req.Beacon.Identifier).Inc()
-	}()
-
 	// Upsert the host
 	hostID, err := srv.graph.Host.Create().
 		SetIdentifier(req.Beacon.Host.Identifier).
@@ -74,6 +73,28 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert host entity: %v", err)
 	}
+
+	// Metrics
+	defer func() {
+		var hostTags []string
+		var tagNames []struct {
+			Name string
+		}
+		err := srv.graph.Host.Query().
+			Where(host.ID(hostID)).
+			QueryTags().
+			Order(tag.ByKind()).
+			Select(tag.FieldName).
+			Scan(ctx, &tagNames)
+		if err != nil {
+			log.Printf("[ERROR] metrics: failed to query host tags: %v", err)
+		}
+		for _, t := range tagNames {
+			hostTags = append(hostTags, t.Name)
+		}
+		metricHostCallbacksTotal.WithLabelValues(req.Beacon.Host.Identifier, strings.Join(hostTags, "-")).Inc()
+	}()
+
 	// Generate name for new beacons
 	beaconExists, err := srv.graph.Beacon.Query().
 		Where(beacon.IdentifierEQ(req.Beacon.Identifier)).
