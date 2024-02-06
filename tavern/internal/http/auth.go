@@ -59,9 +59,9 @@ type requestAuthenticator struct {
 // Instead, the context will not be associated with an authenticated identity.
 func (authenticator *requestAuthenticator) Authenticate(r *http.Request) (context.Context, error) {
 	// Check for Access Token
-	pat := r.Header.Get(auth.HeaderAPIAccessToken)
-	if pat != "" {
-		authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, pat)
+	accessToken := r.Header.Get(auth.HeaderAPIAccessToken)
+	if accessToken != "" {
+		authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, accessToken)
 		if err != nil {
 			log.Printf("[ERROR] failed to authenticate access token from header: %v", err)
 			return nil, ErrInvalidAccessToken
