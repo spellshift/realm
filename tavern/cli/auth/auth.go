@@ -57,12 +57,12 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 	// Create Listener
 	conn, err := net.Listen("tcp", ":0")
 	if err != nil {
-		return Token(""), fmt.Errorf("failed to start oauth http redirect handler: %w", err)
+		return Token(""), fmt.Errorf("failed to start access_token http redirect handler: %w", err)
 	}
 	defer conn.Close()
 
-	// Build OAuth Endpoint
-	oauthLoginURL, err := url.Parse(tavernURL)
+	// Build Access Token Endpoint
+	accessTokenRedirURL, err := url.Parse(tavernURL)
 	if err != nil {
 		return Token(""), fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
@@ -70,13 +70,13 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 	if err != nil {
 		return Token(""), fmt.Errorf("%w: %q: %v", ErrInvalidURL, conn.Addr().String(), err)
 	}
-	oauthLoginURL.RawQuery = url.Values{
+	accessTokenRedirURL.RawQuery = url.Values{
 		auth.ParamTokenRedirPort: []string{redirPort},
 	}.Encode()
-	oauthLoginURL.Path = "/access_token/redirect"
+	accessTokenRedirURL.Path = "/access_token/redirect"
 
 	// Log TLS Warning
-	if oauthLoginURL.Scheme == "http" {
+	if accessTokenRedirURL.Scheme == "http" {
 		log.Printf("[WARN] Using insecure access token URL (http), this may leak sensitive information")
 	}
 
@@ -111,7 +111,7 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 	}()
 
 	// Open Browser
-	if err := browser.OpenURL(oauthLoginURL.String()); err != nil {
+	if err := browser.OpenURL(accessTokenRedirURL.String()); err != nil {
 		return Token(""), fmt.Errorf("failed to open browser for authentication flow: %w", err)
 	}
 
