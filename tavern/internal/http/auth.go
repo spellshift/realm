@@ -58,7 +58,7 @@ type requestAuthenticator struct {
 // If no authenticated identity is associated with the request, no error is returned.
 // Instead, the context will not be associated with an authenticated identity.
 func (authenticator *requestAuthenticator) Authenticate(r *http.Request) (context.Context, error) {
-	// Check for Personal Access Token (PAT)
+	// Check for Access Token
 	pat := r.Header.Get(auth.HeaderAPIAccessToken)
 	if pat != "" {
 		authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, pat)
