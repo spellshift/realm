@@ -266,6 +266,12 @@ The <b>file.download</b> method downloads a file at the URI specified in `uri` t
 
 The <b>file.exists</b> method checks if a file or directory exists at the path specified.
 
+### file.follow
+
+`file.follow(path: str, fn: function(str)) -> None`
+
+The <b>file.follow</b> method recursively call `fn(x)` for all items in the given path. If a file is given, the function will only be called using the file path itself.
+
 ### file.is_dir
 
 `file.is_dir(path: str) -> bool`

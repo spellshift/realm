@@ -4,6 +4,7 @@ mod copy_impl;
 mod download_impl;
 mod exists_impl;
 mod find_impl;
+mod follow_impl;
 mod is_dir_impl;
 mod is_file_impl;
 mod list_impl;
@@ -23,6 +24,7 @@ use derive_more::Display;
 use serde::{Serialize, Serializer};
 use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
+use starlark::eval::Evaluator;
 use starlark::values::dict::Dict;
 use starlark::values::none::NoneType;
 use starlark::values::{
@@ -180,5 +182,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn find(this: FileLibrary, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<u64>, modified_time: Option<u64>, create_time: Option<u64>) -> anyhow::Result<Vec<String>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         find_impl::find(path, name, file_type, permissions, modified_time, create_time)
+    }
+    fn follow<'v>(this: FileLibrary, path: String, f: Value<'v>, eval: &mut Evaluator<'v, '_>) -> anyhow::Result<NoneType> {
+        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+        follow_impl::follow(path, f, eval)?;
+        Ok(NoneType{})
     }
 }
