@@ -20,6 +20,8 @@ const (
 	FieldPhotoURL = "photo_url"
 	// FieldSessionToken holds the string denoting the session_token field in the database.
 	FieldSessionToken = "session_token"
+	// FieldAccessToken holds the string denoting the access_token field in the database.
+	FieldAccessToken = "access_token"
 	// FieldIsActivated holds the string denoting the is_activated field in the database.
 	FieldIsActivated = "is_activated"
 	// FieldIsAdmin holds the string denoting the is_admin field in the database.
@@ -44,6 +46,7 @@ var Columns = []string{
 	FieldOauthID,
 	FieldPhotoURL,
 	FieldSessionToken,
+	FieldAccessToken,
 	FieldIsActivated,
 	FieldIsAdmin,
 }
@@ -65,6 +68,10 @@ var (
 	DefaultSessionToken func() string
 	// SessionTokenValidator is a validator for the "session_token" field. It is called by the builders before save.
 	SessionTokenValidator func(string) error
+	// DefaultAccessToken holds the default value on creation for the "access_token" field.
+	DefaultAccessToken func() string
+	// AccessTokenValidator is a validator for the "access_token" field. It is called by the builders before save.
+	AccessTokenValidator func(string) error
 	// DefaultIsActivated holds the default value on creation for the "is_activated" field.
 	DefaultIsActivated bool
 	// DefaultIsAdmin holds the default value on creation for the "is_admin" field.
@@ -97,6 +104,11 @@ func ByPhotoURL(opts ...sql.OrderTermOption) OrderOption {
 // BySessionToken orders the results by the session_token field.
 func BySessionToken(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSessionToken, opts...).ToFunc()
+}
+
+// ByAccessToken orders the results by the access_token field.
+func ByAccessToken(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccessToken, opts...).ToFunc()
 }
 
 // ByIsActivated orders the results by the is_activated field.

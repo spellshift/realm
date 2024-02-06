@@ -8335,6 +8335,7 @@ type UserMutation struct {
 	oauth_id      *string
 	photo_url     *string
 	session_token *string
+	access_token  *string
 	is_activated  *bool
 	is_admin      *bool
 	clearedFields map[string]struct{}
@@ -8588,6 +8589,42 @@ func (m *UserMutation) ResetSessionToken() {
 	m.session_token = nil
 }
 
+// SetAccessToken sets the "access_token" field.
+func (m *UserMutation) SetAccessToken(s string) {
+	m.access_token = &s
+}
+
+// AccessToken returns the value of the "access_token" field in the mutation.
+func (m *UserMutation) AccessToken() (r string, exists bool) {
+	v := m.access_token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessToken returns the old "access_token" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldAccessToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessToken: %w", err)
+	}
+	return oldValue.AccessToken, nil
+}
+
+// ResetAccessToken resets all changes to the "access_token" field.
+func (m *UserMutation) ResetAccessToken() {
+	m.access_token = nil
+}
+
 // SetIsActivated sets the "is_activated" field.
 func (m *UserMutation) SetIsActivated(b bool) {
 	m.is_activated = &b
@@ -8748,7 +8785,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.name != nil {
 		fields = append(fields, user.FieldName)
 	}
@@ -8760,6 +8797,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.session_token != nil {
 		fields = append(fields, user.FieldSessionToken)
+	}
+	if m.access_token != nil {
+		fields = append(fields, user.FieldAccessToken)
 	}
 	if m.is_activated != nil {
 		fields = append(fields, user.FieldIsActivated)
@@ -8783,6 +8823,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.PhotoURL()
 	case user.FieldSessionToken:
 		return m.SessionToken()
+	case user.FieldAccessToken:
+		return m.AccessToken()
 	case user.FieldIsActivated:
 		return m.IsActivated()
 	case user.FieldIsAdmin:
@@ -8804,6 +8846,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPhotoURL(ctx)
 	case user.FieldSessionToken:
 		return m.OldSessionToken(ctx)
+	case user.FieldAccessToken:
+		return m.OldAccessToken(ctx)
 	case user.FieldIsActivated:
 		return m.OldIsActivated(ctx)
 	case user.FieldIsAdmin:
@@ -8844,6 +8888,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSessionToken(v)
+		return nil
+	case user.FieldAccessToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessToken(v)
 		return nil
 	case user.FieldIsActivated:
 		v, ok := value.(bool)
@@ -8919,6 +8970,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldSessionToken:
 		m.ResetSessionToken()
+		return nil
+	case user.FieldAccessToken:
+		m.ResetAccessToken()
 		return nil
 	case user.FieldIsActivated:
 		m.ResetIsActivated()

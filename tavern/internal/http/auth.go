@@ -49,17 +49,26 @@ func (authenticator *bypassAuthenticator) Authenticate(r *http.Request) (context
 	return auth.ContextFromSessionToken(r.Context(), authenticator.graph, authUser.SessionToken)
 }
 
-type cookieAuthenticator struct {
+type requestAuthenticator struct {
 	graph *ent.Client
 }
 
-// Authenticate the request using the provided HTTP cookie.
-// Returns an *http.Request associated with the authenticated identity.
-// Returns nil if there was an authentication error, and writes error
-// messages to the provided writer.
+// Authenticate the request using the provided HTTP request.
+// Returns a context associated with the authenticated identity.
 // If no authenticated identity is associated with the request, no error is returned.
 // Instead, the context will not be associated with an authenticated identity.
-func (authenticator *cookieAuthenticator) Authenticate(r *http.Request) (context.Context, error) {
+func (authenticator *requestAuthenticator) Authenticate(r *http.Request) (context.Context, error) {
+	// Check for Access Token
+	accessToken := r.Header.Get(auth.HeaderAPIAccessToken)
+	if accessToken != "" {
+		authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, accessToken)
+		if err != nil {
+			log.Printf("[ERROR] failed to authenticate access token from header: %v", err)
+			return nil, ErrInvalidAccessToken
+		}
+		return authCtx, nil
+	}
+
 	// Read SessionToken from auth cookie
 	authCookie, err := r.Cookie(auth.SessionCookieName)
 	if err != nil && err != http.ErrNoCookie {
