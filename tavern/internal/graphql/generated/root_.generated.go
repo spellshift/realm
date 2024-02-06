@@ -1891,11 +1891,11 @@ enum HostOrderField {
 }
 """HostPlatform is enum for the field platform"""
 enum HostPlatform @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Host_Platform") {
-  PLATFORM_MACOS
   PLATFORM_BSD
+  PLATFORM_LINUX
+  PLATFORM_MACOS
   PLATFORM_UNSPECIFIED
   PLATFORM_WINDOWS
-  PLATFORM_LINUX
 }
 type HostProcess implements Node {
   id: ID!
@@ -1943,20 +1943,20 @@ enum HostProcessOrderField {
 }
 """HostProcessStatus is enum for the field status"""
 enum HostProcessStatus @goModel(model: "realm.pub/tavern/internal/c2/epb.Process_Status") {
-  STATUS_ZOMBIE
-  STATUS_WAKING
-  STATUS_UNINTERUPTIBLE_DISK_SLEEP
-  STATUS_UNKNOWN
-  STATUS_WAKE_KILL
-  STATUS_LOCK_BLOCKED
+  STATUS_DEAD
   STATUS_IDLE
+  STATUS_LOCK_BLOCKED
+  STATUS_PARKED
   STATUS_RUN
   STATUS_SLEEP
-  STATUS_TRACING
-  STATUS_UNSPECIFIED
   STATUS_STOP
-  STATUS_DEAD
-  STATUS_PARKED
+  STATUS_TRACING
+  STATUS_UNINTERUPTIBLE_DISK_SLEEP
+  STATUS_UNKNOWN
+  STATUS_UNSPECIFIED
+  STATUS_WAKE_KILL
+  STATUS_WAKING
+  STATUS_ZOMBIE
 }
 """
 HostProcessWhereInput is used for filtering HostProcess objects.
