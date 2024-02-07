@@ -18,7 +18,7 @@ pub struct TavernClient {
 }
 
 impl TavernClient {
-    pub async fn connect(callback: String) -> Result<Self, tonic::transport::Error> {
+    pub async fn new(callback: String) -> Result<Self, tonic::transport::Error> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
         let channel = endpoint.connect().await?;
         let grpc = tonic::client::Grpc::new(channel);

@@ -3,4 +3,5 @@ pub mod pb {
 }
 
 mod c2_manual;
+mod tavern;
 pub use c2_manual::TavernClient;

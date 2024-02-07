@@ -22,7 +22,7 @@ impl Agent {
      * Initialize an agent using the provided configuration.
      */
     pub async fn gen_from_config(cfg: Config) -> Result<Agent> {
-        let tavern = TavernClient::connect(cfg.callback_uri).await?;
+        let tavern = TavernClient::new(cfg.callback_uri).await?;
 
         Ok(Agent {
             info: cfg.info,
