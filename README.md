@@ -13,7 +13,7 @@
 
 Realm is a cross platform Red Team engagement platform with a focus on automation and reliability.
 
-![realm-logo](./docs/assets/img/realm_create_quest.png)
+https://github.com/spellshift/realm/assets/16250309/7b5834d9-a864-490a-96e5-8d83b276af11
 
 ## Features
 
