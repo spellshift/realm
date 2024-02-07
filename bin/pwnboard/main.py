@@ -25,7 +25,8 @@ def router_convert_ip(ip):
     if ip[:2] == '10':
         return ip
     ending = int(ip.split('.')[3])
-    return f'10.{(ending+6)/8}.1.1'
+    team = int((ending+6)/8)
+    return f'10.{team}.1.1'
 
 def make_pwnboard_request(api_url, application_name, ips):
     ips = list(map(router_convert_ip, ips))
