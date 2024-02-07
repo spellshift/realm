@@ -26,7 +26,7 @@ var (
 			Name: "tavern_host_callbacks_total",
 			Help: "The total number of ClaimTasks gRPC calls, provided with host labeling",
 		},
-		[]string{"host_identifier", "host_tags"},
+		[]string{"host_identifier", "host_groups", "host_services"},
 	)
 )
 
@@ -76,23 +76,36 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 
 	// Metrics
 	defer func() {
-		var hostTags []string
+		var hostGroupTags []string
+		var hostServiceTags []string
 		var tagNames []struct {
 			Name string
+			Kind string
 		}
 		err := srv.graph.Host.Query().
 			Where(host.ID(hostID)).
 			QueryTags().
 			Order(tag.ByKind()).
-			Select(tag.FieldName).
+			Select(tag.FieldName, tag.FieldKind).
 			Scan(ctx, &tagNames)
 		if err != nil {
 			log.Printf("[ERROR] metrics: failed to query host tags: %v", err)
 		}
 		for _, t := range tagNames {
-			hostTags = append(hostTags, t.Name)
+			if t.Kind == string(tag.KindGroup) {
+				hostGroupTags = append(hostGroupTags, t.Name)
+			}
+			if t.Kind == string(tag.KindService) {
+				hostServiceTags = append(hostServiceTags, t.Name)
+			}
 		}
-		metricHostCallbacksTotal.WithLabelValues(req.Beacon.Host.Identifier, strings.Join(hostTags, "-")).Inc()
+		metricHostCallbacksTotal.
+			WithLabelValues(
+				req.Beacon.Host.Identifier,
+				strings.Join(hostGroupTags, ","),
+				strings.Join(hostServiceTags, ","),
+			).
+			Inc()
 	}()
 
 	// Generate name for new beacons
