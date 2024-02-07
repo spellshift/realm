@@ -42,8 +42,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            spellshift/tavern
             ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
+            spellshift/tavern
           tags: |
             type=ref,event=branch
             type=edge,branch=main
