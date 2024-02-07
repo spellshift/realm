@@ -1,7 +1,7 @@
 use std::io::{Seek, BufReader, BufRead};
 use notify::{Watcher, RecursiveMode, RecommendedWatcher, Config};
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use starlark::{eval::Evaluator, values::Value};
 
 pub fn follow<'v>(path: String, f: Value<'v>, eval: &mut Evaluator<'v, '_>) -> Result<()> {
