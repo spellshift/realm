@@ -6,7 +6,7 @@ use c2::{
     },
     TavernClient,
 };
-use eldritch::runtime::FileRequest;
+use eldritch::FileRequest;
 use tokio::task::JoinHandle;
 
 /*
