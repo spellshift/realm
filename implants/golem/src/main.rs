@@ -20,13 +20,13 @@ struct ParsedTome {
 struct Handle {
     handle: JoinHandle<()>,
     path: String,
-    eldritch_handle: eldritch::Broker,
+    broker: eldritch::Broker,
 }
 
 async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     let mut handles = Vec::new();
     for tome in tomes {
-        let (mut runtime, eldritch_handle) = Runtime::new();
+        let (mut runtime, broker) = Runtime::new();
         runtime.with_stdout_reporting();
         let handle = tokio::task::spawn_blocking(move || {
             runtime.run(Tome {
@@ -38,7 +38,7 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
         handles.push(Handle {
             handle,
             path: tome.path,
-            eldritch_handle,
+            broker,
         });
     }
 
@@ -54,8 +54,8 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
                 continue;
             }
         };
-        let mut out = handle.eldritch_handle.collect_text();
-        let errors = handle.eldritch_handle.collect_errors();
+        let mut out = handle.broker.collect_text();
+        let errors = handle.broker.collect_errors();
         if !errors.is_empty() {
             return Err(anyhow!("tome execution failed: {:?}", errors));
         }
