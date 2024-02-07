@@ -131,25 +131,20 @@ mod tests {
 }
 ```
 
-### `eldritch/lib.rs` tests
+### `eldritch/runtime.rs` tests
 
-Lastly you'll need to add your function to the `eldritch/lib.rs` integration test.
+Lastly you'll need to add your function to the `eldritch/runtime.rs` integration test. Add your function to it's respective parent binding in alphabetical order.
 
 ```rust
-    #[test]
-    fn test_library_bindings() {
-        let globals = get_eldritch().unwrap();
-        let mut a = Assert::new();
-        a.globals(globals);
-        a.all_true(
-            r#"
-dir(file) == ["append", "compress", "copy", "download", "exists", "hash", "is_dir", "is_file", "mkdir", "read", "remove", "rename", "replace", "replace_all", "template", "timestomp", "write"]
-dir(process) == ["kill", "list", "name"]
-dir(sys) == ["dll_inject", "exec", "is_linux", "is_macos", "is_windows", "shell"]
-dir(pivot) == ["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_exec", "ssh_password_spray"]
-dir(assets) == ["copy","list"]
-"#,
-        );
+    // Binding for the "file" functions
+    file_bindings: TestCase {
+        tome: Tome {
+            eldritch: String::from("print(dir(file))"),
+            parameters: HashMap::new(),
+            file_names: Vec::new(),
+        },
+        want_output: String::from(r#"["append", "compress", "copy", "download", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
+        want_error: None,
     }
 ```
 
