@@ -3,9 +3,7 @@ use async_trait::async_trait;
 use std::sync::mpsc::{Receiver, Sender};
 
 #[async_trait]
-pub trait TavernClient<T> {
-    #[allow(clippy::new_ret_no_self)]
-    async fn new(callback: String) -> Result<T>;
+pub trait TavernClient {
     ///
     /// Contact the server for new tasks to execute.
     async fn claim_tasks(
@@ -24,7 +22,8 @@ pub trait TavernClient<T> {
     async fn download_file(
         &mut self,
         request: crate::pb::DownloadFileRequest,
-    ) -> Result<Receiver<crate::pb::DownloadFileResponse>>;
+        sender: Sender<crate::pb::DownloadFileResponse>,
+    ) -> Result<()>;
 
     ///
     /// Report a file from the host to the server.
@@ -35,7 +34,7 @@ pub trait TavernClient<T> {
     /// Any existing files at the provided path for the host are replaced.
     async fn report_file(
         &mut self,
-        request: Sender<crate::pb::ReportFileRequest>,
+        request: Receiver<crate::pb::ReportFileRequest>,
     ) -> Result<crate::pb::ReportFileResponse>;
 
     ///

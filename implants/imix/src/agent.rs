@@ -2,7 +2,7 @@ use crate::{config::Config, task::TaskHandle};
 use anyhow::Result;
 use c2::{
     pb::{Beacon, ClaimTasksRequest},
-    TavernClient,
+    GRPCTavernClient, TavernClient,
 };
 use eldritch::Runtime;
 use std::time::{Duration, Instant};
@@ -11,18 +11,18 @@ use std::time::{Duration, Instant};
  * Agent contains all relevant logic for managing callbacks to a c2 server.
  * It is responsible for obtaining tasks, executing them, and returning their output.
  */
-pub struct Agent {
+pub struct Agent<T: TavernClient> {
     info: Beacon,
-    tavern: TavernClient,
+    tavern: T,
     handles: Vec<TaskHandle>,
 }
 
-impl Agent {
+impl Agent<GRPCTavernClient> {
     /*
      * Initialize an agent using the provided configuration.
      */
-    pub async fn gen_from_config(cfg: Config) -> Result<Agent> {
-        let tavern = TavernClient::new(cfg.callback_uri).await?;
+    pub async fn gen_from_config(cfg: Config) -> Result<Agent<GRPCTavernClient>> {
+        let tavern = GRPCTavernClient::new(cfg.callback_uri).await?;
 
         Ok(Agent {
             info: cfg.info,
@@ -39,7 +39,6 @@ impl Agent {
                 beacon: Some(self.info.clone()),
             })
             .await?
-            .into_inner()
             .tasks;
 
         #[cfg(debug_assertions)]

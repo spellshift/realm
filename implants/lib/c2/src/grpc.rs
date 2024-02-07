@@ -3,8 +3,12 @@ use crate::pb::{
     ReportFileRequest, ReportFileResponse, ReportProcessListRequest, ReportProcessListResponse,
     ReportTaskOutputRequest, ReportTaskOutputResponse,
 };
+use anyhow::Result;
+use async_trait::async_trait;
+use std::sync::mpsc::{Receiver, Sender};
 use tonic::codec::ProstCodec;
 use tonic::GrpcMethod;
+use tonic::Request;
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static DOWNLOAD_FILE_PATH: &str = "/c2.C2/DownloadFile";
@@ -13,11 +17,61 @@ static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
 
 #[derive(Debug, Clone)]
-pub struct TavernClient {
+pub struct GRPCTavernClient {
     grpc: tonic::client::Grpc<tonic::transport::Channel>,
 }
 
-impl TavernClient {
+#[async_trait]
+impl crate::TavernClient for GRPCTavernClient {
+    async fn claim_tasks(
+        &mut self,
+        request: crate::pb::ClaimTasksRequest,
+    ) -> Result<crate::pb::ClaimTasksResponse> {
+        let resp = self.grpc_claim_tasks(request).await?;
+        Ok(resp.into_inner())
+    }
+
+    async fn download_file(
+        &mut self,
+        request: crate::pb::DownloadFileRequest,
+        sender: Sender<crate::pb::DownloadFileResponse>,
+    ) -> Result<()> {
+        let resp = self.grpc_download_file(request).await?;
+        let mut stream = resp.into_inner();
+        while let Some(file_chunk) = stream.message().await? {
+            sender.send(file_chunk)?;
+        }
+        Ok(())
+    }
+
+    async fn report_file(
+        &mut self,
+        request: Receiver<crate::pb::ReportFileRequest>,
+    ) -> Result<crate::pb::ReportFileResponse> {
+        let stream = tokio_stream::iter(request);
+        let tonic_req = Request::new(stream);
+        let resp = self.grpc_report_file(tonic_req).await?;
+        Ok(resp.into_inner())
+    }
+
+    async fn report_process_list(
+        &mut self,
+        request: crate::pb::ReportProcessListRequest,
+    ) -> Result<crate::pb::ReportProcessListResponse> {
+        let resp = self.grpc_report_process_list(request).await?;
+        Ok(resp.into_inner())
+    }
+
+    async fn report_task_output(
+        &mut self,
+        request: crate::pb::ReportTaskOutputRequest,
+    ) -> Result<crate::pb::ReportTaskOutputResponse> {
+        let resp = self.grpc_report_task_output(request).await?;
+        Ok(resp.into_inner())
+    }
+}
+
+impl GRPCTavernClient {
     pub async fn new(callback: String) -> Result<Self, tonic::transport::Error> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
         let channel = endpoint.connect().await?;
@@ -27,7 +81,7 @@ impl TavernClient {
 
     ///
     /// Contact the server for new tasks to execute.
-    pub async fn claim_tasks(
+    pub async fn grpc_claim_tasks(
         &mut self,
         request: impl tonic::IntoRequest<crate::pb::ClaimTasksRequest>,
     ) -> std::result::Result<tonic::Response<ClaimTasksResponse>, tonic::Status> {
@@ -55,7 +109,7 @@ impl TavernClient {
     ///   - "file-size": The number of bytes contained by the file.
     ///
     /// If no associated file can be found, a NotFound status error is returned.
-    pub async fn download_file(
+    pub async fn grpc_download_file(
         &mut self,
         request: impl tonic::IntoRequest<DownloadFileRequest>,
     ) -> std::result::Result<
@@ -84,7 +138,7 @@ impl TavernClient {
     ///   - Size will automatically be calculated and the provided size will be ignored.
     /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
     /// Any existing files at the provided path for the host are replaced.
-    pub async fn report_file(
+    pub async fn grpc_report_file(
         &mut self,
         request: impl tonic::IntoStreamingRequest<Message = ReportFileRequest>,
     ) -> std::result::Result<tonic::Response<ReportFileResponse>, tonic::Status> {
@@ -106,7 +160,7 @@ impl TavernClient {
     ///
     /// Report the active list of running processes. This list will replace any previously reported
     /// lists for the same host.
-    pub async fn report_process_list(
+    pub async fn grpc_report_process_list(
         &mut self,
         request: impl tonic::IntoRequest<ReportProcessListRequest>,
     ) -> std::result::Result<tonic::Response<ReportProcessListResponse>, tonic::Status> {
@@ -127,7 +181,7 @@ impl TavernClient {
 
     ///
     /// Report execution output for a task.
-    pub async fn report_task_output(
+    pub async fn grpc_report_task_output(
         &mut self,
         request: impl tonic::IntoRequest<ReportTaskOutputRequest>,
     ) -> std::result::Result<tonic::Response<ReportTaskOutputResponse>, tonic::Status> {

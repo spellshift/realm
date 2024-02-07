@@ -27,13 +27,13 @@ impl TaskHandle {
     }
 
     // Report any available task output.
-    pub async fn report(&mut self, tavern: &mut TavernClient) -> Result<()> {
+    pub async fn report(&mut self, tavern: &mut impl TavernClient) -> Result<()> {
         let exec_started_at = self.output.get_exec_started_at();
         let exec_finished_at = self.output.get_exec_finished_at();
         let text = self.output.collect();
         let err = self.output.collect_errors().pop().map(|err| TaskError {
-                msg: err.to_string(),
-            });
+            msg: err.to_string(),
+        });
 
         #[cfg(debug_assertions)]
         log::info!(

@@ -2,6 +2,7 @@ pub mod pb {
     include!("c2.rs");
 }
 
-mod c2_manual;
+mod grpc;
 mod tavern;
-pub use c2_manual::TavernClient;
+pub use grpc::GRPCTavernClient;
+pub use tavern::TavernClient;
