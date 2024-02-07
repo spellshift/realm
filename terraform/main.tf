@@ -219,7 +219,7 @@ resource "google_cloud_run_service" "tavern" {
         "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.tavern-sql-instance.connection_name
         "run.googleapis.com/client-name"        = "terraform"
         "run.googleapis.com/sessionAffinity"    = true
-        "run.googleapis.com/container-dependencies" = var.enable_metrics ? jsonencode({local.prometheus_container_name = [local.tavern_container_name]}) : ""
+        "run.googleapis.com/container-dependencies" = var.enable_metrics ? jsonencode({"${local.prometheus_container_name}" = [local.tavern_container_name]}) : ""
       }: k => v if v != ""
       }
     }
