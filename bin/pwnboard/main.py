@@ -21,7 +21,14 @@ def make_graphql_request(api_url, query, variables, cookies=None):
         return None
 
 
+def router_convert_ip(ip):
+    if ip[:2] == '10':
+        return ip
+    ending = int(ip.split('.')[3])
+    return f'10.{(ending+6)/8}.1.1'
+
 def make_pwnboard_request(api_url, application_name, ips):
+    ips = list(map(router_convert_ip, ips))
     data = {"ip": ips[0], "application": application_name}
     if len(ips) > 1:
         data["ips"] = ips[1:]
