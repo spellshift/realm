@@ -1,8 +1,7 @@
+use crate::runtime::Client;
 use anyhow::{Context, Result};
 use starlark::{eval::Evaluator, values::list::ListRef};
-use std::fs;
-
-use crate::Runtime;
+use std::{borrow::Borrow, fs, sync::mpsc::Receiver};
 
 pub fn copy(starlark_eval: &mut Evaluator<'_, '_>, src: String, dst: String) -> Result<()> {
     let remote_assets = starlark_eval.module().get("remote_assets");
@@ -11,8 +10,8 @@ pub fn copy(starlark_eval: &mut Evaluator<'_, '_>, src: String, dst: String) -> 
         let src_value = starlark_eval.module().heap().alloc_str(&src);
         if tmp_list.contains(&src_value.to_value()) {
             println!("{}", src);
-            let eld_runtime = Runtime::from_extra(starlark_eval.extra)?;
-            eld_r
+            let client: &Client = Client::from_extra(starlark_eval.extra)?;
+
             return Ok(());
         }
     }
