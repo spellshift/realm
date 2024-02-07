@@ -25,7 +25,7 @@ hex-literal = { workspace = true }
 ipnetwork = { workspace = true }
 log = { workspace = true }
 md5 = { workspace = true }
-netstat2 = { workspace = true }
+#netstat2 = { workspace = true }
 nix = { workspace = true }
 notify = { workspace = true }
 object = { workspace = true }

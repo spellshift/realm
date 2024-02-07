@@ -16,6 +16,8 @@ use std::os::macos::fs::MetadataExt;
 use std::os::unix::fs::PermissionsExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
+#[cfg(target_os = "freebsd")]
+use std::os::freebsd::fs::MetadataExt;
 use sysinfo::{System, SystemExt, UserExt};
 
 const UNKNOWN: &str = "UNKNOWN";
