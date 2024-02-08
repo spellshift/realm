@@ -196,6 +196,10 @@ impl Runtime {
             input_params.insert_hashed(hashed_key, new_value);
         }
         module.set("input_params", input_params.alloc_value(module.heap()));
+        module.set(
+            "remote_assets",
+            tome.file_names.clone().alloc_value(module.heap()),
+        );
 
         Ok(module)
     }
