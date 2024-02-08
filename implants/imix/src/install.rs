@@ -31,7 +31,7 @@ pub async fn install() {
             // Run tome
             #[cfg(debug_assertions)]
             log::info!("running tome {embedded_file_path}");
-            let (runtime, output) = Runtime::new();
+            let (runtime, handle) = Runtime::new();
             match tokio::task::spawn_blocking(move || {
                 runtime.run(Tome {
                     eldritch,
@@ -48,7 +48,7 @@ pub async fn install() {
                 }
             }
 
-            let _output = output.collect().join("");
+            let _output = handle.collect_text().join("");
             #[cfg(debug_assertions)]
             log::info!("{_output}");
         }
