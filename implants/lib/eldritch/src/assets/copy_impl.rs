@@ -66,12 +66,21 @@ mod tests {
     use crate::Runtime;
 
     use super::*;
-    use starlark::{environment::Module, values::AllocValue};
+    use starlark::environment::Module;
     use std::{collections::HashMap, io::prelude::*, sync::mpsc::channel};
     use tempfile::NamedTempFile;
 
+    fn init_log() {
+        pretty_env_logger::formatted_timed_builder()
+            .filter_level(log::LevelFilter::Info)
+            .parse_env("IMIX_LOG")
+            .init();
+    }
+
     #[test]
     fn test_remote_copy() -> anyhow::Result<()> {
+        init_log();
+        log::debug!("Testing123");
         // Create files
         let mut tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
