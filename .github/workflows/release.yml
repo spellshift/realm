@@ -1,0 +1,300 @@
+name: Release
+
+env:
+  CARGO_TERM_COLOR: always
+  IMIX_CALLBACK_URI: http://127.0.0.1
+
+on:
+  workflow_dispatch: ~
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+
+  # Create a Release
+  create_release:
+    name: 🚀 Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+####################################################################################
+###                                    TAVERN                                    ###
+####################################################################################
+
+###
+# ALL PLATFORMS
+###
+  upload_tavern:
+    name: 🚀 Release Tavern Assets
+    needs: create_release # Depends on release being created for upload URL
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: ⚡ Setup Golang
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: 🔨 Build
+        run: go build -ldflags='-w -extldflags "-static"' -o ${{ runner.temp }}/realm_build/tavern ./tavern
+      - name: 🌥️⬆️ Upload Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: tavern-${{ matrix.config.os }}
+          asset_path: ${{ runner.temp }}/realm_build/tavern
+          asset_content_type: application/octet-stream
+
+####################################################################################
+###                                     IMIX                                     ###
+####################################################################################
+
+###
+# LINUX
+###
+  upload_imix_linux:
+    name: 🚀 Release Imix Assets (Linux)
+    needs: create_release # Depends on release being created for upload URL
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛠️ Setup Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-09-04
+          default: true
+          profile: minimal
+      - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
+        run: |
+          rustup target add x86_64-unknown-linux-musl && \
+          sudo apt update && \
+          sudo apt install -y musl-tools
+      - name: 🔨 Build Imix
+        run: cargo build --bin=imix --release --target=x86_64-unknown-linux-musl
+        working-directory: ./implants/imix
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
+          RUSTFLAGS: "-C target-feature=+crt-static"
+      - name: 🌥️⬆️ Upload Imix
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: imix-x86_64-unknown-linux-musl
+          asset_path: ${{ runner.temp }}/realm_build/x86_64-unknown-linux-musl/release/imix
+          asset_content_type: application/octet-stream
+###
+# MACOS
+###
+  upload_imix_macos:
+    name: 🚀 Release Imix Assets (MacOS)
+    needs: create_release # Depends on release being created for upload URL
+    runs-on: macOS-latest
+    steps:
+      - name: 🛠️ Setup Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-09-04
+          default: true
+          profile: minimal
+      - name: 🔨 Build Imix
+        run: cargo build --bin=imix --release --target=x86_64-apple-darwin
+        working-directory: ./implants/imix
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
+          RUSTFLAGS: "-C target-feature=+crt-static"
+      - name: 🌥️⬆️ Upload Imix
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: imix-x86_64-apple-darwin
+          asset_path: ${{ runner.temp }}/realm_build/x86_64-apple-darwin/release/imix
+          asset_content_type: application/octet-stream
+###
+# WINDOWS
+###
+  upload_imix_windows:
+    name: 🚀 Release Imix Assets (Windows)
+    needs: create_release # Depends on release being created for upload URL
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: 👾 Disable defender
+        shell: powershell
+        run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+      - name: 🛠️ Setup Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-09-04
+          default: true
+          profile: minimal
+      - name: ⚡ Setup Rust (Loader)
+        shell: powershell
+        run: |
+          rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc
+          rustup component add rust-src --toolchain nightly-2023-09-04-x86_64-pc-windows-msvc
+      - name: 🔨 Build Loader
+        working-directory: ./bin/reflective_loader/
+        run: cargo build --release --target=x86_64-pc-windows-msvc -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+      - name: 🔨 Build Imix
+        run: cargo build --bin=imix --release --target=x86_64-pc-windows-msvc
+        working-directory: ./implants/imix
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
+          RUSTFLAGS: "-C target-feature=+crt-static"
+      - name: 🔨 Build Imix (DLL)
+        run: cargo build --lib --release
+        working-directory: ./implants/imix
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
+          RUSTFLAGS: "-C target-feature=+crt-static"
+      - name: 🌥️⬆️ Upload Imix
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: imix-x86_64-pc-windows-msvc.exe
+          asset_path:  ${{ runner.temp }}/realm_build/x86_64-pc-windows-msvc/release/imix.exe
+          asset_content_type: application/octet-stream
+      - name: 🌥️⬆️ Upload Imix (DLL)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: imix-x86_64-pc-windows-msvc.dll
+          asset_path: ${{ runner.temp }}/realm_build/x86_64-pc-windows-msvc/release/imix.dll
+          asset_content_type: application/octet-stream
+
+####################################################################################
+###                                     GOLEM                                     ###
+####################################################################################
+
+###
+# LINUX
+###
+  upload_golem_linux:
+    name: 🚀 Release Golem Assets (Linux)
+    needs: create_release # Depends on release being created for upload URL
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛠️ Setup Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-09-04
+          default: true
+          profile: minimal
+      - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
+        run: |
+          rustup target add x86_64-unknown-linux-musl && \
+          sudo apt update && \
+          sudo apt install -y musl-tools
+      - name: 🔨 Build Golem
+        run: cargo build --bin=golem --release --target=x86_64-unknown-linux-musl
+        working-directory: ./implants/golem
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
+          RUSTFLAGS: "-C target-feature=+crt-static"
+      - name: 🌥️⬆️ Upload Golem
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: golem-x86_64-unknown-linux-musl
+          asset_path: ${{ runner.temp }}/realm_build/x86_64-unknown-linux-musl/release/golem
+          asset_content_type: application/octet-stream
+###
+# MACOS
+###
+  upload_golem_macos:
+    name: 🚀 Release Golem Assets (MacOS)
+    needs: create_release # Depends on release being created for upload URL
+    runs-on: macOS-latest
+    steps:
+      - name: 🛠️ Setup Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-09-04
+          default: true
+          profile: minimal
+      - name: 🔨 Build Golem
+        run: cargo build --bin=golem --release --target=x86_64-apple-darwin
+        working-directory: ./implants/golem
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
+          RUSTFLAGS: "-C target-feature=+crt-static"
+      - name: 🌥️⬆️ Upload Golem
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: golem-x86_64-apple-darwin
+          asset_path: ${{ runner.temp }}/realm_build/x86_64-apple-darwin/release/golem
+          asset_content_type: application/octet-stream
+###
+# WINDOWS
+###
+  upload_golem_windows:
+      name: 🚀 Release Golem Assets (Windows)
+      needs: create_release # Depends on release being created for upload URL
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v3
+        - name: 👾 Disable defender
+          shell: powershell
+          run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+        - name: 🛠️ Setup Rust Toolchain
+          uses: actions-rs/toolchain@v1
+          with:
+            toolchain: nightly-2023-09-04
+            default: true
+            profile: minimal
+        - name: ⚡ Setup Rust (Loader)
+          shell: powershell
+          run: |
+            rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc
+            rustup component add rust-src --toolchain nightly-2023-09-04-x86_64-pc-windows-msvc
+        - name: 🔨 Build Loader
+          working-directory: ./bin/reflective_loader/
+          run: cargo build --release --target=x86_64-pc-windows-msvc -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+        - name: 🔨 Build Golem
+          run: cargo build --bin=golem --release --target=x86_64-pc-windows-msvc
+          working-directory: ./implants/golem
+          env:
+            CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
+            RUSTFLAGS: "-C target-feature=+crt-static"
+        - name: 🌥️⬆️ Upload Golem
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ needs.create_release.outputs.upload_url }}
+            asset_name: golem-x86_64-pc-windows-msvc.exe
+            asset_path:  ${{ runner.temp }}/realm_build/x86_64-pc-windows-msvc/release/golem.exe
+            asset_content_type: application/octet-stream
