@@ -19,6 +19,7 @@ jobs:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
+          - WIN-L25AS4O2DVF
     steps:
     - uses: actions/checkout@v3
     - name: ⚡ Setup Golang
