@@ -3,7 +3,7 @@ pub mod crypto;
 pub mod file;
 pub mod pivot;
 pub mod process;
-pub mod runtime;
+mod runtime;
 pub mod sys;
 pub mod time;
 
@@ -11,7 +11,7 @@ pub mod pb {
     include!("eldritch.rs");
 }
 
-pub use runtime::{Output, Runtime};
+pub use runtime::{Broker, FileRequest, Runtime};
 
 #[allow(unused_imports)]
 use starlark::const_frozen_string;

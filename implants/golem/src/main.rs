@@ -4,7 +4,7 @@ extern crate golem;
 use anyhow::{anyhow, Result};
 use clap::{Arg, Command};
 use eldritch::pb::Tome;
-use eldritch::{Output, Runtime};
+use eldritch::Runtime;
 use std::collections::HashMap;
 use std::fs;
 use std::process;
@@ -20,13 +20,13 @@ struct ParsedTome {
 struct Handle {
     handle: JoinHandle<()>,
     path: String,
-    output: Output,
+    broker: eldritch::Broker,
 }
 
 async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     let mut handles = Vec::new();
     for tome in tomes {
-        let (mut runtime, output) = Runtime::new();
+        let (mut runtime, broker) = Runtime::new();
         runtime.with_stdout_reporting();
         let handle = tokio::task::spawn_blocking(move || {
             runtime.run(Tome {
@@ -38,7 +38,7 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
         handles.push(Handle {
             handle,
             path: tome.path,
-            output,
+            broker,
         });
     }
 
@@ -54,8 +54,8 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
                 continue;
             }
         };
-        let mut out = handle.output.collect();
-        let errors = handle.output.collect_errors();
+        let mut out = handle.broker.collect_text();
+        let errors = handle.broker.collect_errors();
         if !errors.is_empty() {
             return Err(anyhow!("tome execution failed: {:?}", errors));
         }
