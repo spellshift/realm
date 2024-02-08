@@ -42,6 +42,7 @@ jobs:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
+          - self-hosted
     steps:
     - uses: actions/checkout@v3
     - if: matrix.os == 'windows-latest'
