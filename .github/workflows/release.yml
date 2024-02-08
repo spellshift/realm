@@ -55,7 +55,7 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: 🔨 Build
-        run: go build -ldflags='-w -extldflags "-static"' -o ./build/tavern ./tavern
+        run: go build -ldflags='-w -extldflags "-static"' -o /build/tavern ./tavern
       - name: 🌥️⬆️ Upload Assets
         uses: actions/upload-release-asset@v1
         env:
@@ -63,7 +63,7 @@ jobs:
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_name: tavern-${{ matrix.config.os }}
-          asset_path: ./tavern
+          asset_path: /build/tavern
           asset_content_type: application/octet-stream
 
 ####################################################################################
@@ -87,8 +87,8 @@ jobs:
       - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
         run: |
           rustup target add x86_64-unknown-linux-musl && \
-          apt update && \
-          apt install -y musl-tools
+          sudo apt update && \
+          sudo apt install -y musl-tools
       - name: 🔨 Build Imix
         working-directory: ./implants/imix
         run: CARGO_TARGET_DIR=/build RUSTFLAGS="-C target-feature=+crt-static" cargo build --bin=imix --release --target=x86_64-unknown-linux-musl
@@ -146,8 +146,9 @@ jobs:
           default: true
           profile: minimal
       - name: ⚡ Setup Rust (Loader)
+        shell: powershell
         run: |
-          rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc && \
+          rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc
           rustup component add rust-src --toolchain nightly-2023-09-04-x86_64-pc-windows-msvc
       - name: 🔨 Build Loader
         working-directory: ./bin/reflective_loader/
@@ -198,8 +199,8 @@ jobs:
       - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
         run: |
           rustup target add x86_64-unknown-linux-musl && \
-          apt update && \
-          apt install -y musl-tools
+          sudo apt update && \
+          sudo apt install -y musl-tools
       - name: 🔨 Build Golem
         working-directory: ./implants/golem
         run: CARGO_TARGET_DIR=/build RUSTFLAGS="-C target-feature=+crt-static" cargo build --bin=golem --release --target=x86_64-unknown-linux-musl
@@ -257,8 +258,9 @@ jobs:
             default: true
             profile: minimal
         - name: ⚡ Setup Rust (Loader)
+          shell: powershell
           run: |
-            rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc && \
+            rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc
             rustup component add rust-src --toolchain nightly-2023-09-04-x86_64-pc-windows-msvc
         - name: 🔨 Build Loader
           working-directory: ./bin/reflective_loader/
