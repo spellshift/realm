@@ -1,7 +1,7 @@
 use crate::runtime::Client;
 use anyhow::{Context, Result};
 use starlark::{eval::Evaluator, values::list::ListRef};
-use std::{fs, sync::mpsc::Receiver, time::Duration};
+use std::{fs, sync::mpsc::Receiver};
 
 fn copy_local(src: String, dst: String) -> Result<()> {
     let src_file = match super::Asset::get(src.as_str()) {
@@ -66,7 +66,6 @@ mod tests {
     use crate::Runtime;
 
     use super::*;
-    use starlark::environment::Module;
     use std::{collections::HashMap, io::prelude::*, sync::mpsc::channel};
     use tempfile::NamedTempFile;
 
@@ -113,27 +112,30 @@ mod tests {
 
     #[test]
     fn test_embedded_copy() -> anyhow::Result<()> {
-        let module: Module = Module::new();
-        let mut eval: Evaluator = Evaluator::new(&module);
-
         // Create files
         let mut tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
 
-        // Run our code
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        copy(
-            &mut eval,
-            "exec_script/hello_world.sh".to_string(),
-            path_dst,
-        )?;
+        let path_src = "exec_script/hello_world.sh".to_string();
         #[cfg(target_os = "windows")]
-        copy("exec_script/hello_world.bat".to_string(), path_dst)?;
+        let path_src = "exec_script/hello_world.bat".to_string();
 
-        // Read
+        let (runtime, broker) = Runtime::new();
+        runtime.run(crate::pb::Tome {
+            eldritch: r#"assets.copy(input_params['src_file'], input_params['test_output'])"#
+                .to_owned(),
+            parameters: HashMap::from([
+                ("src_file".to_string(), path_src),
+                ("test_output".to_string(), path_dst),
+            ]),
+            file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
+        });
+
+        assert!(broker.collect_errors().is_empty()); // No errors even though the remote asset is inaccessible
+
         let mut contents = String::new();
         tmp_file_dst.read_to_string(&mut contents)?;
-        // Compare
         assert!(contents.contains("hello from an embedded shell script"));
 
         Ok(())
