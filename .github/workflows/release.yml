@@ -79,11 +79,11 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - name: 🛠️ Setup Rust Toolchain
-            uses: actions-rs/toolchain@v1
-            with:
-              toolchain: nightly-2023-09-04
-              default: true
-              profile: minimal
+          uses: actions-rs/toolchain@v1
+          with:
+            toolchain: nightly-2023-09-04
+            default: true
+            profile: minimal
         - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
             run: |
               rustup target add x86_64-unknown-linux-musl && \
