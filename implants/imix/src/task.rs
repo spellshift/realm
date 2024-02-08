@@ -1,12 +1,13 @@
 use anyhow::Result;
 use c2::{
     pb::{
-        DownloadFileRequest, ReportProcessListRequest, ReportTaskOutputRequest, TaskError,
-        TaskOutput,
+        DownloadFileRequest, DownloadFileResponse, ReportProcessListRequest,
+        ReportTaskOutputRequest, TaskError, TaskOutput,
     },
     Transport,
 };
 use eldritch::FileRequest;
+use std::sync::mpsc::channel;
 use tokio::task::JoinHandle;
 
 /*
@@ -143,24 +144,19 @@ impl TaskHandle {
 
     async fn start_file_download(
         &mut self,
-        tavern: &mut TavernClient,
+        tavern: &mut impl Transport,
         req: FileRequest,
     ) -> Result<()> {
-        let mut stream = tavern
-            .download_file(DownloadFileRequest { name: req.name() })
-            .await?
-            .into_inner();
+        let (ch_file_chunk, file_chunk) = channel::<DownloadFileResponse>();
+        tavern
+            .download_file(DownloadFileRequest { name: req.name() }, ch_file_chunk)
+            .await?;
 
         let task_id = self.id;
         let handle = tokio::task::spawn(async move {
             loop {
-                let resp = match stream.message().await {
-                    Ok(maybe_resp) => match maybe_resp {
-                        Some(r) => r,
-                        None => {
-                            return;
-                        }
-                    },
+                let resp = match file_chunk.recv() {
+                    Ok(r) => r,
                     Err(_err) => {
                         #[cfg(debug_assertions)]
                         log::error!(
