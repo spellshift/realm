@@ -17,7 +17,7 @@ fn copy_local(src: String, dst: String) -> Result<()> {
 
 fn copy_remote(file_reciever: Receiver<Vec<u8>>, dst: String) -> Result<()> {
     loop {
-        let val = match file_reciever.recv_timeout(Duration::from_millis(100)) {
+        let val = match file_reciever.recv() {
             Ok(v) => v,
             Err(err) => {
                 match err.to_string().as_str() {
@@ -25,7 +25,7 @@ fn copy_remote(file_reciever: Receiver<Vec<u8>>, dst: String) -> Result<()> {
                         break;
                     }
                     "timed out waiting on channel" => {
-                        break;
+                        continue;
                     }
                     _ => {
                         #[cfg(debug_assertions)]
@@ -70,17 +70,8 @@ mod tests {
     use std::{collections::HashMap, io::prelude::*, sync::mpsc::channel};
     use tempfile::NamedTempFile;
 
-    fn init_log() {
-        pretty_env_logger::formatted_timed_builder()
-            .filter_level(log::LevelFilter::Info)
-            .parse_env("IMIX_LOG")
-            .init();
-    }
-
     #[test]
     fn test_remote_copy() -> anyhow::Result<()> {
-        init_log();
-        log::debug!("Testing123");
         // Create files
         let mut tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
