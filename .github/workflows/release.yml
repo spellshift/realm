@@ -35,18 +35,12 @@ jobs:
 ####################################################################################
 
 ###
-# ALL PLATFORMS
+# LINUX
 ###
   upload_tavern:
     name: 🚀 Release Tavern Assets
     needs: create_release # Depends on release being created for upload URL
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      matrix:
-        config:
-          - os: ubuntu-latest
-          - os: macos-latest
-          - os: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: ⚡ Setup Golang
@@ -62,7 +56,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: tavern-${{ matrix.config.os }}
+          asset_name: tavern
           asset_path: ${{ runner.temp }}/realm_build/tavern
           asset_content_type: application/octet-stream
 
@@ -78,6 +72,7 @@ jobs:
     needs: create_release # Depends on release being created for upload URL
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -112,6 +107,7 @@ jobs:
     needs: create_release # Depends on release being created for upload URL
     runs-on: macOS-latest
     steps:
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -141,10 +137,10 @@ jobs:
     needs: create_release # Depends on release being created for upload URL
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
       - name: 👾 Disable defender
         shell: powershell
         run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -202,6 +198,7 @@ jobs:
     needs: create_release # Depends on release being created for upload URL
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -236,6 +233,7 @@ jobs:
     needs: create_release # Depends on release being created for upload URL
     runs-on: macOS-latest
     steps:
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -265,10 +263,10 @@ jobs:
       needs: create_release # Depends on release being created for upload URL
       runs-on: windows-latest
       steps:
-        - uses: actions/checkout@v3
         - name: 👾 Disable defender
           shell: powershell
           run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+        - uses: actions/checkout@v3
         - name: 🛠️ Setup Rust Toolchain
           uses: actions-rs/toolchain@v1
           with:
