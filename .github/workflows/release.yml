@@ -38,7 +38,7 @@ jobs:
 # LINUX
 ###
   upload_tavern:
-    name: 🚀 Release Tavern Assets
+    name: 🚀 [Linux] Tavern
     needs: create_release # Depends on release being created for upload URL
     runs-on: ubuntu-latest
     steps:
@@ -68,7 +68,7 @@ jobs:
 # LINUX
 ###
   upload_imix_linux:
-    name: 🚀 Release Imix Assets (Linux)
+    name: 🚀 [Linux] Imix
     needs: create_release # Depends on release being created for upload URL
     runs-on: ubuntu-latest
     steps:
@@ -103,7 +103,7 @@ jobs:
 # MACOS
 ###
   upload_imix_macos:
-    name: 🚀 Release Imix Assets (MacOS)
+    name: 🚀 [MacOS] Imix
     needs: create_release # Depends on release being created for upload URL
     runs-on: macOS-latest
     steps:
@@ -133,7 +133,7 @@ jobs:
 # WINDOWS
 ###
   upload_imix_windows:
-    name: 🚀 Release Imix Assets (Windows)
+    name: 🚀 [Windows] Imix
     needs: create_release # Depends on release being created for upload URL
     runs-on: windows-latest
     steps:
@@ -194,7 +194,7 @@ jobs:
 # LINUX
 ###
   upload_golem_linux:
-    name: 🚀 Release Golem Assets (Linux)
+    name: 🚀 [Linux] Golem
     needs: create_release # Depends on release being created for upload URL
     runs-on: ubuntu-latest
     steps:
@@ -229,7 +229,7 @@ jobs:
 # MACOS
 ###
   upload_golem_macos:
-    name: 🚀 Release Golem Assets (MacOS)
+    name: 🚀 [MacOS] Golem
     needs: create_release # Depends on release being created for upload URL
     runs-on: macOS-latest
     steps:
@@ -259,7 +259,7 @@ jobs:
 # WINDOWS
 ###
   upload_golem_windows:
-      name: 🚀 Release Golem Assets (Windows)
+      name: 🚀 [Windows] Golem
       needs: create_release # Depends on release being created for upload URL
       runs-on: windows-latest
       steps:

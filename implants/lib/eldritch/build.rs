@@ -132,9 +132,9 @@ fn build_proto() -> Result<()> {
 fn main() -> Result<()> {
     set_host_family();
     build_proto()?;
-    #[cfg(target_os = "windows")]
-    build_bin_create_file_dll();
     #[cfg(all(target_os = "windows", debug_assertions))]
+    build_bin_create_file_dll();
+    #[cfg(target_os = "windows")]
     build_bin_reflective_loader();
 
     Ok(())
