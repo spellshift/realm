@@ -1,7 +1,7 @@
 use anyhow::Result;
 use c2::{
     pb::{ReportProcessListRequest, ReportTaskOutputRequest, TaskError, TaskOutput},
-    TavernClient,
+    Transport,
 };
 use eldritch::Output;
 use tokio::task::JoinHandle;
@@ -27,7 +27,7 @@ impl TaskHandle {
     }
 
     // Report any available task output.
-    pub async fn report(&mut self, tavern: &mut impl TavernClient) -> Result<()> {
+    pub async fn report(&mut self, tavern: &mut impl Transport) -> Result<()> {
         let exec_started_at = self.output.get_exec_started_at();
         let exec_finished_at = self.output.get_exec_finished_at();
         let text = self.output.collect();

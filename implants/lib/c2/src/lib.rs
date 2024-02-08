@@ -3,6 +3,6 @@ pub mod pb {
 }
 
 mod grpc;
-mod tavern;
-pub use grpc::GRPCTavernClient;
-pub use tavern::TavernClient;
+mod transport;
+pub use grpc::GRPC;
+pub use transport::Transport;
