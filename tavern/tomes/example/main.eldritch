@@ -1,1 +1,2 @@
 print(input_params['msg'])
+assets.copy("example/linux/test-file", "/tmp/tst_eldritch")

@@ -34,13 +34,44 @@ impl crate::Transport for GRPC {
     async fn download_file(
         &mut self,
         request: crate::pb::DownloadFileRequest,
-        sender: Sender<crate::pb::DownloadFileResponse>,
+        tx: Sender<crate::pb::DownloadFileResponse>,
     ) -> Result<()> {
+        #[cfg(debug_assertions)]
+        let filename = request.name.clone();
+
         let resp = self.download_file_impl(request).await?;
-        let mut stream = resp.into_inner();
-        while let Some(file_chunk) = stream.message().await? {
-            sender.send(file_chunk)?;
-        }
+        let mut stream: tonic::Streaming<DownloadFileResponse> = resp.into_inner();
+        tokio::spawn(async move {
+            loop {
+                let msg = match stream.message().await {
+                    Ok(maybe_msg) => match maybe_msg {
+                        Some(msg) => msg,
+                        None => {
+                            break;
+                        }
+                    },
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to download file: {}: {}", filename, _err);
+
+                        return;
+                    }
+                };
+                match tx.send(msg) {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!(
+                            "failed to send downloaded file chunk: {}: {}",
+                            filename,
+                            _err
+                        );
+
+                        return;
+                    }
+                }
+            }
+        });
         Ok(())
     }
 
