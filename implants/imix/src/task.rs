@@ -158,14 +158,18 @@ impl TaskHandle {
                 let resp = match file_chunk.recv() {
                     Ok(r) => r,
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
-                        log::error!(
-                            "failed to download file chunk: task_id={}, name={}: {}",
-                            task_id,
-                            req.name(),
-                            _err
-                        );
-
+                        match _err.to_string().as_str() {
+                            "receiving on a closed channel" => {}
+                            _ => {
+                                #[cfg(debug_assertions)]
+                                log::error!(
+                                    "failed to download file chunk: task_id={}, name={}: {}",
+                                    task_id,
+                                    req.name(),
+                                    _err
+                                );
+                            }
+                        }
                         return;
                     }
                 };
