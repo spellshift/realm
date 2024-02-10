@@ -147,56 +147,32 @@ impl TaskHandle {
         tavern: &mut impl Transport,
         req: FileRequest,
     ) -> Result<()> {
-        let (ch_file_chunk, file_chunk) = channel::<DownloadFileResponse>();
+        let (tx, rx) = channel::<DownloadFileResponse>();
+
         tavern
-            .download_file(DownloadFileRequest { name: req.name() }, ch_file_chunk)
+            .download_file(DownloadFileRequest { name: req.name() }, tx)
             .await?;
 
-        let task_id = self.id;
-        let handle = tokio::task::spawn(async move {
-            loop {
-                let resp = match file_chunk.recv() {
-                    Ok(r) => r,
-                    Err(_err) => {
-                        match _err.to_string().as_str() {
-                            "receiving on a closed channel" => {}
-                            _ => {
-                                #[cfg(debug_assertions)]
-                                log::error!(
-                                    "failed to download file chunk: task_id={}, name={}: {}",
-                                    task_id,
-                                    req.name(),
-                                    _err
-                                );
-                            }
-                        }
-                        return;
-                    }
-                };
-
-                #[cfg(debug_assertions)]
-                log::info!(
-                    "downloaded file chunk: task_id={}, name={}, size={}",
-                    task_id,
-                    req.name(),
-                    resp.chunk.len()
-                );
-
-                match req.send_chunk(resp.chunk) {
+        let handle = tokio::task::spawn_blocking(move || {
+            for r in rx {
+                match req.send_chunk(r.chunk) {
                     Ok(_) => {}
                     Err(_err) => {
                         #[cfg(debug_assertions)]
                         log::error!(
-                            "failed to send downloaded file chunk: task_id={}, name={}: {}",
-                            task_id,
+                            "failed to send downloaded file chunk: {}: {}",
                             req.name(),
                             _err
                         );
+
                         return;
                     }
-                };
+                }
             }
+            #[cfg(debug_assertions)]
+            log::info!("file download completed: {}", req.name());
         });
+
         self.download_handles.push(handle);
         Ok(())
     }
