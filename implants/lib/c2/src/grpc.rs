@@ -40,7 +40,7 @@ impl crate::Transport for GRPC {
         let filename = request.name.clone();
 
         let resp = self.download_file_impl(request).await?;
-        let mut stream: tonic::Streaming<DownloadFileResponse> = resp.into_inner();
+        let mut stream = resp.into_inner();
         tokio::spawn(async move {
             loop {
                 let msg = match stream.message().await {

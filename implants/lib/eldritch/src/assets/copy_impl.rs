@@ -21,11 +21,14 @@ fn copy_remote(rx: Receiver<Vec<u8>>, dst_path: String) -> Result<()> {
     let mut dst = OpenOptions::new()
         .create(true)
         .append(true)
-        .open(dst_path)?;
-    dst.set_len(0)?; // Truncate if existing
+        .open(&dst_path)
+        .context(format!("failed to open destination file: {}", &dst_path))?;
+    dst.set_len(0)
+        .context(format!("failed to truncate existing file: {}", &dst_path))?; // Truncate if existing
 
     for chunk in rx {
-        dst.write_all(&chunk)?;
+        dst.write_all(&chunk)
+            .context(format!("failed to write file chunk: {}", &dst_path))?;
     }
 
     dst.flush()?;
