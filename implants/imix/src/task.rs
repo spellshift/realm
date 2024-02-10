@@ -7,7 +7,7 @@ use c2::{
     Transport,
 };
 use eldritch::FileRequest;
-use std::sync::mpsc;
+use std::sync::mpsc::channel;
 use tokio::task::JoinHandle;
 
 /*
@@ -147,7 +147,7 @@ impl TaskHandle {
         tavern: &mut impl Transport,
         req: FileRequest,
     ) -> Result<()> {
-        let (tx, rx) = mpsc::channel::<DownloadFileResponse>();
+        let (tx, rx) = channel::<DownloadFileResponse>();
 
         tavern
             .download_file(DownloadFileRequest { name: req.name() }, tx)
