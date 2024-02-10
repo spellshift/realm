@@ -18,20 +18,35 @@ fn copy_local(src: String, dst: String) -> Result<()> {
 }
 
 fn copy_remote(rx: Receiver<Vec<u8>>, dst_path: String) -> Result<()> {
+    // Truncate file
+    let mut dst = OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(&dst_path)
+        .context(format!(
+            "failed to truncate destination file: {}",
+            &dst_path
+        ))?;
+    dst.flush()
+        .context(format!("failed to flush file truncation: {}", &dst_path))?;
+
+    // Reopen file for writing
     let mut dst = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&dst_path)
-        .context(format!("failed to open destination file: {}", &dst_path))?;
-    dst.set_len(0)
-        .context(format!("failed to truncate existing file: {}", &dst_path))?; // Truncate if existing
+        .context(format!("failed to open file for writing: {}", &dst_path))?;
 
+    // Listen for downloaded chunks and write them
     for chunk in rx {
         dst.write_all(&chunk)
             .context(format!("failed to write file chunk: {}", &dst_path))?;
     }
 
-    dst.flush()?;
+    // Ensure all chunks gets written
+    dst.flush()
+        .context(format!("failed to flush file: {}", &dst_path))?;
 
     Ok(())
 }
