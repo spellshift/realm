@@ -4,7 +4,7 @@ version = "0.0.5"
 edition = "2021"
 
 [dependencies]
-eldritch = { workspace = true }
+eldritch = { workspace = true, features = ["print_stdout"] }
 tokio = { workspace = true, features = ["macros"] }
 clap = { workspace = true }
 starlark = { workspace = true }

@@ -4,14 +4,14 @@ use starlark::{collections::SmallMap, eval::Evaluator};
 
 use crate::{
     pb::{process::Status, Process, ProcessList},
-    runtime::Client,
+    runtime::Environment,
 };
 
 pub fn process_list(
     starlark_eval: &Evaluator<'_, '_>,
     process_list: Vec<SmallMap<String, Value>>,
 ) -> Result<()> {
-    let client = Client::from_extra(starlark_eval.extra)?;
+    let env = Environment::from_extra(starlark_eval.extra)?;
 
     let mut pb_process_list = ProcessList { list: Vec::new() };
     for proc in process_list {
@@ -28,7 +28,7 @@ pub fn process_list(
         })
     }
 
-    client.report_process_list(pb_process_list)?;
+    env.report_process_list(pb_process_list)?;
     Ok(())
 }
 
