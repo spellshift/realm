@@ -104,7 +104,7 @@ mod test {
     process_list_tests! {
             one_process: TestCase{
                 tome: Tome{
-                    eldritch: String::from(r#"report.process_list([{"pid":5,"ppid":101,"name":"test","principal":"root","path":"/bin/cat","env":"COOL=1","cmd":"cat","cwd":"/home/meow","status":"IDLE"}])"#),
+                    eldritch: String::from(r#"report.process_list([{"pid":5,"ppid":101,"name":"test","username":"root","path":"/bin/cat","env":"COOL=1","command":"cat","cwd":"/home/meow","status":"IDLE"}])"#),
                     parameters: HashMap::new(),
                     file_names: Vec::new(),
                 },
