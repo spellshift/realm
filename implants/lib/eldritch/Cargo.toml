@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 # Check if compiled by imix
 imix = []
+print_stdout = []
 
 [dependencies]
 aes = { workspace = true }

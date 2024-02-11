@@ -4,7 +4,6 @@ use c2::{
     pb::{Beacon, ClaimTasksRequest},
     Transport, GRPC,
 };
-use eldritch::Runtime;
 use std::time::{Duration, Instant};
 
 /*
@@ -52,9 +51,8 @@ impl Agent<GRPC> {
                 }
             };
 
-            let (runtime, output) = Runtime::new();
-            let handle = tokio::task::spawn_blocking(move || runtime.run(tome));
-            self.handles.push(TaskHandle::new(task.id, output, handle));
+            let runtime = eldritch::start(tome).await;
+            self.handles.push(TaskHandle::new(task.id, runtime));
 
             #[cfg(debug_assertions)]
             log::info!("spawned task execution for id={}", task.id);

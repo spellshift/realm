@@ -63,7 +63,6 @@ mod test {
 
     use crate::pb::process::Status;
     use crate::pb::{Process, ProcessList, Tome};
-    use crate::Runtime;
     use anyhow::Error;
 
     macro_rules! process_list_tests {
@@ -72,23 +71,20 @@ mod test {
             #[tokio::test]
             async fn $name() {
                 let tc: TestCase = $value;
-                let (runtime, broker) = Runtime::new();
-                let handle = tokio::task::spawn_blocking(move || {
-                    runtime.run(tc.tome);
-                });
+                let mut runtime = crate::start(tc.tome).await;
+                runtime.finish().await;
 
                 let want_err_str = match tc.want_error {
                     Some(err) => err.to_string(),
                     None => "".to_string(),
                 };
-                let err_str = match broker.collect_errors().pop() {
+                let err_str = match runtime.collect_errors().pop() {
                     Some(err) => err.to_string(),
                     None => "".to_string(),
                 };
                 assert_eq!(want_err_str, err_str);
-                assert_eq!(tc.want_output, broker.collect_text().join(""));
-                assert_eq!(Some(tc.want_proc_list), broker.collect_process_lists().pop());
-                handle.await.unwrap();
+                assert_eq!(tc.want_output, runtime.collect_text().join(""));
+                assert_eq!(Some(tc.want_proc_list), runtime.collect_process_lists().pop());
             }
         )*
         }
