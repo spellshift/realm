@@ -2,7 +2,7 @@ use super::{Broker, Client, FileRequest};
 use crate::pb::{File, ProcessList};
 use crate::{
     assets::AssetsLibrary, crypto::CryptoLibrary, file::FileLibrary, pb::Tome, pivot::PivotLibrary,
-    process::ProcessLibrary, sys::SysLibrary, time::TimeLibrary,
+    process::ProcessLibrary, report::ReportLibrary, sys::SysLibrary, time::TimeLibrary,
 };
 use anyhow::{Error, Result};
 use chrono::Utc;
@@ -138,6 +138,7 @@ impl Runtime {
             const assets: AssetsLibrary = AssetsLibrary();
             const crypto: CryptoLibrary = CryptoLibrary();
             const time: TimeLibrary = TimeLibrary();
+            const report: ReportLibrary = ReportLibrary();
         }
 
         GlobalsBuilder::extended_by(&[
