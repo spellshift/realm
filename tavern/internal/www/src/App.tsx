@@ -14,12 +14,17 @@ import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import Tasks from "./pages/tasks/Tasks";
 import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
+import { Overview } from "./pages/overview";
 
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Tasks />,
+    element: <Overview />,
+  },
+  {
+    path: "/overview",
+    element: <Overview />,
   },
   {
     path: "/hosts",

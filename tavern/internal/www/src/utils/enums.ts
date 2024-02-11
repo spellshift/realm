@@ -9,6 +9,7 @@ export enum TaskStatus {
     queued = "QUEUED",
 }
 export enum PageNavItem {
+    overview="Overview",
     quests='Quest history',
     documentation='Documentation',
     playground='API Playground',

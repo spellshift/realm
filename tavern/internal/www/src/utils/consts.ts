@@ -35,6 +35,7 @@ export type HostType = {
     id: string;
     name: string;
     primaryIP?: string;
+    lastSeenAt?: string | null;
     platform?: SupportedPlatforms;
     tags?: Array<TomeTag>;
     beacons?: Array<BeaconType>;
@@ -74,7 +75,7 @@ export type Task = {
     id: string,
     lastModifiedAt: string,
     outputSize: number,
-    output: string,
+    output?: string,
     execStartedAt: string,
     execFinishedAt: string,
     beacon: BeaconType

@@ -96,6 +96,7 @@ export const GET_TASK_QUERY = gql`
                                 name
                                 description
                                 eldritch
+                                tactic
                             }
                             parameters
                         }
