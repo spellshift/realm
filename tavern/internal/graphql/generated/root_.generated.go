@@ -35,10 +35,8 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	HostProcess() HostProcessResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
-	HostProcessWhereInput() HostProcessWhereInputResolver
 }
 
 type DirectiveRoot struct {
@@ -1904,9 +1902,9 @@ type HostProcess implements Node {
   """Timestamp of when this ent was last updated"""
   lastModifiedAt: Time!
   """ID of the process."""
-  pid: Int!
+  pid: Uint64!
   """ID of the parent process."""
-  ppid: Int!
+  ppid: Uint64!
   """The name of the process."""
   name: String!
   """The user the process is running as."""
@@ -1994,23 +1992,23 @@ input HostProcessWhereInput {
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
   """pid field predicates"""
-  pid: Int
-  pidNEQ: Int
-  pidIn: [Int!]
-  pidNotIn: [Int!]
-  pidGT: Int
-  pidGTE: Int
-  pidLT: Int
-  pidLTE: Int
+  pid: Uint64
+  pidNEQ: Uint64
+  pidIn: [Uint64!]
+  pidNotIn: [Uint64!]
+  pidGT: Uint64
+  pidGTE: Uint64
+  pidLT: Uint64
+  pidLTE: Uint64
   """ppid field predicates"""
-  ppid: Int
-  ppidNEQ: Int
-  ppidIn: [Int!]
-  ppidNotIn: [Int!]
-  ppidGT: Int
-  ppidGTE: Int
-  ppidLT: Int
-  ppidLTE: Int
+  ppid: Uint64
+  ppidNEQ: Uint64
+  ppidIn: [Uint64!]
+  ppidNotIn: [Uint64!]
+  ppidGT: Uint64
+  ppidGTE: Uint64
+  ppidLT: Uint64
+  ppidLTE: Uint64
   """name field predicates"""
   name: String
   nameNEQ: String

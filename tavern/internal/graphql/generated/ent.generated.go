@@ -24,10 +24,6 @@ import (
 
 // region    ************************** generated!.gotpl **************************
 
-type HostProcessResolver interface {
-	Pid(ctx context.Context, obj *ent.HostProcess) (int, error)
-	Ppid(ctx context.Context, obj *ent.HostProcess) (int, error)
-}
 type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
@@ -40,25 +36,6 @@ type QueryResolver interface {
 	Tomes(ctx context.Context, where *ent.TomeWhereInput) ([]*ent.Tome, error)
 	Users(ctx context.Context, where *ent.UserWhereInput) ([]*ent.User, error)
 	Me(ctx context.Context) (*ent.User, error)
-}
-
-type HostProcessWhereInputResolver interface {
-	Pid(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PidNeq(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PidIn(ctx context.Context, obj *ent.HostProcessWhereInput, data []int) error
-	PidNotIn(ctx context.Context, obj *ent.HostProcessWhereInput, data []int) error
-	PidGt(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PidGte(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PidLt(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PidLte(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	Ppid(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PpidNeq(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PpidIn(ctx context.Context, obj *ent.HostProcessWhereInput, data []int) error
-	PpidNotIn(ctx context.Context, obj *ent.HostProcessWhereInput, data []int) error
-	PpidGt(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PpidGte(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PpidLt(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
-	PpidLte(ctx context.Context, obj *ent.HostProcessWhereInput, data *int) error
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -2404,7 +2381,7 @@ func (ec *executionContext) _HostProcess_pid(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.HostProcess().Pid(rctx, obj)
+		return obj.Pid, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2416,19 +2393,19 @@ func (ec *executionContext) _HostProcess_pid(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(uint64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNUint642uint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_pid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "HostProcess",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type Uint64 does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2448,7 +2425,7 @@ func (ec *executionContext) _HostProcess_ppid(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.HostProcess().Ppid(rctx, obj)
+		return obj.Ppid, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2460,19 +2437,19 @@ func (ec *executionContext) _HostProcess_ppid(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(uint64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNUint642uint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_ppid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "HostProcess",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type Uint64 does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9825,178 +9802,146 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pid"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().Pid(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.Pid = data
 		case "pidNEQ":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pidNEQ"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PidNeq(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PidNEQ = data
 		case "pidIn":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pidIn"))
-			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			data, err := ec.unmarshalOUint642ᚕuint64ᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PidIn(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PidIn = data
 		case "pidNotIn":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pidNotIn"))
-			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			data, err := ec.unmarshalOUint642ᚕuint64ᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PidNotIn(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PidNotIn = data
 		case "pidGT":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pidGT"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PidGt(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PidGT = data
 		case "pidGTE":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pidGTE"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PidGte(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PidGTE = data
 		case "pidLT":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pidLT"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PidLt(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PidLT = data
 		case "pidLTE":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pidLTE"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PidLte(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PidLTE = data
 		case "ppid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ppid"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().Ppid(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.Ppid = data
 		case "ppidNEQ":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ppidNEQ"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PpidNeq(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PpidNEQ = data
 		case "ppidIn":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ppidIn"))
-			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			data, err := ec.unmarshalOUint642ᚕuint64ᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PpidIn(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PpidIn = data
 		case "ppidNotIn":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ppidNotIn"))
-			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			data, err := ec.unmarshalOUint642ᚕuint64ᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PpidNotIn(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PpidNotIn = data
 		case "ppidGT":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ppidGT"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PpidGt(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PpidGT = data
 		case "ppidGTE":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ppidGTE"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PpidGte(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PpidGTE = data
 		case "ppidLT":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ppidLT"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PpidLt(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PpidLT = data
 		case "ppidLTE":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ppidLTE"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.HostProcessWhereInput().PpidLte(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.PpidLTE = data
 		case "name":
 			var err error
 
@@ -16202,77 +16147,15 @@ func (ec *executionContext) _HostProcess(ctx context.Context, sel ast.SelectionS
 				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "pid":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._HostProcess_pid(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._HostProcess_pid(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "ppid":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._HostProcess_ppid(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._HostProcess_ppid(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "name":
 			out.Values[i] = ec._HostProcess_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

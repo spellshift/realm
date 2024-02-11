@@ -19,11 +19,13 @@ func (HostProcess) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("pid").
 			Annotations(
+				entgql.Type("Uint64"),
 				entgql.OrderField("PROCESS_ID"),
 			).
 			Comment("ID of the process."),
 		field.Uint64("ppid").
 			Annotations(
+				entgql.Type("Uint64"),
 				entgql.OrderField("PARENT_PROCESS_ID"),
 			).
 			Comment("ID of the parent process."),
