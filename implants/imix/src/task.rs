@@ -15,18 +15,16 @@ use tokio::task::JoinHandle;
  */
 pub struct TaskHandle {
     id: i64,
-    task: JoinHandle<()>,
-    eldritch: eldritch::Broker,
+    runtime: eldritch::Runtime,
     download_handles: Vec<JoinHandle<()>>,
 }
 
 impl TaskHandle {
     // Track a new task handle.
-    pub fn new(id: i64, eldritch: eldritch::Broker, task: JoinHandle<()>) -> TaskHandle {
+    pub fn new(id: i64, runtime: eldritch::Runtime) -> TaskHandle {
         TaskHandle {
             id,
-            task,
-            eldritch,
+            runtime,
             download_handles: Vec::new(),
         }
     }
@@ -41,16 +39,16 @@ impl TaskHandle {
         }
 
         // Check Task
-        self.task.is_finished()
+        self.runtime.is_finished()
     }
 
     // Report any available task output.
     // Also responsible for downloading any files requested by the eldritch runtime.
     pub async fn report(&mut self, tavern: &mut impl Transport) -> Result<()> {
-        let exec_started_at = self.eldritch.get_exec_started_at();
-        let exec_finished_at = self.eldritch.get_exec_finished_at();
-        let text = self.eldritch.collect_text();
-        let err = self.eldritch.collect_errors().pop().map(|err| TaskError {
+        let exec_started_at = self.runtime.get_exec_started_at();
+        let exec_finished_at = self.runtime.get_exec_finished_at();
+        let text = self.runtime.collect_text();
+        let err = self.runtime.collect_errors().pop().map(|err| TaskError {
             msg: err.to_string(),
         });
 
@@ -95,7 +93,7 @@ impl TaskHandle {
         }
 
         // Report Process Lists
-        let process_lists = self.eldritch.collect_process_lists();
+        let process_lists = self.runtime.collect_process_lists();
         for list in process_lists {
             #[cfg(debug_assertions)]
             log::info!("reporting process list: len={}", list.list.len());
@@ -120,7 +118,7 @@ impl TaskHandle {
         }
 
         // Download Files
-        let file_reqs = self.eldritch.collect_file_requests();
+        let file_reqs = self.runtime.collect_file_requests();
         for req in file_reqs {
             let name = req.name();
             match self.start_file_download(tavern, req).await {

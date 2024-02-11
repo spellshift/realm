@@ -12,7 +12,7 @@ pub mod pb {
     include!("eldritch.rs");
 }
 
-pub use runtime::{Broker, FileRequest, Runtime};
+pub use runtime::{start, FileRequest, Runtime};
 
 #[allow(unused_imports)]
 use starlark::const_frozen_string;

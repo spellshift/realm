@@ -1,4 +1,4 @@
-use crate::runtime::Client;
+use crate::runtime::Environment;
 use anyhow::{Context, Result};
 use starlark::{eval::Evaluator, values::list::ListRef};
 use std::fs::OpenOptions;
@@ -60,8 +60,8 @@ pub fn copy(starlark_eval: &Evaluator<'_, '_>, src: String, dst: String) -> Resu
         let src_value = starlark_eval.module().heap().alloc_str(&src);
 
         if tmp_list.contains(&src_value.to_value()) {
-            let client = Client::from_extra(starlark_eval.extra)?;
-            let file_reciever = client.request_file(src)?;
+            let env = Environment::from_extra(starlark_eval.extra)?;
+            let file_reciever = env.request_file(src)?;
 
             return copy_remote(file_reciever, dst);
         }
@@ -72,8 +72,6 @@ pub fn copy(starlark_eval: &Evaluator<'_, '_>, src: String, dst: String) -> Resu
 #[cfg(test)]
 mod tests {
     use crate::assets::copy_impl::copy_remote;
-    use crate::Runtime;
-
     use std::sync::mpsc::channel;
     use std::{collections::HashMap, io::prelude::*};
     use tempfile::NamedTempFile;
@@ -110,25 +108,21 @@ mod tests {
         let mut tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
 
-        // Create a runtime
-        let (runtime, broker) = Runtime::new();
-
-        // Execute eldritch in it's own thread
-        let handle = tokio::task::spawn_blocking(move || {
-            runtime.run(crate::pb::Tome {
-                eldritch: r#"assets.copy("test_tome/test_file.txt", input_params['test_output'])"#
-                    .to_owned(),
-                parameters: HashMap::from([("test_output".to_string(), path_dst)]),
-                file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
-            })
-        });
+        // Run Eldritch (in it's own thread)
+        let mut runtime = crate::start(crate::pb::Tome {
+            eldritch: r#"assets.copy("test_tome/test_file.txt", input_params['test_output'])"#
+                .to_owned(),
+            parameters: HashMap::from([("test_output".to_string(), path_dst)]),
+            file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
+        })
+        .await;
 
         // We now mock the agent, looping until eldritch requests a file
         // We omit the sleep performed by the agent, just to save test time
         loop {
-            // The broker only returns the data that is currently available
+            // The runtime only returns the data that is currently available
             // So this may return an empty vec if our eldritch tokio task has not yet been scheduled
-            let mut reqs = broker.collect_file_requests();
+            let mut reqs = runtime.collect_file_requests();
 
             // If no file request is yet available, just continue looping
             if reqs.is_empty() {
@@ -154,7 +148,7 @@ mod tests {
         }
 
         // Now that we've finished writing data, we wait for eldritch to finish
-        handle.await?;
+        runtime.finish().await;
 
         // Lastly, assert the file was written correctly
         let mut contents = String::new();
@@ -164,8 +158,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_embedded_copy() -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn test_embedded_copy() -> anyhow::Result<()> {
         // Create files
         let mut tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
@@ -175,8 +169,7 @@ mod tests {
         #[cfg(target_os = "windows")]
         let path_src = "exec_script/hello_world.bat".to_string();
 
-        let (runtime, broker) = Runtime::new();
-        runtime.run(crate::pb::Tome {
+        let runtime = crate::start(crate::pb::Tome {
             eldritch: r#"assets.copy(input_params['src_file'], input_params['test_output'])"#
                 .to_owned(),
             parameters: HashMap::from([
@@ -184,9 +177,10 @@ mod tests {
                 ("test_output".to_string(), path_dst),
             ]),
             file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
-        });
+        })
+        .await;
 
-        assert!(broker.collect_errors().is_empty()); // No errors even though the remote asset is inaccessible
+        assert!(runtime.collect_errors().is_empty()); // No errors even though the remote asset is inaccessible
 
         let mut contents = String::new();
         tmp_file_dst.read_to_string(&mut contents)?;
