@@ -268,102 +268,10 @@ pub fn get_os(starlark_heap: &Heap) -> Result<Dict> {
 
 Splitting the code to handle inserting data into the `Dict` helps keep the code organized and also allows others looking to eldritch as an example of how things can be implemented to more clearly delineate where the technique stops and the eldritch boilerplate begins.
 
-#### Testing with `Heap`
-
-When testing you can pass a clean heap from your test function into your new function.
-
-```rust
-...
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_function() -> anyhow::Result<()>{
-        let test_heap = Heap::new();
-        let res = function(&test_heap)?;
-        assert!(res.contains("success"));
-    }
-}
-```
-
-#### Example PR
-
-Example of how to return a dictionary:
-PR #[238](https://github.com/spellshift/realm/pull/238/files) This PR implements the `sys.get_os` function which returns a dictionary of string types.
-
 ### Using `Async`
 
 ---
-When writing performant code bound by many I/O operations, it can be greatly beneficial to use `async` methods and a scheduler, to enable CPU bound operations to be performed while awaiting I/O. This can dramatically reduce latency for many applications. Using `async` for your eldritch function implementations can be difficult however, as our underlying `starlark` dependency does not yet have great `async` support. It can be done (see the below example), but it will add complexity to your code and must be implemented carefully. **YOU SHOULD NOT** implement `async` functions without having a complete understanding of how eldritch manages threads and it's own async runtime. Doing so will likely result in bugs, where you attempt to create a new `tokio::Runtime` within an existing runtime. By default, the `eldritch::Runtime` creates a new blocking thread (`tokio::task::spawn_blocking`), which helps prevent it from blocking other tome evaluation. Any results reported via the `report` library will already be concurrent with the thread that started the eldritch evaluation. **ALL ELDRITCH CODE IS SYNCHRONOUS** which means that creating an `async` function will not enable tome developers to run code in parallel, it just may allow the `tokio` scheduler to allocate CPU away from your code while it awaits an I/O operation. The primary performance benefits of using `async` is for the environment from which eldritch is being run, it is unlikely to impact the performance of any individual Tome (due to their synchronous nature).
-
-#### Async example
-
-In order to run concurrent tasks we need to build an asynchronous function. This is useful if you're building a function that needs to do two things at once or that can benefit from running discrete tasks in parallel.
-
-The starlark bindings we're using to create Eldritch are not asynchronous therefore the Eldritch function itself cannot be asynchronous.
-To get around this we use the [`tokio::runtime::Runtime.block_on()`](https://docs.rs/tokio/latest/tokio/runtime/struct.Runtime.html#method.block_on) function in conjunction with two asynchronous helpers.
-
-We'll create the following three functions to manage concurrent tasks:
-
-* `pub fn function` - Eldritch function implementation which will implement the `tokio::runtime::Runtime.block_on()` function.
-* `async fn handle_function` - Async helper function that will start, track, and join async tasks.
-* `async fn run_function` - Async function runner that gets spawned by the `handle_function` function.
-
-An example of how you might run multiple concurrent tasks asynchronously.
-
-```rust
-// Async handler for Eldritch function
-async fn run_function(argstr: String) -> Result<String> {
-    // Do async stuff
-}
-
-async fn handle_function(arg1: Vec<String>) -> Result<Vec<String>> {
-    let mut result: Vec<String> = Vec::new();
-    // This vector will hold the handles to our futures so we can retrieve the results when they finish.
-    let mut all_result_futures: Vec<_> = vec![];
-    // Iterate over all values in arg1.
-    for value in arg1 {
-        // Iterate over all listed ports.
-        let resulting_future = run_function(value);
-        all_result_futures.push(task::spawn(resulting_future));
-    }
-
-    // Await results of each task.
-    // We are not acting on scan results independently so it's okay to loop through each and only return when all have finished.
-    for task in all_result_futures {
-        match task.await? {
-            Ok(res) => result.push(res),
-            Err(err) => return anyhow::private::Err(err),
-        };
-    }
-
-    Ok(result)
-}
-
-// Non-async wrapper for our async scan.
-pub fn function(arg1: Vec<String>) -> Result<Vec<String>> {
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-
-    let response = runtime.block_on(
-        handle_function(target_cidrs)
-    );
-
-    match response {
-        Ok(result) => Ok(result),
-        Err(_) => return response,
-    }
-}
-
-// Testing ...
-```
-
-**Implementation tips:**
-
-* If running a lot of concurrent tasks the system may run out of open file descriptors. Either handle this error with a wait and retry, or proactively rate limit your tasks well below the default limits.
+When writing performant code bound by many I/O operations, it can be greatly beneficial to use `async` methods and a scheduler, to enable CPU bound operations to be performed while awaiting I/O. This can dramatically reduce latency for many applications. Using `async` for your eldritch function implementations can be difficult however, as our underlying `starlark` dependency does not yet have great `async` support. It can be done, but it will add complexity to your code and must be implemented carefully. **YOU SHOULD NOT** implement `async` functions without having a complete understanding of how eldritch manages threads and it's own async runtime. Doing so will likely result in bugs, where you attempt to create a new `tokio::Runtime` within an existing runtime. By default, the `eldritch::Runtime` creates a new blocking thread (`tokio::task::spawn_blocking`), which helps prevent it from blocking other tome evaluation. Any results reported via the `report` library will already be concurrent with the thread that started the eldritch evaluation. **ALL ELDRITCH CODE IS SYNCHRONOUS** which means that creating an `async` function will not enable tome developers to run code in parallel, it just may allow the `tokio` scheduler to allocate CPU away from your code while it awaits an I/O operation. The primary performance benefits of using `async` is for the environment from which eldritch is being run, it is unlikely to impact the performance of any individual Tome (due to their synchronous nature).
 
 #### Async Testing
 
@@ -418,9 +326,3 @@ mod tests {
     }
 }
 ```
-
-#### Async PR example
-
-An example of how async can be used in testing: [PR for the Eldritch `pivot.ncat` implementation](https://github.com/spellshift/realm/pull/44/files).
-
-An example of testing async functions with multiple concurrent functions: [PR for the Eldritch `pivot.port_scan` implementation](https://github.com/spellshift/realm/pull/45/files).

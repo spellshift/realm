@@ -86,13 +86,6 @@ fn methods(builder: &mut MethodsBuilder) {
         bind_proxy_impl::bind_proxy(listen_address, listen_port, username, password)?;
         Ok(NoneType{})
     }
-
-    // This + smb_copy should likely move to file or rolled into the download function  or made into an upload function.
-    // #[allow(unused_variables)]
-    // fn ssh_copy(this: &PivotLibrary, target: String, port: i32, username: String, password: String, key: String, src: String, dst: String) ->  String {
-    //   ssh_copy_impl::ssh_copy(target, port, username, password, key, command, shell_path, src, dst)?;
-    //   Ok(NoneType{})
-    // }
 }
 
 // SSH Client utils
