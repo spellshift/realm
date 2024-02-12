@@ -21,7 +21,6 @@ jobs:
 ###
   upload_imix_windows:
     name: 🚀 [Windows] Imix
-    needs: create_release # Depends on release being created for upload URL
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -68,7 +67,6 @@ jobs:
 ###
   upload_golem_windows:
       name: 🚀 [Windows] Golem
-      needs: create_release # Depends on release being created for upload URL
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
