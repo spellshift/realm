@@ -94,7 +94,7 @@ jobs:
           working-directory: ./bin/reflective_loader/
           run: cargo build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
         - name: 🔨 Build Golem
-          run: cargo build --bin=golem --release --target=x86_64-pc-windows-gnu
+          run: cargo build --bin=golem --release --verbose --target=x86_64-pc-windows-gnu
           working-directory: ./implants/golem
           env:
             CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
