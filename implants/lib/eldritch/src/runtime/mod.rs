@@ -158,11 +158,7 @@ mod tests {
 
         let out = runtime.collect_text();
         let err = runtime.collect_errors().pop();
-        assert!(
-            err.is_none(),
-            "failed with err {}",
-            err.unwrap().to_string()
-        );
+        assert!(err.is_none(), "failed with err {}", err.unwrap());
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
         assert_eq!("ok", out.join(""));
         Ok(())

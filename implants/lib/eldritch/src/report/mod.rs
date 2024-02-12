@@ -1,58 +1,28 @@
 mod process_list_impl;
 
-use allocative::Allocative;
-use derive_more::Display;
-use serde::{Serialize, Serializer};
-use starlark::collections::SmallMap;
-use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
-use starlark::eval::Evaluator;
-use starlark::values::list::UnpackList;
-use starlark::values::none::NoneType;
-use starlark::values::{
-    starlark_value, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+use starlark::{
+    collections::SmallMap,
+    environment::MethodsBuilder,
+    eval::Evaluator,
+    starlark_module,
+    values::{list::UnpackList, none::NoneType, starlark_value, Value},
 };
-use starlark::{starlark_module, starlark_simple_value};
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
-#[display(fmt = "ReportLibrary")]
-pub struct ReportLibrary();
-starlark_simple_value!(ReportLibrary);
+/*
+ * Define our library for this module.
+ */
+crate::eldritch_lib!(ReportLibrary, "report_library");
 
-#[allow(non_upper_case_globals)]
-#[starlark_value(type = "report_library")]
-impl<'v> StarlarkValue<'v> for ReportLibrary {
-    fn get_methods() -> Option<&'static Methods> {
-        static RES: MethodsStatic = MethodsStatic::new();
-        RES.methods(methods)
-    }
-}
-
-impl Serialize for ReportLibrary {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_none()
-    }
-}
-
-impl<'v> UnpackValue<'v> for ReportLibrary {
-    fn expected() -> String {
-        ReportLibrary::get_type_value_static().as_str().to_owned()
-    }
-
-    fn unpack_value(value: Value<'v>) -> Option<Self> {
-        Some(*value.downcast_ref::<ReportLibrary>().unwrap())
-    }
-}
-
-// This is where all of the "report.X" impl methods are bound
+/*
+ * Below, we define starlark wrappers for all of our library methods.
+ * The functions must be defined here to be present on our library.
+ */
 #[starlark_module]
 #[rustfmt::skip]
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
-    fn process_list(this: ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, process_list: UnpackList<SmallMap<String, Value>>) -> anyhow::Result<NoneType> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+    #[allow(unused_variables)]
+    fn process_list(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, process_list: UnpackList<SmallMap<String, Value>>) -> anyhow::Result<NoneType> {
         process_list_impl::process_list(starlark_eval, process_list.items)?;
         Ok(NoneType{})
     }
