@@ -37,6 +37,7 @@ jobs:
           toolchain: nightly-2024-02-11
           default: false
           profile: minimal
+          target: x86_64-pc-windows-gnu
       - name: ⚡ Setup Rust (x86_64-pc-windows-gnu)
         run: |
           sudo apt update && \
