@@ -40,8 +40,6 @@ jobs:
         run: |
           sudo apt update && \
           sudo apt install -y gcc-mingw-w64 && \
-#          rustup target add x86_64-pc-windows-gnu --toolchain '1.76.0' && \
-#          rustup target add x86_64-pc-windows-gnu --toolchain 'nightly-2024-02-11'
           rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-pc-windows-msvc
       - name: 🔨 Build Loader
         working-directory: ./bin/reflective_loader/
@@ -87,8 +85,6 @@ jobs:
           run: |
             sudo apt update && \
             sudo apt install -y gcc-mingw-w64 && \
-#            rustup target add x86_64-pc-windows-gnu --toolchain '1.76.0' && \
-#            rustup target add x86_64-pc-windows-gnu --toolchain 'nightly-2024-02-11'
             rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-pc-windows-msvc
         - name: 🔨 Build Loader
           working-directory: ./bin/reflective_loader/
