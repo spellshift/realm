@@ -13,7 +13,7 @@ fn copy_local(src: String, dst: String) -> Result<()> {
 
     match fs::write(dst, src_file) {
         Ok(_) => Ok(()),
-        Err(local_err) => Err(local_err.try_into()?),
+        Err(local_err) => Err(anyhow::anyhow!(local_err)),
     }
 }
 

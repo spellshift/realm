@@ -24,7 +24,7 @@ macro_rules! insert_dict_kv {
         $dict.insert_hashed(
             match const_frozen_string!($key).to_value().get_hashed() {
                 Ok(v) => v,
-                Err(err) => {return Err(err.into_anyhow())},
+                Err(err) => return Err(err.into_anyhow()),
             },
             val_val.to_value(),
         );
@@ -33,7 +33,7 @@ macro_rules! insert_dict_kv {
         $dict.insert_hashed(
             match const_frozen_string!($key).to_value().get_hashed() {
                 Ok(v) => v,
-                Err(err) => {return Err(err.into_anyhow())},
+                Err(err) => return Err(err.into_anyhow()),
             },
             $heap.alloc($val),
         );
@@ -42,7 +42,7 @@ macro_rules! insert_dict_kv {
         $dict.insert_hashed(
             match const_frozen_string!($key).to_value().get_hashed() {
                 Ok(v) => v,
-                Err(err) => {return Err(err.into_anyhow())},
+                Err(err) => return Err(err.into_anyhow()),
             },
             $heap.alloc($val),
         );
@@ -51,7 +51,7 @@ macro_rules! insert_dict_kv {
         $dict.insert_hashed(
             match const_frozen_string!($key).to_value().get_hashed() {
                 Ok(v) => v,
-                Err(err) => {return Err(err.into_anyhow())},
+                Err(err) => return Err(err.into_anyhow()),
             },
             $heap.alloc($val),
         );
@@ -60,7 +60,7 @@ macro_rules! insert_dict_kv {
         $dict.insert_hashed(
             match const_frozen_string!($key).to_value().get_hashed() {
                 Ok(v) => v,
-                Err(err) => {return Err(err.into_anyhow())},
+                Err(err) => return Err(err.into_anyhow()),
             },
             Value::new_none(),
         );
@@ -69,10 +69,38 @@ macro_rules! insert_dict_kv {
         $dict.insert_hashed(
             match const_frozen_string!($key).to_value().get_hashed() {
                 Ok(v) => v,
-                Err(err) => {return Err(err.into_anyhow())},
+                Err(err) => return Err(err.into_anyhow()),
             },
             $heap.alloc($val),
         );
     };
 }
 pub(crate) use insert_dict_kv;
+
+macro_rules! eldritch_lib {
+    ($name:ident, $t:literal) => {
+        #[derive(
+            Copy,
+            Clone,
+            Debug,
+            PartialEq,
+            derive_more::Display,
+            starlark::values::ProvidesStaticType,
+            starlark::values::NoSerialize,
+            allocative::Allocative,
+        )]
+        #[display(fmt = stringify!($name))]
+        pub struct $name;
+        starlark::starlark_simple_value!($name);
+
+        #[starlark_value(type = $t)]
+        impl<'v> starlark::values::StarlarkValue<'v> for $name {
+            fn get_methods() -> Option<&'static starlark::environment::Methods> {
+                static RES: starlark::environment::MethodsStatic =
+                    starlark::environment::MethodsStatic::new();
+                RES.methods(methods)
+            }
+        }
+    };
+}
+pub(crate) use eldritch_lib;

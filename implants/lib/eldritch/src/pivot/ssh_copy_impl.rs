@@ -15,7 +15,7 @@ async fn handle_ssh_copy(
     timeout: Option<u32>,
 ) -> Result<()> {
     let mut ssh = tokio::time::timeout(
-        std::time::Duration::from_secs(timeout.unwrap_or(3).try_into()?),
+        std::time::Duration::from_secs(timeout.unwrap_or(3) as u64),
         Session::connect(
             username,
             password,
