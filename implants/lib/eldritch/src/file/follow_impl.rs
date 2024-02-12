@@ -31,7 +31,10 @@ pub fn follow<'v>(path: String, f: Value<'v>, eval: &mut Evaluator<'v, '_>) -> R
         let reader = BufReader::new(&file);
         for line in reader.lines() {
             let val = starlark_heap.alloc(line?.to_string());
-            eval.eval_function(f, &[val], &[])?;
+            match eval.eval_function(f, &[val], &[]) {
+                Ok(_) => {},
+                Err(err) => {return Err(err.into_anyhow())},
+            };
         }
     }
     Ok(())

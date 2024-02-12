@@ -17,13 +17,16 @@ use derive_more::Display;
 use russh::{client, Disconnect};
 use russh_keys::{decode_secret_key, key};
 use russh_sftp::client::SftpSession;
-use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
-use starlark::values::dict::Dict;
-use starlark::values::none::NoneType;
-use starlark::values::{
-    starlark_value, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+use starlark::{
+    starlark_module, starlark_simple_value,
+    environment::{Methods, MethodsBuilder, MethodsStatic},
+    values::{
+        dict::Dict,
+        none::NoneType,
+        list::UnpackList,
+        starlark_value, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+    }
 };
-use starlark::{starlark_module, starlark_simple_value};
 
 use serde::{Serialize, Serializer};
 
@@ -74,26 +77,26 @@ fn methods(builder: &mut MethodsBuilder) {
         ssh_copy_impl::ssh_copy(target, port, src, dst, username, password, key, key_password, timeout)?;
         Ok(NoneType{})
     }
-    fn ssh_password_spray(this:  PivotLibrary, targets: Vec<String>, port: i32, credentials: Vec<String>, keys: Vec<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
+    fn ssh_password_spray(this:  PivotLibrary, targets: UnpackList<String>, port: i32, credentials: UnpackList<String>, keys: UnpackList<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        ssh_password_spray_impl::ssh_password_spray(targets, port, credentials, keys, command, shell_path)
+        ssh_password_spray_impl::ssh_password_spray(targets.items, port, credentials.items, keys.items, command, shell_path)
     }
     fn smb_exec(this:  PivotLibrary, target: String, port: i32, username: String, password: String, hash: String, command: String) ->  anyhow::Result<String> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         smb_exec_impl::smb_exec(target, port, username, password, hash, command)
     }
     // May want these too: PSRemoting, WMI, WinRM
-    fn port_scan<'v>(this:  PivotLibrary, starlark_heap: &'v Heap, target_cidrs: Vec<String>, ports: Vec<i32>, protocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict<'v>>> {
+    fn port_scan<'v>(this:  PivotLibrary, starlark_heap: &'v Heap, target_cidrs: UnpackList<String>, ports: UnpackList<i32>, protocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        port_scan_impl::port_scan(starlark_heap, target_cidrs, ports, protocol, timeout)
+        port_scan_impl::port_scan(starlark_heap, target_cidrs.items, ports.items, protocol, timeout)
     }
     fn arp_scan<'v>(
         this: PivotLibrary,
         starlark_heap: &'v Heap,
-        target_cidrs: Vec<String>,
+        target_cidrs: UnpackList<String>,
     ) -> anyhow::Result<Vec<Dict<'v>>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        arp_scan_impl::arp_scan(starlark_heap, target_cidrs)
+        arp_scan_impl::arp_scan(starlark_heap, target_cidrs.items)
     }
     fn port_forward(this:  PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, protocol: String) ->  anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
