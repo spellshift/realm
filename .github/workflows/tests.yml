@@ -50,11 +50,11 @@ jobs:
     - name: Setup Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly-2023-09-04
+        toolchain: '1.76.0'
         default: true
         profile: minimal
     - name: Install rust toolchain for loader 💉
-      run: rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc && rustup component add rust-src --toolchain nightly-2023-09-04-x86_64-pc-windows-msvc
+      run: rustup toolchain install '1.76.0-x86_64-pc-windows-msvc' && rustup component add rust-src --toolchain '1.76.0-x86_64-pc-windows-msvc'
     - if: matrix.os == 'windows-latest'
       name: Build reflective loader
       run: cd ./bin/reflective_loader/ && cargo build --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
