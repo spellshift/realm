@@ -22,37 +22,55 @@ macro_rules! insert_dict_kv {
         #[allow(clippy::unnecessary_to_owned)]
         let val_val = $heap.alloc_str(&$val);
         $dict.insert_hashed(
-            const_frozen_string!($key).to_value().get_hashed()?,
+            match const_frozen_string!($key).to_value().get_hashed() {
+                Ok(v) => v,
+                Err(err) => {return Err(err.into_anyhow())},
+            },
             val_val.to_value(),
         );
     };
     ($dict:expr, $heap:expr, $key:expr, $val:expr, i32) => {
         $dict.insert_hashed(
-            const_frozen_string!($key).to_value().get_hashed()?,
+            match const_frozen_string!($key).to_value().get_hashed() {
+                Ok(v) => v,
+                Err(err) => {return Err(err.into_anyhow())},
+            },
             $heap.alloc($val),
         );
     };
     ($dict:expr, $heap:expr, $key:expr, $val:expr, u32) => {
         $dict.insert_hashed(
-            const_frozen_string!($key).to_value().get_hashed()?,
+            match const_frozen_string!($key).to_value().get_hashed() {
+                Ok(v) => v,
+                Err(err) => {return Err(err.into_anyhow())},
+            },
             $heap.alloc($val),
         );
     };
     ($dict:expr, $heap:expr, $key:expr, $val:expr, u64) => {
         $dict.insert_hashed(
-            const_frozen_string!($key).to_value().get_hashed()?,
+            match const_frozen_string!($key).to_value().get_hashed() {
+                Ok(v) => v,
+                Err(err) => {return Err(err.into_anyhow())},
+            },
             $heap.alloc($val),
         );
     };
     ($dict:expr, $heap:expr, $key:expr, None) => {
         $dict.insert_hashed(
-            const_frozen_string!($key).to_value().get_hashed()?,
+            match const_frozen_string!($key).to_value().get_hashed() {
+                Ok(v) => v,
+                Err(err) => {return Err(err.into_anyhow())},
+            },
             Value::new_none(),
         );
     };
     ($dict:expr, $heap:expr, $key:expr, $val:expr, Vec<_>) => {
         $dict.insert_hashed(
-            const_frozen_string!($key).to_value().get_hashed()?,
+            match const_frozen_string!($key).to_value().get_hashed() {
+                Ok(v) => v,
+                Err(err) => {return Err(err.into_anyhow())},
+            },
             $heap.alloc($val),
         );
     };
