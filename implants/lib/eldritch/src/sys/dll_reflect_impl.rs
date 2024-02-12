@@ -406,7 +406,7 @@ mod tests {
         eval::Evaluator,
         starlark_module,
         syntax::{AstModule, Dialect},
-        values::{dict::Dict, AllocValue, Value},
+        values::{dict::Dict, list::UnpackList, AllocValue, Value},
     };
     use std::{fs, path::Path, process::Command, thread, time};
     use sysinfo::{Pid, PidExt, ProcessExt, Signal, System, SystemExt};
@@ -537,17 +537,17 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_in
             &Dialect::Standard,
         ) {
             Ok(res) => ast = res,
-            Err(err) => return Err(err),
+            Err(err) => return Err(err.into_anyhow()),
         }
 
         #[starlark_module]
         fn func_dll_reflect(builder: &mut GlobalsBuilder) {
             fn func_dll_reflect(
-                dll_bytes: Vec<u32>,
+                dll_bytes: UnpackList<u32>,
                 pid: u32,
                 function_name: String,
             ) -> anyhow::Result<NoneType> {
-                dll_reflect(dll_bytes, pid, function_name)
+                dll_reflect(dll_bytes.items, pid, function_name)
             }
         }
 
@@ -560,7 +560,8 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_in
             .heap()
             .alloc_str("target_pid")
             .to_value()
-            .get_hashed()?;
+            .get_hashed()
+            .map_err(|err| err.into_anyhow())?;
         let target_pid_value = module.heap().alloc(target_pid);
         input_params.insert_hashed(target_pid_key, target_pid_value);
 
@@ -568,7 +569,8 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_in
             .heap()
             .alloc_str("dll_bytes")
             .to_value()
-            .get_hashed()?;
+            .get_hashed()
+            .map_err(|err| err.into_anyhow())?;
         let mut tmp_list: Vec<Value> = Vec::new();
         for byte in test_dll_bytes {
             tmp_list.push(module.heap().alloc(*byte as i32));

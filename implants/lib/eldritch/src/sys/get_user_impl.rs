@@ -122,7 +122,11 @@ mod tests {
             assert!(keys.contains(&"egid"));
             assert!(keys.contains(&"gid"));
         }
-        let uid_data: Value<'_> = res.get(const_frozen_string!("uid").to_value())?.unwrap();
+        let uid_data: Value<'_> = match res.get(const_frozen_string!("uid").to_value()) {
+            Ok(v) => Ok(v),
+            Err(err) => Err(err.into_anyhow()),
+        }?
+        .unwrap();
         let uid_data_map: SmallMap<String, Value<'_>> = SmallMap::unpack_value(uid_data).unwrap();
         let uid_data_keys: Vec<&str> = uid_data_map.keys().map(|key| &key[..]).collect();
         assert!(uid_data_keys.contains(&"uid"));
@@ -130,7 +134,11 @@ mod tests {
         assert!(uid_data_keys.contains(&"gid"));
         assert!(uid_data_keys.contains(&"groups"));
         if !cfg!(target_os = "windows") {
-            let euid_data: Value<'_> = res.get(const_frozen_string!("euid").to_value())?.unwrap();
+            let euid_data: Value<'_> = match res.get(const_frozen_string!("euid").to_value()) {
+                Ok(v) => Ok(v),
+                Err(err) => Err(err.into_anyhow()),
+            }?
+            .unwrap();
             let euid_data_map: SmallMap<String, Value<'_>> =
                 SmallMap::unpack_value(euid_data).unwrap();
             let euid_data_keys: Vec<&str> = euid_data_map.keys().map(|key| &key[..]).collect();

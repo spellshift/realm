@@ -18,15 +18,14 @@ mod write_reg_str_impl;
 
 use allocative::Allocative;
 use derive_more::Display;
-
-use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
-use starlark::values::none::NoneType;
-use starlark::values::starlark_value;
-use starlark::values::{
-    dict::Dict, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+use starlark::{
+    starlark_module, starlark_simple_value,
+    environment::{Methods, MethodsBuilder, MethodsStatic},
+    values::{
+        list::UnpackList, starlark_value, none::NoneType,
+        dict::Dict, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
+    }
 };
-use starlark::{starlark_module, starlark_simple_value};
-
 use serde::{Serialize, Serializer};
 
 struct CommandOutput {
@@ -73,9 +72,9 @@ impl<'v> UnpackValue<'v> for SysLibrary {
 #[rustfmt::skip]
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
-    fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: Vec<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
+    fn exec<'v>(this: SysLibrary, starlark_heap: &'v Heap, path: String, args: UnpackList<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        exec_impl::exec(starlark_heap, path, args, disown)
+        exec_impl::exec(starlark_heap, path, args.items, disown)
     }
     fn get_os<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
@@ -85,9 +84,9 @@ fn methods(builder: &mut MethodsBuilder) {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         dll_inject_impl::dll_inject(dll_path, pid)
     }
-    fn dll_reflect(this: SysLibrary, dll_bytes: Vec<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
+    fn dll_reflect(this: SysLibrary, dll_bytes: UnpackList<u32>, pid: u32, function_name: String) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        dll_reflect_impl::dll_reflect(dll_bytes, pid, function_name)
+        dll_reflect_impl::dll_reflect(dll_bytes.items, pid, function_name)
     }
     fn get_env<'v>(this: SysLibrary, starlark_heap: &'v Heap) -> anyhow::Result<Dict<'v>> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }

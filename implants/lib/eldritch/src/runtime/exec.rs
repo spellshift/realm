@@ -116,10 +116,11 @@ fn run_impl(env: Environment, tome: &Tome) -> Result<()> {
     eval.extra = Some(&env);
     eval.set_print_handler(&env);
 
-    eval.eval_module(ast, &globals)
-        .context("failed to evaluate tome")?;
+    match eval.eval_module(ast, &globals) {
+        Ok(_) =>  Ok(()),
+        Err(err) => Err(err.into_anyhow().context("failed to evaluate tome")),
+    }
 
-    Ok(())
 }
 
 /*
@@ -168,12 +169,12 @@ impl Runtime {
             LibraryExtension::Map,
             LibraryExtension::Filter,
             LibraryExtension::Partial,
-            LibraryExtension::ExperimentalRegex,
             LibraryExtension::Debug,
             LibraryExtension::Print,
+            LibraryExtension::Pprint,
             LibraryExtension::Breakpoint,
             LibraryExtension::Json,
-            LibraryExtension::Abs,
+            LibraryExtension::CallStack,
             LibraryExtension::Typing,
         ])
         .with(eldritch)
@@ -184,7 +185,10 @@ impl Runtime {
      * Parse an Eldritch tome into a starlark Abstract Syntax Tree (AST) Module.
      */
     fn parse(tome: &Tome) -> anyhow::Result<AstModule> {
-        AstModule::parse("main", tome.eldritch.to_string(), &Dialect::Extended)
+        match AstModule::parse("main", tome.eldritch.to_string(), &Dialect::Extended) {
+            Ok(v) => Ok(v),
+            Err(err) => Err(err.into_anyhow()),
+        }
     }
 
     /*

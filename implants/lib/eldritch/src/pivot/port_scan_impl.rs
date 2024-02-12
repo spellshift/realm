@@ -414,7 +414,7 @@ mod tests {
     use starlark::eval::Evaluator;
     use starlark::starlark_module;
     use starlark::syntax::{AstModule, Dialect};
-    use starlark::values::Value;
+    use starlark::values::{list::UnpackList, Value};
     use tokio::io::copy;
     use tokio::net::TcpListener;
     use tokio::task;
@@ -696,18 +696,18 @@ res
         let ast =
             match AstModule::parse("test.eldritch", test_content.to_owned(), &Dialect::Extended) {
                 Ok(res) => res,
-                Err(err) => return Err(err),
+                Err(err) => return Err(err.into_anyhow()),
             };
 
         #[starlark_module]
         #[allow(clippy::needless_lifetimes)]
         fn func_port_scan(builder: &mut GlobalsBuilder) {
             fn func_port_scan<'v>(
-                ports: Vec<i32>,
+                ports: UnpackList<i32>,
                 starlark_heap: &'v Heap,
             ) -> anyhow::Result<Vec<Dict<'v>>> {
                 let test_cidr = vec!["127.0.0.1/32".to_string()];
-                port_scan(starlark_heap, test_cidr, ports, TCP.to_string(), 3)
+                port_scan(starlark_heap, test_cidr, ports.items, TCP.to_string(), 3)
             }
         }
 
@@ -715,7 +715,10 @@ res
         let module: Module = Module::new();
 
         let mut eval: Evaluator = Evaluator::new(&module);
-        let res: Value = eval.eval_module(ast, &globals)?;
+        let res: Value = match eval.eval_module(ast, &globals) {
+            Ok(v) => Ok(v),
+            Err(err) => Err(err.into_anyhow()),
+        }?;
         let _res_string = res.to_string();
         // Didn't panic yay!
         Ok(())

@@ -6,6 +6,7 @@ use serde::{Serialize, Serializer};
 use starlark::collections::SmallMap;
 use starlark::environment::{Methods, MethodsBuilder, MethodsStatic};
 use starlark::eval::Evaluator;
+use starlark::values::list::UnpackList;
 use starlark::values::none::NoneType;
 use starlark::values::{
     starlark_value, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
@@ -50,9 +51,9 @@ impl<'v> UnpackValue<'v> for ReportLibrary {
 #[rustfmt::skip]
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
-    fn process_list(this: ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, process_list: Vec<SmallMap<String, Value>>) -> anyhow::Result<NoneType> {
+    fn process_list(this: ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, process_list: UnpackList<SmallMap<String, Value>>) -> anyhow::Result<NoneType> {
         if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        process_list_impl::process_list(starlark_eval, process_list)?;
+        process_list_impl::process_list(starlark_eval, process_list.items)?;
         Ok(NoneType{})
     }
 }
