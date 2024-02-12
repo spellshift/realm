@@ -55,7 +55,7 @@ jobs:
           CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
           RUSTFLAGS: "-C target-feature=+crt-static"
       - name: 🔨 Build Imix (DLL)
-        run: cargo build --lib --release
+        run: cargo build --lib --release --verbose --target=x86_64-pc-windows-gnu
         working-directory: ./implants/imix
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
