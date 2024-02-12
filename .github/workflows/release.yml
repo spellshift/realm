@@ -24,6 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+          name: 👾 Disable defender
+          shell: powershell
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -40,7 +43,8 @@ jobs:
         run: |
           sudo apt update && \
           sudo apt install -y gcc-mingw-w64 && \
-          rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-pc-windows-msvc
+          rustup target add x86_64-pc-windows-gnu --toolchain 'nightly-2024-02-11'
+          rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-pc-windows-gnu
       - name: 🔨 Build Loader
         working-directory: ./bin/reflective_loader/
         run: cargo build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
@@ -69,6 +73,9 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
+        - run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+          name: 👾 Disable defender
+          shell: powershell
         - name: 🛠️ Setup Rust Toolchain
           uses: actions-rs/toolchain@v1
           with:
@@ -85,7 +92,8 @@ jobs:
           run: |
             sudo apt update && \
             sudo apt install -y gcc-mingw-w64 && \
-            rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-pc-windows-msvc
+            rustup target add x86_64-pc-windows-gnu --toolchain 'nightly-2024-02-11'
+            rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-pc-windows-gnu
         - name: 🔨 Build Loader
           working-directory: ./bin/reflective_loader/
           run: cargo build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
