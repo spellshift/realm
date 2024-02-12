@@ -30,6 +30,7 @@ jobs:
           toolchain: '1.76.0'
           default: true
           profile: minimal
+          target: x86_64-pc-windows-gnu
       - name: 🛠️ Setup Rust Toolchain (Loader)
         uses: actions-rs/toolchain@v1
         with:
