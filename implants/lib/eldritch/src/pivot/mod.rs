@@ -8,117 +8,84 @@ mod ssh_copy_impl;
 mod ssh_exec_impl;
 mod ssh_password_spray_impl;
 
-use std::sync::Arc;
-
-use allocative::Allocative;
 use anyhow::Result;
 use async_trait::async_trait;
-use derive_more::Display;
 use russh::{client, Disconnect};
 use russh_keys::{decode_secret_key, key};
 use russh_sftp::client::SftpSession;
 use starlark::{
-    starlark_module, starlark_simple_value,
-    environment::{Methods, MethodsBuilder, MethodsStatic},
-    values::{
-        dict::Dict,
-        none::NoneType,
-        list::UnpackList,
-        starlark_value, Heap, ProvidesStaticType, StarlarkValue, UnpackValue, Value, ValueLike,
-    }
+    environment::MethodsBuilder,
+    starlark_module,
+    values::{dict::Dict, list::UnpackList, none::NoneType, starlark_value, Heap},
 };
+use std::sync::Arc;
 
-use serde::{Serialize, Serializer};
+/*
+ * Define our library for this module.
+ */
+crate::eldritch_lib!(PivotLibrary, "pivot_library");
 
-#[derive(Copy, Clone, Debug, PartialEq, Display, ProvidesStaticType, Allocative)]
-#[display(fmt = "PivotLibrary")]
-pub struct PivotLibrary();
-starlark_simple_value!(PivotLibrary);
-
-#[allow(non_upper_case_globals)]
-#[starlark_value(type = "pivot_library")]
-impl<'v> StarlarkValue<'v> for PivotLibrary {
-    fn get_methods() -> Option<&'static Methods> {
-        static RES: MethodsStatic = MethodsStatic::new();
-        RES.methods(methods)
-    }
-}
-
-impl Serialize for PivotLibrary {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_none()
-    }
-}
-
-impl<'v> UnpackValue<'v> for PivotLibrary {
-    fn expected() -> String {
-        PivotLibrary::get_type_value_static().as_str().to_owned()
-    }
-
-    fn unpack_value(value: Value<'v>) -> Option<Self> {
-        Some(*value.downcast_ref::<PivotLibrary>().unwrap())
-    }
-}
-
-// This is where all of the "file.X" impl methods are bound
+/*
+ * Below, we define starlark wrappers for all of our library methods.
+ * The functions must be defined here to be present on our library.
+ */
 #[starlark_module]
 #[rustfmt::skip]
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
-    fn ssh_exec<'v>(this: PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<Dict<'v>> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+    #[allow(unused_variables)]
+    fn ssh_exec<'v>(this: &PivotLibrary, starlark_heap: &'v Heap, target: String, port: i32, command: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<Dict<'v>> {
         ssh_exec_impl::ssh_exec(starlark_heap, target, port, command, username, password, key, key_password, timeout)
     }
-    fn ssh_copy<'v>(this: PivotLibrary, target: String, port: i32, src: String, dst: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<NoneType> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+
+    #[allow(unused_variables)]
+    fn ssh_copy<'v>(this: &PivotLibrary, target: String, port: i32, src: String, dst: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<NoneType> {
         ssh_copy_impl::ssh_copy(target, port, src, dst, username, password, key, key_password, timeout)?;
         Ok(NoneType{})
     }
-    fn ssh_password_spray(this:  PivotLibrary, targets: UnpackList<String>, port: i32, credentials: UnpackList<String>, keys: UnpackList<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+
+    #[allow(unused_variables)]
+    fn ssh_password_spray(this: &PivotLibrary, targets: UnpackList<String>, port: i32, credentials: UnpackList<String>, keys: UnpackList<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
         ssh_password_spray_impl::ssh_password_spray(targets.items, port, credentials.items, keys.items, command, shell_path)
     }
-    fn smb_exec(this:  PivotLibrary, target: String, port: i32, username: String, password: String, hash: String, command: String) ->  anyhow::Result<String> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+
+    #[allow(unused_variables)]
+    fn smb_exec(this: &PivotLibrary, target: String, port: i32, username: String, password: String, hash: String, command: String) ->  anyhow::Result<String> {
         smb_exec_impl::smb_exec(target, port, username, password, hash, command)
     }
-    // May want these too: PSRemoting, WMI, WinRM
-    fn port_scan<'v>(this:  PivotLibrary, starlark_heap: &'v Heap, target_cidrs: UnpackList<String>, ports: UnpackList<i32>, protocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict<'v>>> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+
+    #[allow(unused_variables)]
+    fn port_scan<'v>(this: &PivotLibrary, starlark_heap: &'v Heap, target_cidrs: UnpackList<String>, ports: UnpackList<i32>, protocol: String, timeout:  i32) ->  anyhow::Result<Vec<Dict<'v>>> {
+        // May want these too: PSRemoting, WMI, WinRM
         port_scan_impl::port_scan(starlark_heap, target_cidrs.items, ports.items, protocol, timeout)
     }
+
+    #[allow(unused_variables)]
     fn arp_scan<'v>(
-        this: PivotLibrary,
+        this: &PivotLibrary,
         starlark_heap: &'v Heap,
         target_cidrs: UnpackList<String>,
     ) -> anyhow::Result<Vec<Dict<'v>>> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
         arp_scan_impl::arp_scan(starlark_heap, target_cidrs.items)
     }
-    fn port_forward(this:  PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, protocol: String) ->  anyhow::Result<NoneType> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+
+    #[allow(unused_variables)]
+    fn port_forward(this: &PivotLibrary, listen_address: String, listen_port: i32, forward_address: String, forward_port: i32, protocol: String) ->  anyhow::Result<NoneType> {
         port_forward_impl::port_forward(listen_address, listen_port, forward_address, forward_port, protocol)?;
         Ok(NoneType{})
     }
-    fn ncat(this:  PivotLibrary, address: String, port: i32, data: String, protocol: String) ->  anyhow::Result<String> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+
+    #[allow(unused_variables)]
+    fn ncat(this: &PivotLibrary, address: String, port: i32, data: String, protocol: String) ->  anyhow::Result<String> {
         ncat_impl::ncat(address, port, data, protocol)
     }
-    // Seems to have the best protocol support - https://github.com/ajmwagar/merino
-    fn bind_proxy(this:  PivotLibrary, listen_address: String, listen_port: i32, username: String, password: String) ->  anyhow::Result<NoneType> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
+
+    #[allow(unused_variables)]
+    fn bind_proxy(this: &PivotLibrary, listen_address: String, listen_port: i32, username: String, password: String) ->  anyhow::Result<NoneType> {
+        // Seems to have the best protocol support - https://github.com/ajmwagar/merino
         bind_proxy_impl::bind_proxy(listen_address, listen_port, username, password)?;
         Ok(NoneType{})
     }
-
-    // This + smb_copy should likely move to file or rolled into the download function  or made into an upload function.
-    // fn ssh_copy(_this:  PivotLibrary, target: String, port: i32, username: String, password: String, key: String, src: String, dst: String) ->  String {
-    //   ssh_copy_impl::ssh_copy(target, port, username, password, key, command, shell_path, src, dst)?;
-    //   Ok(NoneType{})
-    // }
 }
 
 // SSH Client utils
@@ -222,6 +189,6 @@ struct CommandResult {
 
 impl CommandResult {
     fn output(&self) -> Result<String> {
-        Ok(String::from_utf8_lossy(&self.output).try_into()?)
+        Ok(String::from_utf8_lossy(&self.output).to_string())
     }
 }

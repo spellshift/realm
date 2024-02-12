@@ -117,10 +117,9 @@ fn run_impl(env: Environment, tome: &Tome) -> Result<()> {
     eval.set_print_handler(&env);
 
     match eval.eval_module(ast, &globals) {
-        Ok(_) =>  Ok(()),
+        Ok(_) => Ok(()),
         Err(err) => Err(err.into_anyhow().context("failed to evaluate tome")),
     }
-
 }
 
 /*
@@ -152,14 +151,14 @@ impl Runtime {
     pub fn globals() -> Globals {
         #[starlark_module]
         fn eldritch(builder: &mut GlobalsBuilder) {
-            const file: FileLibrary = FileLibrary();
-            const process: ProcessLibrary = ProcessLibrary();
-            const sys: SysLibrary = SysLibrary();
-            const pivot: PivotLibrary = PivotLibrary();
-            const assets: AssetsLibrary = AssetsLibrary();
-            const crypto: CryptoLibrary = CryptoLibrary();
-            const time: TimeLibrary = TimeLibrary();
-            const report: ReportLibrary = ReportLibrary();
+            const file: FileLibrary = FileLibrary;
+            const process: ProcessLibrary = ProcessLibrary;
+            const sys: SysLibrary = SysLibrary;
+            const pivot: PivotLibrary = PivotLibrary;
+            const assets: AssetsLibrary = AssetsLibrary;
+            const crypto: CryptoLibrary = CryptoLibrary;
+            const time: TimeLibrary = TimeLibrary;
+            const report: ReportLibrary = ReportLibrary;
         }
 
         GlobalsBuilder::extended_by(&[

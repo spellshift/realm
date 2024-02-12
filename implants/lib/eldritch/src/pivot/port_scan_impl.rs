@@ -64,11 +64,7 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     // Split on / to get host and cidr bits.
     let tmpvec: Vec<&str> = target_cidr.split('/').collect();
     let host = tmpvec.first().context("Index 0 not found")?.to_string();
-    let bits: u32 = tmpvec
-        .get(1)
-        .context("Index 1 not found")?
-        .parse::<u8>()?
-        .try_into()?;
+    let bits: u32 = tmpvec.get(1).context("Index 1 not found")?.parse::<u8>()? as u32;
 
     // Define our vector representations.
     let mut addr: Vec<u64> = vec![0, 0, 0, 0];
@@ -76,7 +72,7 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     let mut bcas: Vec<u32> = vec![0, 0, 0, 0];
     let mut netw: Vec<u32> = vec![0, 0, 0, 0];
 
-    let cidr: u64 = bits.try_into()?;
+    let cidr: u64 = bits as u64;
 
     let (octet_one, octet_two, octet_three, octet_four) = scanf!(host, ".", u64, u64, u64, u64);
     addr[3] = octet_four.context(format!("Failed to extract fourth octet {}", host))?;
@@ -195,7 +191,7 @@ async fn udp_scan_socket(
             Ok((target_host, target_port, UDP.to_string(), OPEN.to_string()))
         }
         Err(err) => {
-            match format!("{}", err.to_string()).as_str() {
+            match err.to_string().as_str() {
                 // Windows throws a weird error when scanning on localhost.
                 // Considering the port closed.
                 "An existing connection was forcibly closed by the remote host. (os error 10054)" if cfg!(target_os = "windows") => {
@@ -225,7 +221,7 @@ async fn handle_scan(
             match udp_scan_socket(target_host.clone(), port).await {
                 Ok(res) => result = res,
                 Err(err) => {
-                    let err_str = format!("{}", err.to_string());
+                    let err_str = err.to_string();
                     match err_str.as_str() {
                         // If OS runs out source ports of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
@@ -251,7 +247,7 @@ async fn handle_scan(
                 Ok(res) => result = res,
                 Err(err) => {
                     // let err_str = String::from(format!("{}", err.to_string())).as_str();
-                    let err_str = format!("{}", err.to_string());
+                    let err_str = err.to_string();
                     match  err_str.as_str() {
                         // If OS runs out file handles of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
@@ -306,7 +302,7 @@ async fn handle_port_scan_timeout(
         Ok(res) => {
             match res {
                 Ok(scan_res) => return Ok(scan_res),
-                Err(scan_err) => match format!("{}", scan_err.to_string()).as_str() {
+                Err(scan_err) => match scan_err.to_string().as_str() {
                     // If the OS is running out of resources wait and then try again.
                     "Low resources try again" => {
                         sleep(Duration::from_secs(3)).await;
@@ -546,7 +542,7 @@ mod tests {
         // Iterate over append port number and start listen server
         let mut listen_tasks = vec![];
         for listener in bound_listeners_vec.into_iter() {
-            test_ports.push(listener.local_addr()?.port().try_into()?);
+            test_ports.push(listener.local_addr()?.port() as i32);
             listen_tasks.push(task::spawn(local_accept_tcp(listener)));
         }
 
