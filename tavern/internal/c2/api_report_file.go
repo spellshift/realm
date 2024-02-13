@@ -19,7 +19,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		owner       string
 		group       string
 		permissions string
-		size        int
+		size        uint64
 		hash        string
 
 		content []byte
@@ -55,7 +55,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			permissions = req.Chunk.GetPermissions()
 		}
 		if size == 0 {
-			size = int(req.Chunk.GetSize())
+			size = req.Chunk.GetSize()
 		}
 		if hash == "" {
 			hash = req.Chunk.GetSha3_256Hash()

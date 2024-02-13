@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
@@ -111,6 +112,29 @@ func init() {
 	hostDescName := hostFields[1].Descriptor()
 	// host.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	host.NameValidator = hostDescName.Validators[0].(func(string) error)
+	hostcredentialMixin := schema.HostCredential{}.Mixin()
+	hostcredentialMixinFields0 := hostcredentialMixin[0].Fields()
+	_ = hostcredentialMixinFields0
+	hostcredentialFields := schema.HostCredential{}.Fields()
+	_ = hostcredentialFields
+	// hostcredentialDescCreatedAt is the schema descriptor for created_at field.
+	hostcredentialDescCreatedAt := hostcredentialMixinFields0[0].Descriptor()
+	// hostcredential.DefaultCreatedAt holds the default value on creation for the created_at field.
+	hostcredential.DefaultCreatedAt = hostcredentialDescCreatedAt.Default.(func() time.Time)
+	// hostcredentialDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	hostcredentialDescLastModifiedAt := hostcredentialMixinFields0[1].Descriptor()
+	// hostcredential.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	hostcredential.DefaultLastModifiedAt = hostcredentialDescLastModifiedAt.Default.(func() time.Time)
+	// hostcredential.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	hostcredential.UpdateDefaultLastModifiedAt = hostcredentialDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// hostcredentialDescPrincipal is the schema descriptor for principal field.
+	hostcredentialDescPrincipal := hostcredentialFields[0].Descriptor()
+	// hostcredential.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
+	hostcredential.PrincipalValidator = hostcredentialDescPrincipal.Validators[0].(func(string) error)
+	// hostcredentialDescSecret is the schema descriptor for secret field.
+	hostcredentialDescSecret := hostcredentialFields[1].Descriptor()
+	// hostcredential.SecretValidator is a validator for the "secret" field. It is called by the builders before save.
+	hostcredential.SecretValidator = hostcredentialDescSecret.Validators[0].(func(string) error)
 	hostfileMixin := schema.HostFile{}.Mixin()
 	hostfileHooks := schema.HostFile{}.Hooks()
 	hostfile.Hooks[0] = hostfileHooks[0]
@@ -135,9 +159,9 @@ func init() {
 	// hostfileDescSize is the schema descriptor for size field.
 	hostfileDescSize := hostfileFields[4].Descriptor()
 	// hostfile.DefaultSize holds the default value on creation for the size field.
-	hostfile.DefaultSize = hostfileDescSize.Default.(int)
+	hostfile.DefaultSize = hostfileDescSize.Default.(uint64)
 	// hostfile.SizeValidator is a validator for the "size" field. It is called by the builders before save.
-	hostfile.SizeValidator = hostfileDescSize.Validators[0].(func(int) error)
+	hostfile.SizeValidator = hostfileDescSize.Validators[0].(func(uint64) error)
 	// hostfileDescHash is the schema descriptor for hash field.
 	hostfileDescHash := hostfileFields[5].Descriptor()
 	// hostfile.HashValidator is a validator for the "hash" field. It is called by the builders before save.

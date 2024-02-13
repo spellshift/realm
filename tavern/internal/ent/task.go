@@ -53,14 +53,17 @@ type TaskEdges struct {
 	ReportedFiles []*HostFile `json:"reported_files,omitempty"`
 	// Processes that have been reported by this task.
 	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
+	// Credentials that have been reported by this task.
+	ReportedCredentials []*HostCredential `json:"reported_credentials,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [5]map[string]int
 
-	namedReportedFiles     map[string][]*HostFile
-	namedReportedProcesses map[string][]*HostProcess
+	namedReportedFiles       map[string][]*HostFile
+	namedReportedProcesses   map[string][]*HostProcess
+	namedReportedCredentials map[string][]*HostCredential
 }
 
 // QuestOrErr returns the Quest value or an error if the edge
@@ -105,6 +108,15 @@ func (e TaskEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
 		return e.ReportedProcesses, nil
 	}
 	return nil, &NotLoadedError{edge: "reported_processes"}
+}
+
+// ReportedCredentialsOrErr returns the ReportedCredentials value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) ReportedCredentialsOrErr() ([]*HostCredential, error) {
+	if e.loadedTypes[4] {
+		return e.ReportedCredentials, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_credentials"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -238,6 +250,11 @@ func (t *Task) QueryReportedProcesses() *HostProcessQuery {
 	return NewTaskClient(t.config).QueryReportedProcesses(t)
 }
 
+// QueryReportedCredentials queries the "reported_credentials" edge of the Task entity.
+func (t *Task) QueryReportedCredentials() *HostCredentialQuery {
+	return NewTaskClient(t.config).QueryReportedCredentials(t)
+}
+
 // Update returns a builder for updating this Task.
 // Note that you need to call Task.Unwrap() before calling this method if this Task
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -333,6 +350,30 @@ func (t *Task) appendNamedReportedProcesses(name string, edges ...*HostProcess) 
 		t.Edges.namedReportedProcesses[name] = []*HostProcess{}
 	} else {
 		t.Edges.namedReportedProcesses[name] = append(t.Edges.namedReportedProcesses[name], edges...)
+	}
+}
+
+// NamedReportedCredentials returns the ReportedCredentials named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Task) NamedReportedCredentials(name string) ([]*HostCredential, error) {
+	if t.Edges.namedReportedCredentials == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedReportedCredentials[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Task) appendNamedReportedCredentials(name string, edges ...*HostCredential) {
+	if t.Edges.namedReportedCredentials == nil {
+		t.Edges.namedReportedCredentials = make(map[string][]*HostCredential)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedReportedCredentials[name] = []*HostCredential{}
+	} else {
+		t.Edges.namedReportedCredentials[name] = append(t.Edges.namedReportedCredentials[name], edges...)
 	}
 }
 

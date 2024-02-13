@@ -145,6 +145,17 @@ pub struct DownloadFileResponse {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportCredentialRequest {
+    #[prost(int64, tag = "1")]
+    pub task_id: i64,
+    #[prost(message, optional, tag = "2")]
+    pub credential: ::core::option::Option<::eldritch::pb::Credential>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportCredentialResponse {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportFileRequest {
     #[prost(int64, tag = "1")]
     pub task_id: i64,
@@ -312,6 +323,30 @@ pub mod c2_client {
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "DownloadFile"));
             self.inner.server_streaming(req, path, codec).await
+        }
+        ///
+        /// Report a credential from the host to the server.
+        pub async fn report_credential(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ReportCredentialRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportCredentialResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportCredential");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportCredential"));
+            self.inner.unary(req, path, codec).await
         }
         ///
         /// Report a file from the host to the server.

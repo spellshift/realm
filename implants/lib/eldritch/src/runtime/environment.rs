@@ -1,4 +1,4 @@
-use crate::pb::{File, ProcessList};
+use crate::pb::{Credential, File, ProcessList};
 use anyhow::{Context, Error, Result};
 use starlark::{
     values::{AnyLifetime, ProvidesStaticType},
@@ -26,6 +26,7 @@ impl FileRequest {
 pub struct Environment {
     pub(super) tx_output: Sender<String>,
     pub(super) tx_error: Sender<Error>,
+    pub(super) tx_credential: Sender<Credential>,
     pub(super) tx_process_list: Sender<ProcessList>,
     pub(super) tx_file: Sender<File>,
     pub(super) tx_file_request: Sender<FileRequest>,
@@ -55,6 +56,14 @@ impl Environment {
      */
     pub fn report_error(&self, err: anyhow::Error) -> Result<()> {
         self.tx_error.send(err)?;
+        Ok(())
+    }
+
+    /*
+     * Report a credential that was collected by the tome.
+     */
+    pub fn report_credential(&self, credential: Credential) -> Result<()> {
+        self.tx_credential.send(credential)?;
         Ok(())
     }
 

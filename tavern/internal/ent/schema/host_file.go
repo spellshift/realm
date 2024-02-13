@@ -38,10 +38,11 @@ func (HostFile) Fields() []ent.Field {
 		field.String("permissions").
 			Optional().
 			Comment("Permissions for the file on the host system."),
-		field.Int("size").
+		field.Uint64("size").
 			Default(0).
 			Min(0).
 			Annotations(
+				entgql.Type("Uint64"),
 				entgql.OrderField("SIZE"),
 			).
 			Comment("The size of the file in bytes"),
@@ -104,7 +105,7 @@ func HookDeriveHostFileInfo() ent.Hook {
 	// See this example: https://github.com/ent/ent/blob/master/entc/integration/hooks/ent/schema/user.go#L98
 	type fMutation interface {
 		Content() ([]byte, bool)
-		SetSize(i int)
+		SetSize(i uint64)
 		SetHash(s string)
 	}
 
@@ -118,7 +119,7 @@ func HookDeriveHostFileInfo() ent.Hook {
 
 			// Set the new size
 			content, _ := f.Content()
-			f.SetSize(len(content))
+			f.SetSize(uint64(len(content)))
 
 			// Set the new hash (if content exists)
 			if len(content) > 0 {

@@ -3,6 +3,7 @@ use crate::pb::{
     ReportFileRequest, ReportFileResponse, ReportProcessListRequest, ReportProcessListResponse,
     ReportTaskOutputRequest, ReportTaskOutputResponse,
 };
+use crate::pb::{ReportCredentialRequest, ReportCredentialResponse};
 use anyhow::Result;
 use async_trait::async_trait;
 use std::sync::mpsc::{Receiver, Sender};
@@ -12,6 +13,7 @@ use tonic::Request;
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static DOWNLOAD_FILE_PATH: &str = "/c2.C2/DownloadFile";
+static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
@@ -73,6 +75,14 @@ impl crate::Transport for GRPC {
             }
         });
         Ok(())
+    }
+
+    async fn report_credential(
+        &mut self,
+        request: crate::pb::ReportCredentialRequest,
+    ) -> Result<crate::pb::ReportCredentialResponse> {
+        let resp = self.report_credential_impl(request).await?;
+        Ok(resp.into_inner())
     }
 
     async fn report_file(
@@ -160,6 +170,28 @@ impl GRPC {
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "DownloadFile"));
         self.grpc.server_streaming(req, path, codec).await
+    }
+
+    ///
+    /// Report a credential.
+    pub async fn report_credential_impl(
+        &mut self,
+        request: impl tonic::IntoRequest<crate::pb::ReportCredentialRequest>,
+    ) -> std::result::Result<tonic::Response<ReportCredentialResponse>, tonic::Status> {
+        self.grpc.ready().await.map_err(|e| {
+            tonic::Status::new(
+                tonic::Code::Unknown,
+                format!("Service was not ready: {}", e),
+            )
+        })?;
+        let codec: ProstCodec<ReportCredentialRequest, ReportCredentialResponse> =
+            tonic::codec::ProstCodec::default();
+
+        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_CREDENTIAL_PATH);
+        let mut req = request.into_request();
+        req.extensions_mut()
+            .insert(GrpcMethod::new("c2.C2", "ReportCredential"));
+        self.grpc.unary(req, path, codec).await
     }
 
     ///

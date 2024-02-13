@@ -9,7 +9,7 @@ pub mod sys;
 pub mod time;
 
 pub mod pb {
-    include!("eldritch.rs");
+    include!("generated/eldritch.rs");
 }
 
 pub use runtime::{start, FileRequest, Runtime};
