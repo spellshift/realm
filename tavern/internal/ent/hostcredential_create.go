@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/task"
@@ -61,6 +62,12 @@ func (hcc *HostCredentialCreate) SetPrincipal(s string) *HostCredentialCreate {
 // SetSecret sets the "secret" field.
 func (hcc *HostCredentialCreate) SetSecret(s string) *HostCredentialCreate {
 	hcc.mutation.SetSecret(s)
+	return hcc
+}
+
+// SetKind sets the "kind" field.
+func (hcc *HostCredentialCreate) SetKind(ek epb.Credential_Kind) *HostCredentialCreate {
+	hcc.mutation.SetKind(ek)
 	return hcc
 }
 
@@ -155,6 +162,14 @@ func (hcc *HostCredentialCreate) check() error {
 			return &ValidationError{Name: "secret", err: fmt.Errorf(`ent: validator failed for field "HostCredential.secret": %w`, err)}
 		}
 	}
+	if _, ok := hcc.mutation.Kind(); !ok {
+		return &ValidationError{Name: "kind", err: errors.New(`ent: missing required field "HostCredential.kind"`)}
+	}
+	if v, ok := hcc.mutation.Kind(); ok {
+		if err := hostcredential.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
+		}
+	}
 	if _, ok := hcc.mutation.HostID(); !ok {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostCredential.host"`)}
 	}
@@ -203,6 +218,10 @@ func (hcc *HostCredentialCreate) createSpec() (*HostCredential, *sqlgraph.Create
 	if value, ok := hcc.mutation.Secret(); ok {
 		_spec.SetField(hostcredential.FieldSecret, field.TypeString, value)
 		_node.Secret = value
+	}
+	if value, ok := hcc.mutation.Kind(); ok {
+		_spec.SetField(hostcredential.FieldKind, field.TypeEnum, value)
+		_node.Kind = value
 	}
 	if nodes := hcc.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -326,6 +345,18 @@ func (u *HostCredentialUpsert) UpdateSecret() *HostCredentialUpsert {
 	return u
 }
 
+// SetKind sets the "kind" field.
+func (u *HostCredentialUpsert) SetKind(v epb.Credential_Kind) *HostCredentialUpsert {
+	u.Set(hostcredential.FieldKind, v)
+	return u
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *HostCredentialUpsert) UpdateKind() *HostCredentialUpsert {
+	u.SetExcluded(hostcredential.FieldKind)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -410,6 +441,20 @@ func (u *HostCredentialUpsertOne) SetSecret(v string) *HostCredentialUpsertOne {
 func (u *HostCredentialUpsertOne) UpdateSecret() *HostCredentialUpsertOne {
 	return u.Update(func(s *HostCredentialUpsert) {
 		s.UpdateSecret()
+	})
+}
+
+// SetKind sets the "kind" field.
+func (u *HostCredentialUpsertOne) SetKind(v epb.Credential_Kind) *HostCredentialUpsertOne {
+	return u.Update(func(s *HostCredentialUpsert) {
+		s.SetKind(v)
+	})
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *HostCredentialUpsertOne) UpdateKind() *HostCredentialUpsertOne {
+	return u.Update(func(s *HostCredentialUpsert) {
+		s.UpdateKind()
 	})
 }
 
@@ -663,6 +708,20 @@ func (u *HostCredentialUpsertBulk) SetSecret(v string) *HostCredentialUpsertBulk
 func (u *HostCredentialUpsertBulk) UpdateSecret() *HostCredentialUpsertBulk {
 	return u.Update(func(s *HostCredentialUpsert) {
 		s.UpdateSecret()
+	})
+}
+
+// SetKind sets the "kind" field.
+func (u *HostCredentialUpsertBulk) SetKind(v epb.Credential_Kind) *HostCredentialUpsertBulk {
+	return u.Update(func(s *HostCredentialUpsert) {
+		s.SetKind(v)
+	})
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *HostCredentialUpsertBulk) UpdateKind() *HostCredentialUpsertBulk {
+	return u.Update(func(s *HostCredentialUpsert) {
+		s.UpdateKind()
 	})
 }
 

@@ -39,6 +39,7 @@ func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredent
 		SetTask(task).
 		SetPrincipal(req.Credential.Principal).
 		SetSecret(req.Credential.Secret).
+		SetKind(req.Credential.Kind).
 		Save(ctx); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save credential")
 	}
