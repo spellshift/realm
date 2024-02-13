@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -61,11 +62,17 @@ func (HostProcess) Edges() []ent.Edge {
 		edge.To("host", Host.Type).
 			Required().
 			Unique().
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Comment("Host the process was reported on."),
 		edge.From("task", Task.Type).
 			Required().
 			Unique().
 			Ref("reported_processes").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Comment("Task that reported this process."),
 	}
 }

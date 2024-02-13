@@ -31,7 +31,7 @@ var (
 				Symbol:     "beacons_hosts_host",
 				Columns:    []*schema.Column{BeaconsColumns[9]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -100,7 +100,7 @@ var (
 				Symbol:     "host_files_hosts_host",
 				Columns:    []*schema.Column{HostFilesColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_files_tasks_reported_files",
@@ -144,7 +144,7 @@ var (
 				Symbol:     "host_processes_hosts_host",
 				Columns:    []*schema.Column{HostProcessesColumns[13]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_processes_tasks_reported_processes",
@@ -233,7 +233,7 @@ var (
 				Symbol:     "tasks_beacons_beacon",
 				Columns:    []*schema.Column{TasksColumns[10]},
 				RefColumns: []*schema.Column{BeaconsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
