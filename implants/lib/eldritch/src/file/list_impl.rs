@@ -16,7 +16,12 @@ use std::os::macos::fs::MetadataExt;
 use std::os::unix::fs::PermissionsExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
-use sysinfo::{System, SystemExt, UserExt};
+
+use sysinfo::{System, SystemExt};
+
+#[cfg(not(target_os = "windows"))]
+use sysinfo::UserExt;
+
 
 const UNKNOWN: &str = "UNKNOWN";
 

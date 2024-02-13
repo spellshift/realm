@@ -10,14 +10,12 @@ use {
     object::LittleEndian as LE,
     object::{Object, ObjectSection},
     std::{os::raw::c_void, ptr::null_mut},
-    windows_sys::Win32::{
-        System::{
+    windows_sys::Win32::System::{
             Memory::{
                 MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
             },
-            Threading::{PROCESS_ALL_ACCESS},
+            Threading::PROCESS_ALL_ACCESS,
         },
-    },
 };
 
 #[cfg(all(host_family = "windows", target_os = "windows"))]
@@ -121,6 +119,9 @@ fn get_export_address_by_name(
 
 #[cfg(target_os = "windows")]
 struct UserData {
+    // function_offset is never read by our function but will be read by the 
+    // reflective loader when we pass execution.
+    #[allow(dead_code)] 
     function_offset: u64,
 }
 
@@ -182,7 +183,7 @@ fn handle_dll_reflect(
     let remote_buffer_target_dll: *mut std::ffi::c_void = unsafe { virtual_alloc_ex(
         process_handle,
         null_mut(),
-        user_data_ptr_size + target_dll_bytes.len() as usize,
+        user_data_ptr_size + target_dll_bytes.len(),
         MEM_COMMIT | MEM_RESERVE,
         PAGE_EXECUTE_READWRITE,
     ) }?;
