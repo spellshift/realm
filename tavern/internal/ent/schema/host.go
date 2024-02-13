@@ -62,6 +62,9 @@ func (Host) Edges() []ent.Edge {
 			Comment("Files reported on this host system."),
 		edge.To("processes", HostProcess.Type).
 			Comment("Processes reported as running on this host system."),
+		edge.From("credentials", HostCredential.Type).
+			Ref("host").
+			Comment("Credentials reported from this host system."),
 	}
 }
 

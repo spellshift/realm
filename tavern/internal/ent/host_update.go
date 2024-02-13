@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -171,6 +172,21 @@ func (hu *HostUpdate) AddProcesses(h ...*HostProcess) *HostUpdate {
 	return hu.AddProcessIDs(ids...)
 }
 
+// AddCredentialIDs adds the "credentials" edge to the HostCredential entity by IDs.
+func (hu *HostUpdate) AddCredentialIDs(ids ...int) *HostUpdate {
+	hu.mutation.AddCredentialIDs(ids...)
+	return hu
+}
+
+// AddCredentials adds the "credentials" edges to the HostCredential entity.
+func (hu *HostUpdate) AddCredentials(h ...*HostCredential) *HostUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hu.AddCredentialIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (hu *HostUpdate) Mutation() *HostMutation {
 	return hu.mutation
@@ -258,6 +274,27 @@ func (hu *HostUpdate) RemoveProcesses(h ...*HostProcess) *HostUpdate {
 		ids[i] = h[i].ID
 	}
 	return hu.RemoveProcessIDs(ids...)
+}
+
+// ClearCredentials clears all "credentials" edges to the HostCredential entity.
+func (hu *HostUpdate) ClearCredentials() *HostUpdate {
+	hu.mutation.ClearCredentials()
+	return hu
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to HostCredential entities by IDs.
+func (hu *HostUpdate) RemoveCredentialIDs(ids ...int) *HostUpdate {
+	hu.mutation.RemoveCredentialIDs(ids...)
+	return hu
+}
+
+// RemoveCredentials removes "credentials" edges to HostCredential entities.
+func (hu *HostUpdate) RemoveCredentials(h ...*HostCredential) *HostUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hu.RemoveCredentialIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -535,6 +572,51 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if hu.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.CredentialsTable,
+			Columns: []string{host.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.RemovedCredentialsIDs(); len(nodes) > 0 && !hu.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.CredentialsTable,
+			Columns: []string{host.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.CredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.CredentialsTable,
+			Columns: []string{host.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, hu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{host.Label}
@@ -693,6 +775,21 @@ func (huo *HostUpdateOne) AddProcesses(h ...*HostProcess) *HostUpdateOne {
 	return huo.AddProcessIDs(ids...)
 }
 
+// AddCredentialIDs adds the "credentials" edge to the HostCredential entity by IDs.
+func (huo *HostUpdateOne) AddCredentialIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.AddCredentialIDs(ids...)
+	return huo
+}
+
+// AddCredentials adds the "credentials" edges to the HostCredential entity.
+func (huo *HostUpdateOne) AddCredentials(h ...*HostCredential) *HostUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return huo.AddCredentialIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (huo *HostUpdateOne) Mutation() *HostMutation {
 	return huo.mutation
@@ -780,6 +877,27 @@ func (huo *HostUpdateOne) RemoveProcesses(h ...*HostProcess) *HostUpdateOne {
 		ids[i] = h[i].ID
 	}
 	return huo.RemoveProcessIDs(ids...)
+}
+
+// ClearCredentials clears all "credentials" edges to the HostCredential entity.
+func (huo *HostUpdateOne) ClearCredentials() *HostUpdateOne {
+	huo.mutation.ClearCredentials()
+	return huo
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to HostCredential entities by IDs.
+func (huo *HostUpdateOne) RemoveCredentialIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.RemoveCredentialIDs(ids...)
+	return huo
+}
+
+// RemoveCredentials removes "credentials" edges to HostCredential entities.
+func (huo *HostUpdateOne) RemoveCredentials(h ...*HostCredential) *HostUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return huo.RemoveCredentialIDs(ids...)
 }
 
 // Where appends a list predicates to the HostUpdate builder.
@@ -1080,6 +1198,51 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if huo.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.CredentialsTable,
+			Columns: []string{host.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.RemovedCredentialsIDs(); len(nodes) > 0 && !huo.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.CredentialsTable,
+			Columns: []string{host.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.CredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.CredentialsTable,
+			Columns: []string{host.CredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

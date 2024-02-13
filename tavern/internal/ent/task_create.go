@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
@@ -188,6 +189,21 @@ func (tc *TaskCreate) AddReportedProcesses(h ...*HostProcess) *TaskCreate {
 		ids[i] = h[i].ID
 	}
 	return tc.AddReportedProcessIDs(ids...)
+}
+
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by IDs.
+func (tc *TaskCreate) AddReportedCredentialIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddReportedCredentialIDs(ids...)
+	return tc
+}
+
+// AddReportedCredentials adds the "reported_credentials" edges to the HostCredential entity.
+func (tc *TaskCreate) AddReportedCredentials(h ...*HostCredential) *TaskCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tc.AddReportedCredentialIDs(ids...)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -388,6 +404,22 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ReportedCredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedCredentialsTable,
+			Columns: []string{task.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
