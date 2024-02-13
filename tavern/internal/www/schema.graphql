@@ -1637,6 +1637,11 @@ input SubmitTaskResultInput {
   error: String
 }
 type Mutation {
+    ####
+    # Admin
+    ####
+    dropAllData: Boolean! @requireRole(role: ADMIN)
+
     ###
     # Quest
     ###

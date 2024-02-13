@@ -119,6 +119,7 @@ type ComplexityRoot struct {
 		CreateTag    func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome   func(childComplexity int, input ent.CreateTomeInput) int
 		DeleteTome   func(childComplexity int, tomeID int) int
+		DropAllData  func(childComplexity int) int
 		UpdateBeacon func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost   func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateTag    func(childComplexity int, tagID int, input ent.UpdateTagInput) int
@@ -669,6 +670,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteTome(childComplexity, args["tomeID"].(int)), true
+
+	case "Mutation.dropAllData":
+		if e.complexity.Mutation.DropAllData == nil {
+			break
+		}
+
+		return e.complexity.Mutation.DropAllData(childComplexity), true
 
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
@@ -2994,6 +3002,11 @@ scalar Uint64
 }
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
+    ####
+    # Admin
+    ####
+    dropAllData: Boolean! @requireRole(role: ADMIN)
+
     ###
     # Quest
     ###
