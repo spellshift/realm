@@ -25,7 +25,9 @@ struct NetInterface {
 fn handle_get_ip() -> Result<Vec<NetInterface>> {
     let mut res = Vec::new();
     for network_interface in NetworkInterface::show()? {
-        let mac_addr = match network_interface.mac_addr {
+        let name = network_interface.name;
+
+        let mac = match network_interface.mac_addr {
             Some(local_mac) => local_mac,
             None => UNKNOWN.to_string(),
         };
@@ -36,9 +38,9 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
         }
 
         res.push(NetInterface {
-            name: network_interface.name,
-            ips: ips,
-            mac: mac_addr,
+            name,
+            ips,
+            mac,
         });
     }
     Ok(res)

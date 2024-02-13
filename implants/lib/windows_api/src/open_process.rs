@@ -1,13 +1,13 @@
 
-use {
-    windows_sys::Win32::{
+use windows_sys::Win32::{
         Foundation::{GetLastError, BOOL, HANDLE},
-        System::{
-            Threading::{OpenProcess, PROCESS_ACCESS_RIGHTS},
-        },
-    },
-};
-// pub unsafe fn OpenProcess(dwdesiredaccess: PROCESS_ACCESS_RIGHTS, binherithandle: super::super::Foundation::BOOL, dwprocessid: u32) -> super::super::Foundation::HANDLE
+        System::Threading::{OpenProcess, PROCESS_ACCESS_RIGHTS},
+    };
+
+/// # Safety
+///
+/// Windows API: 
+/// pub unsafe fn OpenProcess(dwdesiredaccess: PROCESS_ACCESS_RIGHTS, binherithandle: super::super::Foundation::BOOL, dwprocessid: u32) -> super::super::Foundation::HANDLE
 pub unsafe fn open_process(
     dwdesiredaccess: PROCESS_ACCESS_RIGHTS,
     binherithandle: BOOL,

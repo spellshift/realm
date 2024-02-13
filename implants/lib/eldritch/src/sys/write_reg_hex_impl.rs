@@ -110,195 +110,195 @@ mod tests {
             //Write and then read REG_SZ into temp regkey...
             let mut _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_SZ".to_string(),
                 "deadbeef".to_string(),
             );
             let mut hkcu = RegKey::predef(HKEY_CURRENT_USER);
             let mut subky =
-                hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+                hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             let mut val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_NONE into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_NONE".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_EXPAND_SZ into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_EXPAND_SZ".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_BINARY into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_BINARY".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_DWORD into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_DWORD".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_DWORD_BIG_ENDIAN into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_DWORD_BIG_ENDIAN".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.bytes, 0xdeadbeefu32.to_be_bytes().to_vec());
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_LINK into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_LINK".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_MULTI_SZ into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_MULTI_SZ".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_RESOURCE_LIST into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_RESOURCE_LIST".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_FULL_RESOURCE_DESCRIPTOR into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_FULL_RESOURCE_DESCRIPTOR".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_RESOURCE_REQUIREMENTS_LIST into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_RESOURCE_REQUIREMENTS_LIST".to_string(),
                 "deadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(hex::encode(val2.bytes), "deadbeef");
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
             //Write and then read REG_QWORD into temp regkey...
             _ares = write_reg_hex(
                 "HKEY_CURRENT_USER".to_string(),
-                format!("SOFTWARE\\{}", id.to_string()).to_string(),
+                format!("SOFTWARE\\{}", id).to_string(),
                 "FOO2".to_string(),
                 "REG_QWORD".to_string(),
                 "deadbeefdeadbeef".to_string(),
             );
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.bytes, 0xdeadbeefdeadbeefu64.to_le_bytes().to_vec());
 
             //delete temp regkey
-            hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
         }
 
         Ok(())

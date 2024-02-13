@@ -30,7 +30,7 @@ const UNKNOWN: &str = "UNKNOWN";
 fn windows_tick_to_unix_tick(windows_tick: u64) -> i64 {
     const WINDOWS_TICK: u64 = 10000000;
     const SEC_TO_UNIX_EPOCH: u64 = 11644473600;
-    return (windows_tick / WINDOWS_TICK - SEC_TO_UNIX_EPOCH) as i64;
+    (windows_tick / WINDOWS_TICK - SEC_TO_UNIX_EPOCH) as i64
 }
 
 fn create_file_from_dir_entry(dir_entry: DirEntry) -> Result<File> {

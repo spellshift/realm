@@ -1,14 +1,16 @@
 
 use {
-    std::{os::raw::c_void},
+    std::os::raw::c_void,
     windows_sys::Win32::{
         Foundation::{GetLastError, FALSE, HANDLE},
-        System::{
-            Diagnostics::Debug::WriteProcessMemory,
-        },
+        System::Diagnostics::Debug::WriteProcessMemory,
     },
 };
-// pub unsafe fn WriteProcessMemory(hprocess: super::super::super::Foundation::HANDLE, lpbaseaddress: *const ::core::ffi::c_void, lpbuffer: *const ::core::ffi::c_void, nsize: usize, lpnumberofbyteswritten: *mut usize) -> super::super::super::Foundation::BOOL
+
+/// # Safety
+///
+/// Windows API: 
+/// pub unsafe fn WriteProcessMemory(hprocess: super::super::super::Foundation::HANDLE, lpbaseaddress: *const ::core::ffi::c_void, lpbuffer: *const ::core::ffi::c_void, nsize: usize, lpnumberofbyteswritten: *mut usize) -> super::super::super::Foundation::BOOL
 pub unsafe fn write_process_memory(
     hprocess: HANDLE,
     lpbaseaddress: *const c_void,

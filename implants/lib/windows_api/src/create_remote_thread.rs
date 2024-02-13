@@ -1,14 +1,15 @@
 
 use {
-    std::{os::raw::c_void},
+    std::os::raw::c_void,
     windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
     windows_sys::Win32::System::Threading::CreateRemoteThread,
-    windows_sys::Win32::{
-        Foundation::{GetLastError},
-    },
+    windows_sys::Win32::Foundation::GetLastError,
 };
 
-// fn CreateRemoteThread(hprocess: isize, lpthreadattributes: *const SECURITY_ATTRIBUTES, dwstacksize: usize, lpstartaddress: Option<fn(*mut c_void) -> u32>, lpparameter: *const c_void, dwcreationflags: u32, lpthreadid: *mut u32) -> isize
+/// # Safety
+///
+/// Windows API: 
+/// CreateRemoteThread(hprocess: isize, lpthreadattributes: *const SECURITY_ATTRIBUTES, dwstacksize: usize, lpstartaddress: Option<fn(*mut c_void) -> u32>, lpparameter: *const c_void, dwcreationflags: u32, lpthreadid: *mut u32) -> isize
 pub unsafe fn create_remote_thread(
     hprocess: isize,
     lpthreadattributes: *const SECURITY_ATTRIBUTES,

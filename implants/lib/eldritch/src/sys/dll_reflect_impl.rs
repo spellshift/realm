@@ -149,7 +149,7 @@ fn handle_dll_reflect(
     let remote_buffer = unsafe { virtual_alloc_ex(
         process_handle,
         null_mut(),
-        image_size as usize,
+        image_size,
         MEM_COMMIT | MEM_RESERVE,
         PAGE_EXECUTE_READWRITE,
     ) }?;
@@ -158,7 +158,7 @@ fn handle_dll_reflect(
         process_handle,
         remote_buffer as _,
         reflective_loader_dll.as_ptr() as _,
-        image_size as usize,
+        image_size,
     ) }?;
 
     // Allocate and write user data to the remote process
@@ -204,7 +204,7 @@ fn handle_dll_reflect(
         process_handle,
         payload_ptr_in_remote_buffer as _,
         target_dll_bytes.as_slice().as_ptr() as _,
-        target_dll_bytes.len() as usize,
+        target_dll_bytes.len(),
     ) }?;
 
     // Find the loader entrypoint and hand off execution
@@ -352,7 +352,7 @@ mod tests {
         let target_pid = expected_process.unwrap().id();
 
         // Run our code.
-        let _res = handle_dll_reflect(test_dll_bytes.to_vec(), target_pid, "demo_init")?;
+        handle_dll_reflect(test_dll_bytes.to_vec(), target_pid, "demo_init")?;
 
         let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
         thread::sleep(delay);
