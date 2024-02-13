@@ -367,11 +367,8 @@ mod tests {
         // kill the target process notepad
         let mut sys = System::new();
         sys.refresh_processes();
-        match sys.process(Pid::from_u32(target_pid)) {
-            Some(res) => {
-                res.kill_with(Signal::Kill);
-            }
-            None => {}
+        if let Some(res) = sys.process(Pid::from_u32(target_pid)) {
+            res.kill_with(Signal::Kill);
         }
         Ok(())
     }
@@ -391,21 +388,18 @@ mod tests {
             .spawn();
         let target_pid = expected_process.unwrap().id() as i32;
 
-        let test_eldritch_script = format!(
-            r#"
+        let test_eldritch_script = r#"
 func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_init")
-"#
-        );
+"#.to_string();
 
-        let ast: AstModule;
-        match AstModule::parse(
+        let ast: AstModule = match AstModule::parse(
             "test.eldritch",
             test_eldritch_script.to_owned(),
             &Dialect::Standard,
         ) {
-            Ok(res) => ast = res,
+            Ok(res) => res,
             Err(err) => return Err(err.into_anyhow()),
-        }
+        };
 
         #[starlark_module]
         fn func_dll_reflect(builder: &mut GlobalsBuilder) {
@@ -463,11 +457,8 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_in
         // kill the target process notepad
         let mut sys = System::new();
         sys.refresh_processes();
-        match sys.process(Pid::from_u32(target_pid as u32)) {
-            Some(res) => {
-                res.kill_with(Signal::Kill);
-            }
-            None => {}
+        if let Some(res) = sys.process(Pid::from_u32(target_pid as u32)) {
+            res.kill_with(Signal::Kill);
         }
         Ok(())
     }
