@@ -71,6 +71,7 @@ type ComplexityRoot struct {
 	Host struct {
 		Beacons        func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
+		Credentials    func(childComplexity int) int
 		Files          func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
@@ -81,6 +82,16 @@ type ComplexityRoot struct {
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int) int
 		Tags           func(childComplexity int) int
+	}
+
+	HostCredential struct {
+		CreatedAt      func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Principal      func(childComplexity int) int
+		Secret         func(childComplexity int) int
+		Task           func(childComplexity int) int
 	}
 
 	HostFile struct {
@@ -168,19 +179,20 @@ type ComplexityRoot struct {
 	}
 
 	Task struct {
-		Beacon            func(childComplexity int) int
-		ClaimedAt         func(childComplexity int) int
-		CreatedAt         func(childComplexity int) int
-		Error             func(childComplexity int) int
-		ExecFinishedAt    func(childComplexity int) int
-		ExecStartedAt     func(childComplexity int) int
-		ID                func(childComplexity int) int
-		LastModifiedAt    func(childComplexity int) int
-		Output            func(childComplexity int) int
-		OutputSize        func(childComplexity int) int
-		Quest             func(childComplexity int) int
-		ReportedFiles     func(childComplexity int) int
-		ReportedProcesses func(childComplexity int) int
+		Beacon              func(childComplexity int) int
+		ClaimedAt           func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Error               func(childComplexity int) int
+		ExecFinishedAt      func(childComplexity int) int
+		ExecStartedAt       func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Output              func(childComplexity int) int
+		OutputSize          func(childComplexity int) int
+		Quest               func(childComplexity int) int
+		ReportedCredentials func(childComplexity int) int
+		ReportedFiles       func(childComplexity int) int
+		ReportedProcesses   func(childComplexity int) int
 	}
 
 	TaskConnection struct {
@@ -378,6 +390,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.CreatedAt(childComplexity), true
 
+	case "Host.credentials":
+		if e.complexity.Host.Credentials == nil {
+			break
+		}
+
+		return e.complexity.Host.Credentials(childComplexity), true
+
 	case "Host.files":
 		if e.complexity.Host.Files == nil {
 			break
@@ -447,6 +466,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Host.Tags(childComplexity), true
+
+	case "HostCredential.createdAt":
+		if e.complexity.HostCredential.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.CreatedAt(childComplexity), true
+
+	case "HostCredential.host":
+		if e.complexity.HostCredential.Host == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Host(childComplexity), true
+
+	case "HostCredential.id":
+		if e.complexity.HostCredential.ID == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.ID(childComplexity), true
+
+	case "HostCredential.lastModifiedAt":
+		if e.complexity.HostCredential.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.LastModifiedAt(childComplexity), true
+
+	case "HostCredential.principal":
+		if e.complexity.HostCredential.Principal == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Principal(childComplexity), true
+
+	case "HostCredential.secret":
+		if e.complexity.HostCredential.Secret == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Secret(childComplexity), true
+
+	case "HostCredential.task":
+		if e.complexity.HostCredential.Task == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Task(childComplexity), true
 
 	case "HostFile.createdAt":
 		if e.complexity.HostFile.CreatedAt == nil {
@@ -1061,6 +1129,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Quest(childComplexity), true
 
+	case "Task.reportedCredentials":
+		if e.complexity.Task.ReportedCredentials == nil {
+			break
+		}
+
+		return e.complexity.Task.ReportedCredentials(childComplexity), true
+
 	case "Task.reportedFiles":
 		if e.complexity.Task.ReportedFiles == nil {
 			break
@@ -1252,6 +1327,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
+		ec.unmarshalInputHostCredentialOrder,
+		ec.unmarshalInputHostCredentialWhereInput,
 		ec.unmarshalInputHostFileOrder,
 		ec.unmarshalInputHostFileWhereInput,
 		ec.unmarshalInputHostOrder,
@@ -1715,6 +1792,106 @@ type Host implements Node {
   files: [HostFile!]
   """Processes reported as running on this host system."""
   processes: [HostProcess!]
+  """Credentials reported from this host system."""
+  credentials: [HostCredential!]
+}
+type HostCredential implements Node {
+  id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
+  """Identity associated with this credential (e.g. username)."""
+  principal: String!
+  """Secret for this credential (e.g. password)."""
+  secret: String!
+  """Host the credential was reported on."""
+  host: Host!
+  """Task that reported this credential."""
+  task: Task!
+}
+"""Ordering options for HostCredential connections"""
+input HostCredentialOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order HostCredentials."""
+  field: HostCredentialOrderField!
+}
+"""Properties by which HostCredential connections can be ordered."""
+enum HostCredentialOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  PRINCIPAL
+}
+"""
+HostCredentialWhereInput is used for filtering HostCredential objects.
+Input was generated by ent.
+"""
+input HostCredentialWhereInput {
+  not: HostCredentialWhereInput
+  and: [HostCredentialWhereInput!]
+  or: [HostCredentialWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """principal field predicates"""
+  principal: String
+  principalNEQ: String
+  principalIn: [String!]
+  principalNotIn: [String!]
+  principalGT: String
+  principalGTE: String
+  principalLT: String
+  principalLTE: String
+  principalContains: String
+  principalHasPrefix: String
+  principalHasSuffix: String
+  principalEqualFold: String
+  principalContainsFold: String
+  """secret field predicates"""
+  secret: String
+  secretNEQ: String
+  secretIn: [String!]
+  secretNotIn: [String!]
+  secretGT: String
+  secretGTE: String
+  secretLT: String
+  secretLTE: String
+  secretContains: String
+  secretHasPrefix: String
+  secretHasSuffix: String
+  secretEqualFold: String
+  secretContainsFold: String
+  """host edge predicates"""
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """task edge predicates"""
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
 }
 type HostFile implements Node {
   id: ID!
@@ -1731,7 +1908,7 @@ type HostFile implements Node {
   """Permissions for the file on the host system."""
   permissions: String
   """The size of the file in bytes"""
-  size: Int!
+  size: Uint64!
   """A SHA3-256 digest of the content field"""
   hash: String
   """Host the file was reported on."""
@@ -1851,14 +2028,14 @@ input HostFileWhereInput {
   permissionsEqualFold: String
   permissionsContainsFold: String
   """size field predicates"""
-  size: Int
-  sizeNEQ: Int
-  sizeIn: [Int!]
-  sizeNotIn: [Int!]
-  sizeGT: Int
-  sizeGTE: Int
-  sizeLT: Int
-  sizeLTE: Int
+  size: Uint64
+  sizeNEQ: Uint64
+  sizeIn: [Uint64!]
+  sizeNotIn: [Uint64!]
+  sizeGT: Uint64
+  sizeGTE: Uint64
+  sizeLT: Uint64
+  sizeLTE: Uint64
   """hash field predicates"""
   hash: String
   hashNEQ: String
@@ -2230,6 +2407,9 @@ input HostWhereInput {
   """processes edge predicates"""
   hasProcesses: Boolean
   hasProcessesWith: [HostProcessWhereInput!]
+  """credentials edge predicates"""
+  hasCredentials: Boolean
+  hasCredentialsWith: [HostCredentialWhereInput!]
 }
 """
 An object with an ID.
@@ -2470,6 +2650,8 @@ type Task implements Node {
   reportedFiles: [HostFile!]
   """Processes that have been reported by this task."""
   reportedProcesses: [HostProcess!]
+  """Credentials that have been reported by this task."""
+  reportedCredentials: [HostCredential!]
 }
 """A connection to a list of items."""
 type TaskConnection {
@@ -2624,6 +2806,9 @@ input TaskWhereInput {
   """reported_processes edge predicates"""
   hasReportedProcesses: Boolean
   hasReportedProcessesWith: [HostProcessWhereInput!]
+  """reported_credentials edge predicates"""
+  hasReportedCredentials: Boolean
+  hasReportedCredentialsWith: [HostCredentialWhereInput!]
 }
 type Tome implements Node {
   id: ID!
@@ -2842,6 +3027,9 @@ input UpdateHostInput {
   addProcessIDs: [ID!]
   removeProcessIDs: [ID!]
   clearProcesses: Boolean
+  addCredentialIDs: [ID!]
+  removeCredentialIDs: [ID!]
+  clearCredentials: Boolean
 }
 """
 UpdateTagInput is used for update Tag object.

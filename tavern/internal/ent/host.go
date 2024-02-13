@@ -48,16 +48,19 @@ type HostEdges struct {
 	Files []*HostFile `json:"files,omitempty"`
 	// Processes reported as running on this host system.
 	Processes []*HostProcess `json:"processes,omitempty"`
+	// Credentials reported from this host system.
+	Credentials []*HostCredential `json:"credentials,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [5]map[string]int
 
-	namedTags      map[string][]*Tag
-	namedBeacons   map[string][]*Beacon
-	namedFiles     map[string][]*HostFile
-	namedProcesses map[string][]*HostProcess
+	namedTags        map[string][]*Tag
+	namedBeacons     map[string][]*Beacon
+	namedFiles       map[string][]*HostFile
+	namedProcesses   map[string][]*HostProcess
+	namedCredentials map[string][]*HostCredential
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -94,6 +97,15 @@ func (e HostEdges) ProcessesOrErr() ([]*HostProcess, error) {
 		return e.Processes, nil
 	}
 	return nil, &NotLoadedError{edge: "processes"}
+}
+
+// CredentialsOrErr returns the Credentials value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) CredentialsOrErr() ([]*HostCredential, error) {
+	if e.loadedTypes[4] {
+		return e.Credentials, nil
+	}
+	return nil, &NotLoadedError{edge: "credentials"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -203,6 +215,11 @@ func (h *Host) QueryFiles() *HostFileQuery {
 // QueryProcesses queries the "processes" edge of the Host entity.
 func (h *Host) QueryProcesses() *HostProcessQuery {
 	return NewHostClient(h.config).QueryProcesses(h)
+}
+
+// QueryCredentials queries the "credentials" edge of the Host entity.
+func (h *Host) QueryCredentials() *HostCredentialQuery {
+	return NewHostClient(h.config).QueryCredentials(h)
 }
 
 // Update returns a builder for updating this Host.
@@ -345,6 +362,30 @@ func (h *Host) appendNamedProcesses(name string, edges ...*HostProcess) {
 		h.Edges.namedProcesses[name] = []*HostProcess{}
 	} else {
 		h.Edges.namedProcesses[name] = append(h.Edges.namedProcesses[name], edges...)
+	}
+}
+
+// NamedCredentials returns the Credentials named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedCredentials(name string) ([]*HostCredential, error) {
+	if h.Edges.namedCredentials == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedCredentials[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedCredentials(name string, edges ...*HostCredential) {
+	if h.Edges.namedCredentials == nil {
+		h.Edges.namedCredentials = make(map[string][]*HostCredential)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedCredentials[name] = []*HostCredential{}
+	} else {
+		h.Edges.namedCredentials[name] = append(h.Edges.namedCredentials[name], edges...)
 	}
 }
 

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -22,19 +23,21 @@ import (
 // TaskQuery is the builder for querying Task entities.
 type TaskQuery struct {
 	config
-	ctx                        *QueryContext
-	order                      []task.OrderOption
-	inters                     []Interceptor
-	predicates                 []predicate.Task
-	withQuest                  *QuestQuery
-	withBeacon                 *BeaconQuery
-	withReportedFiles          *HostFileQuery
-	withReportedProcesses      *HostProcessQuery
-	withFKs                    bool
-	modifiers                  []func(*sql.Selector)
-	loadTotal                  []func(context.Context, []*Task) error
-	withNamedReportedFiles     map[string]*HostFileQuery
-	withNamedReportedProcesses map[string]*HostProcessQuery
+	ctx                          *QueryContext
+	order                        []task.OrderOption
+	inters                       []Interceptor
+	predicates                   []predicate.Task
+	withQuest                    *QuestQuery
+	withBeacon                   *BeaconQuery
+	withReportedFiles            *HostFileQuery
+	withReportedProcesses        *HostProcessQuery
+	withReportedCredentials      *HostCredentialQuery
+	withFKs                      bool
+	modifiers                    []func(*sql.Selector)
+	loadTotal                    []func(context.Context, []*Task) error
+	withNamedReportedFiles       map[string]*HostFileQuery
+	withNamedReportedProcesses   map[string]*HostProcessQuery
+	withNamedReportedCredentials map[string]*HostCredentialQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -152,6 +155,28 @@ func (tq *TaskQuery) QueryReportedProcesses() *HostProcessQuery {
 			sqlgraph.From(task.Table, task.FieldID, selector),
 			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedProcessesTable, task.ReportedProcessesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedCredentials chains the current query on the "reported_credentials" edge.
+func (tq *TaskQuery) QueryReportedCredentials() *HostCredentialQuery {
+	query := (&HostCredentialClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedCredentialsTable, task.ReportedCredentialsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -346,15 +371,16 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		return nil
 	}
 	return &TaskQuery{
-		config:                tq.config,
-		ctx:                   tq.ctx.Clone(),
-		order:                 append([]task.OrderOption{}, tq.order...),
-		inters:                append([]Interceptor{}, tq.inters...),
-		predicates:            append([]predicate.Task{}, tq.predicates...),
-		withQuest:             tq.withQuest.Clone(),
-		withBeacon:            tq.withBeacon.Clone(),
-		withReportedFiles:     tq.withReportedFiles.Clone(),
-		withReportedProcesses: tq.withReportedProcesses.Clone(),
+		config:                  tq.config,
+		ctx:                     tq.ctx.Clone(),
+		order:                   append([]task.OrderOption{}, tq.order...),
+		inters:                  append([]Interceptor{}, tq.inters...),
+		predicates:              append([]predicate.Task{}, tq.predicates...),
+		withQuest:               tq.withQuest.Clone(),
+		withBeacon:              tq.withBeacon.Clone(),
+		withReportedFiles:       tq.withReportedFiles.Clone(),
+		withReportedProcesses:   tq.withReportedProcesses.Clone(),
+		withReportedCredentials: tq.withReportedCredentials.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -402,6 +428,17 @@ func (tq *TaskQuery) WithReportedProcesses(opts ...func(*HostProcessQuery)) *Tas
 		opt(query)
 	}
 	tq.withReportedProcesses = query
+	return tq
+}
+
+// WithReportedCredentials tells the query-builder to eager-load the nodes that are connected to
+// the "reported_credentials" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithReportedCredentials(opts ...func(*HostCredentialQuery)) *TaskQuery {
+	query := (&HostCredentialClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withReportedCredentials = query
 	return tq
 }
 
@@ -484,11 +521,12 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		nodes       = []*Task{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			tq.withQuest != nil,
 			tq.withBeacon != nil,
 			tq.withReportedFiles != nil,
 			tq.withReportedProcesses != nil,
+			tq.withReportedCredentials != nil,
 		}
 	)
 	if tq.withQuest != nil || tq.withBeacon != nil {
@@ -544,6 +582,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 			return nil, err
 		}
 	}
+	if query := tq.withReportedCredentials; query != nil {
+		if err := tq.loadReportedCredentials(ctx, query, nodes,
+			func(n *Task) { n.Edges.ReportedCredentials = []*HostCredential{} },
+			func(n *Task, e *HostCredential) { n.Edges.ReportedCredentials = append(n.Edges.ReportedCredentials, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range tq.withNamedReportedFiles {
 		if err := tq.loadReportedFiles(ctx, query, nodes,
 			func(n *Task) { n.appendNamedReportedFiles(name) },
@@ -555,6 +600,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		if err := tq.loadReportedProcesses(ctx, query, nodes,
 			func(n *Task) { n.appendNamedReportedProcesses(name) },
 			func(n *Task, e *HostProcess) { n.appendNamedReportedProcesses(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedReportedCredentials {
+		if err := tq.loadReportedCredentials(ctx, query, nodes,
+			func(n *Task) { n.appendNamedReportedCredentials(name) },
+			func(n *Task, e *HostCredential) { n.appendNamedReportedCredentials(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -692,6 +744,37 @@ func (tq *TaskQuery) loadReportedProcesses(ctx context.Context, query *HostProce
 	}
 	return nil
 }
+func (tq *TaskQuery) loadReportedCredentials(ctx context.Context, query *HostCredentialQuery, nodes []*Task, init func(*Task), assign func(*Task, *HostCredential)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Task)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostCredential(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(task.ReportedCredentialsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.task_reported_credentials
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "task_reported_credentials" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "task_reported_credentials" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (tq *TaskQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := tq.querySpec()
@@ -802,6 +885,20 @@ func (tq *TaskQuery) WithNamedReportedProcesses(name string, opts ...func(*HostP
 		tq.withNamedReportedProcesses = make(map[string]*HostProcessQuery)
 	}
 	tq.withNamedReportedProcesses[name] = query
+	return tq
+}
+
+// WithNamedReportedCredentials tells the query-builder to eager-load the nodes that are connected to the "reported_credentials"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithNamedReportedCredentials(name string, opts ...func(*HostCredentialQuery)) *TaskQuery {
+	query := (&HostCredentialClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedReportedCredentials == nil {
+		tq.withNamedReportedCredentials = make(map[string]*HostCredentialQuery)
+	}
+	tq.withNamedReportedCredentials[name] = query
 	return tq
 }
 
