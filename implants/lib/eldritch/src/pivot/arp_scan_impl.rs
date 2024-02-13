@@ -1,24 +1,40 @@
-use super::super::insert_dict_kv;
-use anyhow::{anyhow, Result};
-use ipnetwork::{IpNetwork, Ipv4Network};
+use anyhow::Result;
 #[cfg(not(target_os = "windows"))]
-use pnet::{
-    datalink::{self, channel, Channel::Ethernet, NetworkInterface},
-    packet::{
-        arp::{ArpOperations, ArpPacket, MutableArpPacket},
-        ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
-        Packet,
+use {
+    super::super::insert_dict_kv,
+    anyhow::anyhow,
+    ipnetwork::{IpNetwork, Ipv4Network},
+    pnet::{
+        datalink::{self, channel, Channel::Ethernet, NetworkInterface},
+        packet::{
+            arp::{ArpOperations, ArpPacket, MutableArpPacket},
+            ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
+            Packet,
+        },
+        util::MacAddr,
     },
-    util::MacAddr,
+    starlark::{
+        collections::SmallMap,
+        const_frozen_string,
+        values::{dict::Dict, Heap},
+    },
+    std::{
+        collections::HashMap,
+        net::{IpAddr, Ipv4Addr},
+        str::FromStr,
+        sync::{Arc, Mutex},
+        time::{Duration, SystemTime}
+    },
+
 };
-use starlark::collections::SmallMap;
-use starlark::const_frozen_string;
+
+
 use starlark::values::{dict::Dict, Heap};
-use std::collections::HashMap;
-use std::net::{IpAddr, Ipv4Addr};
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime};
+
+
+
+
+
 
 #[cfg(not(target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq)]
@@ -265,7 +281,7 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
 }
 
 #[cfg(target_os = "windows")]
-pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
+pub fn arp_scan(_starlark_heap: &Heap, _target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
     Err(anyhow::anyhow!("ARP Scanning is not available on Windows."))
 }
 

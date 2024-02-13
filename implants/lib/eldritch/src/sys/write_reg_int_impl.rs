@@ -92,7 +92,7 @@ mod tests {
         #[cfg(target_os = "windows")]
         {
             use super::*;
-            use std::str;
+            
             use uuid::Uuid;
             use winreg::{enums::*, RegKey};
 
