@@ -1,4 +1,5 @@
 mod process_list_impl;
+mod ssh_key_impl;
 mod user_password_impl;
 
 use starlark::{
@@ -25,6 +26,12 @@ fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
     fn process_list(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, process_list: UnpackList<SmallMap<String, Value>>) -> anyhow::Result<NoneType> {
         process_list_impl::process_list(starlark_eval, process_list.items)?;
+        Ok(NoneType{})
+    }
+
+    #[allow(unused_variables)]
+    fn ssh_key(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, username: String, key: String) -> anyhow::Result<NoneType> {
+        ssh_key_impl::ssh_key(starlark_eval, username, key)?;
         Ok(NoneType{})
     }
 
