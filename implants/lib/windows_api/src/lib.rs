@@ -3,7 +3,7 @@ pub mod open_process;
 pub mod virtual_alloc_ex;
 pub mod write_process_memory;
 
-fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
+pub fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     let mut should_err = false;
     let res_u8_vec: Vec<u8> = u32_vec
         .iter()

@@ -18,7 +18,7 @@ use {
     },
 };
 // pub unsafe fn OpenProcess(dwdesiredaccess: PROCESS_ACCESS_RIGHTS, binherithandle: super::super::Foundation::BOOL, dwprocessid: u32) -> super::super::Foundation::HANDLE
-fn open_process(
+pub unsafe fn open_process(
     dwdesiredaccess: PROCESS_ACCESS_RIGHTS,
     binherithandle: BOOL,
     dwprocessid: u32,

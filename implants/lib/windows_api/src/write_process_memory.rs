@@ -18,7 +18,7 @@ use {
     },
 };
 // pub unsafe fn WriteProcessMemory(hprocess: super::super::super::Foundation::HANDLE, lpbaseaddress: *const ::core::ffi::c_void, lpbuffer: *const ::core::ffi::c_void, nsize: usize, lpnumberofbyteswritten: *mut usize) -> super::super::super::Foundation::BOOL
-fn write_process_memory(
+pub unsafe fn write_process_memory(
     hprocess: HANDLE,
     lpbaseaddress: *const c_void,
     lpbuffer: *const c_void,

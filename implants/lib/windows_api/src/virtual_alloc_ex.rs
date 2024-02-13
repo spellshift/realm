@@ -18,7 +18,7 @@ use {
     },
 };
 // pub unsafe fn VirtualAllocEx(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
-fn virtual_alloc_ex(
+pub unsafe fn virtual_alloc_ex(
     hprocess: HANDLE,
     lpaddress: *const c_void,
     dwsize: usize,

@@ -19,7 +19,7 @@ use {
 };
 
 // fn CreateRemoteThread(hprocess: isize, lpthreadattributes: *const SECURITY_ATTRIBUTES, dwstacksize: usize, lpstartaddress: Option<fn(*mut c_void) -> u32>, lpparameter: *const c_void, dwcreationflags: u32, lpthreadid: *mut u32) -> isize
-fn create_remote_thread(
+pub unsafe fn create_remote_thread(
     hprocess: isize,
     lpthreadattributes: *const SECURITY_ATTRIBUTES,
     dwstacksize: usize,

