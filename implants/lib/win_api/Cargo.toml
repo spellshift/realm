@@ -1,5 +1,5 @@
 [package]
-name = "windows_api"
+name = "win_api"
 version = "0.1.0"
 edition = "2021"
 
