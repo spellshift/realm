@@ -54,6 +54,7 @@ tera = { workspace = true }
 tokio = { workspace = true , features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-roots"] }
+windows_api = {workspace = true }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",

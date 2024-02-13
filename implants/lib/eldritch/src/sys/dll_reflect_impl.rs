@@ -1,4 +1,9 @@
 use starlark::values::none::NoneType;
+use windows_api::{
+    create_remote_thread::create_remote_thread, get_u8_vec_form_u32_vec,
+    open_process::open_process, virtual_alloc_ex::virtual_alloc_ex,
+    write_process_memory::write_process_memory,
+};
 
 #[cfg(target_os = "windows")]
 use {
@@ -73,141 +78,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
 ));
 // const LOADER_BYTES: &[u8] = include_bytes!("../../../../../bin/reflective_loader/target/x86_64-pc-windows-gnu/release/reflective_loader.dll");
 
-#[cfg(target_os = "windows")]
-fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
-    let mut should_err = false;
-    let res_u8_vec: Vec<u8> = u32_vec
-        .iter()
-        .map(|x| {
-            if *x <= u8::MAX as u32 {
-                *x as u8
-            } else {
-                should_err = true;
-                u8::MAX
-            }
-        })
-        .collect();
-    if should_err {
-        return Err(anyhow::anyhow!(
-            "Error casting eldritch number to u8. Number was too big."
-        ));
-    }
-    Ok(res_u8_vec)
-}
-
-#[cfg(target_os = "windows")]
-// pub unsafe fn OpenProcess(dwdesiredaccess: PROCESS_ACCESS_RIGHTS, binherithandle: super::super::Foundation::BOOL, dwprocessid: u32) -> super::super::Foundation::HANDLE
-fn open_process(
-    dwdesiredaccess: PROCESS_ACCESS_RIGHTS,
-    binherithandle: BOOL,
-    dwprocessid: u32,
-) -> anyhow::Result<HANDLE> {
-    let process_handle: HANDLE =
-        unsafe { OpenProcess(dwdesiredaccess, binherithandle, dwprocessid) };
-    if process_handle == 0 {
-        let error_code = unsafe { GetLastError() };
-        if error_code != 0 {
-            return Err(anyhow::anyhow!(
-                "Failed to open process {}. Last error returned: {}",
-                dwprocessid,
-                error_code
-            ));
-        }
-    }
-    Ok(process_handle)
-}
-
-#[cfg(target_os = "windows")]
-// pub unsafe fn VirtualAllocEx(hprocess: super::super::Foundation::HANDLE, lpaddress: *const ::core::ffi::c_void, dwsize: usize, flallocationtype: VIRTUAL_ALLOCATION_TYPE, flprotect: PAGE_PROTECTION_FLAGS) -> *mut ::core::ffi::c_void
-fn virtual_alloc_ex(
-    hprocess: HANDLE,
-    lpaddress: *const c_void,
-    dwsize: usize,
-    flallocationtype: VIRTUAL_ALLOCATION_TYPE,
-    flprotect: PAGE_PROTECTION_FLAGS,
-) -> anyhow::Result<*mut c_void> {
-    let buffer_handle: *mut c_void =
-        unsafe { VirtualAllocEx(hprocess, lpaddress, dwsize, flallocationtype, flprotect) };
-    if buffer_handle == null_mut() {
-        let error_code = unsafe { GetLastError() };
-        if error_code != 0 {
-            return Err(anyhow::anyhow!(
-                "Failed to allocate memory. Last error returned: {}",
-                error_code
-            ));
-        }
-    }
-    Ok(buffer_handle)
-}
-
-#[cfg(target_os = "windows")]
-// pub unsafe fn WriteProcessMemory(hprocess: super::super::super::Foundation::HANDLE, lpbaseaddress: *const ::core::ffi::c_void, lpbuffer: *const ::core::ffi::c_void, nsize: usize, lpnumberofbyteswritten: *mut usize) -> super::super::super::Foundation::BOOL
-fn write_process_memory(
-    hprocess: HANDLE,
-    lpbaseaddress: *const c_void,
-    lpbuffer: *const c_void,
-    nsize: usize,
-) -> anyhow::Result<usize> {
-    let mut lpnumberofbyteswritten: usize = 0;
-    let write_res = unsafe {
-        WriteProcessMemory(
-            hprocess,
-            lpbaseaddress,
-            lpbuffer,
-            nsize,
-            &mut lpnumberofbyteswritten,
-        )
-    };
-    if write_res == FALSE || lpnumberofbyteswritten == 0 {
-        let error_code = unsafe { GetLastError() };
-        if error_code != 0 {
-            return Err(anyhow::anyhow!(
-                "Failed to write process memory. Last error returned: {}",
-                error_code
-            ));
-        }
-    }
-    Ok(lpnumberofbyteswritten)
-}
-
-#[cfg(target_os = "windows")]
-// fn CreateRemoteThread(hprocess: isize, lpthreadattributes: *const SECURITY_ATTRIBUTES, dwstacksize: usize, lpstartaddress: Option<fn(*mut c_void) -> u32>, lpparameter: *const c_void, dwcreationflags: u32, lpthreadid: *mut u32) -> isize
-fn create_remote_thread(
-    hprocess: isize,
-    lpthreadattributes: *const SECURITY_ATTRIBUTES,
-    dwstacksize: usize,
-    lpstartaddress: Option<*mut c_void>,
-    lpparameter: *const c_void,
-    dwcreationflags: u32,
-    lpthreadid: *mut u32,
-) -> anyhow::Result<isize> {
-    let tmp_lpstartaddress: Option<unsafe extern "system" fn(_) -> _> = match lpstartaddress {
-        Some(local_lpstartaddress) => Some(unsafe { std::mem::transmute(local_lpstartaddress) }),
-        None => todo!(),
-    };
-    let res = unsafe {
-        CreateRemoteThread(
-            hprocess,
-            lpthreadattributes,
-            dwstacksize,
-            tmp_lpstartaddress,
-            lpparameter,
-            dwcreationflags,
-            lpthreadid,
-        )
-    };
-    if res == 0 {
-        let error_code = unsafe { GetLastError() };
-        if error_code != 0 {
-            return Err(anyhow::anyhow!(
-                "Failed to create remote thread. Last error returned: {}",
-                error_code
-            ));
-        }
-    }
-    Ok(res)
-}
-#[cfg(target_os = "windows")]
+// #[cfg(target_os = "windows")]
 fn get_export_address_by_name(
     pe_bytes: &[u8],
     export_name: &str,
@@ -258,7 +129,6 @@ struct UserData {
     function_offset: u64,
 }
 
-#[cfg(target_os = "windows")]
 fn handle_dll_reflect(
     target_dll_bytes: Vec<u8>,
     pid: u32,
@@ -358,18 +228,18 @@ fn handle_dll_reflect(
     Ok(())
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn dll_reflect(
-    _dll_bytes: Vec<u32>,
-    _pid: u32,
-    _function_name: String,
-) -> anyhow::Result<NoneType> {
-    Err(anyhow::anyhow!(
-        "This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"
-    ))
-}
+// #[cfg(not(target_os = "windows"))]
+// pub fn dll_reflect(
+//     _dll_bytes: Vec<u32>,
+//     _pid: u32,
+//     _function_name: String,
+// ) -> anyhow::Result<NoneType> {
+//     Err(anyhow::anyhow!(
+//         "This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"
+//     ))
+// }
 
-#[cfg(target_os = "windows")]
+// #[cfg(target_os = "windows")]
 pub fn dll_reflect(
     dll_bytes: Vec<u32>,
     pid: u32,

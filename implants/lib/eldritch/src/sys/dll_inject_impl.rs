@@ -2,7 +2,7 @@ use anyhow::Result;
 use starlark::values::none::NoneType;
 #[cfg(target_os = "windows")]
 use std::ffi::c_void;
-#[cfg(target_os = "windows")]
+// #[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     Foundation::CloseHandle,
     Security::SECURITY_ATTRIBUTES,
@@ -22,7 +22,6 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
     return Err(anyhow::anyhow!(
         "This OS isn't supported by the dll_inject function.\nOnly windows systems are supported"
     ));
-    #[cfg(target_os = "windows")]
     unsafe {
         let dll_path_null_terminated: String = format!("{}\0", dll_path);
 
