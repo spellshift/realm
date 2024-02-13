@@ -144,18 +144,21 @@ jobs:
           toolchain: '1.76.0'
           default: true
           profile: minimal
+          target: x86_64-pc-windows-gnu
       - name: 🛠️ Setup Rust Toolchain (Loader)
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2024-02-11
           default: false
           profile: minimal
+          target: x86_64-pc-windows-gnu
       - name: ⚡ Setup Rust (x86_64-pc-windows-gnu)
         run: |
           sudo apt update && \
           sudo apt install -y gcc-mingw-w64 && \
           rustup target add x86_64-pc-windows-gnu --toolchain '1.76.0' && \
           rustup target add x86_64-pc-windows-gnu --toolchain 'nightly-2024-02-11'
+          rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-unknown-linux-gnu
       - name: 🔨 Build Loader
         working-directory: ./bin/reflective_loader/
         run: cargo build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
@@ -166,7 +169,7 @@ jobs:
           CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
           RUSTFLAGS: "-C target-feature=+crt-static"
       - name: 🔨 Build Imix (DLL)
-        run: cargo build --lib --release
+        run: cargo build --lib --release --verbose --target=x86_64-pc-windows-gnu
         working-directory: ./implants/imix
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
@@ -274,18 +277,21 @@ jobs:
             toolchain: '1.76.0'
             default: true
             profile: minimal
+            target: x86_64-pc-windows-gnu
         - name: 🛠️ Setup Rust Toolchain (Loader)
           uses: actions-rs/toolchain@v1
           with:
             toolchain: nightly-2024-02-11
             default: false
             profile: minimal
+            target: x86_64-pc-windows-gnu
         - name: ⚡ Setup Rust
           run: |
             sudo apt update && \
             sudo apt install -y gcc-mingw-w64 && \
             rustup target add x86_64-pc-windows-gnu --toolchain '1.76.0' && \
             rustup target add x86_64-pc-windows-gnu --toolchain 'nightly-2024-02-11'
+            rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-unknown-linux-gnu
         - name: 🔨 Build Loader
           working-directory: ./bin/reflective_loader/
           run: cargo build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
