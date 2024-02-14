@@ -12,6 +12,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -1049,6 +1050,10 @@ type HostWhereInput struct {
 	// "processes" edge predicates.
 	HasProcesses     *bool                    `json:"hasProcesses,omitempty"`
 	HasProcessesWith []*HostProcessWhereInput `json:"hasProcessesWith,omitempty"`
+
+	// "credentials" edge predicates.
+	HasCredentials     *bool                       `json:"hasCredentials,omitempty"`
+	HasCredentialsWith []*HostCredentialWhereInput `json:"hasCredentialsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1438,6 +1443,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 		}
 		predicates = append(predicates, host.HasProcessesWith(with...))
 	}
+	if i.HasCredentials != nil {
+		p := host.HasCredentials()
+		if !*i.HasCredentials {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCredentialsWith) > 0 {
+		with := make([]predicate.HostCredential, 0, len(i.HasCredentialsWith))
+		for _, w := range i.HasCredentialsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCredentialsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasCredentialsWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyHostWhereInput
@@ -1445,6 +1468,350 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 		return predicates[0], nil
 	default:
 		return host.And(predicates...), nil
+	}
+}
+
+// HostCredentialWhereInput represents a where input for filtering HostCredential queries.
+type HostCredentialWhereInput struct {
+	Predicates []predicate.HostCredential  `json:"-"`
+	Not        *HostCredentialWhereInput   `json:"not,omitempty"`
+	Or         []*HostCredentialWhereInput `json:"or,omitempty"`
+	And        []*HostCredentialWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "principal" field predicates.
+	Principal             *string  `json:"principal,omitempty"`
+	PrincipalNEQ          *string  `json:"principalNEQ,omitempty"`
+	PrincipalIn           []string `json:"principalIn,omitempty"`
+	PrincipalNotIn        []string `json:"principalNotIn,omitempty"`
+	PrincipalGT           *string  `json:"principalGT,omitempty"`
+	PrincipalGTE          *string  `json:"principalGTE,omitempty"`
+	PrincipalLT           *string  `json:"principalLT,omitempty"`
+	PrincipalLTE          *string  `json:"principalLTE,omitempty"`
+	PrincipalContains     *string  `json:"principalContains,omitempty"`
+	PrincipalHasPrefix    *string  `json:"principalHasPrefix,omitempty"`
+	PrincipalHasSuffix    *string  `json:"principalHasSuffix,omitempty"`
+	PrincipalEqualFold    *string  `json:"principalEqualFold,omitempty"`
+	PrincipalContainsFold *string  `json:"principalContainsFold,omitempty"`
+
+	// "secret" field predicates.
+	Secret             *string  `json:"secret,omitempty"`
+	SecretNEQ          *string  `json:"secretNEQ,omitempty"`
+	SecretIn           []string `json:"secretIn,omitempty"`
+	SecretNotIn        []string `json:"secretNotIn,omitempty"`
+	SecretGT           *string  `json:"secretGT,omitempty"`
+	SecretGTE          *string  `json:"secretGTE,omitempty"`
+	SecretLT           *string  `json:"secretLT,omitempty"`
+	SecretLTE          *string  `json:"secretLTE,omitempty"`
+	SecretContains     *string  `json:"secretContains,omitempty"`
+	SecretHasPrefix    *string  `json:"secretHasPrefix,omitempty"`
+	SecretHasSuffix    *string  `json:"secretHasSuffix,omitempty"`
+	SecretEqualFold    *string  `json:"secretEqualFold,omitempty"`
+	SecretContainsFold *string  `json:"secretContainsFold,omitempty"`
+
+	// "host" edge predicates.
+	HasHost     *bool             `json:"hasHost,omitempty"`
+	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
+
+	// "task" edge predicates.
+	HasTask     *bool             `json:"hasTask,omitempty"`
+	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *HostCredentialWhereInput) AddPredicates(predicates ...predicate.HostCredential) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the HostCredentialWhereInput filter on the HostCredentialQuery builder.
+func (i *HostCredentialWhereInput) Filter(q *HostCredentialQuery) (*HostCredentialQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyHostCredentialWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyHostCredentialWhereInput is returned in case the HostCredentialWhereInput is empty.
+var ErrEmptyHostCredentialWhereInput = errors.New("ent: empty predicate HostCredentialWhereInput")
+
+// P returns a predicate for filtering hostcredentials.
+// An error is returned if the input is empty or invalid.
+func (i *HostCredentialWhereInput) P() (predicate.HostCredential, error) {
+	var predicates []predicate.HostCredential
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, hostcredential.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.HostCredential, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, hostcredential.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.HostCredential, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, hostcredential.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, hostcredential.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, hostcredential.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, hostcredential.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, hostcredential.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, hostcredential.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, hostcredential.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, hostcredential.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, hostcredential.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, hostcredential.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, hostcredential.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, hostcredential.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, hostcredential.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, hostcredential.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, hostcredential.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, hostcredential.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, hostcredential.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, hostcredential.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, hostcredential.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, hostcredential.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, hostcredential.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, hostcredential.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, hostcredential.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, hostcredential.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, hostcredential.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Principal != nil {
+		predicates = append(predicates, hostcredential.PrincipalEQ(*i.Principal))
+	}
+	if i.PrincipalNEQ != nil {
+		predicates = append(predicates, hostcredential.PrincipalNEQ(*i.PrincipalNEQ))
+	}
+	if len(i.PrincipalIn) > 0 {
+		predicates = append(predicates, hostcredential.PrincipalIn(i.PrincipalIn...))
+	}
+	if len(i.PrincipalNotIn) > 0 {
+		predicates = append(predicates, hostcredential.PrincipalNotIn(i.PrincipalNotIn...))
+	}
+	if i.PrincipalGT != nil {
+		predicates = append(predicates, hostcredential.PrincipalGT(*i.PrincipalGT))
+	}
+	if i.PrincipalGTE != nil {
+		predicates = append(predicates, hostcredential.PrincipalGTE(*i.PrincipalGTE))
+	}
+	if i.PrincipalLT != nil {
+		predicates = append(predicates, hostcredential.PrincipalLT(*i.PrincipalLT))
+	}
+	if i.PrincipalLTE != nil {
+		predicates = append(predicates, hostcredential.PrincipalLTE(*i.PrincipalLTE))
+	}
+	if i.PrincipalContains != nil {
+		predicates = append(predicates, hostcredential.PrincipalContains(*i.PrincipalContains))
+	}
+	if i.PrincipalHasPrefix != nil {
+		predicates = append(predicates, hostcredential.PrincipalHasPrefix(*i.PrincipalHasPrefix))
+	}
+	if i.PrincipalHasSuffix != nil {
+		predicates = append(predicates, hostcredential.PrincipalHasSuffix(*i.PrincipalHasSuffix))
+	}
+	if i.PrincipalEqualFold != nil {
+		predicates = append(predicates, hostcredential.PrincipalEqualFold(*i.PrincipalEqualFold))
+	}
+	if i.PrincipalContainsFold != nil {
+		predicates = append(predicates, hostcredential.PrincipalContainsFold(*i.PrincipalContainsFold))
+	}
+	if i.Secret != nil {
+		predicates = append(predicates, hostcredential.SecretEQ(*i.Secret))
+	}
+	if i.SecretNEQ != nil {
+		predicates = append(predicates, hostcredential.SecretNEQ(*i.SecretNEQ))
+	}
+	if len(i.SecretIn) > 0 {
+		predicates = append(predicates, hostcredential.SecretIn(i.SecretIn...))
+	}
+	if len(i.SecretNotIn) > 0 {
+		predicates = append(predicates, hostcredential.SecretNotIn(i.SecretNotIn...))
+	}
+	if i.SecretGT != nil {
+		predicates = append(predicates, hostcredential.SecretGT(*i.SecretGT))
+	}
+	if i.SecretGTE != nil {
+		predicates = append(predicates, hostcredential.SecretGTE(*i.SecretGTE))
+	}
+	if i.SecretLT != nil {
+		predicates = append(predicates, hostcredential.SecretLT(*i.SecretLT))
+	}
+	if i.SecretLTE != nil {
+		predicates = append(predicates, hostcredential.SecretLTE(*i.SecretLTE))
+	}
+	if i.SecretContains != nil {
+		predicates = append(predicates, hostcredential.SecretContains(*i.SecretContains))
+	}
+	if i.SecretHasPrefix != nil {
+		predicates = append(predicates, hostcredential.SecretHasPrefix(*i.SecretHasPrefix))
+	}
+	if i.SecretHasSuffix != nil {
+		predicates = append(predicates, hostcredential.SecretHasSuffix(*i.SecretHasSuffix))
+	}
+	if i.SecretEqualFold != nil {
+		predicates = append(predicates, hostcredential.SecretEqualFold(*i.SecretEqualFold))
+	}
+	if i.SecretContainsFold != nil {
+		predicates = append(predicates, hostcredential.SecretContainsFold(*i.SecretContainsFold))
+	}
+
+	if i.HasHost != nil {
+		p := hostcredential.HasHost()
+		if !*i.HasHost {
+			p = hostcredential.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasHostWith) > 0 {
+		with := make([]predicate.Host, 0, len(i.HasHostWith))
+		for _, w := range i.HasHostWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasHostWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostcredential.HasHostWith(with...))
+	}
+	if i.HasTask != nil {
+		p := hostcredential.HasTask()
+		if !*i.HasTask {
+			p = hostcredential.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTaskWith) > 0 {
+		with := make([]predicate.Task, 0, len(i.HasTaskWith))
+		for _, w := range i.HasTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostcredential.HasTaskWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyHostCredentialWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return hostcredential.And(predicates...), nil
 	}
 }
 
@@ -1552,14 +1919,14 @@ type HostFileWhereInput struct {
 	PermissionsContainsFold *string  `json:"permissionsContainsFold,omitempty"`
 
 	// "size" field predicates.
-	Size      *int  `json:"size,omitempty"`
-	SizeNEQ   *int  `json:"sizeNEQ,omitempty"`
-	SizeIn    []int `json:"sizeIn,omitempty"`
-	SizeNotIn []int `json:"sizeNotIn,omitempty"`
-	SizeGT    *int  `json:"sizeGT,omitempty"`
-	SizeGTE   *int  `json:"sizeGTE,omitempty"`
-	SizeLT    *int  `json:"sizeLT,omitempty"`
-	SizeLTE   *int  `json:"sizeLTE,omitempty"`
+	Size      *uint64  `json:"size,omitempty"`
+	SizeNEQ   *uint64  `json:"sizeNEQ,omitempty"`
+	SizeIn    []uint64 `json:"sizeIn,omitempty"`
+	SizeNotIn []uint64 `json:"sizeNotIn,omitempty"`
+	SizeGT    *uint64  `json:"sizeGT,omitempty"`
+	SizeGTE   *uint64  `json:"sizeGTE,omitempty"`
+	SizeLT    *uint64  `json:"sizeLT,omitempty"`
+	SizeLTE   *uint64  `json:"sizeLTE,omitempty"`
 
 	// "hash" field predicates.
 	Hash             *string  `json:"hash,omitempty"`
@@ -3444,6 +3811,10 @@ type TaskWhereInput struct {
 	// "reported_processes" edge predicates.
 	HasReportedProcesses     *bool                    `json:"hasReportedProcesses,omitempty"`
 	HasReportedProcessesWith []*HostProcessWhereInput `json:"hasReportedProcessesWith,omitempty"`
+
+	// "reported_credentials" edge predicates.
+	HasReportedCredentials     *bool                       `json:"hasReportedCredentials,omitempty"`
+	HasReportedCredentialsWith []*HostCredentialWhereInput `json:"hasReportedCredentialsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3865,6 +4236,24 @@ func (i *TaskWhereInput) P() (predicate.Task, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, task.HasReportedProcessesWith(with...))
+	}
+	if i.HasReportedCredentials != nil {
+		p := task.HasReportedCredentials()
+		if !*i.HasReportedCredentials {
+			p = task.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasReportedCredentialsWith) > 0 {
+		with := make([]predicate.HostCredential, 0, len(i.HasReportedCredentialsWith))
+		for _, w := range i.HasReportedCredentialsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasReportedCredentialsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, task.HasReportedCredentialsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

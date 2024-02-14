@@ -1,8 +1,14 @@
 use super::{drain::drain, drain::drain_last, Environment, FileRequest};
-use crate::pb::{File, ProcessList};
 use crate::{
-    assets::AssetsLibrary, crypto::CryptoLibrary, file::FileLibrary, pb::Tome, pivot::PivotLibrary,
-    process::ProcessLibrary, report::ReportLibrary, sys::SysLibrary, time::TimeLibrary,
+    assets::AssetsLibrary,
+    crypto::CryptoLibrary,
+    file::FileLibrary,
+    pb::{Credential, File, ProcessList, Tome},
+    pivot::PivotLibrary,
+    process::ProcessLibrary,
+    report::ReportLibrary,
+    sys::SysLibrary,
+    time::TimeLibrary,
 };
 use anyhow::{Context, Error, Result};
 use chrono::Utc;
@@ -24,6 +30,7 @@ pub async fn start(tome: Tome) -> Runtime {
     let (tx_exec_finished_at, rx_exec_finished_at) = channel::<Timestamp>();
     let (tx_error, rx_error) = channel::<Error>();
     let (tx_output, rx_output) = channel::<String>();
+    let (tx_credential, rx_credential) = channel::<Credential>();
     let (tx_process_list, rx_process_list) = channel::<ProcessList>();
     let (tx_file, rx_file) = channel::<File>();
     let (tx_file_request, rx_file_request) = channel::<FileRequest>();
@@ -31,6 +38,7 @@ pub async fn start(tome: Tome) -> Runtime {
     let env = Environment {
         tx_output,
         tx_error: tx_error.clone(),
+        tx_credential,
         tx_process_list,
         tx_file,
         tx_file_request,
@@ -102,6 +110,7 @@ pub async fn start(tome: Tome) -> Runtime {
         rx_exec_finished_at,
         rx_error,
         rx_output,
+        rx_credential,
         rx_process_list,
         rx_file,
         rx_file_request,
@@ -137,6 +146,7 @@ pub struct Runtime {
     rx_exec_finished_at: Receiver<Timestamp>,
     rx_output: Receiver<String>,
     rx_error: Receiver<Error>,
+    rx_credential: Receiver<Credential>,
     rx_process_list: Receiver<ProcessList>,
     rx_file: Receiver<File>,
     rx_file_request: Receiver<FileRequest>,
@@ -276,6 +286,13 @@ impl Runtime {
      */
     pub fn collect_errors(&self) -> Vec<Error> {
         drain(&self.rx_error)
+    }
+
+    /*
+     * Returns all currently available reported credentials, if any.
+     */
+    pub fn collect_credentials(&self) -> Vec<Credential> {
+        drain(&self.rx_credential)
     }
 
     /*

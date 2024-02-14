@@ -75,6 +75,8 @@ func (Task) Edges() []ent.Edge {
 			Comment("Files that have been reported by this task."),
 		edge.To("reported_processes", HostProcess.Type).
 			Comment("Processes that have been reported by this task."),
+		edge.To("reported_credentials", HostCredential.Type).
+			Comment("Credentials that have been reported by this task."),
 	}
 }
 

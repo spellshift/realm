@@ -115,8 +115,7 @@ fn build_proto() -> Result<()> {
     }
 
     match tonic_build::configure()
-        .out_dir("./src")
-        .protoc_arg("--rust_out=./src/pb.rs")
+        .out_dir("./src/generated/")
         .build_client(false)
         .build_server(false)
         .compile(&["eldritch.proto"], &["../../../tavern/internal/c2/proto"])
