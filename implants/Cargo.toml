@@ -1,5 +1,5 @@
 [workspace]
-members = ["imix", "golem", "lib/eldritch", "lib/c2"]
+members = ["imix", "golem", "lib/eldritch", "lib/c2", "lib/win_api"]
 resolver = "2"
 
 [workspace.dependencies]
