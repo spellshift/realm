@@ -1,5 +1,5 @@
 name: List files
-description: List the files and directories found at the path. Supports basic glob functionality. Does not glob more than one level
+description: List the files and directories found at the path
 author: hulto
 support_model: FIRST_PARTY
 tactic: RECON
