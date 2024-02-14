@@ -1,20 +1,49 @@
+def print_table(rows: list[list]):
+    """Pretty print a table, auto adjusting width based on the row data"""
+    def rpad(s: str, n: int, c=" "):
+        return s + (n-len(s))*c
+    # count columns
+    counts = [0]*len(rows[0])
+    for r in rows:
+        for i, f in enumerate(r):
+            counts[i] = max(len(f), counts[i])
+    # Print the columns
+    for r in rows:
+        for i, c in enumerate(r):
+            print(rpad(c, counts[i]+2))
+        print("\n")
+
 def netstat():
-    nets = process.netstat()
+    """Pretty print the netstat results"""
+    # Faster to do this than to call process.info on each PID
+    pids = {}
+    for p in process.list():
+        pids[p['pid']] = p['name']
 
-    print("----TCP----\n")
-    print("socket_type,local,remote,state,pids\n")
-    for n in nets:
-        if str(n['socket_type']) == "TCP":
-            print(str(n['socket_type'])+", "+str(n['local_address'])+":"+str(n['local_port'])+", "+str(n['remote_address'])+":"+str(n['remote_port'])+", "+str(n['state'])+", "+str(n['pids'])+"\n")
+    # Counts for dynamic column formating
+    counts = [6,6,7,6,8]
+    rows = [["PROTO", "LOCAL", "REMOTE", "STATE", "PROCESS"]]
+    # Loop through each net result and format the columns
+    for n in process.netstat():
+        fields = [
+            n["socket_type"],
+            n.get("local_address", "") + ":" + str(n["local_port"]),
+            "",
+            n.get("state", "")
+        ]
+        remote = n.get("remote_address", "")
+        if remote:
+            fields[2] = remote + ":" + str(n.get("remote_port",))
+        
+        # Established = ESTAB
+        if fields[3] == "ESTABLISHED":
+            fields[3] = fields[3][:5]
+        # Get proc info. "pids" will only ever be one
+        if n["pids"]:
+            fields += ["["+str(n["pids"][0])+"]"+pids.get(n["pids"][0])]
 
-    print("----UDP----\n")
-    print("socket_type,local,pids\n")
-    for n in nets:
-        if str(n['socket_type']) == "UDP":
-            print(str(n['socket_type'])+", "+str(n['local_address'])+":"+str(n['local_port'])+", "+str(n['pids'])+"\n")
-
-
-    return
+        rows.append(fields)
+    print_table(rows)
 
 netstat()
 print("\n")

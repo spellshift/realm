@@ -17,7 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
-func TestReportCredentialList(t *testing.T) {
+func TestReportCredential(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
 	client, graph, close := c2test.New(t)
@@ -32,6 +32,7 @@ func TestReportCredentialList(t *testing.T) {
 		SetTask(existingTask).
 		SetPrincipal("test-cred").
 		SetSecret("test-secret").
+		SetKind(epb.Credential_KIND_PASSWORD).
 		SaveX(ctx)
 
 	// Test Cases
@@ -54,6 +55,7 @@ func TestReportCredentialList(t *testing.T) {
 				Credential: &epb.Credential{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
+					Kind:      existingCredential.Kind,
 				},
 			},
 			wantResp: &c2pb.ReportCredentialResponse{},
@@ -62,10 +64,12 @@ func TestReportCredentialList(t *testing.T) {
 				{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
+					Kind:      existingCredential.Kind,
 				},
 				{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
+					Kind:      existingCredential.Kind,
 				},
 			},
 		},
@@ -78,6 +82,7 @@ func TestReportCredentialList(t *testing.T) {
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "changeme123",
+					Kind:      epb.Credential_KIND_PASSWORD,
 				},
 			},
 			wantResp: &c2pb.ReportCredentialResponse{},
@@ -86,14 +91,17 @@ func TestReportCredentialList(t *testing.T) {
 				{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
+					Kind:      existingCredential.Kind,
 				},
 				{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
+					Kind:      existingCredential.Kind,
 				},
 				{
 					Principal: "root",
 					Secret:    "changeme123",
+					Kind:      existingCredential.Kind,
 				},
 			},
 		},
@@ -106,6 +114,7 @@ func TestReportCredentialList(t *testing.T) {
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "this_will_not_work",
+					Kind:      epb.Credential_KIND_UNSPECIFIED,
 				},
 			},
 			wantResp: nil,
@@ -160,7 +169,7 @@ func TestReportCredentialList(t *testing.T) {
 			var pbHostCreds []*epb.Credential
 			entHostCredentials := host.QueryCredentials().AllX(ctx)
 			for _, cred := range entHostCredentials {
-				pbHostCreds = append(pbHostCreds, &epb.Credential{Principal: cred.Principal, Secret: cred.Secret})
+				pbHostCreds = append(pbHostCreds, &epb.Credential{Principal: cred.Principal, Secret: cred.Secret, Kind: cred.Kind})
 			}
 
 			comparer := func(x any, y any) bool {

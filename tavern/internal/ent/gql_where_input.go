@@ -1538,6 +1538,12 @@ type HostCredentialWhereInput struct {
 	SecretEqualFold    *string  `json:"secretEqualFold,omitempty"`
 	SecretContainsFold *string  `json:"secretContainsFold,omitempty"`
 
+	// "kind" field predicates.
+	Kind      *epb.Credential_Kind  `json:"kind,omitempty"`
+	KindNEQ   *epb.Credential_Kind  `json:"kindNEQ,omitempty"`
+	KindIn    []epb.Credential_Kind `json:"kindIn,omitempty"`
+	KindNotIn []epb.Credential_Kind `json:"kindNotIn,omitempty"`
+
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
@@ -1767,6 +1773,18 @@ func (i *HostCredentialWhereInput) P() (predicate.HostCredential, error) {
 	}
 	if i.SecretContainsFold != nil {
 		predicates = append(predicates, hostcredential.SecretContainsFold(*i.SecretContainsFold))
+	}
+	if i.Kind != nil {
+		predicates = append(predicates, hostcredential.KindEQ(*i.Kind))
+	}
+	if i.KindNEQ != nil {
+		predicates = append(predicates, hostcredential.KindNEQ(*i.KindNEQ))
+	}
+	if len(i.KindIn) > 0 {
+		predicates = append(predicates, hostcredential.KindIn(i.KindIn...))
+	}
+	if len(i.KindNotIn) > 0 {
+		predicates = append(predicates, hostcredential.KindNotIn(i.KindNotIn...))
 	}
 
 	if i.HasHost != nil {

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -45,6 +46,12 @@ func (hcu *HostCredentialUpdate) SetPrincipal(s string) *HostCredentialUpdate {
 // SetSecret sets the "secret" field.
 func (hcu *HostCredentialUpdate) SetSecret(s string) *HostCredentialUpdate {
 	hcu.mutation.SetSecret(s)
+	return hcu
+}
+
+// SetKind sets the "kind" field.
+func (hcu *HostCredentialUpdate) SetKind(ek epb.Credential_Kind) *HostCredentialUpdate {
+	hcu.mutation.SetKind(ek)
 	return hcu
 }
 
@@ -135,6 +142,11 @@ func (hcu *HostCredentialUpdate) check() error {
 			return &ValidationError{Name: "secret", err: fmt.Errorf(`ent: validator failed for field "HostCredential.secret": %w`, err)}
 		}
 	}
+	if v, ok := hcu.mutation.Kind(); ok {
+		if err := hostcredential.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
+		}
+	}
 	if _, ok := hcu.mutation.HostID(); hcu.mutation.HostCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
 	}
@@ -164,6 +176,9 @@ func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 	}
 	if value, ok := hcu.mutation.Secret(); ok {
 		_spec.SetField(hostcredential.FieldSecret, field.TypeString, value)
+	}
+	if value, ok := hcu.mutation.Kind(); ok {
+		_spec.SetField(hostcredential.FieldKind, field.TypeEnum, value)
 	}
 	if hcu.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -258,6 +273,12 @@ func (hcuo *HostCredentialUpdateOne) SetPrincipal(s string) *HostCredentialUpdat
 // SetSecret sets the "secret" field.
 func (hcuo *HostCredentialUpdateOne) SetSecret(s string) *HostCredentialUpdateOne {
 	hcuo.mutation.SetSecret(s)
+	return hcuo
+}
+
+// SetKind sets the "kind" field.
+func (hcuo *HostCredentialUpdateOne) SetKind(ek epb.Credential_Kind) *HostCredentialUpdateOne {
+	hcuo.mutation.SetKind(ek)
 	return hcuo
 }
 
@@ -361,6 +382,11 @@ func (hcuo *HostCredentialUpdateOne) check() error {
 			return &ValidationError{Name: "secret", err: fmt.Errorf(`ent: validator failed for field "HostCredential.secret": %w`, err)}
 		}
 	}
+	if v, ok := hcuo.mutation.Kind(); ok {
+		if err := hostcredential.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
+		}
+	}
 	if _, ok := hcuo.mutation.HostID(); hcuo.mutation.HostCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
 	}
@@ -407,6 +433,9 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 	}
 	if value, ok := hcuo.mutation.Secret(); ok {
 		_spec.SetField(hostcredential.FieldSecret, field.TypeString, value)
+	}
+	if value, ok := hcuo.mutation.Kind(); ok {
+		_spec.SetField(hostcredential.FieldKind, field.TypeEnum, value)
 	}
 	if hcuo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{

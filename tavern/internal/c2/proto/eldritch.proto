@@ -61,14 +61,18 @@ message ProcessList {
     repeated Process list = 1;
 }
 
-// File on the host system.
-message File {
+// FileMetadata about a file on the host system.
+message FileMetadata {
     string path = 1;
     string owner = 2;
     string group = 3;
     string permissions = 4;
     uint64 size = 5;
     string sha3_256_hash = 6;
+}
 
-    bytes chunk = 7;
+// File on the host system.
+message File {
+    FileMetadata metadata = 1;
+    bytes chunk = 2;
 }
