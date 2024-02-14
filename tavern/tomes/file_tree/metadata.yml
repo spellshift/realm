@@ -11,4 +11,4 @@ paramdefs:
 - name: depth
   type: int
   label: Recurse Depth
-  placeholder: "-1"
+  placeholder: "3, or -1 for infinite recursion"
