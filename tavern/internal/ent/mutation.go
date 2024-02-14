@@ -2891,6 +2891,7 @@ type HostCredentialMutation struct {
 	last_modified_at *time.Time
 	principal        *string
 	secret           *string
+	kind             *epb.Credential_Kind
 	clearedFields    map[string]struct{}
 	host             *int
 	clearedhost      bool
@@ -3143,6 +3144,42 @@ func (m *HostCredentialMutation) ResetSecret() {
 	m.secret = nil
 }
 
+// SetKind sets the "kind" field.
+func (m *HostCredentialMutation) SetKind(ek epb.Credential_Kind) {
+	m.kind = &ek
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *HostCredentialMutation) Kind() (r epb.Credential_Kind, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the HostCredential entity.
+// If the HostCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostCredentialMutation) OldKind(ctx context.Context) (v epb.Credential_Kind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *HostCredentialMutation) ResetKind() {
+	m.kind = nil
+}
+
 // SetHostID sets the "host" edge to the Host entity by id.
 func (m *HostCredentialMutation) SetHostID(id int) {
 	m.host = &id
@@ -3255,7 +3292,7 @@ func (m *HostCredentialMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HostCredentialMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, hostcredential.FieldCreatedAt)
 	}
@@ -3267,6 +3304,9 @@ func (m *HostCredentialMutation) Fields() []string {
 	}
 	if m.secret != nil {
 		fields = append(fields, hostcredential.FieldSecret)
+	}
+	if m.kind != nil {
+		fields = append(fields, hostcredential.FieldKind)
 	}
 	return fields
 }
@@ -3284,6 +3324,8 @@ func (m *HostCredentialMutation) Field(name string) (ent.Value, bool) {
 		return m.Principal()
 	case hostcredential.FieldSecret:
 		return m.Secret()
+	case hostcredential.FieldKind:
+		return m.Kind()
 	}
 	return nil, false
 }
@@ -3301,6 +3343,8 @@ func (m *HostCredentialMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldPrincipal(ctx)
 	case hostcredential.FieldSecret:
 		return m.OldSecret(ctx)
+	case hostcredential.FieldKind:
+		return m.OldKind(ctx)
 	}
 	return nil, fmt.Errorf("unknown HostCredential field %s", name)
 }
@@ -3337,6 +3381,13 @@ func (m *HostCredentialMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSecret(v)
+		return nil
+	case hostcredential.FieldKind:
+		v, ok := value.(epb.Credential_Kind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
 		return nil
 	}
 	return fmt.Errorf("unknown HostCredential field %s", name)
@@ -3398,6 +3449,9 @@ func (m *HostCredentialMutation) ResetField(name string) error {
 		return nil
 	case hostcredential.FieldSecret:
 		m.ResetSecret()
+		return nil
+	case hostcredential.FieldKind:
+		m.ResetKind()
 		return nil
 	}
 	return fmt.Errorf("unknown HostCredential field %s", name)

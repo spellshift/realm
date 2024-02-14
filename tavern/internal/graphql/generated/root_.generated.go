@@ -88,6 +88,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		Host           func(childComplexity int) int
 		ID             func(childComplexity int) int
+		Kind           func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Principal      func(childComplexity int) int
 		Secret         func(childComplexity int) int
@@ -487,6 +488,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostCredential.ID(childComplexity), true
+
+	case "HostCredential.kind":
+		if e.complexity.HostCredential.Kind == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Kind(childComplexity), true
 
 	case "HostCredential.lastModifiedAt":
 		if e.complexity.HostCredential.LastModifiedAt == nil {
@@ -1805,10 +1813,18 @@ type HostCredential implements Node {
   principal: String!
   """Secret for this credential (e.g. password)."""
   secret: String!
+  """Kind of credential."""
+  kind: HostCredentialKind!
   """Host the credential was reported on."""
   host: Host!
   """Task that reported this credential."""
   task: Task!
+}
+"""HostCredentialKind is enum for the field kind"""
+enum HostCredentialKind @goModel(model: "realm.pub/tavern/internal/c2/epb.Credential_Kind") {
+  KIND_PASSWORD
+  KIND_SSH_KEY
+  KIND_UNSPECIFIED
 }
 """Ordering options for HostCredential connections"""
 input HostCredentialOrder {
@@ -1886,6 +1902,11 @@ input HostCredentialWhereInput {
   secretHasSuffix: String
   secretEqualFold: String
   secretContainsFold: String
+  """kind field predicates"""
+  kind: HostCredentialKind
+  kindNEQ: HostCredentialKind
+  kindIn: [HostCredentialKind!]
+  kindNotIn: [HostCredentialKind!]
   """host edge predicates"""
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]

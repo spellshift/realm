@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -283,6 +284,26 @@ func SecretEqualFold(v string) predicate.HostCredential {
 // SecretContainsFold applies the ContainsFold predicate on the "secret" field.
 func SecretContainsFold(v string) predicate.HostCredential {
 	return predicate.HostCredential(sql.FieldContainsFold(FieldSecret, v))
+}
+
+// KindEQ applies the EQ predicate on the "kind" field.
+func KindEQ(v epb.Credential_Kind) predicate.HostCredential {
+	return predicate.HostCredential(sql.FieldEQ(FieldKind, v))
+}
+
+// KindNEQ applies the NEQ predicate on the "kind" field.
+func KindNEQ(v epb.Credential_Kind) predicate.HostCredential {
+	return predicate.HostCredential(sql.FieldNEQ(FieldKind, v))
+}
+
+// KindIn applies the In predicate on the "kind" field.
+func KindIn(vs ...epb.Credential_Kind) predicate.HostCredential {
+	return predicate.HostCredential(sql.FieldIn(FieldKind, vs...))
+}
+
+// KindNotIn applies the NotIn predicate on the "kind" field.
+func KindNotIn(vs ...epb.Credential_Kind) predicate.HostCredential {
+	return predicate.HostCredential(sql.FieldNotIn(FieldKind, vs...))
 }
 
 // HasHost applies the HasEdge predicate on the "host" edge.

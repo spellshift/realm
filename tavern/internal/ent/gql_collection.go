@@ -528,6 +528,11 @@ func (hc *HostCredentialQuery) collectField(ctx context.Context, opCtx *graphql.
 				selectedFields = append(selectedFields, hostcredential.FieldSecret)
 				fieldSeen[hostcredential.FieldSecret] = struct{}{}
 			}
+		case "kind":
+			if _, ok := fieldSeen[hostcredential.FieldKind]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldKind)
+				fieldSeen[hostcredential.FieldKind] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:
