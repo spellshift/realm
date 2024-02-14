@@ -93,9 +93,9 @@ su ${USERNAME} -c "$(cat << EOF
     fi
     echo "Installing common Rust dependencies..."
     rustup component add rls rust-analysis rust-src clippy 2>&1
-    rustup toolchain install nightly-2023-09-04
-    rustup component add rustfmt --toolchain nightly-2023-09-04
-    rustup component add clippy --toolchain nightly-2023-09-04
+    rustup toolchain install '1.76.0'
+    rustup component add rustfmt --toolchain '1.76.0'
+    rustup component add clippy --toolchain '1.76.0'
 EOF
 )"
 

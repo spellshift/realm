@@ -12,6 +12,59 @@ pub struct Tome {
     #[prost(string, repeated, tag = "3")]
     pub file_names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
+/// Credential reported on the host system.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Credential {
+    #[prost(string, tag = "1")]
+    pub principal: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub secret: ::prost::alloc::string::String,
+    #[prost(enumeration = "credential::Kind", tag = "3")]
+    pub kind: i32,
+}
+/// Nested message and enum types in `Credential`.
+pub mod credential {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
+    pub enum Kind {
+        Unspecified = 0,
+        Password = 1,
+        SshKey = 2,
+    }
+    impl Kind {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Kind::Unspecified => "KIND_UNSPECIFIED",
+                Kind::Password => "KIND_PASSWORD",
+                Kind::SshKey => "KIND_SSH_KEY",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "KIND_UNSPECIFIED" => Some(Self::Unspecified),
+                "KIND_PASSWORD" => Some(Self::Password),
+                "KIND_SSH_KEY" => Some(Self::SshKey),
+                _ => None,
+            }
+        }
+    }
+}
 /// Process running on the host system.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -117,10 +170,10 @@ pub struct ProcessList {
     #[prost(message, repeated, tag = "1")]
     pub list: ::prost::alloc::vec::Vec<Process>,
 }
-/// File on the host system.
+/// FileMetadata about a file on the host system.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct File {
+pub struct FileMetadata {
     #[prost(string, tag = "1")]
     pub path: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -129,10 +182,17 @@ pub struct File {
     pub group: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
     pub permissions: ::prost::alloc::string::String,
-    #[prost(int64, tag = "5")]
-    pub size: i64,
+    #[prost(uint64, tag = "5")]
+    pub size: u64,
     #[prost(string, tag = "6")]
     pub sha3_256_hash: ::prost::alloc::string::String,
-    #[prost(bytes = "vec", tag = "7")]
+}
+/// File on the host system.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct File {
+    #[prost(message, optional, tag = "1")]
+    pub metadata: ::core::option::Option<FileMetadata>,
+    #[prost(bytes = "vec", tag = "2")]
     pub chunk: ::prost::alloc::vec::Vec<u8>,
 }

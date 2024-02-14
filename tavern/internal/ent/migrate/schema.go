@@ -31,7 +31,7 @@ var (
 				Symbol:     "beacons_hosts_host",
 				Columns:    []*schema.Column{BeaconsColumns[9]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -68,6 +68,37 @@ var (
 		Columns:    HostsColumns,
 		PrimaryKey: []*schema.Column{HostsColumns[0]},
 	}
+	// HostCredentialsColumns holds the columns for the "host_credentials" table.
+	HostCredentialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "principal", Type: field.TypeString},
+		{Name: "secret", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED"}},
+		{Name: "host_credential_host", Type: field.TypeInt},
+		{Name: "task_reported_credentials", Type: field.TypeInt},
+	}
+	// HostCredentialsTable holds the schema information for the "host_credentials" table.
+	HostCredentialsTable = &schema.Table{
+		Name:       "host_credentials",
+		Columns:    HostCredentialsColumns,
+		PrimaryKey: []*schema.Column{HostCredentialsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "host_credentials_hosts_host",
+				Columns:    []*schema.Column{HostCredentialsColumns[6]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "host_credentials_tasks_reported_credentials",
+				Columns:    []*schema.Column{HostCredentialsColumns[7]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// HostFilesColumns holds the columns for the "host_files" table.
 	HostFilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -77,7 +108,7 @@ var (
 		{Name: "owner", Type: field.TypeString, Nullable: true},
 		{Name: "group", Type: field.TypeString, Nullable: true},
 		{Name: "permissions", Type: field.TypeString, Nullable: true},
-		{Name: "size", Type: field.TypeInt, Default: 0},
+		{Name: "size", Type: field.TypeUint64, Default: 0},
 		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "content", Type: field.TypeBytes, Nullable: true},
 		{Name: "host_files", Type: field.TypeInt, Nullable: true},
@@ -100,7 +131,7 @@ var (
 				Symbol:     "host_files_hosts_host",
 				Columns:    []*schema.Column{HostFilesColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_files_tasks_reported_files",
@@ -144,7 +175,7 @@ var (
 				Symbol:     "host_processes_hosts_host",
 				Columns:    []*schema.Column{HostProcessesColumns[13]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_processes_tasks_reported_processes",
@@ -233,7 +264,7 @@ var (
 				Symbol:     "tasks_beacons_beacon",
 				Columns:    []*schema.Column{TasksColumns[10]},
 				RefColumns: []*schema.Column{BeaconsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -338,6 +369,7 @@ var (
 		BeaconsTable,
 		FilesTable,
 		HostsTable,
+		HostCredentialsTable,
 		HostFilesTable,
 		HostProcessesTable,
 		QuestsTable,
@@ -352,6 +384,8 @@ var (
 
 func init() {
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
+	HostCredentialsTable.ForeignKeys[0].RefTable = HostsTable
+	HostCredentialsTable.ForeignKeys[1].RefTable = TasksTable
 	HostFilesTable.ForeignKeys[0].RefTable = HostsTable
 	HostFilesTable.ForeignKeys[1].RefTable = HostsTable
 	HostFilesTable.ForeignKeys[2].RefTable = TasksTable

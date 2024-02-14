@@ -1,6 +1,8 @@
-use crate::runtime::Client;
+use crate::runtime::Environment;
 use anyhow::{Context, Result};
 use starlark::{eval::Evaluator, values::list::ListRef};
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::{fs, sync::mpsc::Receiver};
 
 fn copy_local(src: String, dst: String) -> Result<()> {
@@ -11,40 +13,46 @@ fn copy_local(src: String, dst: String) -> Result<()> {
 
     match fs::write(dst, src_file) {
         Ok(_) => Ok(()),
-        Err(local_err) => Err(local_err.try_into()?),
+        Err(local_err) => Err(anyhow::anyhow!(local_err)),
     }
 }
 
-fn copy_remote(file_reciever: Receiver<Vec<u8>>, dst: String) -> Result<()> {
-    loop {
-        let val = match file_reciever.recv() {
-            Ok(v) => v,
-            Err(err) => {
-                match err.to_string().as_str() {
-                    "channel is empty and sending half is closed" => {
-                        break;
-                    }
-                    "timed out waiting on channel" => {
-                        continue;
-                    }
-                    _ => {
-                        #[cfg(debug_assertions)]
-                        log::debug!("failed to drain channel: {}", err)
-                    }
-                }
-                break;
-            }
-        };
-        match fs::write(dst.clone(), val) {
-            Ok(_) => {}
-            Err(local_err) => return Err(local_err.try_into()?),
-        };
+fn copy_remote(rx: Receiver<Vec<u8>>, dst_path: String) -> Result<()> {
+    // Truncate file
+    let mut dst = OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(&dst_path)
+        .context(format!(
+            "failed to truncate destination file: {}",
+            &dst_path
+        ))?;
+    dst.flush()
+        .context(format!("failed to flush file truncation: {}", &dst_path))?;
+
+    // Reopen file for writing
+    let mut dst = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&dst_path)
+        .context(format!("failed to open file for writing: {}", &dst_path))?;
+
+    // Listen for downloaded chunks and write them
+    for chunk in rx {
+        dst.write_all(&chunk)
+            .context(format!("failed to write file chunk: {}", &dst_path))?;
     }
+
+    // Ensure all chunks gets written
+    dst.flush()
+        .context(format!("failed to flush file: {}", &dst_path))?;
 
     Ok(())
 }
 
-pub fn copy(starlark_eval: &mut Evaluator<'_, '_>, src: String, dst: String) -> Result<()> {
+// #[allow(clippy::needless_pass_by_ref_mut)]
+pub fn copy(starlark_eval: &Evaluator<'_, '_>, src: String, dst: String) -> Result<()> {
     let remote_assets = starlark_eval.module().get("remote_assets");
 
     if let Some(assets) = remote_assets {
@@ -52,8 +60,8 @@ pub fn copy(starlark_eval: &mut Evaluator<'_, '_>, src: String, dst: String) -> 
         let src_value = starlark_eval.module().heap().alloc_str(&src);
 
         if tmp_list.contains(&src_value.to_value()) {
-            let client = Client::from_extra(starlark_eval.extra)?;
-            let file_reciever = client.request_file(src)?;
+            let env = Environment::from_extra(starlark_eval.extra)?;
+            let file_reciever = env.request_file(src)?;
 
             return copy_remote(file_reciever, dst);
         }
@@ -63,67 +71,95 @@ pub fn copy(starlark_eval: &mut Evaluator<'_, '_>, src: String, dst: String) -> 
 
 #[cfg(test)]
 mod tests {
-    use crate::Runtime;
-
+    use crate::assets::copy_impl::copy_remote;
+    use std::sync::mpsc::channel;
     use std::{collections::HashMap, io::prelude::*};
     use tempfile::NamedTempFile;
 
-    // fn init_log() {
-    //     pretty_env_logger::formatted_timed_builder()
-    //         .filter_level(log::LevelFilter::Info)
-    //         .parse_env("IMIX_LOG")
-    //         .init();
-    // }
+    #[tokio::test]
+    async fn test_remote_copy() -> anyhow::Result<()> {
+        // Create files
+        let mut tmp_file_dst = NamedTempFile::new()?;
+        let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
 
-    // #[tokio::test]
-    // async fn test_remote_copy() -> anyhow::Result<()> {
-    //     // Create files
-    //     let mut tmp_file_dst = NamedTempFile::new()?;
-    //     let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
+        let (ch_data, data) = channel::<Vec<u8>>();
+        let handle = tokio::task::spawn_blocking(|| {
+            copy_remote(data, path_dst).expect("copy_remote failed")
+        });
 
-    //     let (sender, reciver) = channel::<Vec<u8>>();
-    //     sender.send("Hello from a remote asset".as_bytes().to_vec())?;
+        ch_data.send("Hello from a remote asset".as_bytes().to_vec())?;
+        ch_data.send("Goodbye from a remote asset".as_bytes().to_vec())?;
 
-    //     copy_remote(reciver, path_dst)?;
+        // Drop the Sender, to indicate no more data will be sent (channel closed)
+        drop(ch_data);
 
-    //     let mut contents = String::new();
-    //     tmp_file_dst.read_to_string(&mut contents)?;
-    //     assert!(contents.contains("Hello from a remote asset"));
-    //     Ok(())
-    // }
+        handle.await?;
 
-    // #[tokio::test]
-    // async fn test_remote_copy_full() -> anyhow::Result<()> {
-    //     init_log();
-    //     log::debug!("Testing123");
+        let mut contents = String::new();
+        tmp_file_dst.read_to_string(&mut contents)?;
+        assert!(contents.contains("Hello from a remote asset"));
+        assert!(contents.contains("Goodbye from a remote asset"));
+        Ok(())
+    }
 
-    //     // Create files
-    //     let mut tmp_file_dst = NamedTempFile::new()?;
-    //     let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
+    #[tokio::test]
+    async fn test_remote_copy_full() -> anyhow::Result<()> {
+        // Create files
+        let mut tmp_file_dst = NamedTempFile::new()?;
+        let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
 
-    //     let (runtime, broker) = Runtime::new();
-    //     let handle = tokio::task::spawn_blocking(move || {
-    //         runtime.run(crate::pb::Tome {
-    //             eldritch: r#"assets.copy("test_tome/test_file.txt", input_params['test_output'])"#
-    //                 .to_owned(),
-    //             parameters: HashMap::from([("test_output".to_string(), path_dst)]),
-    //             file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
-    //         })
-    //     });
-    //     handle.await?;
-    //     println!("{:?}", broker.collect_file_requests().len());
-    //     assert!(broker.collect_errors().is_empty()); // No errors even though the remote asset is inaccessible
+        // Run Eldritch (in it's own thread)
+        let mut runtime = crate::start(crate::pb::Tome {
+            eldritch: r#"assets.copy("test_tome/test_file.txt", input_params['test_output'])"#
+                .to_owned(),
+            parameters: HashMap::from([("test_output".to_string(), path_dst)]),
+            file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
+        })
+        .await;
 
-    //     let mut contents = String::new();
-    //     tmp_file_dst.read_to_string(&mut contents)?;
-    //     // Compare - Should be empty basically just didn't error
-    //     assert!(contents.contains(""));
+        // We now mock the agent, looping until eldritch requests a file
+        // We omit the sleep performed by the agent, just to save test time
+        loop {
+            // The runtime only returns the data that is currently available
+            // So this may return an empty vec if our eldritch tokio task has not yet been scheduled
+            let mut reqs = runtime.collect_file_requests();
 
-    //     Ok(())
-    // }
+            // If no file request is yet available, just continue looping
+            if reqs.is_empty() {
+                continue;
+            }
 
-    #[test]
-    fn test_embedded_copy() -> anyhow::Result<()> {
+            // Ensure the right file was requested
+            assert!(reqs.len() == 1);
+            let req = reqs.pop().expect("no file request received!");
+            assert!(req.name() == "test_tome/test_file.txt");
+
+            // Now, we provide the file to eldritch (as a series of chunks)
+            req.send_chunk("chunk1\n".as_bytes().to_vec())
+                .expect("failed to send file chunk to eldritch");
+            req.send_chunk("chunk2\n".as_bytes().to_vec())
+                .expect("failed to send file chunk to eldritch");
+
+            // We've finished providing the file, so we stop looping
+            // This will drop `req`, which consequently drops the underlying `Sender` for the file channel
+            // This will cause the next `recv()` to error with "channel is empty and sending half is closed"
+            // which is what tells eldritch that there are no more file chunks to wait for
+            break;
+        }
+
+        // Now that we've finished writing data, we wait for eldritch to finish
+        runtime.finish().await;
+
+        // Lastly, assert the file was written correctly
+        let mut contents = String::new();
+        tmp_file_dst.read_to_string(&mut contents)?;
+        assert_eq!("chunk1\nchunk2\n", contents.as_str());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_embedded_copy() -> anyhow::Result<()> {
         // Create files
         let mut tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
@@ -133,8 +169,7 @@ mod tests {
         #[cfg(target_os = "windows")]
         let path_src = "exec_script/hello_world.bat".to_string();
 
-        let (runtime, broker) = Runtime::new();
-        runtime.run(crate::pb::Tome {
+        let runtime = crate::start(crate::pb::Tome {
             eldritch: r#"assets.copy(input_params['src_file'], input_params['test_output'])"#
                 .to_owned(),
             parameters: HashMap::from([
@@ -142,9 +177,10 @@ mod tests {
                 ("test_output".to_string(), path_dst),
             ]),
             file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
-        });
+        })
+        .await;
 
-        assert!(broker.collect_errors().is_empty()); // No errors even though the remote asset is inaccessible
+        assert!(runtime.collect_errors().is_empty()); // No errors even though the remote asset is inaccessible
 
         let mut contents = String::new();
         tmp_file_dst.read_to_string(&mut contents)?;

