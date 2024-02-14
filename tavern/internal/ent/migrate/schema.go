@@ -75,6 +75,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "principal", Type: field.TypeString},
 		{Name: "secret", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED"}},
 		{Name: "host_credential_host", Type: field.TypeInt},
 		{Name: "task_reported_credentials", Type: field.TypeInt},
 	}
@@ -86,13 +87,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "host_credentials_hosts_host",
-				Columns:    []*schema.Column{HostCredentialsColumns[5]},
+				Columns:    []*schema.Column{HostCredentialsColumns[6]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_credentials_tasks_reported_credentials",
-				Columns:    []*schema.Column{HostCredentialsColumns[6]},
+				Columns:    []*schema.Column{HostCredentialsColumns[7]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

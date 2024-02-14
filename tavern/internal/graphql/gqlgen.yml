@@ -47,6 +47,7 @@ models:
   Kind:
     model:
       - realm.pub/tavern/internal/ent/tag.Kind
+      - realm.pub/tavern/internal/c2/epb.Credential_Kind
   Platform:
     model:
       - realm.pub/tavern/internal/c2/c2pb.Host_Platform
