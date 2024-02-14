@@ -54,6 +54,11 @@ tera = { workspace = true }
 tokio = { workspace = true , features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-roots"] }
+whoami = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+network-interface = { workspace = true }
+winreg = { workspace = true }
 win_api = {workspace = true }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
@@ -65,11 +70,6 @@ windows-sys = { workspace = true, features = [
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices"
 ]}
-whoami = { workspace = true }
-
-[target.'cfg(windows)'.dependencies]
-network-interface = { workspace = true }
-winreg = { workspace = true }
 
 [target.'cfg(not(windows))'.dependencies]
 pnet = { workspace = true }
