@@ -13,6 +13,10 @@ if sys.get_os().get("platform", "") == "PLATFORM_WINDOWS":
 def can_read(f):
     """Return true if the user can read this dir/file
     """
+
+    # Until we get permissions on windows, just go ahead and try to read
+    if SEP == "\\":
+        return True
     PERM_READ = 4
     f_user = int(f["permissions"][-3]) # User byte
     f_group = int(f["permissions"][-2]) # Group byte
