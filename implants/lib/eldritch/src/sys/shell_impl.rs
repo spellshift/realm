@@ -115,7 +115,7 @@ func_shell("whoami")
         let ast =
             match AstModule::parse("test.eldritch", test_content.to_owned(), &Dialect::Standard) {
                 Ok(res) => res,
-                Err(err) => return Err(err),
+                Err(err) => return Err(err.into_anyhow()),
             };
 
         #[starlark_module]

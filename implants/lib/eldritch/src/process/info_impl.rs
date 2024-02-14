@@ -163,10 +163,13 @@ mod tests {
         let test_heap = Heap::new();
         let res = info(&test_heap, None)?;
         assert!(
-            res.get(const_frozen_string!("pid").to_value())?
-                .ok_or(anyhow!("Could not find PID"))?
-                .unpack_i32()
-                .ok_or(anyhow!("PID is not an i32"))? as u32
+            match res.get(const_frozen_string!("pid").to_value()) {
+                Ok(v) => Ok(v),
+                Err(err) => Err(err.into_anyhow()),
+            }?
+            .ok_or(anyhow!("Could not find PID"))?
+            .unpack_i32()
+            .ok_or(anyhow!("PID is not an i32"))? as u32
                 == id()
         );
         Ok(())

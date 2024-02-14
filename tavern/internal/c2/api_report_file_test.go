@@ -78,7 +78,7 @@ func TestReportFile(t *testing.T) {
 		wantOwner       string
 		wantGroup       string
 		wantPermissions string
-		wantSize        int
+		wantSize        uint64
 		wantHash        string
 		wantContent     []byte
 	}{

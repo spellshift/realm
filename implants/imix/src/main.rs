@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use anyhow::Result;
 use clap::Command;
 use imix::{Agent, Config};
@@ -11,7 +13,8 @@ async fn main() {
     if let Some(("install", _)) = Command::new("imix")
         .subcommand(Command::new("install").about("Install imix"))
         .get_matches()
-        .subcommand() {
+        .subcommand()
+    {
         imix::install().await;
         return;
     }

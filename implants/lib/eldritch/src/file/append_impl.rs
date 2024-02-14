@@ -5,7 +5,6 @@ use std::io::prelude::*;
 pub fn append(path: String, content: String) -> Result<()> {
     let mut file = OpenOptions::new()
         .create(true) //Do we want to create the file if it doesn't exist? - Yes!
-        .write(true)
         .append(true)
         .open(path)?;
 

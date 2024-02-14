@@ -11,14 +11,14 @@ import { relayStylePagination } from "@apollo/client/utilities";
 const container = document.getElementById("root")
 if (!container) throw new Error('Failed to find the root element');
 const root = ReactDOM.createRoot(container);
-const REACT_APP_API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ;
+const REACT_APP_API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT;
 
 
 const cache = new InMemoryCache({
   typePolicies: {
     Query: {
       fields: {
-        tasks: relayStylePagination(),
+        tasks: relayStylePagination(["where"]),
       },
     },
   },
@@ -47,4 +47,3 @@ serviceWorker.unregister()
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals()
-

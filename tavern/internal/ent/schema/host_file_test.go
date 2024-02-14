@@ -18,7 +18,7 @@ func TestHostFileHooks(t *testing.T) {
 	var (
 		expectedPath    = "TestFile"
 		expectedContent = []byte("ABunchOfBytes")
-		expectedSize    = 13
+		expectedSize    = uint64(13)
 		expectedHash    = "adaf38cc9a3d8d810f051a0098cb8737001394ae9b85d9f6fa56dbc2bcc08db6"
 	)
 

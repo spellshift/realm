@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     match tonic_build::configure()
-        .out_dir("./src")
+        .out_dir("./src/generated")
         .build_server(false)
         .extern_path(".eldritch", "::eldritch::pb")
         .compile(&["c2.proto"], &["../../../tavern/internal/c2/proto/"])

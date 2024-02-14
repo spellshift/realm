@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
@@ -38,6 +39,8 @@ type Client struct {
 	File *FileClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
+	// HostCredential is the client for interacting with the HostCredential builders.
+	HostCredential *HostCredentialClient
 	// HostFile is the client for interacting with the HostFile builders.
 	HostFile *HostFileClient
 	// HostProcess is the client for interacting with the HostProcess builders.
@@ -70,6 +73,7 @@ func (c *Client) init() {
 	c.Beacon = NewBeaconClient(c.config)
 	c.File = NewFileClient(c.config)
 	c.Host = NewHostClient(c.config)
+	c.HostCredential = NewHostCredentialClient(c.config)
 	c.HostFile = NewHostFileClient(c.config)
 	c.HostProcess = NewHostProcessClient(c.config)
 	c.Quest = NewQuestClient(c.config)
@@ -160,18 +164,19 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:         ctx,
-		config:      cfg,
-		Beacon:      NewBeaconClient(cfg),
-		File:        NewFileClient(cfg),
-		Host:        NewHostClient(cfg),
-		HostFile:    NewHostFileClient(cfg),
-		HostProcess: NewHostProcessClient(cfg),
-		Quest:       NewQuestClient(cfg),
-		Tag:         NewTagClient(cfg),
-		Task:        NewTaskClient(cfg),
-		Tome:        NewTomeClient(cfg),
-		User:        NewUserClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Beacon:         NewBeaconClient(cfg),
+		File:           NewFileClient(cfg),
+		Host:           NewHostClient(cfg),
+		HostCredential: NewHostCredentialClient(cfg),
+		HostFile:       NewHostFileClient(cfg),
+		HostProcess:    NewHostProcessClient(cfg),
+		Quest:          NewQuestClient(cfg),
+		Tag:            NewTagClient(cfg),
+		Task:           NewTaskClient(cfg),
+		Tome:           NewTomeClient(cfg),
+		User:           NewUserClient(cfg),
 	}, nil
 }
 
@@ -189,18 +194,19 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:         ctx,
-		config:      cfg,
-		Beacon:      NewBeaconClient(cfg),
-		File:        NewFileClient(cfg),
-		Host:        NewHostClient(cfg),
-		HostFile:    NewHostFileClient(cfg),
-		HostProcess: NewHostProcessClient(cfg),
-		Quest:       NewQuestClient(cfg),
-		Tag:         NewTagClient(cfg),
-		Task:        NewTaskClient(cfg),
-		Tome:        NewTomeClient(cfg),
-		User:        NewUserClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Beacon:         NewBeaconClient(cfg),
+		File:           NewFileClient(cfg),
+		Host:           NewHostClient(cfg),
+		HostCredential: NewHostCredentialClient(cfg),
+		HostFile:       NewHostFileClient(cfg),
+		HostProcess:    NewHostProcessClient(cfg),
+		Quest:          NewQuestClient(cfg),
+		Tag:            NewTagClient(cfg),
+		Task:           NewTaskClient(cfg),
+		Tome:           NewTomeClient(cfg),
+		User:           NewUserClient(cfg),
 	}, nil
 }
 
@@ -230,8 +236,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Beacon, c.File, c.Host, c.HostFile, c.HostProcess, c.Quest, c.Tag, c.Task,
-		c.Tome, c.User,
+		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Quest,
+		c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -241,8 +247,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Beacon, c.File, c.Host, c.HostFile, c.HostProcess, c.Quest, c.Tag, c.Task,
-		c.Tome, c.User,
+		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Quest,
+		c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -257,6 +263,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.File.mutate(ctx, m)
 	case *HostMutation:
 		return c.Host.mutate(ctx, m)
+	case *HostCredentialMutation:
+		return c.HostCredential.mutate(ctx, m)
 	case *HostFileMutation:
 		return c.HostFile.mutate(ctx, m)
 	case *HostProcessMutation:
@@ -763,6 +771,22 @@ func (c *HostClient) QueryProcesses(h *Host) *HostProcessQuery {
 	return query
 }
 
+// QueryCredentials queries the credentials edge of a Host.
+func (c *HostClient) QueryCredentials(h *Host) *HostCredentialQuery {
+	query := (&HostCredentialClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, host.CredentialsTable, host.CredentialsColumn),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *HostClient) Hooks() []Hook {
 	return c.hooks.Host
@@ -785,6 +809,171 @@ func (c *HostClient) mutate(ctx context.Context, m *HostMutation) (Value, error)
 		return (&HostDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Host mutation op: %q", m.Op())
+	}
+}
+
+// HostCredentialClient is a client for the HostCredential schema.
+type HostCredentialClient struct {
+	config
+}
+
+// NewHostCredentialClient returns a client for the HostCredential from the given config.
+func NewHostCredentialClient(c config) *HostCredentialClient {
+	return &HostCredentialClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `hostcredential.Hooks(f(g(h())))`.
+func (c *HostCredentialClient) Use(hooks ...Hook) {
+	c.hooks.HostCredential = append(c.hooks.HostCredential, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `hostcredential.Intercept(f(g(h())))`.
+func (c *HostCredentialClient) Intercept(interceptors ...Interceptor) {
+	c.inters.HostCredential = append(c.inters.HostCredential, interceptors...)
+}
+
+// Create returns a builder for creating a HostCredential entity.
+func (c *HostCredentialClient) Create() *HostCredentialCreate {
+	mutation := newHostCredentialMutation(c.config, OpCreate)
+	return &HostCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of HostCredential entities.
+func (c *HostCredentialClient) CreateBulk(builders ...*HostCredentialCreate) *HostCredentialCreateBulk {
+	return &HostCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *HostCredentialClient) MapCreateBulk(slice any, setFunc func(*HostCredentialCreate, int)) *HostCredentialCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &HostCredentialCreateBulk{err: fmt.Errorf("calling to HostCredentialClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*HostCredentialCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &HostCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for HostCredential.
+func (c *HostCredentialClient) Update() *HostCredentialUpdate {
+	mutation := newHostCredentialMutation(c.config, OpUpdate)
+	return &HostCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *HostCredentialClient) UpdateOne(hc *HostCredential) *HostCredentialUpdateOne {
+	mutation := newHostCredentialMutation(c.config, OpUpdateOne, withHostCredential(hc))
+	return &HostCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *HostCredentialClient) UpdateOneID(id int) *HostCredentialUpdateOne {
+	mutation := newHostCredentialMutation(c.config, OpUpdateOne, withHostCredentialID(id))
+	return &HostCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for HostCredential.
+func (c *HostCredentialClient) Delete() *HostCredentialDelete {
+	mutation := newHostCredentialMutation(c.config, OpDelete)
+	return &HostCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *HostCredentialClient) DeleteOne(hc *HostCredential) *HostCredentialDeleteOne {
+	return c.DeleteOneID(hc.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *HostCredentialClient) DeleteOneID(id int) *HostCredentialDeleteOne {
+	builder := c.Delete().Where(hostcredential.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &HostCredentialDeleteOne{builder}
+}
+
+// Query returns a query builder for HostCredential.
+func (c *HostCredentialClient) Query() *HostCredentialQuery {
+	return &HostCredentialQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeHostCredential},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a HostCredential entity by its id.
+func (c *HostCredentialClient) Get(ctx context.Context, id int) (*HostCredential, error) {
+	return c.Query().Where(hostcredential.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *HostCredentialClient) GetX(ctx context.Context, id int) *HostCredential {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryHost queries the host edge of a HostCredential.
+func (c *HostCredentialClient) QueryHost(hc *HostCredential) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, hostcredential.HostTable, hostcredential.HostColumn),
+		)
+		fromV = sqlgraph.Neighbors(hc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTask queries the task edge of a HostCredential.
+func (c *HostCredentialClient) QueryTask(hc *HostCredential) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostcredential.TaskTable, hostcredential.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(hc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *HostCredentialClient) Hooks() []Hook {
+	return c.hooks.HostCredential
+}
+
+// Interceptors returns the client interceptors.
+func (c *HostCredentialClient) Interceptors() []Interceptor {
+	return c.inters.HostCredential
+}
+
+func (c *HostCredentialClient) mutate(ctx context.Context, m *HostCredentialMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&HostCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&HostCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&HostCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&HostCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown HostCredential mutation op: %q", m.Op())
 	}
 }
 
@@ -1637,6 +1826,22 @@ func (c *TaskClient) QueryReportedProcesses(t *Task) *HostProcessQuery {
 	return query
 }
 
+// QueryReportedCredentials queries the reported_credentials edge of a Task.
+func (c *TaskClient) QueryReportedCredentials(t *Task) *HostCredentialQuery {
+	query := (&HostCredentialClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedCredentialsTable, task.ReportedCredentialsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TaskClient) Hooks() []Hook {
 	hooks := c.hooks.Task
@@ -1981,11 +2186,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Beacon, File, Host, HostFile, HostProcess, Quest, Tag, Task, Tome,
-		User []ent.Hook
+		Beacon, File, Host, HostCredential, HostFile, HostProcess, Quest, Tag, Task,
+		Tome, User []ent.Hook
 	}
 	inters struct {
-		Beacon, File, Host, HostFile, HostProcess, Quest, Tag, Task, Tome,
-		User []ent.Interceptor
+		Beacon, File, Host, HostCredential, HostFile, HostProcess, Quest, Tag, Task,
+		Tome, User []ent.Interceptor
 	}
 )

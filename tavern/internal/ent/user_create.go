@@ -54,6 +54,20 @@ func (uc *UserCreate) SetNillableSessionToken(s *string) *UserCreate {
 	return uc
 }
 
+// SetAccessToken sets the "access_token" field.
+func (uc *UserCreate) SetAccessToken(s string) *UserCreate {
+	uc.mutation.SetAccessToken(s)
+	return uc
+}
+
+// SetNillableAccessToken sets the "access_token" field if the given value is not nil.
+func (uc *UserCreate) SetNillableAccessToken(s *string) *UserCreate {
+	if s != nil {
+		uc.SetAccessToken(*s)
+	}
+	return uc
+}
+
 // SetIsActivated sets the "is_activated" field.
 func (uc *UserCreate) SetIsActivated(b bool) *UserCreate {
 	uc.mutation.SetIsActivated(b)
@@ -136,6 +150,10 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultSessionToken()
 		uc.mutation.SetSessionToken(v)
 	}
+	if _, ok := uc.mutation.AccessToken(); !ok {
+		v := user.DefaultAccessToken()
+		uc.mutation.SetAccessToken(v)
+	}
 	if _, ok := uc.mutation.IsActivated(); !ok {
 		v := user.DefaultIsActivated
 		uc.mutation.SetIsActivated(v)
@@ -168,6 +186,14 @@ func (uc *UserCreate) check() error {
 	if v, ok := uc.mutation.SessionToken(); ok {
 		if err := user.SessionTokenValidator(v); err != nil {
 			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
+		}
+	}
+	if _, ok := uc.mutation.AccessToken(); !ok {
+		return &ValidationError{Name: "access_token", err: errors.New(`ent: missing required field "User.access_token"`)}
+	}
+	if v, ok := uc.mutation.AccessToken(); ok {
+		if err := user.AccessTokenValidator(v); err != nil {
+			return &ValidationError{Name: "access_token", err: fmt.Errorf(`ent: validator failed for field "User.access_token": %w`, err)}
 		}
 	}
 	if _, ok := uc.mutation.IsActivated(); !ok {
@@ -218,6 +244,10 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.SessionToken(); ok {
 		_spec.SetField(user.FieldSessionToken, field.TypeString, value)
 		_node.SessionToken = value
+	}
+	if value, ok := uc.mutation.AccessToken(); ok {
+		_spec.SetField(user.FieldAccessToken, field.TypeString, value)
+		_node.AccessToken = value
 	}
 	if value, ok := uc.mutation.IsActivated(); ok {
 		_spec.SetField(user.FieldIsActivated, field.TypeBool, value)
@@ -331,6 +361,18 @@ func (u *UserUpsert) UpdateSessionToken() *UserUpsert {
 	return u
 }
 
+// SetAccessToken sets the "access_token" field.
+func (u *UserUpsert) SetAccessToken(v string) *UserUpsert {
+	u.Set(user.FieldAccessToken, v)
+	return u
+}
+
+// UpdateAccessToken sets the "access_token" field to the value that was provided on create.
+func (u *UserUpsert) UpdateAccessToken() *UserUpsert {
+	u.SetExcluded(user.FieldAccessToken)
+	return u
+}
+
 // SetIsActivated sets the "is_activated" field.
 func (u *UserUpsert) SetIsActivated(v bool) *UserUpsert {
 	u.Set(user.FieldIsActivated, v)
@@ -439,6 +481,20 @@ func (u *UserUpsertOne) SetSessionToken(v string) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateSessionToken() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateSessionToken()
+	})
+}
+
+// SetAccessToken sets the "access_token" field.
+func (u *UserUpsertOne) SetAccessToken(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetAccessToken(v)
+	})
+}
+
+// UpdateAccessToken sets the "access_token" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateAccessToken() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateAccessToken()
 	})
 }
 
@@ -720,6 +776,20 @@ func (u *UserUpsertBulk) SetSessionToken(v string) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateSessionToken() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateSessionToken()
+	})
+}
+
+// SetAccessToken sets the "access_token" field.
+func (u *UserUpsertBulk) SetAccessToken(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetAccessToken(v)
+	})
+}
+
+// UpdateAccessToken sets the "access_token" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateAccessToken() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateAccessToken()
 	})
 }
 

@@ -6,7 +6,7 @@ terraform {
   required_providers {
     google = {
       source = "hashicorp/google"
-      version = "4.51.0"
+      version = "5.15.0"
     }
   }
 }
@@ -83,6 +83,11 @@ variable "max_scale" {
   description = "Maximum number of CloudRun containers to run"
   default = "100"
 }
+variable "enable_metrics" {
+  type = bool
+  description = "Enable prometheus sidecar and Tavern metrics collection"
+  default = false
+}
 
 provider "google" {
   project = var.gcp_project
@@ -133,6 +138,11 @@ resource "google_sql_database" "tavern-db" {
   instance = google_sql_database_instance.tavern-sql-instance.name
 }
 
+locals {
+  tavern_container_name = "tavern"
+  prometheus_container_name = "prometheus-sidecar"
+}
+
 resource "google_cloud_run_service" "tavern" {
   name     = "tavern"
   location = var.gcp_region
@@ -145,6 +155,7 @@ resource "google_cloud_run_service" "tavern" {
   template {
     spec {
       containers {
+        name = local.tavern_container_name
         image = var.tavern_container_image
         ports {
           container_port = 80
@@ -181,16 +192,35 @@ resource "google_cloud_run_service" "tavern" {
           name = "OAUTH_DOMAIN"
           value = format("https://%s", var.oauth_domain)
         }
+        env {
+          name = "ENABLE_METRICS"
+          value = var.enable_metrics ? "1" : ""
+        }
+      }
+
+      // Only create prometheus sidecar if metrics enabled
+      dynamic "containers" {
+        for_each = var.enable_metrics ? [{
+            image = "us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.0.0"
+            name = local.prometheus_container_name
+          }] : []
+        content {
+          name = containers.value.name
+          image = containers.value.image
+        }
       }
     }
 
     metadata {
       annotations = {
+        for k, v in {
         "autoscaling.knative.dev/minScale"      = var.min_scale
         "autoscaling.knative.dev/maxScale"      = var.max_scale
         "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.tavern-sql-instance.connection_name
         "run.googleapis.com/client-name"        = "terraform"
         "run.googleapis.com/sessionAffinity"    = true
+        "run.googleapis.com/container-dependencies" = var.enable_metrics ? jsonencode({"${local.prometheus_container_name}" = [local.tavern_container_name]}) : ""
+      }: k => v if v != ""
       }
     }
   }

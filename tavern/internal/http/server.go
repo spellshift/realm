@@ -19,6 +19,9 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, err := srv.Authenticate(r)
 	if err != nil {
 		switch err {
+		case ErrInvalidAccessToken:
+			http.Error(w, "invalid access token", http.StatusUnauthorized)
+			return
 		case ErrInvalidAuthCookie:
 			resetAuthCookie(w)
 			http.Error(w, "invalid auth cookie", http.StatusUnauthorized)

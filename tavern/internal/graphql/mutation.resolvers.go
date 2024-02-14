@@ -14,6 +14,46 @@ import (
 	"realm.pub/tavern/internal/graphql/generated"
 )
 
+// DropAllData is the resolver for the dropAllData field.
+func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
+	// Initialize Transaction
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to initialize transaction: %w", err)
+	}
+	client := tx.Client()
+
+	// Delete relevant ents
+	if _, err := client.Beacon.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete beacons: %w", err))
+	}
+	if _, err := client.HostFile.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete hostfiles: %w", err))
+	}
+	if _, err := client.HostProcess.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete hostprocesses: %w", err))
+	}
+	if _, err := client.Host.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
+	}
+	if _, err := client.Quest.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete quests: %w", err))
+	}
+	if _, err := client.Tag.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete tags: %w", err))
+	}
+	if _, err := client.Task.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete tasks: %w", err))
+	}
+
+	// Commit
+	if err := tx.Commit(); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+	}
+
+	return true, nil
+}
+
 // CreateQuest is the resolver for the createQuest field.
 func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error) {
 	// 1. Begin Transaction

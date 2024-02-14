@@ -35,6 +35,8 @@ type testCase struct {
 }
 
 func runTestCase(t *testing.T, path string) {
+	t.Helper()
+
 	// TestDB Config
 	var (
 		driverName     = "sqlite3"
@@ -70,7 +72,7 @@ func runTestCase(t *testing.T, path string) {
 		tavernhttp.RouteMap{
 			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph)),
 		},
-		tavernhttp.WithAuthenticationCookie(graph),
+		tavernhttp.WithAuthentication(graph),
 	)
 	gqlClient := client.New(srv, client.Path("/graphql"))
 
@@ -115,6 +117,8 @@ func TestAPI(t *testing.T) {
 }
 
 func runTestsInDir(t *testing.T, root string) {
+	t.Helper()
+
 	files, err := os.ReadDir(root)
 	require.NoError(t, err)
 

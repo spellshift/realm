@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -22,20 +23,22 @@ import (
 // HostQuery is the builder for querying Host entities.
 type HostQuery struct {
 	config
-	ctx                *QueryContext
-	order              []host.OrderOption
-	inters             []Interceptor
-	predicates         []predicate.Host
-	withTags           *TagQuery
-	withBeacons        *BeaconQuery
-	withFiles          *HostFileQuery
-	withProcesses      *HostProcessQuery
-	modifiers          []func(*sql.Selector)
-	loadTotal          []func(context.Context, []*Host) error
-	withNamedTags      map[string]*TagQuery
-	withNamedBeacons   map[string]*BeaconQuery
-	withNamedFiles     map[string]*HostFileQuery
-	withNamedProcesses map[string]*HostProcessQuery
+	ctx                  *QueryContext
+	order                []host.OrderOption
+	inters               []Interceptor
+	predicates           []predicate.Host
+	withTags             *TagQuery
+	withBeacons          *BeaconQuery
+	withFiles            *HostFileQuery
+	withProcesses        *HostProcessQuery
+	withCredentials      *HostCredentialQuery
+	modifiers            []func(*sql.Selector)
+	loadTotal            []func(context.Context, []*Host) error
+	withNamedTags        map[string]*TagQuery
+	withNamedBeacons     map[string]*BeaconQuery
+	withNamedFiles       map[string]*HostFileQuery
+	withNamedProcesses   map[string]*HostProcessQuery
+	withNamedCredentials map[string]*HostCredentialQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -153,6 +156,28 @@ func (hq *HostQuery) QueryProcesses() *HostProcessQuery {
 			sqlgraph.From(host.Table, host.FieldID, selector),
 			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, host.ProcessesTable, host.ProcessesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCredentials chains the current query on the "credentials" edge.
+func (hq *HostQuery) QueryCredentials() *HostCredentialQuery {
+	query := (&HostCredentialClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, selector),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, host.CredentialsTable, host.CredentialsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
 		return fromU, nil
@@ -347,15 +372,16 @@ func (hq *HostQuery) Clone() *HostQuery {
 		return nil
 	}
 	return &HostQuery{
-		config:        hq.config,
-		ctx:           hq.ctx.Clone(),
-		order:         append([]host.OrderOption{}, hq.order...),
-		inters:        append([]Interceptor{}, hq.inters...),
-		predicates:    append([]predicate.Host{}, hq.predicates...),
-		withTags:      hq.withTags.Clone(),
-		withBeacons:   hq.withBeacons.Clone(),
-		withFiles:     hq.withFiles.Clone(),
-		withProcesses: hq.withProcesses.Clone(),
+		config:          hq.config,
+		ctx:             hq.ctx.Clone(),
+		order:           append([]host.OrderOption{}, hq.order...),
+		inters:          append([]Interceptor{}, hq.inters...),
+		predicates:      append([]predicate.Host{}, hq.predicates...),
+		withTags:        hq.withTags.Clone(),
+		withBeacons:     hq.withBeacons.Clone(),
+		withFiles:       hq.withFiles.Clone(),
+		withProcesses:   hq.withProcesses.Clone(),
+		withCredentials: hq.withCredentials.Clone(),
 		// clone intermediate query.
 		sql:  hq.sql.Clone(),
 		path: hq.path,
@@ -403,6 +429,17 @@ func (hq *HostQuery) WithProcesses(opts ...func(*HostProcessQuery)) *HostQuery {
 		opt(query)
 	}
 	hq.withProcesses = query
+	return hq
+}
+
+// WithCredentials tells the query-builder to eager-load the nodes that are connected to
+// the "credentials" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithCredentials(opts ...func(*HostCredentialQuery)) *HostQuery {
+	query := (&HostCredentialClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withCredentials = query
 	return hq
 }
 
@@ -484,11 +521,12 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 	var (
 		nodes       = []*Host{}
 		_spec       = hq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			hq.withTags != nil,
 			hq.withBeacons != nil,
 			hq.withFiles != nil,
 			hq.withProcesses != nil,
+			hq.withCredentials != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -540,6 +578,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			return nil, err
 		}
 	}
+	if query := hq.withCredentials; query != nil {
+		if err := hq.loadCredentials(ctx, query, nodes,
+			func(n *Host) { n.Edges.Credentials = []*HostCredential{} },
+			func(n *Host, e *HostCredential) { n.Edges.Credentials = append(n.Edges.Credentials, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range hq.withNamedTags {
 		if err := hq.loadTags(ctx, query, nodes,
 			func(n *Host) { n.appendNamedTags(name) },
@@ -565,6 +610,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		if err := hq.loadProcesses(ctx, query, nodes,
 			func(n *Host) { n.appendNamedProcesses(name) },
 			func(n *Host, e *HostProcess) { n.appendNamedProcesses(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hq.withNamedCredentials {
+		if err := hq.loadCredentials(ctx, query, nodes,
+			func(n *Host) { n.appendNamedCredentials(name) },
+			func(n *Host, e *HostCredential) { n.appendNamedCredentials(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -730,6 +782,37 @@ func (hq *HostQuery) loadProcesses(ctx context.Context, query *HostProcessQuery,
 	}
 	return nil
 }
+func (hq *HostQuery) loadCredentials(ctx context.Context, query *HostCredentialQuery, nodes []*Host, init func(*Host), assign func(*Host, *HostCredential)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Host)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostCredential(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(host.CredentialsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.host_credential_host
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "host_credential_host" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "host_credential_host" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (hq *HostQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := hq.querySpec()
@@ -868,6 +951,20 @@ func (hq *HostQuery) WithNamedProcesses(name string, opts ...func(*HostProcessQu
 		hq.withNamedProcesses = make(map[string]*HostProcessQuery)
 	}
 	hq.withNamedProcesses[name] = query
+	return hq
+}
+
+// WithNamedCredentials tells the query-builder to eager-load the nodes that are connected to the "credentials"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNamedCredentials(name string, opts ...func(*HostCredentialQuery)) *HostQuery {
+	query := (&HostCredentialClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hq.withNamedCredentials == nil {
+		hq.withNamedCredentials = make(map[string]*HostCredentialQuery)
+	}
+	hq.withNamedCredentials[name] = query
 	return hq
 }
 

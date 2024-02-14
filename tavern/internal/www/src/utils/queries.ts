@@ -79,7 +79,7 @@ export const GET_TASK_QUERY = gql`
                     node{
                         id
                         lastModifiedAt
-                        output
+                        outputSize
                         execStartedAt
                         execFinishedAt
                         createdAt
@@ -122,6 +122,18 @@ export const GET_TASK_QUERY = gql`
         }
     }
 `;
+
+export const GET_TASK_OUTPUT_QUERY = gql`
+    query GetOutputForTask($where: TaskWhereInput) {
+            tasks(where: $where, ){
+    				edges{
+                        node{
+                            id
+                            output
+                        }
+            }
+    }
+}`
 
 export const GET_SEARCH_FILTERS = gql`
     query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){

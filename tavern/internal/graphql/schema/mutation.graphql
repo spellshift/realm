@@ -1,4 +1,9 @@
 type Mutation {
+    ####
+    # Admin
+    ####
+    dropAllData: Boolean! @requireRole(role: ADMIN)
+
     ###
     # Quest
     ###

@@ -15,6 +15,9 @@ type File func(*sql.Selector)
 // Host is the predicate function for host builders.
 type Host func(*sql.Selector)
 
+// HostCredential is the predicate function for hostcredential builders.
+type HostCredential func(*sql.Selector)
+
 // HostFile is the predicate function for hostfile builders.
 type HostFile func(*sql.Selector)
 

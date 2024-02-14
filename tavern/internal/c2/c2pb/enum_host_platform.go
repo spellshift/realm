@@ -3,6 +3,7 @@ package c2pb
 import (
 	"database/sql/driver"
 	"io"
+	"sort"
 
 	"github.com/99designs/gqlgen/graphql"
 )
@@ -13,6 +14,7 @@ func (Host_Platform) Values() []string {
 	for _, name := range Host_Platform_name {
 		values = append(values, name)
 	}
+	sort.Strings(values)
 	return values
 }
 

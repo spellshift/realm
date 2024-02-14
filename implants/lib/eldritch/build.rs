@@ -3,7 +3,7 @@ use std::env;
 use std::path::PathBuf;
 use which::which;
 
-#[cfg(target_os = "windows")]
+#[cfg(all(target_os = "windows", debug_assertions))]
 fn build_bin_create_file_dll() {
     use std::{
         io::{BufRead, BufReader},
@@ -115,8 +115,7 @@ fn build_proto() -> Result<()> {
     }
 
     match tonic_build::configure()
-        .out_dir("./src")
-        .protoc_arg("--rust_out=./src/pb.rs")
+        .out_dir("./src/generated/")
         .build_client(false)
         .build_server(false)
         .compile(&["eldritch.proto"], &["../../../tavern/internal/c2/proto"])
@@ -132,7 +131,7 @@ fn build_proto() -> Result<()> {
 fn main() -> Result<()> {
     set_host_family();
     build_proto()?;
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", debug_assertions))]
     build_bin_create_file_dll();
     #[cfg(target_os = "windows")]
     build_bin_reflective_loader();

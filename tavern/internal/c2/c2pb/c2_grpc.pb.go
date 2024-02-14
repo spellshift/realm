@@ -32,6 +32,8 @@ type C2Client interface {
 	//
 	// If no associated file can be found, a NotFound status error is returned.
 	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error)
+	// Report a credential from the host to the server.
+	ReportCredential(ctx context.Context, in *ReportCredentialRequest, opts ...grpc.CallOption) (*ReportCredentialResponse, error)
 	// Report a file from the host to the server.
 	// Providing content of the file is optional. If content is provided:
 	//   - Hash will automatically be calculated and the provided hash will be ignored.
@@ -94,6 +96,15 @@ func (x *c2DownloadFileClient) Recv() (*DownloadFileResponse, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *c2Client) ReportCredential(ctx context.Context, in *ReportCredentialRequest, opts ...grpc.CallOption) (*ReportCredentialResponse, error) {
+	out := new(ReportCredentialResponse)
+	err := c.cc.Invoke(ctx, "/c2.C2/ReportCredential", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *c2Client) ReportFile(ctx context.Context, opts ...grpc.CallOption) (C2_ReportFileClient, error) {
@@ -162,6 +173,8 @@ type C2Server interface {
 	//
 	// If no associated file can be found, a NotFound status error is returned.
 	DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error
+	// Report a credential from the host to the server.
+	ReportCredential(context.Context, *ReportCredentialRequest) (*ReportCredentialResponse, error)
 	// Report a file from the host to the server.
 	// Providing content of the file is optional. If content is provided:
 	//   - Hash will automatically be calculated and the provided hash will be ignored.
@@ -187,6 +200,9 @@ func (UnimplementedC2Server) ClaimTasks(context.Context, *ClaimTasksRequest) (*C
 }
 func (UnimplementedC2Server) DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
+}
+func (UnimplementedC2Server) ReportCredential(context.Context, *ReportCredentialRequest) (*ReportCredentialResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportCredential not implemented")
 }
 func (UnimplementedC2Server) ReportFile(C2_ReportFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReportFile not implemented")
@@ -247,6 +263,24 @@ type c2DownloadFileServer struct {
 
 func (x *c2DownloadFileServer) Send(m *DownloadFileResponse) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _C2_ReportCredential_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportCredentialRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(C2Server).ReportCredential(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/c2.C2/ReportCredential",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(C2Server).ReportCredential(ctx, req.(*ReportCredentialRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _C2_ReportFile_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -321,6 +355,10 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClaimTasks",
 			Handler:    _C2_ClaimTasks_Handler,
+		},
+		{
+			MethodName: "ReportCredential",
+			Handler:    _C2_ReportCredential_Handler,
 		},
 		{
 			MethodName: "ReportProcessList",

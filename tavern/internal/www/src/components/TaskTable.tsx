@@ -62,9 +62,9 @@ const TaskTable = (props: Props) => {
             cell: (cellData: any) => {
                 const taskData = cellData.getValue();
                 const statusTime = new Date(taskData?.lastModifiedAt)
-                const hasOutput = taskData?.output.length > 0;
+                const hasOutput = taskData?.outputSize > 0;
                 return (
-                    <Tooltip label={taskData?.output.length > 500 ? "Click to see output" : taskData?.output} aria-label='Task output'>
+                    <Tooltip label="Click to see output" aria-label='Task output'>
                         <div className="flex flex-col gap-1">
                             <div className="flex flex-row gap-2 flex-wrap">
                                 <TaskStatusBadge task={taskData} />

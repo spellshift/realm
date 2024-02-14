@@ -12,6 +12,19 @@ message Tome {
     repeated string file_names = 3;
 }
 
+// Credential reported on the host system.
+message Credential {
+    string principal = 1;
+    string secret = 2;
+
+    enum Kind {
+        KIND_UNSPECIFIED = 0;
+        KIND_PASSWORD = 1;
+        KIND_SSH_KEY = 2;
+    }
+    Kind kind = 3;
+}
+
 // Process running on the host system.
 message Process {
     uint64 pid = 1;
@@ -54,7 +67,7 @@ message File {
     string owner = 2;
     string group = 3;
     string permissions = 4;
-    int64 size = 5;
+    uint64 size = 5;
     string sha3_256_hash = 6;
 
     bytes chunk = 7;

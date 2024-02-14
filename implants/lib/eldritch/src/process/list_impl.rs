@@ -114,14 +114,19 @@ mod tests {
         for proc in res {
             println!(
                 "{:?}",
-                proc.get(const_frozen_string!("pid").to_value())?
-                    .context("Fail")?
+                match proc.get(const_frozen_string!("pid").to_value()) {
+                    Ok(v) => Ok(v),
+                    Err(err) => Err(err.into_anyhow().context("fail")),
+                }?
             );
-            let cur_pid = match proc.get(const_frozen_string!("pid").to_value())? {
-                Some(local_cur_pid) => local_cur_pid
-                    .unpack_i32()
-                    .context("Failed to unpack starlark int to i32")?,
-                None => return Err(anyhow::anyhow!("pid couldn't be unwrapped")),
+            let cur_pid = match proc.get(const_frozen_string!("pid").to_value()) {
+                Ok(v) => match v {
+                    Some(local_cur_pid) => local_cur_pid
+                        .unpack_i32()
+                        .context("Failed to unpack starlark int to i32")?,
+                    None => return Err(anyhow::anyhow!("pid couldn't be unwrapped")),
+                },
+                Err(err) => return Err(err.into_anyhow()),
             };
             if cur_pid as u32 == child.id() {
                 assert_eq!(true, true);

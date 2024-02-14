@@ -6,6 +6,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -59,15 +60,23 @@ func (Task) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("quest", Quest.Type).
 			Ref("tasks").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Required().
 			Unique(),
 		edge.To("beacon", Beacon.Type).
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Required().
 			Unique(),
 		edge.To("reported_files", HostFile.Type).
 			Comment("Files that have been reported by this task."),
 		edge.To("reported_processes", HostProcess.Type).
 			Comment("Processes that have been reported by this task."),
+		edge.To("reported_credentials", HostCredential.Type).
+			Comment("Credentials that have been reported by this task."),
 	}
 }
 

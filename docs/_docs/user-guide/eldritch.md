@@ -266,6 +266,17 @@ The <b>file.download</b> method downloads a file at the URI specified in `uri` t
 
 The <b>file.exists</b> method checks if a file or directory exists at the path specified.
 
+### file.follow
+
+`file.follow(path: str, fn: function(str)) -> None`
+
+The <b>file.follow</b> method will call `fn(line)` for any new `line` that is added to the file (such as from `bash_history` and other logs).
+
+```python
+# Print every line added to bob's bash history
+file.follow('/home/bob/.bash_history', print)
+```
+
 ### file.is_dir
 
 `file.is_dir(path: str) -> bool`

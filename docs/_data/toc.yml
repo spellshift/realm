@@ -5,6 +5,8 @@
       url: "user-guide/getting-started"
     - title: "Tavern"
       url: "user-guide/tavern"
+    - title: "UI"
+      url: "user-guide/ui"
     - title: "Imix"
       url: "user-guide/imix"
     - title: "Golem"

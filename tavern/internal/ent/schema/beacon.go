@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -74,6 +75,9 @@ func (Beacon) Edges() []ent.Edge {
 		edge.To("host", Host.Type).
 			Required().
 			Unique().
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Comment("Host this beacon is running on."),
 		edge.From("tasks", Task.Type).
 			Annotations(
