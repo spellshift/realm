@@ -16,7 +16,6 @@ use {
     starlark::{
         collections::SmallMap,
         const_frozen_string,
-        values::{dict::Dict, Heap},
     },
     std::{
         collections::HashMap,

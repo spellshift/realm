@@ -1,9 +1,4 @@
 use starlark::values::none::NoneType;
-use win_api::{
-    create_remote_thread::create_remote_thread, get_u8_vec_form_u32_vec,
-    open_process::open_process, virtual_alloc_ex::virtual_alloc_ex,
-    write_process_memory::write_process_memory,
-};
 
 #[cfg(target_os = "windows")]
 use {
@@ -14,6 +9,11 @@ use {
         Memory::{MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE},
         Threading::PROCESS_ALL_ACCESS,
     },
+    win_api::{
+        create_remote_thread::create_remote_thread, get_u8_vec_form_u32_vec,
+        open_process::open_process, virtual_alloc_ex::virtual_alloc_ex,
+        write_process_memory::write_process_memory,
+    }
 };
 
 #[cfg(all(host_family = "windows", target_os = "windows"))]
