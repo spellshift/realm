@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,8 +12,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/pkg/browser"
 	"gopkg.in/yaml.v2"
+	"realm.pub/tavern/cli/auth"
 )
 
 type Metadata struct {
@@ -45,12 +49,27 @@ func main() {
 		basedir = "tomes"
 	}
 	endpoint := os.Getenv("endpoint")
-	cookie := os.Getenv("cookie")
 	graphqlEndpoint := ""
 	if endpoint == "" {
 		graphqlEndpoint = "http://localhost/graphql"
+		endpoint = "http://127.0.0.1"
 	} else {
 		graphqlEndpoint = endpoint + "/graphql"
+	}
+	cookie := os.Getenv("cookie")
+	if cookie == "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+
+		// Configure Browser (uses the default system browser)
+		browser := auth.BrowserFunc(browser.OpenURL)
+
+		// Open Browser and Obtain Access Token (via 127.0.0.1 redirect)
+		token, err := auth.Authenticate(ctx, browser, endpoint)
+		if err != nil {
+			panic(err)
+		}
+		cookie = token.String()
 	}
 
 	// Call the function to upload tomes
