@@ -1,8 +1,9 @@
 [workspace]
-members = ["imix", "golem", "lib/eldritch", "lib/c2"]
+members = ["imix", "golem", "lib/eldritch", "lib/c2", "lib/api"]
 resolver = "2"
 
 [workspace.dependencies]
+api = { path = "./lib/api" }
 aes = "0.8.3"
 allocative = "0.3.2"
 allocative_derive = "0.3.2"

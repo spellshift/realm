@@ -1,9 +1,11 @@
 mod drain;
 mod environment;
-mod exec;
+mod eval;
+mod messages;
 
 pub use environment::{Environment, FileRequest};
-pub use exec::{start, Runtime};
+pub use eval::{start, Runtime};
+pub use messages::Message;
 
 #[cfg(test)]
 mod tests {

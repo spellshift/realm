@@ -1,0 +1,17 @@
+[package]
+name = "api"
+version = "0.0.5"
+edition = "2021"
+
+[dependencies]
+log = { workspace = true }
+tonic = { workspace = true, features = ["tls-roots"] }
+prost = { workspace = true}
+prost-types = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tokio-stream = { workspace = true }
+anyhow = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+which =  { workspace = true }
