@@ -87,6 +87,12 @@ message DownloadFileResponse {
     bytes chunk = 1;
 }
 
+message ReportCredentialRequest {
+    int64 task_id = 1;
+    eldritch.Credential credential = 2;
+}
+message ReportCredentialResponse {}
+
 message ReportFileRequest {
     int64 task_id = 1;
     eldritch.File chunk = 2;
@@ -126,6 +132,11 @@ service C2 {
      * If no associated file can be found, a NotFound status error is returned.
      */
      rpc DownloadFile(DownloadFileRequest) returns (stream DownloadFileResponse);
+
+    /*
+     * Report a credential from the host to the server.
+     */
+     rpc ReportCredential(ReportCredentialRequest) returns (ReportCredentialResponse);
 
     /*
      * Report a file from the host to the server.

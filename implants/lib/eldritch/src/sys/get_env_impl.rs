@@ -35,7 +35,11 @@ mod tests {
         env::set_var("FOO", "BAR");
         let test_heap = Heap::new();
         let res = get_env(&test_heap)?;
-        let val: Value<'_> = res.get(const_frozen_string!("FOO").to_value())?.unwrap();
+        let val: Value<'_> = match res.get(const_frozen_string!("FOO").to_value()) {
+            Ok(v) => Ok(v),
+            Err(err) => Err(err.into_anyhow()),
+        }?
+        .unwrap();
         assert_eq!(val.unpack_str().unwrap(), "BAR");
         Ok(())
     }

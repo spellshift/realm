@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -19,11 +20,13 @@ func (HostProcess) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("pid").
 			Annotations(
+				entgql.Type("Uint64"),
 				entgql.OrderField("PROCESS_ID"),
 			).
 			Comment("ID of the process."),
 		field.Uint64("ppid").
 			Annotations(
+				entgql.Type("Uint64"),
 				entgql.OrderField("PARENT_PROCESS_ID"),
 			).
 			Comment("ID of the parent process."),
@@ -59,11 +62,17 @@ func (HostProcess) Edges() []ent.Edge {
 		edge.To("host", Host.Type).
 			Required().
 			Unique().
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Comment("Host the process was reported on."),
 		edge.From("task", Task.Type).
 			Required().
 			Unique().
 			Ref("reported_processes").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Comment("Task that reported this process."),
 	}
 }

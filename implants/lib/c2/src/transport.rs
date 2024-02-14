@@ -26,6 +26,13 @@ pub trait Transport {
     ) -> Result<()>;
 
     ///
+    /// Report a credential to the server.
+    async fn report_credential(
+        &mut self,
+        request: crate::pb::ReportCredentialRequest,
+    ) -> Result<crate::pb::ReportCredentialResponse>;
+
+    ///
     /// Report a file from the host to the server.
     /// Providing content of the file is optional. If content is provided:
     ///   - Hash will automatically be calculated and the provided hash will be ignored.

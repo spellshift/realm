@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 # Check if compiled by imix
 imix = []
+print_stdout = []
 
 [dependencies]
 aes = { workspace = true }
@@ -45,6 +46,7 @@ sha1 = { workspace = true }
 sha2 = { workspace = true }
 sha256 = { workspace = true }
 starlark = { workspace = true }
+starlark_derive = { workspace = true }
 sysinfo = { workspace = true }
 tar = { workspace = true }
 tempfile = { workspace = true }

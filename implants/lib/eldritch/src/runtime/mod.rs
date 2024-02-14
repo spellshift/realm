@@ -1,14 +1,13 @@
-mod broker;
-mod client;
+mod drain;
+mod environment;
 mod exec;
 
-pub use broker::Broker;
-pub use client::{Client, FileRequest};
-pub use exec::Runtime;
+pub use environment::{Environment, FileRequest};
+pub use exec::{start, Runtime};
 
 #[cfg(test)]
 mod tests {
-    use crate::{pb::Tome, Runtime};
+    use crate::pb::Tome;
     use anyhow::Error;
     use std::collections::HashMap;
     use tempfile::NamedTempFile;
@@ -16,22 +15,22 @@ mod tests {
     macro_rules! runtime_tests {
         ($($name:ident: $value:expr,)*) => {
         $(
-            #[test]
-            fn $name() {
+            #[tokio::test]
+            async fn $name() {
                 let tc: TestCase = $value;
-                let (runtime, broker) = Runtime::new();
-                runtime.run(tc.tome);
+                let mut runtime = crate::start(tc.tome).await;
+                runtime.finish().await;
 
                 let want_err_str = match tc.want_error {
                     Some(err) => err.to_string(),
                     None => "".to_string(),
                 };
-                let err_str = match broker.collect_errors().pop() {
+                let err_str = match runtime.collect_errors().pop() {
                     Some(err) => err.to_string(),
                     None => "".to_string(),
                 };
                 assert_eq!(want_err_str, err_str);
-                assert_eq!(tc.want_output, broker.collect_text().join(""));
+                assert_eq!(tc.want_output, runtime.collect_text().join(""));
             }
         )*
         }
@@ -149,23 +148,17 @@ mod tests {
             .replace('\\', "\\\\");
         let eldritch =
             format!(r#"file.download("https://www.google.com/", "{path}"); print("ok")"#);
-        let (runtime, broker) = Runtime::new();
-        let t = tokio::task::spawn_blocking(move || {
-            runtime.run(Tome {
-                eldritch,
-                parameters: HashMap::new(),
-                file_names: Vec::new(),
-            });
-        });
-        assert!(t.await.is_ok());
+        let mut runtime = crate::start(Tome {
+            eldritch,
+            parameters: HashMap::new(),
+            file_names: Vec::new(),
+        })
+        .await;
+        runtime.finish().await;
 
-        let out = broker.collect_text();
-        let err = broker.collect_errors().pop();
-        assert!(
-            err.is_none(),
-            "failed with err {}",
-            err.unwrap().to_string()
-        );
+        let out = runtime.collect_text();
+        let err = runtime.collect_errors().pop();
+        assert!(err.is_none(), "failed with err {}", err.unwrap());
         assert!(tmp_file.as_file().metadata().unwrap().len() > 5);
         assert_eq!("ok", out.join(""));
         Ok(())

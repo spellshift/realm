@@ -1,5 +1,5 @@
 pub mod pb {
-    include!("c2.rs");
+    include!("generated/c2.rs");
 }
 
 mod grpc;
