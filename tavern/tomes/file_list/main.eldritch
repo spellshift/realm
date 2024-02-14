@@ -40,8 +40,7 @@ def can_read(f):
     return False
 
 def glob(s, pattern):
-    #if pattern == s or pattern == "*":
-    #    return True
+    """Basic glob functionality"""
     p = pattern.split("*")
     # Check the first chunk
     chunk = p.pop(0)
@@ -64,6 +63,7 @@ def glob(s, pattern):
     return True
 
 def print_file(path, f):
+    """Pretty Print a file"""
     full = path.rstrip("/") + "/" + f["file_name"]
     if f["type"] == "Directory":
         full += "/"
