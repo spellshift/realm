@@ -2020,7 +2020,7 @@ func (ec *executionContext) _HostCredential_kind(ctx context.Context, field grap
 	}
 	res := resTmp.(epb.Credential_Kind)
 	fc.Result = res
-	return ec.marshalNHostCredentialCredential_Kind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, field.Selections, res)
+	return ec.marshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_kind(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2030,7 +2030,7 @@ func (ec *executionContext) fieldContext_HostCredential_kind(ctx context.Context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type HostCredentialCredential_Kind does not have child fields")
+			return nil, errors.New("field of type HostCredentialKind does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9472,7 +9472,7 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-			data, err := ec.unmarshalOHostCredentialCredential_Kind2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, v)
+			data, err := ec.unmarshalOHostCredentialKind2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9481,7 +9481,7 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindNEQ"))
-			data, err := ec.unmarshalOHostCredentialCredential_Kind2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, v)
+			data, err := ec.unmarshalOHostCredentialKind2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9490,7 +9490,7 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindIn"))
-			data, err := ec.unmarshalOHostCredentialCredential_Kind2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kindᚄ(ctx, v)
+			data, err := ec.unmarshalOHostCredentialKind2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kindᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9499,7 +9499,7 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kindNotIn"))
-			data, err := ec.unmarshalOHostCredentialCredential_Kind2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kindᚄ(ctx, v)
+			data, err := ec.unmarshalOHostCredentialKind2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kindᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19092,13 +19092,13 @@ func (ec *executionContext) marshalNHostCredential2ᚖrealmᚗpubᚋtavernᚋint
 	return ec._HostCredential(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNHostCredentialCredential_Kind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx context.Context, v interface{}) (epb.Credential_Kind, error) {
+func (ec *executionContext) unmarshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx context.Context, v interface{}) (epb.Credential_Kind, error) {
 	var res epb.Credential_Kind
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNHostCredentialCredential_Kind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx context.Context, sel ast.SelectionSet, v epb.Credential_Kind) graphql.Marshaler {
+func (ec *executionContext) marshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx context.Context, sel ast.SelectionSet, v epb.Credential_Kind) graphql.Marshaler {
 	return v
 }
 
@@ -19946,7 +19946,7 @@ func (ec *executionContext) marshalOHostCredential2ᚕᚖrealmᚗpubᚋtavernᚋ
 	return ret
 }
 
-func (ec *executionContext) unmarshalOHostCredentialCredential_Kind2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kindᚄ(ctx context.Context, v interface{}) ([]epb.Credential_Kind, error) {
+func (ec *executionContext) unmarshalOHostCredentialKind2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kindᚄ(ctx context.Context, v interface{}) ([]epb.Credential_Kind, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -19958,7 +19958,7 @@ func (ec *executionContext) unmarshalOHostCredentialCredential_Kind2ᚕrealmᚗp
 	res := make([]epb.Credential_Kind, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNHostCredentialCredential_Kind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -19966,7 +19966,7 @@ func (ec *executionContext) unmarshalOHostCredentialCredential_Kind2ᚕrealmᚗp
 	return res, nil
 }
 
-func (ec *executionContext) marshalOHostCredentialCredential_Kind2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kindᚄ(ctx context.Context, sel ast.SelectionSet, v []epb.Credential_Kind) graphql.Marshaler {
+func (ec *executionContext) marshalOHostCredentialKind2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kindᚄ(ctx context.Context, sel ast.SelectionSet, v []epb.Credential_Kind) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -19993,7 +19993,7 @@ func (ec *executionContext) marshalOHostCredentialCredential_Kind2ᚕrealmᚗpub
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNHostCredentialCredential_Kind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, sel, v[i])
+			ret[i] = ec.marshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -20013,7 +20013,7 @@ func (ec *executionContext) marshalOHostCredentialCredential_Kind2ᚕrealmᚗpub
 	return ret
 }
 
-func (ec *executionContext) unmarshalOHostCredentialCredential_Kind2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx context.Context, v interface{}) (*epb.Credential_Kind, error) {
+func (ec *executionContext) unmarshalOHostCredentialKind2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx context.Context, v interface{}) (*epb.Credential_Kind, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -20022,7 +20022,7 @@ func (ec *executionContext) unmarshalOHostCredentialCredential_Kind2ᚖrealmᚗp
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOHostCredentialCredential_Kind2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx context.Context, sel ast.SelectionSet, v *epb.Credential_Kind) graphql.Marshaler {
+func (ec *executionContext) marshalOHostCredentialKind2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx context.Context, sel ast.SelectionSet, v *epb.Credential_Kind) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
