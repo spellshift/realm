@@ -3,10 +3,13 @@
 package hostcredential
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/99designs/gqlgen/graphql"
+	"realm.pub/tavern/internal/c2/epb"
 )
 
 const (
@@ -22,6 +25,8 @@ const (
 	FieldPrincipal = "principal"
 	// FieldSecret holds the string denoting the secret field in the database.
 	FieldSecret = "secret"
+	// FieldKind holds the string denoting the kind field in the database.
+	FieldKind = "kind"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTask holds the string denoting the task edge name in mutations.
@@ -51,6 +56,7 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldPrincipal,
 	FieldSecret,
+	FieldKind,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "host_credentials"
@@ -88,6 +94,16 @@ var (
 	SecretValidator func(string) error
 )
 
+// KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
+func KindValidator(k epb.Credential_Kind) error {
+	switch k.String() {
+	case "KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED":
+		return nil
+	default:
+		return fmt.Errorf("hostcredential: invalid enum value for kind field: %q", k)
+	}
+}
+
 // OrderOption defines the ordering options for the HostCredential queries.
 type OrderOption func(*sql.Selector)
 
@@ -114,6 +130,11 @@ func ByPrincipal(opts ...sql.OrderTermOption) OrderOption {
 // BySecret orders the results by the secret field.
 func BySecret(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSecret, opts...).ToFunc()
+}
+
+// ByKind orders the results by the kind field.
+func ByKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKind, opts...).ToFunc()
 }
 
 // ByHostField orders the results by host field.
@@ -143,3 +164,10 @@ func newTaskStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
 	)
 }
+
+var (
+	// epb.Credential_Kind must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*epb.Credential_Kind)(nil)
+	// epb.Credential_Kind must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*epb.Credential_Kind)(nil)
+)

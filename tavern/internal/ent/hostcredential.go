@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/task"
@@ -27,6 +28,8 @@ type HostCredential struct {
 	Principal string `json:"principal,omitempty"`
 	// Secret for this credential (e.g. password).
 	Secret string `json:"secret,omitempty"`
+	// Kind of credential.
+	Kind epb.Credential_Kind `json:"kind,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostCredentialQuery when eager-loading is set.
 	Edges                     HostCredentialEdges `json:"edges"`
@@ -79,6 +82,8 @@ func (*HostCredential) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case hostcredential.FieldKind:
+			values[i] = new(epb.Credential_Kind)
 		case hostcredential.FieldID:
 			values[i] = new(sql.NullInt64)
 		case hostcredential.FieldPrincipal, hostcredential.FieldSecret:
@@ -133,6 +138,12 @@ func (hc *HostCredential) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field secret", values[i])
 			} else if value.Valid {
 				hc.Secret = value.String
+			}
+		case hostcredential.FieldKind:
+			if value, ok := values[i].(*epb.Credential_Kind); !ok {
+				return fmt.Errorf("unexpected type %T for field kind", values[i])
+			} else if value != nil {
+				hc.Kind = *value
 			}
 		case hostcredential.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -205,6 +216,9 @@ func (hc *HostCredential) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("secret=")
 	builder.WriteString(hc.Secret)
+	builder.WriteString(", ")
+	builder.WriteString("kind=")
+	builder.WriteString(fmt.Sprintf("%v", hc.Kind))
 	builder.WriteByte(')')
 	return builder.String()
 }

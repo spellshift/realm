@@ -10,8 +10,8 @@ import (
 
 // Values provides list valid values for Enum.
 func (Credential_Kind) Values() []string {
-	values := make([]string, 0, len(Process_Status_name))
-	for _, name := range Process_Status_name {
+	values := make([]string, 0, len(Credential_Kind_name))
+	for _, name := range Credential_Kind_name {
 		values = append(values, name)
 	}
 	sort.Strings(values)

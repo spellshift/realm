@@ -170,10 +170,10 @@ pub struct ProcessList {
     #[prost(message, repeated, tag = "1")]
     pub list: ::prost::alloc::vec::Vec<Process>,
 }
-/// File on the host system.
+/// FileMetadata about a file on the host system.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct File {
+pub struct FileMetadata {
     #[prost(string, tag = "1")]
     pub path: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -186,6 +186,13 @@ pub struct File {
     pub size: u64,
     #[prost(string, tag = "6")]
     pub sha3_256_hash: ::prost::alloc::string::String,
-    #[prost(bytes = "vec", tag = "7")]
+}
+/// File on the host system.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct File {
+    #[prost(message, optional, tag = "1")]
+    pub metadata: ::core::option::Option<FileMetadata>,
+    #[prost(bytes = "vec", tag = "2")]
     pub chunk: ::prost::alloc::vec::Vec<u8>,
 }
