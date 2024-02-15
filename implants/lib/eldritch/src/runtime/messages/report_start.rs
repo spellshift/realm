@@ -3,6 +3,9 @@ use anyhow::Result;
 use pb::c2::{ReportTaskOutputRequest, TaskOutput};
 use prost_types::Timestamp;
 
+/*
+ * ReportStartMessage indicates the start of a tome's evaluation.
+ */
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone)]
 pub struct ReportStartMessage {

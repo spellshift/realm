@@ -2,6 +2,9 @@ use super::{Dispatcher, Transport};
 use anyhow::Result;
 use pb::{c2::ReportCredentialRequest, eldritch::Credential};
 
+/*
+ * ReportCredentialMessage reports a credential captured by this tome's evaluation.
+ */
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone)]
 pub struct ReportCredentialMessage {

@@ -24,10 +24,16 @@ use std::future::Future;
 #[cfg(debug_assertions)]
 use derive_more::Display;
 
+// Dispatcher defines the shared "dispatch" method used by all `Message` variants to send their data using a transport.
 pub trait Dispatcher {
     fn dispatch(self, transport: &mut impl Transport) -> impl Future<Output = Result<()>> + Send;
 }
 
+/*
+ * A Message from an Eldritch tome evaluation `tokio::task` to the owner of the corresponding `eldritch::Runtime`.
+ * This enables eldritch library functions to communicate with the caller API, enabling structured data reporting
+ * as well as resource requests (e.g. fetching assets).
+ */
 #[cfg_attr(debug_assertions, derive(Debug, Display))]
 #[derive(From, Clone)]
 pub enum Message {
@@ -56,6 +62,7 @@ pub enum Message {
     ReportFinish(ReportFinishMessage),
 }
 
+// The Dispatcher implementation for `Message` simply calls the `dispatch()` implementation on the underlying variant.
 impl Dispatcher for Message {
     async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
         #[cfg(debug_assertions)]
@@ -74,8 +81,4 @@ impl Dispatcher for Message {
             Self::ReportFinish(msg) => msg.dispatch(transport).await,
         }
     }
-}
-
-pub(crate) fn aggregate(messages: Vec<Message>) -> Vec<Message> {
-    messages
 }

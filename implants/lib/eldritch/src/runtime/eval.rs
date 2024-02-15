@@ -1,4 +1,4 @@
-use super::{drain::drain, messages::aggregate, Environment};
+use super::drain::drain;
 use crate::{
     assets::AssetsLibrary,
     crypto::CryptoLibrary,
@@ -6,7 +6,10 @@ use crate::{
     pivot::PivotLibrary,
     process::ProcessLibrary,
     report::ReportLibrary,
-    runtime::messages::{Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
+    runtime::{
+        messages::{Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
+        Environment,
+    },
     sys::SysLibrary,
     time::TimeLibrary,
 };
@@ -73,7 +76,7 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
                 // Report evaluation errors
                 match env.send(ReportErrorMessage {
                     id,
-                    error: err.to_string(),
+                    error: format!("{:?}", err),
                 }) {
                     Ok(_) => {}
                     Err(_send_err) => {
@@ -220,7 +223,7 @@ impl Runtime {
      * Collects the currently available messages from the tome.
      */
     pub fn collect(&self) -> Vec<Message> {
-        aggregate(drain(&self.rx))
+        drain(&self.rx)
     }
 
     /*
@@ -232,7 +235,7 @@ impl Runtime {
      * Example:
      * ```rust
      * for msg in runtime.messages() {
-     *     // TODO: Stuff
+     *     // Do Stuff
      * }
      * ```
      */

@@ -36,8 +36,7 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     for runtime in &mut runtimes {
         runtime.finish().await;
 
-        let messages = runtime.collect();
-        for msg in messages {
+        for msg in runtime.messages() {
             match msg {
                 Message::ReportText(m) => result.push(m.text()),
                 Message::ReportError(m) => {
