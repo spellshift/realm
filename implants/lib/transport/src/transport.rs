@@ -5,13 +5,18 @@ use pb::c2::{
     ReportProcessListRequest, ReportProcessListResponse, ReportTaskOutputRequest,
     ReportTaskOutputResponse,
 };
-use std::sync::mpsc::{Receiver, Sender};
+use std::{
+    future::Future,
+    sync::mpsc::{Receiver, Sender},
+};
 
-#[trait_variant::make(Transport: Send)]
-pub trait LocalTransport: Clone {
+pub trait Transport: Clone + Send {
     ///
     /// Contact the server for new tasks to execute.
-    async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
+    fn claim_tasks(
+        &mut self,
+        request: ClaimTasksRequest,
+    ) -> impl Future<Output = Result<ClaimTasksResponse>> + Send;
 
     ///
     /// Fetch an asset from the server, returning one or more chunks of data.
@@ -21,18 +26,18 @@ pub trait LocalTransport: Clone {
     ///   - "file-size": The number of bytes contained by the file.
     ///
     /// If no associated file can be found, a NotFound status error is returned.
-    async fn fetch_asset(
+    fn fetch_asset(
         &mut self,
         request: FetchAssetRequest,
         sender: Sender<FetchAssetResponse>,
-    ) -> Result<()>;
+    ) -> impl Future<Output = Result<()>> + Send;
 
     ///
     /// Report a credential to the server.
-    async fn report_credential(
+    fn report_credential(
         &mut self,
         request: ReportCredentialRequest,
-    ) -> Result<ReportCredentialResponse>;
+    ) -> impl Future<Output = Result<ReportCredentialResponse>> + Send;
 
     ///
     /// Report a file from the host to the server.
@@ -41,23 +46,23 @@ pub trait LocalTransport: Clone {
     ///   - Size will automatically be calculated and the provided size will be ignored.
     /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
     /// Any existing files at the provided path for the host are replaced.
-    async fn report_file(
+    fn report_file(
         &mut self,
         request: Receiver<ReportFileRequest>,
-    ) -> Result<ReportFileResponse>;
+    ) -> impl Future<Output = Result<ReportFileResponse>> + Send;
 
     ///
     /// Report the active list of running processes. This list will replace any previously reported
     /// lists for the same host.
-    async fn report_process_list(
+    fn report_process_list(
         &mut self,
         request: ReportProcessListRequest,
-    ) -> Result<ReportProcessListResponse>;
+    ) -> impl Future<Output = Result<ReportProcessListResponse>> + Send;
 
     ///
     /// Report execution output for a task.
-    async fn report_task_output(
+    fn report_task_output(
         &mut self,
         request: ReportTaskOutputRequest,
-    ) -> Result<ReportTaskOutputResponse>;
+    ) -> impl Future<Output = Result<ReportTaskOutputResponse>> + Send;
 }

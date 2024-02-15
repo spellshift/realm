@@ -1,6 +1,6 @@
 use super::{Dispatcher, Transport};
 use anyhow::Result;
-use pb::{c2::ReportCredentialRequest, eldritch::Credential};
+use pb::{c2::ReportCredentialRequest};
 
 #[derive(Clone)]
 pub struct ReportCredential {

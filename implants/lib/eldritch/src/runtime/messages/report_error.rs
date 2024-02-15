@@ -1,5 +1,5 @@
 use super::{Dispatcher, Transport};
-use anyhow::{Error, Result};
+use anyhow::{Result};
 use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use prost_types::Timestamp;
 

@@ -1,11 +1,11 @@
 use super::messages::{Message, ReportText};
-use anyhow::{Context, Error, Result};
-use pb::eldritch::{Credential, File, ProcessList};
+use anyhow::{Context, Result};
+
 use starlark::{
     values::{AnyLifetime, ProvidesStaticType},
     PrintHandler,
 };
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Sender};
 
 pub struct FileRequest {
     name: String,

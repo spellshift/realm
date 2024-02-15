@@ -1,16 +1,16 @@
 use super::{
-    drain::{drain, drain_last},
+    drain::{drain},
     messages::{aggregate, Dispatcher, Transport},
-    Environment, FileRequest,
+    Environment,
 };
 use crate::{
     assets::AssetsLibrary, crypto::CryptoLibrary, file::FileLibrary, pivot::PivotLibrary,
     process::ProcessLibrary, report::ReportLibrary, runtime::messages, runtime::messages::Message,
     sys::SysLibrary, time::TimeLibrary,
 };
-use anyhow::{Context, Error, Result};
+use anyhow::{Context, Result};
 use chrono::Utc;
-use pb::eldritch::{Credential, File, ProcessList, Tome};
+use pb::eldritch::{Tome};
 use prost_types::Timestamp;
 use starlark::{
     collections::SmallMap,

@@ -13,11 +13,12 @@ pub use report_process_list::ReportProcessList;
 pub use report_text::ReportText;
 pub use transport::Transport;
 
-use anyhow::{Error, Result};
+use anyhow::Result;
 use derive_more::From;
+use std::future::Future;
 
 pub trait Dispatcher {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()>;
+    fn dispatch(self, transport: &mut impl Transport) -> impl Future<Output = Result<()>> + Send;
 }
 
 #[derive(From, Clone)]

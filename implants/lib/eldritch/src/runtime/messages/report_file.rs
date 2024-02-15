@@ -1,6 +1,6 @@
 use super::{Dispatcher, Transport};
 use anyhow::Result;
-use pb::c2::ReportProcessListRequest;
+
 
 #[derive(Clone)]
 pub struct ReportFile {
@@ -9,7 +9,7 @@ pub struct ReportFile {
 }
 
 impl Dispatcher for ReportFile {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+    async fn dispatch(self, _transport: &mut impl Transport) -> Result<()> {
         Ok(())
     }
 }

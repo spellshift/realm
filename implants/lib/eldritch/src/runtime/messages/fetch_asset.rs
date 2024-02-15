@@ -1,5 +1,5 @@
 use super::Dispatcher;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use pb::c2::{FetchAssetRequest, FetchAssetResponse};
 use std::sync::mpsc::Sender;
 use transport::Transport;
@@ -12,7 +12,7 @@ pub struct FetchAsset {
 
 impl Dispatcher for FetchAsset {
     async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
-        transport.fetch_asset(self.req, self.tx).await;
+        transport.fetch_asset(self.req, self.tx).await?;
         Ok(())
     }
 }

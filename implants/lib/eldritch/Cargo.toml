@@ -10,7 +10,7 @@ print_stdout = []
 
 [dependencies]
 pb = { workspace = true }
-transport = { workspace = true, test = true }
+transport = { workspace = true }
 
 aes = { workspace = true }
 allocative = { workspace = true }
