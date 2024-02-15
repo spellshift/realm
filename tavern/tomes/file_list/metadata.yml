@@ -7,4 +7,4 @@ paramdefs:
 - name: path
   type: string
   label: File path
-  placeholder: "/etc/"
+  placeholder: "/etc/open*"
