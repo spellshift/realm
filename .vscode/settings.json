@@ -4,7 +4,4 @@
         "rust-analyzer"
     ],
     "rust-analyzer.check.command": "clippy",
-    "rust-analyzer.linkedProjects": [
-        "./implants/lib/transport/Cargo.toml"
-    ],
 }

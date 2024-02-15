@@ -1,10 +1,5 @@
 use anyhow::Result;
-use pb::c2::{
-    ClaimTasksRequest, ClaimTasksResponse, FetchAssetRequest, FetchAssetResponse,
-    ReportCredentialRequest, ReportCredentialResponse, ReportFileRequest, ReportFileResponse,
-    ReportProcessListRequest, ReportProcessListResponse, ReportTaskOutputRequest,
-    ReportTaskOutputResponse,
-};
+use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
 
 #[trait_variant::make(Transport: Send)]

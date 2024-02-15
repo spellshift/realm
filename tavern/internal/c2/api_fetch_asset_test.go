@@ -18,7 +18,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2test"
 )
 
-func TestDownloadFile(t *testing.T) {
+func TestFetchAsset(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
 	client, graph, close := c2test.New(t)
@@ -68,7 +68,7 @@ func TestDownloadFile(t *testing.T) {
 			SaveX(ctx)
 
 		// Send Request
-		fileClient, err := client.DownloadFile(ctx, tc.req)
+		fileClient, err := client.FetchAsset(ctx, tc.req)
 		require.NoError(t, err)
 
 		// Read All Chunks

@@ -638,7 +638,7 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
 
 ## Report
 
-The report library is designed to enabled reporting structured data to Tavern. It's API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
+The report library is designed to enable reporting structured data to Tavern. It's API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
 
 ### report.file
 

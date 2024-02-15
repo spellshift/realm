@@ -12,7 +12,7 @@ import (
 	"realm.pub/tavern/internal/ent/file"
 )
 
-func (srv *Server) DownloadFile(req *c2pb.FetchAssetRequest, stream c2pb.C2_DownloadFileServer) error {
+func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
 	// Load File
@@ -33,7 +33,7 @@ func (srv *Server) DownloadFile(req *c2pb.FetchAssetRequest, stream c2pb.C2_Down
 		"file-size", fmt.Sprintf("%d", f.Size),
 	))
 
-	// Send File Chunks
+	// Send Asset Chunks
 	buf := bytes.NewBuffer(f.Content)
 	for {
 		// Check Empty Buffer
