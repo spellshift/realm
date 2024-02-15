@@ -7,7 +7,7 @@ import Table from "../../../components/tavern-base-ui/Table";
 import { useHostAcitvityData } from "../hook/useHostActivityData";
 
 const GroupHostActivityTable = ({ hosts }: { hosts: Array<any> }) => {
-    const { loading, hostActivity } = useHostAcitvityData(hosts);
+    const { loading, hostActivity, onlineHostCount, totalHostCount } = useHostAcitvityData(hosts);
     const currentDate = new Date();
 
     const columns: ColumnDef<any>[] = [
@@ -16,14 +16,23 @@ const GroupHostActivityTable = ({ hosts }: { hosts: Array<any> }) => {
             header: 'Group',
             accessorFn: row => row.group,
             footer: props => props.column.id,
-            enableSorting: false,
+            enableSorting: true,
         },
         {
             id: "hostStatus",
             header: "Active beacons",
             accessorFn: row => row,
             footer: props => props.column.id,
-            enableSorting: false,
+            enableSorting: true,
+            sortingFn: (
+                rowA,
+                rowB,
+            ) => {
+                const numA = rowA?.original?.online / (rowA?.original?.total);
+                const numB = rowB?.original?.online / (rowB?.original?.total);
+
+                return numA < numB ? 1 : numA > numB ? -1 : 0;
+            },
             cell: (cellData: any) => {
                 const rowData = cellData.getValue();
                 const color = rowData.online === 0 ? "red" : "gray";
@@ -65,7 +74,7 @@ const GroupHostActivityTable = ({ hosts }: { hosts: Array<any> }) => {
                 <div className='flex flex-col'>
                     <h2 className="text-lg font-semibold text-gray-900">Active hosts</h2>
                     <h3 className='text-lg'>
-                        180/300
+                        {onlineHostCount}/{totalHostCount}
                     </h3>
                 </div>
             </div>

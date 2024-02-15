@@ -23,12 +23,24 @@ type UniqueCountHostByGroup = {
 export const useHostAcitvityData = (data: Array<any>) => {
     const [loading, setLoading] = useState(false);
     const [hostActivity, setHostActivity] = useState<Array<UniqueCountHost>>([]);
+    const [onlineHostCount, setOnlineHostCount] = useState(0);
+    const [totalHostCount, setTotalHostCount] = useState(0);
 
     const getformattedHosts = useCallback((hosts: any) => {
         const uniqueGroups = {} as UniqueCountHostByGroup;
+        let onlineCount = 0;
+        let totalCount = 0;
 
         hosts?.map((host: HostType) => {
             const groupTag = host?.tags && host?.tags.find((tag: TomeTag) => tag.kind === "group");
+            const beaconStatus = getOfflineOnlineStatus(host.beacons || []);
+
+            if (beaconStatus.online > 0) {
+                onlineCount += 1;
+            }
+            if (beaconStatus.online > 0 || beaconStatus.offline > 0) {
+                totalCount += (beaconStatus.online + beaconStatus.offline);
+            }
 
             if (groupTag) {
                 const groupName = groupTag.name
@@ -36,7 +48,6 @@ export const useHostAcitvityData = (data: Array<any>) => {
                     const currDate = uniqueGroups[groupName]?.lastSeenAt ? new Date(uniqueGroups[groupName].lastSeenAt || "") : new Date("1999/08/08");
                     const newDate = host?.lastSeenAt ? new Date(host?.lastSeenAt || "") : new Date("1999/07/07");;
                     const replaceCallback = isAfter(newDate, currDate);
-                    const beaconStatus = getOfflineOnlineStatus(host.beacons || []);
 
                     if (replaceCallback) {
                         uniqueGroups[groupName].lastSeenAt = host.lastSeenAt;
@@ -59,6 +70,8 @@ export const useHostAcitvityData = (data: Array<any>) => {
         });
 
         setHostActivity(Object.values(uniqueGroups));
+        setOnlineHostCount(onlineCount);
+        setTotalHostCount(totalCount);
     }, []);
 
     useEffect(() => {
@@ -71,7 +84,9 @@ export const useHostAcitvityData = (data: Array<any>) => {
 
     return {
         loading,
-        hostActivity
+        hostActivity,
+        onlineHostCount,
+        totalHostCount
     }
 
 }
