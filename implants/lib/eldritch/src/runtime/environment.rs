@@ -1,6 +1,6 @@
-use super::{messages::ReportText, Message};
-use crate::pb::{Credential, File, ProcessList};
+use super::messages::{Message, ReportText};
 use anyhow::{Context, Error, Result};
+use pb::eldritch::{Credential, File, ProcessList};
 use starlark::{
     values::{AnyLifetime, ProvidesStaticType},
     PrintHandler,

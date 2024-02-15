@@ -1,13 +1,20 @@
 use super::{Dispatcher, Transport};
 use anyhow::Result;
-use api::pb::c2::{ReportTaskOutputRequest, TaskOutput};
+use pb::c2::{ReportTaskOutputRequest, TaskOutput};
 use prost_types::Timestamp;
 
+#[derive(Clone)]
 pub struct ReportText {
     pub(crate) id: i64,
     pub(crate) text: String,
     pub(crate) exec_started_at: Option<Timestamp>,
     pub(crate) exec_finished_at: Option<Timestamp>,
+}
+
+impl ReportText {
+    pub fn text(&self) -> String {
+        self.text.clone()
+    }
 }
 
 impl Dispatcher for ReportText {

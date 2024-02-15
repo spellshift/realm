@@ -89,7 +89,7 @@ pub struct Task {
     #[prost(int64, tag = "1")]
     pub id: i64,
     #[prost(message, optional, tag = "2")]
-    pub tome: ::core::option::Option<crate::pb::eldritch::Tome>,
+    pub tome: ::core::option::Option<crate::eldritch::Tome>,
     #[prost(string, tag = "3")]
     pub quest_name: ::prost::alloc::string::String,
 }
@@ -133,13 +133,13 @@ pub struct ClaimTasksResponse {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DownloadFileRequest {
+pub struct FetchAssetRequest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DownloadFileResponse {
+pub struct FetchAssetResponse {
     #[prost(bytes = "vec", tag = "1")]
     pub chunk: ::prost::alloc::vec::Vec<u8>,
 }
@@ -149,7 +149,7 @@ pub struct ReportCredentialRequest {
     #[prost(int64, tag = "1")]
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
-    pub credential: ::core::option::Option<crate::pb::eldritch::Credential>,
+    pub credential: ::core::option::Option<crate::eldritch::Credential>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -160,7 +160,7 @@ pub struct ReportFileRequest {
     #[prost(int64, tag = "1")]
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
-    pub chunk: ::core::option::Option<crate::pb::eldritch::File>,
+    pub chunk: ::core::option::Option<crate::eldritch::File>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -171,7 +171,7 @@ pub struct ReportProcessListRequest {
     #[prost(int64, tag = "1")]
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
-    pub list: ::core::option::Option<crate::pb::eldritch::ProcessList>,
+    pub list: ::core::option::Option<crate::eldritch::ProcessList>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -295,18 +295,18 @@ pub mod c2_client {
             self.inner.unary(req, path, codec).await
         }
         ///
-        /// Download a file from the server, returning one or more chunks of data.
+        /// Fetch an asset from the server, returning one or more chunks of data.
         /// The maximum size of these chunks is determined by the server.
         /// The server should reply with two headers:
         ///   - "sha3-256-checksum": A SHA3-256 digest of the entire file contents.
         ///   - "file-size": The number of bytes contained by the file.
         ///
         /// If no associated file can be found, a NotFound status error is returned.
-        pub async fn download_file(
+        pub async fn fetch_asset(
             &mut self,
-            request: impl tonic::IntoRequest<super::DownloadFileRequest>,
+            request: impl tonic::IntoRequest<super::FetchAssetRequest>,
         ) -> std::result::Result<
-            tonic::Response<tonic::codec::Streaming<super::DownloadFileResponse>>,
+            tonic::Response<tonic::codec::Streaming<super::FetchAssetResponse>>,
             tonic::Status,
         > {
             self.inner
@@ -319,9 +319,9 @@ pub mod c2_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/c2.C2/DownloadFile");
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/FetchAsset");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "DownloadFile"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "FetchAsset"));
             self.inner.server_streaming(req, path, codec).await
         }
         ///

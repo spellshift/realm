@@ -31,7 +31,7 @@ type C2Client interface {
 	//   - "file-size": The number of bytes contained by the file.
 	//
 	// If no associated file can be found, a NotFound status error is returned.
-	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error)
+	DownloadFile(ctx context.Context, in *FetchAssetRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error)
 	// Report a credential from the host to the server.
 	ReportCredential(ctx context.Context, in *ReportCredentialRequest, opts ...grpc.CallOption) (*ReportCredentialResponse, error)
 	// Report a file from the host to the server.
@@ -66,7 +66,7 @@ func (c *c2Client) ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts .
 	return out, nil
 }
 
-func (c *c2Client) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error) {
+func (c *c2Client) DownloadFile(ctx context.Context, in *FetchAssetRequest, opts ...grpc.CallOption) (C2_DownloadFileClient, error) {
 	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[0], "/c2.C2/DownloadFile", opts...)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (c *c2Client) DownloadFile(ctx context.Context, in *DownloadFileRequest, op
 }
 
 type C2_DownloadFileClient interface {
-	Recv() (*DownloadFileResponse, error)
+	Recv() (*FetchAssetResponse, error)
 	grpc.ClientStream
 }
 
@@ -90,8 +90,8 @@ type c2DownloadFileClient struct {
 	grpc.ClientStream
 }
 
-func (x *c2DownloadFileClient) Recv() (*DownloadFileResponse, error) {
-	m := new(DownloadFileResponse)
+func (x *c2DownloadFileClient) Recv() (*FetchAssetResponse, error) {
+	m := new(FetchAssetResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ type C2Server interface {
 	//   - "file-size": The number of bytes contained by the file.
 	//
 	// If no associated file can be found, a NotFound status error is returned.
-	DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error
+	DownloadFile(*FetchAssetRequest, C2_DownloadFileServer) error
 	// Report a credential from the host to the server.
 	ReportCredential(context.Context, *ReportCredentialRequest) (*ReportCredentialResponse, error)
 	// Report a file from the host to the server.
@@ -198,7 +198,7 @@ type UnimplementedC2Server struct {
 func (UnimplementedC2Server) ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimTasks not implemented")
 }
-func (UnimplementedC2Server) DownloadFile(*DownloadFileRequest, C2_DownloadFileServer) error {
+func (UnimplementedC2Server) DownloadFile(*FetchAssetRequest, C2_DownloadFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
 }
 func (UnimplementedC2Server) ReportCredential(context.Context, *ReportCredentialRequest) (*ReportCredentialResponse, error) {
@@ -245,7 +245,7 @@ func _C2_ClaimTasks_Handler(srv interface{}, ctx context.Context, dec func(inter
 }
 
 func _C2_DownloadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(DownloadFileRequest)
+	m := new(FetchAssetRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -253,7 +253,7 @@ func _C2_DownloadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type C2_DownloadFileServer interface {
-	Send(*DownloadFileResponse) error
+	Send(*FetchAssetResponse) error
 	grpc.ServerStream
 }
 
@@ -261,7 +261,7 @@ type c2DownloadFileServer struct {
 	grpc.ServerStream
 }
 
-func (x *c2DownloadFileServer) Send(m *DownloadFileResponse) error {
+func (x *c2DownloadFileServer) Send(m *FetchAssetResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

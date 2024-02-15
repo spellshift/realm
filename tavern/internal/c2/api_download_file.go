@@ -12,7 +12,7 @@ import (
 	"realm.pub/tavern/internal/ent/file"
 )
 
-func (srv *Server) DownloadFile(req *c2pb.DownloadFileRequest, stream c2pb.C2_DownloadFileServer) error {
+func (srv *Server) DownloadFile(req *c2pb.FetchAssetRequest, stream c2pb.C2_DownloadFileServer) error {
 	ctx := stream.Context()
 
 	// Load File
@@ -54,7 +54,7 @@ func (srv *Server) DownloadFile(req *c2pb.DownloadFileRequest, stream c2pb.C2_Do
 		}
 
 		// Send Chunk
-		sendErr := stream.Send(&c2pb.DownloadFileResponse{
+		sendErr := stream.Send(&c2pb.FetchAssetResponse{
 			Chunk: chunk,
 		})
 		if sendErr != nil {

@@ -4,13 +4,9 @@ pub mod file;
 pub mod pivot;
 pub mod process;
 mod report;
-mod runtime;
+pub mod runtime;
 pub mod sys;
 pub mod time;
-
-pub mod pb {
-    include!("generated/eldritch.rs");
-}
 
 pub use runtime::{start, FileRequest, Runtime};
 

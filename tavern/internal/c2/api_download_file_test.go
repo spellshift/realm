@@ -29,7 +29,7 @@ func TestDownloadFile(t *testing.T) {
 		name     string
 		fileName string
 		fileSize int
-		req      *c2pb.DownloadFileRequest
+		req      *c2pb.FetchAssetRequest
 		wantCode codes.Code
 	}
 	tests := []testCase{
@@ -37,20 +37,20 @@ func TestDownloadFile(t *testing.T) {
 			name:     "Small_File",
 			fileName: "small_file",
 			fileSize: 100,
-			req:      &c2pb.DownloadFileRequest{Name: "small_file"},
+			req:      &c2pb.FetchAssetRequest{Name: "small_file"},
 			wantCode: codes.OK,
 		},
 		{
 			name:     "Large_File",
 			fileName: "large_file",
 			fileSize: 1024 * 1024 * 10, // 10 MB
-			req:      &c2pb.DownloadFileRequest{Name: "large_file"},
+			req:      &c2pb.FetchAssetRequest{Name: "large_file"},
 			wantCode: codes.OK,
 		},
 		{
 			name:     "File Not Found",
 			fileName: "n/a",
-			req:      &c2pb.DownloadFileRequest{Name: "this_file_does_not_exist"},
+			req:      &c2pb.FetchAssetRequest{Name: "this_file_does_not_exist"},
 			wantCode: codes.NotFound,
 		},
 	}

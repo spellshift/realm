@@ -1,9 +1,12 @@
 [workspace]
-members = ["imix", "golem", "lib/eldritch", "lib/c2", "lib/api"]
+members = ["imix", "golem", "lib/eldritch", "lib/transport", "lib/pb"]
 resolver = "2"
 
 [workspace.dependencies]
-api = { path = "./lib/api" }
+transport = { path = "./lib/transport" }
+eldritch = { path = "./lib/eldritch" }
+pb = { path = "./lib/pb" }
+
 aes = "0.8.3"
 allocative = "0.3.2"
 allocative_derive = "0.3.2"
@@ -16,7 +19,6 @@ chrono = "0.4.24"
 clap = "3.2.23"
 default-net = "0.13.1"
 derive_more = "0.99.17"
-eldritch = { path = "./lib/eldritch" }
 eval = "0.4.3"
 flate2 = "1.0.24"
 gazebo = "0.8.1"
@@ -59,8 +61,8 @@ structopt = "0.3.23"
 sys-info = "0.9.1"
 sysinfo = "0.29.7"
 tar = "0.4.38"
+trait-variant = "0.1.1"
 tonic-build = "0.10"
-c2 = { path = "./lib/c2" }
 tempfile = "3.3.0"
 tera = "1.17.1"
 thiserror = "1.0.30"

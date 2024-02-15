@@ -566,7 +566,7 @@ func (x *ClaimTasksResponse) GetTasks() []*Task {
 	return nil
 }
 
-type DownloadFileRequest struct {
+type FetchAssetRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -574,8 +574,8 @@ type DownloadFileRequest struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 }
 
-func (x *DownloadFileRequest) Reset() {
-	*x = DownloadFileRequest{}
+func (x *FetchAssetRequest) Reset() {
+	*x = FetchAssetRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_c2_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -583,13 +583,13 @@ func (x *DownloadFileRequest) Reset() {
 	}
 }
 
-func (x *DownloadFileRequest) String() string {
+func (x *FetchAssetRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DownloadFileRequest) ProtoMessage() {}
+func (*FetchAssetRequest) ProtoMessage() {}
 
-func (x *DownloadFileRequest) ProtoReflect() protoreflect.Message {
+func (x *FetchAssetRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_c2_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -601,19 +601,19 @@ func (x *DownloadFileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DownloadFileRequest.ProtoReflect.Descriptor instead.
-func (*DownloadFileRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use FetchAssetRequest.ProtoReflect.Descriptor instead.
+func (*FetchAssetRequest) Descriptor() ([]byte, []int) {
 	return file_c2_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *DownloadFileRequest) GetName() string {
+func (x *FetchAssetRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-type DownloadFileResponse struct {
+type FetchAssetResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -621,8 +621,8 @@ type DownloadFileResponse struct {
 	Chunk []byte `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
 }
 
-func (x *DownloadFileResponse) Reset() {
-	*x = DownloadFileResponse{}
+func (x *FetchAssetResponse) Reset() {
+	*x = FetchAssetResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_c2_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -630,13 +630,13 @@ func (x *DownloadFileResponse) Reset() {
 	}
 }
 
-func (x *DownloadFileResponse) String() string {
+func (x *FetchAssetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DownloadFileResponse) ProtoMessage() {}
+func (*FetchAssetResponse) ProtoMessage() {}
 
-func (x *DownloadFileResponse) ProtoReflect() protoreflect.Message {
+func (x *FetchAssetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_c2_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -648,12 +648,12 @@ func (x *DownloadFileResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DownloadFileResponse.ProtoReflect.Descriptor instead.
-func (*DownloadFileResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use FetchAssetResponse.ProtoReflect.Descriptor instead.
+func (*FetchAssetResponse) Descriptor() ([]byte, []int) {
 	return file_c2_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *DownloadFileResponse) GetChunk() []byte {
+func (x *FetchAssetResponse) GetChunk() []byte {
 	if x != nil {
 		return x.Chunk
 	}
@@ -1180,8 +1180,8 @@ var file_c2_proto_goTypes = []interface{}{
 	(*TaskOutput)(nil),                // 6: c2.TaskOutput
 	(*ClaimTasksRequest)(nil),         // 7: c2.ClaimTasksRequest
 	(*ClaimTasksResponse)(nil),        // 8: c2.ClaimTasksResponse
-	(*DownloadFileRequest)(nil),       // 9: c2.DownloadFileRequest
-	(*DownloadFileResponse)(nil),      // 10: c2.DownloadFileResponse
+	(*FetchAssetRequest)(nil),       // 9: c2.FetchAssetRequest
+	(*FetchAssetResponse)(nil),      // 10: c2.FetchAssetResponse
 	(*ReportCredentialRequest)(nil),   // 11: c2.ReportCredentialRequest
 	(*ReportCredentialResponse)(nil),  // 12: c2.ReportCredentialResponse
 	(*ReportFileRequest)(nil),         // 13: c2.ReportFileRequest
@@ -1211,13 +1211,13 @@ var file_c2_proto_depIdxs = []int32{
 	23, // 11: c2.ReportProcessListRequest.list:type_name -> eldritch.ProcessList
 	6,  // 12: c2.ReportTaskOutputRequest.output:type_name -> c2.TaskOutput
 	7,  // 13: c2.C2.ClaimTasks:input_type -> c2.ClaimTasksRequest
-	9,  // 14: c2.C2.DownloadFile:input_type -> c2.DownloadFileRequest
+	9,  // 14: c2.C2.DownloadFile:input_type -> c2.FetchAssetRequest
 	11, // 15: c2.C2.ReportCredential:input_type -> c2.ReportCredentialRequest
 	13, // 16: c2.C2.ReportFile:input_type -> c2.ReportFileRequest
 	15, // 17: c2.C2.ReportProcessList:input_type -> c2.ReportProcessListRequest
 	17, // 18: c2.C2.ReportTaskOutput:input_type -> c2.ReportTaskOutputRequest
 	8,  // 19: c2.C2.ClaimTasks:output_type -> c2.ClaimTasksResponse
-	10, // 20: c2.C2.DownloadFile:output_type -> c2.DownloadFileResponse
+	10, // 20: c2.C2.DownloadFile:output_type -> c2.FetchAssetResponse
 	12, // 21: c2.C2.ReportCredential:output_type -> c2.ReportCredentialResponse
 	14, // 22: c2.C2.ReportFile:output_type -> c2.ReportFileResponse
 	16, // 23: c2.C2.ReportProcessList:output_type -> c2.ReportProcessListResponse
@@ -1332,7 +1332,7 @@ func file_c2_proto_init() {
 			}
 		}
 		file_c2_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DownloadFileRequest); i {
+			switch v := v.(*FetchAssetRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1344,7 +1344,7 @@ func file_c2_proto_init() {
 			}
 		}
 		file_c2_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DownloadFileResponse); i {
+			switch v := v.(*FetchAssetResponse); i {
 			case 0:
 				return &v.state
 			case 1:

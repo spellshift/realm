@@ -1,10 +1,11 @@
 use super::{Dispatcher, Transport};
 use anyhow::Result;
-use api::pb::{c2::ReportProcessListRequest, eldritch::ProcessList};
+use pb::{c2::ReportProcessListRequest, eldritch::ProcessList};
 
+#[derive(Clone)]
 pub struct ReportProcessList {
-    id: i64,
-    list: ProcessList,
+    pub(crate) id: i64,
+    pub(crate) list: ProcessList,
 }
 
 impl Dispatcher for ReportProcessList {

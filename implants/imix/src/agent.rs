@@ -1,10 +1,8 @@
 use crate::{config::Config, task::TaskHandle};
 use anyhow::Result;
-use c2::{
-    pb::{Beacon, ClaimTasksRequest},
-    Transport, GRPC,
-};
+use pb::c2::{Beacon, ClaimTasksRequest};
 use std::time::{Duration, Instant};
+use transport::{Transport, GRPC};
 
 /*
  * Agent contains all relevant logic for managing callbacks to a c2 server.
@@ -51,7 +49,7 @@ impl Agent<GRPC> {
                 }
             };
 
-            let runtime = eldritch::start(tome).await;
+            let runtime = eldritch::start(task.id, tome).await;
             self.handles.push(TaskHandle::new(task.id, runtime));
 
             #[cfg(debug_assertions)]

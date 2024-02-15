@@ -1,7 +1,8 @@
 use super::{Dispatcher, Transport};
 use anyhow::Result;
-use api::pb::c2::ReportProcessListRequest;
+use pb::c2::ReportProcessListRequest;
 
+#[derive(Clone)]
 pub struct ReportFile {
     id: i64,
     path: String,

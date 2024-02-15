@@ -1,19 +1,16 @@
-use super::{drain::drain, drain::drain_last, Environment, FileRequest};
+use super::{
+    drain::{drain, drain_last},
+    messages::{aggregate, Dispatcher, Transport},
+    Environment, FileRequest,
+};
 use crate::{
-    assets::AssetsLibrary,
-    crypto::CryptoLibrary,
-    file::FileLibrary,
-    pb::{Credential, File, ProcessList, Tome},
-    pivot::PivotLibrary,
-    process::ProcessLibrary,
-    report::ReportLibrary,
-    runtime::messages,
-    runtime::Message,
-    sys::SysLibrary,
-    time::TimeLibrary,
+    assets::AssetsLibrary, crypto::CryptoLibrary, file::FileLibrary, pivot::PivotLibrary,
+    process::ProcessLibrary, report::ReportLibrary, runtime::messages, runtime::messages::Message,
+    sys::SysLibrary, time::TimeLibrary,
 };
 use anyhow::{Context, Error, Result};
 use chrono::Utc;
+use pb::eldritch::{Credential, File, ProcessList, Tome};
 use prost_types::Timestamp;
 use starlark::{
     collections::SmallMap,
@@ -76,7 +73,7 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
                 // Report evaluation errors
                 match env.send(Message::ReportError(messages::ReportError {
                     id,
-                    error: err,
+                    error: err.to_string(),
                     exec_started_at: None,
                     exec_finished_at: None,
                 })) {
@@ -221,6 +218,30 @@ impl Runtime {
         );
 
         Ok(module)
+    }
+
+    /*
+     * Collects the currently available messages from the tome.
+     */
+    pub fn collect(&self) -> Vec<Message> {
+        aggregate(drain(&self.rx))
+    }
+
+    /*
+     * Collect and dispatch all of the currently available messages from the tome.
+     * This method will block until all currently available messages have been dispatched.
+     */
+    pub async fn collect_and_dispatch(&self, transport: &mut impl Transport) {
+        for msg in self.collect() {
+            // let mut t = transport.clone();
+            // tokio::spawn(async move {
+            msg.dispatch(transport).await;
+            // });
+        }
+        // while let Some(result) = futures.join_next().await {
+        //     #[cfg(debug_assertions)]
+        //     log::debug!("finished message dispatch")
+        // }
     }
 
     /*

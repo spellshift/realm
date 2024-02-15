@@ -1,5 +1,5 @@
 use crate::version::VERSION;
-use c2::pb::host::Platform;
+use pb::c2::host::Platform;
 use std::{
     fs::{self, File},
     io::Write,
@@ -52,7 +52,7 @@ pub const RETRY_INTERVAL: &str = retry_interval!();
  */
 #[derive(Debug, Clone)]
 pub struct Config {
-    pub info: c2::pb::Beacon,
+    pub info: pb::c2::Beacon,
     pub callback_uri: String,
     pub retry_interval: u64,
 }
@@ -62,18 +62,18 @@ pub struct Config {
  */
 impl Default for Config {
     fn default() -> Self {
-        let agent = c2::pb::Agent {
+        let agent = pb::c2::Agent {
             identifier: format!("imix-v{}", VERSION),
         };
 
-        let host = c2::pb::Host {
+        let host = pb::c2::Host {
             name: whoami::hostname(),
             identifier: get_host_id(get_host_id_path()),
             platform: get_host_platform() as i32,
             primary_ip: get_primary_ip(),
         };
 
-        let info = c2::pb::Beacon {
+        let info = pb::c2::Beacon {
             identifier: String::from(Uuid::new_v4()),
             principal: whoami::username(),
             interval: match CALLBACK_INTERVAL.parse::<u64>() {
@@ -155,7 +155,9 @@ fn get_host_id(file_path: String) -> String {
     // Read Existing Host ID
     let path = Path::new(file_path.as_str());
     if path.exists() {
-        if let Ok(host_id) = fs::read_to_string(path) { return host_id.trim().to_string() }
+        if let Ok(host_id) = fs::read_to_string(path) {
+            return host_id.trim().to_string();
+        }
     }
 
     // Generate New

@@ -1,36 +1,38 @@
 use anyhow::Result;
-use async_trait::async_trait;
+use pb::c2::{
+    ClaimTasksRequest, ClaimTasksResponse, FetchAssetRequest, FetchAssetResponse,
+    ReportCredentialRequest, ReportCredentialResponse, ReportFileRequest, ReportFileResponse,
+    ReportProcessListRequest, ReportProcessListResponse, ReportTaskOutputRequest,
+    ReportTaskOutputResponse,
+};
 use std::sync::mpsc::{Receiver, Sender};
 
-#[async_trait]
-pub trait Transport {
+#[trait_variant::make(Transport: Send)]
+pub trait LocalTransport: Clone {
     ///
     /// Contact the server for new tasks to execute.
-    async fn claim_tasks(
-        &mut self,
-        request: crate::pb::ClaimTasksRequest,
-    ) -> Result<crate::pb::ClaimTasksResponse>;
+    async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 
     ///
-    /// Download a file from the server, returning one or more chunks of data.
+    /// Fetch an asset from the server, returning one or more chunks of data.
     /// The maximum size of these chunks is determined by the server.
     /// The server should reply with two headers:
     ///   - "sha3-256-checksum": A SHA3-256 digest of the entire file contents.
     ///   - "file-size": The number of bytes contained by the file.
     ///
     /// If no associated file can be found, a NotFound status error is returned.
-    async fn download_file(
+    async fn fetch_asset(
         &mut self,
-        request: crate::pb::DownloadFileRequest,
-        sender: Sender<crate::pb::DownloadFileResponse>,
+        request: FetchAssetRequest,
+        sender: Sender<FetchAssetResponse>,
     ) -> Result<()>;
 
     ///
     /// Report a credential to the server.
     async fn report_credential(
         &mut self,
-        request: crate::pb::ReportCredentialRequest,
-    ) -> Result<crate::pb::ReportCredentialResponse>;
+        request: ReportCredentialRequest,
+    ) -> Result<ReportCredentialResponse>;
 
     ///
     /// Report a file from the host to the server.
@@ -41,21 +43,21 @@ pub trait Transport {
     /// Any existing files at the provided path for the host are replaced.
     async fn report_file(
         &mut self,
-        request: Receiver<crate::pb::ReportFileRequest>,
-    ) -> Result<crate::pb::ReportFileResponse>;
+        request: Receiver<ReportFileRequest>,
+    ) -> Result<ReportFileResponse>;
 
     ///
     /// Report the active list of running processes. This list will replace any previously reported
     /// lists for the same host.
     async fn report_process_list(
         &mut self,
-        request: crate::pb::ReportProcessListRequest,
-    ) -> Result<crate::pb::ReportProcessListResponse>;
+        request: ReportProcessListRequest,
+    ) -> Result<ReportProcessListResponse>;
 
     ///
     /// Report execution output for a task.
     async fn report_task_output(
         &mut self,
-        request: crate::pb::ReportTaskOutputRequest,
-    ) -> Result<crate::pb::ReportTaskOutputResponse>;
+        request: ReportTaskOutputRequest,
+    ) -> Result<ReportTaskOutputResponse>;
 }

