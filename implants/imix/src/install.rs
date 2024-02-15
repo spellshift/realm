@@ -44,16 +44,19 @@ pub async fn install() {
             runtime.finish().await;
 
             #[cfg(debug_assertions)]
-            let mut _output = String::new();
+            let mut output = String::new();
 
             #[cfg(debug_assertions)]
             for msg in runtime.collect() {
                 if let Message::ReportText(m) = msg {
-                    _output.write_str(m.text().as_str());
+                    if let Err(err) = output.write_str(m.text().as_str()) {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to write text: {}", err);
+                    }
                 }
             }
             #[cfg(debug_assertions)]
-            log::info!("{_output}");
+            log::info!("{output}");
         }
     }
 }

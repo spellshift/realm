@@ -1,16 +1,18 @@
-use super::{
-    drain::{drain},
-    messages::{aggregate, Dispatcher, Transport},
-    Environment,
-};
+use super::{drain::drain, messages::aggregate, Environment};
 use crate::{
-    assets::AssetsLibrary, crypto::CryptoLibrary, file::FileLibrary, pivot::PivotLibrary,
-    process::ProcessLibrary, report::ReportLibrary, runtime::messages, runtime::messages::Message,
-    sys::SysLibrary, time::TimeLibrary,
+    assets::AssetsLibrary,
+    crypto::CryptoLibrary,
+    file::FileLibrary,
+    pivot::PivotLibrary,
+    process::ProcessLibrary,
+    report::ReportLibrary,
+    runtime::messages::{Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
+    sys::SysLibrary,
+    time::TimeLibrary,
 };
 use anyhow::{Context, Result};
 use chrono::Utc;
-use pb::eldritch::{Tome};
+use pb::eldritch::Tome;
 use prost_types::Timestamp;
 use starlark::{
     collections::SmallMap,
@@ -32,15 +34,13 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
     let handle = tokio::task::spawn_blocking(move || {
         // Send exec_started_at
         let start = Utc::now();
-        match env.send(Message::ReportText(messages::ReportText {
+        match env.send(ReportStartMessage {
             id,
-            text: String::from(""),
             exec_started_at: Some(Timestamp {
                 seconds: start.timestamp(),
                 nanos: start.timestamp_subsec_nanos() as i32,
             }),
-            exec_finished_at: None,
-        })) {
+        }) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
@@ -71,12 +71,10 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
                 );
 
                 // Report evaluation errors
-                match env.send(Message::ReportError(messages::ReportError {
+                match env.send(ReportErrorMessage {
                     id,
                     error: err.to_string(),
-                    exec_started_at: None,
-                    exec_finished_at: None,
-                })) {
+                }) {
                     Ok(_) => {}
                     Err(_send_err) => {
                         #[cfg(debug_assertions)]
@@ -93,19 +91,17 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
 
         // Send exec_finished_at
         let finish = Utc::now();
-        match env.send(Message::ReportText(messages::ReportText {
+        match env.send(ReportFinishMessage {
             id,
-            text: String::from(""),
-            exec_started_at: None,
             exec_finished_at: Some(Timestamp {
                 seconds: finish.timestamp(),
                 nanos: finish.timestamp_subsec_nanos() as i32,
             }),
-        })) {
+        }) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
-                log::error!("failed to send exec_started_at (task_id={}): {}", id, _err);
+                log::error!("failed to send exec_finished_at (task_id={}): {}", id, _err);
             }
         }
     });
@@ -228,20 +224,20 @@ impl Runtime {
     }
 
     /*
-     * Collect and dispatch all of the currently available messages from the tome.
-     * This method will block until all currently available messages have been dispatched.
+     * Borrow the underlying message receiver.
+     *
+     * This is most useful to block for all runtime messages, whereas collect would only
+     * return the currently available messages.
+     *
+     * Example:
+     * ```rust
+     * for msg in runtime.messages() {
+     *     // TODO: Stuff
+     * }
+     * ```
      */
-    pub async fn collect_and_dispatch(&self, transport: &mut impl Transport) {
-        for msg in self.collect() {
-            // let mut t = transport.clone();
-            // tokio::spawn(async move {
-            msg.dispatch(transport).await;
-            // });
-        }
-        // while let Some(result) = futures.join_next().await {
-        //     #[cfg(debug_assertions)]
-        //     log::debug!("finished message dispatch")
-        // }
+    pub fn messages(&self) -> &Receiver<Message> {
+        &self.rx
     }
 
     /*

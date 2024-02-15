@@ -1,7 +1,4 @@
-use crate::runtime::{
-    messages::{Message, ReportProcessList},
-    Environment,
-};
+use crate::runtime::{messages::ReportProcessListMessage, Environment};
 use anyhow::Result;
 use pb::eldritch::{process::Status, Process, ProcessList};
 use starlark::values::Value;
@@ -28,10 +25,10 @@ pub fn process_list(
         })
     }
 
-    env.send(Message::from(ReportProcessList {
+    env.send(ReportProcessListMessage {
         id: env.id(),
         list: pb_process_list,
-    }))?;
+    })?;
     Ok(())
 }
 
@@ -60,8 +57,7 @@ fn unpack_status(proc: &SmallMap<String, Value>) -> Status {
 
 #[cfg(test)]
 mod test {
-    use anyhow::Error;
-    use pb::c2::*;
+    use crate::runtime::Message;
     use pb::eldritch::process::Status;
     use pb::eldritch::*;
     use std::collections::HashMap;
@@ -77,8 +73,15 @@ mod test {
                 let mut runtime = crate::start(tc.id, tc.tome).await;
                 runtime.finish().await;
 
-                // Dispatch Messages
-                // TODO
+                // Read Messages
+                let mut found = false;
+                for msg in runtime.messages() {
+                    if let Message::ReportProcessList(m) = msg {
+                        assert_eq!(tc.want_proc_list, m.list);
+                        found = true;
+                    }
+                }
+                assert!(found);
             }
         )*
         }
@@ -87,8 +90,6 @@ mod test {
     struct TestCase {
         pub id: i64,
         pub tome: Tome,
-        pub want_output: String,
-        pub want_error: Option<Error>,
         pub want_proc_list: ProcessList,
     }
 
@@ -113,8 +114,6 @@ mod test {
                         status: Status::Idle.into(),
                     },
                 ]},
-                want_output: String::from(""),
-                want_error: None,
             },
     }
 }

@@ -1,11 +1,11 @@
-use super::messages::{Message, ReportText};
+use super::messages::{Message, ReportTextMessage};
 use anyhow::{Context, Result};
 
 use starlark::{
     values::{AnyLifetime, ProvidesStaticType},
     PrintHandler,
 };
-use std::sync::mpsc::{Sender};
+use std::sync::mpsc::Sender;
 
 pub struct FileRequest {
     name: String,
@@ -44,8 +44,8 @@ impl Environment {
         self.id
     }
 
-    pub fn send(&self, msg: Message) -> Result<()> {
-        self.tx.send(msg)?;
+    pub fn send(&self, msg: impl Into<Message>) -> Result<()> {
+        self.tx.send(msg.into())?;
         Ok(())
     }
 }
@@ -55,12 +55,10 @@ impl Environment {
  */
 impl PrintHandler for Environment {
     fn println(&self, text: &str) -> Result<()> {
-        self.send(Message::ReportText(ReportText {
+        self.send(ReportTextMessage {
             id: self.id,
             text: String::from(text),
-            exec_started_at: None,
-            exec_finished_at: None,
-        }))?;
+        })?;
 
         #[cfg(feature = "print_stdout")]
         print!("{}", text);

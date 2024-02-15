@@ -1,9 +1,6 @@
-use crate::runtime::{
-    messages::{FetchAsset, Message},
-    Environment,
-};
+use crate::runtime::{messages::FetchAssetMessage, Environment};
 use anyhow::{Context, Result};
-use pb::c2::{FetchAssetRequest, FetchAssetResponse};
+use pb::c2::FetchAssetResponse;
 use starlark::{eval::Evaluator, values::list::ListRef};
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -67,10 +64,7 @@ pub fn copy(starlark_eval: &Evaluator<'_, '_>, src: String, dst: String) -> Resu
         if tmp_list.contains(&src_value.to_value()) {
             let env = Environment::from_extra(starlark_eval.extra)?;
             let (tx, rx) = channel();
-            env.send(Message::from(FetchAsset {
-                req: FetchAssetRequest { name: src },
-                tx,
-            }))?;
+            env.send(FetchAssetMessage { name: src, tx })?;
 
             return copy_remote(rx, dst);
         }
@@ -82,7 +76,7 @@ pub fn copy(starlark_eval: &Evaluator<'_, '_>, src: String, dst: String) -> Resu
 mod tests {
     use crate::{
         assets::copy_impl::copy_remote,
-        runtime::messages::{FetchAsset, Message},
+        runtime::messages::{FetchAssetMessage, Message},
     };
     use pb::c2::FetchAssetResponse;
     use pb::eldritch::Tome;
@@ -142,8 +136,8 @@ mod tests {
         loop {
             // The runtime only returns the data that is currently available
             // So this may return an empty vec if our eldritch tokio task has not yet been scheduled
-            let mut messages = runtime.collect();
-            let mut fetch_asset_msgs: Vec<&FetchAsset> = messages
+            let messages = runtime.collect();
+            let mut fetch_asset_msgs: Vec<&FetchAssetMessage> = messages
                 .iter()
                 .filter_map(|m| match m {
                     Message::FetchAsset(msg) => Some(msg),
@@ -159,7 +153,7 @@ mod tests {
             // Ensure the right asset was requested
             assert!(fetch_asset_msgs.len() == 1);
             let msg = fetch_asset_msgs.pop().expect("no asset request received!");
-            assert!(msg.req.name == "test_tome/test_file.txt");
+            assert!(msg.name == "test_tome/test_file.txt");
 
             // Now, we provide the file to eldritch (as a series of chunks)
             msg.tx

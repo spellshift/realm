@@ -4,15 +4,18 @@ use pb::c2::{FetchAssetRequest, FetchAssetResponse};
 use std::sync::mpsc::Sender;
 use transport::Transport;
 
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone)]
-pub struct FetchAsset {
-    pub(crate) req: FetchAssetRequest,
+pub struct FetchAssetMessage {
+    pub(crate) name: String,
     pub(crate) tx: Sender<FetchAssetResponse>,
 }
 
-impl Dispatcher for FetchAsset {
+impl Dispatcher for FetchAssetMessage {
     async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
-        transport.fetch_asset(self.req, self.tx).await?;
+        transport
+            .fetch_asset(FetchAssetRequest { name: self.name }, self.tx)
+            .await?;
         Ok(())
     }
 }
