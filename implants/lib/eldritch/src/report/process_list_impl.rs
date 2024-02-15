@@ -1,15 +1,10 @@
 use crate::runtime::{messages::ReportProcessListMessage, Environment};
 use anyhow::Result;
 use pb::eldritch::{process::Status, Process, ProcessList};
+use starlark::collections::SmallMap;
 use starlark::values::Value;
-use starlark::{collections::SmallMap, eval::Evaluator};
 
-pub fn process_list(
-    starlark_eval: &Evaluator<'_, '_>,
-    process_list: Vec<SmallMap<String, Value>>,
-) -> Result<()> {
-    let env = Environment::from_extra(starlark_eval.extra)?;
-
+pub fn process_list(env: &Environment, process_list: Vec<SmallMap<String, Value>>) -> Result<()> {
     let mut pb_process_list = ProcessList { list: Vec::new() };
     for proc in process_list {
         pb_process_list.list.push(Process {

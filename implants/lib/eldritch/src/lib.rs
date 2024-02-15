@@ -8,7 +8,7 @@ pub mod runtime;
 pub mod sys;
 pub mod time;
 
-pub use runtime::{start, FileRequest, Runtime};
+pub use runtime::{start, Runtime};
 
 #[allow(unused_imports)]
 use starlark::const_frozen_string;

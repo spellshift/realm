@@ -3,7 +3,7 @@ mod environment;
 mod eval;
 pub mod messages;
 
-pub use environment::{Environment, FileRequest};
+pub(crate) use environment::Environment;
 pub use eval::{start, Runtime};
 pub use messages::Message;
 
@@ -149,6 +149,16 @@ mod tests {
                 file_names: Vec::new(),
             },
             want_text: String::from(r#"["format_to_epoch", "format_to_readable", "now", "sleep"]"#),
+            want_error: None,
+        },
+        report_bindings: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(dir(report))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: String::from(r#"["file", "process_list", "ssh_key", "user_password"]"#),
             want_error: None,
         },
     }

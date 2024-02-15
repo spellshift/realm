@@ -1,10 +1,8 @@
 use crate::runtime::{messages::ReportCredentialMessage, Environment};
 use anyhow::Result;
 use pb::eldritch::{credential::Kind, Credential};
-use starlark::eval::Evaluator;
 
-pub fn ssh_key(starlark_eval: &Evaluator<'_, '_>, username: String, key: String) -> Result<()> {
-    let env = Environment::from_extra(starlark_eval.extra)?;
+pub fn ssh_key(env: &Environment, username: String, key: String) -> Result<()> {
     env.send(ReportCredentialMessage {
         id: env.id(),
         credential: Credential {

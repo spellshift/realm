@@ -7,22 +7,6 @@ use starlark::{
 };
 use std::sync::mpsc::Sender;
 
-pub struct FileRequest {
-    name: String,
-    tx_data: Sender<Vec<u8>>,
-}
-
-impl FileRequest {
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-
-    pub fn send_chunk(&self, chunk: Vec<u8>) -> Result<()> {
-        self.tx_data.send(chunk)?;
-        Ok(())
-    }
-}
-
 #[derive(ProvidesStaticType)]
 pub struct Environment {
     pub(super) id: i64,

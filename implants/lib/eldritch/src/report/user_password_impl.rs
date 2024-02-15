@@ -1,14 +1,8 @@
 use crate::runtime::{messages::ReportCredentialMessage, Environment};
 use anyhow::Result;
 use pb::eldritch::{credential::Kind, Credential};
-use starlark::eval::Evaluator;
 
-pub fn user_password(
-    starlark_eval: &Evaluator<'_, '_>,
-    username: String,
-    password: String,
-) -> Result<()> {
-    let env = Environment::from_extra(starlark_eval.extra)?;
+pub fn user_password(env: &Environment, username: String, password: String) -> Result<()> {
     env.send(ReportCredentialMessage {
         id: env.id(),
         credential: Credential {
