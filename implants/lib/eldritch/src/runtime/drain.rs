@@ -2,13 +2,6 @@ use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
 /*
- * Drain a receiver, returning only the last currently available result.
- */
-pub fn drain_last<T>(receiver: &Receiver<T>) -> Option<T> {
-    drain(receiver).pop()
-}
-
-/*
  * Drain a receiver, returning all currently available results as a Vec.
  */
 pub fn drain<T>(reciever: &Receiver<T>) -> Vec<T> {

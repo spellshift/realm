@@ -4,11 +4,14 @@ version = "0.0.5"
 edition = "2021"
 
 [dependencies]
+eldritch = { workspace = true, features = ["imix"] }
+pb = {workspace = true }
+transport = { workspace = true }
+
 anyhow = { workspace = true }
 chrono = { workspace = true , features = ["serde"] }
 clap = { workspace = true }
 default-net = { workspace = true }
-eldritch = { workspace = true, features = ["imix"] }
 hyper = { workspace = true }
 log = {workspace = true}
 openssl = { workspace = true, features = ["vendored"] }
@@ -19,7 +22,6 @@ reqwest = { workspace = true, features = ["blocking", "stream", "json"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = {workspace = true}
 sys-info = { workspace = true }
-c2 = { workspace = true }
 tonic = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["v4","fast-rng"] }

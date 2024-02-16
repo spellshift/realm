@@ -1,17 +1,21 @@
-use super::{drain::drain, drain::drain_last, Environment, FileRequest};
+use super::drain::drain;
 use crate::{
     assets::AssetsLibrary,
     crypto::CryptoLibrary,
     file::FileLibrary,
-    pb::{Credential, File, ProcessList, Tome},
     pivot::PivotLibrary,
     process::ProcessLibrary,
     report::ReportLibrary,
+    runtime::{
+        messages::{reduce, Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
+        Environment,
+    },
     sys::SysLibrary,
     time::TimeLibrary,
 };
-use anyhow::{Context, Error, Result};
+use anyhow::{Context, Result};
 use chrono::Utc;
+use pb::eldritch::Tome;
 use prost_types::Timestamp;
 use starlark::{
     collections::SmallMap,
@@ -25,59 +29,61 @@ use starlark::{
 use std::sync::mpsc::{channel, Receiver};
 use tokio::task::JoinHandle;
 
-pub async fn start(tome: Tome) -> Runtime {
-    let (tx_exec_started_at, rx_exec_started_at) = channel::<Timestamp>();
-    let (tx_exec_finished_at, rx_exec_finished_at) = channel::<Timestamp>();
-    let (tx_error, rx_error) = channel::<Error>();
-    let (tx_output, rx_output) = channel::<String>();
-    let (tx_credential, rx_credential) = channel::<Credential>();
-    let (tx_process_list, rx_process_list) = channel::<ProcessList>();
-    let (tx_file, rx_file) = channel::<File>();
-    let (tx_file_request, rx_file_request) = channel::<FileRequest>();
+pub async fn start(id: i64, tome: Tome) -> Runtime {
+    let (tx, rx) = channel::<Message>();
 
-    let env = Environment {
-        tx_output,
-        tx_error: tx_error.clone(),
-        tx_credential,
-        tx_process_list,
-        tx_file,
-        tx_file_request,
-    };
+    let env = Environment { id, tx };
 
     let handle = tokio::task::spawn_blocking(move || {
         // Send exec_started_at
         let start = Utc::now();
-        match tx_exec_started_at.send(Timestamp {
-            seconds: start.timestamp(),
-            nanos: start.timestamp_subsec_nanos() as i32,
+        match env.send(ReportStartMessage {
+            id,
+            exec_started_at: Timestamp {
+                seconds: start.timestamp(),
+                nanos: start.timestamp_subsec_nanos() as i32,
+            },
         }) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
-                log::error!("failed to send exec_started_at (tome={:?}): {}", tome, _err);
+                log::error!(
+                    "failed to send exec_started_at (task_id={}): {}",
+                    env.id(),
+                    _err
+                );
             }
         }
 
         #[cfg(debug_assertions)]
-        log::info!("evaluating tome: {:?}", tome);
+        log::info!("evaluating tome (task_id={})", id);
 
         // Run Tome
-        match run_impl(env, &tome) {
+        match run_impl(&env, &tome) {
             Ok(_) => {
                 #[cfg(debug_assertions)]
-                log::info!("tome evaluation successful (tome={:?})", tome);
+                log::info!("tome evaluation successful (task_id={})", id);
             }
             Err(err) => {
                 #[cfg(debug_assertions)]
-                log::info!("tome evaluation failed (tome={:?}): {}", tome, err);
+                log::error!(
+                    "tome evaluation failed (task_id={},tome={:#?}): {:?}",
+                    id,
+                    tome,
+                    err
+                );
 
                 // Report evaluation errors
-                match tx_error.send(err) {
+                match env.send(ReportErrorMessage {
+                    id,
+                    error: format!("{:?}", err),
+                }) {
                     Ok(_) => {}
                     Err(_send_err) => {
                         #[cfg(debug_assertions)]
                         log::error!(
-                            "failed to report tome evaluation error (tome={:?}): {}",
+                            "failed to report tome evaluation error (task_id={},tome={:#?}): {}",
+                            id,
                             tome,
                             _send_err
                         );
@@ -87,43 +93,35 @@ pub async fn start(tome: Tome) -> Runtime {
         };
 
         // Send exec_finished_at
-        let end = Utc::now();
-        match tx_exec_finished_at.send(Timestamp {
-            seconds: end.timestamp(),
-            nanos: end.timestamp_subsec_nanos() as i32,
+        let finish = Utc::now();
+        match env.send(ReportFinishMessage {
+            id,
+            exec_finished_at: Timestamp {
+                seconds: finish.timestamp(),
+                nanos: finish.timestamp_subsec_nanos() as i32,
+            },
         }) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
-                log::error!(
-                    "failed to send exec_finished_at (tome={:?}): {}",
-                    tome,
-                    _err
-                );
+                log::error!("failed to send exec_finished_at (task_id={}): {}", id, _err);
             }
         }
     });
 
     Runtime {
         handle: Some(handle),
-        rx_exec_started_at,
-        rx_exec_finished_at,
-        rx_error,
-        rx_output,
-        rx_credential,
-        rx_process_list,
-        rx_file,
-        rx_file_request,
+        rx,
     }
 }
 
-fn run_impl(env: Environment, tome: &Tome) -> Result<()> {
+fn run_impl(env: &Environment, tome: &Tome) -> Result<()> {
     let ast = Runtime::parse(tome).context("failed to parse tome")?;
     let module = Runtime::alloc_module(tome).context("failed to allocate module")?;
     let globals = Runtime::globals();
     let mut eval: Evaluator = Evaluator::new(&module);
-    eval.extra = Some(&env);
-    eval.set_print_handler(&env);
+    eval.extra = Some(env);
+    eval.set_print_handler(env);
 
     match eval.eval_module(ast, &globals) {
         Ok(_) => Ok(()),
@@ -140,17 +138,7 @@ fn run_impl(env: Environment, tome: &Tome) -> Result<()> {
  */
 pub struct Runtime {
     handle: Option<JoinHandle<()>>,
-    rx_exec_started_at: Receiver<Timestamp>,
-    // stdout_reporting: bool,
-    // exec_started_at: Receiver<Timestamp>,
-    rx_exec_finished_at: Receiver<Timestamp>,
-    rx_output: Receiver<String>,
-    rx_error: Receiver<Error>,
-    rx_credential: Receiver<Credential>,
-    rx_process_list: Receiver<ProcessList>,
-    rx_file: Receiver<File>,
-    rx_file_request: Receiver<FileRequest>,
-    // client: Client,
+    rx: Receiver<Message>,
 }
 
 impl Runtime {
@@ -232,6 +220,35 @@ impl Runtime {
     }
 
     /*
+     * Collects the currently available messages from the tome.
+     *
+     * This will also attempt to reduce the messages by combining similar messages into an aggregate message.
+     * This will reduce the number of requests when dispatching messages to a transport.
+     */
+    pub fn collect(&self) -> Vec<Message> {
+        reduce(drain(&self.rx))
+    }
+
+    /*
+     * Borrow the underlying message receiver.
+     *
+     * This DOES NOT reduce or aggregate the received messages in any way.
+     *
+     * This is most useful to block for all runtime messages, whereas collect would only
+     * return the currently available messages.
+     *
+     * Example:
+     * ```rust
+     * for msg in runtime.messages() {
+     *     // Do Stuff
+     * }
+     * ```
+     */
+    pub fn messages(&self) -> &Receiver<Message> {
+        &self.rx
+    }
+
+    /*
      * Returns true if the tome has completed execution, false otherwise.
      */
     pub fn is_finished(&self) -> bool {
@@ -258,61 +275,5 @@ impl Runtime {
                 log::error!("attempted to join runtime handle which has already finished");
             }
         };
-    }
-
-    /*
-     * Returns the timestamp of when execution started, if available.
-     */
-    pub fn get_exec_started_at(&self) -> Option<Timestamp> {
-        drain_last(&self.rx_exec_started_at)
-    }
-
-    /*
-     * Returns the timestamp of when execution finished, if available.
-     */
-    pub fn get_exec_finished_at(&self) -> Option<Timestamp> {
-        drain_last(&self.rx_exec_finished_at)
-    }
-
-    /*
-     * Collects all currently available reported text output.
-     */
-    pub fn collect_text(&self) -> Vec<String> {
-        drain(&self.rx_output)
-    }
-
-    /*
-     * Collects all currently available reported errors, if any.
-     */
-    pub fn collect_errors(&self) -> Vec<Error> {
-        drain(&self.rx_error)
-    }
-
-    /*
-     * Returns all currently available reported credentials, if any.
-     */
-    pub fn collect_credentials(&self) -> Vec<Credential> {
-        drain(&self.rx_credential)
-    }
-
-    /*
-     * Returns all currently available reported process lists, if any.
-     */
-    pub fn collect_process_lists(&self) -> Vec<ProcessList> {
-        drain(&self.rx_process_list)
-    }
-
-    /*
-     * Returns all currently available reported files, if any.
-     */
-    pub fn collect_files(&self) -> Vec<File> {
-        drain(&self.rx_file)
-    }
-
-    /*
-     * Returns all FileRequests that the eldritch runtime has requested, if any.
-     */
-    pub fn collect_file_requests(&self) -> Vec<FileRequest> {
-        drain(&self.rx_file_request)
     }
 }
