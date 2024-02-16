@@ -100,8 +100,6 @@ impl Dispatcher for ReportFileMessage {
 
         // Wait for completion
         transport.report_file(rx).await?;
-        // let (_, join_err) = tokio::join!(transport.report_file(rx), handle);
-        // join_err?;
 
         Ok(())
     }
