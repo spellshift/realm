@@ -1,3 +1,4 @@
+mod file_impl;
 mod process_list_impl;
 mod ssh_key_impl;
 mod user_password_impl;
@@ -24,20 +25,31 @@ crate::eldritch_lib!(ReportLibrary, "report_library");
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
+    fn file(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, path: String) -> anyhow::Result<NoneType> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        file_impl::file(env, path)?;
+        Ok(NoneType{})
+    }
+
+
+    #[allow(unused_variables)]
     fn process_list(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, process_list: UnpackList<SmallMap<String, Value>>) -> anyhow::Result<NoneType> {
-        process_list_impl::process_list(starlark_eval, process_list.items)?;
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        process_list_impl::process_list(env, process_list.items)?;
         Ok(NoneType{})
     }
 
     #[allow(unused_variables)]
     fn ssh_key(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, username: String, key: String) -> anyhow::Result<NoneType> {
-        ssh_key_impl::ssh_key(starlark_eval, username, key)?;
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        ssh_key_impl::ssh_key(env, username, key)?;
         Ok(NoneType{})
     }
 
     #[allow(unused_variables)]
     fn user_password(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, username: String, password: String) -> anyhow::Result<NoneType> {
-        user_password_impl::user_password(starlark_eval, username, password)?;
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        user_password_impl::user_password(env, username, password)?;
         Ok(NoneType{})
     }
 }

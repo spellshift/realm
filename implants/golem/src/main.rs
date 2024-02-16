@@ -5,7 +5,8 @@ mod inter;
 
 use anyhow::{anyhow, Result};
 use clap::{Arg, Command};
-use eldritch::pb::Tome;
+use eldritch::runtime::Message;
+use pb::eldritch::Tome;
 use std::collections::HashMap;
 use std::fs;
 use std::process;
@@ -16,25 +17,34 @@ struct ParsedTome {
 
 async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     let mut runtimes = Vec::new();
+    let mut idx = 1;
     for tome in tomes {
-        let runtime = eldritch::start(Tome {
-            eldritch: tome.eldritch,
-            parameters: HashMap::new(),
-            file_names: Vec::new(),
-        })
+        let runtime = eldritch::start(
+            idx,
+            Tome {
+                eldritch: tome.eldritch,
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+        )
         .await;
         runtimes.push(runtime);
+        idx += 1;
     }
 
     let mut result = Vec::new();
     for runtime in &mut runtimes {
         runtime.finish().await;
-        let mut out = runtime.collect_text();
-        let errors = runtime.collect_errors();
-        if !errors.is_empty() {
-            return Err(anyhow!("tome execution failed: {:?}", errors));
+
+        for msg in runtime.messages() {
+            match msg {
+                Message::ReportText(m) => result.push(m.text()),
+                Message::ReportError(m) => {
+                    return Err(anyhow!("{}", m.error));
+                }
+                _ => {}
+            }
         }
-        result.append(&mut out);
     }
 
     Ok(result)

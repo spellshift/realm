@@ -4,8 +4,10 @@ version = "0.0.5"
 edition = "2021"
 
 [dependencies]
-starlark_lsp = "0.12.0"
+pb = { workspace = true }
 eldritch = { workspace = true, features = ["print_stdout"] }
+
+starlark_lsp = "0.12.0"
 tokio = { workspace = true, features = ["macros"] }
 clap = { workspace = true }
 starlark = { workspace = true }
