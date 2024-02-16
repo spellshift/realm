@@ -135,7 +135,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		return rollback(tx, fmt.Errorf("failed to remove previous host files: %w", err))
 	}
 
-	// // Commit Transaction
+	// Commit Transaction
 	if err := tx.Commit(); err != nil {
 		return rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
