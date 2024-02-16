@@ -4,6 +4,9 @@ use std::sync::mpsc::{Receiver, Sender};
 
 #[trait_variant::make(Transport: Send)]
 pub trait UnsafeTransport: Clone + Send {
+    // New will initialize a new instance of the transport using the provided URI.
+    fn new(uri: String) -> Result<Self>;
+
     ///
     /// Contact the server for new tasks to execute.
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;

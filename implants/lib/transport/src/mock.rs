@@ -10,6 +10,8 @@ mock! {
         fn clone(&self) -> Self;
     }
     impl super::Transport for Transport {
+    fn new(uri: String) -> Result<Self>;
+
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 
     async fn fetch_asset(

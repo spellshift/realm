@@ -22,6 +22,17 @@ pub struct GRPC {
 }
 
 impl Transport for GRPC {
+    fn new(callback: String) -> Result<Self> {
+        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+
+        let channel = endpoint
+            .rate_limit(1, Duration::from_millis(25))
+            .connect_lazy();
+
+        let grpc = tonic::client::Grpc::new(channel);
+        Ok(Self { grpc })
+    }
+
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
         let resp = self.claim_tasks_impl(request).await?;
         Ok(resp.into_inner())
@@ -107,18 +118,6 @@ impl Transport for GRPC {
 }
 
 impl GRPC {
-    pub async fn new(callback: String) -> Result<Self, tonic::transport::Error> {
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
-
-        let channel = endpoint
-            .rate_limit(1, Duration::from_millis(25))
-            .connect()
-            .await?;
-
-        let grpc = tonic::client::Grpc::new(channel);
-        Ok(Self { grpc })
-    }
-
     ///
     /// Contact the server for new tasks to execute.
     pub async fn claim_tasks_impl(
