@@ -35,12 +35,12 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn match_all<'v>(this: &RegexLibrary, haystack: String, pattern: String, text: String) -> anyhow::Result<Vec<String>> {
-        match_all_impl::match_all(haystack, pattern, text)
+    fn match_all<'v>(this: &RegexLibrary, haystack: String, pattern: String) -> anyhow::Result<Vec<String>> {
+        match_all_impl::match_all(haystack, pattern)
     }
 
     #[allow(unused_variables)]
-    fn r#match<'v>(this: &RegexLibrary, haystack: String, pattern: String, text: String) -> anyhow::Result<String> {
-        match_impl::r#match(haystack, pattern, text)
+    fn r#match<'v>(this: &RegexLibrary, haystack: String, pattern: String) -> anyhow::Result<String> {
+        match_impl::r#match(haystack, pattern)
     }
 }
