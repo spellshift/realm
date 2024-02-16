@@ -9,6 +9,9 @@ imix = []
 print_stdout = []
 
 [dependencies]
+pb = { workspace = true }
+transport = { workspace = true }
+
 aes = { workspace = true }
 allocative = { workspace = true }
 allocative_derive = { workspace = true }
@@ -74,6 +77,7 @@ winreg = { workspace = true }
 pnet = { workspace = true }
 
 [dev-dependencies]
+transport = { workspace = true, features = ["mock"]}
 httptest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 

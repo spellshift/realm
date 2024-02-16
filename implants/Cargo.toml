@@ -1,8 +1,12 @@
 [workspace]
-members = ["imix", "golem", "lib/eldritch", "lib/c2"]
+members = ["imix", "golem", "lib/eldritch", "lib/transport", "lib/pb"]
 resolver = "2"
 
 [workspace.dependencies]
+transport = { path = "./lib/transport" }
+eldritch = { path = "./lib/eldritch" }
+pb = { path = "./lib/pb" }
+
 aes = "0.8.3"
 allocative = "0.3.2"
 allocative_derive = "0.3.2"
@@ -15,7 +19,6 @@ chrono = "0.4.24"
 clap = "3.2.23"
 default-net = "0.13.1"
 derive_more = "0.99.17"
-eldritch = { path = "./lib/eldritch" }
 eval = "0.4.3"
 flate2 = "1.0.24"
 gazebo = "0.8.1"
@@ -29,6 +32,7 @@ itertools = "0.10"
 lsp-types = "0.93.0"
 log = "0.4.20"
 md5 = "0.7.0"
+mockall = "0.12.1"
 netstat2 = "0.9.1"
 network-interface = "1.0.1"
 nix = "0.26.1"
@@ -58,8 +62,6 @@ structopt = "0.3.23"
 sys-info = "0.9.1"
 sysinfo = "0.29.7"
 tar = "0.4.38"
-tonic-build = "0.10"
-c2 = { path = "./lib/c2" }
 tempfile = "3.3.0"
 tera = "1.17.1"
 thiserror = "1.0.30"
@@ -67,6 +69,8 @@ tokio = "1.19.1"
 tokio-stream = "0.1.9"
 tokio-test = "*"
 tonic = { git = "https://github.com/hyperium/tonic.git", rev = "07e4ee1" }
+tonic-build = "0.10"
+trait-variant = "0.1.1"
 uuid = "1.5.0"
 which = "4.4.2"
 whoami = "1.3.0"

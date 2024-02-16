@@ -1,18 +1,10 @@
+use crate::runtime::{messages::ReportProcessListMessage, Environment};
 use anyhow::Result;
+use pb::eldritch::{process::Status, Process, ProcessList};
+use starlark::collections::SmallMap;
 use starlark::values::Value;
-use starlark::{collections::SmallMap, eval::Evaluator};
 
-use crate::{
-    pb::{process::Status, Process, ProcessList},
-    runtime::Environment,
-};
-
-pub fn process_list(
-    starlark_eval: &Evaluator<'_, '_>,
-    process_list: Vec<SmallMap<String, Value>>,
-) -> Result<()> {
-    let env = Environment::from_extra(starlark_eval.extra)?;
-
+pub fn process_list(env: &Environment, process_list: Vec<SmallMap<String, Value>>) -> Result<()> {
     let mut pb_process_list = ProcessList { list: Vec::new() };
     for proc in process_list {
         pb_process_list.list.push(Process {
@@ -28,7 +20,10 @@ pub fn process_list(
         })
     }
 
-    env.report_process_list(pb_process_list)?;
+    env.send(ReportProcessListMessage {
+        id: env.id(),
+        list: pb_process_list,
+    })?;
     Ok(())
 }
 
@@ -57,11 +52,10 @@ fn unpack_status(proc: &SmallMap<String, Value>) -> Status {
 
 #[cfg(test)]
 mod test {
+    use crate::runtime::Message;
+    use pb::eldritch::process::Status;
+    use pb::eldritch::*;
     use std::collections::HashMap;
-
-    use crate::pb::process::Status;
-    use crate::pb::{Process, ProcessList, Tome};
-    use anyhow::Error;
 
     macro_rules! process_list_tests {
         ($($name:ident: $value:expr,)*) => {
@@ -69,34 +63,34 @@ mod test {
             #[tokio::test]
             async fn $name() {
                 let tc: TestCase = $value;
-                let mut runtime = crate::start(tc.tome).await;
+
+                // Run Eldritch (until finished)
+                let mut runtime = crate::start(tc.id, tc.tome).await;
                 runtime.finish().await;
 
-                let want_err_str = match tc.want_error {
-                    Some(err) => err.to_string(),
-                    None => "".to_string(),
-                };
-                let err_str = match runtime.collect_errors().pop() {
-                    Some(err) => err.to_string(),
-                    None => "".to_string(),
-                };
-                assert_eq!(want_err_str, err_str);
-                assert_eq!(tc.want_output, runtime.collect_text().join(""));
-                assert_eq!(Some(tc.want_proc_list), runtime.collect_process_lists().pop());
+                // Read Messages
+                let mut found = false;
+                for msg in runtime.messages() {
+                    if let Message::ReportProcessList(m) = msg {
+                        assert_eq!(tc.want_proc_list, m.list);
+                        found = true;
+                    }
+                }
+                assert!(found);
             }
         )*
         }
     }
 
     struct TestCase {
+        pub id: i64,
         pub tome: Tome,
-        pub want_output: String,
-        pub want_error: Option<Error>,
         pub want_proc_list: ProcessList,
     }
 
     process_list_tests! {
             one_process: TestCase{
+                id: 123,
                 tome: Tome{
                     eldritch: String::from(r#"report.process_list([{"pid":5,"ppid":101,"name":"test","username":"root","path":"/bin/cat","env":"COOL=1","command":"cat","cwd":"/home/meow","status":"IDLE"}])"#),
                     parameters: HashMap::new(),
@@ -115,8 +109,6 @@ mod test {
                         status: Status::Idle.into(),
                     },
                 ]},
-                want_output: String::from(""),
-                want_error: None,
             },
     }
 }

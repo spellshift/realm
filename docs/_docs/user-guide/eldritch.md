@@ -90,6 +90,7 @@ It currently contains seven modules:
 - `file` - Used to interact with files on the system.
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
+- `report` - Structured data reporting capabilities.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
 
@@ -632,6 +633,36 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
     ...
 ]
 ```
+
+---
+
+## Report
+
+The report library is designed to enable reporting structured data to Tavern. It's API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
+
+### report.file
+
+`report.file(path: str) -> None`
+
+Reports a file from the host that an Eldritch Tome is being evaluated on (e.g. a compromised system) to Tavern. It has a 1GB size limit, and will report the file in 1MB chunks. This process happens asynchronously, so after `report.file()` returns **there are no guarantees about when this file will be reported**. This means that if you delete the file immediately after reporting it, it may not be reported at all (race condition).
+
+### report.process_list
+
+`report.process_list(list: List<Dict>) -> None`
+
+Reports a snapshot of the currently running processes on the host system. This should only be called with the entire process list (e.g. from calling `process.list()`), as it will replace Tavern's current list of processes for the host with this new snapshot.
+
+### report.ssh_key
+
+`report.ssh_key(username: str, key: str) -> None`
+
+Reports a captured SSH Key credential to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
+
+### report.user_password
+
+`report.user_password(username: str, password: str) -> None`
+
+Reports a captured username & password combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
 
 ---
 
