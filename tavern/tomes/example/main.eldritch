@@ -1,1 +1,14 @@
 print(input_params['msg'])
+
+
+for i in range(0, 100):
+    print("doing it up: "+str(i))
+    report.user_password("root", "your mom")
+    report.ssh_key("root", "still your mom")
+    report.file("/tmp/test_file")
+
+
+
+
+print("now for an error")
+assets.copy("/get/fucked", "/tmp/oh_ok")

@@ -7,7 +7,7 @@ use crate::{
     process::ProcessLibrary,
     report::ReportLibrary,
     runtime::{
-        messages::{Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
+        messages::{reduce, Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
         Environment,
     },
     sys::SysLibrary,
@@ -39,10 +39,10 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
         let start = Utc::now();
         match env.send(ReportStartMessage {
             id,
-            exec_started_at: Some(Timestamp {
+            exec_started_at: Timestamp {
                 seconds: start.timestamp(),
                 nanos: start.timestamp_subsec_nanos() as i32,
-            }),
+            },
         }) {
             Ok(_) => {}
             Err(_err) => {
@@ -66,8 +66,8 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
             }
             Err(err) => {
                 #[cfg(debug_assertions)]
-                log::info!(
-                    "tome evaluation failed (task_id={},tome={:?}): {}",
+                log::error!(
+                    "tome evaluation failed (task_id={},tome={:#?}): {:?}",
                     id,
                     tome,
                     err
@@ -82,7 +82,7 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
                     Err(_send_err) => {
                         #[cfg(debug_assertions)]
                         log::error!(
-                            "failed to report tome evaluation error (task_id={},tome={:?}): {}",
+                            "failed to report tome evaluation error (task_id={},tome={:#?}): {}",
                             id,
                             tome,
                             _send_err
@@ -96,10 +96,10 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
         let finish = Utc::now();
         match env.send(ReportFinishMessage {
             id,
-            exec_finished_at: Some(Timestamp {
+            exec_finished_at: Timestamp {
                 seconds: finish.timestamp(),
                 nanos: finish.timestamp_subsec_nanos() as i32,
-            }),
+            },
         }) {
             Ok(_) => {}
             Err(_err) => {
@@ -221,13 +221,18 @@ impl Runtime {
 
     /*
      * Collects the currently available messages from the tome.
+     *
+     * This will also attempt to reduce the messages by combining similar messages into an aggregate message.
+     * This will reduce the number of requests when dispatching messages to a transport.
      */
     pub fn collect(&self) -> Vec<Message> {
-        drain(&self.rx)
+        reduce(drain(&self.rx))
     }
 
     /*
      * Borrow the underlying message receiver.
+     *
+     * This DOES NOT reduce or aggregate the received messages in any way.
      *
      * This is most useful to block for all runtime messages, whereas collect would only
      * return the currently available messages.

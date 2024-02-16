@@ -23,3 +23,10 @@ impl Dispatcher for FetchAssetMessage {
         Ok(())
     }
 }
+
+#[cfg(debug_assertions)]
+impl PartialEq for FetchAssetMessage {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}

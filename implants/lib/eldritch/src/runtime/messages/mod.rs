@@ -1,4 +1,6 @@
 mod fetch_asset;
+mod reduce;
+mod report_agg_output;
 mod report_credential;
 mod report_error;
 mod report_file;
@@ -8,6 +10,7 @@ mod report_start;
 mod report_text;
 
 pub use fetch_asset::FetchAssetMessage;
+pub(super) use reduce::reduce;
 pub use report_credential::ReportCredentialMessage;
 pub use report_error::ReportErrorMessage;
 pub use report_file::ReportFileMessage;
@@ -19,6 +22,7 @@ pub use transport::Transport;
 
 use anyhow::Result;
 use derive_more::From;
+use report_agg_output::ReportAggOutputMessage;
 use std::future::Future;
 
 #[cfg(debug_assertions)]
@@ -34,7 +38,7 @@ pub trait Dispatcher {
  * This enables eldritch library functions to communicate with the caller API, enabling structured data reporting
  * as well as resource requests (e.g. fetching assets).
  */
-#[cfg_attr(debug_assertions, derive(Debug, Display))]
+#[cfg_attr(debug_assertions, derive(Debug, Display, PartialEq))]
 #[derive(From, Clone)]
 pub enum Message {
     #[cfg_attr(debug_assertions, display(fmt = "FetchAsset"))]
@@ -60,6 +64,9 @@ pub enum Message {
 
     #[cfg_attr(debug_assertions, display(fmt = "ReportFinish"))]
     ReportFinish(ReportFinishMessage),
+
+    #[cfg_attr(debug_assertions, display(fmt = "ReportAggOutput"))]
+    ReportAggOutput(ReportAggOutputMessage),
 }
 
 // The Dispatcher implementation for `Message` simply calls the `dispatch()` implementation on the underlying variant.
@@ -76,6 +83,7 @@ impl Dispatcher for Message {
             Self::ReportFile(msg) => msg.dispatch(transport).await,
             Self::ReportProcessList(msg) => msg.dispatch(transport).await,
             Self::ReportText(msg) => msg.dispatch(transport).await,
+            Self::ReportAggOutput(msg) => msg.dispatch(transport).await,
 
             Self::ReportStart(msg) => msg.dispatch(transport).await,
             Self::ReportFinish(msg) => msg.dispatch(transport).await,

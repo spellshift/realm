@@ -6,6 +6,9 @@ use tonic::codec::ProstCodec;
 use tonic::GrpcMethod;
 use tonic::Request;
 
+#[cfg(debug_assertions)]
+use std::time::Duration;
+
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static FETCH_ASSET_PATH: &str = "/c2.C2/DownloadFile";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
@@ -106,7 +109,12 @@ impl Transport for GRPC {
 impl GRPC {
     pub async fn new(callback: String) -> Result<Self, tonic::transport::Error> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
-        let channel = endpoint.connect().await?;
+
+        let channel = endpoint
+            .rate_limit(1, Duration::from_millis(25))
+            .connect()
+            .await?;
+
         let grpc = tonic::client::Grpc::new(channel);
         Ok(Self { grpc })
     }

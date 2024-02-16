@@ -5,7 +5,7 @@ use pb::c2::{ReportTaskOutputRequest, TaskOutput};
 /*
  * ReportTextMessage reports textual output (e.g. from `print()`) created by this tome's evaluation.
  */
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReportTextMessage {
     pub(crate) id: i64,

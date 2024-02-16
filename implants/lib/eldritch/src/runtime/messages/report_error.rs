@@ -5,7 +5,7 @@ use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 /*
  * ReportErrorMessage reports an error encountered by this tome's evaluation.
  */
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReportErrorMessage {
     pub(crate) id: i64,
