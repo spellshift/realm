@@ -639,19 +639,22 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
 
 ## Regex
 
-The regex library is designed to enable basic regex operations on strings.
+The regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written
+in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, adding more than one will cause the tome to error.
 
 ### regex.match_all
 
 `regex.match_all(haystack: str, pattern: str) -> List<str>`
 
-Unimplemented.
+The <b>regex.match_all</b> method returns a list of capture group strings that matched the given pattern within the given
+haystack.
 
 ### regex.match
 
 `regex.match(haystack: str, pattern: str) -> str`
 
-Unimplemented.
+The <b>regex.match</b> method returns the first capture group string that matched the given pattern within the given
+haystack.
 
 ### regex.replace_all
 
