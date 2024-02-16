@@ -1,10 +1,15 @@
 block_list = ["/proc","/sys","/lib","/libx32","/lib32","/lib64","/boot","/srv","/usr","/snap","/run","/dev","/cores"]
 
 usernfo = sys.get_user()
+windows = sys.get_os().get("platform", "") == "PLATFORM_WINDOWS"
 
 def can_read(f):
     """Return true if the user can read this dir/file
     """
+    # Bypass until windows perms are implemented
+    if windows:
+        return True
+    
     PERM_READ = 4
     f_user = int(f["permissions"][-3]) # User byte
     f_group = int(f["permissions"][-2]) # Group byte
