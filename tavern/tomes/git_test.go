@@ -27,7 +27,7 @@ func TestImportFromRepo(t *testing.T) {
 	filter := func(path string) bool {
 		return strings.Contains(path, "tavern/tomes")
 	}
-	_, err := tomes.ImportFromRepo(ctx, graph, "https://github.com/spellshift/realm", filter)
+	_, err := tomes.ImportFromRepo(ctx, graph, RealmGIT, filter)
 	require.NoError(t, err)
 
 	testTome := graph.Tome.Query().

@@ -19,16 +19,14 @@ import (
 	"realm.pub/tavern/internal/ent/tome"
 )
 
-/*
- * ImportFromRepo clones a git repository from the provided URL in memory.
- * It walks the directory structure, looking for 'main.eldritch' files.
- * For each 'main.eldritch' file found, it's parent directory is treated as the tome's root.
- * All files in that directory and it's subdirectories (recursively) aside from the reserved
- * metadata.yml file are uploaded as the tome's assets.
- *
- * Provided filters on tome paths may be used to exclude directories by returning true if the
- * result should be included.
- */
+// ImportFromRepo clones a git repository from the provided URL in memory.
+// It walks the directory structure, looking for 'main.eldritch' files.
+// For each 'main.eldritch' file found, it's parent directory is treated as the tome's root.
+// All files in that directory and it's subdirectories (recursively) aside from the reserved
+// metadata.yml file are uploaded as the tome's assets.
+
+// Provided filters on tome paths may be used to exclude directories by returning true if the
+// result should be included.
 func ImportFromRepo(ctx context.Context, graph *ent.Client, gitURL string, filters ...func(path string) bool) ([]*ent.Tome, error) {
 	// Clone Repository (In-Memory)
 	storage := memory.NewStorage()
@@ -71,7 +69,6 @@ func ImportFromRepo(ctx context.Context, graph *ent.Client, gitURL string, filte
 	namespace := parseNamespaceFromGit(gitURL)
 	tomes := make([]*ent.Tome, 0, len(tomePaths))
 	for _, path := range tomePaths {
-
 		// Apply Filters
 		include := true
 		for _, filter := range filters {
@@ -133,7 +130,7 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 
 	var metadata MetadataDefinition
 	var eldritch string
-	var tomeFiles []*ent.File
+	var tomeFileIDs []int
 	// Iterate Tome Files
 	for {
 		name, entry, err := walker.Next()
@@ -183,14 +180,17 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 		}
 
 		// Upload other files
-		f, err := graph.File.Create().
+
+		fileID, err := graph.File.Create().
 			SetName(filepath.Join(namespace, filepath.Base(path), name)).
 			SetContent(data).
-			Save(ctx)
+			OnConflict().
+			UpdateNewValues().
+			ID(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to upload tome file %q: %w", name, err)
 		}
-		tomeFiles = append(tomeFiles, f)
+		tomeFileIDs = append(tomeFileIDs, fileID)
 	}
 
 	// Ensure Metadata was found
@@ -211,7 +211,7 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 
 	// Create the tome
 	fmt.Printf("Creating Tome: %q  (namespace=%q)\n", fmt.Sprintf("%s::%s", namespace, metadata.Name), namespace)
-	tome, err := graph.Tome.Create().
+	tomeID, err := graph.Tome.Create().
 		SetName(fmt.Sprintf("%s::%s", namespace, metadata.Name)).
 		SetDescription(metadata.Description).
 		SetAuthor(metadata.Author).
@@ -219,13 +219,15 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 		SetSupportModel(tome.SupportModelCOMMUNITY).
 		SetTactic(tome.Tactic(metadata.Tactic)).
 		SetEldritch(eldritch).
-		AddFiles(tomeFiles...).
-		Save(ctx)
+		AddFileIDs(tomeFileIDs...).
+		OnConflict().
+		UpdateNewValues().
+		ID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tome %q: %w", metadata.Name, err)
 	}
 
-	return tome, nil
+	return graph.Tome.Get(ctx, tomeID)
 }
 
 // parseNamespaceFromGit attempts to return a shortend namespace for the tome based on the git URL.
