@@ -5,6 +5,7 @@ use crate::{
     file::FileLibrary,
     pivot::PivotLibrary,
     process::ProcessLibrary,
+    regex::RegexLibrary,
     report::ReportLibrary,
     runtime::{
         messages::{reduce, Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
@@ -157,6 +158,7 @@ impl Runtime {
             const crypto: CryptoLibrary = CryptoLibrary;
             const time: TimeLibrary = TimeLibrary;
             const report: ReportLibrary = ReportLibrary;
+            const regex: RegexLibrary = RegexLibrary;
         }
 
         GlobalsBuilder::extended_by(&[

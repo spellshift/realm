@@ -3,6 +3,7 @@ pub mod crypto;
 pub mod file;
 pub mod pivot;
 pub mod process;
+pub mod regex;
 mod report;
 pub mod runtime;
 pub mod sys;
