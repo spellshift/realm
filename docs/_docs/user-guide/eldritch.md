@@ -639,7 +639,7 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
 
 ## Regex
 
-The regex library is designed to enable basic regex operations upon strings.
+The regex library is designed to enable basic regex operations on strings.
 
 ### regex.match_all
 
