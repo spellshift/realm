@@ -1,5 +1,7 @@
 import { useQuery } from "@apollo/client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { FilterBarOption } from "../utils/consts";
 import { TableRowLimit } from "../utils/enums";
 import { GET_TASK_QUERY } from "../utils/queries";
 import { getFilterNameByTypes } from "../utils/utils";
@@ -12,10 +14,21 @@ export enum TASK_PAGE_TYPE{
 
 export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
     // store filters
+    const {state} = useLocation();
     const [page, setPage] = useState<number>(1);
     const [search, setSearch] = useState("");
-    const [filtersSelected, setFiltersSelected] = useState<Array<any>>([]);
 
+    const defaultFilter = useMemo(() : Array<FilterBarOption> => {
+      const allTrue  = state && Array.isArray(state) && state.every((stateItem: FilterBarOption) => 'kind' in stateItem && 'value' in stateItem && 'name' in stateItem);
+      if(allTrue){
+          return state;
+      }
+      else{
+          return [];
+      }
+    },[state]);
+
+    const [filtersSelected, setFiltersSelected] = useState<Array<any>>(defaultFilter);
 
     const handleFilterChange = (filters: Array<any>)=> {
       setPage(1);

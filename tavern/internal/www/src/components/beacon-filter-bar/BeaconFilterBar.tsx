@@ -1,7 +1,7 @@
 import React from "react";
 import { Heading } from "@chakra-ui/react";
-import Select, { createFilter } from "react-select"
-import { BeaconType, HostType, TomeTag } from "../../utils/consts";
+import Select, { createFilter, GroupBase, OptionsOrGroups } from "react-select"
+import { BeaconType, FilterBarOption, HostType, TomeTag } from "../../utils/consts";
 import { SupportedPlatforms } from "../../utils/enums";
 
 type Props = {
@@ -10,11 +10,12 @@ type Props = {
     groups: Array<TomeTag>;
     services: Array<TomeTag>;
     hosts: Array<HostType>;
+    filtersSelected?: any;
 }
 export const BeaconFilterBar = (props: Props) => {
     // TODO add host to filter
 
-    const { setFiltersSelected, beacons, groups, services, hosts } = props;
+    const { setFiltersSelected, beacons, groups, services, hosts, filtersSelected } = props;
     const supportedPlatformsList = Object.values(SupportedPlatforms);
 
     const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>, hosts: Array<HostType>) => {
@@ -89,6 +90,7 @@ export const BeaconFilterBar = (props: Props) => {
                     matchFrom: 'any',
                     stringify: option => `${option.label}`,
                 })}
+                value={filtersSelected || undefined}
             />
         </div>
     );

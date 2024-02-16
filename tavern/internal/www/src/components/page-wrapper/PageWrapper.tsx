@@ -19,10 +19,10 @@ import { AccessGate } from '../access-gate';
 
 const navigation = [
   { name: PageNavItem.createQuest, href: '/createQuest', icon: CommandLineIcon, internal: true },
-  { name: PageNavItem.overview, href: '/overview', icon: PresentationChartBarIcon, internal: true },
+  { name: PageNavItem.dashboard, href: '/dashboard', icon: PresentationChartBarIcon, internal: true },
   { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
   { name: PageNavItem.quests, href: '/quests', icon: ClockIcon, internal: true },
-  { name: PageNavItem.results, href: '/results', icon: ClipboardDocumentCheckIcon, internal: true },
+  { name: PageNavItem.tasks, href: '/tasks', icon: ClipboardDocumentCheckIcon, internal: true },
   { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
   { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
 ]

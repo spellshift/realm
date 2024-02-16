@@ -5,12 +5,10 @@ import { PageWrapper } from "../../components/page-wrapper"
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import { PageNavItem } from "../../utils/enums";
 import { GET_HOST_QUERY, GET_TASK_QUERY } from "../../utils/queries";
-import { useHostTable } from "../host-list/hooks/useHostsTable";
 import OverviewChartWrapper from "./components/OverviewChartWrapper";
-import { useHostAcitvityData } from "./hook/useHostActivityData";
 
 
-export const Overview = () => {
+export const Dashboard = () => {
     const { loading, error, data, refetch } = useQuery(GET_TASK_QUERY, {
         variables: {
             "orderBy": [{
@@ -30,11 +28,11 @@ export const Overview = () => {
 
     function getOverviewWrapper() {
         if (loading || hostLoading) {
-            return <EmptyState type={EmptyStateType.loading} label="Loading overview data..." />
+            return <EmptyState type={EmptyStateType.loading} label="Loading dashboard data..." />
         }
 
         if (error || hostError) {
-            return <EmptyState type={EmptyStateType.error} label="Error loading overview data..." />
+            return <EmptyState type={EmptyStateType.error} label="Error loading dashboard data..." />
         }
 
         if (data?.tasks?.totalCount === 0) {
@@ -47,9 +45,9 @@ export const Overview = () => {
     }
 
     return (
-        <PageWrapper currNavItem={PageNavItem.overview}>
+        <PageWrapper currNavItem={PageNavItem.dashboard}>
             <div className="border-b border-gray-200 pb-6 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Overview</h3>
+                <h3 className="text-xl font-semibold leading-6 text-gray-900">Dashboard</h3>
             </div>
             {getOverviewWrapper()}
         </PageWrapper>

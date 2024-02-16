@@ -27,6 +27,7 @@ export type TomeTag = {
     kind: string;
 }
 export type FilterBarOption = {
+    label?: string;
     id: string;
     name: string;
     kind: string;

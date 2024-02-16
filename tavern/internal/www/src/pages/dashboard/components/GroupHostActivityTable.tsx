@@ -2,6 +2,7 @@ import { Badge } from "@chakra-ui/react";
 import { BugAntIcon } from "@heroicons/react/24/outline";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import Table from "../../../components/tavern-base-ui/Table";
 import { useHostAcitvityData } from "../hook/useHostActivityData";
@@ -9,6 +10,18 @@ import { useHostAcitvityData } from "../hook/useHostActivityData";
 const GroupHostActivityTable = ({ hosts }: { hosts: Array<any> }) => {
     const { loading, hostActivity, onlineHostCount, totalHostCount } = useHostAcitvityData(hosts);
     const currentDate = new Date();
+    const navigation = useNavigate();
+
+    const handleOnClick = (item: any) => {
+        navigation(`/hosts`, {
+            state: [{
+                'label': item?.original?.group,
+                'kind': 'group',
+                'name': item?.original?.group,
+                'value': item?.original?.tagId
+            }]
+        });
+    }
 
     const columns: ColumnDef<any>[] = [
         {
@@ -79,7 +92,7 @@ const GroupHostActivityTable = ({ hosts }: { hosts: Array<any> }) => {
                 </div>
             </div>
             <div className='h-80 overflow-y-scroll'>
-                <Table columns={columns} data={hostActivity} />
+                <Table columns={columns} data={hostActivity} onRowClick={handleOnClick} />
             </div>
         </div>
     )

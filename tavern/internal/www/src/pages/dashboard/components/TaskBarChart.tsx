@@ -42,7 +42,7 @@ const TaskBarChart = ({ total, data, taskTactics, loading }: { total: number, da
                         <Legend />
                         {taskTactics.map((tactic: any, index: number) => {
                             return (
-                                <Bar type="monotone" dataKey={tactic} stackId="a" fill={getTacticColor(tactic.toUpperCase())} />
+                                <Bar key={`${tactic}_${index}`} type="monotone" dataKey={tactic} stackId="a" fill={getTacticColor(tactic.toUpperCase())} />
                             )
                         })}
                     </BarChart>

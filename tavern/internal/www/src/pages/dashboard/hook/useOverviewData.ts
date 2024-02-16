@@ -3,7 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { TomeTag } from "../../../utils/consts";
 
 type UniqueCountObject = {
-    [key: string] : number
+    [key: string] : {
+        name: string,
+        value: number,
+        id: any
+    }
 }
 
 export const useOverviewData = (data: Array<any>) => {
@@ -15,12 +19,16 @@ export const useOverviewData = (data: Array<any>) => {
     }) as Array<any>;
 
 
-    const applyUniqueTermCount = useCallback((term: string, termCountObject: UniqueCountObject)=> {
+    const applyUniqueTermCount = useCallback((term: string, id: any, termCountObject: UniqueCountObject)=> {
         if (!(term in termCountObject)) {
-            return termCountObject[term] = 1;
+            return termCountObject[term] = {
+                name: term,
+                value: 1,
+                id: id
+            };
         }
         else {
-            return termCountObject[term] += 1;
+            return termCountObject[term].value += 1;
         }
     },[]);
 
@@ -31,7 +39,8 @@ export const useOverviewData = (data: Array<any>) => {
         for (let key in keys) {
             dataUsage.push({
                 name: keys[key],
-                "task count": termCountObject[keys[key]]
+                "task count": termCountObject[keys[key]].value,
+                "id": termCountObject[keys[key]].id
             });
         }
         if(sortByAsc){
@@ -98,10 +107,10 @@ export const useOverviewData = (data: Array<any>) => {
 
         for (let index in data){
             const groupTag = data[index]?.node?.beacon?.host?.tags.find( (tag: TomeTag) => tag.kind === "group");
-            applyUniqueTermCount(data[index]?.node?.quest?.tome?.name, uniqueTomeCount);
+            applyUniqueTermCount(data[index]?.node?.quest?.tome?.name, data[index]?.node?.quest?.tome.id, uniqueTomeCount);
             modifyTaskTimeline(data[index], tasksTimeline);
             modifyUniqueTactics(data[index], uniqueTactics);
-            applyUniqueTermCount(groupTag?.name || "Unknown", uniqueGroup);
+            applyUniqueTermCount(groupTag?.name || "Unknown", groupTag.id, uniqueGroup);
         }
 
         const overviewData = {
