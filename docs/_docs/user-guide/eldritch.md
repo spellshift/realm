@@ -658,15 +658,15 @@ haystack.
 
 ### regex.replace_all
 
-`regex.replace_all(haystack: str, pattern: str, value: string) -> None`
+`regex.replace_all(haystack: str, pattern: str, value: string) -> str`
 
-Unimplemented.
+The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value.
 
 ### regex.replace
 
-`regex.replace(haystack: str, pattern: str, value: string) -> None`
+`regex.replace(haystack: str, pattern: str, value: string) -> str`
 
-Unimplemented.
+The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value.
 
 ---
 
