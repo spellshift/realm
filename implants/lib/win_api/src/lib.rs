@@ -1,7 +1,3 @@
-pub mod create_remote_thread;
-pub mod open_process;
-pub mod virtual_alloc_ex;
-pub mod write_process_memory;
 
 pub fn get_u8_vec_form_u32_vec(u32_vec: Vec<u32>) -> anyhow::Result<Vec<u8>> {
     let mut should_err = false;
