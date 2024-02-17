@@ -31,7 +31,7 @@ const HostTable = ({ data }: any) => {
         },
         {
             id: "beaconStatus",
-            header: "Active beacons",
+            header: "Online beacons",
             accessorFn: row => row.beaconStatus,
             footer: props => props.column.id,
             maxSize: 100,

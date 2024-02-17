@@ -1,11 +1,28 @@
-import { useCallback, useEffect, useState } from "react"
-import { HostType } from "../../../utils/consts";
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useLocation } from "react-router-dom";
+import { FilterBarOption, HostType } from "../../../utils/consts";
 
-export const useHostsFilter = (hosts: Array<HostType>) => {
+export const useHostsFilter = (hosts: Array<HostType>) : {
+    loading: boolean,
+    filteredHosts: Array<HostType>,
+    typeFilters: Array<FilterBarOption>,
+    setTypeFilters: (arg: Array<FilterBarOption>) => void
+} => {
+    const {state} = useLocation();
     const [loading, setLoading] = useState(false);
     const [filteredHosts, setFilteredHosts] = useState(hosts);
 
-    const [typeFilters, setTypeFilters] = useState([]) as Array<any>;
+    const defaultFilter = useMemo(() : Array<FilterBarOption> => {
+        const allTrue  = state && Array.isArray(state) && state.every((stateItem: FilterBarOption) => 'kind' in stateItem && 'value' in stateItem && 'name' in stateItem);
+        if(allTrue){
+            return state;
+        }
+        else{
+            return [];
+        }
+    },[state]);
+
+    const [typeFilters, setTypeFilters] = useState<Array<FilterBarOption>>(defaultFilter);
 
     function getSearchTypes(typeFilters: any){
         return typeFilters.reduce((accumulator:any, currentValue:any) => {
@@ -35,7 +52,7 @@ export const useHostsFilter = (hosts: Array<HostType>) => {
         });
     };
 
-    const filterByTypes = useCallback((filteredHosts: Array<HostType>) => {
+    const filterByTypes = useCallback((filteredHosts: Array<HostType>, typeFilters: Array<any>) => {
         if(typeFilters.length < 1){
             return filteredHosts;
         }
@@ -101,13 +118,13 @@ export const useHostsFilter = (hosts: Array<HostType>) => {
 
             return match;
         });
-    },[typeFilters]);
+    },[]);
 
     useEffect(()=> {
         if(hosts.length > 0){
             setLoading(true);
 
-            const filtered = filterByTypes(hosts);
+            const filtered = filterByTypes(hosts, typeFilters);
             setFilteredHosts(
                 filtered
             );
@@ -118,6 +135,7 @@ export const useHostsFilter = (hosts: Array<HostType>) => {
     return {
         loading,
         filteredHosts,
+        typeFilters,
         setTypeFilters
     }
 }

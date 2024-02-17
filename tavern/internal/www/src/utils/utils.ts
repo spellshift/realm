@@ -85,3 +85,37 @@ export function isBeaconSelected(selectedBeacons: any): boolean{
     }
     return false;
 }
+
+export function getTacticColor(tactic: string){
+    switch (tactic) {
+        case "RECON":
+            return "#22c55e";
+        case "RESOURCE_DEVELOPMENT":
+            return "#f97316";
+        case "INITIAL_ACCESS":
+            return "#ef4444";
+        case "EXECUTION":
+            return "#a855f7";
+        case "PERSISTENCE":
+            return  "#1e40af";
+        case "PRIVILEGE_ESCALATION":
+            return  "#9f1239";
+        case "DEFENSE_EVASION":
+            return "#2dd4bf";
+        case "CREDENTIAL_ACCESS":
+            return  "#020617";
+        case  "DISCOVERY":
+            return "#60a5fa";
+        case  "LATERAL_MOVEMENT":
+            return "#3b0764";
+        case "COMMAND_AND_CONTROL":
+            return "#facc15";
+        case "EXFILTRATION":
+            return "#f9a8d4";
+        case "IMPACT":
+            return "#d946ef";
+        case  "UNSPECIFIED":
+        default:
+            return "#4b5563";
+    }
+}
