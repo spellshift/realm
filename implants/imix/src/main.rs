@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate windows_service;
 
-use imix::{handle_main};
+use imix::handle_main;
 
 
 // ============= Standard ===============
@@ -20,7 +20,7 @@ async fn main() {
             #[cfg(debug_assertions)]
             log::error!("Failed to start service (running as exe?): {_err}");
         },
-    }    
+    }
 
     handle_main().await
 }
@@ -40,4 +40,3 @@ async fn service_main(arguments: Vec<std::ffi::OsString>) {
     imix::win_service::handle_service_main(arguments);
     handle_main().await;
 }
-
