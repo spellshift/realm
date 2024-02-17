@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use eldritch::runtime::Message;
 use pb::eldritch::Tome;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Write};
 
 pub async fn install() {
     #[cfg(debug_assertions)]
