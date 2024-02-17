@@ -36,7 +36,8 @@ pub fn handle_service_main(_arguments: Vec<OsString>) {
         checkpoint: 0,
         // Only used for pending states, otherwise must be zero
         wait_hint: Duration::default(),
-        process_id: Some(18882),
+        // Process ID of the service This is only retrieved when querying the service status
+        process_id: None,
     };
 
     // Tell the system that the service is running now
