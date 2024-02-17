@@ -11,8 +11,6 @@ pub use agent::Agent;
 use clap::Command;
 pub use config::Config;
 pub use install::install;
-use windows_service::service_dispatcher;
-use anyhow::Result;
 
 
 pub async fn handle_main(){

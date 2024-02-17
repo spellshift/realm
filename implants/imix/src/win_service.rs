@@ -1,8 +1,13 @@
-use std::{ffi::OsString, fs::File, io::Write, thread, time::{self, Duration}};
-use windows_service::{service::{ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus, ServiceType}, service_control_handler::{self, ServiceControlHandlerResult}, service_dispatcher};
+use std::{ffi::OsString, time::Duration};
+use windows_service::{
+    service::{
+        ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus,
+        ServiceType,
+    },
+    service_control_handler::{self, ServiceControlHandlerResult},
+};
 
-
-pub fn handle_service_main(arguments: Vec<OsString>) {
+pub fn handle_service_main(_arguments: Vec<OsString>) {
     let event_handler = move |control_event| -> ServiceControlHandlerResult {
         match control_event {
             ServiceControl::Stop => {
