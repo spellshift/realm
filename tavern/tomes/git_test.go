@@ -2,6 +2,7 @@ package tomes_test
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,9 +14,8 @@ import (
 	"realm.pub/tavern/tomes"
 )
 
-const localGit = "../../../realm"
-
 func TestImportFromRepo(t *testing.T) {
+	localGit := filepath.Join("..", "..", "..", "realm")
 	ctx := context.Background()
 	var (
 		driverName     = "sqlite3"
