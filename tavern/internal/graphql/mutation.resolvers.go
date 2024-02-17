@@ -162,6 +162,12 @@ func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.U
 
 // ImportTomesFromGit is the resolver for the importTomesFromGit field.
 func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.ImportTomesFromGitInput) ([]*ent.Tome, error) {
+	// Ensure a schema is set (or set https:// by default)
+	gitURL := input.GitURL
+	if !strings.HasPrefix(gitURL, "http://") && !strings.HasPrefix(gitURL, "ssh://") {
+		gitURL = fmt.Sprintf("https://%s", gitURL)
+	}
+
 	if input.IncludeDirs == nil {
 		return tomes.ImportFromRepo(ctx, r.client, input.GitURL)
 	}
@@ -180,7 +186,7 @@ func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.
 		}
 		return false
 	}
-	return tomes.ImportFromRepo(ctx, r.client, input.GitURL, filter)
+	return tomes.ImportFromRepo(ctx, r.client, gitURL, filter)
 }
 
 // CreateTome is the resolver for the createTome field.
