@@ -83,6 +83,8 @@ RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --lib --target=x
 cd realm/implants/imix/
 # Build imix.exe
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-pc-windows-gnu
+# Build imix.svc.exe
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```
