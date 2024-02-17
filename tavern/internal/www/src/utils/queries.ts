@@ -49,6 +49,7 @@ export const GET_QUEST_QUERY = gql`
                 execStartedAt
                 execFinishedAt
                 createdAt
+                error
             }
             tome{
                 id

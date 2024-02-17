@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 import { EmptyState, EmptyStateType } from '../../../components/tavern-base-ui/EmptyState';
+import { TaskChartKeys } from '../../../utils/enums';
 
 
 const TomeBarChart = ({ data, loading }: { data: Array<any>, loading: boolean }) => {
@@ -37,7 +38,8 @@ const TomeBarChart = ({ data, loading }: { data: Array<any>, loading: boolean })
                             <YAxis type="category" dataKey="name" width={300} interval={0} />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="task count" fill="#553C9A" activeBar={<Rectangle fill="#805AD5" stroke="#322659" />} />
+                            <Bar stackId="a" dataKey={TaskChartKeys.taskNoError} fill="#553C9A" activeBar={<Rectangle fill="#805AD5" stroke="#322659" />} />
+                            <Bar stackId="a" dataKey={TaskChartKeys.taskError} fill="#E53E3E" activeBar={<Rectangle fill="#F56565" stroke="#822727" />} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
