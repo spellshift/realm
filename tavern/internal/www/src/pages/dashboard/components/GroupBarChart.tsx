@@ -5,6 +5,7 @@ import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 
 import { EmptyState, EmptyStateType } from '../../../components/tavern-base-ui/EmptyState';
 import { TomeTag } from '../../../utils/consts';
+import { TaskChartKeys } from '../../../utils/enums';
 import { getOfflineOnlineStatus } from '../../../utils/utils';
 
 
@@ -16,7 +17,7 @@ const GroupBarChart = ({ data, loading, hosts }: { data: Array<any>, loading: bo
     }
 
     const height = data.length * 40 < 320 ? 320 : data.length * 40;
-    const groupWithFewestTasks = data.length > 0 ? data[0] : {};
+    const groupWithFewestTasks = data.length > 0 ? data.find((task: any) => task.name !== "undefined") : null;
 
     const getTotalActiveBeaconsForGroup = () => {
         const returnedValue = hosts.reduce((acc, curr) => {
@@ -29,8 +30,6 @@ const GroupBarChart = ({ data, loading, hosts }: { data: Array<any>, loading: bo
         }, 0);
         return returnedValue;
     };
-
-    const activeBeaconForGroupWithFewestTasks = getTotalActiveBeaconsForGroup();
 
     const handleClickQuestDetails = (item: any) => {
         navigation("/tasks", {
@@ -83,7 +82,7 @@ const GroupBarChart = ({ data, loading, hosts }: { data: Array<any>, loading: bo
                             <YAxis type="category" dataKey="name" width={100} interval={0} />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="task count" fill="#553C9A" onClick={handleBarClick} activeBar={<Rectangle fill="#805AD5" stroke="#322659" />}>
+                            <Bar stackId="a" dataKey={TaskChartKeys.taskNoError} fill="#553C9A" onClick={handleBarClick} activeBar={<Rectangle fill="#805AD5" stroke="#322659" />}>
                                 {data.map((_, index) => (
                                     <Cell
                                         cursor="pointer"
@@ -93,14 +92,24 @@ const GroupBarChart = ({ data, loading, hosts }: { data: Array<any>, loading: bo
                                     />
                                 ))}
                             </Bar>
+                            <Bar stackId="a" dataKey={TaskChartKeys.taskError} fill="#E53E3E" onClick={handleBarClick} activeBar={<Rectangle fill="#F56565" stroke="#822727" />}>
+                                {data.map((_, index) => (
+                                    <Cell
+                                        cursor="pointer"
+                                        fill="#E53E3E"
+                                        stroke="#E53E3E"
+                                        key={`bar-cell-group-task-error-${index}`}
+                                    />
+                                ))}
+                            </Bar>
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
             </div>
-            {groupWithFewestTasks.name !== "undefined" &&
+            {groupWithFewestTasks &&
                 <div className='flex flex-col border-l-4 border-purple-900 px-4 py-2 rounded'>
                     <h4 className="font-semibold text-gray-900">Consider targeting the group with fewest tasks</h4>
-                    <p className='text-sm'>{groupWithFewestTasks.name} has {groupWithFewestTasks["task count"]} task run and {activeBeaconForGroupWithFewestTasks} online beacons</p>
+                    <p className='text-sm'>{groupWithFewestTasks.name} has {groupWithFewestTasks[TaskChartKeys.taskNoError]} task run and {getTotalActiveBeaconsForGroup()} online beacons</p>
                     <div className='flex flex-row gap-4 mt-2'>
                         <Button size="sm" variant="link" colorScheme="purple" onClick={() => {
                             handleClickQuestDetails(groupWithFewestTasks)
