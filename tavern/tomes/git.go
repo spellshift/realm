@@ -31,11 +31,10 @@ func ImportFromRepo(ctx context.Context, graph *ent.Client, gitURL string, filte
 	// Clone Repository (In-Memory)
 	storage := memory.NewStorage()
 	repo, err := git.CloneContext(ctx, storage, nil, &git.CloneOptions{
-		URL:           gitURL,
-		ReferenceName: plumbing.Main,
-		SingleBranch:  true,
-		Depth:         1,
-		Tags:          git.NoTags,
+		URL:          gitURL,
+		SingleBranch: true,
+		Depth:        1,
+		Tags:         git.NoTags,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to clone: %w", err)
