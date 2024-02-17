@@ -17,7 +17,7 @@ define_windows_service!(ffi_service_main, service_main);
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
 async fn main() {
     #[cfg(feature = "win_service")]
-    service_dispatcher::start("svc-debug", ffi_service_main).unwrap();
+    service_dispatcher::start("imix", ffi_service_main).unwrap();
     handle_main().await
 }
 
@@ -25,14 +25,6 @@ async fn main() {
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
 async fn service_main(arguments: Vec<std::ffi::OsString>) {
     imix::win_service::handle_service_main(arguments);
-
-    match service_dispatcher::start("imix", ffi_service_main) {
-        Ok(_) => {},
-        Err(_err) => {
-            #[cfg(debug_assertions)]
-            log::info!("Failed to start service {}", _err);    
-        },
-    }
 
     handle_main().await;
 }
