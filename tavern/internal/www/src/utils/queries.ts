@@ -86,6 +86,7 @@ export const GET_TASK_QUERY = gql`
                         claimedAt
                         error
                         quest{
+                            id
                             name
                             creator{
                                 id

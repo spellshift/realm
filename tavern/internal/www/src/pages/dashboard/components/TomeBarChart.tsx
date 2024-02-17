@@ -1,6 +1,6 @@
-import { BookOpenIcon } from '@heroicons/react/24/outline';
-import React, { useState } from 'react';
+import React from 'react';
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
 import { EmptyState, EmptyStateType } from '../../../components/tavern-base-ui/EmptyState';
 
 
@@ -13,17 +13,11 @@ const TomeBarChart = ({ data, loading }: { data: Array<any>, loading: boolean })
     const height = data.length * 40 < 320 ? 320 : data.length * 40;
 
     return (
-        <div className=" bg-white rounded-lg shadow-lg flex flex-col gap-6 w-full h-full p-4">
+        <div className="flex flex-col gap-6 w-full h-full">
             <div className='flex flex-row gap-4 items-center'>
-                <div className="rounded-md bg-purple-900 p-4">
-                    <BookOpenIcon className="text-white w-8 h-8" />
-                </div>
-                <div className='flex flex-col'>
-                    <h2 className="text-lg font-semibold text-gray-900">Unique tomes run</h2>
-                    <h3 className='text-lg'>{data.length.toLocaleString()}</h3>
-                </div>
+                <h2 className="text-lg">Tasks by tome name</h2>
             </div>
-            <div className='max-h-80 overflow-y-scroll'>
+            <div className='max-h-56 overflow-y-scroll '>
                 <div style={{ height: `${height}px` }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart

@@ -1,5 +1,6 @@
 import { differenceInMinutes, format, startOfHour } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
+
 import { TomeTag } from "../../../utils/consts";
 
 type UniqueCountObject = {
@@ -11,11 +12,15 @@ type UniqueCountObject = {
 }
 
 export const useOverviewData = (data: Array<any>) => {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [formattedData, setFormattedData] = useState({
         tomeUsage: [],
         taskTimeline: [],
-        taskTactics: []
+        taskTactics: [],
+        groupUsage: [],
+        totalQuests: 0,
+        totalOutput: 0,
+        totalTasks: 0
     }) as Array<any>;
 
 
@@ -60,7 +65,7 @@ export const useOverviewData = (data: Array<any>) => {
             tasksTimeline.push({
                 label: format(created, "iii haaa"),
                 timestamp: startOfHour(created),
-                ["tasks created"]: 1,
+                "tasks created": 1,
                 [tactic]:1,
             })
         }
@@ -71,7 +76,7 @@ export const useOverviewData = (data: Array<any>) => {
                 tasksTimeline.push({
                     label: format(created, "iii haaa"),
                     timestamp: startOfHour(created),
-                    ["tasks created"]: 1,
+                    "tasks created": 1,
                     [tactic]: 1,
                 });
 
@@ -99,35 +104,52 @@ export const useOverviewData = (data: Array<any>) => {
         return
     },[]);
 
+    const modifyTaskWithOutput = useCallback((task: any, tasksWithOutput: number) => {
+        const hasOuput = task?.node?.outputSize > 0;
+        if(hasOuput){
+            return tasksWithOutput += 1;
+        }
+        else{
+            return tasksWithOutput
+        }
+    },[]);
+
     const formatOverviewData = useCallback((data: Array<any>) =>{
+        const uniqueQuestCount = {} as any;
         const uniqueTomeCount = {} as any;
         const uniqueTactics = {} as any;
         const uniqueGroup = {} as any;
         const tasksTimeline = [] as Array<any>;
+        let tasksWithOutput = 0;
 
         for (let index in data){
             const groupTag = data[index]?.node?.beacon?.host?.tags.find( (tag: TomeTag) => tag.kind === "group");
+            applyUniqueTermCount(data[index]?.node?.quest?.id, data[index]?.node?.quest?.id, uniqueQuestCount);
+            applyUniqueTermCount(groupTag?.name, groupTag?.id, uniqueGroup);
             applyUniqueTermCount(data[index]?.node?.quest?.tome?.name, data[index]?.node?.quest?.tome.id, uniqueTomeCount);
             modifyTaskTimeline(data[index], tasksTimeline);
             modifyUniqueTactics(data[index], uniqueTactics);
-            applyUniqueTermCount(groupTag?.name || "Unknown", groupTag.id, uniqueGroup);
+            tasksWithOutput = modifyTaskWithOutput(data[index], tasksWithOutput);
         }
 
         const overviewData = {
             tomeUsage: getTermUsage(uniqueTomeCount, true),
             taskTimelime: tasksTimeline,
             taskTactics: Object.keys(uniqueTactics),
-            groupUsage: getTermUsage(uniqueGroup, false)
+            groupUsage: getTermUsage(uniqueGroup, false),
+            totalQuests: Object.keys(uniqueQuestCount).length,
+            totalOutput: tasksWithOutput,
+            totalTasks: data.length
         }
         setLoading(false);
 
         setFormattedData(overviewData);
 
-    },[getTermUsage]);
+    },[getTermUsage, applyUniqueTermCount, modifyTaskTimeline, modifyTaskWithOutput, modifyUniqueTactics]);
 
     useEffect(()=> {
         formatOverviewData(data);
-    },[data]);
+    },[data, formatOverviewData]);
 
 
     return {

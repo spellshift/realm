@@ -1,28 +1,28 @@
-import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import React from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
+import EmptyStateNoQuests from '../../../components/empty-states/EmptyStateNoQuests';
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { getTacticColor } from '../../../utils/utils';
 
 
-const TaskBarChart = ({ total, data, taskTactics, loading }: { total: number, data: Array<any>, taskTactics: Array<string>, loading: boolean }) => {
+const TaskBarChart = ({ data, taskTactics, loading }: { data: Array<any>, taskTactics: Array<string>, loading: boolean }) => {
 
     if (loading) {
         return <EmptyState type={EmptyStateType.loading} label="Formatting tome data..." />
     }
+    if (!data || data?.length <= 0) {
+        return (
+            <EmptyStateNoQuests />
+        )
+    }
 
     return (
-        <div className=" bg-white rounded-lg shadow-lg flex flex-col gap-6 w-full h-full p-4">
+        <div className="flex flex-col gap-6 w-full h-full">
             <div className='flex flex-row gap-4 items-center'>
-                <div className="rounded-md bg-purple-900 p-4">
-                    <ClipboardDocumentListIcon className="text-white w-8 h-8" />
-                </div>
-                <div className='flex flex-col'>
-                    <h2 className="text-lg font-semibold text-gray-900">Tasks created</h2>
-                    <h3 className='text-lg'>{total.toLocaleString()}</h3>
-                </div>
+                <h2 className="text-lg">Tasks by creation time</h2>
             </div>
-            <div className='h-80 overflow-y-scroll'>
+            <div className='h-56 overflow-y-scroll'>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         width={500}

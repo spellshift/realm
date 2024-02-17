@@ -1,7 +1,7 @@
 import React from "react";
 import { Heading } from "@chakra-ui/react";
-import Select, { createFilter, GroupBase, OptionsOrGroups } from "react-select"
-import { BeaconType, FilterBarOption, HostType, TomeTag } from "../../utils/consts";
+import Select, { createFilter, } from "react-select"
+import { BeaconType, HostType, TomeTag } from "../../utils/consts";
 import { SupportedPlatforms } from "../../utils/enums";
 
 type Props = {

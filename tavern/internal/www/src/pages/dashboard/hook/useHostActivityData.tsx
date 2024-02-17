@@ -1,10 +1,7 @@
-import { useQuery } from "@apollo/client";
 import { isAfter } from "date-fns";
-import { useCallback, useContext, useEffect, useState } from "react";
-import { TagContext } from "../../../context/TagContext";
-import { HostType, TomeTag } from "../../../utils/consts";
+import { useCallback, useEffect, useState } from "react";
 
-import { GET_HOST_QUERY } from "../../../utils/queries";
+import { HostType, TomeTag } from "../../../utils/consts";
 import { getOfflineOnlineStatus } from "../../../utils/utils";
 
 type UniqueCountHost = {
@@ -20,26 +17,32 @@ type UniqueCountHostByGroup = {
 }
 
 
-export const useHostAcitvityData = (data: Array<any>) => {
+export const useHostAcitvityData = (data: Array<HostType>) => {
     const [loading, setLoading] = useState(false);
     const [hostActivity, setHostActivity] = useState<Array<UniqueCountHost>>([]);
     const [onlineHostCount, setOnlineHostCount] = useState(0);
+    const [offlineHostCount, setOfflineHostCount] = useState(0);
     const [totalHostCount, setTotalHostCount] = useState(0);
 
     const getformattedHosts = useCallback((hosts: any) => {
         const uniqueGroups = {} as UniqueCountHostByGroup;
         let onlineCount = 0;
         let totalCount = 0;
+        let offlineCount = 0;
 
-        hosts?.map((host: HostType) => {
+        hosts?.forEach((host: HostType) => {
             const groupTag = host?.tags && host?.tags.find((tag: TomeTag) => tag.kind === "group");
             const beaconStatus = getOfflineOnlineStatus(host.beacons || []);
 
             if (beaconStatus.online > 0) {
                 onlineCount += 1;
             }
+            else {
+                offlineCount += 1;
+            }
+
             if (beaconStatus.online > 0 || beaconStatus.offline > 0) {
-                totalCount += (beaconStatus.online + beaconStatus.offline);
+                totalCount += 1;
             }
 
             if (groupTag) {
@@ -56,7 +59,6 @@ export const useHostAcitvityData = (data: Array<any>) => {
                     uniqueGroups[groupName].online += beaconStatus.online;
                 }
                 else {
-                    const beaconStatus = getOfflineOnlineStatus(host.beacons || []);
                     uniqueGroups[groupName] = {
                         tagId: groupTag.id,
                         group: groupTag.name,
@@ -72,6 +74,7 @@ export const useHostAcitvityData = (data: Array<any>) => {
         setHostActivity(Object.values(uniqueGroups));
         setOnlineHostCount(onlineCount);
         setTotalHostCount(totalCount);
+        setOfflineHostCount(offlineCount);
     }, []);
 
     useEffect(() => {
@@ -86,7 +89,8 @@ export const useHostAcitvityData = (data: Array<any>) => {
         loading,
         hostActivity,
         onlineHostCount,
-        totalHostCount
+        totalHostCount,
+        offlineHostCount
     }
 
 }

@@ -1,10 +1,12 @@
 import { useQuery } from "@apollo/client";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+
 import EmptyStateNoQuests from "../../components/empty-states/EmptyStateNoQuests";
 import { PageWrapper } from "../../components/page-wrapper"
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import { PageNavItem } from "../../utils/enums";
 import { GET_HOST_QUERY, GET_TASK_QUERY } from "../../utils/queries";
+
 import OverviewChartWrapper from "./components/OverviewChartWrapper";
 
 
@@ -23,7 +25,7 @@ export const Dashboard = () => {
 
     useEffect(() => {
         refetch();
-    }, []);
+    }, [refetch]);
 
 
     function getOverviewWrapper() {
@@ -35,7 +37,7 @@ export const Dashboard = () => {
             return <EmptyState type={EmptyStateType.error} label="Error loading dashboard data..." />
         }
 
-        if (data?.tasks?.totalCount === 0) {
+        if (!data || !data.tasks || !data.tasks?.edges) {
             return <EmptyStateNoQuests />
         }
 
