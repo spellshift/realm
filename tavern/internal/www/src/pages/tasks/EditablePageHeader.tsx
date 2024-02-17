@@ -29,14 +29,14 @@ export const EditablePageHeader = () => {
                     Quest outputs for
                 </h3>
                 {data?.quests[0]?.name &&
-                    <Link to="/results">
+                    <Link to="/tasks">
                         <Button rightIcon={<CloseIcon />} colorScheme='purple' variant='outline' size="xs">
                             {data?.quests[0]?.name}
                         </Button>
                     </Link>
                 }
                 {(error || (!data?.quests[0]?.name && !loading)) &&
-                    <Link to="/results">
+                    <Link to="/tasks">
                         <Button rightIcon={<CloseIcon />} colorScheme='purple' variant='outline' size="xs">
                             {questId}
                         </Button>

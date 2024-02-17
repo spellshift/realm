@@ -14,12 +14,17 @@ import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import Tasks from "./pages/tasks/Tasks";
 import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
+import { Dashboard } from "./pages/dashboard";
 
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Tasks />,
+    element: <Dashboard />,
+  },
+  {
+    path: "/dashboard",
+    element: <Dashboard />,
   },
   {
     path: "/hosts",
@@ -34,7 +39,7 @@ const router = createBrowserRouter([
     element: <QuestList />,
   },
   {
-    path: "/results/:questId",
+    path: "/tasks/:questId",
     element: <Tasks />,
   },
   {
@@ -42,7 +47,7 @@ const router = createBrowserRouter([
     element: <CreateQuest />,
   },
   {
-    path: "/results",
+    path: "/tasks",
     element: <Tasks />,
   },
 ]);

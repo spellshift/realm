@@ -9,14 +9,14 @@ import { useHostTable } from "./hooks/useHostsTable";
 
 const HostList = () => {
     const { loading, hosts, error } = useHostTable();
-    const { loading: filterLoading, filteredHosts, setTypeFilters } = useHostsFilter(hosts);
+    const { loading: filterLoading, filteredHosts, setTypeFilters, typeFilters } = useHostsFilter(hosts);
 
     return (
         <PageWrapper currNavItem={PageNavItem.hosts}>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                 <h3 className="text-xl font-semibold leading-6 text-gray-900">Hosts</h3>
             </div>
-            <HostFilter setFiltersSelected={setTypeFilters} />
+            <HostFilter setFiltersSelected={setTypeFilters} typeFilters={typeFilters} />
             <div className="flex flex-col justify-center items-center gap-6">
                 {(loading || filterLoading) ? (
                     <EmptyState type={EmptyStateType.loading} label="Loading hosts..." />
