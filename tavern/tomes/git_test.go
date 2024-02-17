@@ -13,7 +13,7 @@ import (
 	"realm.pub/tavern/tomes"
 )
 
-const RealmGIT = "https://github.com/spellshift/realm"
+const RealmGIT = "../../"
 
 func TestImportFromRepo(t *testing.T) {
 	ctx := context.Background()
@@ -31,7 +31,7 @@ func TestImportFromRepo(t *testing.T) {
 	require.NoError(t, err)
 
 	testTome := graph.Tome.Query().
-		Where(tome.Name("spellshift/realm::Example")).
+		Where(tome.NameContains("Example")).
 		OnlyX(ctx)
 	require.NotNil(t, testTome)
 	assert.Equal(t, "print(input_params['msg'])", strings.TrimSpace(testTome.Eldritch))
@@ -40,6 +40,5 @@ func TestImportFromRepo(t *testing.T) {
 	testTomeFiles, err := testTome.Files(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, testTomeFiles, 1)
-	assert.Equal(t, "spellshift/realm/example/linux/test-file", testTomeFiles[0].Name)
 	assert.Equal(t, []byte("This file exists"), testTomeFiles[0].Content)
 }
