@@ -30,6 +30,10 @@ export const useQuests = () => {
                     modMap.outputCount += 1;
                 }
 
+                if (task.error.length > 0 ) {
+                    modMap.errorCount += 1;
+                }
+
                 return modMap
             },
                 {
@@ -37,7 +41,8 @@ export const useQuests = () => {
                     inprogress: 0,
                     queued: 0,
                     outputCount: 0,
-                    lastUpdated: null
+                    lastUpdated: null,
+                    errorCount: 0
                 }
             );
 

@@ -14,6 +14,7 @@ const QuestCard = ({ formattedData, loading }: { formattedData: any, loading: bo
                 <DashboardStatistic label="Total quests" value={formattedData.totalQuests} loading={loading} />
                 <DashboardStatistic label="Total tasks" value={formattedData.totalTasks} loading={loading} />
                 <DashboardStatistic label="Total outputs" value={formattedData.totalOutput} loading={loading} />
+                <DashboardStatistic label="Total errors" value={formattedData.totalErrors} loading={loading} />
             </div>
             <div className="col-span-1 md:col-span-4">
                 <TaskBarChart data={formattedData?.taskTimelime || []} taskTactics={formattedData.taskTactics} loading={loading} />
