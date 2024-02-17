@@ -3,11 +3,7 @@ mod match_impl;
 mod replace_all_impl;
 mod replace_impl;
 
-use starlark::{
-    environment::MethodsBuilder,
-    starlark_module,
-    values::{none::NoneType, starlark_value},
-};
+use starlark::{environment::MethodsBuilder, starlark_module, values::starlark_value};
 
 /*
  * Define our library for this module.
@@ -23,15 +19,13 @@ crate::eldritch_lib!(RegexLibrary, "regex_library");
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
-    fn replace_all<'v>(this: &RegexLibrary, haystack: String, pattern: String, text: String) -> anyhow::Result<NoneType> {
-        replace_all_impl::replace_all(haystack, pattern, text)?;
-        Ok(NoneType{})
+    fn replace_all<'v>(this: &RegexLibrary, haystack: String, pattern: String, text: String) -> anyhow::Result<String> {
+        replace_all_impl::replace_all(haystack, pattern, text)
     }
 
     #[allow(unused_variables)]
-    fn replace<'v>(this: &RegexLibrary, haystack: String, pattern: String, text: String) -> anyhow::Result<NoneType> {
-        replace_impl::replace(haystack, pattern, text)?;
-        Ok(NoneType{})
+    fn replace<'v>(this: &RegexLibrary, haystack: String, pattern: String, text: String) -> anyhow::Result<String> {
+        replace_impl::replace(haystack, pattern, text)
     }
 
     #[allow(unused_variables)]
