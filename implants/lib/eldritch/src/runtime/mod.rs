@@ -161,6 +161,16 @@ mod tests {
             want_text: String::from(r#"["file", "process_list", "ssh_key", "user_password"]"#),
             want_error: None,
         },
+        regex_bindings: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(dir(regex))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: String::from(r#"["match", "match_all", "replace", "replace_all"]"#),
+            want_error: None,
+        },
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 128)]
