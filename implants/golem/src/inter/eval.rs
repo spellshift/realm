@@ -23,10 +23,10 @@ use std::iter;
 use std::path::Path;
 use std::path::PathBuf;
 
-use gazebo::prelude::*;
+use eldritch::Runtime;
 use itertools::Either;
-use lsp_types::Diagnostic;
 use lsp_types::Url;
+use starlark::analysis::AstModuleLint;
 use starlark::docs::get_registered_starlark_docs;
 use starlark::docs::render_docs_as_code;
 use starlark::docs::Doc;
@@ -37,16 +37,17 @@ use starlark::environment::Globals;
 use starlark::environment::Module;
 use starlark::errors::EvalMessage;
 use starlark::eval::Evaluator;
-use starlark::lsp::server::LspContext;
-use starlark::lsp::server::LspEvalResult;
-use starlark::lsp::server::LspUrl;
-use starlark::lsp::server::StringLiteralResult;
 use starlark::syntax::AstModule;
 use starlark::syntax::Dialect;
+use starlark_lsp::error::eval_message_to_lsp_diagnostic;
+use starlark_lsp::server::LspContext;
+use starlark_lsp::server::LspEvalResult;
+use starlark_lsp::server::LspUrl;
+use starlark_lsp::server::StringLiteralResult;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub(crate) enum ContextMode {
+    #[allow(dead_code)]
     Check,
     Run,
 }
@@ -100,15 +101,20 @@ impl Context {
         module: bool,
     ) -> anyhow::Result<Self> {
         let globals = globals();
-        let prelude = prelude.try_map(|x| {
-            let env = Module::new();
-            {
-                let mut eval = Evaluator::new(&env);
-                let module = AstModule::parse_file(x, &dialect())?;
-                eval.eval_module(module, &globals)?;
-            }
-            env.freeze()
-        })?;
+        let prelude: Vec<_> = prelude
+            .iter()
+            .map(|x| {
+                let env = Module::new();
+                {
+                    let mut eval = Evaluator::new(&env);
+                    let module = AstModule::parse_file(x, &dialect())
+                        .map_err(starlark::Error::into_anyhow)?;
+                    eval.eval_module(module, &globals)
+                        .map_err(starlark::Error::into_anyhow)?;
+                }
+                env.freeze()
+            })
+            .collect::<anyhow::Result<_>>()?;
 
         let module = if module {
             Some(Self::new_module(&prelude))
@@ -177,14 +183,14 @@ impl Context {
         }
     }
 
-    // Convert an anyhow over iterator of EvalMessage, into an iterator of EvalMessage
+    // Convert a result over iterator of EvalMessage, into an iterator of EvalMessage
     fn err(
         file: &str,
-        result: anyhow::Result<EvalResult<impl Iterator<Item = EvalMessage>>>,
+        result: starlark::Result<EvalResult<impl Iterator<Item = EvalMessage>>>,
     ) -> EvalResult<impl Iterator<Item = EvalMessage>> {
         match result {
             Err(e) => EvalResult {
-                messages: Either::Left(iter::once(EvalMessage::from_anyhow(Path::new(file), &e))),
+                messages: Either::Left(iter::once(EvalMessage::from_error(Path::new(file), &e))),
                 ast: None,
             },
             Ok(res) => EvalResult {
@@ -201,7 +207,9 @@ impl Context {
         let file = "expression";
         Self::err(
             file,
-            AstModule::parse(file, content, &dialect()).map(|module| self.go(file, module)),
+            AstModule::parse(file, content, &dialect())
+                .map(|module| self.go(file, module))
+                .map_err(Into::into),
         )
     }
 
@@ -212,7 +220,7 @@ impl Context {
             filename,
             fs::read_to_string(file)
                 .map(|content| self.file_with_contents(filename, content))
-                .map_err(|e| e.into()),
+                .map_err(|e| anyhow::Error::from(e).into()),
         )
     }
 
@@ -223,7 +231,9 @@ impl Context {
     ) -> EvalResult<impl Iterator<Item = EvalMessage>> {
         Self::err(
             filename,
-            AstModule::parse(filename, content, &dialect()).map(|module| self.go(filename, module)),
+            AstModule::parse(filename, content, &dialect())
+                .map(|module| self.go(filename, module))
+                .map_err(Into::into),
         )
     }
 
@@ -241,15 +251,17 @@ impl Context {
         let globals = globals();
         Self::err(
             file,
-            eval.eval_module(ast, &globals).map(|v| {
-                if self.print_non_none && !v.is_none() {
-                    println!("{}", v);
-                }
-                EvalResult {
-                    messages: iter::empty(),
-                    ast: None,
-                }
-            }),
+            eval.eval_module(ast, &globals)
+                .map(|v| {
+                    if self.print_non_none && !v.is_none() {
+                        println!("{}", v);
+                    }
+                    EvalResult {
+                        messages: iter::empty(),
+                        ast: None,
+                    }
+                })
+                .map_err(Into::into),
         )
     }
 
@@ -285,7 +297,7 @@ impl LspContext for Context {
                 let EvalResult { messages, ast } =
                     self.file_with_contents(&uri.to_string_lossy(), content);
                 LspEvalResult {
-                    diagnostics: messages.map(Diagnostic::from).collect(),
+                    diagnostics: messages.map(eval_message_to_lsp_diagnostic).collect(),
                     ast,
                 }
             }
@@ -369,7 +381,7 @@ impl LspContext for Context {
 }
 
 pub(crate) fn globals() -> Globals {
-    eldritch::Runtime::globals()
+    Runtime::globals()
 }
 
 pub(crate) fn dialect() -> Dialect {

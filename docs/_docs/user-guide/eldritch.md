@@ -90,6 +90,7 @@ It currently contains seven modules:
 - `file` - Used to interact with files on the system.
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
+- `report` - Structured data reporting capabilities.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
 
@@ -266,6 +267,17 @@ The <b>file.download</b> method downloads a file at the URI specified in `uri` t
 
 The <b>file.exists</b> method checks if a file or directory exists at the path specified.
 
+### file.follow
+
+`file.follow(path: str, fn: function(str)) -> None`
+
+The <b>file.follow</b> method will call `fn(line)` for any new `line` that is added to the file (such as from `bash_history` and other logs).
+
+```python
+# Print every line added to bob's bash history
+file.follow('/home/bob/.bash_history', print)
+```
+
 ### file.is_dir
 
 `file.is_dir(path: str) -> bool`
@@ -345,7 +357,8 @@ The <b>file.remove</b> method deletes a file or directory (and it's contents) sp
 ### file.replace
 
 `file.replace(path: str, pattern: str, value: str) -> None`
-The <b>file.replace</b> method is very cool, and will be even cooler when Nick documents it.
+
+Unimplemented.
 
 ### file.replace_all
 
@@ -366,7 +379,7 @@ The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 
 `file.timestomp(src: str, dst: str) -> None`
 
-The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick documents it.
+Unimplemented.
 
 ### file.write
 
@@ -377,7 +390,7 @@ If a file or directory already exists at this path, the method will fail.
 
 ### file.find
 
-`file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> Vec<str>`
+`file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>`
 
 The <b>file.find</b> method finds all files matching the used parameters. Returns file path for all matching items.
 
@@ -601,7 +614,7 @@ The <b>process.name</b> method returns the name of the process from it's given p
 
 ### process.netstat
 
-`process.netstat() -> Vec<Dict>`
+`process.netstat() -> List<Dict>`
 
 The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
@@ -621,6 +634,69 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
     ...
 ]
 ```
+
+---
+
+## Regex
+
+The regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written
+in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, adding more than one will cause the tome to error.
+
+### regex.match_all
+
+`regex.match_all(haystack: str, pattern: str) -> List<str>`
+
+The <b>regex.match_all</b> method returns a list of capture group strings that matched the given pattern within the given
+haystack.
+
+### regex.match
+
+`regex.match(haystack: str, pattern: str) -> str`
+
+The <b>regex.match</b> method returns the first capture group string that matched the given pattern within the given
+haystack.
+
+### regex.replace_all
+
+`regex.replace_all(haystack: str, pattern: str, value: string) -> str`
+
+The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value.
+
+### regex.replace
+
+`regex.replace(haystack: str, pattern: str, value: string) -> str`
+
+The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value.
+
+---
+
+## Report
+
+The report library is designed to enable reporting structured data to Tavern. It's API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
+
+### report.file
+
+`report.file(path: str) -> None`
+
+Reports a file from the host that an Eldritch Tome is being evaluated on (e.g. a compromised system) to Tavern. It has a 1GB size limit, and will report the file in 1MB chunks. This process happens asynchronously, so after `report.file()` returns **there are no guarantees about when this file will be reported**. This means that if you delete the file immediately after reporting it, it may not be reported at all (race condition).
+
+### report.process_list
+
+`report.process_list(list: List<Dict>) -> None`
+
+Reports a snapshot of the currently running processes on the host system. This should only be called with the entire process list (e.g. from calling `process.list()`), as it will replace Tavern's current list of processes for the host with this new snapshot.
+
+### report.ssh_key
+
+`report.ssh_key(username: str, key: str) -> None`
+
+Reports a captured SSH Key credential to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
+
+### report.user_password
+
+`report.user_password(username: str, password: str) -> None`
+
+Reports a captured username & password combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
 
 ---
 

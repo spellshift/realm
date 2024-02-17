@@ -88,6 +88,34 @@ func (h *Host) Processes(ctx context.Context) (result []*HostProcess, err error)
 	return result, err
 }
 
+func (h *Host) Credentials(ctx context.Context) (result []*HostCredential, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = h.NamedCredentials(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = h.Edges.CredentialsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = h.QueryCredentials().All(ctx)
+	}
+	return result, err
+}
+
+func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
+	result, err := hc.Edges.HostOrErr()
+	if IsNotLoaded(err) {
+		result, err = hc.QueryHost().Only(ctx)
+	}
+	return result, err
+}
+
+func (hc *HostCredential) Task(ctx context.Context) (*Task, error) {
+	result, err := hc.Edges.TaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hc.QueryTask().Only(ctx)
+	}
+	return result, err
+}
+
 func (hf *HostFile) Host(ctx context.Context) (*Host, error) {
 	result, err := hf.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -204,6 +232,18 @@ func (t *Task) ReportedProcesses(ctx context.Context) (result []*HostProcess, er
 	}
 	if IsNotLoaded(err) {
 		result, err = t.QueryReportedProcesses().All(ctx)
+	}
+	return result, err
+}
+
+func (t *Task) ReportedCredentials(ctx context.Context) (result []*HostCredential, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = t.NamedReportedCredentials(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = t.Edges.ReportedCredentialsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = t.QueryReportedCredentials().All(ctx)
 	}
 	return result, err
 }

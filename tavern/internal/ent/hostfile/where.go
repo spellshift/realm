@@ -86,7 +86,7 @@ func Permissions(v string) predicate.HostFile {
 }
 
 // Size applies equality check predicate on the "size" field. It's identical to SizeEQ.
-func Size(v int) predicate.HostFile {
+func Size(v uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldEQ(FieldSize, v))
 }
 
@@ -471,42 +471,42 @@ func PermissionsContainsFold(v string) predicate.HostFile {
 }
 
 // SizeEQ applies the EQ predicate on the "size" field.
-func SizeEQ(v int) predicate.HostFile {
+func SizeEQ(v uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldEQ(FieldSize, v))
 }
 
 // SizeNEQ applies the NEQ predicate on the "size" field.
-func SizeNEQ(v int) predicate.HostFile {
+func SizeNEQ(v uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldNEQ(FieldSize, v))
 }
 
 // SizeIn applies the In predicate on the "size" field.
-func SizeIn(vs ...int) predicate.HostFile {
+func SizeIn(vs ...uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldIn(FieldSize, vs...))
 }
 
 // SizeNotIn applies the NotIn predicate on the "size" field.
-func SizeNotIn(vs ...int) predicate.HostFile {
+func SizeNotIn(vs ...uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldNotIn(FieldSize, vs...))
 }
 
 // SizeGT applies the GT predicate on the "size" field.
-func SizeGT(v int) predicate.HostFile {
+func SizeGT(v uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldGT(FieldSize, v))
 }
 
 // SizeGTE applies the GTE predicate on the "size" field.
-func SizeGTE(v int) predicate.HostFile {
+func SizeGTE(v uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldGTE(FieldSize, v))
 }
 
 // SizeLT applies the LT predicate on the "size" field.
-func SizeLT(v int) predicate.HostFile {
+func SizeLT(v uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldLT(FieldSize, v))
 }
 
 // SizeLTE applies the LTE predicate on the "size" field.
-func SizeLTE(v int) predicate.HostFile {
+func SizeLTE(v uint64) predicate.HostFile {
 	return predicate.HostFile(sql.FieldLTE(FieldSize, v))
 }
 

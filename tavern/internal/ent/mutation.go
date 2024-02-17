@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -35,16 +36,17 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeBeacon      = "Beacon"
-	TypeFile        = "File"
-	TypeHost        = "Host"
-	TypeHostFile    = "HostFile"
-	TypeHostProcess = "HostProcess"
-	TypeQuest       = "Quest"
-	TypeTag         = "Tag"
-	TypeTask        = "Task"
-	TypeTome        = "Tome"
-	TypeUser        = "User"
+	TypeBeacon         = "Beacon"
+	TypeFile           = "File"
+	TypeHost           = "Host"
+	TypeHostCredential = "HostCredential"
+	TypeHostFile       = "HostFile"
+	TypeHostProcess    = "HostProcess"
+	TypeQuest          = "Quest"
+	TypeTag            = "Tag"
+	TypeTask           = "Task"
+	TypeTome           = "Tome"
+	TypeUser           = "User"
 )
 
 // BeaconMutation represents an operation that mutates the Beacon nodes in the graph.
@@ -1747,32 +1749,35 @@ func (m *FileMutation) ResetEdge(name string) error {
 // HostMutation represents an operation that mutates the Host nodes in the graph.
 type HostMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	identifier       *string
-	name             *string
-	primary_ip       *string
-	platform         *c2pb.Host_Platform
-	last_seen_at     *time.Time
-	clearedFields    map[string]struct{}
-	tags             map[int]struct{}
-	removedtags      map[int]struct{}
-	clearedtags      bool
-	beacons          map[int]struct{}
-	removedbeacons   map[int]struct{}
-	clearedbeacons   bool
-	files            map[int]struct{}
-	removedfiles     map[int]struct{}
-	clearedfiles     bool
-	processes        map[int]struct{}
-	removedprocesses map[int]struct{}
-	clearedprocesses bool
-	done             bool
-	oldValue         func(context.Context) (*Host, error)
-	predicates       []predicate.Host
+	op                 Op
+	typ                string
+	id                 *int
+	created_at         *time.Time
+	last_modified_at   *time.Time
+	identifier         *string
+	name               *string
+	primary_ip         *string
+	platform           *c2pb.Host_Platform
+	last_seen_at       *time.Time
+	clearedFields      map[string]struct{}
+	tags               map[int]struct{}
+	removedtags        map[int]struct{}
+	clearedtags        bool
+	beacons            map[int]struct{}
+	removedbeacons     map[int]struct{}
+	clearedbeacons     bool
+	files              map[int]struct{}
+	removedfiles       map[int]struct{}
+	clearedfiles       bool
+	processes          map[int]struct{}
+	removedprocesses   map[int]struct{}
+	clearedprocesses   bool
+	credentials        map[int]struct{}
+	removedcredentials map[int]struct{}
+	clearedcredentials bool
+	done               bool
+	oldValue           func(context.Context) (*Host, error)
+	predicates         []predicate.Host
 }
 
 var _ ent.Mutation = (*HostMutation)(nil)
@@ -2380,6 +2385,60 @@ func (m *HostMutation) ResetProcesses() {
 	m.removedprocesses = nil
 }
 
+// AddCredentialIDs adds the "credentials" edge to the HostCredential entity by ids.
+func (m *HostMutation) AddCredentialIDs(ids ...int) {
+	if m.credentials == nil {
+		m.credentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.credentials[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCredentials clears the "credentials" edge to the HostCredential entity.
+func (m *HostMutation) ClearCredentials() {
+	m.clearedcredentials = true
+}
+
+// CredentialsCleared reports if the "credentials" edge to the HostCredential entity was cleared.
+func (m *HostMutation) CredentialsCleared() bool {
+	return m.clearedcredentials
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to the HostCredential entity by IDs.
+func (m *HostMutation) RemoveCredentialIDs(ids ...int) {
+	if m.removedcredentials == nil {
+		m.removedcredentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.credentials, ids[i])
+		m.removedcredentials[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCredentials returns the removed IDs of the "credentials" edge to the HostCredential entity.
+func (m *HostMutation) RemovedCredentialsIDs() (ids []int) {
+	for id := range m.removedcredentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CredentialsIDs returns the "credentials" edge IDs in the mutation.
+func (m *HostMutation) CredentialsIDs() (ids []int) {
+	for id := range m.credentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCredentials resets all changes to the "credentials" edge.
+func (m *HostMutation) ResetCredentials() {
+	m.credentials = nil
+	m.clearedcredentials = false
+	m.removedcredentials = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -2636,7 +2695,7 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -2648,6 +2707,9 @@ func (m *HostMutation) AddedEdges() []string {
 	}
 	if m.processes != nil {
 		edges = append(edges, host.EdgeProcesses)
+	}
+	if m.credentials != nil {
+		edges = append(edges, host.EdgeCredentials)
 	}
 	return edges
 }
@@ -2680,13 +2742,19 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeCredentials:
+		ids := make([]ent.Value, 0, len(m.credentials))
+		for id := range m.credentials {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -2698,6 +2766,9 @@ func (m *HostMutation) RemovedEdges() []string {
 	}
 	if m.removedprocesses != nil {
 		edges = append(edges, host.EdgeProcesses)
+	}
+	if m.removedcredentials != nil {
+		edges = append(edges, host.EdgeCredentials)
 	}
 	return edges
 }
@@ -2730,13 +2801,19 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeCredentials:
+		ids := make([]ent.Value, 0, len(m.removedcredentials))
+		for id := range m.removedcredentials {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -2748,6 +2825,9 @@ func (m *HostMutation) ClearedEdges() []string {
 	}
 	if m.clearedprocesses {
 		edges = append(edges, host.EdgeProcesses)
+	}
+	if m.clearedcredentials {
+		edges = append(edges, host.EdgeCredentials)
 	}
 	return edges
 }
@@ -2764,6 +2844,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedfiles
 	case host.EdgeProcesses:
 		return m.clearedprocesses
+	case host.EdgeCredentials:
+		return m.clearedcredentials
 	}
 	return false
 }
@@ -2792,8 +2874,679 @@ func (m *HostMutation) ResetEdge(name string) error {
 	case host.EdgeProcesses:
 		m.ResetProcesses()
 		return nil
+	case host.EdgeCredentials:
+		m.ResetCredentials()
+		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)
+}
+
+// HostCredentialMutation represents an operation that mutates the HostCredential nodes in the graph.
+type HostCredentialMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	principal        *string
+	secret           *string
+	kind             *epb.Credential_Kind
+	clearedFields    map[string]struct{}
+	host             *int
+	clearedhost      bool
+	task             *int
+	clearedtask      bool
+	done             bool
+	oldValue         func(context.Context) (*HostCredential, error)
+	predicates       []predicate.HostCredential
+}
+
+var _ ent.Mutation = (*HostCredentialMutation)(nil)
+
+// hostcredentialOption allows management of the mutation configuration using functional options.
+type hostcredentialOption func(*HostCredentialMutation)
+
+// newHostCredentialMutation creates new mutation for the HostCredential entity.
+func newHostCredentialMutation(c config, op Op, opts ...hostcredentialOption) *HostCredentialMutation {
+	m := &HostCredentialMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeHostCredential,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withHostCredentialID sets the ID field of the mutation.
+func withHostCredentialID(id int) hostcredentialOption {
+	return func(m *HostCredentialMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *HostCredential
+		)
+		m.oldValue = func(ctx context.Context) (*HostCredential, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().HostCredential.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withHostCredential sets the old HostCredential of the mutation.
+func withHostCredential(node *HostCredential) hostcredentialOption {
+	return func(m *HostCredentialMutation) {
+		m.oldValue = func(context.Context) (*HostCredential, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m HostCredentialMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m HostCredentialMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *HostCredentialMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *HostCredentialMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().HostCredential.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *HostCredentialMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *HostCredentialMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the HostCredential entity.
+// If the HostCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostCredentialMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *HostCredentialMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *HostCredentialMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *HostCredentialMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the HostCredential entity.
+// If the HostCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostCredentialMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *HostCredentialMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetPrincipal sets the "principal" field.
+func (m *HostCredentialMutation) SetPrincipal(s string) {
+	m.principal = &s
+}
+
+// Principal returns the value of the "principal" field in the mutation.
+func (m *HostCredentialMutation) Principal() (r string, exists bool) {
+	v := m.principal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrincipal returns the old "principal" field's value of the HostCredential entity.
+// If the HostCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostCredentialMutation) OldPrincipal(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrincipal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrincipal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrincipal: %w", err)
+	}
+	return oldValue.Principal, nil
+}
+
+// ResetPrincipal resets all changes to the "principal" field.
+func (m *HostCredentialMutation) ResetPrincipal() {
+	m.principal = nil
+}
+
+// SetSecret sets the "secret" field.
+func (m *HostCredentialMutation) SetSecret(s string) {
+	m.secret = &s
+}
+
+// Secret returns the value of the "secret" field in the mutation.
+func (m *HostCredentialMutation) Secret() (r string, exists bool) {
+	v := m.secret
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSecret returns the old "secret" field's value of the HostCredential entity.
+// If the HostCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostCredentialMutation) OldSecret(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSecret is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSecret requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSecret: %w", err)
+	}
+	return oldValue.Secret, nil
+}
+
+// ResetSecret resets all changes to the "secret" field.
+func (m *HostCredentialMutation) ResetSecret() {
+	m.secret = nil
+}
+
+// SetKind sets the "kind" field.
+func (m *HostCredentialMutation) SetKind(ek epb.Credential_Kind) {
+	m.kind = &ek
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *HostCredentialMutation) Kind() (r epb.Credential_Kind, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the HostCredential entity.
+// If the HostCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostCredentialMutation) OldKind(ctx context.Context) (v epb.Credential_Kind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *HostCredentialMutation) ResetKind() {
+	m.kind = nil
+}
+
+// SetHostID sets the "host" edge to the Host entity by id.
+func (m *HostCredentialMutation) SetHostID(id int) {
+	m.host = &id
+}
+
+// ClearHost clears the "host" edge to the Host entity.
+func (m *HostCredentialMutation) ClearHost() {
+	m.clearedhost = true
+}
+
+// HostCleared reports if the "host" edge to the Host entity was cleared.
+func (m *HostCredentialMutation) HostCleared() bool {
+	return m.clearedhost
+}
+
+// HostID returns the "host" edge ID in the mutation.
+func (m *HostCredentialMutation) HostID() (id int, exists bool) {
+	if m.host != nil {
+		return *m.host, true
+	}
+	return
+}
+
+// HostIDs returns the "host" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HostID instead. It exists only for internal usage by the builders.
+func (m *HostCredentialMutation) HostIDs() (ids []int) {
+	if id := m.host; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHost resets all changes to the "host" edge.
+func (m *HostCredentialMutation) ResetHost() {
+	m.host = nil
+	m.clearedhost = false
+}
+
+// SetTaskID sets the "task" edge to the Task entity by id.
+func (m *HostCredentialMutation) SetTaskID(id int) {
+	m.task = &id
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (m *HostCredentialMutation) ClearTask() {
+	m.clearedtask = true
+}
+
+// TaskCleared reports if the "task" edge to the Task entity was cleared.
+func (m *HostCredentialMutation) TaskCleared() bool {
+	return m.clearedtask
+}
+
+// TaskID returns the "task" edge ID in the mutation.
+func (m *HostCredentialMutation) TaskID() (id int, exists bool) {
+	if m.task != nil {
+		return *m.task, true
+	}
+	return
+}
+
+// TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
+func (m *HostCredentialMutation) TaskIDs() (ids []int) {
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTask resets all changes to the "task" edge.
+func (m *HostCredentialMutation) ResetTask() {
+	m.task = nil
+	m.clearedtask = false
+}
+
+// Where appends a list predicates to the HostCredentialMutation builder.
+func (m *HostCredentialMutation) Where(ps ...predicate.HostCredential) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the HostCredentialMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *HostCredentialMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.HostCredential, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *HostCredentialMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *HostCredentialMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (HostCredential).
+func (m *HostCredentialMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *HostCredentialMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, hostcredential.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, hostcredential.FieldLastModifiedAt)
+	}
+	if m.principal != nil {
+		fields = append(fields, hostcredential.FieldPrincipal)
+	}
+	if m.secret != nil {
+		fields = append(fields, hostcredential.FieldSecret)
+	}
+	if m.kind != nil {
+		fields = append(fields, hostcredential.FieldKind)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *HostCredentialMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case hostcredential.FieldCreatedAt:
+		return m.CreatedAt()
+	case hostcredential.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case hostcredential.FieldPrincipal:
+		return m.Principal()
+	case hostcredential.FieldSecret:
+		return m.Secret()
+	case hostcredential.FieldKind:
+		return m.Kind()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *HostCredentialMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case hostcredential.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case hostcredential.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case hostcredential.FieldPrincipal:
+		return m.OldPrincipal(ctx)
+	case hostcredential.FieldSecret:
+		return m.OldSecret(ctx)
+	case hostcredential.FieldKind:
+		return m.OldKind(ctx)
+	}
+	return nil, fmt.Errorf("unknown HostCredential field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostCredentialMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case hostcredential.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case hostcredential.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case hostcredential.FieldPrincipal:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrincipal(v)
+		return nil
+	case hostcredential.FieldSecret:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSecret(v)
+		return nil
+	case hostcredential.FieldKind:
+		v, ok := value.(epb.Credential_Kind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HostCredential field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *HostCredentialMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *HostCredentialMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostCredentialMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown HostCredential numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *HostCredentialMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *HostCredentialMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *HostCredentialMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown HostCredential nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *HostCredentialMutation) ResetField(name string) error {
+	switch name {
+	case hostcredential.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case hostcredential.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case hostcredential.FieldPrincipal:
+		m.ResetPrincipal()
+		return nil
+	case hostcredential.FieldSecret:
+		m.ResetSecret()
+		return nil
+	case hostcredential.FieldKind:
+		m.ResetKind()
+		return nil
+	}
+	return fmt.Errorf("unknown HostCredential field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *HostCredentialMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.host != nil {
+		edges = append(edges, hostcredential.EdgeHost)
+	}
+	if m.task != nil {
+		edges = append(edges, hostcredential.EdgeTask)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *HostCredentialMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case hostcredential.EdgeHost:
+		if id := m.host; id != nil {
+			return []ent.Value{*id}
+		}
+	case hostcredential.EdgeTask:
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *HostCredentialMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *HostCredentialMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *HostCredentialMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedhost {
+		edges = append(edges, hostcredential.EdgeHost)
+	}
+	if m.clearedtask {
+		edges = append(edges, hostcredential.EdgeTask)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *HostCredentialMutation) EdgeCleared(name string) bool {
+	switch name {
+	case hostcredential.EdgeHost:
+		return m.clearedhost
+	case hostcredential.EdgeTask:
+		return m.clearedtask
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *HostCredentialMutation) ClearEdge(name string) error {
+	switch name {
+	case hostcredential.EdgeHost:
+		m.ClearHost()
+		return nil
+	case hostcredential.EdgeTask:
+		m.ClearTask()
+		return nil
+	}
+	return fmt.Errorf("unknown HostCredential unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *HostCredentialMutation) ResetEdge(name string) error {
+	switch name {
+	case hostcredential.EdgeHost:
+		m.ResetHost()
+		return nil
+	case hostcredential.EdgeTask:
+		m.ResetTask()
+		return nil
+	}
+	return fmt.Errorf("unknown HostCredential edge %s", name)
 }
 
 // HostFileMutation represents an operation that mutates the HostFile nodes in the graph.
@@ -2808,8 +3561,8 @@ type HostFileMutation struct {
 	owner            *string
 	group            *string
 	permissions      *string
-	size             *int
-	addsize          *int
+	size             *uint64
+	addsize          *int64
 	hash             *string
 	content          *[]byte
 	clearedFields    map[string]struct{}
@@ -3176,13 +3929,13 @@ func (m *HostFileMutation) ResetPermissions() {
 }
 
 // SetSize sets the "size" field.
-func (m *HostFileMutation) SetSize(i int) {
-	m.size = &i
+func (m *HostFileMutation) SetSize(u uint64) {
+	m.size = &u
 	m.addsize = nil
 }
 
 // Size returns the value of the "size" field in the mutation.
-func (m *HostFileMutation) Size() (r int, exists bool) {
+func (m *HostFileMutation) Size() (r uint64, exists bool) {
 	v := m.size
 	if v == nil {
 		return
@@ -3193,7 +3946,7 @@ func (m *HostFileMutation) Size() (r int, exists bool) {
 // OldSize returns the old "size" field's value of the HostFile entity.
 // If the HostFile object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HostFileMutation) OldSize(ctx context.Context) (v int, err error) {
+func (m *HostFileMutation) OldSize(ctx context.Context) (v uint64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSize is only allowed on UpdateOne operations")
 	}
@@ -3207,17 +3960,17 @@ func (m *HostFileMutation) OldSize(ctx context.Context) (v int, err error) {
 	return oldValue.Size, nil
 }
 
-// AddSize adds i to the "size" field.
-func (m *HostFileMutation) AddSize(i int) {
+// AddSize adds u to the "size" field.
+func (m *HostFileMutation) AddSize(u int64) {
 	if m.addsize != nil {
-		*m.addsize += i
+		*m.addsize += u
 	} else {
-		m.addsize = &i
+		m.addsize = &u
 	}
 }
 
 // AddedSize returns the value that was added to the "size" field in this mutation.
-func (m *HostFileMutation) AddedSize() (r int, exists bool) {
+func (m *HostFileMutation) AddedSize() (r int64, exists bool) {
 	v := m.addsize
 	if v == nil {
 		return
@@ -3574,7 +4327,7 @@ func (m *HostFileMutation) SetField(name string, value ent.Value) error {
 		m.SetPermissions(v)
 		return nil
 	case hostfile.FieldSize:
-		v, ok := value.(int)
+		v, ok := value.(uint64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -3625,7 +4378,7 @@ func (m *HostFileMutation) AddedField(name string) (ent.Value, bool) {
 func (m *HostFileMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case hostfile.FieldSize:
-		v, ok := value.(int)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -6210,32 +6963,35 @@ func (m *TagMutation) ResetEdge(name string) error {
 // TaskMutation represents an operation that mutates the Task nodes in the graph.
 type TaskMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *int
-	created_at                *time.Time
-	last_modified_at          *time.Time
-	claimed_at                *time.Time
-	exec_started_at           *time.Time
-	exec_finished_at          *time.Time
-	output                    *string
-	output_size               *int
-	addoutput_size            *int
-	error                     *string
-	clearedFields             map[string]struct{}
-	quest                     *int
-	clearedquest              bool
-	beacon                    *int
-	clearedbeacon             bool
-	reported_files            map[int]struct{}
-	removedreported_files     map[int]struct{}
-	clearedreported_files     bool
-	reported_processes        map[int]struct{}
-	removedreported_processes map[int]struct{}
-	clearedreported_processes bool
-	done                      bool
-	oldValue                  func(context.Context) (*Task, error)
-	predicates                []predicate.Task
+	op                          Op
+	typ                         string
+	id                          *int
+	created_at                  *time.Time
+	last_modified_at            *time.Time
+	claimed_at                  *time.Time
+	exec_started_at             *time.Time
+	exec_finished_at            *time.Time
+	output                      *string
+	output_size                 *int
+	addoutput_size              *int
+	error                       *string
+	clearedFields               map[string]struct{}
+	quest                       *int
+	clearedquest                bool
+	beacon                      *int
+	clearedbeacon               bool
+	reported_files              map[int]struct{}
+	removedreported_files       map[int]struct{}
+	clearedreported_files       bool
+	reported_processes          map[int]struct{}
+	removedreported_processes   map[int]struct{}
+	clearedreported_processes   bool
+	reported_credentials        map[int]struct{}
+	removedreported_credentials map[int]struct{}
+	clearedreported_credentials bool
+	done                        bool
+	oldValue                    func(context.Context) (*Task, error)
+	predicates                  []predicate.Task
 }
 
 var _ ent.Mutation = (*TaskMutation)(nil)
@@ -6895,6 +7651,60 @@ func (m *TaskMutation) ResetReportedProcesses() {
 	m.removedreported_processes = nil
 }
 
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by ids.
+func (m *TaskMutation) AddReportedCredentialIDs(ids ...int) {
+	if m.reported_credentials == nil {
+		m.reported_credentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.reported_credentials[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReportedCredentials clears the "reported_credentials" edge to the HostCredential entity.
+func (m *TaskMutation) ClearReportedCredentials() {
+	m.clearedreported_credentials = true
+}
+
+// ReportedCredentialsCleared reports if the "reported_credentials" edge to the HostCredential entity was cleared.
+func (m *TaskMutation) ReportedCredentialsCleared() bool {
+	return m.clearedreported_credentials
+}
+
+// RemoveReportedCredentialIDs removes the "reported_credentials" edge to the HostCredential entity by IDs.
+func (m *TaskMutation) RemoveReportedCredentialIDs(ids ...int) {
+	if m.removedreported_credentials == nil {
+		m.removedreported_credentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.reported_credentials, ids[i])
+		m.removedreported_credentials[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReportedCredentials returns the removed IDs of the "reported_credentials" edge to the HostCredential entity.
+func (m *TaskMutation) RemovedReportedCredentialsIDs() (ids []int) {
+	for id := range m.removedreported_credentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReportedCredentialsIDs returns the "reported_credentials" edge IDs in the mutation.
+func (m *TaskMutation) ReportedCredentialsIDs() (ids []int) {
+	for id := range m.reported_credentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReportedCredentials resets all changes to the "reported_credentials" edge.
+func (m *TaskMutation) ResetReportedCredentials() {
+	m.reported_credentials = nil
+	m.clearedreported_credentials = false
+	m.removedreported_credentials = nil
+}
+
 // Where appends a list predicates to the TaskMutation builder.
 func (m *TaskMutation) Where(ps ...predicate.Task) {
 	m.predicates = append(m.predicates, ps...)
@@ -7195,7 +8005,7 @@ func (m *TaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.quest != nil {
 		edges = append(edges, task.EdgeQuest)
 	}
@@ -7207,6 +8017,9 @@ func (m *TaskMutation) AddedEdges() []string {
 	}
 	if m.reported_processes != nil {
 		edges = append(edges, task.EdgeReportedProcesses)
+	}
+	if m.reported_credentials != nil {
+		edges = append(edges, task.EdgeReportedCredentials)
 	}
 	return edges
 }
@@ -7235,18 +8048,27 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeReportedCredentials:
+		ids := make([]ent.Value, 0, len(m.reported_credentials))
+		for id := range m.reported_credentials {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedreported_files != nil {
 		edges = append(edges, task.EdgeReportedFiles)
 	}
 	if m.removedreported_processes != nil {
 		edges = append(edges, task.EdgeReportedProcesses)
+	}
+	if m.removedreported_credentials != nil {
+		edges = append(edges, task.EdgeReportedCredentials)
 	}
 	return edges
 }
@@ -7267,13 +8089,19 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeReportedCredentials:
+		ids := make([]ent.Value, 0, len(m.removedreported_credentials))
+		for id := range m.removedreported_credentials {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedquest {
 		edges = append(edges, task.EdgeQuest)
 	}
@@ -7285,6 +8113,9 @@ func (m *TaskMutation) ClearedEdges() []string {
 	}
 	if m.clearedreported_processes {
 		edges = append(edges, task.EdgeReportedProcesses)
+	}
+	if m.clearedreported_credentials {
+		edges = append(edges, task.EdgeReportedCredentials)
 	}
 	return edges
 }
@@ -7301,6 +8132,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 		return m.clearedreported_files
 	case task.EdgeReportedProcesses:
 		return m.clearedreported_processes
+	case task.EdgeReportedCredentials:
+		return m.clearedreported_credentials
 	}
 	return false
 }
@@ -7334,6 +8167,9 @@ func (m *TaskMutation) ResetEdge(name string) error {
 		return nil
 	case task.EdgeReportedProcesses:
 		m.ResetReportedProcesses()
+		return nil
+	case task.EdgeReportedCredentials:
+		m.ResetReportedCredentials()
 		return nil
 	}
 	return fmt.Errorf("unknown Task edge %s", name)
@@ -8335,6 +9171,7 @@ type UserMutation struct {
 	oauth_id      *string
 	photo_url     *string
 	session_token *string
+	access_token  *string
 	is_activated  *bool
 	is_admin      *bool
 	clearedFields map[string]struct{}
@@ -8588,6 +9425,42 @@ func (m *UserMutation) ResetSessionToken() {
 	m.session_token = nil
 }
 
+// SetAccessToken sets the "access_token" field.
+func (m *UserMutation) SetAccessToken(s string) {
+	m.access_token = &s
+}
+
+// AccessToken returns the value of the "access_token" field in the mutation.
+func (m *UserMutation) AccessToken() (r string, exists bool) {
+	v := m.access_token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessToken returns the old "access_token" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldAccessToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessToken: %w", err)
+	}
+	return oldValue.AccessToken, nil
+}
+
+// ResetAccessToken resets all changes to the "access_token" field.
+func (m *UserMutation) ResetAccessToken() {
+	m.access_token = nil
+}
+
 // SetIsActivated sets the "is_activated" field.
 func (m *UserMutation) SetIsActivated(b bool) {
 	m.is_activated = &b
@@ -8748,7 +9621,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.name != nil {
 		fields = append(fields, user.FieldName)
 	}
@@ -8760,6 +9633,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.session_token != nil {
 		fields = append(fields, user.FieldSessionToken)
+	}
+	if m.access_token != nil {
+		fields = append(fields, user.FieldAccessToken)
 	}
 	if m.is_activated != nil {
 		fields = append(fields, user.FieldIsActivated)
@@ -8783,6 +9659,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.PhotoURL()
 	case user.FieldSessionToken:
 		return m.SessionToken()
+	case user.FieldAccessToken:
+		return m.AccessToken()
 	case user.FieldIsActivated:
 		return m.IsActivated()
 	case user.FieldIsAdmin:
@@ -8804,6 +9682,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPhotoURL(ctx)
 	case user.FieldSessionToken:
 		return m.OldSessionToken(ctx)
+	case user.FieldAccessToken:
+		return m.OldAccessToken(ctx)
 	case user.FieldIsActivated:
 		return m.OldIsActivated(ctx)
 	case user.FieldIsAdmin:
@@ -8844,6 +9724,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSessionToken(v)
+		return nil
+	case user.FieldAccessToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessToken(v)
 		return nil
 	case user.FieldIsActivated:
 		v, ok := value.(bool)
@@ -8919,6 +9806,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldSessionToken:
 		m.ResetSessionToken()
+		return nil
+	case user.FieldAccessToken:
+		m.ResetAccessToken()
 		return nil
 	case user.FieldIsActivated:
 		m.ResetIsActivated()

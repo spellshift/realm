@@ -39,6 +39,8 @@ const (
 	EdgeFiles = "files"
 	// EdgeProcesses holds the string denoting the processes edge name in mutations.
 	EdgeProcesses = "processes"
+	// EdgeCredentials holds the string denoting the credentials edge name in mutations.
+	EdgeCredentials = "credentials"
 	// Table holds the table name of the host in the database.
 	Table = "hosts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -67,6 +69,13 @@ const (
 	ProcessesInverseTable = "host_processes"
 	// ProcessesColumn is the table column denoting the processes relation/edge.
 	ProcessesColumn = "host_processes"
+	// CredentialsTable is the table that holds the credentials relation/edge.
+	CredentialsTable = "host_credentials"
+	// CredentialsInverseTable is the table name for the HostCredential entity.
+	// It exists in this package in order to avoid circular dependency with the "hostcredential" package.
+	CredentialsInverseTable = "host_credentials"
+	// CredentialsColumn is the table column denoting the credentials relation/edge.
+	CredentialsColumn = "host_credential_host"
 )
 
 // Columns holds all SQL columns for host fields.
@@ -113,7 +122,7 @@ var (
 // PlatformValidator is a validator for the "platform" field enum values. It is called by the builders before save.
 func PlatformValidator(pl c2pb.Host_Platform) error {
 	switch pl.String() {
-	case "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_BSD":
+	case "PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS":
 		return nil
 	default:
 		return fmt.Errorf("host: invalid enum value for platform field: %q", pl)
@@ -218,6 +227,20 @@ func ByProcesses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newProcessesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByCredentialsCount orders the results by credentials count.
+func ByCredentialsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCredentialsStep(), opts...)
+	}
+}
+
+// ByCredentials orders the results by credentials terms.
+func ByCredentials(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCredentialsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTagsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -244,6 +267,13 @@ func newProcessesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProcessesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ProcessesTable, ProcessesColumn),
+	)
+}
+func newCredentialsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CredentialsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, CredentialsTable, CredentialsColumn),
 	)
 }
 

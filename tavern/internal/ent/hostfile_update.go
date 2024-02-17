@@ -103,23 +103,23 @@ func (hfu *HostFileUpdate) ClearPermissions() *HostFileUpdate {
 }
 
 // SetSize sets the "size" field.
-func (hfu *HostFileUpdate) SetSize(i int) *HostFileUpdate {
+func (hfu *HostFileUpdate) SetSize(u uint64) *HostFileUpdate {
 	hfu.mutation.ResetSize()
-	hfu.mutation.SetSize(i)
+	hfu.mutation.SetSize(u)
 	return hfu
 }
 
 // SetNillableSize sets the "size" field if the given value is not nil.
-func (hfu *HostFileUpdate) SetNillableSize(i *int) *HostFileUpdate {
-	if i != nil {
-		hfu.SetSize(*i)
+func (hfu *HostFileUpdate) SetNillableSize(u *uint64) *HostFileUpdate {
+	if u != nil {
+		hfu.SetSize(*u)
 	}
 	return hfu
 }
 
-// AddSize adds i to the "size" field.
-func (hfu *HostFileUpdate) AddSize(i int) *HostFileUpdate {
-	hfu.mutation.AddSize(i)
+// AddSize adds u to the "size" field.
+func (hfu *HostFileUpdate) AddSize(u int64) *HostFileUpdate {
+	hfu.mutation.AddSize(u)
 	return hfu
 }
 
@@ -299,10 +299,10 @@ func (hfu *HostFileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.ClearField(hostfile.FieldPermissions, field.TypeString)
 	}
 	if value, ok := hfu.mutation.Size(); ok {
-		_spec.SetField(hostfile.FieldSize, field.TypeInt, value)
+		_spec.SetField(hostfile.FieldSize, field.TypeUint64, value)
 	}
 	if value, ok := hfu.mutation.AddedSize(); ok {
-		_spec.AddField(hostfile.FieldSize, field.TypeInt, value)
+		_spec.AddField(hostfile.FieldSize, field.TypeUint64, value)
 	}
 	if value, ok := hfu.mutation.Hash(); ok {
 		_spec.SetField(hostfile.FieldHash, field.TypeString, value)
@@ -467,23 +467,23 @@ func (hfuo *HostFileUpdateOne) ClearPermissions() *HostFileUpdateOne {
 }
 
 // SetSize sets the "size" field.
-func (hfuo *HostFileUpdateOne) SetSize(i int) *HostFileUpdateOne {
+func (hfuo *HostFileUpdateOne) SetSize(u uint64) *HostFileUpdateOne {
 	hfuo.mutation.ResetSize()
-	hfuo.mutation.SetSize(i)
+	hfuo.mutation.SetSize(u)
 	return hfuo
 }
 
 // SetNillableSize sets the "size" field if the given value is not nil.
-func (hfuo *HostFileUpdateOne) SetNillableSize(i *int) *HostFileUpdateOne {
-	if i != nil {
-		hfuo.SetSize(*i)
+func (hfuo *HostFileUpdateOne) SetNillableSize(u *uint64) *HostFileUpdateOne {
+	if u != nil {
+		hfuo.SetSize(*u)
 	}
 	return hfuo
 }
 
-// AddSize adds i to the "size" field.
-func (hfuo *HostFileUpdateOne) AddSize(i int) *HostFileUpdateOne {
-	hfuo.mutation.AddSize(i)
+// AddSize adds u to the "size" field.
+func (hfuo *HostFileUpdateOne) AddSize(u int64) *HostFileUpdateOne {
+	hfuo.mutation.AddSize(u)
 	return hfuo
 }
 
@@ -693,10 +693,10 @@ func (hfuo *HostFileUpdateOne) sqlSave(ctx context.Context) (_node *HostFile, er
 		_spec.ClearField(hostfile.FieldPermissions, field.TypeString)
 	}
 	if value, ok := hfuo.mutation.Size(); ok {
-		_spec.SetField(hostfile.FieldSize, field.TypeInt, value)
+		_spec.SetField(hostfile.FieldSize, field.TypeUint64, value)
 	}
 	if value, ok := hfuo.mutation.AddedSize(); ok {
-		_spec.AddField(hostfile.FieldSize, field.TypeInt, value)
+		_spec.AddField(hostfile.FieldSize, field.TypeUint64, value)
 	}
 	if value, ok := hfuo.mutation.Hash(); ok {
 		_spec.SetField(hostfile.FieldHash, field.TypeString, value)

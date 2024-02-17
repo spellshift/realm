@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
@@ -1127,6 +1128,335 @@ func (h *Host) ToEdge(order *HostOrder) *HostEdge {
 	return &HostEdge{
 		Node:   h,
 		Cursor: order.Field.toCursor(h),
+	}
+}
+
+// HostCredentialEdge is the edge representation of HostCredential.
+type HostCredentialEdge struct {
+	Node   *HostCredential `json:"node"`
+	Cursor Cursor          `json:"cursor"`
+}
+
+// HostCredentialConnection is the connection containing edges to HostCredential.
+type HostCredentialConnection struct {
+	Edges      []*HostCredentialEdge `json:"edges"`
+	PageInfo   PageInfo              `json:"pageInfo"`
+	TotalCount int                   `json:"totalCount"`
+}
+
+func (c *HostCredentialConnection) build(nodes []*HostCredential, pager *hostcredentialPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *HostCredential
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *HostCredential {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *HostCredential {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*HostCredentialEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &HostCredentialEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// HostCredentialPaginateOption enables pagination customization.
+type HostCredentialPaginateOption func(*hostcredentialPager) error
+
+// WithHostCredentialOrder configures pagination ordering.
+func WithHostCredentialOrder(order *HostCredentialOrder) HostCredentialPaginateOption {
+	if order == nil {
+		order = DefaultHostCredentialOrder
+	}
+	o := *order
+	return func(pager *hostcredentialPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultHostCredentialOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithHostCredentialFilter configures pagination filter.
+func WithHostCredentialFilter(filter func(*HostCredentialQuery) (*HostCredentialQuery, error)) HostCredentialPaginateOption {
+	return func(pager *hostcredentialPager) error {
+		if filter == nil {
+			return errors.New("HostCredentialQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type hostcredentialPager struct {
+	reverse bool
+	order   *HostCredentialOrder
+	filter  func(*HostCredentialQuery) (*HostCredentialQuery, error)
+}
+
+func newHostCredentialPager(opts []HostCredentialPaginateOption, reverse bool) (*hostcredentialPager, error) {
+	pager := &hostcredentialPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultHostCredentialOrder
+	}
+	return pager, nil
+}
+
+func (p *hostcredentialPager) applyFilter(query *HostCredentialQuery) (*HostCredentialQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *hostcredentialPager) toCursor(hc *HostCredential) Cursor {
+	return p.order.Field.toCursor(hc)
+}
+
+func (p *hostcredentialPager) applyCursors(query *HostCredentialQuery, after, before *Cursor) (*HostCredentialQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultHostCredentialOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *hostcredentialPager) applyOrder(query *HostCredentialQuery) *HostCredentialQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultHostCredentialOrder.Field {
+		query = query.Order(DefaultHostCredentialOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *hostcredentialPager) orderExpr(query *HostCredentialQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultHostCredentialOrder.Field {
+			b.Comma().Ident(DefaultHostCredentialOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to HostCredential.
+func (hc *HostCredentialQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...HostCredentialPaginateOption,
+) (*HostCredentialConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newHostCredentialPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if hc, err = pager.applyFilter(hc); err != nil {
+		return nil, err
+	}
+	conn := &HostCredentialConnection{Edges: []*HostCredentialEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			if conn.TotalCount, err = hc.Clone().Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if hc, err = pager.applyCursors(hc, after, before); err != nil {
+		return nil, err
+	}
+	if limit := paginateLimit(first, last); limit != 0 {
+		hc.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := hc.collectField(ctx, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	hc = pager.applyOrder(hc)
+	nodes, err := hc.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// HostCredentialOrderFieldCreatedAt orders HostCredential by created_at.
+	HostCredentialOrderFieldCreatedAt = &HostCredentialOrderField{
+		Value: func(hc *HostCredential) (ent.Value, error) {
+			return hc.CreatedAt, nil
+		},
+		column: hostcredential.FieldCreatedAt,
+		toTerm: hostcredential.ByCreatedAt,
+		toCursor: func(hc *HostCredential) Cursor {
+			return Cursor{
+				ID:    hc.ID,
+				Value: hc.CreatedAt,
+			}
+		},
+	}
+	// HostCredentialOrderFieldLastModifiedAt orders HostCredential by last_modified_at.
+	HostCredentialOrderFieldLastModifiedAt = &HostCredentialOrderField{
+		Value: func(hc *HostCredential) (ent.Value, error) {
+			return hc.LastModifiedAt, nil
+		},
+		column: hostcredential.FieldLastModifiedAt,
+		toTerm: hostcredential.ByLastModifiedAt,
+		toCursor: func(hc *HostCredential) Cursor {
+			return Cursor{
+				ID:    hc.ID,
+				Value: hc.LastModifiedAt,
+			}
+		},
+	}
+	// HostCredentialOrderFieldPrincipal orders HostCredential by principal.
+	HostCredentialOrderFieldPrincipal = &HostCredentialOrderField{
+		Value: func(hc *HostCredential) (ent.Value, error) {
+			return hc.Principal, nil
+		},
+		column: hostcredential.FieldPrincipal,
+		toTerm: hostcredential.ByPrincipal,
+		toCursor: func(hc *HostCredential) Cursor {
+			return Cursor{
+				ID:    hc.ID,
+				Value: hc.Principal,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f HostCredentialOrderField) String() string {
+	var str string
+	switch f.column {
+	case HostCredentialOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case HostCredentialOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case HostCredentialOrderFieldPrincipal.column:
+		str = "PRINCIPAL"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f HostCredentialOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *HostCredentialOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("HostCredentialOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *HostCredentialOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *HostCredentialOrderFieldLastModifiedAt
+	case "PRINCIPAL":
+		*f = *HostCredentialOrderFieldPrincipal
+	default:
+		return fmt.Errorf("%s is not a valid HostCredentialOrderField", str)
+	}
+	return nil
+}
+
+// HostCredentialOrderField defines the ordering field of HostCredential.
+type HostCredentialOrderField struct {
+	// Value extracts the ordering value from the given HostCredential.
+	Value    func(*HostCredential) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) hostcredential.OrderOption
+	toCursor func(*HostCredential) Cursor
+}
+
+// HostCredentialOrder defines the ordering of HostCredential.
+type HostCredentialOrder struct {
+	Direction OrderDirection            `json:"direction"`
+	Field     *HostCredentialOrderField `json:"field"`
+}
+
+// DefaultHostCredentialOrder is the default ordering of HostCredential.
+var DefaultHostCredentialOrder = &HostCredentialOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &HostCredentialOrderField{
+		Value: func(hc *HostCredential) (ent.Value, error) {
+			return hc.ID, nil
+		},
+		column: hostcredential.FieldID,
+		toTerm: hostcredential.ByID,
+		toCursor: func(hc *HostCredential) Cursor {
+			return Cursor{ID: hc.ID}
+		},
+	},
+}
+
+// ToEdge converts HostCredential into HostCredentialEdge.
+func (hc *HostCredential) ToEdge(order *HostCredentialOrder) *HostCredentialEdge {
+	if order == nil {
+		order = DefaultHostCredentialOrder
+	}
+	return &HostCredentialEdge{
+		Node:   hc,
+		Cursor: order.Field.toCursor(hc),
 	}
 }
 

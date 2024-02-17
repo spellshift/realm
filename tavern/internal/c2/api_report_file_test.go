@@ -78,7 +78,7 @@ func TestReportFile(t *testing.T) {
 		wantOwner       string
 		wantGroup       string
 		wantPermissions string
-		wantSize        int
+		wantSize        uint64
 		wantHash        string
 		wantContent     []byte
 	}{
@@ -87,7 +87,9 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Chunk: &epb.File{
-						Path: "/test",
+						Metadata: &epb.FileMetadata{
+							Path: "/test",
+						},
 					},
 				},
 			},
@@ -108,13 +110,15 @@ func TestReportFile(t *testing.T) {
 				{
 					TaskId: int64(existingTasks[2].ID),
 					Chunk: &epb.File{
-						Path:         "/new/file",
-						Owner:        "root",
-						Group:        "wheel",
-						Permissions:  "0664",
-						Size:         999999,
-						Sha3_256Hash: "I_AM_IGNORED",
-						Chunk:        []byte("death"),
+						Metadata: &epb.FileMetadata{
+							Path:         "/new/file",
+							Owner:        "root",
+							Group:        "wheel",
+							Permissions:  "0664",
+							Size:         999999,
+							Sha3_256Hash: "I_AM_IGNORED",
+						},
+						Chunk: []byte("death"),
 					},
 				},
 			},
@@ -140,8 +144,10 @@ func TestReportFile(t *testing.T) {
 				{
 					TaskId: int64(existingTasks[2].ID),
 					Chunk: &epb.File{
+						Metadata: &epb.FileMetadata{
+							Path: "/another/new/file",
+						},
 						Chunk: []byte("death"),
-						Path:  "/another/new/file",
 					},
 				},
 				{
@@ -170,7 +176,9 @@ func TestReportFile(t *testing.T) {
 				{
 					TaskId: int64(existingTasks[2].ID),
 					Chunk: &epb.File{
-						Path:  "/another/new/file",
+						Metadata: &epb.FileMetadata{
+							Path: "/another/new/file",
+						},
 						Chunk: []byte("replaced"),
 					},
 				},
@@ -195,7 +203,9 @@ func TestReportFile(t *testing.T) {
 				{
 					TaskId: int64(existingTasks[3].ID),
 					Chunk: &epb.File{
-						Path:  "/no/other/files",
+						Metadata: &epb.FileMetadata{
+							Path: "/no/other/files",
+						},
 						Chunk: []byte("meow"),
 					},
 				},

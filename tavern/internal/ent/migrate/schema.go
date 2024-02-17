@@ -31,7 +31,7 @@ var (
 				Symbol:     "beacons_hosts_host",
 				Columns:    []*schema.Column{BeaconsColumns[9]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -59,7 +59,7 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "primary_ip", Type: field.TypeString, Nullable: true},
-		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_BSD"}},
+		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// HostsTable holds the schema information for the "hosts" table.
@@ -67,6 +67,37 @@ var (
 		Name:       "hosts",
 		Columns:    HostsColumns,
 		PrimaryKey: []*schema.Column{HostsColumns[0]},
+	}
+	// HostCredentialsColumns holds the columns for the "host_credentials" table.
+	HostCredentialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "principal", Type: field.TypeString},
+		{Name: "secret", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED"}},
+		{Name: "host_credential_host", Type: field.TypeInt},
+		{Name: "task_reported_credentials", Type: field.TypeInt},
+	}
+	// HostCredentialsTable holds the schema information for the "host_credentials" table.
+	HostCredentialsTable = &schema.Table{
+		Name:       "host_credentials",
+		Columns:    HostCredentialsColumns,
+		PrimaryKey: []*schema.Column{HostCredentialsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "host_credentials_hosts_host",
+				Columns:    []*schema.Column{HostCredentialsColumns[6]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "host_credentials_tasks_reported_credentials",
+				Columns:    []*schema.Column{HostCredentialsColumns[7]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// HostFilesColumns holds the columns for the "host_files" table.
 	HostFilesColumns = []*schema.Column{
@@ -77,7 +108,7 @@ var (
 		{Name: "owner", Type: field.TypeString, Nullable: true},
 		{Name: "group", Type: field.TypeString, Nullable: true},
 		{Name: "permissions", Type: field.TypeString, Nullable: true},
-		{Name: "size", Type: field.TypeInt, Default: 0},
+		{Name: "size", Type: field.TypeUint64, Default: 0},
 		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "content", Type: field.TypeBytes, Nullable: true},
 		{Name: "host_files", Type: field.TypeInt, Nullable: true},
@@ -100,7 +131,7 @@ var (
 				Symbol:     "host_files_hosts_host",
 				Columns:    []*schema.Column{HostFilesColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_files_tasks_reported_files",
@@ -123,7 +154,7 @@ var (
 		{Name: "cmd", Type: field.TypeString, Nullable: true},
 		{Name: "env", Type: field.TypeString, Nullable: true},
 		{Name: "cwd", Type: field.TypeString, Nullable: true},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_IDLE", "STATUS_STOP", "STATUS_ZOMBIE", "STATUS_LOCK_BLOCKED", "STATUS_UNSPECIFIED", "STATUS_PARKED", "STATUS_RUN", "STATUS_DEAD", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNKNOWN", "STATUS_SLEEP", "STATUS_TRACING", "STATUS_WAKE_KILL", "STATUS_WAKING"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_DEAD", "STATUS_IDLE", "STATUS_LOCK_BLOCKED", "STATUS_PARKED", "STATUS_RUN", "STATUS_SLEEP", "STATUS_STOP", "STATUS_TRACING", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNKNOWN", "STATUS_UNSPECIFIED", "STATUS_WAKE_KILL", "STATUS_WAKING", "STATUS_ZOMBIE"}},
 		{Name: "host_processes", Type: field.TypeInt, Nullable: true},
 		{Name: "host_process_host", Type: field.TypeInt},
 		{Name: "task_reported_processes", Type: field.TypeInt},
@@ -144,7 +175,7 @@ var (
 				Symbol:     "host_processes_hosts_host",
 				Columns:    []*schema.Column{HostProcessesColumns[13]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_processes_tasks_reported_processes",
@@ -233,7 +264,7 @@ var (
 				Symbol:     "tasks_beacons_beacon",
 				Columns:    []*schema.Column{TasksColumns[10]},
 				RefColumns: []*schema.Column{BeaconsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -273,6 +304,7 @@ var (
 		{Name: "oauth_id", Type: field.TypeString, Unique: true},
 		{Name: "photo_url", Type: field.TypeString, SchemaType: map[string]string{"mysql": "MEDIUMTEXT"}},
 		{Name: "session_token", Type: field.TypeString, Size: 200},
+		{Name: "access_token", Type: field.TypeString, Size: 200},
 		{Name: "is_activated", Type: field.TypeBool, Default: false},
 		{Name: "is_admin", Type: field.TypeBool, Default: false},
 	}
@@ -337,6 +369,7 @@ var (
 		BeaconsTable,
 		FilesTable,
 		HostsTable,
+		HostCredentialsTable,
 		HostFilesTable,
 		HostProcessesTable,
 		QuestsTable,
@@ -351,6 +384,8 @@ var (
 
 func init() {
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
+	HostCredentialsTable.ForeignKeys[0].RefTable = HostsTable
+	HostCredentialsTable.ForeignKeys[1].RefTable = TasksTable
 	HostFilesTable.ForeignKeys[0].RefTable = HostsTable
 	HostFilesTable.ForeignKeys[1].RefTable = HostsTable
 	HostFilesTable.ForeignKeys[2].RefTable = TasksTable

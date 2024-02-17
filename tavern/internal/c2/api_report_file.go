@@ -19,7 +19,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		owner       string
 		group       string
 		permissions string
-		size        int
+		size        uint64
 		hash        string
 
 		content []byte
@@ -42,23 +42,23 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		if taskID == 0 {
 			taskID = req.GetTaskId()
 		}
-		if path == "" {
-			path = req.Chunk.GetPath()
+		if path == "" && req.Chunk.Metadata != nil {
+			path = req.Chunk.Metadata.GetPath()
 		}
-		if owner == "" {
-			owner = req.Chunk.GetOwner()
+		if owner == "" && req.Chunk.Metadata != nil {
+			owner = req.Chunk.Metadata.GetOwner()
 		}
-		if group == "" {
-			group = req.Chunk.GetGroup()
+		if group == "" && req.Chunk.Metadata != nil {
+			group = req.Chunk.Metadata.GetGroup()
 		}
-		if permissions == "" {
-			permissions = req.Chunk.GetPermissions()
+		if permissions == "" && req.Chunk.Metadata != nil {
+			permissions = req.Chunk.Metadata.GetPermissions()
 		}
-		if size == 0 {
-			size = int(req.Chunk.GetSize())
+		if size == 0 && req.Chunk.Metadata != nil {
+			size = req.Chunk.Metadata.GetSize()
 		}
-		if hash == "" {
-			hash = req.Chunk.GetSha3_256Hash()
+		if hash == "" && req.Chunk.Metadata != nil {
+			hash = req.Chunk.Metadata.GetSha3_256Hash()
 		}
 		content = append(content, req.Chunk.GetChunk()...)
 	}

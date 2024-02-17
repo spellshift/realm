@@ -3,6 +3,7 @@ package epb
 import (
 	"database/sql/driver"
 	"io"
+	"sort"
 
 	"github.com/99designs/gqlgen/graphql"
 )
@@ -13,6 +14,7 @@ func (Process_Status) Values() []string {
 	for _, name := range Process_Status_name {
 		values = append(values, name)
 	}
+	sort.Strings(values)
 	return values
 }
 

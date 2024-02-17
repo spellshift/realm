@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
@@ -356,6 +357,18 @@ func (h *HostQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			h.WithNamedProcesses(alias, func(wq *HostProcessQuery) {
 				*wq = *query
 			})
+		case "credentials":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostCredentialClient{config: h.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			h.WithNamedCredentials(alias, func(wq *HostCredentialQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[host.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, host.FieldCreatedAt)
@@ -450,6 +463,135 @@ func newHostPaginateArgs(rv map[string]any) *hostPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*HostWhereInput); ok {
 		args.opts = append(args.opts, WithHostFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (hc *HostCredentialQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostCredentialQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return hc, nil
+	}
+	if err := hc.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return hc, nil
+}
+
+func (hc *HostCredentialQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(hostcredential.Columns))
+		selectedFields = []string{hostcredential.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "host":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostClient{config: hc.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			hc.withHost = query
+		case "task":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TaskClient{config: hc.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			hc.withTask = query
+		case "createdAt":
+			if _, ok := fieldSeen[hostcredential.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldCreatedAt)
+				fieldSeen[hostcredential.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[hostcredential.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldLastModifiedAt)
+				fieldSeen[hostcredential.FieldLastModifiedAt] = struct{}{}
+			}
+		case "principal":
+			if _, ok := fieldSeen[hostcredential.FieldPrincipal]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldPrincipal)
+				fieldSeen[hostcredential.FieldPrincipal] = struct{}{}
+			}
+		case "secret":
+			if _, ok := fieldSeen[hostcredential.FieldSecret]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldSecret)
+				fieldSeen[hostcredential.FieldSecret] = struct{}{}
+			}
+		case "kind":
+			if _, ok := fieldSeen[hostcredential.FieldKind]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldKind)
+				fieldSeen[hostcredential.FieldKind] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		hc.Select(selectedFields...)
+	}
+	return nil
+}
+
+type hostcredentialPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []HostCredentialPaginateOption
+}
+
+func newHostCredentialPaginateArgs(rv map[string]any) *hostcredentialPaginateArgs {
+	args := &hostcredentialPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &HostCredentialOrder{Field: &HostCredentialOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithHostCredentialOrder(order))
+			}
+		case *HostCredentialOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithHostCredentialOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*HostCredentialWhereInput); ok {
+		args.opts = append(args.opts, WithHostCredentialFilter(v.Filter))
 	}
 	return args
 }
@@ -1072,6 +1214,18 @@ func (t *TaskQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				return err
 			}
 			t.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
+				*wq = *query
+			})
+		case "reportedCredentials":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostCredentialClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedReportedCredentials(alias, func(wq *HostCredentialQuery) {
 				*wq = *query
 			})
 		case "createdAt":

@@ -2,9 +2,11 @@ package c2test
 
 import (
 	"context"
+	"errors"
 	"net"
 	"testing"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -33,8 +35,9 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	baseSrv := grpc.NewServer()
 	c2pb.RegisterC2Server(baseSrv, c2.New(graph))
 
+	grpcErrCh := make(chan error, 1)
 	go func() {
-		require.NoError(t, baseSrv.Serve(lis), "failed to serve grpc")
+		grpcErrCh <- baseSrv.Serve(lis)
 	}()
 
 	conn, err := grpc.DialContext(
@@ -51,5 +54,8 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 		assert.NoError(t, lis.Close())
 		baseSrv.Stop()
 		assert.NoError(t, graph.Close())
+		if err := <-grpcErrCh; err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			t.Fatalf("failed to serve grpc")
+		}
 	}
 }
