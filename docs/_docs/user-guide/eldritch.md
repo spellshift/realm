@@ -357,7 +357,8 @@ The <b>file.remove</b> method deletes a file or directory (and it's contents) sp
 ### file.replace
 
 `file.replace(path: str, pattern: str, value: str) -> None`
-The <b>file.replace</b> method is very cool, and will be even cooler when Nick documents it.
+
+Unimplemented.
 
 ### file.replace_all
 
@@ -378,7 +379,7 @@ The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 
 `file.timestomp(src: str, dst: str) -> None`
 
-The <b>file.timestomp</b> method is very cool, and will be even cooler when Nick documents it.
+Unimplemented.
 
 ### file.write
 
@@ -389,7 +390,7 @@ If a file or directory already exists at this path, the method will fail.
 
 ### file.find
 
-`file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> Vec<str>`
+`file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>`
 
 The <b>file.find</b> method finds all files matching the used parameters. Returns file path for all matching items.
 
@@ -613,7 +614,7 @@ The <b>process.name</b> method returns the name of the process from it's given p
 
 ### process.netstat
 
-`process.netstat() -> Vec<Dict>`
+`process.netstat() -> List<Dict>`
 
 The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
@@ -633,6 +634,36 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
     ...
 ]
 ```
+
+---
+
+## Regex
+
+The regex library is designed to enable basic regex operations on strings.
+
+### regex.match_all
+
+`regex.match_all(haystack: str, pattern: str) -> List<str>`
+
+Unimplemented.
+
+### regex.match
+
+`regex.match(haystack: str, pattern: str) -> str`
+
+Unimplemented.
+
+### regex.replace_all
+
+`regex.replace_all(haystack: str, pattern: str, value: string) -> None`
+
+Unimplemented.
+
+### regex.replace
+
+`regex.replace(haystack: str, pattern: str, value: string) -> None`
+
+Unimplemented.
 
 ---
 
