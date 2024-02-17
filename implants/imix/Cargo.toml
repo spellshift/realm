@@ -27,6 +27,9 @@ tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["v4","fast-rng"] }
 whoami = { workspace = true }
 
+[target.'cfg(target_os = "linux")'.dependencies]
+windows-service = "0.6.0"
+
 [dev-dependencies]
 httptest = { workspace = true }
 tempfile = { workspace = true }
