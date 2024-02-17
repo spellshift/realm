@@ -19,6 +19,7 @@ const Tasks = () => {
         error,
         setSearch,
         setFiltersSelected,
+        filtersSelected,
         updateTaskList,
         page,
         setPage
@@ -34,12 +35,12 @@ const Tasks = () => {
     }
 
     return (
-        <PageWrapper currNavItem={PageNavItem.results}>
+        <PageWrapper currNavItem={PageNavItem.tasks}>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                 <TaskPageHeader />
             </div>
             <div className="p-4 bg-white rounded-lg shadow-lg mt-2">
-                <FilterBar setSearch={setSearch} setFiltersSelected={setFiltersSelected} />
+                <FilterBar setSearch={setSearch} setFiltersSelected={setFiltersSelected} filtersSelected={filtersSelected} />
             </div>
             {loading ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading quest tasks..." />
