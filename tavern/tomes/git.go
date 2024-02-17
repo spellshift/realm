@@ -180,9 +180,9 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 		}
 
 		// Upload other files
-
+		// TODO: Namespace tomes to prevent multi-repo conflicts
 		fileID, err := graph.File.Create().
-			SetName(filepath.Join(namespace, filepath.Base(path), name)).
+			SetName(filepath.Join(filepath.Base(path), name)).
 			SetContent(data).
 			OnConflict().
 			UpdateNewValues().
@@ -210,7 +210,6 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 	}
 
 	// Create the tome
-	fmt.Printf("Creating Tome: %q  (namespace=%q)\n", fmt.Sprintf("%s::%s", namespace, metadata.Name), namespace)
 	tomeID, err := graph.Tome.Create().
 		SetName(fmt.Sprintf("%s::%s", namespace, metadata.Name)).
 		SetDescription(metadata.Description).

@@ -13,7 +13,7 @@ import (
 	"realm.pub/tavern/tomes"
 )
 
-const RealmGIT = "../../"
+const localGit = "../../../realm"
 
 func TestImportFromRepo(t *testing.T) {
 	ctx := context.Background()
@@ -25,13 +25,13 @@ func TestImportFromRepo(t *testing.T) {
 	defer graph.Close()
 
 	filter := func(path string) bool {
-		return strings.Contains(path, "tavern/tomes")
+		return strings.Contains(path, "example")
 	}
-	_, err := tomes.ImportFromRepo(ctx, graph, RealmGIT, filter)
+	_, err := tomes.ImportFromRepo(ctx, graph, localGit, filter)
 	require.NoError(t, err)
 
 	testTome := graph.Tome.Query().
-		Where(tome.NameContains("Example")).
+		Where(tome.NameContains("example")).
 		OnlyX(ctx)
 	require.NotNil(t, testTome)
 	assert.Equal(t, "print(input_params['msg'])", strings.TrimSpace(testTome.Eldritch))
