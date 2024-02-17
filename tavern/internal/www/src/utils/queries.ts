@@ -99,6 +99,7 @@ export const GET_TASK_QUERY = gql`
                                 description
                                 eldritch
                                 tactic
+                                paramDefs
                             }
                             parameters
                         }
