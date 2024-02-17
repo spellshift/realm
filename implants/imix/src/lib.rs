@@ -3,6 +3,7 @@ mod config;
 mod install;
 mod task;
 mod version;
+#[cfg(feature = "win_service")]
 pub mod win_service;
 
 use std::time::Duration;

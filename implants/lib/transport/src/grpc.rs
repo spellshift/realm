@@ -6,7 +6,6 @@ use tonic::codec::ProstCodec;
 use tonic::GrpcMethod;
 use tonic::Request;
 
-#[cfg(debug_assertions)]
 use std::time::Duration;
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
