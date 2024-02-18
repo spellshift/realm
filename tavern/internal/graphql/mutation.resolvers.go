@@ -7,12 +7,55 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/graphql/generated"
+	"realm.pub/tavern/internal/graphql/models"
+	"realm.pub/tavern/tomes"
 )
+
+// DropAllData is the resolver for the dropAllData field.
+func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
+	// Initialize Transaction
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to initialize transaction: %w", err)
+	}
+	client := tx.Client()
+
+	// Delete relevant ents
+	if _, err := client.Beacon.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete beacons: %w", err))
+	}
+	if _, err := client.HostFile.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete hostfiles: %w", err))
+	}
+	if _, err := client.HostProcess.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete hostprocesses: %w", err))
+	}
+	if _, err := client.Host.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
+	}
+	if _, err := client.Quest.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete quests: %w", err))
+	}
+	if _, err := client.Tag.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete tags: %w", err))
+	}
+	if _, err := client.Task.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete tasks: %w", err))
+	}
+
+	// Commit
+	if err := tx.Commit(); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+	}
+
+	return true, nil
+}
 
 // CreateQuest is the resolver for the createQuest field.
 func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error) {
@@ -115,6 +158,35 @@ func (r *mutationResolver) CreateTag(ctx context.Context, input ent.CreateTagInp
 // UpdateTag is the resolver for the updateTag field.
 func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error) {
 	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
+}
+
+// ImportTomesFromGit is the resolver for the importTomesFromGit field.
+func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.ImportTomesFromGitInput) ([]*ent.Tome, error) {
+	// Ensure a schema is set (or set https:// by default)
+	gitURL := input.GitURL
+	if !strings.HasPrefix(gitURL, "http://") && !strings.HasPrefix(gitURL, "ssh://") {
+		gitURL = fmt.Sprintf("https://%s", gitURL)
+	}
+
+	if input.IncludeDirs == nil {
+		return tomes.ImportFromRepo(ctx, r.client, input.GitURL)
+	}
+
+	// Filter to only include provided directories
+	filter := func(path string) bool {
+		for _, prefix := range input.IncludeDirs {
+			// Ignore Leading /
+			path = strings.TrimPrefix(path, "/")
+			prefix = strings.TrimPrefix(prefix, "/")
+
+			// Include if matching
+			if strings.HasPrefix(path, prefix) {
+				return true
+			}
+		}
+		return false
+	}
+	return tomes.ImportFromRepo(ctx, r.client, gitURL, filter)
 }
 
 // CreateTome is the resolver for the createTome field.

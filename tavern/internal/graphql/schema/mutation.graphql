@@ -1,4 +1,9 @@
 type Mutation {
+    ####
+    # Admin
+    ####
+    dropAllData: Boolean! @requireRole(role: ADMIN)
+
     ###
     # Quest
     ###
@@ -23,6 +28,7 @@ type Mutation {
     ###
     # Tome
     ###
+    importTomesFromGit(input: ImportTomesFromGitInput!,): [Tome!] @requireRole(role: USER)
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
     updateTome(tomeID: ID!, input: UpdateTomeInput!,): Tome! @requireRole(role: ADMIN)
     deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)

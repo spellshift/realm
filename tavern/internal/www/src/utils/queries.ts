@@ -49,6 +49,7 @@ export const GET_QUEST_QUERY = gql`
                 execStartedAt
                 execFinishedAt
                 createdAt
+                error
             }
             tome{
                 id
@@ -86,6 +87,7 @@ export const GET_TASK_QUERY = gql`
                         claimedAt
                         error
                         quest{
+                            id
                             name
                             creator{
                                 id
@@ -96,6 +98,8 @@ export const GET_TASK_QUERY = gql`
                                 name
                                 description
                                 eldritch
+                                tactic
+                                paramDefs
                             }
                             parameters
                         }

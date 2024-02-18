@@ -6,8 +6,12 @@ edition = "2021"
 [features]
 # Check if compiled by imix
 imix = []
+print_stdout = []
 
 [dependencies]
+pb = { workspace = true }
+transport = { workspace = true }
+
 aes = { workspace = true }
 allocative = { workspace = true }
 allocative_derive = { workspace = true }
@@ -29,6 +33,7 @@ nix = { workspace = true }
 notify = { workspace = true }
 object = { workspace = true }
 openssl = { workspace = true, features = ["vendored"] }
+pretty_env_logger = { workspace = true }
 prost = { workspace = true}
 prost-types = { workspace = true }
 regex = { workspace = true }
@@ -43,6 +48,7 @@ sha1 = { workspace = true }
 sha2 = { workspace = true }
 sha256 = { workspace = true }
 starlark = { workspace = true }
+starlark_derive = { workspace = true }
 sysinfo = { workspace = true }
 tar = { workspace = true }
 tempfile = { workspace = true }
@@ -73,6 +79,7 @@ pnet = { workspace = true }
 netstat2 = { workspace = true }
 
 [dev-dependencies]
+transport = { workspace = true, features = ["mock"]}
 httptest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 

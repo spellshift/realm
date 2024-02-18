@@ -1,65 +1,50 @@
 extern crate eldritch;
 extern crate golem;
 
+mod inter;
+
 use anyhow::{anyhow, Result};
 use clap::{Arg, Command};
-use eldritch::pb::Tome;
-use eldritch::Runtime;
+use eldritch::runtime::Message;
+use pb::eldritch::Tome;
 use std::collections::HashMap;
 use std::fs;
 use std::process;
-use tokio::task::JoinHandle;
-
-mod inter;
 
 struct ParsedTome {
-    pub path: String,
     pub eldritch: String,
 }
 
-struct Handle {
-    handle: JoinHandle<()>,
-    path: String,
-    broker: eldritch::Broker,
-}
-
 async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
-    let mut handles = Vec::new();
+    let mut runtimes = Vec::new();
+    let mut idx = 1;
     for tome in tomes {
-        let (mut runtime, broker) = Runtime::new();
-        runtime.with_stdout_reporting();
-        let handle = tokio::task::spawn_blocking(move || {
-            runtime.run(Tome {
+        let runtime = eldritch::start(
+            idx,
+            Tome {
                 eldritch: tome.eldritch,
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
-            });
-        });
-        handles.push(Handle {
-            handle,
-            path: tome.path,
-            broker,
-        });
+            },
+        )
+        .await;
+        runtimes.push(runtime);
+        idx += 1;
     }
 
     let mut result = Vec::new();
-    for handle in handles {
-        match handle.handle.await {
-            Ok(_) => {}
-            Err(err) => {
-                eprintln!(
-                    "error waiting for tome to complete: {} {}",
-                    handle.path, err
-                );
-                continue;
+    for runtime in &mut runtimes {
+        runtime.finish().await;
+
+        for msg in runtime.messages() {
+            match msg {
+                Message::ReportText(m) => result.push(m.text()),
+                Message::ReportError(m) => {
+                    return Err(anyhow!("{}", m.error));
+                }
+                _ => {}
             }
-        };
-        let mut out = handle.broker.collect_text();
-        let errors = handle.broker.collect_errors();
-        if !errors.is_empty() {
-            return Err(anyhow!("tome execution failed: {:?}", errors));
         }
-        result.append(&mut out);
     }
 
     Ok(result)
@@ -90,7 +75,6 @@ fn main() -> anyhow::Result<()> {
             let tome_path = tome.to_string().clone();
             let tome_contents = fs::read_to_string(tome_path.clone())?;
             parsed_tomes.push(ParsedTome {
-                path: tome_path,
                 eldritch: tome_contents,
             });
         }
@@ -117,7 +101,6 @@ fn main() -> anyhow::Result<()> {
             let filename = embedded_file_path.split('/').last().unwrap_or("");
             println!("{}", embedded_file_path);
             if filename == "main.eldritch" {
-                let tome_path = embedded_file_path.to_string().clone();
                 let tome_contents_extraction_result =
                     match eldritch::assets::Asset::get(embedded_file_path.as_ref()) {
                         Some(local_tome_content) => {
@@ -137,7 +120,6 @@ fn main() -> anyhow::Result<()> {
                     }
                 };
                 parsed_tomes.push(ParsedTome {
-                    path: tome_path,
                     eldritch: tome_contents,
                 });
             }
@@ -170,7 +152,6 @@ mod tests {
     #[tokio::test]
     async fn test_golem_execute_tomes_in_parallel() -> anyhow::Result<()> {
         let parsed_tomes = Vec::from([ParsedTome {
-            path: "test_hello.eldritch".to_string(),
             eldritch: r#"print("hello world")"#.to_string(),
         }]);
 

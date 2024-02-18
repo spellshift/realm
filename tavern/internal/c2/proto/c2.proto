@@ -80,12 +80,18 @@ message ClaimTasksResponse {
     repeated Task tasks = 1;
 }
 
-message DownloadFileRequest {
+message FetchAssetRequest {
     string name = 1;
 }
-message DownloadFileResponse {
+message FetchAssetResponse {
     bytes chunk = 1;
 }
+
+message ReportCredentialRequest {
+    int64 task_id = 1;
+    eldritch.Credential credential = 2;
+}
+message ReportCredentialResponse {}
 
 message ReportFileRequest {
     int64 task_id = 1;
@@ -117,7 +123,7 @@ service C2 {
     rpc ClaimTasks(ClaimTasksRequest) returns (ClaimTasksResponse) {}
 
     /*
-     * Download a file from the server, returning one or more chunks of data.
+     * Fetch an asset from the server, returning one or more chunks of data.
      * The maximum size of these chunks is determined by the server.
      * The server should reply with two headers:
      *   - "sha3-256-checksum": A SHA3-256 digest of the entire file contents.
@@ -125,7 +131,12 @@ service C2 {
      *
      * If no associated file can be found, a NotFound status error is returned.
      */
-     rpc DownloadFile(DownloadFileRequest) returns (stream DownloadFileResponse);
+     rpc FetchAsset(FetchAssetRequest) returns (stream FetchAssetResponse);
+
+    /*
+     * Report a credential from the host to the server.
+     */
+     rpc ReportCredential(ReportCredentialRequest) returns (ReportCredentialResponse);
 
     /*
      * Report a file from the host to the server.

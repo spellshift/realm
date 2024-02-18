@@ -9,10 +9,11 @@ export enum TaskStatus {
     queued = "QUEUED",
 }
 export enum PageNavItem {
+    dashboard="Dashboard",
     quests='Quest history',
     documentation='Documentation',
     playground='API Playground',
-    results='Quest outputs',
+    tasks='Quest tasks',
     createQuest= 'Create new quest',
     hosts="Hosts"
 }
@@ -30,4 +31,10 @@ export enum PrincipalAdminTypes {
     root='root',
     Administrator='Administrator',
     SYSTEM="SYSTEM"
+}
+
+export enum TaskChartKeys {
+    taskError="Tasks with errors",
+    taskNoError ="Tasks without errors",
+    taskCreated= "Tasks created"
 }

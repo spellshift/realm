@@ -98,6 +98,7 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 mod tests {
     use super::*;
     use anyhow::Result;
+    use starlark::values::list::UnpackList;
     use starlark::values::{Heap, UnpackValue};
     use std::process::id;
     use tokio::io::copy;
@@ -168,9 +169,9 @@ mod tests {
             if let Some(Some(pids)) = socket
                 .get(const_frozen_string!("pids").to_value())
                 .unwrap()
-                .map(Vec::<i32>::unpack_value)
+                .map(UnpackList::<i32>::unpack_value)
             {
-                if pids.contains(&pid) {
+                if pids.items.contains(&pid) {
                     return Ok(());
                 }
             }

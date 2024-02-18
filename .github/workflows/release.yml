@@ -35,18 +35,12 @@ jobs:
 ####################################################################################
 
 ###
-# ALL PLATFORMS
+# LINUX
 ###
   upload_tavern:
-    name: 🚀 Release Tavern Assets
+    name: 🚀 [Linux] Tavern
     needs: create_release # Depends on release being created for upload URL
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      matrix:
-        config:
-          - os: ubuntu-latest
-          - os: macos-latest
-          - os: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: ⚡ Setup Golang
@@ -62,7 +56,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: tavern-${{ matrix.config.os }}
+          asset_name: tavern
           asset_path: ${{ runner.temp }}/realm_build/tavern
           asset_content_type: application/octet-stream
 
@@ -74,14 +68,15 @@ jobs:
 # LINUX
 ###
   upload_imix_linux:
-    name: 🚀 Release Imix Assets (Linux)
+    name: 🚀 [Linux] Imix
     needs: create_release # Depends on release being created for upload URL
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2023-09-04
+          toolchain: '1.76.0'
           default: true
           profile: minimal
       - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
@@ -108,14 +103,15 @@ jobs:
 # MACOS
 ###
   upload_imix_macos:
-    name: 🚀 Release Imix Assets (MacOS)
+    name: 🚀 [MacOS] Imix
     needs: create_release # Depends on release being created for upload URL
     runs-on: macOS-latest
     steps:
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2023-09-04
+          toolchain: '1.76.0'
           default: true
           profile: minimal
       - name: 🔨 Build Imix
@@ -137,36 +133,43 @@ jobs:
 # WINDOWS
 ###
   upload_imix_windows:
-    name: 🚀 Release Imix Assets (Windows)
+    name: 🚀 [Windows] Imix
     needs: create_release # Depends on release being created for upload URL
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: 👾 Disable defender
-        shell: powershell
-        run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2023-09-04
+          toolchain: '1.76.0'
           default: true
           profile: minimal
-      - name: ⚡ Setup Rust (Loader)
-        shell: powershell
+          target: x86_64-pc-windows-gnu
+      - name: 🛠️ Setup Rust Toolchain (Loader)
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2024-02-11
+          default: false
+          profile: minimal
+          target: x86_64-pc-windows-gnu
+      - name: ⚡ Setup Rust (x86_64-pc-windows-gnu)
         run: |
-          rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc
-          rustup component add rust-src --toolchain nightly-2023-09-04-x86_64-pc-windows-msvc
+          sudo apt update && \
+          sudo apt install -y gcc-mingw-w64 && \
+          rustup target add x86_64-pc-windows-gnu --toolchain '1.76.0' && \
+          rustup target add x86_64-pc-windows-gnu --toolchain 'nightly-2024-02-11'
+          rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-unknown-linux-gnu
       - name: 🔨 Build Loader
         working-directory: ./bin/reflective_loader/
-        run: cargo build --release --target=x86_64-pc-windows-msvc -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+        run: cargo build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
       - name: 🔨 Build Imix
-        run: cargo build --bin=imix --release --target=x86_64-pc-windows-msvc
+        run: cargo build --bin=imix --release --verbose --target=x86_64-pc-windows-gnu
         working-directory: ./implants/imix
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
           RUSTFLAGS: "-C target-feature=+crt-static"
       - name: 🔨 Build Imix (DLL)
-        run: cargo build --lib --release
+        run: cargo build --lib --release --verbose --target=x86_64-pc-windows-gnu
         working-directory: ./implants/imix
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
@@ -177,8 +180,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: imix-x86_64-pc-windows-msvc.exe
-          asset_path:  ${{ runner.temp }}/realm_build/x86_64-pc-windows-msvc/release/imix.exe
+          asset_name: imix-x86_64-pc-windows-gnu.exe
+          asset_path:  ${{ runner.temp }}/realm_build/x86_64-pc-windows-gnu/release/imix.exe
           asset_content_type: application/octet-stream
       - name: 🌥️⬆️ Upload Imix (DLL)
         uses: actions/upload-release-asset@v1
@@ -186,8 +189,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: imix-x86_64-pc-windows-msvc.dll
-          asset_path: ${{ runner.temp }}/realm_build/x86_64-pc-windows-msvc/release/imix.dll
+          asset_name: imix-x86_64-pc-windows-gnu.dll
+          asset_path: ${{ runner.temp }}/realm_build/x86_64-pc-windows-gnu/release/imix.dll
           asset_content_type: application/octet-stream
 
 ####################################################################################
@@ -198,14 +201,15 @@ jobs:
 # LINUX
 ###
   upload_golem_linux:
-    name: 🚀 Release Golem Assets (Linux)
+    name: 🚀 [Linux] Golem
     needs: create_release # Depends on release being created for upload URL
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2023-09-04
+          toolchain: '1.76.0'
           default: true
           profile: minimal
       - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
@@ -232,14 +236,15 @@ jobs:
 # MACOS
 ###
   upload_golem_macos:
-    name: 🚀 Release Golem Assets (MacOS)
+    name: 🚀 [MacOS] Golem
     needs: create_release # Depends on release being created for upload URL
     runs-on: macOS-latest
     steps:
+      - uses: actions/checkout@v3
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2023-09-04
+          toolchain: '1.76.0'
           default: true
           profile: minimal
       - name: 🔨 Build Golem
@@ -261,30 +266,37 @@ jobs:
 # WINDOWS
 ###
   upload_golem_windows:
-      name: 🚀 Release Golem Assets (Windows)
+      name: 🚀 [Windows] Golem
       needs: create_release # Depends on release being created for upload URL
-      runs-on: windows-latest
+      runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
-        - name: 👾 Disable defender
-          shell: powershell
-          run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
         - name: 🛠️ Setup Rust Toolchain
           uses: actions-rs/toolchain@v1
           with:
-            toolchain: nightly-2023-09-04
+            toolchain: '1.76.0'
             default: true
             profile: minimal
-        - name: ⚡ Setup Rust (Loader)
-          shell: powershell
+            target: x86_64-pc-windows-gnu
+        - name: 🛠️ Setup Rust Toolchain (Loader)
+          uses: actions-rs/toolchain@v1
+          with:
+            toolchain: nightly-2024-02-11
+            default: false
+            profile: minimal
+            target: x86_64-pc-windows-gnu
+        - name: ⚡ Setup Rust
           run: |
-            rustup toolchain install nightly-2023-09-04-x86_64-pc-windows-msvc
-            rustup component add rust-src --toolchain nightly-2023-09-04-x86_64-pc-windows-msvc
+            sudo apt update && \
+            sudo apt install -y gcc-mingw-w64 && \
+            rustup target add x86_64-pc-windows-gnu --toolchain '1.76.0' && \
+            rustup target add x86_64-pc-windows-gnu --toolchain 'nightly-2024-02-11'
+            rustup component add rust-src --toolchain nightly-2024-02-11-x86_64-unknown-linux-gnu
         - name: 🔨 Build Loader
           working-directory: ./bin/reflective_loader/
-          run: cargo build --release --target=x86_64-pc-windows-msvc -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+          run: cargo build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
         - name: 🔨 Build Golem
-          run: cargo build --bin=golem --release --target=x86_64-pc-windows-msvc
+          run: cargo build --bin=golem --release --target=x86_64-pc-windows-gnu
           working-directory: ./implants/golem
           env:
             CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
@@ -295,6 +307,6 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
             upload_url: ${{ needs.create_release.outputs.upload_url }}
-            asset_name: golem-x86_64-pc-windows-msvc.exe
-            asset_path:  ${{ runner.temp }}/realm_build/x86_64-pc-windows-msvc/release/golem.exe
+            asset_name: golem-x86_64-pc-windows-gnu.exe
+            asset_path:  ${{ runner.temp }}/realm_build/x86_64-pc-windows-gnu/release/golem.exe
             asset_content_type: application/octet-stream
