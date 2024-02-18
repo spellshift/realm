@@ -32,3 +32,9 @@ export enum PrincipalAdminTypes {
     Administrator='Administrator',
     SYSTEM="SYSTEM"
 }
+
+export enum TaskChartKeys {
+    taskError="Tasks with errors",
+    taskNoError ="Tasks without errors",
+    taskCreated= "Tasks created"
+}

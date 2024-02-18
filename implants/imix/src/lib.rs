@@ -15,9 +15,6 @@ pub use install::install;
 
 
 pub async fn handle_main(){
-    #[cfg(debug_assertions)]
-    init_logging();
-
     if let Some(("install", _)) = Command::new("imix")
         .subcommand(Command::new("install").about("Install imix"))
         .get_matches()
@@ -52,7 +49,7 @@ async fn run(cfg: Config) -> anyhow::Result<()> {
 }
 
 #[cfg(debug_assertions)]
-fn init_logging() {
+pub fn init_logging() {
     pretty_env_logger::formatted_timed_builder()
         .filter_level(log::LevelFilter::Info)
         .parse_env("IMIX_LOG")

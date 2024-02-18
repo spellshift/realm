@@ -79,8 +79,9 @@ export type Task = {
     output?: string,
     execStartedAt: string,
     execFinishedAt: string,
-    beacon: BeaconType
+    beacon: BeaconType,
     createdAt: string,
+    error: string,
 };
 export type UserType = {
     id: string;
