@@ -278,9 +278,9 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
     file.template("/tmp/svc.sh.j2",startup_dir+service_name+".sh", args, False)
     file.remove("/tmp/svc.sh.j2")
 
-    sys.exec("/bin/sh",["-c","chmod +x "+startup_dir+service_name+".sh"])
-    sys.exec("/bin/sh",["-c","chmod +x "+executable_path])
-    sys.exec("/bin/sh",["-c","service "+service_name+".sh start"])
+    sys.shell("chmod +x "+startup_dir+service_name+".sh")
+    sys.shell("chmod +x "+executable_path)
+    sys.shell("service "+service_name+".sh start")
 
     print("bsdinit installed")
 
