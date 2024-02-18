@@ -33,7 +33,7 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
         command_args = ["/c", cmd.as_str()].to_vec();
     } else {
         // linux and such
-        command_string = "bash";
+        command_string = "sh";
         command_args = ["-c", cmd.as_str()].to_vec();
     }
 
