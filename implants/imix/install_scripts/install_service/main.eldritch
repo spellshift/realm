@@ -221,7 +221,7 @@ def is_using_sysvinit():
 def is_using_bsdinit():
     # Lol this is how ansible does it too :shrug:
     # https://github.com/ansible/ansible/blob/386edc666ec2a053b4d576fc4b2deeb46fe492b8/lib/ansible/module_utils/facts/system/service_mgr.py#L124
-    if sys.is_bsd():
+    if sys.get_os()['platform'] == "BSD":
         return True
     return False
 
@@ -264,9 +264,9 @@ def sysvinit(service_name, service_desc, executable_path, executable_args):
     print("sysvinit installed")
 
 def bsdinit(service_name, service_desc, executable_path, executable_args):
-    # assets.copy("persist_service/files/sysvinit.sh.j2","/tmp/svc.sh.j2")
-    if not file.is_dir("/etc/rc.d"):
-        print("/etc/rc.d not found")
+    startup_dir = "/usr/local/etc/rc.d/"
+    if not file.is_dir(startup_dir):
+        print(startup_dir+" not found")
         return
 
     file.write("/tmp/svc.sh.j2", bsdinit_template)
@@ -275,18 +275,13 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
         "service_desc":service_desc,
         "service_start_cmd":executable_path+" "+executable_args
     }
-    file.template("/tmp/svc.sh.j2","/etc/rc.d/"+service_name, args, False)
+    file.template("/tmp/svc.sh.j2",startup_dir+service_name+".sh", args, False)
     file.remove("/tmp/svc.sh.j2")
-    sys.shell("chmod +x "+"/etc/rc.d/"+service_name)
 
-    sys.shell("chmod +x "+executable_path)
+    sys.exec("/bin/sh",["-c","chmod +x "+startup_dir+service_name+".sh"])
+    sys.exec("/bin/sh",["-c","chmod +x "+executable_path])
+    sys.exec("/bin/sh",["-c","service "+service_name+".sh start"])
 
-    rc_file = "/etc/rc.conf.local"
-    if not file.is_file(rc_file):
-        file.write(rc_file, "")
-
-    sys.shell("sysrc -f /etc/rc.conf.local "+service_name+"=\"YES\"")
-    sys.shell("service "+service_name+" start")
     print("bsdinit installed")
 
 def launch_daemon(service_name, executable_path, executable_args):
@@ -317,7 +312,9 @@ def persist_service(service_name, service_desc, executable_name, executable_args
         executable_path = "/var/root/"+executable_name
         file.copy(src_path, executable_path)
         launch_daemon(service_name, executable_path, executable_args)
-    elif sys.is_bsd():
+    elif sys.get_os()['platform'] == "BSD":
+        executable_path = "/bin/"+executable_name
+        file.copy(src_path, executable_path)
         if is_using_bsdinit():
             bsdinit(service_name, service_desc, executable_path, executable_args)
     else:
