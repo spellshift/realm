@@ -26,4 +26,7 @@ extend type Query {
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
   me: User!
+
+  """Obtain git ssh public key used for importing tomes from repos via ssh."""
+  gitSSHPublicKey: String! @requireRole(role: USER)
 }

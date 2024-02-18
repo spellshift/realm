@@ -12,19 +12,20 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-// A TomeImporter is responsible for importing tomes from the provided URL (filter based on provided filter options).
-type TomeImporter interface {
-	Import(ctx context.Context, srcURL string, filters ...func(path string) bool) ([]*ent.Tome, error)
+// A GitTomeImporter is responsible for importing tomes from the provided URL (filter based on provided filter options).
+type GitTomeImporter interface {
+	Import(ctx context.Context, gitURL string, filters ...func(path string) bool) ([]*ent.Tome, error)
+	SSHPublicKey() string
 }
 
 // Resolver is the resolver root.
 type Resolver struct {
-	client   *ent.Client
-	importer TomeImporter
+	client *ent.Client
+	git    GitTomeImporter
 }
 
 // NewSchema creates a graphql executable schema.
-func NewSchema(client *ent.Client, importer TomeImporter) graphql.ExecutableSchema {
+func NewSchema(client *ent.Client, importer GitTomeImporter) graphql.ExecutableSchema {
 	cfg := generated.Config{
 		Resolvers: &Resolver{client, importer},
 	}

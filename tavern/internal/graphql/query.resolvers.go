@@ -148,3 +148,8 @@ func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	}
 	return nil, fmt.Errorf("no authenticated user present in request context")
 }
+
+// GitPublicKey is the resolver for the gitPublicKey field.
+func (r *queryResolver) GitPublicKey(ctx context.Context) (string, error) {
+	return r.git.SSHPublicKey(), nil
+}

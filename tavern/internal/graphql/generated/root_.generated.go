@@ -148,17 +148,18 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Beacons func(childComplexity int, where *ent.BeaconWhereInput) int
-		Files   func(childComplexity int, where *ent.FileWhereInput) int
-		Hosts   func(childComplexity int, where *ent.HostWhereInput) int
-		Me      func(childComplexity int) int
-		Node    func(childComplexity int, id int) int
-		Nodes   func(childComplexity int, ids []int) int
-		Quests  func(childComplexity int, where *ent.QuestWhereInput) int
-		Tags    func(childComplexity int, where *ent.TagWhereInput) int
-		Tasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes   func(childComplexity int, where *ent.TomeWhereInput) int
-		Users   func(childComplexity int, where *ent.UserWhereInput) int
+		Beacons      func(childComplexity int, where *ent.BeaconWhereInput) int
+		Files        func(childComplexity int, where *ent.FileWhereInput) int
+		GitPublicKey func(childComplexity int) int
+		Hosts        func(childComplexity int, where *ent.HostWhereInput) int
+		Me           func(childComplexity int) int
+		Node         func(childComplexity int, id int) int
+		Nodes        func(childComplexity int, ids []int) int
+		Quests       func(childComplexity int, where *ent.QuestWhereInput) int
+		Tags         func(childComplexity int, where *ent.TagWhereInput) int
+		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
+		Users        func(childComplexity int, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -878,6 +879,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Files(childComplexity, args["where"].(*ent.FileWhereInput)), true
+
+	case "Query.gitPublicKey":
+		if e.complexity.Query.GitPublicKey == nil {
+			break
+		}
+
+		return e.complexity.Query.GitPublicKey(childComplexity), true
 
 	case "Query.hosts":
 		if e.complexity.Query.Hosts == nil {
@@ -3222,6 +3230,9 @@ scalar Uint64
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
   me: User!
+
+  """Obtain git ssh public key used for importing tomes from repos via ssh."""
+  gitPublicKey: String! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {

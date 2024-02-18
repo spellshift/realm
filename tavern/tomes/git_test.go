@@ -25,12 +25,12 @@ func TestImportFromRepo(t *testing.T) {
 	defer graph.Close()
 
 	// Initialize Git Importer
-	importer := tomes.NewGitImporter(graph)
+	git := tomes.NewGitImporter(graph)
 
 	filter := func(path string) bool {
 		return strings.Contains(path, "example")
 	}
-	_, err := importer.Import(ctx, localGit, filter)
+	_, err := git.Import(ctx, localGit, filter)
 	require.NoError(t, err)
 
 	testTome := graph.Tome.Query().

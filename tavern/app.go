@@ -130,7 +130,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	// Initialize Git Tome Importer
-	importer := cfg.NewGitImporter(client)
+	git := cfg.NewGitImporter(client)
 
 	// Initialize Test Data
 	if cfg.IsTestDataEnabled() {
@@ -162,7 +162,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			client,
 			"https://www.googleapis.com/oauth2/v3/userinfo",
 		)},
-		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client, importer)},
+		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client, git)},
 		"/c2.C2/":     tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
 		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
 		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
@@ -229,8 +229,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client, importer graphql.TomeImporter) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client, importer))
+func newGraphQLHandler(client *ent.Client, git graphql.GitTomeImporter) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, git))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// GraphQL Logging

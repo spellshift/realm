@@ -168,7 +168,7 @@ func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.
 	}
 
 	if input.IncludeDirs == nil {
-		return r.importer.Import(ctx, input.GitURL)
+		return r.git.Import(ctx, input.GitURL)
 	}
 
 	// Filter to only include provided directories
@@ -185,7 +185,7 @@ func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.
 		}
 		return false
 	}
-	return r.importer.Import(ctx, gitURL, filter)
+	return r.git.Import(ctx, gitURL, filter)
 }
 
 // CreateTome is the resolver for the createTome field.

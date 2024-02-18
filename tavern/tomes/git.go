@@ -2,8 +2,7 @@ package tomes
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -16,7 +15,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	gitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/memory"
+	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tome"
@@ -25,10 +26,10 @@ import (
 // GitImportOption provides configuration for creating a new GitImporter.
 type GitImportOption func(*GitImporter)
 
-// GitWithSSHPrivateKey enables a GitImporter to use an ECDSA private key for ssh clones.
-func GitWithSSHPrivateKey(privKey *ecdsa.PrivateKey) GitImportOption {
+// GitWithSSHSigner enables a GitImporter to use a private key for ssh clones.
+func GitWithSSHSigner(signer ssh.Signer) GitImportOption {
 	return func(importer *GitImporter) {
-		importer.privKey = privKey
+		importer.signer = signer
 	}
 }
 
@@ -42,12 +43,18 @@ func NewGitImporter(graph *ent.Client, options ...GitImportOption) *GitImporter 
 	for _, opt := range options {
 		opt(importer)
 	}
-	if importer.privKey == nil {
-		privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if importer.signer == nil {
+		_, privKey, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {
-			panic(fmt.Errorf("failed to generate ECDSA P256 private key: %w", err))
+			panic(fmt.Errorf("failed to generate ed25519 private key: %w", err))
 		}
-		importer.privKey = privKey
+
+		signer, err := ssh.NewSignerFromKey(privKey)
+		if err != nil {
+			panic(fmt.Errorf("could not convert private key to ssh signer: %v", err))
+		}
+
+		importer.signer = signer
 	}
 
 	return importer
@@ -55,8 +62,8 @@ func NewGitImporter(graph *ent.Client, options ...GitImportOption) *GitImporter 
 
 // A GitImporter imports tomes from a provided Git URL.
 type GitImporter struct {
-	privKey *ecdsa.PrivateKey
-	graph   *ent.Client
+	signer ssh.Signer
+	graph  *ent.Client
 }
 
 // Import clones a git repository from the provided URL in memory.
@@ -68,12 +75,26 @@ type GitImporter struct {
 // Provided filters on tome paths may be used to limit included directories by returning true if the
 // result should be included.
 func (importer *GitImporter) Import(ctx context.Context, gitURL string, filters ...func(path string) bool) ([]*ent.Tome, error) {
+	// Use Private Key Auth for SSH
+	var authMethod *gitssh.PublicKeys
+	if importer.signer != nil && strings.HasPrefix(gitURL, "ssh://") {
+		authMethod = &gitssh.PublicKeys{
+			User:   "git",
+			Signer: importer.signer,
+			HostKeyCallbackHelper: gitssh.HostKeyCallbackHelper{
+				// Ignore Host Keys
+				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			},
+		}
+	}
+
 	// Clone Repository (In-Memory)
 	storage := memory.NewStorage()
 	repo, err := git.CloneContext(ctx, storage, nil, &git.CloneOptions{
 		URL:          gitURL,
 		SingleBranch: true,
 		Depth:        1,
+		Auth:         authMethod,
 		Tags:         git.NoTags,
 	})
 	if err != nil {
@@ -129,40 +150,6 @@ func (importer *GitImporter) Import(ctx context.Context, gitURL string, filters 
 	}
 
 	return tomes, nil
-}
-
-// findTomePaths returns a list of valid paths to the root directory of a Tome.
-// This is based on all of the 'main.eldritch' files found in the repository.
-func findTomePaths(tree *object.Tree) ([]string, error) {
-	var tomePaths []string
-	walker := object.NewTreeWalker(tree, true, make(map[plumbing.Hash]bool))
-	defer walker.Close()
-	for {
-		// Fetch next entry
-		name, _, err := walker.Next()
-		if err == io.EOF {
-			// No more entries
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to walk repo tree: %w", err)
-		}
-
-		// If 'main.eldritch' is present, the parent directory is the tome root
-		base := filepath.Base(name)
-		if base == "main.eldritch" {
-			// Cannot use filepath.Dir on Windows, git does not use \ separators
-			tomePaths = append(
-				tomePaths,
-				strings.TrimSuffix(
-					strings.TrimSuffix(name, base), // Get the directory name
-					"/",                            // Remove the trailing /
-				),
-			)
-		}
-	}
-
-	return tomePaths, nil
 }
 
 // ImportFromGitTree imports a tome based on the provided path
@@ -274,6 +261,46 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 	}
 
 	return importer.graph.Tome.Get(ctx, tomeID)
+}
+
+// SSHPublicKey returns a PEM-Encoded PKIX ASN.1DER encoded public key associated with the private key used for cloning.
+func (importer *GitImporter) SSHPublicKey() string {
+	pubKey := importer.signer.PublicKey()
+	return string(ssh.MarshalAuthorizedKey(pubKey))
+}
+
+// findTomePaths returns a list of valid paths to the root directory of a Tome.
+// This is based on all of the 'main.eldritch' files found in the repository.
+func findTomePaths(tree *object.Tree) ([]string, error) {
+	var tomePaths []string
+	walker := object.NewTreeWalker(tree, true, make(map[plumbing.Hash]bool))
+	defer walker.Close()
+	for {
+		// Fetch next entry
+		name, _, err := walker.Next()
+		if err == io.EOF {
+			// No more entries
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to walk repo tree: %w", err)
+		}
+
+		// If 'main.eldritch' is present, the parent directory is the tome root
+		base := filepath.Base(name)
+		if base == "main.eldritch" {
+			// Cannot use filepath.Dir on Windows, git does not use \ separators
+			tomePaths = append(
+				tomePaths,
+				strings.TrimSuffix(
+					strings.TrimSuffix(name, base), // Get the directory name
+					"/",                            // Remove the trailing /
+				),
+			)
+		}
+	}
+
+	return tomePaths, nil
 }
 
 // parseNamespaceFromGit attempts to return a shortend namespace for the tome based on the git URL.

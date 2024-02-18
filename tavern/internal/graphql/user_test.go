@@ -25,11 +25,11 @@ func TestUserMutations(t *testing.T) {
 	defer graph.Close()
 
 	// Initialize Git Importer
-	importer := tomes.NewGitImporter(graph)
+	git := tomes.NewGitImporter(graph)
 
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, importer)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git)),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)

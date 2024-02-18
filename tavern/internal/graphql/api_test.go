@@ -69,12 +69,12 @@ func runTestCase(t *testing.T, path string) {
 	require.NoError(t, dbErr, "failed to setup test db state")
 
 	// Initialize Git Importer
-	importer := tomes.NewGitImporter(graph)
+	git := tomes.NewGitImporter(graph)
 
 	// Server
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, importer)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git)),
 		},
 		tavernhttp.WithAuthentication(graph),
 	)
