@@ -2,6 +2,9 @@ package tomes
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,15 +22,52 @@ import (
 	"realm.pub/tavern/internal/ent/tome"
 )
 
-// ImportFromRepo clones a git repository from the provided URL in memory.
+// GitImportOption provides configuration for creating a new GitImporter.
+type GitImportOption func(*GitImporter)
+
+// GitWithSSHPrivateKey enables a GitImporter to use an ECDSA private key for ssh clones.
+func GitWithSSHPrivateKey(privKey *ecdsa.PrivateKey) GitImportOption {
+	return func(importer *GitImporter) {
+		importer.privKey = privKey
+	}
+}
+
+// NewGitImporter initializes and returns a new GitImporter.
+// If no SSH Private Key is provided, a new ECDSA P256 private key is generated.
+// This panics if a new SSH Private Key cannot be generated.
+func NewGitImporter(graph *ent.Client, options ...GitImportOption) *GitImporter {
+	importer := &GitImporter{
+		graph: graph,
+	}
+	for _, opt := range options {
+		opt(importer)
+	}
+	if importer.privKey == nil {
+		privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			panic(fmt.Errorf("failed to generate ECDSA P256 private key: %w", err))
+		}
+		importer.privKey = privKey
+	}
+
+	return importer
+}
+
+// A GitImporter imports tomes from a provided Git URL.
+type GitImporter struct {
+	privKey *ecdsa.PrivateKey
+	graph   *ent.Client
+}
+
+// Import clones a git repository from the provided URL in memory.
 // It walks the directory structure, looking for 'main.eldritch' files.
 // For each 'main.eldritch' file found, it's parent directory is treated as the tome's root.
 // All files in that directory and it's subdirectories (recursively) aside from the reserved
 // metadata.yml file are uploaded as the tome's assets.
-
-// Provided filters on tome paths may be used to exclude directories by returning true if the
+//
+// Provided filters on tome paths may be used to limit included directories by returning true if the
 // result should be included.
-func ImportFromRepo(ctx context.Context, graph *ent.Client, gitURL string, filters ...func(path string) bool) ([]*ent.Tome, error) {
+func (importer *GitImporter) Import(ctx context.Context, gitURL string, filters ...func(path string) bool) ([]*ent.Tome, error) {
 	// Clone Repository (In-Memory)
 	storage := memory.NewStorage()
 	repo, err := git.CloneContext(ctx, storage, nil, &git.CloneOptions{
@@ -81,7 +121,7 @@ func ImportFromRepo(ctx context.Context, graph *ent.Client, gitURL string, filte
 		}
 
 		// Import Tome
-		tome, err := importFromGitTree(ctx, repo, namespace, tree, path, graph)
+		tome, err := importer.importFromGitTree(ctx, repo, namespace, tree, path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to import tome (%q): %w", path, err)
 		}
@@ -126,7 +166,7 @@ func findTomePaths(tree *object.Tree) ([]string, error) {
 }
 
 // ImportFromGitTree imports a tome based on the provided path
-func importFromGitTree(ctx context.Context, repo *git.Repository, namespace string, root *object.Tree, path string, graph *ent.Client) (*ent.Tome, error) {
+func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Repository, namespace string, root *object.Tree, path string) (*ent.Tome, error) {
 	tree, err := root.Tree(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tome tree (%q): %w", path, err)
@@ -188,7 +228,7 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 
 		// Upload other files
 		// TODO: Namespace tomes to prevent multi-repo conflicts
-		fileID, err := graph.File.Create().
+		fileID, err := importer.graph.File.Create().
 			SetName(fmt.Sprintf("%s/%s", filepath.Base(path), name)).
 			SetContent(data).
 			OnConflict().
@@ -217,7 +257,7 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 	}
 
 	// Create the tome
-	tomeID, err := graph.Tome.Create().
+	tomeID, err := importer.graph.Tome.Create().
 		SetName(fmt.Sprintf("%s::%s", namespace, metadata.Name)).
 		SetDescription(metadata.Description).
 		SetAuthor(metadata.Author).
@@ -233,7 +273,7 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 		return nil, fmt.Errorf("failed to create tome %q: %w", metadata.Name, err)
 	}
 
-	return graph.Tome.Get(ctx, tomeID)
+	return importer.graph.Tome.Get(ctx, tomeID)
 }
 
 // parseNamespaceFromGit attempts to return a shortend namespace for the tome based on the git URL.

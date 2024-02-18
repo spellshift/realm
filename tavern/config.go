@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/x509"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/tomes"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
@@ -50,6 +52,9 @@ var (
 	EnvDBMaxIdleConns    = EnvInteger{"DB_MAX_IDLE_CONNS", 10}
 	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
+
+	// EnvGitSSHPrivateKey defines the private key used to import tomes from git repositories when the "ssh" schema is specified.
+	EnvGitSSHPrivateKey = EnvString{"GIT_SSH_PRIVATE_KEY", ""}
 
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
@@ -109,6 +114,22 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+}
+
+// NewGitImporter configures and returns a new TomeImporter using git.
+func (cfg *Config) NewGitImporter(client *ent.Client) *tomes.GitImporter {
+	var options []tomes.GitImportOption
+	privKeyStr := EnvGitSSHPrivateKey.String()
+	if privKeyStr != "" {
+		privKey, err := x509.ParseECPrivateKey([]byte(privKeyStr))
+		if err != nil {
+			log.Fatalf("[FATAL] Failed to parse git ssh private key: %v", err)
+		}
+		options = append(options, tomes.GitWithSSHPrivateKey(privKey))
+	} else {
+		log.Printf("[WARN] No value for %q provided, generating a new ECDSA P256 private key", EnvGitSSHPrivateKey.Key)
+	}
+	return tomes.NewGitImporter(client, options...)
 }
 
 // IsMetricsEnabled returns true if the /metrics http endpoint has been enabled.

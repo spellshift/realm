@@ -24,10 +24,13 @@ func TestImportFromRepo(t *testing.T) {
 	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
 	defer graph.Close()
 
+	// Initialize Git Importer
+	importer := tomes.NewGitImporter(graph)
+
 	filter := func(path string) bool {
 		return strings.Contains(path, "example")
 	}
-	_, err := tomes.ImportFromRepo(ctx, graph, localGit, filter)
+	_, err := importer.Import(ctx, localGit, filter)
 	require.NoError(t, err)
 
 	testTome := graph.Tome.Query().

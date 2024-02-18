@@ -14,7 +14,6 @@ import (
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
-	"realm.pub/tavern/tomes"
 )
 
 // DropAllData is the resolver for the dropAllData field.
@@ -169,7 +168,7 @@ func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.
 	}
 
 	if input.IncludeDirs == nil {
-		return tomes.ImportFromRepo(ctx, r.client, input.GitURL)
+		return r.importer.Import(ctx, input.GitURL)
 	}
 
 	// Filter to only include provided directories
@@ -186,7 +185,7 @@ func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.
 		}
 		return false
 	}
-	return tomes.ImportFromRepo(ctx, r.client, gitURL, filter)
+	return r.importer.Import(ctx, gitURL, filter)
 }
 
 // CreateTome is the resolver for the createTome field.

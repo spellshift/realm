@@ -12,13 +12,21 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+// A TomeImporter is responsible for importing tomes from the provided URL (filter based on provided filter options).
+type TomeImporter interface {
+	Import(ctx context.Context, srcURL string, filters ...func(path string) bool) ([]*ent.Tome, error)
+}
+
 // Resolver is the resolver root.
-type Resolver struct{ client *ent.Client }
+type Resolver struct {
+	client   *ent.Client
+	importer TomeImporter
+}
 
 // NewSchema creates a graphql executable schema.
-func NewSchema(client *ent.Client) graphql.ExecutableSchema {
+func NewSchema(client *ent.Client, importer TomeImporter) graphql.ExecutableSchema {
 	cfg := generated.Config{
-		Resolvers: &Resolver{client},
+		Resolvers: &Resolver{client, importer},
 	}
 	cfg.Directives.RequireRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, requiredRole models.Role) (interface{}, error) {
 		// Allow unauthenticated contexts to continue for open endpoints

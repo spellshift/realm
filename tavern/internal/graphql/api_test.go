@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/tomes"
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -67,10 +68,13 @@ func runTestCase(t *testing.T, path string) {
 	_, dbErr := db.Exec(tc.State)
 	require.NoError(t, dbErr, "failed to setup test db state")
 
+	// Initialize Git Importer
+	importer := tomes.NewGitImporter(graph)
+
 	// Server
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, importer)),
 		},
 		tavernhttp.WithAuthentication(graph),
 	)
