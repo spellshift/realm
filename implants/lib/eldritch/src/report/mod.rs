@@ -2,6 +2,7 @@ mod file_impl;
 mod process_list_impl;
 mod ssh_key_impl;
 mod user_password_impl;
+mod eprint_impl;
 
 use starlark::{
     collections::SmallMap,
@@ -25,12 +26,18 @@ crate::eldritch_lib!(ReportLibrary, "report_library");
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
+    fn eprint(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, message: String) -> anyhow::Result<NoneType> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        eprint_impl::eprint(env, message)?;
+        Ok(NoneType{})
+    }
+
+    #[allow(unused_variables)]
     fn file(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, path: String) -> anyhow::Result<NoneType> {
         let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
         file_impl::file(env, path)?;
         Ok(NoneType{})
     }
-
 
     #[allow(unused_variables)]
     fn process_list(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, process_list: UnpackList<SmallMap<String, Value>>) -> anyhow::Result<NoneType> {
