@@ -4,8 +4,12 @@ use anyhow::Result;
 pub fn eprint(env: &Environment, message: String) -> Result<()> {
     env.send(ReportErrorMessage {
         id: env.id(),
-        error: message,
-    });
+        error: message.clone(),
+    })?;
+
+    #[cfg(feature = "print_stdout")]
+    eprintln!("{}", message);
+
     Ok(())
 }
 
