@@ -55,7 +55,7 @@ mod test {
             one_error: TestCase{
                 id: 123,
                 tome: Tome{
-                    eldritch: String::from(r#"report.eprint(message="Beep Boop an error occured")"#),
+                    eldritch: String::from(r#"eprint(message="Beep Boop an error occured")"#),
                     parameters: HashMap::new(),
                     file_names: Vec::new(),
                 },
