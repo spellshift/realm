@@ -25,9 +25,10 @@
 
 use std::fmt;
 use std::fmt::Display;
+use std::sync::mpsc::Receiver;
 
-
-
+use eldritch::expression;
+use eldritch::runtime::Message;
 use starlark::errors::EvalMessage;
 use starlark::errors::EvalSeverity;
 use starlark::read_line::ReadLine;
@@ -78,7 +79,7 @@ impl Stats {
     }
 }
 
-fn drain(xs: impl Iterator<Item = EvalMessage>, json: bool, stats: &mut Stats) {
+fn old_drain(xs: impl Iterator<Item = EvalMessage>, json: bool, stats: &mut Stats) {
     for x in xs {
         stats.increment(x.severity);
         if json {
@@ -95,13 +96,27 @@ fn drain(xs: impl Iterator<Item = EvalMessage>, json: bool, stats: &mut Stats) {
     }
 }
 
+fn drain(rx: Receiver<Message>) {
+    for msg in rx {
+        println!("{:?}", msg);
+    }
+}
+
 fn interactive(ctx: &Context) -> anyhow::Result<()> {
     let mut rl = ReadLine::new("STARLARK_RUST_HISTFILE")?;
     loop {
         match rl.read_line("$> ")? {
             Some(line) => {
-                let mut stats = Stats::default();
-                drain(ctx.expression(line).messages, false, &mut stats);
+                // let mut stats = Stats::default();
+                // drain(ctx.expression(line).messages, false, &mut stats);
+                let runtime = tokio::runtime::Builder::new_multi_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap();
+
+                let rx = runtime.block_on(eldritch::expression(line))?;
+
+                drain(rx);
             }
             // User pressed EOF - disconnected terminal, or similar
             None => return Ok(()),

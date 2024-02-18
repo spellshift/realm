@@ -5,7 +5,7 @@ mod eval;
 pub mod messages;
 
 pub(crate) use environment::Environment;
-pub use eval::{start, Runtime};
+pub use eval::{expression, start, Runtime};
 pub use messages::Message;
 
 #[cfg(test)]

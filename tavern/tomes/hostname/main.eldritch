@@ -1,3 +1,4 @@
+eprint("TEST\n")
 print(sys.hostname())
 print("\n")
 print("\n")

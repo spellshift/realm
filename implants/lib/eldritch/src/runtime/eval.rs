@@ -27,13 +27,16 @@ use starlark::{
     syntax::{AstModule, Dialect},
     values::{dict::Dict, none::NoneType, AllocValue},
 };
-use std::sync::mpsc::{channel, Receiver};
+use std::{
+    collections::HashMap,
+    sync::mpsc::{channel, Receiver},
+};
 use tokio::task::JoinHandle;
 
 pub async fn start(id: i64, tome: Tome) -> Runtime {
     let (tx, rx) = channel::<Message>();
 
-    let env = Environment { id, tx };
+    let env: Environment = Environment { id, tx };
 
     let handle = tokio::task::spawn_blocking(move || {
         // Send exec_started_at
@@ -114,6 +117,30 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
         handle: Some(handle),
         rx,
     }
+}
+
+pub async fn expression(content: String) -> Result<Receiver<Message>> {
+    let (tx, rx) = channel::<Message>();
+    let env: Environment = Environment { id: 0, tx };
+    match run_impl(
+        &env,
+        &Tome {
+            eldritch: content,
+            parameters: HashMap::new(),
+            file_names: Vec::new(),
+        },
+    ) {
+        Ok(_) => {
+            #[cfg(debug_assertions)]
+            log::info!("expression evaluation successful");
+        }
+        Err(_) => {
+            #[cfg(debug_assertions)]
+            log::error!("expression evaluation failed");
+        }
+    }
+
+    Ok(rx)
 }
 
 fn run_impl(env: &Environment, tome: &Tome) -> Result<()> {

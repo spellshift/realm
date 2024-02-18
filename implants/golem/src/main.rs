@@ -87,7 +87,7 @@ fn main() -> anyhow::Result<()> {
         let (error_code, _result) = match runtime.block_on(run_tomes(parsed_tomes)) {
             Ok(response) => (0, response),
             Err(error) => {
-                eprint!("failed to execute tome {:?}", error);
+                eprint!("failed to execute tome:\n{:?}", error);
                 (-1, Vec::new())
             }
         };
