@@ -109,8 +109,16 @@ func findTomePaths(tree *object.Tree) ([]string, error) {
 		}
 
 		// If 'main.eldritch' is present, the parent directory is the tome root
-		if filepath.Base(name) == "main.eldritch" {
-			tomePaths = append(tomePaths, filepath.Dir(name))
+		base := filepath.Base(name)
+		if base == "main.eldritch" {
+			// Cannot use filepath.Dir on Windows, git does not use \ separators
+			tomePaths = append(
+				tomePaths,
+				strings.TrimSuffix(
+					strings.TrimSuffix(name, base), // Get the directory name
+					"/",                            // Remove the trailing /
+				),
+			)
 		}
 	}
 
@@ -181,7 +189,7 @@ func importFromGitTree(ctx context.Context, repo *git.Repository, namespace stri
 		// Upload other files
 		// TODO: Namespace tomes to prevent multi-repo conflicts
 		fileID, err := graph.File.Create().
-			SetName(filepath.Join(filepath.Base(path), name)).
+			SetName(fmt.Sprintf("%s/%s", filepath.Base(path), name)).
 			SetContent(data).
 			OnConflict().
 			UpdateNewValues().
