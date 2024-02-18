@@ -30,7 +30,7 @@ func (r *queryResolver) Files(ctx context.Context, where *ent.FileWhereInput) ([
 }
 
 // Quests is the resolver for the quests field.
-func (r *queryResolver) Quests(ctx context.Context, where *ent.QuestWhereInput) ([]*ent.Quest, error) {
+func (r *queryResolver) Quests(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) (*ent.QuestConnection, error) {
 	query, err := r.client.Quest.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
@@ -40,9 +40,9 @@ func (r *queryResolver) Quests(ctx context.Context, where *ent.QuestWhereInput) 
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.All(ctx)
+		return query.Paginate(ctx, after, first, before, last, ent.WithQuestOrder(orderBy))
 	}
-	return query.All(ctx)
+	return query.Paginate(ctx, after, first, before, last, ent.WithQuestOrder(orderBy))
 }
 
 // Tasks is the resolver for the tasks field.

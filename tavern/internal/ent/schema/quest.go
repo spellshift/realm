@@ -64,6 +64,8 @@ func (Quest) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Quest) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 		),

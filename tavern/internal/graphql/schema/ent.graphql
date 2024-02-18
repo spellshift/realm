@@ -1029,6 +1029,22 @@ type Quest implements Node {
   """User that created the quest if available."""
   creator: User
 }
+"""A connection to a list of items."""
+type QuestConnection {
+  """A list of edges."""
+  edges: [QuestEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type QuestEdge {
+  """The item at the end of the edge."""
+  node: Quest
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
 """Ordering options for Quest connections"""
 input QuestOrder {
   """The ordering direction."""

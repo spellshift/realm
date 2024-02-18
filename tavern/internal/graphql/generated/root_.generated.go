@@ -154,7 +154,7 @@ type ComplexityRoot struct {
 		Me      func(childComplexity int) int
 		Node    func(childComplexity int, id int) int
 		Nodes   func(childComplexity int, ids []int) int
-		Quests  func(childComplexity int, where *ent.QuestWhereInput) int
+		Quests  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Tags    func(childComplexity int, where *ent.TagWhereInput) int
 		Tasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tomes   func(childComplexity int, where *ent.TomeWhereInput) int
@@ -171,6 +171,17 @@ type ComplexityRoot struct {
 		Parameters     func(childComplexity int) int
 		Tasks          func(childComplexity int) int
 		Tome           func(childComplexity int) int
+	}
+
+	QuestConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	QuestEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Tag struct {
@@ -932,7 +943,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Quests(childComplexity, args["where"].(*ent.QuestWhereInput)), true
+		return e.complexity.Query.Quests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
@@ -1044,6 +1055,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Quest.Tome(childComplexity), true
+
+	case "QuestConnection.edges":
+		if e.complexity.QuestConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.Edges(childComplexity), true
+
+	case "QuestConnection.pageInfo":
+		if e.complexity.QuestConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.PageInfo(childComplexity), true
+
+	case "QuestConnection.totalCount":
+		if e.complexity.QuestConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.TotalCount(childComplexity), true
+
+	case "QuestEdge.cursor":
+		if e.complexity.QuestEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.QuestEdge.Cursor(childComplexity), true
+
+	case "QuestEdge.node":
+		if e.complexity.QuestEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.QuestEdge.Node(childComplexity), true
 
 	case "Tag.hosts":
 		if e.complexity.Tag.Hosts == nil {
@@ -2506,6 +2552,22 @@ type Quest implements Node {
   """User that created the quest if available."""
   creator: User
 }
+"""A connection to a list of items."""
+type QuestConnection {
+  """A list of edges."""
+  edges: [QuestEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type QuestEdge {
+  """The item at the end of the edge."""
+  node: Quest
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
 """Ordering options for Quest connections"""
 input QuestOrder {
   """The ordering direction."""
@@ -3196,7 +3258,25 @@ scalar Uint64
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
-  quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
+  quests(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Quests returned from the connection."""
+    orderBy: [QuestOrder!]
+
+    """Filtering options for Quests returned from the connection."""
+    where: QuestWhereInput
+  ): QuestConnection! @requireRole(role: USER)
   tasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

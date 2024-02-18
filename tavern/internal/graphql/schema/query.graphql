@@ -1,6 +1,24 @@
 extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
-  quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
+  quests(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Quests returned from the connection."""
+    orderBy: [QuestOrder!]
+
+    """Filtering options for Quests returned from the connection."""
+    where: QuestWhereInput
+  ): QuestConnection! @requireRole(role: USER)
   tasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

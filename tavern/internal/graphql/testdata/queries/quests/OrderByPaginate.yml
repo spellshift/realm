@@ -10,16 +10,25 @@ state: |
   INSERT INTO `quests` (id, quest_tome, name, created_at, last_modified_at)
     VALUES (7000,2000,"Test Quest","2023-03-04 14:51:13","2023-03-04 14:51:13");
   INSERT INTO `quests` (id, quest_tome, name, created_at, last_modified_at)
-    VALUES (7001,2000,"Test Quest 2","2023-03-04 14:51:13","2023-03-04 14:51:13");
+    VALUES (7001,2000,"Test Quest 2","2023-03-04 14:51:13","2023-03-04 14:51:14");
 requestor:
   session_token: secretToken
 query: |
   query Quests {
-    quests(where: {id: 7000}) {
+    quests(
+      first: 1,
+      orderBy: {
+        direction: DESC,
+        field: LAST_MODIFIED_AT
+      }
+    ) {
       edges {
         node {
           id
         }
+      }
+      pageInfo {
+        hasNextPage
       }
     }
   }
@@ -27,4 +36,6 @@ expected:
   quests:
     edges:
       - node:
-          id: "7000"
+          id: "7001"
+    pageInfo:
+      hasNextPage: true

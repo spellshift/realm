@@ -15,11 +15,14 @@ requestor:
   session_token: secretToken
 query: |
   query Quests {
-    quests(where: {id: 7000}) {
+    quests(first: 1) {
       edges {
         node {
           id
         }
+      }
+      pageInfo {
+        hasNextPage
       }
     }
   }
@@ -28,3 +31,5 @@ expected:
     edges:
       - node:
           id: "7000"
+    pageInfo:
+      hasNextPage: true

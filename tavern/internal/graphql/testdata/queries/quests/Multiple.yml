@@ -15,7 +15,7 @@ requestor:
   session_token: secretToken
 query: |
   query Quests {
-    quests(where: {id: 7000}) {
+    quests {
       edges {
         node {
           id
@@ -28,3 +28,5 @@ expected:
     edges:
       - node:
           id: "7000"
+      - node:
+          id: "7001"
