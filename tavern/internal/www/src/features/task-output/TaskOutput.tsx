@@ -7,6 +7,8 @@ import BeaconTile from "../../components/BeaconTile";
 import TomeAccordion from "../../components/TomeAccordion";
 import { Image } from "@chakra-ui/react";
 import OutputWrapper from "./OutputWrapper";
+import { CodeBlock, tomorrow } from "react-code-blocks";
+import ErrorWrapper from "./ErrorWrapper";
 
 type Props = {
   isOpen: boolean,
@@ -113,6 +115,9 @@ export const TaskOutput = (props: Props) => {
                           </div>
                         </div>
                       )}
+                      {selectedTask && selectedTask.error.length > 0 &&
+                        <ErrorWrapper error={selectedTask.error} />
+                      }
                       {selectedTask && selectedTask?.id && <OutputWrapper id={selectedTask.id} />}
                     </div>
                   </div>

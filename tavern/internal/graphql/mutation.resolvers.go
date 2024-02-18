@@ -7,11 +7,14 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/graphql/generated"
+	"realm.pub/tavern/internal/graphql/models"
+	"realm.pub/tavern/tomes"
 )
 
 // DropAllData is the resolver for the dropAllData field.
@@ -155,6 +158,35 @@ func (r *mutationResolver) CreateTag(ctx context.Context, input ent.CreateTagInp
 // UpdateTag is the resolver for the updateTag field.
 func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error) {
 	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
+}
+
+// ImportTomesFromGit is the resolver for the importTomesFromGit field.
+func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.ImportTomesFromGitInput) ([]*ent.Tome, error) {
+	// Ensure a schema is set (or set https:// by default)
+	gitURL := input.GitURL
+	if !strings.HasPrefix(gitURL, "http://") && !strings.HasPrefix(gitURL, "ssh://") {
+		gitURL = fmt.Sprintf("https://%s", gitURL)
+	}
+
+	if input.IncludeDirs == nil {
+		return tomes.ImportFromRepo(ctx, r.client, input.GitURL)
+	}
+
+	// Filter to only include provided directories
+	filter := func(path string) bool {
+		for _, prefix := range input.IncludeDirs {
+			// Ignore Leading /
+			path = strings.TrimPrefix(path, "/")
+			prefix = strings.TrimPrefix(prefix, "/")
+
+			// Include if matching
+			if strings.HasPrefix(path, prefix) {
+				return true
+			}
+		}
+		return false
+	}
+	return tomes.ImportFromRepo(ctx, r.client, gitURL, filter)
 }
 
 // CreateTome is the resolver for the createTome field.

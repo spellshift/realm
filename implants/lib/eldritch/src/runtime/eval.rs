@@ -184,7 +184,14 @@ impl Runtime {
      * Parse an Eldritch tome into a starlark Abstract Syntax Tree (AST) Module.
      */
     fn parse(tome: &Tome) -> anyhow::Result<AstModule> {
-        match AstModule::parse("main", tome.eldritch.to_string(), &Dialect::Extended) {
+        match AstModule::parse(
+            "main",
+            tome.eldritch.to_string(),
+            &Dialect {
+                enable_f_strings: true,
+                ..Dialect::Extended
+            },
+        ) {
             Ok(v) => Ok(v),
             Err(err) => Err(err.into_anyhow()),
         }

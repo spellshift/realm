@@ -112,11 +112,17 @@ func_shell("whoami")
         .to_string();
 
         // Setup starlark interpreter with handle to our function
-        let ast =
-            match AstModule::parse("test.eldritch", test_content.to_owned(), &Dialect::Standard) {
-                Ok(res) => res,
-                Err(err) => return Err(err.into_anyhow()),
-            };
+        let ast = match AstModule::parse(
+            "test.eldritch",
+            test_content.to_owned(),
+            &Dialect {
+                enable_f_strings: true,
+                ..Dialect::Extended
+            },
+        ) {
+            Ok(res) => res,
+            Err(err) => return Err(err.into_anyhow()),
+        };
 
         #[starlark_module]
         #[allow(clippy::needless_lifetimes)]
