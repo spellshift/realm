@@ -29,7 +29,6 @@ hex-literal = { workspace = true }
 ipnetwork = { workspace = true }
 log = { workspace = true }
 md5 = { workspace = true }
-netstat2 = { workspace = true }
 nix = { workspace = true }
 notify = { workspace = true }
 object = { workspace = true }
@@ -75,6 +74,9 @@ winreg = { workspace = true }
 
 [target.'cfg(not(windows))'.dependencies]
 pnet = { workspace = true }
+
+[target.'cfg(not(target_os = "freebsd"))'.dependencies]
+netstat2 = { workspace = true }
 
 [dev-dependencies]
 transport = { workspace = true, features = ["mock"]}
