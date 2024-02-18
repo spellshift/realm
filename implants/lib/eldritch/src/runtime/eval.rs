@@ -5,6 +5,7 @@ use crate::{
     file::FileLibrary,
     pivot::PivotLibrary,
     process::ProcessLibrary,
+    regex::RegexLibrary,
     report::ReportLibrary,
     runtime::{
         messages::{reduce, Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
@@ -157,6 +158,7 @@ impl Runtime {
             const crypto: CryptoLibrary = CryptoLibrary;
             const time: TimeLibrary = TimeLibrary;
             const report: ReportLibrary = ReportLibrary;
+            const regex: RegexLibrary = RegexLibrary;
         }
 
         GlobalsBuilder::extended_by(&[
@@ -182,7 +184,14 @@ impl Runtime {
      * Parse an Eldritch tome into a starlark Abstract Syntax Tree (AST) Module.
      */
     fn parse(tome: &Tome) -> anyhow::Result<AstModule> {
-        match AstModule::parse("main", tome.eldritch.to_string(), &Dialect::Extended) {
+        match AstModule::parse(
+            "main",
+            tome.eldritch.to_string(),
+            &Dialect {
+                enable_f_strings: true,
+                ..Dialect::Extended
+            },
+        ) {
             Ok(v) => Ok(v),
             Err(err) => Err(err.into_anyhow()),
         }

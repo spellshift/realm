@@ -12,6 +12,7 @@ type QuestTableProps = {
     queued: number,
     outputCount: number,
     lastUpdated: string | null,
+    errorCount: number,
 }
 
 type Props = {
@@ -25,7 +26,7 @@ export const QuestTable = (props: Props) => {
     const currentDate = new Date();
 
     const onToggle = (row: any) => {
-        navigate(`/results/${row?.original?.id}`)
+        navigate(`/tasks/${row?.original?.id}`)
     }
 
     const columns: ColumnDef<any>[] = [
@@ -50,7 +51,7 @@ export const QuestTable = (props: Props) => {
         },
         {
             id: "lastUpdated",
-            header: 'Last updated',
+            header: 'Updated',
             maxSize: 100,
             accessorFn: row => formatDistance(new Date(row.lastUpdated), currentDate),
             footer: props => props.column.id,
@@ -66,9 +67,9 @@ export const QuestTable = (props: Props) => {
         },
         {
             id: "finished",
-            header: 'Finished Tasks',
+            header: 'Finished',
             accessorFn: row => row,
-            maxSize: 100,
+            maxSize: 60,
             cell: (row: any) => {
                 const rowData = row.row.original;
                 const finished = rowData.finished;
@@ -93,9 +94,9 @@ export const QuestTable = (props: Props) => {
         },
         {
             id: "output",
-            header: 'Output available',
+            header: 'Output',
             accessorKey: "outputCount",
-            maxSize: 100,
+            maxSize: 60,
             cell: (cellData: any) => {
                 const output = cellData.getValue();
 
@@ -117,8 +118,33 @@ export const QuestTable = (props: Props) => {
             sortingFn: "alphanumeric"
         },
         {
+            id: "error",
+            header: 'Error',
+            accessorKey: "errorCount",
+            maxSize: 60,
+            cell: (cellData: any) => {
+                const error = cellData.getValue();
+
+                if (error === 0) {
+                    return (
+                        <Badge ml='1' px='4' colorScheme='alphaWhite' fontSize="font-base">
+                            {error}
+                        </Badge>
+                    );
+                }
+
+                return (
+                    <Badge ml='1' px='4' colorScheme='red' fontSize="font-base">
+                        {error}
+                    </Badge>
+                );
+            },
+            footer: (props: any) => props.column.id,
+            sortingFn: "alphanumeric"
+        },
+        {
             id: "creator",
-            header: 'Created by',
+            header: 'Creator',
             maxSize: 100,
             accessorFn: row => row.creator,
             footer: props => props.column.id,

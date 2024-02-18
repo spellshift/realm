@@ -37,7 +37,7 @@ export const useSubmitQuest = () => {
     }
 
     const handleOnCompleted = (result: any) => {
-        navigate(`/results/${result?.createQuest?.id}`);
+        navigate(`/tasks/${result?.createQuest?.id}`);
     }
 
     const [createQuestMutation, {loading, reset}] = useMutation(CREATE_QUEST_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [

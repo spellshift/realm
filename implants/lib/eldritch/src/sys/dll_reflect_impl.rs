@@ -534,7 +534,10 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_in
         match AstModule::parse(
             "test.eldritch",
             test_eldritch_script.to_owned(),
-            &Dialect::Standard,
+            &Dialect {
+                enable_f_strings: true,
+                ..Dialect::Extended
+            },
         ) {
             Ok(res) => ast = res,
             Err(err) => return Err(err.into_anyhow()),

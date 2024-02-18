@@ -3,12 +3,18 @@ name = "imix"
 version = "0.0.5"
 edition = "2021"
 
+[features]
+# Check if compiled by imix
+win_service = []
+default = []
+
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }
 pb = {workspace = true }
 transport = { workspace = true }
 
 anyhow = { workspace = true }
+env_logger = "0.11.2"
 chrono = { workspace = true , features = ["serde"] }
 clap = { workspace = true }
 default-net = { workspace = true }
@@ -26,6 +32,9 @@ tonic = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["v4","fast-rng"] }
 whoami = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-service = "0.6.0"
 
 [dev-dependencies]
 httptest = { workspace = true }

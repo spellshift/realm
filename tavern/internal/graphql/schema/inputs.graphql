@@ -40,3 +40,13 @@ input SubmitTaskResultInput {
   """Error message captured as the result of task execution failure."""
   error: String
 }
+input ImportTomesFromGitInput {
+  """Specify a git URL to obtain the tomes from."""
+  gitURL: String!
+
+  """
+  Optionally, specify directories to include.
+  Only tomes that have a main.eldritch in one of these directory prefixes will be included.
+  """
+  includeDirs: [String!]
+}

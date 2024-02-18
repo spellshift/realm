@@ -55,7 +55,7 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 		baseSrv.Stop()
 		assert.NoError(t, graph.Close())
 		if err := <-grpcErrCh; err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-			t.Fatalf("failed to serve grpc")
+			t.Fatalf("failed to serve grpc: %v", err)
 		}
 	}
 }
