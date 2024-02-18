@@ -127,16 +127,17 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateQuest  func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateTag    func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome   func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteTome   func(childComplexity int, tomeID int) int
-		DropAllData  func(childComplexity int) int
-		UpdateBeacon func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost   func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateTag    func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome   func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser   func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateQuest        func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateTag          func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome         func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteTome         func(childComplexity int, tomeID int) int
+		DropAllData        func(childComplexity int) int
+		ImportTomesFromGit func(childComplexity int, input models.ImportTomesFromGitInput) int
+		UpdateBeacon       func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost         func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateTag          func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome         func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser         func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -754,6 +755,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DropAllData(childComplexity), true
 
+	case "Mutation.importTomesFromGit":
+		if e.complexity.Mutation.ImportTomesFromGit == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_importTomesFromGit_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ImportTomesFromGit(childComplexity, args["input"].(models.ImportTomesFromGitInput)), true
+
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
 			break
@@ -1343,6 +1356,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHostProcessOrder,
 		ec.unmarshalInputHostProcessWhereInput,
 		ec.unmarshalInputHostWhereInput,
+		ec.unmarshalInputImportTomesFromGitInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
@@ -3240,6 +3254,7 @@ scalar Uint64
     ###
     # Tome
     ###
+    importTomesFromGit(input: ImportTomesFromGitInput!,): [Tome!] @requireRole(role: USER)
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
     updateTome(tomeID: ID!, input: UpdateTomeInput!,): Tome! @requireRole(role: ADMIN)
     deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)
@@ -3291,6 +3306,16 @@ input SubmitTaskResultInput {
 
   """Error message captured as the result of task execution failure."""
   error: String
+}
+input ImportTomesFromGitInput {
+  """Specify a git URL to obtain the tomes from."""
+  gitURL: String!
+
+  """
+  Optionally, specify directories to include.
+  Only tomes that have a main.eldritch in one of these directory prefixes will be included.
+  """
+  includeDirs: [String!]
 }
 `, BuiltIn: false},
 }

@@ -2,28 +2,36 @@ package tomes_test
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/tomes"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
-func TestUploadTomes(t *testing.T) {
-	// Setup
+func TestImportFromRepo(t *testing.T) {
+	localGit := filepath.Join("..", "..", "..", "realm")
 	ctx := context.Background()
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	var (
+		driverName     = "sqlite3"
+		dataSourceName = "file:ent?mode=memory&cache=shared&_fk=1"
+	)
+	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
 	defer graph.Close()
 
-	// Assert our example tome is there
-	require.NoError(t, tomes.UploadTomes(ctx, graph, tomes.FileSystem))
+	filter := func(path string) bool {
+		return strings.Contains(path, "example")
+	}
+	_, err := tomes.ImportFromRepo(ctx, graph, localGit, filter)
+	require.NoError(t, err)
+
 	testTome := graph.Tome.Query().
-		Where(tome.NameContains("Example")).
+		Where(tome.NameContains("example")).
 		OnlyX(ctx)
 	require.NotNil(t, testTome)
 	assert.Equal(t, "print(input_params['msg'])", strings.TrimSpace(testTome.Eldritch))
@@ -32,6 +40,5 @@ func TestUploadTomes(t *testing.T) {
 	testTomeFiles, err := testTome.Files(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, testTomeFiles, 1)
-	assert.Equal(t, "example/linux/test-file", testTomeFiles[0].Name)
 	assert.Equal(t, []byte("This file exists"), testTomeFiles[0].Content)
 }
