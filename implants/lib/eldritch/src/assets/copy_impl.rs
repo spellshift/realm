@@ -217,7 +217,7 @@ mod tests {
             .collect::<Vec<&Message>>();
         assert!(errors.is_empty());
 
-        let mut contents = String::new();
+        let mut contents: String = String::new();
         tmp_file_dst.read_to_string(&mut contents)?;
         assert!(contents.contains("hello from an embedded shell script"));
 
