@@ -1,13 +1,31 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use glob::glob;
 use std::fs;
 
+/*
+               if !entry_path.exists() {
+                   return Err(anyhow::anyhow!(
+                       "file.read: pattern {} could not find path {}",
+                       path,
+                       entry_path.to_str().context("Failed to convert to str")?
+                   ));
+               }
+*/
+
 pub fn read(path: String) -> Result<String> {
     let mut res: String = String::from("");
-    for entry in glob(&path)? {
+    let glob_res = glob(&path)?.collect::<Vec<_>>();
+    if glob_res.is_empty() {
+        return Err(anyhow::anyhow!(
+            "file.read: pattern {} found no results",
+            path,
+        ));
+    }
+
+    for entry in glob_res {
         match entry {
-            Ok(enty_path) => {
-                let data = fs::read_to_string(enty_path)?;
+            Ok(entry_path) => {
+                let data = fs::read_to_string(entry_path)?;
                 res.push_str(data.as_str());
             }
             Err(local_err) => {
@@ -68,6 +86,7 @@ mod tests {
         assert!(res.is_err());
         Ok(())
     }
+
     #[test]
     fn test_read_glob() -> anyhow::Result<()> {
         // Create file
