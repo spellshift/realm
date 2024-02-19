@@ -29,8 +29,6 @@
           url: "admin-guide/tavern#user-interface"
         - title: "GraphQL API"
           url: "admin-guide/tavern#graphql-api"
-        - title: "Agent Development"
-          url: "admin-guide/tavern#agent-development"
 - title: Developer Guide
   url: dev-guide/introduction
   links:
@@ -50,6 +48,8 @@
       children:
         - title: "CDN API"
           url: "admin-guide/tavern#cdn-api"
+        - title: "Agent Development"
+          url: "admin-guide/tavern#agent-development"
     - title: "Eldritch"
       url: "dev-guide/eldritch"
       children:
