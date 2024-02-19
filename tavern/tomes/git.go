@@ -2,8 +2,6 @@ package tomes
 
 import (
 	"context"
-	"crypto/ed25519"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -26,13 +24,6 @@ import (
 // GitImportOption provides configuration for creating a new GitImporter.
 type GitImportOption func(*GitImporter)
 
-// GitWithSSHSigner enables a GitImporter to use a private key for ssh clones.
-func GitWithSSHSigner(signer ssh.Signer) GitImportOption {
-	return func(importer *GitImporter) {
-		importer.signer = signer
-	}
-}
-
 // NewGitImporter initializes and returns a new GitImporter.
 // If no SSH Private Key is provided, a new ECDSA P256 private key is generated.
 // This panics if a new SSH Private Key cannot be generated.
@@ -43,27 +34,13 @@ func NewGitImporter(graph *ent.Client, options ...GitImportOption) *GitImporter 
 	for _, opt := range options {
 		opt(importer)
 	}
-	if importer.signer == nil {
-		_, privKey, err := ed25519.GenerateKey(rand.Reader)
-		if err != nil {
-			panic(fmt.Errorf("failed to generate ed25519 private key: %w", err))
-		}
-
-		signer, err := ssh.NewSignerFromKey(privKey)
-		if err != nil {
-			panic(fmt.Errorf("could not convert private key to ssh signer: %v", err))
-		}
-
-		importer.signer = signer
-	}
 
 	return importer
 }
 
 // A GitImporter imports tomes from a provided Git URL.
 type GitImporter struct {
-	signer ssh.Signer
-	graph  *ent.Client
+	graph *ent.Client
 }
 
 // Import clones a git repository from the provided URL in memory.
@@ -74,13 +51,17 @@ type GitImporter struct {
 //
 // Provided filters on tome paths may be used to limit included directories by returning true if the
 // result should be included.
-func (importer *GitImporter) Import(ctx context.Context, gitURL string, filters ...func(path string) bool) ([]*ent.Tome, error) {
+func (importer *GitImporter) Import(ctx context.Context, entRepo *ent.Repository, filters ...func(path string) bool) error {
 	// Use Private Key Auth for SSH
 	var authMethod *gitssh.PublicKeys
-	if importer.signer != nil && strings.HasPrefix(gitURL, "ssh://") {
+	if strings.HasPrefix(entRepo.URL, "ssh://") {
+		privKey, err := ssh.ParsePrivateKey([]byte(entRepo.PrivateKey))
+		if err != nil {
+			return fmt.Errorf("failed to parse private key for repository: %w", err)
+		}
 		authMethod = &gitssh.PublicKeys{
 			User:   "git",
-			Signer: importer.signer,
+			Signer: privKey,
 			HostKeyCallbackHelper: gitssh.HostKeyCallbackHelper{
 				// Ignore Host Keys
 				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
@@ -91,43 +72,42 @@ func (importer *GitImporter) Import(ctx context.Context, gitURL string, filters 
 	// Clone Repository (In-Memory)
 	storage := memory.NewStorage()
 	repo, err := git.CloneContext(ctx, storage, nil, &git.CloneOptions{
-		URL:          gitURL,
+		URL:          entRepo.URL,
 		SingleBranch: true,
 		Depth:        1,
 		Auth:         authMethod,
 		Tags:         git.NoTags,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to clone: %w", err)
+		return fmt.Errorf("failed to clone: %w", err)
 	}
 
 	// Get HEAD
 	head, err := repo.Head()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get repository HEAD: %w", err)
+		return fmt.Errorf("failed to get repository HEAD: %w", err)
 	}
 
 	// Get Commit
 	commit, err := repo.CommitObject(head.Hash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get commit object (HEAD): %w", err)
+		return fmt.Errorf("failed to get commit object (HEAD): %w", err)
 	}
 
 	// Get Root File Tree
 	tree, err := repo.TreeObject(commit.TreeHash)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get tree (%q): %w", commit.Hash, err)
+		return fmt.Errorf("failed to get tree (%q): %w", commit.Hash, err)
 	}
 
 	// Get Tome Paths
 	tomePaths, err := findTomePaths(tree)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Import Tomes
-	namespace := parseNamespaceFromGit(gitURL)
-	tomes := make([]*ent.Tome, 0, len(tomePaths))
+	namespace := parseNamespaceFromGit(entRepo.URL)
 	for _, path := range tomePaths {
 		// Apply Filters
 		include := true
@@ -142,21 +122,19 @@ func (importer *GitImporter) Import(ctx context.Context, gitURL string, filters 
 		}
 
 		// Import Tome
-		tome, err := importer.importFromGitTree(ctx, repo, namespace, tree, path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to import tome (%q): %w", path, err)
+		if err := importer.importFromGitTree(ctx, repo, entRepo, namespace, tree, path); err != nil {
+			return fmt.Errorf("failed to import tome (%q): %w", path, err)
 		}
-		tomes = append(tomes, tome)
 	}
 
-	return tomes, nil
+	return nil
 }
 
 // ImportFromGitTree imports a tome based on the provided path
-func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Repository, namespace string, root *object.Tree, path string) (*ent.Tome, error) {
+func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Repository, entRepo *ent.Repository, namespace string, root *object.Tree, path string) error {
 	tree, err := root.Tree(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get tome tree (%q): %w", path, err)
+		return fmt.Errorf("failed to get tome tree (%q): %w", path, err)
 	}
 
 	walker := object.NewTreeWalker(tree, true, make(map[plumbing.Hash]bool))
@@ -172,7 +150,7 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("failed to walk tome tree (%q): %w", name, err)
+			return fmt.Errorf("failed to walk tome tree (%q): %w", name, err)
 		}
 
 		// Skip Directory Files
@@ -183,25 +161,25 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 		// Read File Data
 		blob, err := repo.BlobObject(entry.Hash)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get tome blob (%q): %w", name, err)
+			return fmt.Errorf("failed to get tome blob (%q): %w", name, err)
 		}
 		reader, err := blob.Reader()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get tome blob reader (%q): %w", name, err)
+			return fmt.Errorf("failed to get tome blob reader (%q): %w", name, err)
 		}
 		defer reader.Close()
 		data, err := io.ReadAll(reader)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read tome file (%q): %w", name, err)
+			return fmt.Errorf("failed to read tome file (%q): %w", name, err)
 		}
 
 		// Parse metadata.yml
 		if filepath.Base(name) == "metadata.yml" {
 			if err := yaml.Unmarshal(data, &metadata); err != nil {
-				return nil, fmt.Errorf("failed to parse tome metadata %q: %w", name, err)
+				return fmt.Errorf("failed to parse tome metadata %q: %w", name, err)
 			}
 			if err := metadata.Validate(); err != nil {
-				return nil, fmt.Errorf("invalid tome metadata %q: %w", name, err)
+				return fmt.Errorf("invalid tome metadata %q: %w", name, err)
 			}
 
 			continue
@@ -222,29 +200,29 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 			UpdateNewValues().
 			ID(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to upload tome file %q: %w", name, err)
+			return fmt.Errorf("failed to upload tome file %q: %w", name, err)
 		}
 		tomeFileIDs = append(tomeFileIDs, fileID)
 	}
 
 	// Ensure Metadata was found
 	if metadata.Name == "" {
-		return nil, fmt.Errorf("tome must include 'metadata.yml' file (%q)", path)
+		return fmt.Errorf("tome must include 'metadata.yml' file (%q)", path)
 	}
 
 	// Ensure Eldritch not empty
 	if eldritch == "" {
-		return nil, fmt.Errorf("tome must include non-empty 'eldritch.main' file (%q)", path)
+		return fmt.Errorf("tome must include non-empty 'eldritch.main' file (%q)", path)
 	}
 
 	// Marshal Params
 	paramdefs, err := json.Marshal(metadata.ParamDefs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal param defs for %q: %w", path, err)
+		return fmt.Errorf("failed to marshal param defs for %q: %w", path, err)
 	}
 
 	// Create the tome
-	tomeID, err := importer.graph.Tome.Create().
+	_, err = importer.graph.Tome.Create().
 		SetName(fmt.Sprintf("%s::%s", namespace, metadata.Name)).
 		SetDescription(metadata.Description).
 		SetAuthor(metadata.Author).
@@ -257,16 +235,9 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 		UpdateNewValues().
 		ID(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create tome %q: %w", metadata.Name, err)
+		return fmt.Errorf("failed to create tome %q: %w", metadata.Name, err)
 	}
-
-	return importer.graph.Tome.Get(ctx, tomeID)
-}
-
-// SSHPublicKey returns a PEM-Encoded PKIX ASN.1DER encoded public key associated with the private key used for cloning.
-func (importer *GitImporter) SSHPublicKey() string {
-	pubKey := importer.signer.PublicKey()
-	return string(ssh.MarshalAuthorizedKey(pubKey))
+	return nil
 }
 
 // findTomePaths returns a list of valid paths to the root directory of a Tome.

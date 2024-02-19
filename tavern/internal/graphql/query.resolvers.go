@@ -61,6 +61,22 @@ func (r *queryResolver) Tasks(ctx context.Context, after *entgql.Cursor[int], fi
 	return query.Paginate(ctx, after, first, before, last, ent.WithTaskOrder(orderBy))
 }
 
+// Repositories is the resolver for the repositories field.
+func (r *queryResolver) Repositories(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) (*ent.RepositoryConnection, error) {
+	query, err := r.client.Repository.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithRepositoryOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithRepositoryOrder(orderBy))
+}
+
 // Beacons is the resolver for the beacons field.
 func (r *queryResolver) Beacons(ctx context.Context, where *ent.BeaconWhereInput) ([]*ent.Beacon, error) {
 	query, err := r.client.Beacon.Query().CollectFields(ctx)
@@ -147,9 +163,4 @@ func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 		return authUser, nil
 	}
 	return nil, fmt.Errorf("no authenticated user present in request context")
-}
-
-// GitPublicKey is the resolver for the gitPublicKey field.
-func (r *queryResolver) GitPublicKey(ctx context.Context) (string, error) {
-	return r.git.SSHPublicKey(), nil
 }

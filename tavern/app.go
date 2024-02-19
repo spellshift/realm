@@ -229,8 +229,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client, git graphql.GitTomeImporter) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client, git))
+func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// GraphQL Logging

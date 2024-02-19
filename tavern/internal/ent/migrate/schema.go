@@ -222,6 +222,21 @@ var (
 			},
 		},
 	}
+	// RepositoriesColumns holds the columns for the "repositories" table.
+	RepositoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "url", Type: field.TypeString, Unique: true},
+		{Name: "public_key", Type: field.TypeString},
+		{Name: "private_key", Type: field.TypeString},
+	}
+	// RepositoriesTable holds the schema information for the "repositories" table.
+	RepositoriesTable = &schema.Table{
+		Name:       "repositories",
+		Columns:    RepositoriesColumns,
+		PrimaryKey: []*schema.Column{RepositoriesColumns[0]},
+	}
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -373,6 +388,7 @@ var (
 		HostFilesTable,
 		HostProcessesTable,
 		QuestsTable,
+		RepositoriesTable,
 		TagsTable,
 		TasksTable,
 		TomesTable,

@@ -22,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -47,6 +48,8 @@ type Client struct {
 	HostProcess *HostProcessClient
 	// Quest is the client for interacting with the Quest builders.
 	Quest *QuestClient
+	// Repository is the client for interacting with the Repository builders.
+	Repository *RepositoryClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Task is the client for interacting with the Task builders.
@@ -77,6 +80,7 @@ func (c *Client) init() {
 	c.HostFile = NewHostFileClient(c.config)
 	c.HostProcess = NewHostProcessClient(c.config)
 	c.Quest = NewQuestClient(c.config)
+	c.Repository = NewRepositoryClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tome = NewTomeClient(c.config)
@@ -173,6 +177,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		HostFile:       NewHostFileClient(cfg),
 		HostProcess:    NewHostProcessClient(cfg),
 		Quest:          NewQuestClient(cfg),
+		Repository:     NewRepositoryClient(cfg),
 		Tag:            NewTagClient(cfg),
 		Task:           NewTaskClient(cfg),
 		Tome:           NewTomeClient(cfg),
@@ -203,6 +208,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		HostFile:       NewHostFileClient(cfg),
 		HostProcess:    NewHostProcessClient(cfg),
 		Quest:          NewQuestClient(cfg),
+		Repository:     NewRepositoryClient(cfg),
 		Tag:            NewTagClient(cfg),
 		Task:           NewTaskClient(cfg),
 		Tome:           NewTomeClient(cfg),
@@ -237,7 +243,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Quest,
-		c.Tag, c.Task, c.Tome, c.User,
+		c.Repository, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -248,7 +254,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Quest,
-		c.Tag, c.Task, c.Tome, c.User,
+		c.Repository, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -271,6 +277,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.HostProcess.mutate(ctx, m)
 	case *QuestMutation:
 		return c.Quest.mutate(ctx, m)
+	case *RepositoryMutation:
+		return c.Repository.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
 	case *TaskMutation:
@@ -1505,6 +1513,140 @@ func (c *QuestClient) mutate(ctx context.Context, m *QuestMutation) (Value, erro
 	}
 }
 
+// RepositoryClient is a client for the Repository schema.
+type RepositoryClient struct {
+	config
+}
+
+// NewRepositoryClient returns a client for the Repository from the given config.
+func NewRepositoryClient(c config) *RepositoryClient {
+	return &RepositoryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `repository.Hooks(f(g(h())))`.
+func (c *RepositoryClient) Use(hooks ...Hook) {
+	c.hooks.Repository = append(c.hooks.Repository, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `repository.Intercept(f(g(h())))`.
+func (c *RepositoryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Repository = append(c.inters.Repository, interceptors...)
+}
+
+// Create returns a builder for creating a Repository entity.
+func (c *RepositoryClient) Create() *RepositoryCreate {
+	mutation := newRepositoryMutation(c.config, OpCreate)
+	return &RepositoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Repository entities.
+func (c *RepositoryClient) CreateBulk(builders ...*RepositoryCreate) *RepositoryCreateBulk {
+	return &RepositoryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RepositoryClient) MapCreateBulk(slice any, setFunc func(*RepositoryCreate, int)) *RepositoryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RepositoryCreateBulk{err: fmt.Errorf("calling to RepositoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RepositoryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RepositoryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Repository.
+func (c *RepositoryClient) Update() *RepositoryUpdate {
+	mutation := newRepositoryMutation(c.config, OpUpdate)
+	return &RepositoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RepositoryClient) UpdateOne(r *Repository) *RepositoryUpdateOne {
+	mutation := newRepositoryMutation(c.config, OpUpdateOne, withRepository(r))
+	return &RepositoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RepositoryClient) UpdateOneID(id int) *RepositoryUpdateOne {
+	mutation := newRepositoryMutation(c.config, OpUpdateOne, withRepositoryID(id))
+	return &RepositoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Repository.
+func (c *RepositoryClient) Delete() *RepositoryDelete {
+	mutation := newRepositoryMutation(c.config, OpDelete)
+	return &RepositoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RepositoryClient) DeleteOne(r *Repository) *RepositoryDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RepositoryClient) DeleteOneID(id int) *RepositoryDeleteOne {
+	builder := c.Delete().Where(repository.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RepositoryDeleteOne{builder}
+}
+
+// Query returns a query builder for Repository.
+func (c *RepositoryClient) Query() *RepositoryQuery {
+	return &RepositoryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRepository},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Repository entity by its id.
+func (c *RepositoryClient) Get(ctx context.Context, id int) (*Repository, error) {
+	return c.Query().Where(repository.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RepositoryClient) GetX(ctx context.Context, id int) *Repository {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RepositoryClient) Hooks() []Hook {
+	hooks := c.hooks.Repository
+	return append(hooks[:len(hooks):len(hooks)], repository.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *RepositoryClient) Interceptors() []Interceptor {
+	return c.inters.Repository
+}
+
+func (c *RepositoryClient) mutate(ctx context.Context, m *RepositoryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RepositoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RepositoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RepositoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RepositoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Repository mutation op: %q", m.Op())
+	}
+}
+
 // TagClient is a client for the Tag schema.
 type TagClient struct {
 	config
@@ -2186,11 +2328,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Beacon, File, Host, HostCredential, HostFile, HostProcess, Quest, Tag, Task,
-		Tome, User []ent.Hook
+		Beacon, File, Host, HostCredential, HostFile, HostProcess, Quest, Repository,
+		Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Beacon, File, Host, HostCredential, HostFile, HostProcess, Quest, Tag, Task,
-		Tome, User []ent.Interceptor
+		Beacon, File, Host, HostCredential, HostFile, HostProcess, Quest, Repository,
+		Tag, Task, Tome, User []ent.Interceptor
 	}
 )

@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -1041,6 +1042,116 @@ func newQuestPaginateArgs(rv map[string]any) *questPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*QuestWhereInput); ok {
 		args.opts = append(args.opts, WithQuestFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (r *RepositoryQuery) CollectFields(ctx context.Context, satisfies ...string) (*RepositoryQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return r, nil
+	}
+	if err := r.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (r *RepositoryQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(repository.Columns))
+		selectedFields = []string{repository.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "createdAt":
+			if _, ok := fieldSeen[repository.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, repository.FieldCreatedAt)
+				fieldSeen[repository.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[repository.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, repository.FieldLastModifiedAt)
+				fieldSeen[repository.FieldLastModifiedAt] = struct{}{}
+			}
+		case "url":
+			if _, ok := fieldSeen[repository.FieldURL]; !ok {
+				selectedFields = append(selectedFields, repository.FieldURL)
+				fieldSeen[repository.FieldURL] = struct{}{}
+			}
+		case "publicKey":
+			if _, ok := fieldSeen[repository.FieldPublicKey]; !ok {
+				selectedFields = append(selectedFields, repository.FieldPublicKey)
+				fieldSeen[repository.FieldPublicKey] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		r.Select(selectedFields...)
+	}
+	return nil
+}
+
+type repositoryPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []RepositoryPaginateOption
+}
+
+func newRepositoryPaginateArgs(rv map[string]any) *repositoryPaginateArgs {
+	args := &repositoryPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*RepositoryOrder:
+			args.opts = append(args.opts, WithRepositoryOrder(v))
+		case []any:
+			var orders []*RepositoryOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &RepositoryOrder{Field: &RepositoryOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithRepositoryOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*RepositoryWhereInput); ok {
+		args.opts = append(args.opts, WithRepositoryFilter(v.Filter))
 	}
 	return args
 }

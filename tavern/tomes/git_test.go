@@ -27,10 +27,14 @@ func TestImportFromRepo(t *testing.T) {
 	// Initialize Git Importer
 	git := tomes.NewGitImporter(graph)
 
+	// Create repository
+	repo := graph.Repository.Create().SetURL(localGit).SaveX(ctx)
+	repo.URL = localGit
+
 	filter := func(path string) bool {
 		return strings.Contains(path, "example")
 	}
-	_, err := git.Import(ctx, localGit, filter)
+	err := git.Import(ctx, repo, filter)
 	require.NoError(t, err)
 
 	testTome := graph.Tome.Query().
