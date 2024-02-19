@@ -20,6 +20,25 @@ extend type Query {
     """Filtering options for Tasks returned from the connection."""
     where: TaskWhereInput
   ): TaskConnection! @requireRole(role: USER)
+  repositories(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Repositories returned from the connection."""
+    orderBy: [RepositoryOrder!]
+
+    """Filtering options for Repositories returned from the connection."""
+    where: RepositoryWhereInput
+  ): RepositoryConnection! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
   hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)

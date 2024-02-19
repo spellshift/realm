@@ -12,6 +12,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/schema"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -208,6 +209,35 @@ func init() {
 	questDescParameters := questFields[1].Descriptor()
 	// quest.ParametersValidator is a validator for the "parameters" field. It is called by the builders before save.
 	quest.ParametersValidator = questDescParameters.Validators[0].(func(string) error)
+	repositoryMixin := schema.Repository{}.Mixin()
+	repositoryHooks := schema.Repository{}.Hooks()
+	repository.Hooks[0] = repositoryHooks[0]
+	repositoryMixinFields0 := repositoryMixin[0].Fields()
+	_ = repositoryMixinFields0
+	repositoryFields := schema.Repository{}.Fields()
+	_ = repositoryFields
+	// repositoryDescCreatedAt is the schema descriptor for created_at field.
+	repositoryDescCreatedAt := repositoryMixinFields0[0].Descriptor()
+	// repository.DefaultCreatedAt holds the default value on creation for the created_at field.
+	repository.DefaultCreatedAt = repositoryDescCreatedAt.Default.(func() time.Time)
+	// repositoryDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	repositoryDescLastModifiedAt := repositoryMixinFields0[1].Descriptor()
+	// repository.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	repository.DefaultLastModifiedAt = repositoryDescLastModifiedAt.Default.(func() time.Time)
+	// repository.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	repository.UpdateDefaultLastModifiedAt = repositoryDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// repositoryDescURL is the schema descriptor for url field.
+	repositoryDescURL := repositoryFields[0].Descriptor()
+	// repository.URLValidator is a validator for the "url" field. It is called by the builders before save.
+	repository.URLValidator = repositoryDescURL.Validators[0].(func(string) error)
+	// repositoryDescPublicKey is the schema descriptor for public_key field.
+	repositoryDescPublicKey := repositoryFields[1].Descriptor()
+	// repository.PublicKeyValidator is a validator for the "public_key" field. It is called by the builders before save.
+	repository.PublicKeyValidator = repositoryDescPublicKey.Validators[0].(func(string) error)
+	// repositoryDescPrivateKey is the schema descriptor for private_key field.
+	repositoryDescPrivateKey := repositoryFields[2].Descriptor()
+	// repository.PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
+	repository.PrivateKeyValidator = repositoryDescPrivateKey.Validators[0].(func(string) error)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.

@@ -127,17 +127,18 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateQuest        func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateTag          func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome         func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteTome         func(childComplexity int, tomeID int) int
-		DropAllData        func(childComplexity int) int
-		ImportTomesFromGit func(childComplexity int, input models.ImportTomesFromGitInput) int
-		UpdateBeacon       func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost         func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateTag          func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome         func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser         func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteTome       func(childComplexity int, tomeID int) int
+		DropAllData      func(childComplexity int) int
+		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome       func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -148,17 +149,18 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Beacons func(childComplexity int, where *ent.BeaconWhereInput) int
-		Files   func(childComplexity int, where *ent.FileWhereInput) int
-		Hosts   func(childComplexity int, where *ent.HostWhereInput) int
-		Me      func(childComplexity int) int
-		Node    func(childComplexity int, id int) int
-		Nodes   func(childComplexity int, ids []int) int
-		Quests  func(childComplexity int, where *ent.QuestWhereInput) int
-		Tags    func(childComplexity int, where *ent.TagWhereInput) int
-		Tasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes   func(childComplexity int, where *ent.TomeWhereInput) int
-		Users   func(childComplexity int, where *ent.UserWhereInput) int
+		Beacons      func(childComplexity int, where *ent.BeaconWhereInput) int
+		Files        func(childComplexity int, where *ent.FileWhereInput) int
+		Hosts        func(childComplexity int, where *ent.HostWhereInput) int
+		Me           func(childComplexity int) int
+		Node         func(childComplexity int, id int) int
+		Nodes        func(childComplexity int, ids []int) int
+		Quests       func(childComplexity int, where *ent.QuestWhereInput) int
+		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
+		Tags         func(childComplexity int, where *ent.TagWhereInput) int
+		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
+		Users        func(childComplexity int, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -171,6 +173,27 @@ type ComplexityRoot struct {
 		Parameters     func(childComplexity int) int
 		Tasks          func(childComplexity int) int
 		Tome           func(childComplexity int) int
+	}
+
+	Repository struct {
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		PublicKey      func(childComplexity int) int
+		Tomes          func(childComplexity int) int
+		URL            func(childComplexity int) int
+	}
+
+	RepositoryConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	RepositoryEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Tag struct {
@@ -218,6 +241,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
 		ParamDefs      func(childComplexity int) int
+		Repository     func(childComplexity int) int
 		SupportModel   func(childComplexity int) int
 		Tactic         func(childComplexity int) int
 		Uploader       func(childComplexity int) int
@@ -712,6 +736,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateQuest(childComplexity, args["beaconIDs"].([]int), args["input"].(ent.CreateQuestInput)), true
 
+	case "Mutation.createRepository":
+		if e.complexity.Mutation.CreateRepository == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createRepository_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateRepository(childComplexity, args["input"].(ent.CreateRepositoryInput)), true
+
 	case "Mutation.createTag":
 		if e.complexity.Mutation.CreateTag == nil {
 			break
@@ -755,17 +791,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DropAllData(childComplexity), true
 
-	case "Mutation.importTomesFromGit":
-		if e.complexity.Mutation.ImportTomesFromGit == nil {
+	case "Mutation.importRepository":
+		if e.complexity.Mutation.ImportRepository == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_importTomesFromGit_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_importRepository_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ImportTomesFromGit(childComplexity, args["input"].(models.ImportTomesFromGitInput)), true
+		return e.complexity.Mutation.ImportRepository(childComplexity, args["repoID"].(int), args["input"].(*models.ImportRepositoryInput)), true
 
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
@@ -934,6 +970,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Quests(childComplexity, args["where"].(*ent.QuestWhereInput)), true
 
+	case "Query.repositories":
+		if e.complexity.Query.Repositories == nil {
+			break
+		}
+
+		args, err := ec.field_Query_repositories_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Repositories(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.RepositoryOrder), args["where"].(*ent.RepositoryWhereInput)), true
+
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
 			break
@@ -1044,6 +1092,90 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Quest.Tome(childComplexity), true
+
+	case "Repository.createdAt":
+		if e.complexity.Repository.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Repository.CreatedAt(childComplexity), true
+
+	case "Repository.id":
+		if e.complexity.Repository.ID == nil {
+			break
+		}
+
+		return e.complexity.Repository.ID(childComplexity), true
+
+	case "Repository.lastModifiedAt":
+		if e.complexity.Repository.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Repository.LastModifiedAt(childComplexity), true
+
+	case "Repository.owner":
+		if e.complexity.Repository.Owner == nil {
+			break
+		}
+
+		return e.complexity.Repository.Owner(childComplexity), true
+
+	case "Repository.publicKey":
+		if e.complexity.Repository.PublicKey == nil {
+			break
+		}
+
+		return e.complexity.Repository.PublicKey(childComplexity), true
+
+	case "Repository.tomes":
+		if e.complexity.Repository.Tomes == nil {
+			break
+		}
+
+		return e.complexity.Repository.Tomes(childComplexity), true
+
+	case "Repository.url":
+		if e.complexity.Repository.URL == nil {
+			break
+		}
+
+		return e.complexity.Repository.URL(childComplexity), true
+
+	case "RepositoryConnection.edges":
+		if e.complexity.RepositoryConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.RepositoryConnection.Edges(childComplexity), true
+
+	case "RepositoryConnection.pageInfo":
+		if e.complexity.RepositoryConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.RepositoryConnection.PageInfo(childComplexity), true
+
+	case "RepositoryConnection.totalCount":
+		if e.complexity.RepositoryConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.RepositoryConnection.TotalCount(childComplexity), true
+
+	case "RepositoryEdge.cursor":
+		if e.complexity.RepositoryEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.RepositoryEdge.Cursor(childComplexity), true
+
+	case "RepositoryEdge.node":
+		if e.complexity.RepositoryEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.RepositoryEdge.Node(childComplexity), true
 
 	case "Tag.hosts":
 		if e.complexity.Tag.Hosts == nil {
@@ -1269,6 +1401,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.ParamDefs(childComplexity), true
 
+	case "Tome.repository":
+		if e.complexity.Tome.Repository == nil {
+			break
+		}
+
+		return e.complexity.Tome.Repository(childComplexity), true
+
 	case "Tome.supportModel":
 		if e.complexity.Tome.SupportModel == nil {
 			break
@@ -1344,6 +1483,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateQuestInput,
+		ec.unmarshalInputCreateRepositoryInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputFileOrder,
@@ -1356,9 +1496,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHostProcessOrder,
 		ec.unmarshalInputHostProcessWhereInput,
 		ec.unmarshalInputHostWhereInput,
-		ec.unmarshalInputImportTomesFromGitInput,
+		ec.unmarshalInputImportRepositoryInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
+		ec.unmarshalInputRepositoryOrder,
+		ec.unmarshalInputRepositoryWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
 		ec.unmarshalInputTagWhereInput,
@@ -1648,6 +1790,14 @@ input CreateQuestInput {
   """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
   tomeID: ID!
+}
+"""
+CreateRepositoryInput is used for create Repository object.
+Input was generated by ent.
+"""
+input CreateRepositoryInput {
+  """URL of the repository"""
+  url: String!
 }
 """
 CreateTagInput is used for create Tag object.
@@ -2597,6 +2747,119 @@ input QuestWhereInput {
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
 }
+type Repository implements Node {
+  id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
+  """URL of the repository"""
+  url: String!
+  """Public key associated with this repositories private key"""
+  publicKey: String!
+  """Tomes imported using this repository."""
+  tomes: [Tome!]
+  """User that created this repository."""
+  owner: User
+}
+"""A connection to a list of items."""
+type RepositoryConnection {
+  """A list of edges."""
+  edges: [RepositoryEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type RepositoryEdge {
+  """The item at the end of the edge."""
+  node: Repository
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
+"""Ordering options for Repository connections"""
+input RepositoryOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Repositories."""
+  field: RepositoryOrderField!
+}
+"""Properties by which Repository connections can be ordered."""
+enum RepositoryOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+RepositoryWhereInput is used for filtering Repository objects.
+Input was generated by ent.
+"""
+input RepositoryWhereInput {
+  not: RepositoryWhereInput
+  and: [RepositoryWhereInput!]
+  or: [RepositoryWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """url field predicates"""
+  url: String
+  urlNEQ: String
+  urlIn: [String!]
+  urlNotIn: [String!]
+  urlGT: String
+  urlGTE: String
+  urlLT: String
+  urlLTE: String
+  urlContains: String
+  urlHasPrefix: String
+  urlHasSuffix: String
+  urlEqualFold: String
+  urlContainsFold: String
+  """public_key field predicates"""
+  publicKey: String
+  publicKeyNEQ: String
+  publicKeyIn: [String!]
+  publicKeyNotIn: [String!]
+  publicKeyGT: String
+  publicKeyGTE: String
+  publicKeyLT: String
+  publicKeyLTE: String
+  publicKeyContains: String
+  publicKeyHasPrefix: String
+  publicKeyHasSuffix: String
+  publicKeyEqualFold: String
+  publicKeyContainsFold: String
+  """tomes edge predicates"""
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
+  """owner edge predicates"""
+  hasOwner: Boolean
+  hasOwnerWith: [UserWhereInput!]
+}
 type Tag implements Node {
   id: ID!
   """Name of the tag"""
@@ -2869,6 +3132,8 @@ type Tome implements Node {
   files: [File!]
   """User who uploaded the tome (may be null)."""
   uploader: User
+  """Repository from which this Tome was imported (may be null)."""
+  repository: Repository
 }
 """Ordering options for Tome connections"""
 input TomeOrder {
@@ -3030,6 +3295,9 @@ input TomeWhereInput {
   """uploader edge predicates"""
   hasUploader: Boolean
   hasUploaderWith: [UserWhereInput!]
+  """repository edge predicates"""
+  hasRepository: Boolean
+  hasRepositoryWith: [RepositoryWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -3216,6 +3484,25 @@ scalar Uint64
     """Filtering options for Tasks returned from the connection."""
     where: TaskWhereInput
   ): TaskConnection! @requireRole(role: USER)
+  repositories(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Repositories returned from the connection."""
+    orderBy: [RepositoryOrder!]
+
+    """Filtering options for Repositories returned from the connection."""
+    where: RepositoryWhereInput
+  ): RepositoryConnection! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
   hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
@@ -3254,10 +3541,15 @@ scalar Uint64
     ###
     # Tome
     ###
-    importTomesFromGit(input: ImportTomesFromGitInput!,): [Tome!] @requireRole(role: USER)
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
     updateTome(tomeID: ID!, input: UpdateTomeInput!,): Tome! @requireRole(role: ADMIN)
     deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)
+
+    ###
+    # Repository
+    ###
+    createRepository(input: CreateRepositoryInput!): Repository! @requireRole(role: USER)
+    importRepository(repoID: ID!, input: ImportRepositoryInput): Repository! @requireRole(role: USER)
 
     ###
     # User
@@ -3307,10 +3599,7 @@ input SubmitTaskResultInput {
   """Error message captured as the result of task execution failure."""
   error: String
 }
-input ImportTomesFromGitInput {
-  """Specify a git URL to obtain the tomes from."""
-  gitURL: String!
-
+input ImportRepositoryInput {
   """
   Optionally, specify directories to include.
   Only tomes that have a main.eldritch in one of these directory prefixes will be included.

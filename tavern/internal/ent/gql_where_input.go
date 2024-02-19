@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -3479,6 +3480,350 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 	}
 }
 
+// RepositoryWhereInput represents a where input for filtering Repository queries.
+type RepositoryWhereInput struct {
+	Predicates []predicate.Repository  `json:"-"`
+	Not        *RepositoryWhereInput   `json:"not,omitempty"`
+	Or         []*RepositoryWhereInput `json:"or,omitempty"`
+	And        []*RepositoryWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "url" field predicates.
+	URL             *string  `json:"url,omitempty"`
+	URLNEQ          *string  `json:"urlNEQ,omitempty"`
+	URLIn           []string `json:"urlIn,omitempty"`
+	URLNotIn        []string `json:"urlNotIn,omitempty"`
+	URLGT           *string  `json:"urlGT,omitempty"`
+	URLGTE          *string  `json:"urlGTE,omitempty"`
+	URLLT           *string  `json:"urlLT,omitempty"`
+	URLLTE          *string  `json:"urlLTE,omitempty"`
+	URLContains     *string  `json:"urlContains,omitempty"`
+	URLHasPrefix    *string  `json:"urlHasPrefix,omitempty"`
+	URLHasSuffix    *string  `json:"urlHasSuffix,omitempty"`
+	URLEqualFold    *string  `json:"urlEqualFold,omitempty"`
+	URLContainsFold *string  `json:"urlContainsFold,omitempty"`
+
+	// "public_key" field predicates.
+	PublicKey             *string  `json:"publicKey,omitempty"`
+	PublicKeyNEQ          *string  `json:"publicKeyNEQ,omitempty"`
+	PublicKeyIn           []string `json:"publicKeyIn,omitempty"`
+	PublicKeyNotIn        []string `json:"publicKeyNotIn,omitempty"`
+	PublicKeyGT           *string  `json:"publicKeyGT,omitempty"`
+	PublicKeyGTE          *string  `json:"publicKeyGTE,omitempty"`
+	PublicKeyLT           *string  `json:"publicKeyLT,omitempty"`
+	PublicKeyLTE          *string  `json:"publicKeyLTE,omitempty"`
+	PublicKeyContains     *string  `json:"publicKeyContains,omitempty"`
+	PublicKeyHasPrefix    *string  `json:"publicKeyHasPrefix,omitempty"`
+	PublicKeyHasSuffix    *string  `json:"publicKeyHasSuffix,omitempty"`
+	PublicKeyEqualFold    *string  `json:"publicKeyEqualFold,omitempty"`
+	PublicKeyContainsFold *string  `json:"publicKeyContainsFold,omitempty"`
+
+	// "tomes" edge predicates.
+	HasTomes     *bool             `json:"hasTomes,omitempty"`
+	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
+
+	// "owner" edge predicates.
+	HasOwner     *bool             `json:"hasOwner,omitempty"`
+	HasOwnerWith []*UserWhereInput `json:"hasOwnerWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *RepositoryWhereInput) AddPredicates(predicates ...predicate.Repository) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the RepositoryWhereInput filter on the RepositoryQuery builder.
+func (i *RepositoryWhereInput) Filter(q *RepositoryQuery) (*RepositoryQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyRepositoryWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyRepositoryWhereInput is returned in case the RepositoryWhereInput is empty.
+var ErrEmptyRepositoryWhereInput = errors.New("ent: empty predicate RepositoryWhereInput")
+
+// P returns a predicate for filtering repositories.
+// An error is returned if the input is empty or invalid.
+func (i *RepositoryWhereInput) P() (predicate.Repository, error) {
+	var predicates []predicate.Repository
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, repository.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Repository, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, repository.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Repository, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, repository.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, repository.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, repository.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, repository.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, repository.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, repository.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, repository.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, repository.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, repository.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, repository.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, repository.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, repository.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, repository.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, repository.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, repository.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, repository.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, repository.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, repository.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, repository.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, repository.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, repository.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, repository.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, repository.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, repository.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, repository.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.URL != nil {
+		predicates = append(predicates, repository.URLEQ(*i.URL))
+	}
+	if i.URLNEQ != nil {
+		predicates = append(predicates, repository.URLNEQ(*i.URLNEQ))
+	}
+	if len(i.URLIn) > 0 {
+		predicates = append(predicates, repository.URLIn(i.URLIn...))
+	}
+	if len(i.URLNotIn) > 0 {
+		predicates = append(predicates, repository.URLNotIn(i.URLNotIn...))
+	}
+	if i.URLGT != nil {
+		predicates = append(predicates, repository.URLGT(*i.URLGT))
+	}
+	if i.URLGTE != nil {
+		predicates = append(predicates, repository.URLGTE(*i.URLGTE))
+	}
+	if i.URLLT != nil {
+		predicates = append(predicates, repository.URLLT(*i.URLLT))
+	}
+	if i.URLLTE != nil {
+		predicates = append(predicates, repository.URLLTE(*i.URLLTE))
+	}
+	if i.URLContains != nil {
+		predicates = append(predicates, repository.URLContains(*i.URLContains))
+	}
+	if i.URLHasPrefix != nil {
+		predicates = append(predicates, repository.URLHasPrefix(*i.URLHasPrefix))
+	}
+	if i.URLHasSuffix != nil {
+		predicates = append(predicates, repository.URLHasSuffix(*i.URLHasSuffix))
+	}
+	if i.URLEqualFold != nil {
+		predicates = append(predicates, repository.URLEqualFold(*i.URLEqualFold))
+	}
+	if i.URLContainsFold != nil {
+		predicates = append(predicates, repository.URLContainsFold(*i.URLContainsFold))
+	}
+	if i.PublicKey != nil {
+		predicates = append(predicates, repository.PublicKeyEQ(*i.PublicKey))
+	}
+	if i.PublicKeyNEQ != nil {
+		predicates = append(predicates, repository.PublicKeyNEQ(*i.PublicKeyNEQ))
+	}
+	if len(i.PublicKeyIn) > 0 {
+		predicates = append(predicates, repository.PublicKeyIn(i.PublicKeyIn...))
+	}
+	if len(i.PublicKeyNotIn) > 0 {
+		predicates = append(predicates, repository.PublicKeyNotIn(i.PublicKeyNotIn...))
+	}
+	if i.PublicKeyGT != nil {
+		predicates = append(predicates, repository.PublicKeyGT(*i.PublicKeyGT))
+	}
+	if i.PublicKeyGTE != nil {
+		predicates = append(predicates, repository.PublicKeyGTE(*i.PublicKeyGTE))
+	}
+	if i.PublicKeyLT != nil {
+		predicates = append(predicates, repository.PublicKeyLT(*i.PublicKeyLT))
+	}
+	if i.PublicKeyLTE != nil {
+		predicates = append(predicates, repository.PublicKeyLTE(*i.PublicKeyLTE))
+	}
+	if i.PublicKeyContains != nil {
+		predicates = append(predicates, repository.PublicKeyContains(*i.PublicKeyContains))
+	}
+	if i.PublicKeyHasPrefix != nil {
+		predicates = append(predicates, repository.PublicKeyHasPrefix(*i.PublicKeyHasPrefix))
+	}
+	if i.PublicKeyHasSuffix != nil {
+		predicates = append(predicates, repository.PublicKeyHasSuffix(*i.PublicKeyHasSuffix))
+	}
+	if i.PublicKeyEqualFold != nil {
+		predicates = append(predicates, repository.PublicKeyEqualFold(*i.PublicKeyEqualFold))
+	}
+	if i.PublicKeyContainsFold != nil {
+		predicates = append(predicates, repository.PublicKeyContainsFold(*i.PublicKeyContainsFold))
+	}
+
+	if i.HasTomes != nil {
+		p := repository.HasTomes()
+		if !*i.HasTomes {
+			p = repository.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTomesWith) > 0 {
+		with := make([]predicate.Tome, 0, len(i.HasTomesWith))
+		for _, w := range i.HasTomesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTomesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, repository.HasTomesWith(with...))
+	}
+	if i.HasOwner != nil {
+		p := repository.HasOwner()
+		if !*i.HasOwner {
+			p = repository.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasOwnerWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasOwnerWith))
+		for _, w := range i.HasOwnerWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasOwnerWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, repository.HasOwnerWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyRepositoryWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return repository.And(predicates...), nil
+	}
+}
+
 // TagWhereInput represents a where input for filtering Tag queries.
 type TagWhereInput struct {
 	Predicates []predicate.Tag  `json:"-"`
@@ -4416,6 +4761,10 @@ type TomeWhereInput struct {
 	// "uploader" edge predicates.
 	HasUploader     *bool             `json:"hasUploader,omitempty"`
 	HasUploaderWith []*UserWhereInput `json:"hasUploaderWith,omitempty"`
+
+	// "repository" edge predicates.
+	HasRepository     *bool                   `json:"hasRepository,omitempty"`
+	HasRepositoryWith []*RepositoryWhereInput `json:"hasRepositoryWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4822,6 +5171,24 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, tome.HasUploaderWith(with...))
+	}
+	if i.HasRepository != nil {
+		p := tome.HasRepository()
+		if !*i.HasRepository {
+			p = tome.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasRepositoryWith) > 0 {
+		with := make([]predicate.Repository, 0, len(i.HasRepositoryWith))
+		for _, w := range i.HasRepositoryWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasRepositoryWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, tome.HasRepositoryWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
