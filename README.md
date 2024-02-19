@@ -29,7 +29,7 @@
 
 ## Quick Start
 
-*To deploy a production ready instance see the [tavern setup guide](https://docs.realm.pub/user-guide/tavern).*
+*To deploy a production ready instance see the [setup guide](https://docs.realm.pub/user-guide/tavern).*
 
 ```bash
 # Clone Realm
@@ -69,9 +69,9 @@ cd realm/implants/imix && cargo run
 - Remote execution over SSH.
 - And much much more: <https://docs.realm.pub/user-guide/eldritch>
 
-## Want to contribute? start here
+## Want to contribute?
 
-<https://docs.realm.pub/dev-guide/introduction>
+Check out our [developer docs!](https://docs.realm.pub/dev-guide/introduction)
 
 ## Contact Support
 

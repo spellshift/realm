@@ -2,10 +2,10 @@
   url: about
 
 - title: User Guide
-  url: user-guide
+  url: user-guide/getting-started
 
 - title: Admin Guide
-  url: admin-guide
+  url: admin-guide/tavern
 
 - title: Developer Guide
-  url: dev-guide
+  url: dev-guide/introduction

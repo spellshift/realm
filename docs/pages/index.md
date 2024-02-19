@@ -20,9 +20,7 @@ permalink: /
 
 * **Stateless Server Architecture:** While Realm officially supports GCP, you may deploy it's [stateless docker container](https://hub.docker.com/r/spellshift/tavern) to any environment that best fits your needs.
 
-----
-
-## Documentation Overview
+### Documentation Overview
 
 Our three sections of documentation are split by intended audience, but feel free to explore!
 
@@ -45,7 +43,7 @@ When opening your issue, please include:
 
 The more information you provide, the faster we can investigate and help you resolve the issue.
 
-#### Feature Requests & Feedback
+### Feature Requests & Feedback
 
 Realm lives and breathes through its users. Your insights and experiences are crucial in guiding its development and ensuring it continues to empower your mission. Please don't hesitate to reach out!
 
@@ -56,10 +54,10 @@ Realm lives and breathes through its users. Your insights and experiences are cr
 * The more details you provide, the better we can understand your needs and respond effectively.
 * Together, we can shape Realm into an incredible framework. **Thank you for being part of the adventure!**
 
-##### Feature Requests
+#### Feature Requests
 
 Do you have an idea for a feature that would supercharge your workflow? We're all ears! [Open an issue on GitHub](https://github.com/spellshift/realm/issues/new?labels=feature&projects=&template=feature_request.md&title=%5Bfeature%5D+Something+to+do) and share your detailed proposal. Be sure to explain the problem you're facing, the solution you envision, and how it would benefit other users. The more information you provide, the better we can understand your needs and assess the feasibility of implementing your suggestion.
 
-##### Provide Feedback
+#### Provide Feedback
 
 Love something about Realm? Feel something could be improved? Let us know! Your feedback, good or bad, helps us make Realm better for everyone. [Open an issue on GitHub](https://github.com/spellshift/realm/issues/new?labels=feedback&projects=&template=feedback.md&title=%5Bfeedback%5D+Something+to+improve) outlining your thoughts, whether it's a praiseworthy feature, a usability concern, or a suggestion for improvement. Every bit of your feedback helps us refine Realm and make it an even more valuable tool in your red teaming toolbox.
