@@ -10,7 +10,7 @@ permalink: user-guide/getting-started
 
 Welcome, intrepid red teamer! This guide will launch you into a sandboxed Realm experience, perfect for experimenting and exploring its features. Think of it as your personal training ground before unleashing it in real-world engagements. But first, let's make sure you're in the right place.
 
-* Want to deploy Realm for production? Check out our [deployment guide](admin-guide/tavern#deployment).
+* Want to deploy Realm for production? Check out our [deployment guide](/admin-guide/tavern#deployment).
 * Already using a deployed Realm instance? Check out our [UI guide](/user-guide/ui).
 
 Otherwise, let's delve into Realm! Break, bend, and explore to your heart's content. This is your chance to unlock Realm's potential and get comfortable before your next engagement. Time for an adventure!
