@@ -23,7 +23,9 @@ mod tests {
                 "exec_script/hello_world.bat",
                 "exec_script/hello_world.sh",
                 "exec_script/main.eldritch",
-                "print/main.eldritch"
+                "exec_script/metadata.yml",
+                "print/main.eldritch",
+                "print/metadata.yml",
             ]
         );
 

@@ -1,7 +1,7 @@
 use super::super::insert_dict_kv;
 use super::CommandOutput;
 use anyhow::{Context, Result};
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use nix::{
     sys::wait::waitpid,
     unistd::{fork, ForkResult},
@@ -11,7 +11,7 @@ use starlark::{
     const_frozen_string,
     values::{dict::Dict, Heap},
 };
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use std::process::exit;
 use std::process::Command;
 // https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
@@ -54,7 +54,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
             "Windows is not supported for disowned processes."
         ));
 
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
         match unsafe { fork()? } {
             ForkResult::Parent { child } => {
                 // Wait for intermediate process to exit.

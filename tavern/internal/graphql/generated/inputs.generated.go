@@ -110,6 +110,44 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputImportTomesFromGitInput(ctx context.Context, obj interface{}) (models.ImportTomesFromGitInput, error) {
+	var it models.ImportTomesFromGitInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"gitURL", "includeDirs"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "gitURL":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitURL"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GitURL = data
+		case "includeDirs":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDirs"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncludeDirs = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Context, obj interface{}) (models.SubmitTaskResultInput, error) {
 	var it models.SubmitTaskResultInput
 	asMap := map[string]interface{}{}
@@ -186,5 +224,10 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) unmarshalNImportTomesFromGitInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐImportTomesFromGitInput(ctx context.Context, v interface{}) (models.ImportTomesFromGitInput, error) {
+	res, err := ec.unmarshalInputImportTomesFromGitInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
 
 // endregion ***************************** type.gotpl *****************************
