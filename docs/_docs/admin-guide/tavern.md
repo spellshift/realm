@@ -329,10 +329,12 @@ mutation CreateTome ($input: CreateTomeInput!) {
 {
   "input": {
     "name": "Test tome",
+    "author":"Hulto",
     "description": "Just a sample",
+    "paramDefs": "[{\"name\":\"print_string\",\"label\":\"Print String\",\"type\":\"string\",\"placeholder\":\"A message to print\"}]",
     "eldritch": "print(input_params['print_string'])",
     "fileIDs": [],
-    "paramDefs": "[{\"name\":\"print_string\",\"label\":\"Print String\",\"type\":\"string\",\"placeholder\":\"A message to print\"}]"
+    "tactic": "IMPACT"
   }
 }
 ```
