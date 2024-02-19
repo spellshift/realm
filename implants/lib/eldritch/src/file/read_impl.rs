@@ -1,9 +1,22 @@
 use anyhow::Result;
+use glob::glob;
 use std::fs;
 
 pub fn read(path: String) -> Result<String> {
-    let data = fs::read_to_string(path)?;
-    Ok(data)
+    let mut res: String = String::from("");
+    for entry in glob(&path)? {
+        match entry {
+            Ok(enty_path) => {
+                let data = fs::read_to_string(enty_path)?;
+                res.push_str(data.as_str());
+            }
+            Err(local_err) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Failed to parse glob {}\n{}", path, local_err);
+            }
+        }
+    }
+    Ok(res)
 }
 
 #[cfg(test)]
