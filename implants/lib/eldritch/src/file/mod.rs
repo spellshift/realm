@@ -37,8 +37,9 @@ enum FileType {
 
 #[derive(Debug, Display)]
 #[display(
-    fmt = "{} {} {} {} {} {} {}",
+    fmt = "{} {} {} {} {} {} {} {}",
     name,
+    absolute_path,
     file_type,
     size,
     owner,
@@ -48,6 +49,7 @@ enum FileType {
 )]
 struct File {
     name: String,
+    absolute_path: String,
     file_type: FileType,
     size: u64,
     owner: String,

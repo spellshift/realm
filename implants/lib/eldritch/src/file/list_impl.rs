@@ -8,8 +8,7 @@ use starlark::{
     const_frozen_string,
     values::{dict::Dict, Heap, Value},
 };
-use std::any::Any;
-use std::fs::DirEntry;
+use std::fs::{self};
 #[cfg(target_os = "freebsd")]
 use std::os::freebsd::fs::MetadataExt;
 #[cfg(target_os = "linux")]
@@ -21,7 +20,7 @@ use std::os::unix::fs::PermissionsExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
+
 use sysinfo::{System, SystemExt, UserExt};
 const UNKNOWN: &str = "UNKNOWN";
 
@@ -41,6 +40,11 @@ fn create_file_from_pathbuf(path_entry: PathBuf) -> Result<File> {
         .context("file.list: Failed to get filename")?
         .to_str()
         .context("file.list: Unable to convert file name to string")?
+        .to_string();
+
+    let absolute_path = fs::canonicalize(&path_entry)?
+        .to_str()
+        .context("file.list: Failed to canonicalize path")?
         .to_string();
 
     let file_type = if path_entry.is_dir() {
@@ -107,6 +111,7 @@ fn create_file_from_pathbuf(path_entry: PathBuf) -> Result<File> {
 
     Ok(File {
         name: file_name,
+        absolute_path,
         file_type,
         size: file_size,
         owner: owner_username,
@@ -139,6 +144,13 @@ fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict> {
     let mut dict_res = Dict::new(res);
 
     insert_dict_kv!(dict_res, starlark_heap, "file_name", &file.name, String);
+    insert_dict_kv!(
+        dict_res,
+        starlark_heap,
+        "absolute_path",
+        &file.absolute_path,
+        String
+    );
     insert_dict_kv!(dict_res, starlark_heap, "size", file.size, u64);
     insert_dict_kv!(dict_res, starlark_heap, "owner", &file.owner, String);
     insert_dict_kv!(dict_res, starlark_heap, "group", &file.group, String);
