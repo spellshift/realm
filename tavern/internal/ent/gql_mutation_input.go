@@ -151,6 +151,22 @@ func (c *QuestCreate) SetInput(i CreateQuestInput) *QuestCreate {
 	return c
 }
 
+// CreateRepositoryInput represents a mutation input for creating repositories.
+type CreateRepositoryInput struct {
+	URL string
+}
+
+// Mutate applies the CreateRepositoryInput on the RepositoryMutation builder.
+func (i *CreateRepositoryInput) Mutate(m *RepositoryMutation) {
+	m.SetURL(i.URL)
+}
+
+// SetInput applies the change-set in the CreateRepositoryInput on the RepositoryCreate builder.
+func (c *RepositoryCreate) SetInput(i CreateRepositoryInput) *RepositoryCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateTagInput represents a mutation input for creating tags.
 type CreateTagInput struct {
 	Name    string

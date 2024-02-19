@@ -1,6 +1,7 @@
 package graphql_test
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -11,7 +12,9 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 
@@ -32,6 +35,27 @@ type testCase struct {
 	Variables     map[string]any `yaml:"variables"`
 	Expected      map[string]any `yaml:"expected"`
 	ExpectedError string         `yaml:"expected_error"`
+}
+
+type importerFake struct {
+	graph *ent.Client
+}
+
+// Import fake imports a simple static tome for testing.
+func (fake importerFake) Import(ctx context.Context, repo *ent.Repository, filters ...func(path string) bool) error {
+	_, err := fake.graph.Tome.Create().
+		SetName("expected_tome").
+		SetDescription("expected_description").
+		SetAuthor("expected_author").
+		SetParamDefs("").
+		SetSupportModel(tome.SupportModelCOMMUNITY).
+		SetTactic(tome.TacticIMPACT).
+		SetEldritch(`print("expected")`).
+		SetRepository(repo).
+		OnConflict().
+		UpdateNewValues().
+		ID(ctx)
+	return err
 }
 
 func runTestCase(t *testing.T, path string) {
@@ -70,7 +94,7 @@ func runTestCase(t *testing.T, path string) {
 	// Server
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, importerFake{graph})),
 		},
 		tavernhttp.WithAuthentication(graph),
 	)

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -156,6 +157,25 @@ func (tc *TomeCreate) SetNillableUploaderID(id *int) *TomeCreate {
 // SetUploader sets the "uploader" edge to the User entity.
 func (tc *TomeCreate) SetUploader(u *User) *TomeCreate {
 	return tc.SetUploaderID(u.ID)
+}
+
+// SetRepositoryID sets the "repository" edge to the Repository entity by ID.
+func (tc *TomeCreate) SetRepositoryID(id int) *TomeCreate {
+	tc.mutation.SetRepositoryID(id)
+	return tc
+}
+
+// SetNillableRepositoryID sets the "repository" edge to the Repository entity by ID if the given value is not nil.
+func (tc *TomeCreate) SetNillableRepositoryID(id *int) *TomeCreate {
+	if id != nil {
+		tc = tc.SetRepositoryID(*id)
+	}
+	return tc
+}
+
+// SetRepository sets the "repository" edge to the Repository entity.
+func (tc *TomeCreate) SetRepository(r *Repository) *TomeCreate {
+	return tc.SetRepositoryID(r.ID)
 }
 
 // Mutation returns the TomeMutation object of the builder.
@@ -372,6 +392,23 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.tome_uploader = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.RepositoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.RepositoryTable,
+			Columns: []string{tome.RepositoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.tome_repository = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
