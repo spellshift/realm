@@ -91,7 +91,7 @@ fn create_file_from_pathbuf(path_entry: PathBuf) -> Result<File> {
     let permissions = { format!("{:o}", file_metadata.permissions().mode()) };
     #[cfg(target_os = "windows")]
     let permissions = {
-        if dir_entry.metadata()?.permissions().readonly() {
+        if file_metadata.permissions().readonly() {
             "Read only"
         } else {
             "Not read only"
