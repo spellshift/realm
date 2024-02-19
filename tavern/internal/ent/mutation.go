@@ -5712,26 +5712,28 @@ func (m *HostProcessMutation) ResetEdge(name string) error {
 // QuestMutation represents an operation that mutates the Quest nodes in the graph.
 type QuestMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	name             *string
-	parameters       *string
-	clearedFields    map[string]struct{}
-	tome             *int
-	clearedtome      bool
-	bundle           *int
-	clearedbundle    bool
-	tasks            map[int]struct{}
-	removedtasks     map[int]struct{}
-	clearedtasks     bool
-	creator          *int
-	clearedcreator   bool
-	done             bool
-	oldValue         func(context.Context) (*Quest, error)
-	predicates       []predicate.Quest
+	op                     Op
+	typ                    string
+	id                     *int
+	created_at             *time.Time
+	last_modified_at       *time.Time
+	name                   *string
+	parameters             *string
+	param_defs_at_creation *string
+	eldritch_at_creation   *string
+	clearedFields          map[string]struct{}
+	tome                   *int
+	clearedtome            bool
+	bundle                 *int
+	clearedbundle          bool
+	tasks                  map[int]struct{}
+	removedtasks           map[int]struct{}
+	clearedtasks           bool
+	creator                *int
+	clearedcreator         bool
+	done                   bool
+	oldValue               func(context.Context) (*Quest, error)
+	predicates             []predicate.Quest
 }
 
 var _ ent.Mutation = (*QuestMutation)(nil)
@@ -5989,6 +5991,91 @@ func (m *QuestMutation) ResetParameters() {
 	delete(m.clearedFields, quest.FieldParameters)
 }
 
+// SetParamDefsAtCreation sets the "param_defs_at_creation" field.
+func (m *QuestMutation) SetParamDefsAtCreation(s string) {
+	m.param_defs_at_creation = &s
+}
+
+// ParamDefsAtCreation returns the value of the "param_defs_at_creation" field in the mutation.
+func (m *QuestMutation) ParamDefsAtCreation() (r string, exists bool) {
+	v := m.param_defs_at_creation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParamDefsAtCreation returns the old "param_defs_at_creation" field's value of the Quest entity.
+// If the Quest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuestMutation) OldParamDefsAtCreation(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParamDefsAtCreation is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParamDefsAtCreation requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParamDefsAtCreation: %w", err)
+	}
+	return oldValue.ParamDefsAtCreation, nil
+}
+
+// ClearParamDefsAtCreation clears the value of the "param_defs_at_creation" field.
+func (m *QuestMutation) ClearParamDefsAtCreation() {
+	m.param_defs_at_creation = nil
+	m.clearedFields[quest.FieldParamDefsAtCreation] = struct{}{}
+}
+
+// ParamDefsAtCreationCleared returns if the "param_defs_at_creation" field was cleared in this mutation.
+func (m *QuestMutation) ParamDefsAtCreationCleared() bool {
+	_, ok := m.clearedFields[quest.FieldParamDefsAtCreation]
+	return ok
+}
+
+// ResetParamDefsAtCreation resets all changes to the "param_defs_at_creation" field.
+func (m *QuestMutation) ResetParamDefsAtCreation() {
+	m.param_defs_at_creation = nil
+	delete(m.clearedFields, quest.FieldParamDefsAtCreation)
+}
+
+// SetEldritchAtCreation sets the "eldritch_at_creation" field.
+func (m *QuestMutation) SetEldritchAtCreation(s string) {
+	m.eldritch_at_creation = &s
+}
+
+// EldritchAtCreation returns the value of the "eldritch_at_creation" field in the mutation.
+func (m *QuestMutation) EldritchAtCreation() (r string, exists bool) {
+	v := m.eldritch_at_creation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEldritchAtCreation returns the old "eldritch_at_creation" field's value of the Quest entity.
+// If the Quest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuestMutation) OldEldritchAtCreation(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEldritchAtCreation is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEldritchAtCreation requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEldritchAtCreation: %w", err)
+	}
+	return oldValue.EldritchAtCreation, nil
+}
+
+// ResetEldritchAtCreation resets all changes to the "eldritch_at_creation" field.
+func (m *QuestMutation) ResetEldritchAtCreation() {
+	m.eldritch_at_creation = nil
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by id.
 func (m *QuestMutation) SetTomeID(id int) {
 	m.tome = &id
@@ -6194,7 +6281,7 @@ func (m *QuestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *QuestMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, quest.FieldCreatedAt)
 	}
@@ -6206,6 +6293,12 @@ func (m *QuestMutation) Fields() []string {
 	}
 	if m.parameters != nil {
 		fields = append(fields, quest.FieldParameters)
+	}
+	if m.param_defs_at_creation != nil {
+		fields = append(fields, quest.FieldParamDefsAtCreation)
+	}
+	if m.eldritch_at_creation != nil {
+		fields = append(fields, quest.FieldEldritchAtCreation)
 	}
 	return fields
 }
@@ -6223,6 +6316,10 @@ func (m *QuestMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case quest.FieldParameters:
 		return m.Parameters()
+	case quest.FieldParamDefsAtCreation:
+		return m.ParamDefsAtCreation()
+	case quest.FieldEldritchAtCreation:
+		return m.EldritchAtCreation()
 	}
 	return nil, false
 }
@@ -6240,6 +6337,10 @@ func (m *QuestMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldName(ctx)
 	case quest.FieldParameters:
 		return m.OldParameters(ctx)
+	case quest.FieldParamDefsAtCreation:
+		return m.OldParamDefsAtCreation(ctx)
+	case quest.FieldEldritchAtCreation:
+		return m.OldEldritchAtCreation(ctx)
 	}
 	return nil, fmt.Errorf("unknown Quest field %s", name)
 }
@@ -6277,6 +6378,20 @@ func (m *QuestMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetParameters(v)
 		return nil
+	case quest.FieldParamDefsAtCreation:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParamDefsAtCreation(v)
+		return nil
+	case quest.FieldEldritchAtCreation:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEldritchAtCreation(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Quest field %s", name)
 }
@@ -6310,6 +6425,9 @@ func (m *QuestMutation) ClearedFields() []string {
 	if m.FieldCleared(quest.FieldParameters) {
 		fields = append(fields, quest.FieldParameters)
 	}
+	if m.FieldCleared(quest.FieldParamDefsAtCreation) {
+		fields = append(fields, quest.FieldParamDefsAtCreation)
+	}
 	return fields
 }
 
@@ -6326,6 +6444,9 @@ func (m *QuestMutation) ClearField(name string) error {
 	switch name {
 	case quest.FieldParameters:
 		m.ClearParameters()
+		return nil
+	case quest.FieldParamDefsAtCreation:
+		m.ClearParamDefsAtCreation()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest nullable field %s", name)
@@ -6346,6 +6467,12 @@ func (m *QuestMutation) ResetField(name string) error {
 		return nil
 	case quest.FieldParameters:
 		m.ResetParameters()
+		return nil
+	case quest.FieldParamDefsAtCreation:
+		m.ResetParamDefsAtCreation()
+		return nil
+	case quest.FieldEldritchAtCreation:
+		m.ResetEldritchAtCreation()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest field %s", name)

@@ -209,6 +209,14 @@ func init() {
 	questDescParameters := questFields[1].Descriptor()
 	// quest.ParametersValidator is a validator for the "parameters" field. It is called by the builders before save.
 	quest.ParametersValidator = questDescParameters.Validators[0].(func(string) error)
+	// questDescParamDefsAtCreation is the schema descriptor for param_defs_at_creation field.
+	questDescParamDefsAtCreation := questFields[2].Descriptor()
+	// quest.ParamDefsAtCreationValidator is a validator for the "param_defs_at_creation" field. It is called by the builders before save.
+	quest.ParamDefsAtCreationValidator = questDescParamDefsAtCreation.Validators[0].(func(string) error)
+	// questDescEldritchAtCreation is the schema descriptor for eldritch_at_creation field.
+	questDescEldritchAtCreation := questFields[3].Descriptor()
+	// quest.DefaultEldritchAtCreation holds the default value on creation for the eldritch_at_creation field.
+	quest.DefaultEldritchAtCreation = questDescEldritchAtCreation.Default.(string)
 	repositoryMixin := schema.Repository{}.Mixin()
 	repositoryHooks := schema.Repository{}.Hooks()
 	repository.Hooks[0] = repositoryHooks[0]

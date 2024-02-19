@@ -983,6 +983,16 @@ func (q *QuestQuery) collectField(ctx context.Context, opCtx *graphql.OperationC
 				selectedFields = append(selectedFields, quest.FieldParameters)
 				fieldSeen[quest.FieldParameters] = struct{}{}
 			}
+		case "paramDefsAtCreation":
+			if _, ok := fieldSeen[quest.FieldParamDefsAtCreation]; !ok {
+				selectedFields = append(selectedFields, quest.FieldParamDefsAtCreation)
+				fieldSeen[quest.FieldParamDefsAtCreation] = struct{}{}
+			}
+		case "eldritchAtCreation":
+			if _, ok := fieldSeen[quest.FieldEldritchAtCreation]; !ok {
+				selectedFields = append(selectedFields, quest.FieldEldritchAtCreation)
+				fieldSeen[quest.FieldEldritchAtCreation] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

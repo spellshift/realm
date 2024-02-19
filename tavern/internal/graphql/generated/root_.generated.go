@@ -164,15 +164,17 @@ type ComplexityRoot struct {
 	}
 
 	Quest struct {
-		Bundle         func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Creator        func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Name           func(childComplexity int) int
-		Parameters     func(childComplexity int) int
-		Tasks          func(childComplexity int) int
-		Tome           func(childComplexity int) int
+		Bundle              func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Creator             func(childComplexity int) int
+		EldritchAtCreation  func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Name                func(childComplexity int) int
+		ParamDefsAtCreation func(childComplexity int) int
+		Parameters          func(childComplexity int) int
+		Tasks               func(childComplexity int) int
+		Tome                func(childComplexity int) int
 	}
 
 	QuestConnection struct {
@@ -1062,6 +1064,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Quest.Creator(childComplexity), true
 
+	case "Quest.eldritchAtCreation":
+		if e.complexity.Quest.EldritchAtCreation == nil {
+			break
+		}
+
+		return e.complexity.Quest.EldritchAtCreation(childComplexity), true
+
 	case "Quest.id":
 		if e.complexity.Quest.ID == nil {
 			break
@@ -1082,6 +1091,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Quest.Name(childComplexity), true
+
+	case "Quest.paramDefsAtCreation":
+		if e.complexity.Quest.ParamDefsAtCreation == nil {
+			break
+		}
+
+		return e.complexity.Quest.ParamDefsAtCreation(childComplexity), true
 
 	case "Quest.parameters":
 		if e.complexity.Quest.Parameters == nil {
@@ -2693,6 +2709,10 @@ type Quest implements Node {
   name: String!
   """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
+  """JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter."""
+  paramDefsAtCreation: String
+  """Eldritch script that was evaluated at the time of this quest creation."""
+  eldritchAtCreation: String!
   """Tome that this quest will be executing"""
   tome: Tome!
   """Bundle file that the executing tome depends on (if any)"""
@@ -2796,6 +2816,36 @@ input QuestWhereInput {
   parametersNotNil: Boolean
   parametersEqualFold: String
   parametersContainsFold: String
+  """param_defs_at_creation field predicates"""
+  paramDefsAtCreation: String
+  paramDefsAtCreationNEQ: String
+  paramDefsAtCreationIn: [String!]
+  paramDefsAtCreationNotIn: [String!]
+  paramDefsAtCreationGT: String
+  paramDefsAtCreationGTE: String
+  paramDefsAtCreationLT: String
+  paramDefsAtCreationLTE: String
+  paramDefsAtCreationContains: String
+  paramDefsAtCreationHasPrefix: String
+  paramDefsAtCreationHasSuffix: String
+  paramDefsAtCreationIsNil: Boolean
+  paramDefsAtCreationNotNil: Boolean
+  paramDefsAtCreationEqualFold: String
+  paramDefsAtCreationContainsFold: String
+  """eldritch_at_creation field predicates"""
+  eldritchAtCreation: String
+  eldritchAtCreationNEQ: String
+  eldritchAtCreationIn: [String!]
+  eldritchAtCreationNotIn: [String!]
+  eldritchAtCreationGT: String
+  eldritchAtCreationGTE: String
+  eldritchAtCreationLT: String
+  eldritchAtCreationLTE: String
+  eldritchAtCreationContains: String
+  eldritchAtCreationHasPrefix: String
+  eldritchAtCreationHasSuffix: String
+  eldritchAtCreationEqualFold: String
+  eldritchAtCreationContainsFold: String
   """tome edge predicates"""
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]

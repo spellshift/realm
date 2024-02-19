@@ -5018,6 +5018,91 @@ func (ec *executionContext) fieldContext_Quest_parameters(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Quest_paramDefsAtCreation(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParamDefsAtCreation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Quest_paramDefsAtCreation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Quest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Quest_eldritchAtCreation(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EldritchAtCreation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Quest_eldritchAtCreation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Quest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Quest_tome(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Quest_tome(ctx, field)
 	if err != nil {
@@ -5464,6 +5549,10 @@ func (ec *executionContext) fieldContext_QuestEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Quest_name(ctx, field)
 			case "parameters":
 				return ec.fieldContext_Quest_parameters(ctx, field)
+			case "paramDefsAtCreation":
+				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
+			case "eldritchAtCreation":
+				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
@@ -6744,6 +6833,10 @@ func (ec *executionContext) fieldContext_Task_quest(ctx context.Context, field g
 				return ec.fieldContext_Quest_name(ctx, field)
 			case "parameters":
 				return ec.fieldContext_Quest_parameters(ctx, field)
+			case "paramDefsAtCreation":
+				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
+			case "eldritchAtCreation":
+				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
@@ -13983,7 +14076,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "paramDefsAtCreation", "paramDefsAtCreationNEQ", "paramDefsAtCreationIn", "paramDefsAtCreationNotIn", "paramDefsAtCreationGT", "paramDefsAtCreationGTE", "paramDefsAtCreationLT", "paramDefsAtCreationLTE", "paramDefsAtCreationContains", "paramDefsAtCreationHasPrefix", "paramDefsAtCreationHasSuffix", "paramDefsAtCreationIsNil", "paramDefsAtCreationNotNil", "paramDefsAtCreationEqualFold", "paramDefsAtCreationContainsFold", "eldritchAtCreation", "eldritchAtCreationNEQ", "eldritchAtCreationIn", "eldritchAtCreationNotIn", "eldritchAtCreationGT", "eldritchAtCreationGTE", "eldritchAtCreationLT", "eldritchAtCreationLTE", "eldritchAtCreationContains", "eldritchAtCreationHasPrefix", "eldritchAtCreationHasSuffix", "eldritchAtCreationEqualFold", "eldritchAtCreationContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14485,6 +14578,258 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.ParametersContainsFold = data
+		case "paramDefsAtCreation":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreation"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreation = data
+		case "paramDefsAtCreationNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationNEQ = data
+		case "paramDefsAtCreationIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationIn = data
+		case "paramDefsAtCreationNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationNotIn = data
+		case "paramDefsAtCreationGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationGT = data
+		case "paramDefsAtCreationGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationGTE = data
+		case "paramDefsAtCreationLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationLT = data
+		case "paramDefsAtCreationLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationLTE = data
+		case "paramDefsAtCreationContains":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationContains = data
+		case "paramDefsAtCreationHasPrefix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationHasPrefix = data
+		case "paramDefsAtCreationHasSuffix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationHasSuffix = data
+		case "paramDefsAtCreationIsNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationIsNil = data
+		case "paramDefsAtCreationNotNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationNotNil = data
+		case "paramDefsAtCreationEqualFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationEqualFold = data
+		case "paramDefsAtCreationContainsFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationContainsFold = data
+		case "eldritchAtCreation":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreation"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreation = data
+		case "eldritchAtCreationNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationNEQ = data
+		case "eldritchAtCreationIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationIn = data
+		case "eldritchAtCreationNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationNotIn = data
+		case "eldritchAtCreationGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationGT = data
+		case "eldritchAtCreationGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationGTE = data
+		case "eldritchAtCreationLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationLT = data
+		case "eldritchAtCreationLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationLTE = data
+		case "eldritchAtCreationContains":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationContains = data
+		case "eldritchAtCreationHasPrefix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationHasPrefix = data
+		case "eldritchAtCreationHasSuffix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationHasSuffix = data
+		case "eldritchAtCreationEqualFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationEqualFold = data
+		case "eldritchAtCreationContainsFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationContainsFold = data
 		case "hasTome":
 			var err error
 
@@ -19775,6 +20120,13 @@ func (ec *executionContext) _Quest(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "parameters":
 			out.Values[i] = ec._Quest_parameters(ctx, field, obj)
+		case "paramDefsAtCreation":
+			out.Values[i] = ec._Quest_paramDefsAtCreation(ctx, field, obj)
+		case "eldritchAtCreation":
+			out.Values[i] = ec._Quest_eldritchAtCreation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "tome":
 			field := field
 

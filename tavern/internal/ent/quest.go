@@ -28,6 +28,10 @@ type Quest struct {
 	Name string `json:"name,omitempty"`
 	// Value of parameters that were specified for the quest (as a JSON string).
 	Parameters string `json:"parameters,omitempty"`
+	// JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter.
+	ParamDefsAtCreation string `json:"param_defs_at_creation,omitempty"`
+	// Eldritch script that was evaluated at the time of this quest creation.
+	EldritchAtCreation string `json:"eldritch_at_creation,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the QuestQuery when eager-loading is set.
 	Edges         QuestEdges `json:"edges"`
@@ -111,7 +115,7 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case quest.FieldID:
 			values[i] = new(sql.NullInt64)
-		case quest.FieldName, quest.FieldParameters:
+		case quest.FieldName, quest.FieldParameters, quest.FieldParamDefsAtCreation, quest.FieldEldritchAtCreation:
 			values[i] = new(sql.NullString)
 		case quest.FieldCreatedAt, quest.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -165,6 +169,18 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field parameters", values[i])
 			} else if value.Valid {
 				q.Parameters = value.String
+			}
+		case quest.FieldParamDefsAtCreation:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field param_defs_at_creation", values[i])
+			} else if value.Valid {
+				q.ParamDefsAtCreation = value.String
+			}
+		case quest.FieldEldritchAtCreation:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field eldritch_at_creation", values[i])
+			} else if value.Valid {
+				q.EldritchAtCreation = value.String
 			}
 		case quest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -254,6 +270,12 @@ func (q *Quest) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("parameters=")
 	builder.WriteString(q.Parameters)
+	builder.WriteString(", ")
+	builder.WriteString("param_defs_at_creation=")
+	builder.WriteString(q.ParamDefsAtCreation)
+	builder.WriteString(", ")
+	builder.WriteString("eldritch_at_creation=")
+	builder.WriteString(q.EldritchAtCreation)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -22,6 +22,10 @@ const (
 	FieldName = "name"
 	// FieldParameters holds the string denoting the parameters field in the database.
 	FieldParameters = "parameters"
+	// FieldParamDefsAtCreation holds the string denoting the param_defs_at_creation field in the database.
+	FieldParamDefsAtCreation = "param_defs_at_creation"
+	// FieldEldritchAtCreation holds the string denoting the eldritch_at_creation field in the database.
+	FieldEldritchAtCreation = "eldritch_at_creation"
 	// EdgeTome holds the string denoting the tome edge name in mutations.
 	EdgeTome = "tome"
 	// EdgeBundle holds the string denoting the bundle edge name in mutations.
@@ -69,6 +73,8 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldName,
 	FieldParameters,
+	FieldParamDefsAtCreation,
+	FieldEldritchAtCreation,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "quests"
@@ -105,6 +111,10 @@ var (
 	NameValidator func(string) error
 	// ParametersValidator is a validator for the "parameters" field. It is called by the builders before save.
 	ParametersValidator func(string) error
+	// ParamDefsAtCreationValidator is a validator for the "param_defs_at_creation" field. It is called by the builders before save.
+	ParamDefsAtCreationValidator func(string) error
+	// DefaultEldritchAtCreation holds the default value on creation for the "eldritch_at_creation" field.
+	DefaultEldritchAtCreation string
 )
 
 // OrderOption defines the ordering options for the Quest queries.
@@ -133,6 +143,16 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByParameters orders the results by the parameters field.
 func ByParameters(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldParameters, opts...).ToFunc()
+}
+
+// ByParamDefsAtCreation orders the results by the param_defs_at_creation field.
+func ByParamDefsAtCreation(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParamDefsAtCreation, opts...).ToFunc()
+}
+
+// ByEldritchAtCreation orders the results by the eldritch_at_creation field.
+func ByEldritchAtCreation(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEldritchAtCreation, opts...).ToFunc()
 }
 
 // ByTomeField orders the results by tome field.
