@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -54,6 +55,12 @@ func (Repository) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
 			).
 			Comment("Tomes imported using this repository."),
+		edge.To("owner", User.Type).
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("User that created this repository."),
 	}
 }
 
@@ -63,6 +70,7 @@ func (Repository) Annotations() []schema.Annotation {
 		entgql.Mutations(entgql.MutationCreate()),
 		entgql.RelayConnection(),
 		entgql.MultiOrder(),
+		entsql.Annotation{Table: "repositories"},
 	}
 }
 

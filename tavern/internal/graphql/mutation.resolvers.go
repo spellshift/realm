@@ -187,8 +187,14 @@ func (r *mutationResolver) DeleteTome(ctx context.Context, tomeID int) (int, err
 
 // CreateRepository is the resolver for the createRepository field.
 func (r *mutationResolver) CreateRepository(ctx context.Context, input ent.CreateRepositoryInput) (*ent.Repository, error) {
+	var ownerID *int
+	if owner := auth.UserFromContext(ctx); owner != nil {
+		ownerID = &owner.ID
+	}
+
 	return r.client.Repository.Create().
-		SetURL(input.URL).
+		SetInput(input).
+		SetNillableOwnerID(ownerID).
 		Save(ctx)
 }
 

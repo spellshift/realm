@@ -1079,6 +1079,16 @@ func (r *RepositoryQuery) collectField(ctx context.Context, opCtx *graphql.Opera
 			r.WithNamedTomes(alias, func(wq *TomeQuery) {
 				*wq = *query
 			})
+		case "owner":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: r.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			r.withOwner = query
 		case "createdAt":
 			if _, ok := fieldSeen[repository.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, repository.FieldCreatedAt)

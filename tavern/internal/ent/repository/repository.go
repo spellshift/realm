@@ -27,6 +27,8 @@ const (
 	FieldPrivateKey = "private_key"
 	// EdgeTomes holds the string denoting the tomes edge name in mutations.
 	EdgeTomes = "tomes"
+	// EdgeOwner holds the string denoting the owner edge name in mutations.
+	EdgeOwner = "owner"
 	// Table holds the table name of the repository in the database.
 	Table = "repositories"
 	// TomesTable is the table that holds the tomes relation/edge.
@@ -36,6 +38,13 @@ const (
 	TomesInverseTable = "tomes"
 	// TomesColumn is the table column denoting the tomes relation/edge.
 	TomesColumn = "tome_repository"
+	// OwnerTable is the table that holds the owner relation/edge.
+	OwnerTable = "repositories"
+	// OwnerInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	OwnerInverseTable = "users"
+	// OwnerColumn is the table column denoting the owner relation/edge.
+	OwnerColumn = "repository_owner"
 )
 
 // Columns holds all SQL columns for repository fields.
@@ -48,10 +57,21 @@ var Columns = []string{
 	FieldPrivateKey,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "repositories"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"repository_owner",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -125,10 +145,24 @@ func ByTomes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newTomesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOwnerField orders the results by owner field.
+func ByOwnerField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOwnerStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TomesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, TomesTable, TomesColumn),
+	)
+}
+func newOwnerStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OwnerInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, OwnerTable, OwnerColumn),
 	)
 }

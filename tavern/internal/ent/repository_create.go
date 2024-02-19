@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // RepositoryCreate is the builder for creating a Repository entity.
@@ -82,6 +83,25 @@ func (rc *RepositoryCreate) AddTomes(t ...*Tome) *RepositoryCreate {
 		ids[i] = t[i].ID
 	}
 	return rc.AddTomeIDs(ids...)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (rc *RepositoryCreate) SetOwnerID(id int) *RepositoryCreate {
+	rc.mutation.SetOwnerID(id)
+	return rc
+}
+
+// SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
+func (rc *RepositoryCreate) SetNillableOwnerID(id *int) *RepositoryCreate {
+	if id != nil {
+		rc = rc.SetOwnerID(*id)
+	}
+	return rc
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (rc *RepositoryCreate) SetOwner(u *User) *RepositoryCreate {
+	return rc.SetOwnerID(u.ID)
 }
 
 // Mutation returns the RepositoryMutation object of the builder.
@@ -231,6 +251,23 @@ func (rc *RepositoryCreate) createSpec() (*Repository, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   repository.OwnerTable,
+			Columns: []string{repository.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.repository_owner = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

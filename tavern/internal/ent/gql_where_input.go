@@ -3550,6 +3550,10 @@ type RepositoryWhereInput struct {
 	// "tomes" edge predicates.
 	HasTomes     *bool             `json:"hasTomes,omitempty"`
 	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
+
+	// "owner" edge predicates.
+	HasOwner     *bool             `json:"hasOwner,omitempty"`
+	HasOwnerWith []*UserWhereInput `json:"hasOwnerWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3791,6 +3795,24 @@ func (i *RepositoryWhereInput) P() (predicate.Repository, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, repository.HasTomesWith(with...))
+	}
+	if i.HasOwner != nil {
+		p := repository.HasOwner()
+		if !*i.HasOwner {
+			p = repository.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasOwnerWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasOwnerWith))
+		for _, w := range i.HasOwnerWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasOwnerWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, repository.HasOwnerWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

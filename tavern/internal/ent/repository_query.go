@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // RepositoryQuery is the builder for querying Repository entities.
@@ -24,6 +25,8 @@ type RepositoryQuery struct {
 	inters         []Interceptor
 	predicates     []predicate.Repository
 	withTomes      *TomeQuery
+	withOwner      *UserQuery
+	withFKs        bool
 	modifiers      []func(*sql.Selector)
 	loadTotal      []func(context.Context, []*Repository) error
 	withNamedTomes map[string]*TomeQuery
@@ -78,6 +81,28 @@ func (rq *RepositoryQuery) QueryTomes() *TomeQuery {
 			sqlgraph.From(repository.Table, repository.FieldID, selector),
 			sqlgraph.To(tome.Table, tome.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, repository.TomesTable, repository.TomesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOwner chains the current query on the "owner" edge.
+func (rq *RepositoryQuery) QueryOwner() *UserQuery {
+	query := (&UserClient{config: rq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(repository.Table, repository.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, repository.OwnerTable, repository.OwnerColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -278,6 +303,7 @@ func (rq *RepositoryQuery) Clone() *RepositoryQuery {
 		inters:     append([]Interceptor{}, rq.inters...),
 		predicates: append([]predicate.Repository{}, rq.predicates...),
 		withTomes:  rq.withTomes.Clone(),
+		withOwner:  rq.withOwner.Clone(),
 		// clone intermediate query.
 		sql:  rq.sql.Clone(),
 		path: rq.path,
@@ -292,6 +318,17 @@ func (rq *RepositoryQuery) WithTomes(opts ...func(*TomeQuery)) *RepositoryQuery 
 		opt(query)
 	}
 	rq.withTomes = query
+	return rq
+}
+
+// WithOwner tells the query-builder to eager-load the nodes that are connected to
+// the "owner" edge. The optional arguments are used to configure the query builder of the edge.
+func (rq *RepositoryQuery) WithOwner(opts ...func(*UserQuery)) *RepositoryQuery {
+	query := (&UserClient{config: rq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withOwner = query
 	return rq
 }
 
@@ -372,11 +409,19 @@ func (rq *RepositoryQuery) prepareQuery(ctx context.Context) error {
 func (rq *RepositoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Repository, error) {
 	var (
 		nodes       = []*Repository{}
+		withFKs     = rq.withFKs
 		_spec       = rq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			rq.withTomes != nil,
+			rq.withOwner != nil,
 		}
 	)
+	if rq.withOwner != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, repository.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Repository).scanValues(nil, columns)
 	}
@@ -402,6 +447,12 @@ func (rq *RepositoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*R
 		if err := rq.loadTomes(ctx, query, nodes,
 			func(n *Repository) { n.Edges.Tomes = []*Tome{} },
 			func(n *Repository, e *Tome) { n.Edges.Tomes = append(n.Edges.Tomes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := rq.withOwner; query != nil {
+		if err := rq.loadOwner(ctx, query, nodes, nil,
+			func(n *Repository, e *User) { n.Edges.Owner = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -448,6 +499,38 @@ func (rq *RepositoryQuery) loadTomes(ctx context.Context, query *TomeQuery, node
 			return fmt.Errorf(`unexpected referenced foreign-key "tome_repository" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (rq *RepositoryQuery) loadOwner(ctx context.Context, query *UserQuery, nodes []*Repository, init func(*Repository), assign func(*Repository, *User)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Repository)
+	for i := range nodes {
+		if nodes[i].repository_owner == nil {
+			continue
+		}
+		fk := *nodes[i].repository_owner
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "repository_owner" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }

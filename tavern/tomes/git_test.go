@@ -29,7 +29,7 @@ func TestImportFromRepo(t *testing.T) {
 
 	// Create repository
 	repo := graph.Repository.Create().SetURL(localGit).SaveX(ctx)
-	repo.URL = localGit
+	repo.URL = localGit // Override schema hook to test with local repo
 
 	assert.NotEmpty(t, repo.PrivateKey)
 

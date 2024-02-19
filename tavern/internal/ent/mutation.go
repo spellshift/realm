@@ -6504,6 +6504,8 @@ type RepositoryMutation struct {
 	tomes            map[int]struct{}
 	removedtomes     map[int]struct{}
 	clearedtomes     bool
+	owner            *int
+	clearedowner     bool
 	done             bool
 	oldValue         func(context.Context) (*Repository, error)
 	predicates       []predicate.Repository
@@ -6841,6 +6843,45 @@ func (m *RepositoryMutation) ResetTomes() {
 	m.removedtomes = nil
 }
 
+// SetOwnerID sets the "owner" edge to the User entity by id.
+func (m *RepositoryMutation) SetOwnerID(id int) {
+	m.owner = &id
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (m *RepositoryMutation) ClearOwner() {
+	m.clearedowner = true
+}
+
+// OwnerCleared reports if the "owner" edge to the User entity was cleared.
+func (m *RepositoryMutation) OwnerCleared() bool {
+	return m.clearedowner
+}
+
+// OwnerID returns the "owner" edge ID in the mutation.
+func (m *RepositoryMutation) OwnerID() (id int, exists bool) {
+	if m.owner != nil {
+		return *m.owner, true
+	}
+	return
+}
+
+// OwnerIDs returns the "owner" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OwnerID instead. It exists only for internal usage by the builders.
+func (m *RepositoryMutation) OwnerIDs() (ids []int) {
+	if id := m.owner; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOwner resets all changes to the "owner" edge.
+func (m *RepositoryMutation) ResetOwner() {
+	m.owner = nil
+	m.clearedowner = false
+}
+
 // Where appends a list predicates to the RepositoryMutation builder.
 func (m *RepositoryMutation) Where(ps ...predicate.Repository) {
 	m.predicates = append(m.predicates, ps...)
@@ -7042,9 +7083,12 @@ func (m *RepositoryMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RepositoryMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.tomes != nil {
 		edges = append(edges, repository.EdgeTomes)
+	}
+	if m.owner != nil {
+		edges = append(edges, repository.EdgeOwner)
 	}
 	return edges
 }
@@ -7059,13 +7103,17 @@ func (m *RepositoryMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case repository.EdgeOwner:
+		if id := m.owner; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RepositoryMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedtomes != nil {
 		edges = append(edges, repository.EdgeTomes)
 	}
@@ -7088,9 +7136,12 @@ func (m *RepositoryMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RepositoryMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedtomes {
 		edges = append(edges, repository.EdgeTomes)
+	}
+	if m.clearedowner {
+		edges = append(edges, repository.EdgeOwner)
 	}
 	return edges
 }
@@ -7101,6 +7152,8 @@ func (m *RepositoryMutation) EdgeCleared(name string) bool {
 	switch name {
 	case repository.EdgeTomes:
 		return m.clearedtomes
+	case repository.EdgeOwner:
+		return m.clearedowner
 	}
 	return false
 }
@@ -7109,6 +7162,9 @@ func (m *RepositoryMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *RepositoryMutation) ClearEdge(name string) error {
 	switch name {
+	case repository.EdgeOwner:
+		m.ClearOwner()
+		return nil
 	}
 	return fmt.Errorf("unknown Repository unique edge %s", name)
 }
@@ -7119,6 +7175,9 @@ func (m *RepositoryMutation) ResetEdge(name string) error {
 	switch name {
 	case repository.EdgeTomes:
 		m.ResetTomes()
+		return nil
+	case repository.EdgeOwner:
+		m.ResetOwner()
 		return nil
 	}
 	return fmt.Errorf("unknown Repository edge %s", name)

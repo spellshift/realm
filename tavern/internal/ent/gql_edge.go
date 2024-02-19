@@ -196,6 +196,14 @@ func (r *Repository) Tomes(ctx context.Context) (result []*Tome, err error) {
 	return result, err
 }
 
+func (r *Repository) Owner(ctx context.Context) (*User, error) {
+	result, err := r.Edges.OwnerOrErr()
+	if IsNotLoaded(err) {
+		result, err = r.QueryOwner().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (t *Tag) Hosts(ctx context.Context) (result []*Host, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = t.NamedHosts(graphql.GetFieldContext(ctx).Field.Alias)

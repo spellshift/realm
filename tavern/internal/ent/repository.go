@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Repository is the model entity for the Repository schema.
@@ -29,19 +30,22 @@ type Repository struct {
 	PrivateKey string `json:"-"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RepositoryQuery when eager-loading is set.
-	Edges        RepositoryEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges            RepositoryEdges `json:"edges"`
+	repository_owner *int
+	selectValues     sql.SelectValues
 }
 
 // RepositoryEdges holds the relations/edges for other nodes in the graph.
 type RepositoryEdges struct {
 	// Tomes imported using this repository.
 	Tomes []*Tome `json:"tomes,omitempty"`
+	// User that created this repository.
+	Owner *User `json:"owner,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 
 	namedTomes map[string][]*Tome
 }
@@ -55,6 +59,19 @@ func (e RepositoryEdges) TomesOrErr() ([]*Tome, error) {
 	return nil, &NotLoadedError{edge: "tomes"}
 }
 
+// OwnerOrErr returns the Owner value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RepositoryEdges) OwnerOrErr() (*User, error) {
+	if e.loadedTypes[1] {
+		if e.Owner == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: user.Label}
+		}
+		return e.Owner, nil
+	}
+	return nil, &NotLoadedError{edge: "owner"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Repository) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -66,6 +83,8 @@ func (*Repository) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case repository.FieldCreatedAt, repository.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
+		case repository.ForeignKeys[0]: // repository_owner
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -117,6 +136,13 @@ func (r *Repository) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				r.PrivateKey = value.String
 			}
+		case repository.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field repository_owner", value)
+			} else if value.Valid {
+				r.repository_owner = new(int)
+				*r.repository_owner = int(value.Int64)
+			}
 		default:
 			r.selectValues.Set(columns[i], values[i])
 		}
@@ -133,6 +159,11 @@ func (r *Repository) Value(name string) (ent.Value, error) {
 // QueryTomes queries the "tomes" edge of the Repository entity.
 func (r *Repository) QueryTomes() *TomeQuery {
 	return NewRepositoryClient(r.config).QueryTomes(r)
+}
+
+// QueryOwner queries the "owner" edge of the Repository entity.
+func (r *Repository) QueryOwner() *UserQuery {
+	return NewRepositoryClient(r.config).QueryOwner(r)
 }
 
 // Update returns a builder for updating this Repository.

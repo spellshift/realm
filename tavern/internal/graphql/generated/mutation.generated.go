@@ -1192,6 +1192,8 @@ func (ec *executionContext) fieldContext_Mutation_createRepository(ctx context.C
 				return ec.fieldContext_Repository_publicKey(ctx, field)
 			case "tomes":
 				return ec.fieldContext_Repository_tomes(ctx, field)
+			case "owner":
+				return ec.fieldContext_Repository_owner(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Repository", field.Name)
 		},
@@ -1285,6 +1287,8 @@ func (ec *executionContext) fieldContext_Mutation_importRepository(ctx context.C
 				return ec.fieldContext_Repository_publicKey(ctx, field)
 			case "tomes":
 				return ec.fieldContext_Repository_tomes(ctx, field)
+			case "owner":
+				return ec.fieldContext_Repository_owner(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Repository", field.Name)
 		},

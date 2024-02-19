@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // RepositoryUpdate is the builder for updating Repository entities.
@@ -68,6 +69,25 @@ func (ru *RepositoryUpdate) AddTomes(t ...*Tome) *RepositoryUpdate {
 	return ru.AddTomeIDs(ids...)
 }
 
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (ru *RepositoryUpdate) SetOwnerID(id int) *RepositoryUpdate {
+	ru.mutation.SetOwnerID(id)
+	return ru
+}
+
+// SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
+func (ru *RepositoryUpdate) SetNillableOwnerID(id *int) *RepositoryUpdate {
+	if id != nil {
+		ru = ru.SetOwnerID(*id)
+	}
+	return ru
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (ru *RepositoryUpdate) SetOwner(u *User) *RepositoryUpdate {
+	return ru.SetOwnerID(u.ID)
+}
+
 // Mutation returns the RepositoryMutation object of the builder.
 func (ru *RepositoryUpdate) Mutation() *RepositoryMutation {
 	return ru.mutation
@@ -92,6 +112,12 @@ func (ru *RepositoryUpdate) RemoveTomes(t ...*Tome) *RepositoryUpdate {
 		ids[i] = t[i].ID
 	}
 	return ru.RemoveTomeIDs(ids...)
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (ru *RepositoryUpdate) ClearOwner() *RepositoryUpdate {
+	ru.mutation.ClearOwner()
+	return ru
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -225,6 +251,35 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ru.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   repository.OwnerTable,
+			Columns: []string{repository.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   repository.OwnerTable,
+			Columns: []string{repository.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{repository.Label}
@@ -284,6 +339,25 @@ func (ruo *RepositoryUpdateOne) AddTomes(t ...*Tome) *RepositoryUpdateOne {
 	return ruo.AddTomeIDs(ids...)
 }
 
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (ruo *RepositoryUpdateOne) SetOwnerID(id int) *RepositoryUpdateOne {
+	ruo.mutation.SetOwnerID(id)
+	return ruo
+}
+
+// SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
+func (ruo *RepositoryUpdateOne) SetNillableOwnerID(id *int) *RepositoryUpdateOne {
+	if id != nil {
+		ruo = ruo.SetOwnerID(*id)
+	}
+	return ruo
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (ruo *RepositoryUpdateOne) SetOwner(u *User) *RepositoryUpdateOne {
+	return ruo.SetOwnerID(u.ID)
+}
+
 // Mutation returns the RepositoryMutation object of the builder.
 func (ruo *RepositoryUpdateOne) Mutation() *RepositoryMutation {
 	return ruo.mutation
@@ -308,6 +382,12 @@ func (ruo *RepositoryUpdateOne) RemoveTomes(t ...*Tome) *RepositoryUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return ruo.RemoveTomeIDs(ids...)
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (ruo *RepositoryUpdateOne) ClearOwner() *RepositoryUpdateOne {
+	ruo.mutation.ClearOwner()
+	return ruo
 }
 
 // Where appends a list predicates to the RepositoryUpdate builder.
@@ -464,6 +544,35 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   repository.OwnerTable,
+			Columns: []string{repository.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   repository.OwnerTable,
+			Columns: []string{repository.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

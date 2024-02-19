@@ -153,16 +153,12 @@ func (c *QuestCreate) SetInput(i CreateQuestInput) *QuestCreate {
 
 // CreateRepositoryInput represents a mutation input for creating repositories.
 type CreateRepositoryInput struct {
-	URL     string
-	TomeIDs []int
+	URL string
 }
 
 // Mutate applies the CreateRepositoryInput on the RepositoryMutation builder.
 func (i *CreateRepositoryInput) Mutate(m *RepositoryMutation) {
 	m.SetURL(i.URL)
-	if v := i.TomeIDs; len(v) > 0 {
-		m.AddTomeIDs(v...)
-	}
 }
 
 // SetInput applies the change-set in the CreateRepositoryInput on the RepositoryCreate builder.
