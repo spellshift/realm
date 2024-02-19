@@ -29,7 +29,7 @@
 
 ## Quick Start
 
-*To deploy a production ready instance see the [setup guide](https://docs.realm.pub/user-guide/tavern).*
+*To deploy a production ready instance see the [setup guide](https://docs.realm.pub/admin-guide/tavern).*
 
 ```bash
 # Clone Realm
