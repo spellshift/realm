@@ -302,15 +302,17 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 ##### List all beacons
 
 ```graphql
-query get_beacons {
-  beacons {
-    id
-    identifier
-    name
-    hostPlatform
-    hostIdentifier
-    hostPrimaryIP
-  }
+query listBeacons {
+    beacons {
+        id
+        identifier
+        name
+        host {
+          platform
+          identifier
+          primaryIP
+        }
+    }
 }
 ```
 
