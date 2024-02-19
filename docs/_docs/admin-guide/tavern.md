@@ -354,7 +354,7 @@ mutation createQuest($input: CreateQuestInput!, $beaconIDs:[ID!]!){
     "tomeID": "21474836488",
     "parameters": "{\"print_string\":\"Hello World\"}"
   },
-  "sess": ["8589934593"]
+  "beaconIDs": ["8589934593"]
 }
 ```
 
