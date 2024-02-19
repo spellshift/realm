@@ -295,6 +295,13 @@ The <b>file.is_file</b> method checks if a path exists and is a file. If it does
 `file.list(path: str) -> List<Dict>`
 
 The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
+This function also supports globbing with `*` for example:
+
+```python
+file.list("/home/*/.bash_history") # List all files called .bash_history in sub dirs of `/home/`
+file.list("/etc/*ssh*") # List the contents of all dirs that have `ssh` in the name and all files in etc with `ssh` in the name
+```
+
 Each file is represented by a Dict type.
 Here is an example of the Dict layout:
 
@@ -302,6 +309,7 @@ Here is an example of the Dict layout:
 [
     {
         "file_name": "implants",
+        "absolute_path": "/workspace/realm/implants",
         "size": 4096,
         "owner": "root",
         "group": "0",
@@ -311,6 +319,7 @@ Here is an example of the Dict layout:
     },
     {
         "file_name": "README.md",
+        "absolute_path": "/workspace/realm/README.md",
         "size": 750,
         "owner": "root",
         "group": "0",
@@ -320,6 +329,7 @@ Here is an example of the Dict layout:
     },
     {
         "file_name": ".git",
+        "absolute_path": "/workspace/realm/.git",
         "size": 4096,
         "owner": "root",
         "group": "0",
@@ -347,6 +357,12 @@ The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If 
 `file.read(path: str) -> str`
 
 The <b>file.read</b> method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+This function supports globbing with `*` for example:
+
+```python
+file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
+file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+```
 
 ### file.remove
 
