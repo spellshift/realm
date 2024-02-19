@@ -109,7 +109,7 @@ func HookCreateRepoPrivateKey() ent.Hook {
 			}
 
 			// Prepend https schema if no schema specified
-			if u, ok := mut.URL(); ok && (!strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "ssh://")) {
+			if u, ok := mut.URL(); ok && (!strings.HasPrefix(u, "https://") && !strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "ssh://")) {
 				mut.SetURL(fmt.Sprintf("https://%s", u))
 			}
 
