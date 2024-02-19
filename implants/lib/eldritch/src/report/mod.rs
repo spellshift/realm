@@ -31,7 +31,6 @@ fn methods(builder: &mut MethodsBuilder) {
         Ok(NoneType{})
     }
 
-
     #[allow(unused_variables)]
     fn process_list(this: &ReportLibrary, starlark_eval: &mut Evaluator<'v, '_>, process_list: UnpackList<SmallMap<String, Value>>) -> anyhow::Result<NoneType> {
         let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
