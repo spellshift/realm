@@ -60,6 +60,9 @@ func (meta MetadataDefinition) Validate() error {
 	if meta.Description == "" {
 		return fmt.Errorf("must set 'description'")
 	}
+	if meta.Tactic == "" {
+		return fmt.Errorf("must set 'tactic'")
+	}
 	for _, paramDef := range meta.ParamDefs {
 		if err := paramDef.Validate(); err != nil {
 			return fmt.Errorf("invalid parameter definition (%q): %w", meta.Name, err)

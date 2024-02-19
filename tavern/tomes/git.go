@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	gitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"golang.org/x/crypto/ssh"
@@ -53,20 +54,20 @@ type GitImporter struct {
 // result should be included.
 func (importer *GitImporter) Import(ctx context.Context, entRepo *ent.Repository, filters ...func(path string) bool) error {
 	// Use Private Key Auth for SSH
-	var authMethod *gitssh.PublicKeys
+	var authMethod transport.AuthMethod
 	if strings.HasPrefix(entRepo.URL, "ssh://") {
 		privKey, err := ssh.ParsePrivateKey([]byte(entRepo.PrivateKey))
 		if err != nil {
 			return fmt.Errorf("failed to parse private key for repository: %w", err)
 		}
-		authMethod = &gitssh.PublicKeys{
+		authMethod = transport.AuthMethod(&gitssh.PublicKeys{
 			User:   "git",
 			Signer: privKey,
 			HostKeyCallbackHelper: gitssh.HostKeyCallbackHelper{
 				// Ignore Host Keys
 				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			},
-		}
+		})
 	}
 
 	// Clone Repository (In-Memory)
