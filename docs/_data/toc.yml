@@ -37,8 +37,6 @@
       children:
         - title: "Contribution Guidelines"
           url: "dev-guide/introduction#contribution-guidelines"
-        - title: "Terminology"
-          url: "dev-guide/introduction#terminology"
         - title: "Project Structure"
           url: "dev-guide/introduction#project-structure"
         - title: "Where to Start?"
