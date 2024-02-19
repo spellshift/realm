@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -12,17 +13,20 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // RepositoryQuery is the builder for querying Repository entities.
 type RepositoryQuery struct {
 	config
-	ctx        *QueryContext
-	order      []repository.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Repository
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Repository) error
+	ctx            *QueryContext
+	order          []repository.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Repository
+	withTomes      *TomeQuery
+	modifiers      []func(*sql.Selector)
+	loadTotal      []func(context.Context, []*Repository) error
+	withNamedTomes map[string]*TomeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -57,6 +61,28 @@ func (rq *RepositoryQuery) Unique(unique bool) *RepositoryQuery {
 func (rq *RepositoryQuery) Order(o ...repository.OrderOption) *RepositoryQuery {
 	rq.order = append(rq.order, o...)
 	return rq
+}
+
+// QueryTomes chains the current query on the "tomes" edge.
+func (rq *RepositoryQuery) QueryTomes() *TomeQuery {
+	query := (&TomeClient{config: rq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(repository.Table, repository.FieldID, selector),
+			sqlgraph.To(tome.Table, tome.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, repository.TomesTable, repository.TomesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Repository entity from the query.
@@ -251,10 +277,22 @@ func (rq *RepositoryQuery) Clone() *RepositoryQuery {
 		order:      append([]repository.OrderOption{}, rq.order...),
 		inters:     append([]Interceptor{}, rq.inters...),
 		predicates: append([]predicate.Repository{}, rq.predicates...),
+		withTomes:  rq.withTomes.Clone(),
 		// clone intermediate query.
 		sql:  rq.sql.Clone(),
 		path: rq.path,
 	}
+}
+
+// WithTomes tells the query-builder to eager-load the nodes that are connected to
+// the "tomes" edge. The optional arguments are used to configure the query builder of the edge.
+func (rq *RepositoryQuery) WithTomes(opts ...func(*TomeQuery)) *RepositoryQuery {
+	query := (&TomeClient{config: rq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withTomes = query
+	return rq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -333,8 +371,11 @@ func (rq *RepositoryQuery) prepareQuery(ctx context.Context) error {
 
 func (rq *RepositoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Repository, error) {
 	var (
-		nodes = []*Repository{}
-		_spec = rq.querySpec()
+		nodes       = []*Repository{}
+		_spec       = rq.querySpec()
+		loadedTypes = [1]bool{
+			rq.withTomes != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Repository).scanValues(nil, columns)
@@ -342,6 +383,7 @@ func (rq *RepositoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*R
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Repository{config: rq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(rq.modifiers) > 0 {
@@ -356,12 +398,58 @@ func (rq *RepositoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*R
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := rq.withTomes; query != nil {
+		if err := rq.loadTomes(ctx, query, nodes,
+			func(n *Repository) { n.Edges.Tomes = []*Tome{} },
+			func(n *Repository, e *Tome) { n.Edges.Tomes = append(n.Edges.Tomes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range rq.withNamedTomes {
+		if err := rq.loadTomes(ctx, query, nodes,
+			func(n *Repository) { n.appendNamedTomes(name) },
+			func(n *Repository, e *Tome) { n.appendNamedTomes(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range rq.loadTotal {
 		if err := rq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (rq *RepositoryQuery) loadTomes(ctx context.Context, query *TomeQuery, nodes []*Repository, init func(*Repository), assign func(*Repository, *Tome)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Repository)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Tome(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(repository.TomesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.tome_repository
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "tome_repository" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "tome_repository" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (rq *RepositoryQuery) sqlCount(ctx context.Context) (int, error) {
@@ -446,6 +534,20 @@ func (rq *RepositoryQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedTomes tells the query-builder to eager-load the nodes that are connected to the "tomes"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (rq *RepositoryQuery) WithNamedTomes(name string, opts ...func(*TomeQuery)) *RepositoryQuery {
+	query := (&TomeClient{config: rq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if rq.withNamedTomes == nil {
+		rq.withNamedTomes = make(map[string]*TomeQuery)
+	}
+	rq.withNamedTomes[name] = query
+	return rq
 }
 
 // RepositoryGroupBy is the group-by builder for Repository entities.

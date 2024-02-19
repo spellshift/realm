@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/pem"
 	"fmt"
 	"strings"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"golang.org/x/crypto/ssh"
 	"realm.pub/tavern/internal/ent/hook"
@@ -28,11 +30,13 @@ func (Repository) Fields() []ent.Field {
 			Unique().
 			Comment("URL of the repository"),
 		field.String("public_key").
+			NotEmpty().
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput | entgql.SkipMutationUpdateInput),
 			).
 			Comment("Public key associated with this repositories private key"),
 		field.String("private_key").
+			NotEmpty().
 			Sensitive().
 			Annotations(
 				entgql.Skip(entgql.SkipAll),
@@ -43,7 +47,14 @@ func (Repository) Fields() []ent.Field {
 
 // Edges of the ent.
 func (Repository) Edges() []ent.Edge {
-	return []ent.Edge{}
+	return []ent.Edge{
+		edge.From("tomes", Tome.Type).
+			Ref("repository").
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("Tomes imported using this repository."),
+	}
 }
 
 // Annotations describes additional information for the ent.
@@ -69,7 +80,7 @@ func (Repository) Hooks() []ent.Hook {
 	}
 }
 
-// HookCreateRepoPrivateKey will update tome info (e.g. hash) whenever it is mutated.
+// HookCreateRepoPrivateKey will generate private key for the repository upon creation.
 func HookCreateRepoPrivateKey() ent.Hook {
 	// Get the relevant methods from the Mutation
 	// See this example: https://github.com/ent/ent/blob/master/entc/integration/hooks/ent/schema/user.go#L98
@@ -110,12 +121,13 @@ func HookCreateRepoPrivateKey() ent.Hook {
 			if err != nil {
 				return nil, fmt.Errorf("could not convert private key to ssh signer: %v", err)
 			}
+
 			block, err := ssh.MarshalPrivateKey(privKey, "")
 			if err != nil || block == nil {
 				return nil, fmt.Errorf("failed to marshal ssh private key: %w", err)
 			}
 
-			mut.SetPrivateKey(string(block.Bytes))
+			mut.SetPrivateKey(string(pem.EncodeToMemory(block)))
 			mut.SetPublicKey(string(ssh.MarshalAuthorizedKey(signer.PublicKey())))
 
 			return next.Mutate(ctx, m)

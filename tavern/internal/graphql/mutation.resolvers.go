@@ -202,7 +202,7 @@ func (r *mutationResolver) ImportRepository(ctx context.Context, repoID int, inp
 
 	// Configure Filters
 	filter := func(string) bool { return true }
-	if input.IncludeDirs != nil {
+	if input != nil && input.IncludeDirs != nil {
 		filter = func(path string) bool {
 			for _, prefix := range input.IncludeDirs {
 				// Ignore Leading /

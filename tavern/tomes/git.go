@@ -230,6 +230,7 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 		SetSupportModel(tome.SupportModelCOMMUNITY).
 		SetTactic(tome.Tactic(metadata.Tactic)).
 		SetEldritch(eldritch).
+		SetRepository(entRepo).
 		AddFileIDs(tomeFileIDs...).
 		OnConflict().
 		UpdateNewValues().

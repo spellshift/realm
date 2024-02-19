@@ -1172,6 +1172,8 @@ func (ec *executionContext) fieldContext_File_tomes(ctx context.Context, field g
 				return ec.fieldContext_Tome_files(ctx, field)
 			case "uploader":
 				return ec.fieldContext_Tome_uploader(ctx, field)
+			case "repository":
+				return ec.fieldContext_Tome_repository(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
 		},
@@ -4466,6 +4468,8 @@ func (ec *executionContext) fieldContext_Query_tomes(ctx context.Context, field 
 				return ec.fieldContext_Tome_files(ctx, field)
 			case "uploader":
 				return ec.fieldContext_Tome_uploader(ctx, field)
+			case "repository":
+				return ec.fieldContext_Tome_repository(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
 		},
@@ -5044,6 +5048,8 @@ func (ec *executionContext) fieldContext_Quest_tome(ctx context.Context, field g
 				return ec.fieldContext_Tome_files(ctx, field)
 			case "uploader":
 				return ec.fieldContext_Tome_uploader(ctx, field)
+			case "repository":
+				return ec.fieldContext_Tome_repository(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
 		},
@@ -5454,6 +5460,75 @@ func (ec *executionContext) fieldContext_Repository_publicKey(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Repository_tomes(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Repository_tomes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tomes(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Tome)
+	fc.Result = res
+	return ec.marshalOTome2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Repository_tomes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Repository",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tome_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Tome_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Tome_lastModifiedAt(ctx, field)
+			case "name":
+				return ec.fieldContext_Tome_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Tome_description(ctx, field)
+			case "author":
+				return ec.fieldContext_Tome_author(ctx, field)
+			case "supportModel":
+				return ec.fieldContext_Tome_supportModel(ctx, field)
+			case "tactic":
+				return ec.fieldContext_Tome_tactic(ctx, field)
+			case "paramDefs":
+				return ec.fieldContext_Tome_paramDefs(ctx, field)
+			case "eldritch":
+				return ec.fieldContext_Tome_eldritch(ctx, field)
+			case "files":
+				return ec.fieldContext_Tome_files(ctx, field)
+			case "uploader":
+				return ec.fieldContext_Tome_uploader(ctx, field)
+			case "repository":
+				return ec.fieldContext_Tome_repository(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RepositoryConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.RepositoryConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RepositoryConnection_edges(ctx, field)
 	if err != nil {
@@ -5645,6 +5720,8 @@ func (ec *executionContext) fieldContext_RepositoryEdge_node(ctx context.Context
 				return ec.fieldContext_Repository_url(ctx, field)
 			case "publicKey":
 				return ec.fieldContext_Repository_publicKey(ctx, field)
+			case "tomes":
+				return ec.fieldContext_Repository_tomes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Repository", field.Name)
 		},
@@ -7414,6 +7491,61 @@ func (ec *executionContext) fieldContext_Tome_uploader(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Tome_repository(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tome_repository(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Repository(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Repository)
+	fc.Result = res
+	return ec.marshalORepository2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepository(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tome_repository(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tome",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Repository_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Repository_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Repository_lastModifiedAt(ctx, field)
+			case "url":
+				return ec.fieldContext_Repository_url(ctx, field)
+			case "publicKey":
+				return ec.fieldContext_Repository_publicKey(ctx, field)
+			case "tomes":
+				return ec.fieldContext_Repository_tomes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Repository", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_id(ctx, field)
 	if err != nil {
@@ -7694,6 +7826,8 @@ func (ec *executionContext) fieldContext_User_tomes(ctx context.Context, field g
 				return ec.fieldContext_Tome_files(ctx, field)
 			case "uploader":
 				return ec.fieldContext_Tome_uploader(ctx, field)
+			case "repository":
+				return ec.fieldContext_Tome_repository(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
 		},
@@ -8784,7 +8918,7 @@ func (ec *executionContext) unmarshalInputCreateRepositoryInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"url"}
+	fieldsInOrder := [...]string{"url", "tomeIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8800,6 +8934,15 @@ func (ec *executionContext) unmarshalInputCreateRepositoryInput(ctx context.Cont
 				return it, err
 			}
 			it.URL = data
+		case "tomeIDs":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tomeIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TomeIDs = data
 		}
 	}
 
@@ -14136,7 +14279,7 @@ func (ec *executionContext) unmarshalInputRepositoryWhereInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "url", "urlNEQ", "urlIn", "urlNotIn", "urlGT", "urlGTE", "urlLT", "urlLTE", "urlContains", "urlHasPrefix", "urlHasSuffix", "urlEqualFold", "urlContainsFold", "publicKey", "publicKeyNEQ", "publicKeyIn", "publicKeyNotIn", "publicKeyGT", "publicKeyGTE", "publicKeyLT", "publicKeyLTE", "publicKeyContains", "publicKeyHasPrefix", "publicKeyHasSuffix", "publicKeyEqualFold", "publicKeyContainsFold"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "url", "urlNEQ", "urlIn", "urlNotIn", "urlGT", "urlGTE", "urlLT", "urlLTE", "urlContains", "urlHasPrefix", "urlHasSuffix", "urlEqualFold", "urlContainsFold", "publicKey", "publicKeyNEQ", "publicKeyIn", "publicKeyNotIn", "publicKeyGT", "publicKeyGTE", "publicKeyLT", "publicKeyLTE", "publicKeyContains", "publicKeyHasPrefix", "publicKeyHasSuffix", "publicKeyEqualFold", "publicKeyContainsFold", "hasTomes", "hasTomesWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14620,6 +14763,24 @@ func (ec *executionContext) unmarshalInputRepositoryWhereInput(ctx context.Conte
 				return it, err
 			}
 			it.PublicKeyContainsFold = data
+		case "hasTomes":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTomes"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasTomes = data
+		case "hasTomesWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTomesWith"))
+			data, err := ec.unmarshalOTomeWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasTomesWith = data
 		}
 	}
 
@@ -16014,7 +16175,7 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "author", "authorNEQ", "authorIn", "authorNotIn", "authorGT", "authorGTE", "authorLT", "authorLTE", "authorContains", "authorHasPrefix", "authorHasSuffix", "authorEqualFold", "authorContainsFold", "supportModel", "supportModelNEQ", "supportModelIn", "supportModelNotIn", "tactic", "tacticNEQ", "tacticIn", "tacticNotIn", "paramDefs", "paramDefsNEQ", "paramDefsIn", "paramDefsNotIn", "paramDefsGT", "paramDefsGTE", "paramDefsLT", "paramDefsLTE", "paramDefsContains", "paramDefsHasPrefix", "paramDefsHasSuffix", "paramDefsIsNil", "paramDefsNotNil", "paramDefsEqualFold", "paramDefsContainsFold", "eldritch", "eldritchNEQ", "eldritchIn", "eldritchNotIn", "eldritchGT", "eldritchGTE", "eldritchLT", "eldritchLTE", "eldritchContains", "eldritchHasPrefix", "eldritchHasSuffix", "eldritchEqualFold", "eldritchContainsFold", "hasFiles", "hasFilesWith", "hasUploader", "hasUploaderWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "author", "authorNEQ", "authorIn", "authorNotIn", "authorGT", "authorGTE", "authorLT", "authorLTE", "authorContains", "authorHasPrefix", "authorHasSuffix", "authorEqualFold", "authorContainsFold", "supportModel", "supportModelNEQ", "supportModelIn", "supportModelNotIn", "tactic", "tacticNEQ", "tacticIn", "tacticNotIn", "paramDefs", "paramDefsNEQ", "paramDefsIn", "paramDefsNotIn", "paramDefsGT", "paramDefsGTE", "paramDefsLT", "paramDefsLTE", "paramDefsContains", "paramDefsHasPrefix", "paramDefsHasSuffix", "paramDefsIsNil", "paramDefsNotNil", "paramDefsEqualFold", "paramDefsContainsFold", "eldritch", "eldritchNEQ", "eldritchIn", "eldritchNotIn", "eldritchGT", "eldritchGTE", "eldritchLT", "eldritchLTE", "eldritchContains", "eldritchHasPrefix", "eldritchHasSuffix", "eldritchEqualFold", "eldritchContainsFold", "hasFiles", "hasFilesWith", "hasUploader", "hasUploaderWith", "hasRepository", "hasRepositoryWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -16975,6 +17136,24 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasUploaderWith = data
+		case "hasRepository":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasRepository"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasRepository = data
+		case "hasRepositoryWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasRepositoryWith"))
+			data, err := ec.unmarshalORepositoryWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasRepositoryWith = data
 		}
 	}
 
@@ -19417,28 +19596,61 @@ func (ec *executionContext) _Repository(ctx context.Context, sel ast.SelectionSe
 		case "id":
 			out.Values[i] = ec._Repository_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Repository_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "lastModifiedAt":
 			out.Values[i] = ec._Repository_lastModifiedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "url":
 			out.Values[i] = ec._Repository_url(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "publicKey":
 			out.Values[i] = ec._Repository_publicKey(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "tomes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Repository_tomes(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -20054,6 +20266,39 @@ func (ec *executionContext) _Tome(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Tome_uploader(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "repository":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Tome_repository(ctx, field, obj)
 				return res
 			}
 

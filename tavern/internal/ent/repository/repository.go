@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -24,8 +25,17 @@ const (
 	FieldPublicKey = "public_key"
 	// FieldPrivateKey holds the string denoting the private_key field in the database.
 	FieldPrivateKey = "private_key"
+	// EdgeTomes holds the string denoting the tomes edge name in mutations.
+	EdgeTomes = "tomes"
 	// Table holds the table name of the repository in the database.
 	Table = "repositories"
+	// TomesTable is the table that holds the tomes relation/edge.
+	TomesTable = "tomes"
+	// TomesInverseTable is the table name for the Tome entity.
+	// It exists in this package in order to avoid circular dependency with the "tome" package.
+	TomesInverseTable = "tomes"
+	// TomesColumn is the table column denoting the tomes relation/edge.
+	TomesColumn = "tome_repository"
 )
 
 // Columns holds all SQL columns for repository fields.
@@ -63,6 +73,10 @@ var (
 	UpdateDefaultLastModifiedAt func() time.Time
 	// URLValidator is a validator for the "url" field. It is called by the builders before save.
 	URLValidator func(string) error
+	// PublicKeyValidator is a validator for the "public_key" field. It is called by the builders before save.
+	PublicKeyValidator func(string) error
+	// PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
+	PrivateKeyValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Repository queries.
@@ -96,4 +110,25 @@ func ByPublicKey(opts ...sql.OrderTermOption) OrderOption {
 // ByPrivateKey orders the results by the private_key field.
 func ByPrivateKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrivateKey, opts...).ToFunc()
+}
+
+// ByTomesCount orders the results by tomes count.
+func ByTomesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTomesStep(), opts...)
+	}
+}
+
+// ByTomes orders the results by tomes terms.
+func ByTomes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTomesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newTomesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TomesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, TomesTable, TomesColumn),
+	)
 }

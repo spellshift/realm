@@ -297,6 +297,7 @@ var (
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "tome_uploader", Type: field.TypeInt, Nullable: true},
+		{Name: "tome_repository", Type: field.TypeInt, Nullable: true},
 	}
 	// TomesTable holds the schema information for the "tomes" table.
 	TomesTable = &schema.Table{
@@ -308,6 +309,12 @@ var (
 				Symbol:     "tomes_users_uploader",
 				Columns:    []*schema.Column{TomesColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "tomes_repositories_repository",
+				Columns:    []*schema.Column{TomesColumns[12]},
+				RefColumns: []*schema.Column{RepositoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -414,6 +421,7 @@ func init() {
 	TasksTable.ForeignKeys[0].RefTable = QuestsTable
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
 	TomesTable.ForeignKeys[0].RefTable = UsersTable
+	TomesTable.ForeignKeys[1].RefTable = RepositoriesTable
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
 	TomeFilesTable.ForeignKeys[0].RefTable = TomesTable

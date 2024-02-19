@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // RepositoryUpdate is the builder for updating Repository entities.
@@ -52,9 +53,45 @@ func (ru *RepositoryUpdate) SetPrivateKey(s string) *RepositoryUpdate {
 	return ru
 }
 
+// AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
+func (ru *RepositoryUpdate) AddTomeIDs(ids ...int) *RepositoryUpdate {
+	ru.mutation.AddTomeIDs(ids...)
+	return ru
+}
+
+// AddTomes adds the "tomes" edges to the Tome entity.
+func (ru *RepositoryUpdate) AddTomes(t ...*Tome) *RepositoryUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ru.AddTomeIDs(ids...)
+}
+
 // Mutation returns the RepositoryMutation object of the builder.
 func (ru *RepositoryUpdate) Mutation() *RepositoryMutation {
 	return ru.mutation
+}
+
+// ClearTomes clears all "tomes" edges to the Tome entity.
+func (ru *RepositoryUpdate) ClearTomes() *RepositoryUpdate {
+	ru.mutation.ClearTomes()
+	return ru
+}
+
+// RemoveTomeIDs removes the "tomes" edge to Tome entities by IDs.
+func (ru *RepositoryUpdate) RemoveTomeIDs(ids ...int) *RepositoryUpdate {
+	ru.mutation.RemoveTomeIDs(ids...)
+	return ru
+}
+
+// RemoveTomes removes "tomes" edges to Tome entities.
+func (ru *RepositoryUpdate) RemoveTomes(t ...*Tome) *RepositoryUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ru.RemoveTomeIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -106,6 +143,16 @@ func (ru *RepositoryUpdate) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "Repository.url": %w`, err)}
 		}
 	}
+	if v, ok := ru.mutation.PublicKey(); ok {
+		if err := repository.PublicKeyValidator(v); err != nil {
+			return &ValidationError{Name: "public_key", err: fmt.Errorf(`ent: validator failed for field "Repository.public_key": %w`, err)}
+		}
+	}
+	if v, ok := ru.mutation.PrivateKey(); ok {
+		if err := repository.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Repository.private_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -132,6 +179,51 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := ru.mutation.PrivateKey(); ok {
 		_spec.SetField(repository.FieldPrivateKey, field.TypeString, value)
+	}
+	if ru.mutation.TomesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   repository.TomesTable,
+			Columns: []string{repository.TomesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedTomesIDs(); len(nodes) > 0 && !ru.mutation.TomesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   repository.TomesTable,
+			Columns: []string{repository.TomesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.TomesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   repository.TomesTable,
+			Columns: []string{repository.TomesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -177,9 +269,45 @@ func (ruo *RepositoryUpdateOne) SetPrivateKey(s string) *RepositoryUpdateOne {
 	return ruo
 }
 
+// AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
+func (ruo *RepositoryUpdateOne) AddTomeIDs(ids ...int) *RepositoryUpdateOne {
+	ruo.mutation.AddTomeIDs(ids...)
+	return ruo
+}
+
+// AddTomes adds the "tomes" edges to the Tome entity.
+func (ruo *RepositoryUpdateOne) AddTomes(t ...*Tome) *RepositoryUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ruo.AddTomeIDs(ids...)
+}
+
 // Mutation returns the RepositoryMutation object of the builder.
 func (ruo *RepositoryUpdateOne) Mutation() *RepositoryMutation {
 	return ruo.mutation
+}
+
+// ClearTomes clears all "tomes" edges to the Tome entity.
+func (ruo *RepositoryUpdateOne) ClearTomes() *RepositoryUpdateOne {
+	ruo.mutation.ClearTomes()
+	return ruo
+}
+
+// RemoveTomeIDs removes the "tomes" edge to Tome entities by IDs.
+func (ruo *RepositoryUpdateOne) RemoveTomeIDs(ids ...int) *RepositoryUpdateOne {
+	ruo.mutation.RemoveTomeIDs(ids...)
+	return ruo
+}
+
+// RemoveTomes removes "tomes" edges to Tome entities.
+func (ruo *RepositoryUpdateOne) RemoveTomes(t ...*Tome) *RepositoryUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ruo.RemoveTomeIDs(ids...)
 }
 
 // Where appends a list predicates to the RepositoryUpdate builder.
@@ -244,6 +372,16 @@ func (ruo *RepositoryUpdateOne) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "Repository.url": %w`, err)}
 		}
 	}
+	if v, ok := ruo.mutation.PublicKey(); ok {
+		if err := repository.PublicKeyValidator(v); err != nil {
+			return &ValidationError{Name: "public_key", err: fmt.Errorf(`ent: validator failed for field "Repository.public_key": %w`, err)}
+		}
+	}
+	if v, ok := ruo.mutation.PrivateKey(); ok {
+		if err := repository.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Repository.private_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -287,6 +425,51 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 	}
 	if value, ok := ruo.mutation.PrivateKey(); ok {
 		_spec.SetField(repository.FieldPrivateKey, field.TypeString, value)
+	}
+	if ruo.mutation.TomesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   repository.TomesTable,
+			Columns: []string{repository.TomesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedTomesIDs(); len(nodes) > 0 && !ruo.mutation.TomesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   repository.TomesTable,
+			Columns: []string{repository.TomesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.TomesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   repository.TomesTable,
+			Columns: []string{repository.TomesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Repository{config: ruo.config}
 	_spec.Assign = _node.assignValues

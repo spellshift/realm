@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // RepositoryCreate is the builder for creating a Repository entity.
@@ -66,6 +67,21 @@ func (rc *RepositoryCreate) SetPublicKey(s string) *RepositoryCreate {
 func (rc *RepositoryCreate) SetPrivateKey(s string) *RepositoryCreate {
 	rc.mutation.SetPrivateKey(s)
 	return rc
+}
+
+// AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
+func (rc *RepositoryCreate) AddTomeIDs(ids ...int) *RepositoryCreate {
+	rc.mutation.AddTomeIDs(ids...)
+	return rc
+}
+
+// AddTomes adds the "tomes" edges to the Tome entity.
+func (rc *RepositoryCreate) AddTomes(t ...*Tome) *RepositoryCreate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return rc.AddTomeIDs(ids...)
 }
 
 // Mutation returns the RepositoryMutation object of the builder.
@@ -141,8 +157,18 @@ func (rc *RepositoryCreate) check() error {
 	if _, ok := rc.mutation.PublicKey(); !ok {
 		return &ValidationError{Name: "public_key", err: errors.New(`ent: missing required field "Repository.public_key"`)}
 	}
+	if v, ok := rc.mutation.PublicKey(); ok {
+		if err := repository.PublicKeyValidator(v); err != nil {
+			return &ValidationError{Name: "public_key", err: fmt.Errorf(`ent: validator failed for field "Repository.public_key": %w`, err)}
+		}
+	}
 	if _, ok := rc.mutation.PrivateKey(); !ok {
 		return &ValidationError{Name: "private_key", err: errors.New(`ent: missing required field "Repository.private_key"`)}
+	}
+	if v, ok := rc.mutation.PrivateKey(); ok {
+		if err := repository.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Repository.private_key": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -190,6 +216,22 @@ func (rc *RepositoryCreate) createSpec() (*Repository, *sqlgraph.CreateSpec) {
 	if value, ok := rc.mutation.PrivateKey(); ok {
 		_spec.SetField(repository.FieldPrivateKey, field.TypeString, value)
 		_node.PrivateKey = value
+	}
+	if nodes := rc.mutation.TomesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   repository.TomesTable,
+			Columns: []string{repository.TomesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

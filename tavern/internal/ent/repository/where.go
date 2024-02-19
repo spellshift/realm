@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -352,6 +353,29 @@ func PrivateKeyEqualFold(v string) predicate.Repository {
 // PrivateKeyContainsFold applies the ContainsFold predicate on the "private_key" field.
 func PrivateKeyContainsFold(v string) predicate.Repository {
 	return predicate.Repository(sql.FieldContainsFold(FieldPrivateKey, v))
+}
+
+// HasTomes applies the HasEdge predicate on the "tomes" edge.
+func HasTomes() predicate.Repository {
+	return predicate.Repository(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, TomesTable, TomesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTomesWith applies the HasEdge predicate on the "tomes" edge with a given conditions (other predicates).
+func HasTomesWith(preds ...predicate.Tome) predicate.Repository {
+	return predicate.Repository(func(s *sql.Selector) {
+		step := newTomesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

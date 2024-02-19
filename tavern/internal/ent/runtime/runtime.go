@@ -230,6 +230,14 @@ func init() {
 	repositoryDescURL := repositoryFields[0].Descriptor()
 	// repository.URLValidator is a validator for the "url" field. It is called by the builders before save.
 	repository.URLValidator = repositoryDescURL.Validators[0].(func(string) error)
+	// repositoryDescPublicKey is the schema descriptor for public_key field.
+	repositoryDescPublicKey := repositoryFields[1].Descriptor()
+	// repository.PublicKeyValidator is a validator for the "public_key" field. It is called by the builders before save.
+	repository.PublicKeyValidator = repositoryDescPublicKey.Validators[0].(func(string) error)
+	// repositoryDescPrivateKey is the schema descriptor for private_key field.
+	repositoryDescPrivateKey := repositoryFields[2].Descriptor()
+	// repository.PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
+	repository.PrivateKeyValidator = repositoryDescPrivateKey.Validators[0].(func(string) error)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.

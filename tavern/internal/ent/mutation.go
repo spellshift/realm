@@ -6501,6 +6501,9 @@ type RepositoryMutation struct {
 	public_key       *string
 	private_key      *string
 	clearedFields    map[string]struct{}
+	tomes            map[int]struct{}
+	removedtomes     map[int]struct{}
+	clearedtomes     bool
 	done             bool
 	oldValue         func(context.Context) (*Repository, error)
 	predicates       []predicate.Repository
@@ -6784,6 +6787,60 @@ func (m *RepositoryMutation) ResetPrivateKey() {
 	m.private_key = nil
 }
 
+// AddTomeIDs adds the "tomes" edge to the Tome entity by ids.
+func (m *RepositoryMutation) AddTomeIDs(ids ...int) {
+	if m.tomes == nil {
+		m.tomes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tomes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTomes clears the "tomes" edge to the Tome entity.
+func (m *RepositoryMutation) ClearTomes() {
+	m.clearedtomes = true
+}
+
+// TomesCleared reports if the "tomes" edge to the Tome entity was cleared.
+func (m *RepositoryMutation) TomesCleared() bool {
+	return m.clearedtomes
+}
+
+// RemoveTomeIDs removes the "tomes" edge to the Tome entity by IDs.
+func (m *RepositoryMutation) RemoveTomeIDs(ids ...int) {
+	if m.removedtomes == nil {
+		m.removedtomes = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.tomes, ids[i])
+		m.removedtomes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTomes returns the removed IDs of the "tomes" edge to the Tome entity.
+func (m *RepositoryMutation) RemovedTomesIDs() (ids []int) {
+	for id := range m.removedtomes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TomesIDs returns the "tomes" edge IDs in the mutation.
+func (m *RepositoryMutation) TomesIDs() (ids []int) {
+	for id := range m.tomes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTomes resets all changes to the "tomes" edge.
+func (m *RepositoryMutation) ResetTomes() {
+	m.tomes = nil
+	m.clearedtomes = false
+	m.removedtomes = nil
+}
+
 // Where appends a list predicates to the RepositoryMutation builder.
 func (m *RepositoryMutation) Where(ps ...predicate.Repository) {
 	m.predicates = append(m.predicates, ps...)
@@ -6985,49 +7042,85 @@ func (m *RepositoryMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RepositoryMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.tomes != nil {
+		edges = append(edges, repository.EdgeTomes)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *RepositoryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case repository.EdgeTomes:
+		ids := make([]ent.Value, 0, len(m.tomes))
+		for id := range m.tomes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RepositoryMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedtomes != nil {
+		edges = append(edges, repository.EdgeTomes)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *RepositoryMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case repository.EdgeTomes:
+		ids := make([]ent.Value, 0, len(m.removedtomes))
+		for id := range m.removedtomes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RepositoryMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedtomes {
+		edges = append(edges, repository.EdgeTomes)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *RepositoryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case repository.EdgeTomes:
+		return m.clearedtomes
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *RepositoryMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Repository unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *RepositoryMutation) ResetEdge(name string) error {
+	switch name {
+	case repository.EdgeTomes:
+		m.ResetTomes()
+		return nil
+	}
 	return fmt.Errorf("unknown Repository edge %s", name)
 }
 
@@ -8722,28 +8815,30 @@ func (m *TaskMutation) ResetEdge(name string) error {
 // TomeMutation represents an operation that mutates the Tome nodes in the graph.
 type TomeMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	name             *string
-	description      *string
-	author           *string
-	support_model    *tome.SupportModel
-	tactic           *tome.Tactic
-	param_defs       *string
-	hash             *string
-	eldritch         *string
-	clearedFields    map[string]struct{}
-	files            map[int]struct{}
-	removedfiles     map[int]struct{}
-	clearedfiles     bool
-	uploader         *int
-	cleareduploader  bool
-	done             bool
-	oldValue         func(context.Context) (*Tome, error)
-	predicates       []predicate.Tome
+	op                Op
+	typ               string
+	id                *int
+	created_at        *time.Time
+	last_modified_at  *time.Time
+	name              *string
+	description       *string
+	author            *string
+	support_model     *tome.SupportModel
+	tactic            *tome.Tactic
+	param_defs        *string
+	hash              *string
+	eldritch          *string
+	clearedFields     map[string]struct{}
+	files             map[int]struct{}
+	removedfiles      map[int]struct{}
+	clearedfiles      bool
+	uploader          *int
+	cleareduploader   bool
+	repository        *int
+	clearedrepository bool
+	done              bool
+	oldValue          func(context.Context) (*Tome, error)
+	predicates        []predicate.Tome
 }
 
 var _ ent.Mutation = (*TomeMutation)(nil)
@@ -9310,6 +9405,45 @@ func (m *TomeMutation) ResetUploader() {
 	m.cleareduploader = false
 }
 
+// SetRepositoryID sets the "repository" edge to the Repository entity by id.
+func (m *TomeMutation) SetRepositoryID(id int) {
+	m.repository = &id
+}
+
+// ClearRepository clears the "repository" edge to the Repository entity.
+func (m *TomeMutation) ClearRepository() {
+	m.clearedrepository = true
+}
+
+// RepositoryCleared reports if the "repository" edge to the Repository entity was cleared.
+func (m *TomeMutation) RepositoryCleared() bool {
+	return m.clearedrepository
+}
+
+// RepositoryID returns the "repository" edge ID in the mutation.
+func (m *TomeMutation) RepositoryID() (id int, exists bool) {
+	if m.repository != nil {
+		return *m.repository, true
+	}
+	return
+}
+
+// RepositoryIDs returns the "repository" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RepositoryID instead. It exists only for internal usage by the builders.
+func (m *TomeMutation) RepositoryIDs() (ids []int) {
+	if id := m.repository; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRepository resets all changes to the "repository" edge.
+func (m *TomeMutation) ResetRepository() {
+	m.repository = nil
+	m.clearedrepository = false
+}
+
 // Where appends a list predicates to the TomeMutation builder.
 func (m *TomeMutation) Where(ps ...predicate.Tome) {
 	m.predicates = append(m.predicates, ps...)
@@ -9605,12 +9739,15 @@ func (m *TomeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TomeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.files != nil {
 		edges = append(edges, tome.EdgeFiles)
 	}
 	if m.uploader != nil {
 		edges = append(edges, tome.EdgeUploader)
+	}
+	if m.repository != nil {
+		edges = append(edges, tome.EdgeRepository)
 	}
 	return edges
 }
@@ -9629,13 +9766,17 @@ func (m *TomeMutation) AddedIDs(name string) []ent.Value {
 		if id := m.uploader; id != nil {
 			return []ent.Value{*id}
 		}
+	case tome.EdgeRepository:
+		if id := m.repository; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TomeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedfiles != nil {
 		edges = append(edges, tome.EdgeFiles)
 	}
@@ -9658,12 +9799,15 @@ func (m *TomeMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TomeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedfiles {
 		edges = append(edges, tome.EdgeFiles)
 	}
 	if m.cleareduploader {
 		edges = append(edges, tome.EdgeUploader)
+	}
+	if m.clearedrepository {
+		edges = append(edges, tome.EdgeRepository)
 	}
 	return edges
 }
@@ -9676,6 +9820,8 @@ func (m *TomeMutation) EdgeCleared(name string) bool {
 		return m.clearedfiles
 	case tome.EdgeUploader:
 		return m.cleareduploader
+	case tome.EdgeRepository:
+		return m.clearedrepository
 	}
 	return false
 }
@@ -9686,6 +9832,9 @@ func (m *TomeMutation) ClearEdge(name string) error {
 	switch name {
 	case tome.EdgeUploader:
 		m.ClearUploader()
+		return nil
+	case tome.EdgeRepository:
+		m.ClearRepository()
 		return nil
 	}
 	return fmt.Errorf("unknown Tome unique edge %s", name)
@@ -9700,6 +9849,9 @@ func (m *TomeMutation) ResetEdge(name string) error {
 		return nil
 	case tome.EdgeUploader:
 		m.ResetUploader()
+		return nil
+	case tome.EdgeRepository:
+		m.ResetRepository()
 		return nil
 	}
 	return fmt.Errorf("unknown Tome edge %s", name)

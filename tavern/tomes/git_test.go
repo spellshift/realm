@@ -31,6 +31,8 @@ func TestImportFromRepo(t *testing.T) {
 	repo := graph.Repository.Create().SetURL(localGit).SaveX(ctx)
 	repo.URL = localGit
 
+	assert.NotEmpty(t, repo.PrivateKey)
+
 	filter := func(path string) bool {
 		return strings.Contains(path, "example")
 	}

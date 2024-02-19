@@ -1621,6 +1621,22 @@ func (c *RepositoryClient) GetX(ctx context.Context, id int) *Repository {
 	return obj
 }
 
+// QueryTomes queries the tomes edge of a Repository.
+func (c *RepositoryClient) QueryTomes(r *Repository) *TomeQuery {
+	query := (&TomeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(repository.Table, repository.FieldID, id),
+			sqlgraph.To(tome.Table, tome.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, repository.TomesTable, repository.TomesColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *RepositoryClient) Hooks() []Hook {
 	hooks := c.hooks.Repository
@@ -2143,6 +2159,22 @@ func (c *TomeClient) QueryUploader(t *Tome) *UserQuery {
 			sqlgraph.From(tome.Table, tome.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, tome.UploaderTable, tome.UploaderColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRepository queries the repository edge of a Tome.
+func (c *TomeClient) QueryRepository(t *Tome) *RepositoryQuery {
+	query := (&RepositoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tome.Table, tome.FieldID, id),
+			sqlgraph.To(repository.Table, repository.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, tome.RepositoryTable, tome.RepositoryColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

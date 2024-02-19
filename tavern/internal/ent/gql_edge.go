@@ -184,6 +184,18 @@ func (q *Quest) Creator(ctx context.Context) (*User, error) {
 	return result, MaskNotFound(err)
 }
 
+func (r *Repository) Tomes(ctx context.Context) (result []*Tome, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = r.NamedTomes(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = r.Edges.TomesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = r.QueryTomes().All(ctx)
+	}
+	return result, err
+}
+
 func (t *Tag) Hosts(ctx context.Context) (result []*Host, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = t.NamedHosts(graphql.GetFieldContext(ctx).Field.Alias)
@@ -264,6 +276,14 @@ func (t *Tome) Uploader(ctx context.Context) (*User, error) {
 	result, err := t.Edges.UploaderOrErr()
 	if IsNotLoaded(err) {
 		result, err = t.QueryUploader().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (t *Tome) Repository(ctx context.Context) (*Repository, error) {
+	result, err := t.Edges.RepositoryOrErr()
+	if IsNotLoaded(err) {
+		result, err = t.QueryRepository().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }

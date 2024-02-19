@@ -661,6 +661,29 @@ func HasUploaderWith(preds ...predicate.User) predicate.Tome {
 	})
 }
 
+// HasRepository applies the HasEdge predicate on the "repository" edge.
+func HasRepository() predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, RepositoryTable, RepositoryColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRepositoryWith applies the HasEdge predicate on the "repository" edge with a given conditions (other predicates).
+func HasRepositoryWith(preds ...predicate.Repository) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		step := newRepositoryStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Tome) predicate.Tome {
 	return predicate.Tome(sql.AndPredicates(predicates...))

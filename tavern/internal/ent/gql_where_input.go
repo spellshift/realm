@@ -3546,6 +3546,10 @@ type RepositoryWhereInput struct {
 	PublicKeyHasSuffix    *string  `json:"publicKeyHasSuffix,omitempty"`
 	PublicKeyEqualFold    *string  `json:"publicKeyEqualFold,omitempty"`
 	PublicKeyContainsFold *string  `json:"publicKeyContainsFold,omitempty"`
+
+	// "tomes" edge predicates.
+	HasTomes     *bool             `json:"hasTomes,omitempty"`
+	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3770,6 +3774,24 @@ func (i *RepositoryWhereInput) P() (predicate.Repository, error) {
 		predicates = append(predicates, repository.PublicKeyContainsFold(*i.PublicKeyContainsFold))
 	}
 
+	if i.HasTomes != nil {
+		p := repository.HasTomes()
+		if !*i.HasTomes {
+			p = repository.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTomesWith) > 0 {
+		with := make([]predicate.Tome, 0, len(i.HasTomesWith))
+		for _, w := range i.HasTomesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTomesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, repository.HasTomesWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyRepositoryWhereInput
@@ -4717,6 +4739,10 @@ type TomeWhereInput struct {
 	// "uploader" edge predicates.
 	HasUploader     *bool             `json:"hasUploader,omitempty"`
 	HasUploaderWith []*UserWhereInput `json:"hasUploaderWith,omitempty"`
+
+	// "repository" edge predicates.
+	HasRepository     *bool                   `json:"hasRepository,omitempty"`
+	HasRepositoryWith []*RepositoryWhereInput `json:"hasRepositoryWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -5123,6 +5149,24 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, tome.HasUploaderWith(with...))
+	}
+	if i.HasRepository != nil {
+		p := tome.HasRepository()
+		if !*i.HasRepository {
+			p = tome.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasRepositoryWith) > 0 {
+		with := make([]predicate.Repository, 0, len(i.HasRepositoryWith))
+		for _, w := range i.HasRepositoryWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasRepositoryWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, tome.HasRepositoryWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

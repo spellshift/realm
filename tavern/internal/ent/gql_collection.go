@@ -1067,6 +1067,18 @@ func (r *RepositoryQuery) collectField(ctx context.Context, opCtx *graphql.Opera
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+		case "tomes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TomeClient{config: r.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			r.WithNamedTomes(alias, func(wq *TomeQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[repository.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, repository.FieldCreatedAt)
@@ -1491,6 +1503,16 @@ func (t *TomeQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				return err
 			}
 			t.withUploader = query
+		case "repository":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&RepositoryClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.withRepository = query
 		case "createdAt":
 			if _, ok := fieldSeen[tome.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, tome.FieldCreatedAt)

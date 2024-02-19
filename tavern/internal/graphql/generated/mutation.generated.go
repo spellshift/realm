@@ -911,6 +911,8 @@ func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context
 				return ec.fieldContext_Tome_files(ctx, field)
 			case "uploader":
 				return ec.fieldContext_Tome_uploader(ctx, field)
+			case "repository":
+				return ec.fieldContext_Tome_repository(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
 		},
@@ -1016,6 +1018,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTome(ctx context.Context
 				return ec.fieldContext_Tome_files(ctx, field)
 			case "uploader":
 				return ec.fieldContext_Tome_uploader(ctx, field)
+			case "repository":
+				return ec.fieldContext_Tome_repository(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
 		},
@@ -1186,6 +1190,8 @@ func (ec *executionContext) fieldContext_Mutation_createRepository(ctx context.C
 				return ec.fieldContext_Repository_url(ctx, field)
 			case "publicKey":
 				return ec.fieldContext_Repository_publicKey(ctx, field)
+			case "tomes":
+				return ec.fieldContext_Repository_tomes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Repository", field.Name)
 		},
@@ -1277,6 +1283,8 @@ func (ec *executionContext) fieldContext_Mutation_importRepository(ctx context.C
 				return ec.fieldContext_Repository_url(ctx, field)
 			case "publicKey":
 				return ec.fieldContext_Repository_publicKey(ctx, field)
+			case "tomes":
+				return ec.fieldContext_Repository_tomes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Repository", field.Name)
 		},

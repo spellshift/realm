@@ -26,8 +26,33 @@ type Repository struct {
 	// Public key associated with this repositories private key
 	PublicKey string `json:"public_key,omitempty"`
 	// Private key used for authentication.
-	PrivateKey   string `json:"-"`
+	PrivateKey string `json:"-"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the RepositoryQuery when eager-loading is set.
+	Edges        RepositoryEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// RepositoryEdges holds the relations/edges for other nodes in the graph.
+type RepositoryEdges struct {
+	// Tomes imported using this repository.
+	Tomes []*Tome `json:"tomes,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+
+	namedTomes map[string][]*Tome
+}
+
+// TomesOrErr returns the Tomes value or an error if the edge
+// was not loaded in eager-loading.
+func (e RepositoryEdges) TomesOrErr() ([]*Tome, error) {
+	if e.loadedTypes[0] {
+		return e.Tomes, nil
+	}
+	return nil, &NotLoadedError{edge: "tomes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -105,6 +130,11 @@ func (r *Repository) Value(name string) (ent.Value, error) {
 	return r.selectValues.Get(name)
 }
 
+// QueryTomes queries the "tomes" edge of the Repository entity.
+func (r *Repository) QueryTomes() *TomeQuery {
+	return NewRepositoryClient(r.config).QueryTomes(r)
+}
+
 // Update returns a builder for updating this Repository.
 // Note that you need to call Repository.Unwrap() before calling this method if this Repository
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -143,6 +173,30 @@ func (r *Repository) String() string {
 	builder.WriteString("private_key=<sensitive>")
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedTomes returns the Tomes named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (r *Repository) NamedTomes(name string) ([]*Tome, error) {
+	if r.Edges.namedTomes == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := r.Edges.namedTomes[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (r *Repository) appendNamedTomes(name string, edges ...*Tome) {
+	if r.Edges.namedTomes == nil {
+		r.Edges.namedTomes = make(map[string][]*Tome)
+	}
+	if len(edges) == 0 {
+		r.Edges.namedTomes[name] = []*Tome{}
+	} else {
+		r.Edges.namedTomes[name] = append(r.Edges.namedTomes[name], edges...)
+	}
 }
 
 // Repositories is a parsable slice of Repository.
