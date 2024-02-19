@@ -47,17 +47,14 @@ fn create_file_from_pathbuf(path_entry: PathBuf) -> Result<File> {
         .context("file.list: Failed to canonicalize path")?
         .to_string();
 
-    let file_type = if path_entry.is_dir() {
-        FileType::Directory
-    } else if path_entry.is_file() {
-        FileType::File
-    } else if path_entry.is_symlink() {
-        FileType::Link
-    } else {
-        FileType::Unknown
+    let file_type = match &path_entry {
+        t if t.is_dir() => FileType::Directory,
+        t if t.is_file() => FileType::File,
+        t if t.is_symlink() => FileType::Link,
+        _ => FileType::Unknown,
     };
 
-    let file_metadata = path_entry.metadata()?;
+    let file_metadata = &path_entry.metadata()?;
     let file_size = file_metadata.len();
 
     #[cfg(unix)]

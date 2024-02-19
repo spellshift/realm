@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use glob::glob;
-use std::fs;
+use glob::{glob, GlobError};
+use std::{fs, path::PathBuf};
 
 /*
                if !entry_path.exists() {
@@ -14,7 +14,7 @@ use std::fs;
 
 pub fn read(path: String) -> Result<String> {
     let mut res: String = String::from("");
-    let glob_res = glob(&path)?.collect::<Vec<_>>();
+    let glob_res = glob(&path)?.collect::<Vec<Result<PathBuf, GlobError>>>();
     if glob_res.is_empty() {
         return Err(anyhow::anyhow!(
             "file.read: pattern {} found no results",
