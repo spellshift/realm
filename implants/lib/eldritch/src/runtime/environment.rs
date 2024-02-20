@@ -41,11 +41,11 @@ impl PrintHandler for Environment {
     fn println(&self, text: &str) -> Result<()> {
         self.send(ReportTextMessage {
             id: self.id,
-            text: String::from(text),
+            text: format!("{}\n", text),
         })?;
 
         #[cfg(feature = "print_stdout")]
-        print!("{}", text);
+        println!("{}", text);
 
         Ok(())
     }

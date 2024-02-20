@@ -55,7 +55,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from("2"),
+            want_text: format!("{}\n", "2"),
             want_error: None,
         },
         multi_print: TestCase {
@@ -65,7 +65,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"oceans rise, empires fall"#),
+            want_text: String::from("oceans \nrise, \nempires \nfall\n"),
             want_error: None,
         },
         input_params: TestCase{
@@ -79,7 +79,7 @@ mod tests {
                             ]),
                             file_names: Vec::new(),
                         },
-                        want_text: String::from("echo hello_world"),
+                        want_text: format!("{}\n", "echo hello_world"),
                         want_error: None,
         },
         file_bindings: TestCase {
@@ -89,7 +89,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["append", "compress", "copy", "download", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
+            want_text: format!("{}\n", r#"["append", "compress", "copy", "download", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
             want_error: None,
         },
         process_bindings: TestCase {
@@ -99,7 +99,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["info", "kill", "list", "name", "netstat"]"#),
+            want_text: format!("{}\n", r#"["info", "kill", "list", "name", "netstat"]"#),
             want_error: None,
         },
         sys_bindings: TestCase {
@@ -109,7 +109,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]"#),
+            want_text: format!("{}\n", r#"["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]"#),
             want_error: None,
         },
         pivot_bindings: TestCase {
@@ -119,7 +119,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]"#),
+            want_text: format!("{}\n", r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]"#),
             want_error: None,
         },
         assets_bindings: TestCase {
@@ -129,7 +129,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["copy", "list", "read", "read_binary"]"#),
+            want_text: format!("{}\n", r#"["copy", "list", "read", "read_binary"]"#),
             want_error: None,
         },
         crypto_bindings: TestCase {
@@ -139,7 +139,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]"#),
+            want_text: format!("{}\n", r#"["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]"#),
             want_error: None,
         },
         time_bindings: TestCase {
@@ -149,7 +149,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["format_to_epoch", "format_to_readable", "now", "sleep"]"#),
+            want_text: format!("{}\n", r#"["format_to_epoch", "format_to_readable", "now", "sleep"]"#),
             want_error: None,
         },
         report_bindings: TestCase {
@@ -159,7 +159,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["file", "process_list", "ssh_key", "user_password"]"#),
+            want_text: format!("{}\n", r#"["file", "process_list", "ssh_key", "user_password"]"#),
             want_error: None,
         },
         regex_bindings: TestCase {
@@ -169,7 +169,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: String::from(r#"["match", "match_all", "replace", "replace_all"]"#),
+            want_text: format!("{}\n", r#"["match", "match_all", "replace", "replace_all"]"#),
             want_error: None,
         },
     }
