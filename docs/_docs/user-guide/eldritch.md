@@ -420,6 +420,12 @@ The <b>file.find</b> method finds all files matching the used parameters. Return
 
 The <b>http.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten.
 
+### http.get
+
+`http.get(uri: str, query_params: Option<Dict<str, Value>>, headers: Option<Dict<str, str>>) -> str`
+
+The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`, then return the result as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+
 ---
 
 ## Pivot

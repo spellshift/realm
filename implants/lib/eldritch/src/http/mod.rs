@@ -1,9 +1,11 @@
 mod download_impl;
+mod get_impl;
 
 use starlark::{
+    collections::SmallMap,
     environment::MethodsBuilder,
     starlark_module,
-    values::{none::NoneType, starlark_value},
+    values::{none::NoneType, starlark_value, Value},
 };
 
 /*
@@ -23,5 +25,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn download(this: &HTTPLibrary, uri: String, dst: String) -> anyhow::Result<NoneType> {
         download_impl::download(uri, dst)?;
         Ok(NoneType{})
+    }
+
+    #[allow(unused_variables)]
+    fn get(this: &HTTPLibrary, uri: String, query_params: Option<SmallMap<String, Value>>, headers: Option<SmallMap<String, String>>) -> anyhow::Result<String> {
+        get_impl::get(uri, query_params, headers)
     }
 }

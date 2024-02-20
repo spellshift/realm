@@ -179,7 +179,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["download"]"#),
+            want_text: format!("{}\n", r#"["download", "get"]"#),
             want_error: None,
         },
     }
