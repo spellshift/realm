@@ -24,10 +24,19 @@ func TestImportFromRepo(t *testing.T) {
 	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
 	defer graph.Close()
 
+	// Initialize Git Importer
+	git := tomes.NewGitImporter(graph)
+
+	// Create repository
+	repo := graph.Repository.Create().SetURL(localGit).SaveX(ctx)
+	repo.URL = localGit // Override schema hook to test with local repo
+
+	assert.NotEmpty(t, repo.PrivateKey)
+
 	filter := func(path string) bool {
 		return strings.Contains(path, "example")
 	}
-	_, err := tomes.ImportFromRepo(ctx, graph, localGit, filter)
+	err := git.Import(ctx, repo, filter)
 	require.NoError(t, err)
 
 	testTome := graph.Tome.Query().

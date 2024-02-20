@@ -28,9 +28,7 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
-type ImportTomesFromGitInput struct {
-	// Specify a git URL to obtain the tomes from.
-	GitURL string `json:"gitURL"`
+type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
 	IncludeDirs []string `json:"includeDirs,omitempty"`

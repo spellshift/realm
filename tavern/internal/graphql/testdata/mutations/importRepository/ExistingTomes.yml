@@ -1,0 +1,44 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `repositories` (id, repository_owner, url, public_key, private_key, created_at, last_modified_at)
+    VALUES (11000, 5, "ssh://code.google.com/my/repo", "--PUBLIC KEY--", "--PRIVATE KEY--", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `tomes` (id, tome_repository, name, description, author, eldritch, hash, created_at, last_modified_at)
+    VALUES (2000,11000,"Test Tome","Used in a unit test :D", "kcarretto", "print('Hello World!')", "abcdefg", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `tomes` (id, tome_repository, name, description, author, eldritch, hash, created_at, last_modified_at)
+    VALUES (2001,11000,"expected_tome","Filtered by a unit test :D", "kcarretto", "print('Goodbye World!')", "gfedcba", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation ImportRepository {
+    importRepository(repoID: 11000) {
+      id
+      url
+      publicKey
+      tomes {
+        id
+        name
+        author
+        eldritch
+      }
+      owner {
+          id
+      }
+    }
+  }
+expected:
+  importRepository:
+    id: "11000"
+    url: "ssh://code.google.com/my/repo"
+    publicKey: "--PUBLIC KEY--"
+    tomes:
+      - id: "2000"
+        name: "Test Tome"
+        author: kcarretto
+        eldritch: print('Hello World!')
+      - id: "2001"
+        name: "expected_tome"
+        author: "expected_author"
+        eldritch: print("expected")
+    owner:
+      id: "5"

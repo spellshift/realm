@@ -110,29 +110,20 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputImportTomesFromGitInput(ctx context.Context, obj interface{}) (models.ImportTomesFromGitInput, error) {
-	var it models.ImportTomesFromGitInput
+func (ec *executionContext) unmarshalInputImportRepositoryInput(ctx context.Context, obj interface{}) (models.ImportRepositoryInput, error) {
+	var it models.ImportRepositoryInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"gitURL", "includeDirs"}
+	fieldsInOrder := [...]string{"includeDirs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "gitURL":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gitURL"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.GitURL = data
 		case "includeDirs":
 			var err error
 
@@ -225,9 +216,12 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNImportTomesFromGitInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐImportTomesFromGitInput(ctx context.Context, v interface{}) (models.ImportTomesFromGitInput, error) {
-	res, err := ec.unmarshalInputImportTomesFromGitInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
+func (ec *executionContext) unmarshalOImportRepositoryInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐImportRepositoryInput(ctx context.Context, v interface{}) (*models.ImportRepositoryInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputImportRepositoryInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 // endregion ***************************** type.gotpl *****************************

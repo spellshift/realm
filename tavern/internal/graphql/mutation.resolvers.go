@@ -14,7 +14,6 @@ import (
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
-	"realm.pub/tavern/tomes"
 )
 
 // DropAllData is the resolver for the dropAllData field.
@@ -160,35 +159,6 @@ func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.U
 	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
 }
 
-// ImportTomesFromGit is the resolver for the importTomesFromGit field.
-func (r *mutationResolver) ImportTomesFromGit(ctx context.Context, input models.ImportTomesFromGitInput) ([]*ent.Tome, error) {
-	// Ensure a schema is set (or set https:// by default)
-	gitURL := input.GitURL
-	if !strings.HasPrefix(gitURL, "http://") && !strings.HasPrefix(gitURL, "ssh://") {
-		gitURL = fmt.Sprintf("https://%s", gitURL)
-	}
-
-	if input.IncludeDirs == nil {
-		return tomes.ImportFromRepo(ctx, r.client, input.GitURL)
-	}
-
-	// Filter to only include provided directories
-	filter := func(path string) bool {
-		for _, prefix := range input.IncludeDirs {
-			// Ignore Leading /
-			path = strings.TrimPrefix(path, "/")
-			prefix = strings.TrimPrefix(prefix, "/")
-
-			// Include if matching
-			if strings.HasPrefix(path, prefix) {
-				return true
-			}
-		}
-		return false
-	}
-	return tomes.ImportFromRepo(ctx, r.client, gitURL, filter)
-}
-
 // CreateTome is the resolver for the createTome field.
 func (r *mutationResolver) CreateTome(ctx context.Context, input ent.CreateTomeInput) (*ent.Tome, error) {
 	var uploaderID *int
@@ -213,6 +183,53 @@ func (r *mutationResolver) DeleteTome(ctx context.Context, tomeID int) (int, err
 		return 0, err
 	}
 	return tomeID, nil
+}
+
+// CreateRepository is the resolver for the createRepository field.
+func (r *mutationResolver) CreateRepository(ctx context.Context, input ent.CreateRepositoryInput) (*ent.Repository, error) {
+	var ownerID *int
+	if owner := auth.UserFromContext(ctx); owner != nil {
+		ownerID = &owner.ID
+	}
+
+	return r.client.Repository.Create().
+		SetInput(input).
+		SetNillableOwnerID(ownerID).
+		Save(ctx)
+}
+
+// ImportRepository is the resolver for the importRepository field.
+func (r *mutationResolver) ImportRepository(ctx context.Context, repoID int, input *models.ImportRepositoryInput) (*ent.Repository, error) {
+	// Load Repository
+	repo, err := r.client.Repository.Get(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Configure Filters
+	filter := func(string) bool { return true }
+	if input != nil && input.IncludeDirs != nil {
+		filter = func(path string) bool {
+			for _, prefix := range input.IncludeDirs {
+				// Ignore Leading /
+				path = strings.TrimPrefix(path, "/")
+				prefix = strings.TrimPrefix(prefix, "/")
+
+				// Include if matching
+				if strings.HasPrefix(path, prefix) {
+					return true
+				}
+			}
+			return false
+		}
+	}
+
+	// Import Tomes
+	if err := r.importer.Import(ctx, repo, filter); err != nil {
+		return nil, err
+	}
+
+	return repo, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
