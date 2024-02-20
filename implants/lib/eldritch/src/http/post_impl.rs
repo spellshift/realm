@@ -1,21 +1,18 @@
 use anyhow::Result;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use starlark::collections::SmallMap;
+use std::collections::HashMap;
 
-pub fn get(
+pub fn post(
     uri: String,
-    query_params: Option<SmallMap<String, String>>,
+    body: Option<String>,
+    form: Option<SmallMap<String, String>>,
     headers: Option<SmallMap<String, String>>,
 ) -> Result<String> {
-    let mut full_uri = uri.clone();
     let mut headers_map = HeaderMap::new();
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
-
-    if query_params.is_some() {
-        full_uri = append_query_params_to_uri(full_uri, query_params.unwrap())?;
-    }
 
     if headers.is_some() {
         for (k, v) in headers.unwrap() {
@@ -25,38 +22,42 @@ pub fn get(
         }
     }
 
-    runtime.block_on(handle_get(full_uri, headers_map))
-}
-
-fn append_query_params_to_uri(
-    mut uri: String,
-    query_params: SmallMap<String, String>,
-) -> Result<String> {
-    let mut after_first_param = false;
-    if !uri.contains('?') {
-        uri.push('?')
-    } else {
-        after_first_param = true;
+    if body.is_some() {
+        return runtime.block_on(handle_post(uri, body, None, headers_map));
     }
-    for (k, v) in query_params {
-        if after_first_param {
-            uri.push('&');
+
+    if form.is_some() {
+        let mut form_map = HashMap::new();
+        for (k, v) in form.unwrap() {
+            form_map.insert(k, v);
         }
-        uri.push_str(format!("{}={}", k.as_str(), v.as_str()).as_str());
-        after_first_param = true;
+
+        return runtime.block_on(handle_post(uri, None, Some(form_map), headers_map));
     }
-    Ok(uri)
+
+    runtime.block_on(handle_post(uri, None, None, headers_map))
 }
 
-async fn handle_get(uri: String, headers: HeaderMap) -> Result<String> {
+async fn handle_post(
+    uri: String,
+    body: Option<String>,
+    form: Option<HashMap<String, String>>,
+    headers: HeaderMap,
+) -> Result<String> {
     #[cfg(debug_assertions)]
     log::info!(
-        "eldritch sending HTTP GET request to '{}' with headers '{:#?}'",
+        "eldritch sending HTTP POST request to '{}' with headers '{:#?}'",
         uri,
         headers
     );
 
-    let client = reqwest::Client::new().get(uri).headers(headers);
+    let mut client = reqwest::Client::new().post(uri).headers(headers);
+    if body.is_some() {
+        client = client.body(body.unwrap());
+    }
+    if form.is_some() {
+        client = client.form(&form.unwrap());
+    }
     let resp = client.send().await?.text().await?;
     Ok(resp)
 }
@@ -69,11 +70,11 @@ mod tests {
     use starlark::collections::SmallMap;
 
     #[test]
-    fn test_get_no_params_or_headers() -> anyhow::Result<()> {
+    fn test_post_no_body_or_params_or_headers() -> anyhow::Result<()> {
         // running test http server
         let server = Server::run();
         server.expect(
-            Expectation::matching(request::method_path("GET", "/foo"))
+            Expectation::matching(request::method_path("POST", "/foo"))
                 .respond_with(status_code(200).body("test body")),
         );
 
@@ -81,7 +82,7 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        let contents = get(url, None, None)?;
+        let contents = post(url, None, None, None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -90,11 +91,11 @@ mod tests {
     }
 
     #[test]
-    fn test_get_empty_params_and_headers() -> anyhow::Result<()> {
+    fn test_post_empty_params_and_headers() -> anyhow::Result<()> {
         // running test http server
         let server = Server::run();
         server.expect(
-            Expectation::matching(request::method_path("GET", "/foo"))
+            Expectation::matching(request::method_path("POST", "/foo"))
                 .respond_with(status_code(200).body("test body")),
         );
 
@@ -102,7 +103,7 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        let contents = get(url, Some(SmallMap::new()), Some(SmallMap::new()))?;
+        let contents = post(url, None, Some(SmallMap::new()), Some(SmallMap::new()))?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -111,14 +112,14 @@ mod tests {
     }
 
     #[test]
-    fn test_get_with_params() -> anyhow::Result<()> {
+    fn test_post_with_params() -> anyhow::Result<()> {
         // running test http server
         let server = Server::run();
         let m = all_of![
-            request::method_path("GET", "/foo"),
-            request::query(url_decoded(contains(("a", "true")))),
-            request::query(url_decoded(contains(("b", "bar")))),
-            request::query(url_decoded(contains(("c", "3")))),
+            request::method_path("POST", "/foo"),
+            request::body(url_decoded(contains(("a", "true")))),
+            request::body(url_decoded(contains(("b", "bar")))),
+            request::body(url_decoded(contains(("c", "3")))),
         ];
         server.expect(Expectation::matching(m).respond_with(status_code(200).body("test body")));
 
@@ -130,7 +131,7 @@ mod tests {
         params.insert("a".to_string(), "true".to_string());
         params.insert("b".to_string(), "bar".to_string());
         params.insert("c".to_string(), "3".to_string());
-        let contents = get(url, Some(params), None)?;
+        let contents = post(url, None, Some(params), None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -139,38 +140,11 @@ mod tests {
     }
 
     #[test]
-    fn test_get_with_hybrid_params() -> anyhow::Result<()> {
+    fn test_post_with_headers() -> anyhow::Result<()> {
         // running test http server
         let server = Server::run();
         let m = all_of![
-            request::method_path("GET", "/foo"),
-            request::query(url_decoded(contains(("a", "true")))),
-            request::query(url_decoded(contains(("b", "bar")))),
-            request::query(url_decoded(contains(("c", "3")))),
-        ];
-        server.expect(Expectation::matching(m).respond_with(status_code(200).body("test body")));
-
-        // reference test server uri
-        let url = server.url("/foo?a=true").to_string();
-
-        // run our code
-        let mut params = SmallMap::new();
-        params.insert("b".to_string(), "bar".to_string());
-        params.insert("c".to_string(), "3".to_string());
-        let contents = get(url, Some(params), None)?;
-
-        // check request returned correctly
-        assert_eq!(contents, "test body");
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_get_with_headers() -> anyhow::Result<()> {
-        // running test http server
-        let server = Server::run();
-        let m = all_of![
-            request::method_path("GET", "/foo"),
+            request::method_path("POST", "/foo"),
             request::headers(contains(("a", "TRUE"))),
             request::headers(contains(("b", "bar"))),
         ];
@@ -183,7 +157,7 @@ mod tests {
         let mut headers = SmallMap::new();
         headers.insert("A".to_string(), "TRUE".to_string());
         headers.insert("b".to_string(), "bar".to_string());
-        let contents = get(url, None, Some(headers))?;
+        let contents = post(url, None, None, Some(headers))?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -192,14 +166,14 @@ mod tests {
     }
 
     #[test]
-    fn test_get_with_params_and_headers() -> anyhow::Result<()> {
+    fn test_post_with_params_and_headers() -> anyhow::Result<()> {
         // running test http server
         let server = Server::run();
         let m = all_of![
-            request::method_path("GET", "/foo"),
+            request::method_path("POST", "/foo"),
             request::headers(contains(("a", "TRUE"))),
             request::headers(contains(("b", "bar"))),
-            request::query(url_decoded(contains(("c", "3")))),
+            request::body(url_decoded(contains(("c", "3")))),
         ];
         server.expect(Expectation::matching(m).respond_with(status_code(200).body("test body")));
 
@@ -212,7 +186,37 @@ mod tests {
         headers.insert("b".to_string(), "bar".to_string());
         let mut params = SmallMap::new();
         params.insert("c".to_string(), "3".to_string());
-        let contents = get(url, Some(params), Some(headers))?;
+        let contents = post(url, None, Some(params), Some(headers))?;
+
+        // check request returned correctly
+        assert_eq!(contents, "test body");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_post_with_body_and_header() -> anyhow::Result<()> {
+        // running test http server
+        let server = Server::run();
+        let m = all_of![
+            request::method_path("POST", "/foo"),
+            request::headers(contains(("a", "TRUE"))),
+            request::body("the quick brown fox jumps over the lazy dog"),
+        ];
+        server.expect(Expectation::matching(m).respond_with(status_code(200).body("test body")));
+
+        // reference test server uri
+        let url = server.url("/foo").to_string();
+
+        // run our code
+        let mut headers = SmallMap::new();
+        headers.insert("A".to_string(), "TRUE".to_string());
+        let contents = post(
+            url,
+            Some(String::from("the quick brown fox jumps over the lazy dog")),
+            None,
+            Some(headers),
+        )?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
