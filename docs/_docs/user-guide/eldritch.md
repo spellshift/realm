@@ -422,7 +422,7 @@ The <b>http.download</b> method downloads a file at the URI specified in `uri` t
 
 ### http.get
 
-`http.get(uri: str, query_params: Option<Dict<str, Value>>, headers: Option<Dict<str, str>>) -> str`
+`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>) -> str`
 
 The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`, then return the result as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
 

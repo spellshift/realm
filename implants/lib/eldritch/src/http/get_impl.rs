@@ -1,11 +1,10 @@
 use anyhow::Result;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use starlark::collections::SmallMap;
-use starlark::values::Value;
 
 pub fn get(
     uri: String,
-    query_params: Option<SmallMap<String, Value>>,
+    query_params: Option<SmallMap<String, String>>,
     headers: Option<SmallMap<String, String>>,
 ) -> Result<String> {
     let mut full_uri = uri.clone();
@@ -31,7 +30,7 @@ pub fn get(
 
 fn append_query_params_to_uri(
     mut uri: String,
-    query_params: SmallMap<String, Value>,
+    query_params: SmallMap<String, String>,
 ) -> Result<String> {
     let mut after_first_param = false;
     if !uri.contains('?') {
@@ -43,19 +42,7 @@ fn append_query_params_to_uri(
         if after_first_param {
             uri.push('&');
         }
-        let val: String;
-        if v.unpack_bool().is_some() {
-            val = format!("{}", v.unpack_bool().unwrap());
-        } else if v.unpack_i32().is_some() {
-            val = format!("{}", v.unpack_i32().unwrap());
-        } else if v.unpack_str().is_some() {
-            val = v.unpack_str().unwrap().to_string();
-        } else {
-            return Err(anyhow::anyhow!(
-                "query_param values had an unknown type (not bool, i32, or string)"
-            ));
-        }
-        uri.push_str(format!("{}={}", k.as_str(), val.as_str()).as_str());
+        uri.push_str(format!("{}={}", k.as_str(), v.as_str()).as_str());
         after_first_param = true;
     }
     Ok(uri)
@@ -79,8 +66,7 @@ mod tests {
 
     use super::*;
     use httptest::{matchers::*, responders::*, Expectation, Server};
-    use starlark::const_frozen_string;
-    use starlark::{collections::SmallMap, values::Heap};
+    use starlark::collections::SmallMap;
 
     #[test]
     fn test_get_no_params_or_headers() -> anyhow::Result<()> {
@@ -140,11 +126,10 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        let heap = Heap::new();
         let mut params = SmallMap::new();
-        params.insert("a".to_string(), starlark::values::Value::new_bool(true));
-        params.insert("b".to_string(), const_frozen_string!("bar").to_value());
-        params.insert("c".to_string(), heap.alloc(3));
+        params.insert("a".to_string(), "true".to_string());
+        params.insert("b".to_string(), "bar".to_string());
+        params.insert("c".to_string(), "3".to_string());
         let contents = get(url, Some(params), None)?;
 
         // check file written correctly
@@ -169,10 +154,9 @@ mod tests {
         let url = server.url("/foo?a=true").to_string();
 
         // run our code
-        let heap = Heap::new();
         let mut params = SmallMap::new();
-        params.insert("b".to_string(), const_frozen_string!("bar").to_value());
-        params.insert("c".to_string(), heap.alloc(3));
+        params.insert("b".to_string(), "bar".to_string());
+        params.insert("c".to_string(), "3".to_string());
         let contents = get(url, Some(params), None)?;
 
         // check file written correctly
@@ -226,9 +210,8 @@ mod tests {
         let mut headers = SmallMap::new();
         headers.insert("A".to_string(), "TRUE".to_string());
         headers.insert("b".to_string(), "bar".to_string());
-        let heap = Heap::new();
         let mut params = SmallMap::new();
-        params.insert("c".to_string(), heap.alloc(3));
+        params.insert("c".to_string(), "3".to_string());
         let contents = get(url, Some(params), Some(headers))?;
 
         // check file written correctly

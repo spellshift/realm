@@ -28,7 +28,7 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn get(this: &HTTPLibrary, uri: String, query_params: Option<SmallMap<String, Value>>, headers: Option<SmallMap<String, String>>) -> anyhow::Result<String> {
+    fn get(this: &HTTPLibrary, uri: String, query_params: Option<SmallMap<String, String>>, headers: Option<SmallMap<String, String>>) -> anyhow::Result<String> {
         get_impl::get(uri, query_params, headers)
     }
 }
