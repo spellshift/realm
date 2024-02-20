@@ -89,7 +89,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["append", "compress", "copy", "download", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
+            want_text: format!("{}\n", r#"["append", "compress", "copy", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
             want_error: None,
         },
         process_bindings: TestCase {
@@ -109,7 +109,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]"#),
+            want_text: format!("{}\n", r#"["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_bsd", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]"#),
             want_error: None,
         },
         pivot_bindings: TestCase {
@@ -172,6 +172,16 @@ mod tests {
             want_text: format!("{}\n", r#"["match", "match_all", "replace", "replace_all"]"#),
             want_error: None,
         },
+        http_bindings: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(dir(http))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: format!("{}\n", r#"["download"]"#),
+            want_error: None,
+        },
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 128)]
@@ -182,7 +192,7 @@ mod tests {
             .clone()
             .replace('\\', "\\\\");
         let eldritch =
-            format!(r#"file.download("https://www.google.com/", "{path}"); print("ok")"#);
+            format!(r#"http.download("https://www.google.com/", "{path}"); print("ok")"#);
         let mut runtime = crate::start(
             123,
             Tome {
