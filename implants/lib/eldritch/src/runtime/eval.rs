@@ -3,6 +3,7 @@ use crate::{
     assets::AssetsLibrary,
     crypto::CryptoLibrary,
     file::FileLibrary,
+    http::HTTPLibrary,
     pivot::PivotLibrary,
     process::ProcessLibrary,
     regex::RegexLibrary,
@@ -169,6 +170,7 @@ impl Runtime {
             const time: TimeLibrary = TimeLibrary;
             const report: ReportLibrary = ReportLibrary;
             const regex: RegexLibrary = RegexLibrary;
+            const http: HTTPLibrary = HTTPLibrary;
         }
 
         GlobalsBuilder::extended_by(&[

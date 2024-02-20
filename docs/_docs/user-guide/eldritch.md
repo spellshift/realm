@@ -255,12 +255,6 @@ The <b>file.compress</b> method compresses a file using the gzip algorithm. If t
 
 The <b>file.copy</b> method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
 
-### file.download
-
-`file.download(uri: str, dst: str) -> None`
-
-The <b>file.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten. This currently only supports `http` & `https` protocols.
-
 ### file.exists
 
 `file.exists(path: str) -> bool`
@@ -374,7 +368,7 @@ The <b>file.remove</b> method deletes a file or directory (and it's contents) sp
 
 `file.replace(path: str, pattern: str, value: str) -> None`
 
-Unimplemented.
+The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value.
 
 ### file.replace_all
 
@@ -415,6 +409,16 @@ The <b>file.find</b> method finds all files matching the used parameters. Return
 - permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.
 - modified_time: Checks if last modified time matches input specified in time since EPOCH
 - create_time: Checks if last modified time matches input specified in time since EPOCH
+
+---
+
+## HTTP
+
+### http.download
+
+`http.download(uri: str, dst: str) -> None`
+
+The <b>http.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten.
 
 ---
 
@@ -878,6 +882,12 @@ For users, will return name and groups of user.
 `sys.hostname() -> String`
 
 The <b>sys.hostname</b> method returns a String containing the host's hostname.
+
+### sys.is_bsd
+
+`sys.is_bsd() -> bool`
+
+The <b>sys.is_bsd</b> method returns `True` if on a `freebsd`, `netbsd`, or `openbsd` system and `False` on everything else.
 
 ### sys.is_linux
 

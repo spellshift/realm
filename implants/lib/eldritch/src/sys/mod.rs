@@ -8,6 +8,7 @@ mod get_pid_impl;
 mod get_reg_impl;
 mod get_user_impl;
 mod hostname_impl;
+mod is_bsd_impl;
 mod is_linux_impl;
 mod is_macos_impl;
 mod is_windows_impl;
@@ -84,6 +85,11 @@ fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
     fn hostname(this: &SysLibrary) -> anyhow::Result<String> {
         hostname_impl::hostname()
+    }
+
+    #[allow(unused_variables)]
+    fn is_bsd(this: &SysLibrary) -> anyhow::Result<bool> {
+        is_bsd_impl::is_bsd()
     }
 
     #[allow(unused_variables)]
