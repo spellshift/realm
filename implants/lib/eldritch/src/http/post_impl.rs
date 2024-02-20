@@ -51,12 +51,14 @@ async fn handle_post(
         headers
     );
 
-    let mut client = reqwest::Client::new().post(uri).headers(headers);
+    let client = reqwest::Client::new().post(uri).headers(headers);
     if body.is_some() {
-        client = client.body(body.unwrap());
+        let resp = client.body(body.unwrap()).send().await?.text().await?;
+        return Ok(resp);
     }
     if form.is_some() {
-        client = client.form(&form.unwrap());
+        let resp = client.form(&form.unwrap()).send().await?.text().await?;
+        return Ok(resp);
     }
     let resp = client.send().await?.text().await?;
     Ok(resp)
