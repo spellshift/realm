@@ -368,7 +368,7 @@ The <b>file.remove</b> method deletes a file or directory (and it's contents) sp
 
 `file.replace(path: str, pattern: str, value: str) -> None`
 
-Unimplemented.
+The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value.
 
 ### file.replace_all
 
