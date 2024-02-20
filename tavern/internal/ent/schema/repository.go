@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -32,6 +33,9 @@ func (Repository) Fields() []ent.Field {
 			Comment("URL of the repository"),
 		field.String("public_key").
 			NotEmpty().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput | entgql.SkipMutationUpdateInput),
 			).
@@ -39,6 +43,9 @@ func (Repository) Fields() []ent.Field {
 		field.String("private_key").
 			NotEmpty().
 			Sensitive().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Annotations(
 				entgql.Skip(entgql.SkipAll),
 			).
