@@ -1,13 +1,10 @@
-use std::fs::File;
-use std::io::Read;
-
 use sha1::{Digest, Sha1};
 use sha2::{Sha256, Sha512};
 
 use anyhow::{anyhow, Result};
 
 pub fn hash_file(file: String, algo: String) -> Result<String> {
-    let mut file_data = std::fs::read(file)?;
+    let file_data = std::fs::read(file)?;
     match algo.to_lowercase().as_str() {
         "md5" => Ok(format!("{:02x}", md5::compute(file_data))),
         "sha1" => {
