@@ -65,7 +65,7 @@ impl TaskHandle {
                         match t
                             .report_task_output(ReportTaskOutputRequest {
                                 output: Some(TaskOutput {
-                                    id: id,
+                                    id,
                                     output: String::new(),
                                     error: Some(TaskError {
                                         msg: format!("dispatch error ({}): {:#?}", msg_str, err),
