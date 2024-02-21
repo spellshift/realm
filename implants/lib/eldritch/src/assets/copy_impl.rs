@@ -20,6 +20,9 @@ fn copy_local(src: String, dst: String) -> Result<()> {
 }
 
 fn copy_remote(rx: Receiver<FetchAssetResponse>, dst_path: String) -> Result<()> {
+    // Wait for our first chunk
+    let resp = rx.recv()?;
+
     // Truncate file
     let mut dst = OpenOptions::new()
         .create(true)
@@ -39,6 +42,10 @@ fn copy_remote(rx: Receiver<FetchAssetResponse>, dst_path: String) -> Result<()>
         .append(true)
         .open(&dst_path)
         .context(format!("failed to open file for writing: {}", &dst_path))?;
+
+    // Write our first chunk
+    dst.write_all(&resp.chunk)
+        .context(format!("failed to write file chunk: {}", &dst_path))?;
 
     // Listen for downloaded chunks and write them
     for resp in rx {
