@@ -1,5 +1,7 @@
 use anyhow::{anyhow, Result};
+use starlark::eval::Evaluator;
 use std::fs::{canonicalize, DirEntry};
+use crate::runtime::{messages::ReportErrorMessage, Environment};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::{path::Path, time::UNIX_EPOCH};
@@ -74,7 +76,8 @@ fn check_path(
     Ok(true)
 }
 
-fn search_dir(
+fn search_dir<'v>(
+    starlark_eval: &mut Evaluator<'v, '_>,
     path: &str,
     name: Option<String>,
     file_type: Option<String>,
@@ -87,10 +90,11 @@ fn search_dir(
     if !res.is_dir() {
         return Err(anyhow!("Search path is not a directory"));
     }
+    let env = Environment::from_extra(starlark_eval.extra)?;
     let entries = match res.read_dir() {
         Ok(res) => res,
         Err(err) => {
-            eprintln!("Failed to read directory {}: {}", path, err);
+            env.send(ReportErrorMessage { id: env.id(), error: format!("Failed to read directory {}: {}\n", path, err) })?;
             return Ok(out);
         },
     };
@@ -99,6 +103,7 @@ fn search_dir(
         let path = entry.path();
         if path.is_dir() {
             out.append(&mut search_dir(
+                starlark_eval,
                 path.to_str()
                     .ok_or(anyhow!("Failed to convert path to str"))?,
                 name.clone(),
@@ -127,7 +132,8 @@ fn search_dir(
     Ok(out)
 }
 
-pub fn find(
+pub fn find<'v>(
+    starlark_eval: &mut Evaluator<'v, '_>,
     path: String,
     name: Option<String>,
     file_type: Option<String>,
@@ -143,6 +149,7 @@ pub fn find(
         }
     }
     search_dir(
+        starlark_eval,
         &path,
         name,
         file_type,
