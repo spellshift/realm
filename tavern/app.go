@@ -164,7 +164,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		)},
 		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client, git)},
 		"/c2.C2/":     tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
-		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
+		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client, "/cdn/")},
 		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
