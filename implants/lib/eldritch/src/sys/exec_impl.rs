@@ -1,6 +1,7 @@
 use super::super::insert_dict_kv;
 use super::CommandOutput;
 use anyhow::{Context, Result};
+use nix::unistd::setsid;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use nix::{
     sys::wait::waitpid,
@@ -13,7 +14,7 @@ use starlark::{
 };
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use std::process::exit;
-use std::process::Command;
+use std::process::{Command, Stdio};
 // https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
 
 pub fn exec(
@@ -57,28 +58,35 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
         match unsafe { fork()? } {
             ForkResult::Parent { child } => {
-                // Wait for intermediate process to exit.
-                waitpid(Some(child), None)?;
+                if child.as_raw() < 0 {
+                    return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+                }
                 Ok(CommandOutput {
                     stdout: "".to_string(),
                     stderr: "".to_string(),
                     status: 0,
                 })
             }
-
-            ForkResult::Child => match unsafe { fork()? } {
-                ForkResult::Parent { child } => {
-                    if child.as_raw() < 0 {
-                        return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+            ForkResult::Child => {
+                setsid()?;
+                match unsafe { fork()? } {
+                    ForkResult::Parent { child } => {
+                        if child.as_raw() < 0 {
+                            return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+                        }
+                        exit(0);
                     }
-                    exit(0)
+                    ForkResult::Child => {
+                        let _res = Command::new(path)
+                            .args(args)
+                            .stdin(Stdio::null())
+                            .stdout(Stdio::null())
+                            .stderr(Stdio::null())
+                            .spawn()?;
+                        exit(0);
+                    }
                 }
-
-                ForkResult::Child => {
-                    let _res = Command::new(path).args(args).output()?;
-                    exit(0)
-                }
-            },
+            }
         }
     }
 }
@@ -171,10 +179,7 @@ mod tests {
 
             let _res = handle_exec(
                 String::from("/bin/sh"),
-                vec![
-                    String::from("-c"),
-                    format!("touch {}", path.clone()),
-                ],
+                vec![String::from("-c"), format!("touch {}", path.clone())],
                 Some(true),
             )?;
             thread::sleep(time::Duration::from_secs(2));
