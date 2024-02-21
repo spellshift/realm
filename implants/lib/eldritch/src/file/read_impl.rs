@@ -18,9 +18,9 @@ pub fn read(path: String) -> Result<String> {
                 let data = fs::read_to_string(entry_path)?;
                 res.push_str(data.as_str());
             }
-            Err(local_err) => {
+            Err(_err) => {
                 #[cfg(debug_assertions)]
-                log::debug!("Failed to parse glob {}\n{}", path, local_err);
+                log::debug!("Failed to parse glob {}\n{}", path, _err);
             }
         }
     }

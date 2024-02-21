@@ -1,6 +1,6 @@
 use anyhow::Result;
 use eldritch::runtime::messages::Dispatcher;
-use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
+use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use transport::Transport;
 
 /*
