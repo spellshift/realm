@@ -9,7 +9,7 @@ use tonic::Request;
 use std::time::Duration;
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
-static FETCH_ASSET_PATH: &str = "/c2.C2/DownloadFile";
+static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
@@ -165,7 +165,7 @@ impl GRPC {
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(FETCH_ASSET_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
-            .insert(GrpcMethod::new("c2.C2", "DownloadFile"));
+            .insert(GrpcMethod::new("c2.C2", "FetchAsset"));
         self.grpc.server_streaming(req, path, codec).await
     }
 
