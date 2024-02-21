@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use std::fs::canonicalize;
+use std::fs::{canonicalize, DirEntry};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::{path::Path, time::UNIX_EPOCH};
@@ -87,35 +87,41 @@ fn search_dir(
     if !res.is_dir() {
         return Err(anyhow!("Search path is not a directory"));
     }
-    if res.is_dir() {
-        for entry in res.read_dir()? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                out.append(&mut search_dir(
-                    path.to_str()
-                        .ok_or(anyhow!("Failed to convert path to str"))?,
-                    name.clone(),
-                    file_type.clone(),
-                    permissions,
-                    modified_time,
-                    create_time,
-                )?);
-            } else if check_path(
-                &path,
+    let entries = match res.read_dir() {
+        Ok(res) => res,
+        Err(err) => {
+            eprintln!("Failed to read directory {}: {}", path, err);
+            return Ok(out);
+        },
+    };
+    for entry in entries {
+        let entry: DirEntry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            out.append(&mut search_dir(
+                path.to_str()
+                    .ok_or(anyhow!("Failed to convert path to str"))?,
                 name.clone(),
                 file_type.clone(),
                 permissions,
                 modified_time,
                 create_time,
-            )? {
-                out.push(
-                    canonicalize(path)?
-                        .to_str()
-                        .ok_or(anyhow!("Failed to convert path to str"))?
-                        .to_owned(),
-                );
-            }
+            )?);
+        }
+        if check_path(
+            &path,
+            name.clone(),
+            file_type.clone(),
+            permissions,
+            modified_time,
+            create_time,
+        )? {
+            out.push(
+                canonicalize(path)?
+                    .to_str()
+                    .ok_or(anyhow!("Failed to convert path to str"))?
+                    .to_owned(),
+            );
         }
     }
     Ok(out)
