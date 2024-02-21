@@ -424,13 +424,13 @@ The <b>http.download</b> method downloads a file at the URI specified in `uri` t
 
 `http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>) -> str`
 
-The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`, then return the result as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
 
 ### http.post
 
 `http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>) -> str`
 
-The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form paramters specified in `form`, and headers specified in `headers`, then return the result as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
+The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form paramters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
 
 ---
 

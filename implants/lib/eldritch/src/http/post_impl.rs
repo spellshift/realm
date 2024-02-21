@@ -14,8 +14,8 @@ pub fn post(
         .enable_all()
         .build()?;
 
-    if headers.is_some() {
-        for (k, v) in headers.unwrap() {
+    if let Some(h) = headers {
+        for (k, v) in h {
             let name = HeaderName::from_bytes(k.as_bytes())?;
             let value = HeaderValue::from_bytes(v.as_bytes())?;
             headers_map.append(name, value);
@@ -26,9 +26,9 @@ pub fn post(
         return runtime.block_on(handle_post(uri, body, None, headers_map));
     }
 
-    if form.is_some() {
+    if let Some(f) = form {
         let mut form_map = HashMap::new();
-        for (k, v) in form.unwrap() {
+        for (k, v) in f {
             form_map.insert(k, v);
         }
 
@@ -52,12 +52,12 @@ async fn handle_post(
     );
 
     let client = reqwest::Client::new().post(uri).headers(headers);
-    if body.is_some() {
-        let resp = client.body(body.unwrap()).send().await?.text().await?;
+    if let Some(b) = body {
+        let resp = client.body(b).send().await?.text().await?;
         return Ok(resp);
     }
-    if form.is_some() {
-        let resp = client.form(&form.unwrap()).send().await?.text().await?;
+    if let Some(f) = form {
+        let resp = client.form(&f).send().await?.text().await?;
         return Ok(resp);
     }
     let resp = client.send().await?.text().await?;
