@@ -7,10 +7,9 @@ use sha2::{Sha256, Sha512};
 use anyhow::{anyhow, Result};
 
 pub fn hash_file(file: String, algo: String) -> Result<String> {
-    let mut file_data = String::new();
-    File::open(file)?.read_to_string(&mut file_data)?;
+    let mut file_data = std::fs::read(file)?;
     match algo.to_lowercase().as_str() {
-        "md5" => Ok(format!("{:02x}", md5::compute(file_data.as_bytes()))),
+        "md5" => Ok(format!("{:02x}", md5::compute(file_data))),
         "sha1" => {
             let mut hasher = Sha1::new();
             hasher.update(&file_data);
