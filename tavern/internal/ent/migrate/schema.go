@@ -44,7 +44,7 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
-		{Name: "content", Type: field.TypeBytes},
+		{Name: "content", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
 	}
 	// FilesTable holds the schema information for the "files" table.
 	FilesTable = &schema.Table{
