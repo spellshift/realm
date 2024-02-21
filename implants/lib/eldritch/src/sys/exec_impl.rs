@@ -1,21 +1,18 @@
 use super::super::insert_dict_kv;
 use super::CommandOutput;
 use anyhow::{Context, Result};
-use nix::unistd::setsid;
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
-use nix::{
-    sys::wait::waitpid,
-    unistd::{fork, ForkResult},
-};
 use starlark::{
     collections::SmallMap,
     const_frozen_string,
     values::{dict::Dict, Heap},
 };
+use std::process::Command;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
-use std::process::exit;
-use std::process::{Command, Stdio};
-// https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
+use {
+    nix::unistd::setsid,
+    nix::unistd::{fork, ForkResult},
+    std::process::{exit, Stdio},
+};
 
 pub fn exec(
     starlark_heap: &Heap,
@@ -158,11 +155,6 @@ mod tests {
         Ok(())
     }
 
-    // This is a manual test:
-    // Example results:
-    // 42284 pts/0    S      0:00 /workspaces/realm/implants/target/debug/deps/eldritch-a23fc08ee1443dc3 test_sys_exec_disown_linux --nocapture
-    // 42285 pts/0    S      0:00  \_ /bin/sh -c sleep 600
-    // 42286 pts/0    S      0:00      \_ sleep 600
     #[test]
     fn test_sys_exec_disown_linux() -> anyhow::Result<()> {
         if cfg!(target_os = "linux")
