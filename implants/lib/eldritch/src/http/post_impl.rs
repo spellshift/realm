@@ -10,9 +10,6 @@ pub fn post(
     headers: Option<SmallMap<String, String>>,
 ) -> Result<String> {
     let mut headers_map = HeaderMap::new();
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
 
     if let Some(h) = headers {
         for (k, v) in h {
@@ -22,8 +19,22 @@ pub fn post(
         }
     }
 
-    if body.is_some() {
-        return runtime.block_on(handle_post(uri, body, None, headers_map));
+    let client = reqwest::blocking::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()?;
+    let req = client.post(uri.clone()).headers(headers_map.clone());
+
+    if let Some(b) = body {
+        #[cfg(debug_assertions)]
+        log::info!(
+            "eldritch sending HTTP POST request to '{}' with headers '{:#?}' and body '{}'",
+            uri,
+            headers_map,
+            b.clone()
+        );
+
+        let resp = req.body(b).send()?.text()?;
+        return Ok(resp);
     }
 
     if let Some(f) = form {
@@ -32,35 +43,26 @@ pub fn post(
             form_map.insert(k, v);
         }
 
-        return runtime.block_on(handle_post(uri, None, Some(form_map), headers_map));
+        #[cfg(debug_assertions)]
+        log::info!(
+            "eldritch sending HTTP POST request to '{}' with headers '{:#?}' and form '{:#?}'",
+            uri,
+            headers_map,
+            form_map.clone()
+        );
+
+        let resp = req.form(&form_map).send()?.text()?;
+        return Ok(resp);
     }
 
-    runtime.block_on(handle_post(uri, None, None, headers_map))
-}
-
-async fn handle_post(
-    uri: String,
-    body: Option<String>,
-    form: Option<HashMap<String, String>>,
-    headers: HeaderMap,
-) -> Result<String> {
     #[cfg(debug_assertions)]
     log::info!(
         "eldritch sending HTTP POST request to '{}' with headers '{:#?}'",
         uri,
-        headers
+        headers_map
     );
 
-    let client = reqwest::Client::new().post(uri).headers(headers);
-    if let Some(b) = body {
-        let resp = client.body(b).send().await?.text().await?;
-        return Ok(resp);
-    }
-    if let Some(f) = form {
-        let resp = client.form(&f).send().await?.text().await?;
-        return Ok(resp);
-    }
-    let resp = client.send().await?.text().await?;
+    let resp = req.send()?.text()?;
     Ok(resp)
 }
 

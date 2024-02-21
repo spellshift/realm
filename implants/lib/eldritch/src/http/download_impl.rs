@@ -12,7 +12,10 @@ async fn handle_download(uri: String, dst: String) -> Result<()> {
 
     // Download as a stream of bytes.
     // there's no checking at all happening here, for anything
-    let mut stream = reqwest::get(uri).await?.bytes_stream();
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()?;
+    let mut stream = client.get(uri).send().await?.bytes_stream();
 
     // Write the stream of bytes to the file in chunks
     while let Some(chunk_result) = stream.next().await {

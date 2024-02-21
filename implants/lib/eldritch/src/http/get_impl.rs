@@ -10,9 +10,6 @@ pub fn get(
 ) -> Result<String> {
     let mut query_map = HashMap::new();
     let mut headers_map = HeaderMap::new();
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
 
     if let Some(q) = query_params {
         for (k, v) in q {
@@ -28,26 +25,20 @@ pub fn get(
         }
     }
 
-    runtime.block_on(handle_get(uri, query_map, headers_map))
-}
-
-async fn handle_get(
-    uri: String,
-    query_params: HashMap<String, String>,
-    headers: HeaderMap,
-) -> Result<String> {
     #[cfg(debug_assertions)]
     log::info!(
-        "eldritch sending HTTP GET request to '{}' with headers '{:#?}'",
+        "eldritch sending HTTP GET request to '{}' with headers '{:#?}' and query_params '{:#?}'",
         uri,
-        headers
+        headers_map,
+        query_map
     );
 
-    let client = reqwest::Client::new()
-        .get(uri)
-        .headers(headers)
-        .query(&query_params);
-    let resp = client.send().await?.text().await?;
+    let client = reqwest::blocking::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()?;
+
+    let req = client.get(uri).headers(headers_map).query(&query_map);
+    let resp = req.send()?.text()?;
     Ok(resp)
 }
 
