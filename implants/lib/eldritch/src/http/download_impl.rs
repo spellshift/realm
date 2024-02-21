@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use tokio::{fs::File, io::AsyncWriteExt};
 use tokio_stream::StreamExt;
 
-async fn handle_download(uri: String, dst: String) -> Result<()> {
+async fn handle_download(uri: String, dst: String, allow_insecure: bool) -> Result<()> {
     // Create our file
     let mut dest = {
         let fname = PathBuf::from(dst);
@@ -13,7 +13,7 @@ async fn handle_download(uri: String, dst: String) -> Result<()> {
     // Download as a stream of bytes.
     // there's no checking at all happening here, for anything
     let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(true)
+        .danger_accept_invalid_certs(allow_insecure)
         .build()?;
     let mut stream = client.get(uri).send().await?.bytes_stream();
 
@@ -28,12 +28,17 @@ async fn handle_download(uri: String, dst: String) -> Result<()> {
     Ok(())
 }
 
-pub fn download(uri: String, dst: String) -> Result<()> {
+pub fn download(uri: String, dst: String, allow_insecure: Option<bool>) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
 
-    let response = runtime.block_on(handle_download(uri, dst));
+    let mut insecure = false;
+    if let Some(a) = allow_insecure {
+        insecure = a;
+    }
+
+    let response = runtime.block_on(handle_download(uri, dst, insecure));
 
     match response {
         Ok(_) => Ok(()),
@@ -66,7 +71,7 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        download(url, path.clone())?;
+        download(url, path.clone(), None)?;
 
         // Read the file
         let contents = read_to_string(path.clone())?;

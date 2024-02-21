@@ -7,6 +7,7 @@ pub fn get(
     uri: String,
     query_params: Option<SmallMap<String, String>>,
     headers: Option<SmallMap<String, String>>,
+    allow_insecure: Option<bool>,
 ) -> Result<String> {
     let mut query_map = HashMap::new();
     let mut headers_map = HeaderMap::new();
@@ -33,8 +34,13 @@ pub fn get(
         query_map
     );
 
+    let mut insecure = false;
+    if let Some(a) = allow_insecure {
+        insecure = a;
+    }
+
     let client = reqwest::blocking::Client::builder()
-        .danger_accept_invalid_certs(true)
+        .danger_accept_invalid_certs(insecure)
         .build()?;
 
     let req = client.get(uri).headers(headers_map).query(&query_map);
@@ -62,7 +68,7 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        let contents = get(url, None, None)?;
+        let contents = get(url, None, None, None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -83,7 +89,7 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        let contents = get(url, Some(SmallMap::new()), Some(SmallMap::new()))?;
+        let contents = get(url, Some(SmallMap::new()), Some(SmallMap::new()), None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -111,7 +117,7 @@ mod tests {
         params.insert("a".to_string(), "true".to_string());
         params.insert("b".to_string(), "bar".to_string());
         params.insert("c".to_string(), "3".to_string());
-        let contents = get(url, Some(params), None)?;
+        let contents = get(url, Some(params), None, None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -138,7 +144,7 @@ mod tests {
         let mut params = SmallMap::new();
         params.insert("b".to_string(), "bar".to_string());
         params.insert("c".to_string(), "3".to_string());
-        let contents = get(url, Some(params), None)?;
+        let contents = get(url, Some(params), None, None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -164,7 +170,7 @@ mod tests {
         let mut headers = SmallMap::new();
         headers.insert("A".to_string(), "TRUE".to_string());
         headers.insert("b".to_string(), "bar".to_string());
-        let contents = get(url, None, Some(headers))?;
+        let contents = get(url, None, Some(headers), None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -193,7 +199,7 @@ mod tests {
         headers.insert("b".to_string(), "bar".to_string());
         let mut params = SmallMap::new();
         params.insert("c".to_string(), "3".to_string());
-        let contents = get(url, Some(params), Some(headers))?;
+        let contents = get(url, Some(params), Some(headers), None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");

@@ -8,6 +8,7 @@ pub fn post(
     body: Option<String>,
     form: Option<SmallMap<String, String>>,
     headers: Option<SmallMap<String, String>>,
+    allow_insecure: Option<bool>,
 ) -> Result<String> {
     let mut headers_map = HeaderMap::new();
 
@@ -19,8 +20,13 @@ pub fn post(
         }
     }
 
+    let mut insecure = false;
+    if let Some(a) = allow_insecure {
+        insecure = a;
+    }
+
     let client = reqwest::blocking::Client::builder()
-        .danger_accept_invalid_certs(true)
+        .danger_accept_invalid_certs(insecure)
         .build()?;
     let req = client.post(uri.clone()).headers(headers_map.clone());
 
@@ -86,7 +92,7 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        let contents = post(url, None, None, None)?;
+        let contents = post(url, None, None, None, None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -107,7 +113,13 @@ mod tests {
         let url = server.url("/foo").to_string();
 
         // run our code
-        let contents = post(url, None, Some(SmallMap::new()), Some(SmallMap::new()))?;
+        let contents = post(
+            url,
+            None,
+            Some(SmallMap::new()),
+            Some(SmallMap::new()),
+            None,
+        )?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -135,7 +147,7 @@ mod tests {
         params.insert("a".to_string(), "true".to_string());
         params.insert("b".to_string(), "bar".to_string());
         params.insert("c".to_string(), "3".to_string());
-        let contents = post(url, None, Some(params), None)?;
+        let contents = post(url, None, Some(params), None, None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -161,7 +173,7 @@ mod tests {
         let mut headers = SmallMap::new();
         headers.insert("A".to_string(), "TRUE".to_string());
         headers.insert("b".to_string(), "bar".to_string());
-        let contents = post(url, None, None, Some(headers))?;
+        let contents = post(url, None, None, Some(headers), None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -190,7 +202,7 @@ mod tests {
         headers.insert("b".to_string(), "bar".to_string());
         let mut params = SmallMap::new();
         params.insert("c".to_string(), "3".to_string());
-        let contents = post(url, None, Some(params), Some(headers))?;
+        let contents = post(url, None, Some(params), Some(headers), None)?;
 
         // check request returned correctly
         assert_eq!(contents, "test body");
@@ -220,6 +232,7 @@ mod tests {
             Some(String::from("the quick brown fox jumps over the lazy dog")),
             None,
             Some(headers),
+            None,
         )?;
 
         // check request returned correctly
