@@ -6,6 +6,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -41,6 +42,9 @@ func (Task) Fields() []ent.Field {
 			Comment("Timestamp of when execution of the task finished, null if not yet finished"),
 		field.Text("output").
 			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Comment("Output from executing the task"),
 		field.Int("output_size").
 			Default(0).
@@ -51,6 +55,9 @@ func (Task) Fields() []ent.Field {
 			Comment("The size of the output in bytes"),
 		field.String("error").
 			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Comment("Error, if any, produced while executing the Task"),
 	}
 }

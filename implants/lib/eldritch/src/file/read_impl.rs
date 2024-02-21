@@ -1,16 +1,6 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use glob::{glob, GlobError};
 use std::{fs, path::PathBuf};
-
-/*
-               if !entry_path.exists() {
-                   return Err(anyhow::anyhow!(
-                       "file.read: pattern {} could not find path {}",
-                       path,
-                       entry_path.to_str().context("Failed to convert to str")?
-                   ));
-               }
-*/
 
 pub fn read(path: String) -> Result<String> {
     let mut res: String = String::from("");
