@@ -193,7 +193,12 @@ mod tests {
         let message = messages.first().unwrap();
 
         if let Message::ReportAggOutput(output) = message {
-            assert_eq!(output.text, format!("[\"{}\"]\n", file.to_str().unwrap()));
+            let expected = if cfg!(target_os = "macos") {
+                format!("[\"/private{}\"]\n", file.to_str().unwrap())
+            } else {
+                format!("[\"{}\"]\n", file.to_str().unwrap())
+            };
+            assert_eq!(output.text, expected);
         } else {
             panic!("Expected ReportAggOutputMessage");
         }
@@ -222,7 +227,12 @@ mod tests {
         let message = messages.first().unwrap();
 
         if let Message::ReportAggOutput(output) = message {
-            assert_eq!(output.text, format!("[\"{}\"]\n", inner_dir.to_str().unwrap()));
+            let expected = if cfg!(target_os = "macos") {
+                format!("[\"/private{}\"]\n", inner_dir.to_str().unwrap())
+            } else {
+                format!("[\"{}\"]\n", inner_dir.to_str().unwrap())
+            };
+            assert_eq!(output.text, expected);
         } else {
             panic!("Expected ReportAggOutputMessage");
         }
