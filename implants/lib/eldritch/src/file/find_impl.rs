@@ -37,7 +37,7 @@ fn check_path(
         let metadata = path.metadata()?.permissions();
         #[cfg(unix)]
         {
-            if metadata.mode() != (permissions as u32) {
+            if metadata.mode() & 0o777 != (permissions as u32) {
                 return Ok(false);
             }
         }
@@ -157,4 +157,131 @@ pub fn find<'v>(
         modified_time,
         create_time,
     )
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::{collections::HashMap, fs::Permissions, os::unix::fs::PermissionsExt};
+
+    use tempfile::TempDir;
+    use pb::eldritch::Tome;
+    use crate::runtime::Message;
+
+    #[tokio::test]
+    #[cfg(unix)]
+    async fn test_find_file() {
+        let dir = TempDir::new().unwrap();
+        let file = dir.path().join("test.txt");
+        std::fs::write(&file, "test").unwrap();
+        let runtime = crate::start(
+            123,
+            Tome {
+                eldritch: r#"print(file.find(input_params['dir_path'], name="test.txt", file_type="file"))"#
+                    .to_owned(),
+                parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
+                file_names: Vec::new(),
+            },
+        )
+        .await;
+
+        //println!("{:?}", runtime.collect().into_iter().collect::<Vec<Message>>());
+
+        let messages: Vec<Message> = runtime.collect().into_iter()
+            .filter(|x| matches!(x, Message::ReportAggOutput(_))).collect();
+        println!("{:?}", messages);
+        let message = messages.first().unwrap();
+
+        if let Message::ReportAggOutput(output) = message {
+            assert_eq!(output.text, format!("[\"{}\"]\n", file.to_str().unwrap()));
+        } else {
+            panic!("Expected ReportAggOutputMessage");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_find_dir() {
+        let dir = TempDir::new().unwrap();
+        let inner_dir = dir.path().join("testdir");
+        std::fs::create_dir(&inner_dir).unwrap();
+        let runtime = crate::start(
+            123,
+            Tome {
+                eldritch: r#"print(file.find(input_params['dir_path'], name="testdir", file_type="dir"))"#
+                    .to_owned(),
+                parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
+                file_names: Vec::new(),
+            },
+        )
+        .await;
+
+        //println!("{:?}", runtime.collect().into_iter().collect::<Vec<Message>>());
+
+        let messages: Vec<Message> = runtime.collect().into_iter()
+            .filter(|x| matches!(x, Message::ReportAggOutput(_))).collect();
+        let message = messages.first().unwrap();
+
+        if let Message::ReportAggOutput(output) = message {
+            assert_eq!(output.text, format!("[\"{}\"]\n", inner_dir.to_str().unwrap()));
+        } else {
+            panic!("Expected ReportAggOutputMessage");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_runtime_error() {
+        let dir = TempDir::new().unwrap();
+        let inner_dir = dir.path().join("testdir");
+        let inner_dir2 = dir.path().join("testdir2");
+        std::fs::create_dir(&inner_dir).unwrap();
+        std::fs::set_permissions(&inner_dir, Permissions::from_mode(0o000)).unwrap();
+        std::fs::create_dir(&inner_dir2).unwrap();
+        std::fs::set_permissions(&inner_dir2, Permissions::from_mode(0o000)).unwrap();
+        let runtime = crate::start(
+            123,
+            Tome {
+                eldritch: r#"print(file.find(input_params['dir_path'], name="randomname"))"#
+                    .to_owned(),
+                parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
+                file_names: Vec::new(),
+            },
+        )
+        .await;
+        let messages: Vec<Message> = runtime.collect().into_iter()
+        .filter(|x| matches!(x, Message::ReportAggOutput(_))).collect();
+        let message = messages.first().unwrap();
+
+        if let Message::ReportAggOutput(output) = message {
+            assert!(output.error.is_some());
+        } else {
+            panic!("Expected ReportAggOutputMessage");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_provided_file() {
+        let dir = TempDir::new().unwrap();
+        let file = dir.path().join("test.txt");
+        std::fs::write(&file, "test").unwrap();
+        std::fs::set_permissions(&file, Permissions::from_mode(0o775)).unwrap();
+        let runtime = crate::start(
+            123,
+            Tome {
+                eldritch: r#"print(file.find(input_params['dir_path'], name="test.txt", file_type="file", permissions=0o775))"#
+                    .to_owned(),
+                parameters: HashMap::from([("dir_path".to_string(), file.to_str().unwrap().to_string())]),
+                file_names: Vec::new(),
+            },
+        )
+        .await;
+        let messages: Vec<Message> = runtime.collect().into_iter()
+        .filter(|x| matches!(x, Message::ReportAggOutput(_))).collect();
+        let message = messages.first().unwrap();
+
+        if let Message::ReportAggOutput(output) = message {
+            assert!(output.error.is_some());
+        } else {
+            panic!("Expected ReportAggOutputMessage");
+        }
+    }
 }
