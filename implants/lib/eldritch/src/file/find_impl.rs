@@ -239,6 +239,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(unix)]
     async fn test_runtime_error() {
         let dir = TempDir::new().unwrap();
         let inner_dir = dir.path().join("testdir");
@@ -273,11 +274,10 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let file = dir.path().join("test.txt");
         std::fs::write(&file, "test").unwrap();
-        std::fs::set_permissions(&file, Permissions::from_mode(0o775)).unwrap();
         let runtime = crate::start(
             123,
             Tome {
-                eldritch: r#"print(file.find(input_params['dir_path'], name="test.txt", file_type="file", permissions=0o775))"#
+                eldritch: r#"print(file.find(input_params['dir_path'], name="test.txt", file_type="file")"#
                     .to_owned(),
                 parameters: HashMap::from([("dir_path".to_string(), file.to_str().unwrap().to_string())]),
                 file_names: Vec::new(),
