@@ -121,11 +121,16 @@ fn search_dir<'v>(
             modified_time,
             create_time,
         )? {
+            let out_str = canonicalize(path)?
+                .to_str()
+                .ok_or(anyhow!("Failed to convert path to str"))?
+                .to_owned();
             out.push(
-                canonicalize(path)?
-                    .to_str()
-                    .ok_or(anyhow!("Failed to convert path to str"))?
-                    .to_owned(),
+                if cfg!(windows) {
+                    out_str.trim_start_matches(['\\', '?']).replace("\\\\", "\\")
+                } else {
+                    out_str
+                }
             );
         }
     }
