@@ -6,6 +6,20 @@ description: Getting started with Realm
 permalink: user-guide/getting-started
 ---
 
+## Quick Start
+
+```bash
+# Clone Repo
+git clone https://github.com/spellshift/realm && cd ./realm
+
+# Start Server 
+go run ./tavern
+
+# Start Agent
+cd implants/imix && cargo run
+```
+
+
 ## Getting Started
 
 Welcome, intrepid red teamer! This guide will launch you into a sandboxed Realm experience, perfect for experimenting and exploring its features. Think of it as your personal training ground before unleashing it in real-world engagements. But first, let's make sure you're in the right place.

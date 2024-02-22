@@ -1,7 +1,6 @@
 mod append_impl;
 mod compress_impl;
 mod copy_impl;
-mod download_impl;
 mod exists_impl;
 mod find_impl;
 mod follow_impl;
@@ -37,8 +36,9 @@ enum FileType {
 
 #[derive(Debug, Display)]
 #[display(
-    fmt = "{} {} {} {} {} {} {}",
+    fmt = "{} {} {} {} {} {} {} {}",
     name,
+    absolute_path,
     file_type,
     size,
     owner,
@@ -48,6 +48,7 @@ enum FileType {
 )]
 struct File {
     name: String,
+    absolute_path: String,
     file_type: FileType,
     size: u64,
     owner: String,
@@ -84,12 +85,6 @@ fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
     fn compress(this: &FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
         compress_impl::compress(src, dst)?;
-        Ok(NoneType{})
-    }
-
-    #[allow(unused_variables)]
-    fn download(this: &FileLibrary, uri: String, dst: String) -> anyhow::Result<NoneType> {
-        download_impl::download(uri, dst)?;
         Ok(NoneType{})
     }
 

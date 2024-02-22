@@ -58,7 +58,7 @@ func TestDownload(t *testing.T) {
 func newDownloadTest(graph *ent.Client, req *http.Request, checks ...func(t *testing.T, fileContent []byte, err *errors.HTTP)) func(*testing.T) {
 	return func(t *testing.T) {
 		// Initialize Download Handler
-		handler := cdn.NewDownloadHandler(graph)
+		handler := cdn.NewDownloadHandler(graph, "/download/")
 
 		// Send request and record response
 		w := httptest.NewRecorder()

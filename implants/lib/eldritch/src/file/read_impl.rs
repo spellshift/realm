@@ -1,16 +1,37 @@
 use anyhow::Result;
-use std::fs;
+use glob::{glob, GlobError};
+use std::{fs, path::PathBuf};
 
 pub fn read(path: String) -> Result<String> {
-    let data = fs::read_to_string(path)?;
-    Ok(data)
+    let mut res: String = String::from("");
+    let glob_res = glob(&path)?.collect::<Vec<Result<PathBuf, GlobError>>>();
+    if glob_res.is_empty() {
+        return Err(anyhow::anyhow!(
+            "file.read: pattern {} found no results",
+            path,
+        ));
+    }
+
+    for entry in glob_res {
+        match entry {
+            Ok(entry_path) => {
+                let data = fs::read_to_string(entry_path)?;
+                res.push_str(data.as_str());
+            }
+            Err(_err) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Failed to parse glob {}\n{}", path, _err);
+            }
+        }
+    }
+    Ok(res)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::prelude::*;
-    use tempfile::NamedTempFile;
+    use std::{fs::File, io::prelude::*};
+    use tempfile::{tempdir, NamedTempFile};
 
     #[test]
     fn test_read_simple() -> anyhow::Result<()> {
@@ -53,6 +74,30 @@ mod tests {
 
         let res = read(path);
         assert!(res.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_glob() -> anyhow::Result<()> {
+        // Create file
+        let tmp_dir = tempdir()?;
+        let matched_files = ["thesshfile", "anothersshfile"];
+        let unmatched_files = ["noswordshere"];
+        let tmp_path = tmp_dir.into_path();
+        for f in matched_files {
+            let mut file = File::create(tmp_path.clone().join(f).clone())?;
+            file.write_all(b"Hello\n")?;
+        }
+        for f in unmatched_files {
+            let mut file = File::create(tmp_path.clone().join(f))?;
+            file.write_all(b"Bye")?;
+        }
+
+        let path = String::from(tmp_path.clone().join("*ssh*").to_str().unwrap());
+        let res = read(path)?;
+
+        assert!(!res.contains("Bye"));
+        assert_eq!(res, "Hello\nHello\n");
         Ok(())
     }
 }

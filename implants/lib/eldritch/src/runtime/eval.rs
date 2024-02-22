@@ -3,6 +3,7 @@ use crate::{
     assets::AssetsLibrary,
     crypto::CryptoLibrary,
     file::FileLibrary,
+    http::HTTPLibrary,
     pivot::PivotLibrary,
     process::ProcessLibrary,
     regex::RegexLibrary,
@@ -145,7 +146,7 @@ pub struct Runtime {
 #[starlark_module]
 fn error_handler(builder: &mut GlobalsBuilder) {
     #[allow(unused_variables)]
-    fn eprint(starlark_eval: &mut Evaluator<'v, '_>, message: String) -> anyhow::Result<NoneType> {
+    fn eprint(starlark_eval: &mut Evaluator<'_, '_>, message: String) -> anyhow::Result<NoneType> {
         let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
         eprint_impl::eprint(env, message)?;
         Ok(NoneType {})
@@ -169,6 +170,7 @@ impl Runtime {
             const time: TimeLibrary = TimeLibrary;
             const report: ReportLibrary = ReportLibrary;
             const regex: RegexLibrary = RegexLibrary;
+            const http: HTTPLibrary = HTTPLibrary;
         }
 
         GlobalsBuilder::extended_by(&[

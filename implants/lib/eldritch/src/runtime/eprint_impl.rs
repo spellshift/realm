@@ -4,7 +4,7 @@ use anyhow::Result;
 pub fn eprint(env: &Environment, message: String) -> Result<()> {
     env.send(ReportErrorMessage {
         id: env.id(),
-        error: message.clone(),
+        error: format!("{}\n", message),
     })?;
 
     #[cfg(feature = "print_stdout")]
@@ -59,7 +59,7 @@ mod test {
                     parameters: HashMap::new(),
                     file_names: Vec::new(),
                 },
-                want_error: String::from("Beep Boop an error occured"),
+                want_error: String::from("Beep Boop an error occured\n"),
             },
     }
 }

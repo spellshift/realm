@@ -44,7 +44,7 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
-		{Name: "content", Type: field.TypeBytes},
+		{Name: "content", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
 	}
 	// FilesTable holds the schema information for the "files" table.
 	FilesTable = &schema.Table{
@@ -231,8 +231,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "url", Type: field.TypeString, Unique: true},
-		{Name: "public_key", Type: field.TypeString},
-		{Name: "private_key", Type: field.TypeString},
+		{Name: "public_key", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "private_key", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "repository_owner", Type: field.TypeInt, Nullable: true},
 	}
 	// RepositoriesTable holds the schema information for the "repositories" table.
@@ -269,9 +269,9 @@ var (
 		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "exec_started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "exec_finished_at", Type: field.TypeTime, Nullable: true},
-		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "output_size", Type: field.TypeInt, Default: 0},
-		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "error", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "quest_tasks", Type: field.TypeInt},
 		{Name: "task_beacon", Type: field.TypeInt},
 	}

@@ -255,12 +255,6 @@ The <b>file.compress</b> method compresses a file using the gzip algorithm. If t
 
 The <b>file.copy</b> method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
 
-### file.download
-
-`file.download(uri: str, dst: str) -> None`
-
-The <b>file.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten. This currently only supports `http` & `https` protocols.
-
 ### file.exists
 
 `file.exists(path: str) -> bool`
@@ -295,6 +289,13 @@ The <b>file.is_file</b> method checks if a path exists and is a file. If it does
 `file.list(path: str) -> List<Dict>`
 
 The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
+This function also supports globbing with `*` for example:
+
+```python
+file.list("/home/*/.bash_history") # List all files called .bash_history in sub dirs of `/home/`
+file.list("/etc/*ssh*") # List the contents of all dirs that have `ssh` in the name and all files in etc with `ssh` in the name
+```
+
 Each file is represented by a Dict type.
 Here is an example of the Dict layout:
 
@@ -302,6 +303,7 @@ Here is an example of the Dict layout:
 [
     {
         "file_name": "implants",
+        "absolute_path": "/workspace/realm/implants",
         "size": 4096,
         "owner": "root",
         "group": "0",
@@ -311,6 +313,7 @@ Here is an example of the Dict layout:
     },
     {
         "file_name": "README.md",
+        "absolute_path": "/workspace/realm/README.md",
         "size": 750,
         "owner": "root",
         "group": "0",
@@ -320,6 +323,7 @@ Here is an example of the Dict layout:
     },
     {
         "file_name": ".git",
+        "absolute_path": "/workspace/realm/.git",
         "size": 4096,
         "owner": "root",
         "group": "0",
@@ -347,6 +351,12 @@ The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If 
 `file.read(path: str) -> str`
 
 The <b>file.read</b> method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+This function supports globbing with `*` for example:
+
+```python
+file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
+file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+```
 
 ### file.remove
 
@@ -358,7 +368,7 @@ The <b>file.remove</b> method deletes a file or directory (and it's contents) sp
 
 `file.replace(path: str, pattern: str, value: str) -> None`
 
-Unimplemented.
+The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value.
 
 ### file.replace_all
 
@@ -399,6 +409,30 @@ The <b>file.find</b> method finds all files matching the used parameters. Return
 - permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.
 - modified_time: Checks if last modified time matches input specified in time since EPOCH
 - create_time: Checks if last modified time matches input specified in time since EPOCH
+
+---
+
+## HTTP
+
+The HTTP library also allows the user to allow the http client to ignore TLS validation via the `allow_insecure` optional parameter (defaults to `false`).
+
+### http.download
+
+`http.download(uri: str, dst: str, allow_insecure: Option<bool>) -> None`
+
+The <b>http.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten.
+
+### http.get
+
+`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
+
+The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+
+### http.post
+
+`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
+
+The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form paramters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
 
 ---
 
@@ -862,6 +896,12 @@ For users, will return name and groups of user.
 `sys.hostname() -> String`
 
 The <b>sys.hostname</b> method returns a String containing the host's hostname.
+
+### sys.is_bsd
+
+`sys.is_bsd() -> bool`
+
+The <b>sys.is_bsd</b> method returns `True` if on a `freebsd`, `netbsd`, or `openbsd` system and `False` on everything else.
 
 ### sys.is_linux
 

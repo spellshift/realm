@@ -156,7 +156,7 @@ mod tests {
         }]);
 
         let out = run_tomes(parsed_tomes).await?;
-        assert_eq!("hello world".to_string(), out.join(""));
+        assert_eq!("hello world\n".to_string(), out.join(""));
         Ok(())
     }
 }

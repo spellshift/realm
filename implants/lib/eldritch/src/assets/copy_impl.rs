@@ -2,10 +2,13 @@ use crate::runtime::{messages::FetchAssetMessage, Environment};
 use anyhow::{Context, Result};
 use pb::c2::FetchAssetResponse;
 use starlark::{eval::Evaluator, values::list::ListRef};
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::sync::mpsc::channel;
-use std::{fs, sync::mpsc::Receiver};
+use std::{
+    fs,
+    fs::OpenOptions,
+    io::Write,
+    path::Path,
+    sync::mpsc::{channel, Receiver},
+};
 
 fn copy_local(src: String, dst: String) -> Result<()> {
     let src_file = match super::Asset::get(src.as_str()) {
@@ -20,27 +23,26 @@ fn copy_local(src: String, dst: String) -> Result<()> {
 }
 
 fn copy_remote(rx: Receiver<FetchAssetResponse>, dst_path: String) -> Result<()> {
-    // Truncate file
-    let mut dst = OpenOptions::new()
-        .create(true)
-        .truncate(true)
-        .write(true)
-        .open(&dst_path)
-        .context(format!(
-            "failed to truncate destination file: {}",
-            &dst_path
-        ))?;
-    dst.flush()
-        .context(format!("failed to flush file truncation: {}", &dst_path))?;
+    // Wait for our first chunk
+    let resp = rx.recv()?;
 
-    // Reopen file for writing
+    // Delete file if it exists
+    if Path::new(&dst_path).exists() {
+        fs::remove_file(&dst_path).context("failed to delete existing file")?;
+    }
+
+    // Open file for writing
     let mut dst = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&dst_path)
         .context(format!("failed to open file for writing: {}", &dst_path))?;
 
-    // Listen for downloaded chunks and write them
+    // Write our first chunk
+    dst.write_all(&resp.chunk)
+        .context(format!("failed to write file chunk: {}", &dst_path))?;
+
+    // Listen for more chunks and write them
     for resp in rx {
         dst.write_all(&resp.chunk)
             .context(format!("failed to write file chunk: {}", &dst_path))?;
@@ -80,15 +82,16 @@ mod tests {
     };
     use pb::c2::FetchAssetResponse;
     use pb::eldritch::Tome;
-    use std::sync::mpsc::channel;
     use std::{collections::HashMap, io::prelude::*};
+    use std::{fs, sync::mpsc::channel};
     use tempfile::NamedTempFile;
 
     #[tokio::test]
     async fn test_remote_copy() -> anyhow::Result<()> {
         // Create files
-        let mut tmp_file_dst = NamedTempFile::new()?;
+        let tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
+        let check_dst = path_dst.clone();
 
         let (tx, rx) = channel();
         let handle =
@@ -106,8 +109,7 @@ mod tests {
 
         handle.await?;
 
-        let mut contents = String::new();
-        tmp_file_dst.read_to_string(&mut contents)?;
+        let contents = fs::read_to_string(check_dst)?;
         assert!(contents.contains("Hello from a remote asset"));
         assert!(contents.contains("Goodbye from a remote asset"));
         Ok(())
@@ -116,8 +118,9 @@ mod tests {
     #[tokio::test]
     async fn test_remote_copy_full() -> anyhow::Result<()> {
         // Create files
-        let mut tmp_file_dst = NamedTempFile::new()?;
+        let tmp_file_dst = NamedTempFile::new()?;
         let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
+        let check_dst = path_dst.clone();
 
         // Run Eldritch (in it's own thread)
         let mut runtime = crate::start(
@@ -178,8 +181,7 @@ mod tests {
         runtime.finish().await;
 
         // Lastly, assert the file was written correctly
-        let mut contents = String::new();
-        tmp_file_dst.read_to_string(&mut contents)?;
+        let contents = fs::read_to_string(check_dst)?;
         assert_eq!("chunk1\nchunk2\n", contents.as_str());
 
         Ok(())
@@ -217,7 +219,7 @@ mod tests {
             .collect::<Vec<&Message>>();
         assert!(errors.is_empty());
 
-        let mut contents = String::new();
+        let mut contents: String = String::new();
         tmp_file_dst.read_to_string(&mut contents)?;
         assert!(contents.contains("hello from an embedded shell script"));
 
