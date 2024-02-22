@@ -162,7 +162,9 @@ pub fn find<'v>(
 #[cfg(test)]
 mod tests {
 
-    use std::{collections::HashMap, fs::Permissions, os::unix::fs::PermissionsExt};
+    use std::{collections::HashMap, fs::Permissions};
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
 
     use tempfile::TempDir;
     use pb::eldritch::Tome;
