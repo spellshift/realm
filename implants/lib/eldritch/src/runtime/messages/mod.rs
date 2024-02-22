@@ -21,12 +21,9 @@ pub use report_text::ReportTextMessage;
 pub use transport::Transport;
 
 use anyhow::Result;
-use derive_more::From;
+use derive_more::{Display, From};
 use report_agg_output::ReportAggOutputMessage;
 use std::future::Future;
-
-#[cfg(debug_assertions)]
-use derive_more::Display;
 
 // Dispatcher defines the shared "dispatch" method used by all `Message` variants to send their data using a transport.
 pub trait Dispatcher {
@@ -38,34 +35,34 @@ pub trait Dispatcher {
  * This enables eldritch library functions to communicate with the caller API, enabling structured data reporting
  * as well as resource requests (e.g. fetching assets).
  */
-#[cfg_attr(debug_assertions, derive(Debug, Display, PartialEq))]
-#[derive(From, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[derive(Display, From, Clone)]
 pub enum Message {
-    #[cfg_attr(debug_assertions, display(fmt = "FetchAsset"))]
+    #[display(fmt = "FetchAsset")]
     FetchAsset(FetchAssetMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportCredential"))]
+    #[display(fmt = "ReportCredential")]
     ReportCredential(ReportCredentialMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportError"))]
+    #[display(fmt = "ReportError")]
     ReportError(ReportErrorMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportFile"))]
+    #[display(fmt = "ReportFile")]
     ReportFile(ReportFileMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportProcessList"))]
+    #[display(fmt = "ReportProcessList")]
     ReportProcessList(ReportProcessListMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportText"))]
+    #[display(fmt = "ReportText")]
     ReportText(ReportTextMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportStart"))]
+    #[display(fmt = "ReportStart")]
     ReportStart(ReportStartMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportFinish"))]
+    #[display(fmt = "ReportFinish")]
     ReportFinish(ReportFinishMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportAggOutput"))]
+    #[display(fmt = "ReportAggOutput")]
     ReportAggOutput(ReportAggOutputMessage),
 }
 

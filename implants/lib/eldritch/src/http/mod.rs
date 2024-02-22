@@ -23,18 +23,18 @@ crate::eldritch_lib!(HTTPLibrary, "http_library");
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
-    fn download(this: &HTTPLibrary, uri: String, dst: String) -> anyhow::Result<NoneType> {
-        download_impl::download(uri, dst)?;
+    fn download(this: &HTTPLibrary, uri: String, dst: String, allow_insecure: Option<bool>) -> anyhow::Result<NoneType> {
+        download_impl::download(uri, dst, allow_insecure)?;
         Ok(NoneType{})
     }
 
     #[allow(unused_variables)]
-    fn get(this: &HTTPLibrary, uri: String, query_params: Option<SmallMap<String, String>>, headers: Option<SmallMap<String, String>>) -> anyhow::Result<String> {
-        get_impl::get(uri, query_params, headers)
+    fn get(this: &HTTPLibrary, uri: String, query_params: Option<SmallMap<String, String>>, headers: Option<SmallMap<String, String>>, allow_insecure: Option<bool>) -> anyhow::Result<String> {
+        get_impl::get(uri, query_params, headers, allow_insecure)
     }
 
     #[allow(unused_variables)]
-    fn post(this: &HTTPLibrary, uri: String, body: Option<String>, form: Option<SmallMap<String, String>>, headers: Option<SmallMap<String, String>>) -> anyhow::Result<String> {
-        post_impl::post(uri, body, form, headers)
+    fn post(this: &HTTPLibrary, uri: String, body: Option<String>, form: Option<SmallMap<String, String>>, headers: Option<SmallMap<String, String>>, allow_insecure: Option<bool>) -> anyhow::Result<String> {
+        post_impl::post(uri, body, form, headers, allow_insecure)
     }
 }

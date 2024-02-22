@@ -1,6 +1,6 @@
 use anyhow::Result;
 use eldritch::runtime::messages::Dispatcher;
-use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
+use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use transport::Transport;
 
 /*
@@ -65,7 +65,7 @@ impl TaskHandle {
                         match t
                             .report_task_output(ReportTaskOutputRequest {
                                 output: Some(TaskOutput {
-                                    id: id,
+                                    id,
                                     output: String::new(),
                                     error: Some(TaskError {
                                         msg: format!("dispatch error ({}): {:#?}", msg_str, err),
