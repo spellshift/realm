@@ -74,7 +74,7 @@ export function getOnlineBeacons(beacons: Array<BeaconType>) : Array<BeaconType>
 }
 export function checkIfBeaconOffline(beacon: {lastSeenAt: string, interval: number}) : boolean{
     const currentDate = new Date();
-    return add(new Date(beacon.lastSeenAt),{seconds: beacon.interval, minutes: 1}) < currentDate;
+    return add(new Date(beacon?.lastSeenAt),{seconds: beacon?.interval, minutes: 1}) < currentDate;
 }
 
 export function isBeaconSelected(selectedBeacons: any): boolean{
