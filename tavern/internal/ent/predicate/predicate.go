@@ -27,6 +27,9 @@ type HostProcess func(*sql.Selector)
 // Quest is the predicate function for quest builders.
 type Quest func(*sql.Selector)
 
+// Repository is the predicate function for repository builders.
+type Repository func(*sql.Selector)
+
 // Tag is the predicate function for tag builders.
 type Tag func(*sql.Selector)
 

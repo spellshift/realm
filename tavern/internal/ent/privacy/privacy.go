@@ -278,6 +278,30 @@ func (f QuestMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation)
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.QuestMutation", m)
 }
 
+// The RepositoryQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type RepositoryQueryRuleFunc func(context.Context, *ent.RepositoryQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f RepositoryQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.RepositoryQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.RepositoryQuery", q)
+}
+
+// The RepositoryMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type RepositoryMutationRuleFunc func(context.Context, *ent.RepositoryMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f RepositoryMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.RepositoryMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.RepositoryMutation", m)
+}
+
 // The TagQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type TagQueryRuleFunc func(context.Context, *ent.TagQuery) error

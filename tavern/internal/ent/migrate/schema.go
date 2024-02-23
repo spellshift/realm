@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -43,7 +44,7 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
-		{Name: "content", Type: field.TypeBytes},
+		{Name: "content", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
 	}
 	// FilesTable holds the schema information for the "files" table.
 	FilesTable = &schema.Table{
@@ -222,6 +223,30 @@ var (
 			},
 		},
 	}
+	// RepositoriesColumns holds the columns for the "repositories" table.
+	RepositoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "url", Type: field.TypeString, Unique: true},
+		{Name: "public_key", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "private_key", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "repository_owner", Type: field.TypeInt, Nullable: true},
+	}
+	// RepositoriesTable holds the schema information for the "repositories" table.
+	RepositoriesTable = &schema.Table{
+		Name:       "repositories",
+		Columns:    RepositoriesColumns,
+		PrimaryKey: []*schema.Column{RepositoriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "repositories_users_owner",
+				Columns:    []*schema.Column{RepositoriesColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -242,9 +267,9 @@ var (
 		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "exec_started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "exec_finished_at", Type: field.TypeTime, Nullable: true},
-		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "output_size", Type: field.TypeInt, Default: 0},
-		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "error", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "quest_tasks", Type: field.TypeInt},
 		{Name: "task_beacon", Type: field.TypeInt},
 	}
@@ -282,6 +307,7 @@ var (
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "tome_uploader", Type: field.TypeInt, Nullable: true},
+		{Name: "tome_repository", Type: field.TypeInt, Nullable: true},
 	}
 	// TomesTable holds the schema information for the "tomes" table.
 	TomesTable = &schema.Table{
@@ -293,6 +319,12 @@ var (
 				Symbol:     "tomes_users_uploader",
 				Columns:    []*schema.Column{TomesColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "tomes_repositories_repository",
+				Columns:    []*schema.Column{TomesColumns[12]},
+				RefColumns: []*schema.Column{RepositoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -373,6 +405,7 @@ var (
 		HostFilesTable,
 		HostProcessesTable,
 		QuestsTable,
+		RepositoriesTable,
 		TagsTable,
 		TasksTable,
 		TomesTable,
@@ -395,9 +428,14 @@ func init() {
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = FilesTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable
+	RepositoriesTable.ForeignKeys[0].RefTable = UsersTable
+	RepositoriesTable.Annotation = &entsql.Annotation{
+		Table: "repositories",
+	}
 	TasksTable.ForeignKeys[0].RefTable = QuestsTable
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
 	TomesTable.ForeignKeys[0].RefTable = UsersTable
+	TomesTable.ForeignKeys[1].RefTable = RepositoriesTable
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
 	TomeFilesTable.ForeignKeys[0].RefTable = TomesTable

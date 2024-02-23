@@ -1,6 +1,7 @@
 pub mod assets;
 pub mod crypto;
 pub mod file;
+pub mod http;
 pub mod pivot;
 pub mod process;
 pub mod regex;

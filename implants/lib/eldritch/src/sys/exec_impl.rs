@@ -1,20 +1,18 @@
 use super::super::insert_dict_kv;
 use super::CommandOutput;
 use anyhow::{Context, Result};
-#[cfg(any(target_os = "linux", target_os = "macos"))]
-use nix::{
-    sys::wait::waitpid,
-    unistd::{fork, ForkResult},
-};
 use starlark::{
     collections::SmallMap,
     const_frozen_string,
     values::{dict::Dict, Heap},
 };
-#[cfg(any(target_os = "linux", target_os = "macos"))]
-use std::process::exit;
 use std::process::Command;
-// https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
+use {
+    nix::unistd::setsid,
+    nix::unistd::{fork, ForkResult},
+    std::process::{exit, Stdio},
+};
 
 pub fn exec(
     starlark_heap: &Heap,
@@ -54,31 +52,38 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
             "Windows is not supported for disowned processes."
         ));
 
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
         match unsafe { fork()? } {
             ForkResult::Parent { child } => {
-                // Wait for intermediate process to exit.
-                waitpid(Some(child), None)?;
+                if child.as_raw() < 0 {
+                    return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+                }
                 Ok(CommandOutput {
                     stdout: "".to_string(),
                     stderr: "".to_string(),
                     status: 0,
                 })
             }
-
-            ForkResult::Child => match unsafe { fork()? } {
-                ForkResult::Parent { child } => {
-                    if child.as_raw() < 0 {
-                        return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+            ForkResult::Child => {
+                setsid()?;
+                match unsafe { fork()? } {
+                    ForkResult::Parent { child } => {
+                        if child.as_raw() < 0 {
+                            return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+                        }
+                        exit(0);
                     }
-                    exit(0)
+                    ForkResult::Child => {
+                        let _res = Command::new(path)
+                            .args(args)
+                            .stdin(Stdio::null())
+                            .stdout(Stdio::null())
+                            .stderr(Stdio::null())
+                            .spawn()?;
+                        exit(0);
+                    }
                 }
-
-                ForkResult::Child => {
-                    let _res = Command::new(path).args(args).output()?;
-                    exit(0)
-                }
-            },
+            }
         }
     }
 }
@@ -150,11 +155,6 @@ mod tests {
         Ok(())
     }
 
-    // This is a manual test:
-    // Example results:
-    // 42284 pts/0    S      0:00 /workspaces/realm/implants/target/debug/deps/eldritch-a23fc08ee1443dc3 test_sys_exec_disown_linux --nocapture
-    // 42285 pts/0    S      0:00  \_ /bin/sh -c sleep 600
-    // 42286 pts/0    S      0:00      \_ sleep 600
     #[test]
     fn test_sys_exec_disown_linux() -> anyhow::Result<()> {
         if cfg!(target_os = "linux")
@@ -171,10 +171,7 @@ mod tests {
 
             let _res = handle_exec(
                 String::from("/bin/sh"),
-                vec![
-                    String::from("-c"),
-                    format!("touch {}", path.clone()),
-                ],
+                vec![String::from("-c"), format!("touch {}", path.clone())],
                 Some(true),
             )?;
             thread::sleep(time::Duration::from_secs(2));

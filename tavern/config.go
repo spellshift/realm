@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/tomes"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
@@ -109,6 +110,12 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+}
+
+// NewGitImporter configures and returns a new RepoImporter using git.
+func (cfg *Config) NewGitImporter(client *ent.Client) *tomes.GitImporter {
+	var options []tomes.GitImportOption
+	return tomes.NewGitImporter(client, options...)
 }
 
 // IsMetricsEnabled returns true if the /metrics http endpoint has been enabled.

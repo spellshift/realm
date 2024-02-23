@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -40,6 +41,9 @@ func (File) Fields() []ent.Field {
 			MaxLen(100).
 			Comment("A SHA3-256 digest of the content field"),
 		field.Bytes("content").
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGBLOB", // Override MySQL, improve length maximum
+			}).
 			Annotations(
 				entgql.Skip(), // Don't return file content in GraphQL queries
 			).

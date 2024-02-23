@@ -1,5 +1,6 @@
 use anyhow::Result;
 use eldritch::runtime::messages::Dispatcher;
+use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use transport::Transport;
 
 /*
@@ -38,9 +39,7 @@ impl TaskHandle {
         let messages = self.runtime.collect();
         for msg in messages {
             // Copy values for logging
-            #[cfg(debug_assertions)]
             let id = self.id;
-            #[cfg(debug_assertions)]
             let msg_str = msg.to_string();
 
             // Each message is dispatched in it's own tokio task, managed by this task handle's pool.
@@ -51,9 +50,38 @@ impl TaskHandle {
                         #[cfg(debug_assertions)]
                         log::info!("message success (task_id={},msg={})", id, msg_str);
                     }
-                    Err(_err) => {
+                    Err(err) => {
                         #[cfg(debug_assertions)]
-                        log::error!("message failed (task_id={},msg={}): {}", id, msg_str, _err);
+                        log::error!(
+                            "message failed (task_id={},msg={}): {}",
+                            id,
+                            msg_str.clone(),
+                            err
+                        );
+
+                        // Attempt to report this dispatch error to the server
+                        // This will help in cases where one transport method is failing but we can
+                        // still report errors.
+                        match t
+                            .report_task_output(ReportTaskOutputRequest {
+                                output: Some(TaskOutput {
+                                    id,
+                                    output: String::new(),
+                                    error: Some(TaskError {
+                                        msg: format!("dispatch error ({}): {:#?}", msg_str, err),
+                                    }),
+                                    exec_started_at: None,
+                                    exec_finished_at: None,
+                                }),
+                            })
+                            .await
+                        {
+                            Ok(_) => {}
+                            Err(_err) => {
+                                #[cfg(debug_assertions)]
+                                log::error!("failed to report dispatch error: {}", _err);
+                            }
+                        };
                     }
                 }
             });

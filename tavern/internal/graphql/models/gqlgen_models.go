@@ -28,6 +28,12 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
+type ImportRepositoryInput struct {
+	// Optionally, specify directories to include.
+	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
+	IncludeDirs []string `json:"includeDirs,omitempty"`
+}
+
 type SubmitTaskResultInput struct {
 	// ID of the task to submit results for.
 	TaskID int `json:"taskID"`

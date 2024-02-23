@@ -110,6 +110,35 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputImportRepositoryInput(ctx context.Context, obj interface{}) (models.ImportRepositoryInput, error) {
+	var it models.ImportRepositoryInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"includeDirs"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "includeDirs":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDirs"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncludeDirs = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Context, obj interface{}) (models.SubmitTaskResultInput, error) {
 	var it models.SubmitTaskResultInput
 	asMap := map[string]interface{}{}
@@ -186,5 +215,13 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) unmarshalOImportRepositoryInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐImportRepositoryInput(ctx context.Context, v interface{}) (*models.ImportRepositoryInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputImportRepositoryInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
 
 // endregion ***************************** type.gotpl *****************************

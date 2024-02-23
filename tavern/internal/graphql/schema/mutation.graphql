@@ -33,6 +33,12 @@ type Mutation {
     deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
+    # Repository
+    ###
+    createRepository(input: CreateRepositoryInput!): Repository! @requireRole(role: USER)
+    importRepository(repoID: ID!, input: ImportRepositoryInput): Repository! @requireRole(role: USER)
+
+    ###
     # User
     ###
     updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)

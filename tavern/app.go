@@ -129,6 +129,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		return nil, fmt.Errorf("failed to upload default tomes: %w", err)
 	}
 
+	// Initialize Git Tome Importer
+	git := cfg.NewGitImporter(client)
+
 	// Initialize Test Data
 	if cfg.IsTestDataEnabled() {
 		createTestData(ctx, client)
@@ -159,9 +162,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			client,
 			"https://www.googleapis.com/oauth2/v3/userinfo",
 		)},
-		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client)},
+		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client, git)},
 		"/c2.C2/":     tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
-		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
+		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client, "/cdn/")},
 		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
@@ -226,8 +229,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client))
+func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// GraphQL Logging
