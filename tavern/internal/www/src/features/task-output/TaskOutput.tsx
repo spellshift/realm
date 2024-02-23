@@ -9,7 +9,7 @@ import { Button, Image } from "@chakra-ui/react";
 import OutputWrapper from "./OutputWrapper";
 import ErrorWrapper from "./ErrorWrapper";
 import { useNavigate } from "react-router-dom";
-import { constructTomeParams } from "../../utils/utils";
+import { checkIfBeaconOffline, constructTomeParams } from "../../utils/utils";
 
 type Props = {
   isOpen: boolean,
@@ -19,12 +19,15 @@ type Props = {
 
 export const TaskOutput = (props: Props) => {
   const { isOpen, setOpen, selectedTask } = props;
+
   const nav = useNavigate();
   const createdTime = new Date(selectedTask?.createdAt || "");
   const finishTime = new Date(selectedTask?.execFinishedAt || "");
   const startTime = new Date(selectedTask?.execStartedAt || "");
 
   const params = constructTomeParams(selectedTask?.quest?.parameters, selectedTask?.quest?.tome?.paramDefs);
+
+  const beaconOffline = checkIfBeaconOffline(selectedTask?.beacon);
 
   const hanldeRerunQuest = useCallback(() => {
     const beaconId = selectedTask?.beacon?.id;
@@ -82,13 +85,17 @@ export const TaskOutput = (props: Props) => {
                           <h2 className="text-3xl font-semibold text-gray-900">{selectedTask?.quest?.name}</h2>
                           <TaskStatusBadge task={selectedTask} />
                         </div>
-                        <div>
-                          <Button size={"sm"}
-                            onClick={() => hanldeRerunQuest()}
-                          >
-                            Re-run task
-                          </Button>
-                        </div>
+                        {!beaconOffline &&
+                          <div>
+                            <Button size={"sm"}
+                              onClick={() => hanldeRerunQuest()}
+                              disabled={beaconOffline}
+                              title="Beacon must be online to rerun"
+                            >
+                              Re-run task
+                            </Button>
+                          </div>
+                        }
                       </div>
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl">Status</h3>

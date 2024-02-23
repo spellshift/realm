@@ -38,7 +38,6 @@ export const EditablePageHeader = () => {
             }
         }
     });
-    console.log(data);
 
     return (
         <div className="flex flex-row justify-between w-full">

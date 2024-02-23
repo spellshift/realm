@@ -25,7 +25,6 @@ const Tasks = () => {
         page,
         setPage
     } = useTasks(pageType, questId);
-    console.log(data);
 
     const [isOpen, setOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -69,7 +68,7 @@ const Tasks = () => {
                     )}
                 </div>
             )}
-            <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask} />
+            {isOpen && <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask} />}
         </PageWrapper>
     );
 };
