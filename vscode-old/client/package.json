@@ -1,0 +1,24 @@
+{
+	"name": "eldritch-lsp-client",
+	"description": "LSP client for the eldritch language",
+	"author": "Realm",
+	"license": "GNU GPL v3.0",
+	"version": "0.0.1",
+	"publisher": "vscode",
+	"repository": {
+		"type": "git",
+		"url": "https://realm.pub"
+	},
+	"engines": {
+		"vscode": "^1.43.0"
+	},
+	"dependencies": {
+		"cd": "^0.3.3",
+		"eldritch": "file:..",
+		"vscode-languageclient": "^6.1.3"
+	},
+	"devDependencies": {
+		"@types/vscode": "1.43.0",
+		"vscode-test": "^1.3.0"
+	}
+}

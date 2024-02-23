@@ -1,5 +1,4 @@
 def cat(path):
-
     if file.is_file(path):
         res = file.read(path)
         print(res)

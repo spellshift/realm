@@ -2,6 +2,7 @@ extern crate eldritch;
 extern crate golem;
 
 mod inter;
+mod lsp;
 
 use anyhow::{anyhow, Result};
 use clap::{Arg, Command};
@@ -65,7 +66,19 @@ fn main() -> anyhow::Result<()> {
                 .multiple_occurrences(false)
                 .required(false),
         )
+        .arg(
+            Arg::with_name("lsp")
+                .help("Run the eldritch LSP server (for vscode)")
+                .long("lsp")
+                .short('l')
+                .required(false),
+        )
         .get_matches();
+
+    if matches.contains_id("lsp") {
+        lsp::main()?;
+        return Ok(());
+    }
 
     if matches.contains_id("INPUT") {
         // Read Tomes

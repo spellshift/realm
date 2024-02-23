@@ -194,17 +194,21 @@ impl Runtime {
     }
 
     /*
+     * Dialect of starlark available to eldritch code.
+     * This defines available starlark features & syntax for eldritch code.
+     */
+    pub fn dialect() -> Dialect {
+        Dialect {
+            enable_f_strings: true,
+            ..Dialect::Extended
+        }
+    }
+
+    /*
      * Parse an Eldritch tome into a starlark Abstract Syntax Tree (AST) Module.
      */
     fn parse(tome: &Tome) -> anyhow::Result<AstModule> {
-        match AstModule::parse(
-            "main",
-            tome.eldritch.to_string(),
-            &Dialect {
-                enable_f_strings: true,
-                ..Dialect::Extended
-            },
-        ) {
+        match AstModule::parse("main", tome.eldritch.to_string(), &Runtime::dialect()) {
             Ok(v) => Ok(v),
             Err(err) => Err(err.into_anyhow()),
         }

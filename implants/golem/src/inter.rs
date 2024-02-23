@@ -26,16 +26,13 @@
 use std::fmt;
 use std::fmt::Display;
 
-
-
 use starlark::errors::EvalMessage;
 use starlark::errors::EvalSeverity;
 use starlark::read_line::ReadLine;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
 
-use eval::Context;
-use eval::ContextMode;
+pub(crate) use eval::{Context, ContextMode};
 use types::LintMessage;
 
 mod eval;

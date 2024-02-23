@@ -1,69 +1,117 @@
 {
     "name": "eldritch",
     "description": "An Eldritch language server",
-    "author": "realm",
-    "license": "GNU GPL v3.0",
-    "version": "0.0.3",
     "icon": "images/eldritch.png",
+    "extensionKind": [
+        "workspace"
+    ],
+    "author": "spellshift/realm",
+    "license": "GPL-3.0-only",
+    "version": "0.0.5",
     "repository": {
         "type": "git",
-        "url": "https://realm.pub"
+        "url": "https://github.com/spellshift/realm"
     },
-    "publisher": "realm",
+    "publisher": "spellshift",
     "categories": [],
     "keywords": [
-        "Eldritch",
-        "eldritch",
-        "implant",
-        "red team"
+        "multi-root ready"
     ],
     "engines": {
         "vscode": "^1.43.0"
     },
     "activationEvents": [
-        "onLanguage:eldritch",
-        "workspaceContains:*.tome",
-        "workspaceContains:*/*.tome",
-        "workspaceContains:*/*/*.tome"
+        "onLanguage:starlark"
     ],
     "main": "./client/out/extension",
     "contributes": {
         "languages": [
             {
                 "id": "eldritch",
-                "icon": {
-                    "light": "client/src/images/eldritch.png",
-                    "dark": "client/src/images/eldritch.png"
-                },
                 "aliases": [
-                    "Eldritch",
-                    "eldritch"
+                    "Eldritch"
                 ],
                 "extensions": [
-                    ".tome"
+                    ".eldritch"
                 ],
                 "filenames": [],
-                "configuration": "./syntaxes/eldritch.configuration.json"
+                "configuration": "./syntaxes/starlark.configuration.json"
             }
         ],
         "grammars": [
             {
                 "language": "eldritch",
-                "scopeName": "source.eldritch",
-                "path": "./syntaxes/eldritch.tmLanguage.json"
+                "scopeName": "source.starlark",
+                "path": "./syntaxes/starlark.tmLanguage.json"
             }
         ],
         "breakpoints": [
             {
                 "language": "eldritch"
             }
-        ]
+        ],
+        "debuggers": [
+            {
+                "type": "eldritch",
+                "label": "Eldritch Debug",
+                "program": "/usr/bin/env",
+                "args": [
+                    "golem",
+                    "--dap"
+                ],
+                "languages": [
+                    "eldritch"
+                ],
+                "configurationAttributes": {
+                    "launch": {
+                        "properties": {
+                            "program": {
+                                "type": "string",
+                                "description": "The program to debug.",
+                                "default": "${file}"
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "eldritch",
+                        "request": "launch",
+                        "name": "Launch Program",
+                        "program": "${file}"
+                    }
+                ]
+            }
+        ],
+        "configuration": {
+            "properties": {
+                "eldritch.lspPath": {
+                    "type": "string",
+                    "default": "golem",
+                    "description": "The path to the binary to invoke (possibly on the path) for the plugin to invoke that handles LSP over stdin/stdout"
+                },
+                "eldritch.lspArguments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "--lsp"
+                    ],
+                    "description": "Additional arguments that should be passed to the binary at eldritch.lspPath"
+                },
+                "starlark.enableGotoDefinition": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to ask the LSP server to enable Goto Definition functionality"
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -b",
-        "watch": "tsc -b -w",
-        "postinstall": "cd client && npm install && cd .."
+        "watch": "tsc -b -w"
     },
     "devDependencies": {
         "@types/mocha": "^9.0.0",
@@ -74,6 +122,6 @@
         "typescript": "^4.4.3"
     },
     "dependencies": {
-        "vsce": "^2.6.7"
+        "vsce": "^2.15.0"
     }
 }

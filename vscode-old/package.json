@@ -1,0 +1,79 @@
+{
+    "name": "eldritch",
+    "description": "An Eldritch language server",
+    "author": "realm",
+    "license": "GNU GPL v3.0",
+    "version": "0.0.3",
+    "icon": "images/eldritch.png",
+    "repository": {
+        "type": "git",
+        "url": "https://realm.pub"
+    },
+    "publisher": "realm",
+    "categories": [],
+    "keywords": [
+        "Eldritch",
+        "eldritch",
+        "implant",
+        "red team"
+    ],
+    "engines": {
+        "vscode": "^1.43.0"
+    },
+    "activationEvents": [
+        "onLanguage:eldritch",
+        "workspaceContains:*.tome",
+        "workspaceContains:*/*.tome",
+        "workspaceContains:*/*/*.tome"
+    ],
+    "main": "./client/out/extension",
+    "contributes": {
+        "languages": [
+            {
+                "id": "eldritch",
+                "icon": {
+                    "light": "client/src/images/eldritch.png",
+                    "dark": "client/src/images/eldritch.png"
+                },
+                "aliases": [
+                    "Eldritch",
+                    "eldritch"
+                ],
+                "extensions": [
+                    ".tome"
+                ],
+                "filenames": [],
+                "configuration": "./syntaxes/eldritch.configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "eldritch",
+                "scopeName": "source.eldritch",
+                "path": "./syntaxes/eldritch.tmLanguage.json"
+            }
+        ],
+        "breakpoints": [
+            {
+                "language": "eldritch"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -b",
+        "watch": "tsc -b -w",
+        "postinstall": "cd client && npm install && cd .."
+    },
+    "devDependencies": {
+        "@types/mocha": "^9.0.0",
+        "@types/node": "^16.10.2",
+        "@typescript-eslint/parser": "^4.32.0",
+        "eslint": "^7.32.0",
+        "mocha": "^9.0.0",
+        "typescript": "^4.4.3"
+    },
+    "dependencies": {
+        "vsce": "^2.6.7"
+    }
+}

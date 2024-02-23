@@ -385,8 +385,5 @@ pub(crate) fn globals() -> Globals {
 }
 
 pub(crate) fn dialect() -> Dialect {
-    Dialect {
-        enable_f_strings: true,
-        ..Dialect::Extended
-    }
+    Runtime::dialect()
 }
