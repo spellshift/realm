@@ -82,6 +82,7 @@ export type Task = {
     beacon: BeaconType,
     createdAt: string,
     error: string,
+    quest?: QuestProps
 };
 export type UserType = {
     id: string;
@@ -95,7 +96,8 @@ export type QuestProps = {
     name: string,
     tasks: Array<Task>,
     tome: Tome,
-    creator: UserType
+    creator: UserType,
+    parameters: string
 }
 export type OutputTableProps = {
     quest: string,

@@ -1,5 +1,5 @@
 import {add} from "date-fns";
-import { BeaconType } from "./consts";
+import { BeaconType, QuestParam, TomeParams } from "./consts";
 
 export const convertArrayToObject = (array: Array<any>) =>
   array.reduce((acc, curr) =>(acc[curr] = curr, acc), {});
@@ -118,4 +118,31 @@ export function getTacticColor(tactic: string){
         default:
             return "#4b5563";
     }
+}
+export function constructTomeParams(questParamamters?: string, tomeParameters?: string): Array<QuestParam>{
+    if(!questParamamters || !tomeParameters){
+        return [];
+    }
+
+    const paramValues = JSON.parse(questParamamters) || {};
+    const paramFields = JSON.parse(tomeParameters || "") || [];
+
+    const fieldWithValue = paramFields.map((field: TomeParams)=> {
+        return {
+            ...field,
+            value: paramValues[field.name] || "Unable to find value"
+        }
+    })
+
+    return fieldWithValue;
+}
+export function combineTomeValueAndFields(paramValues: {[key:string]: any}, paramFields: Array<TomeParams>): Array<QuestParam>{
+    const fieldWithValue = paramFields.map((field: TomeParams)=> {
+        return {
+            ...field,
+            value: paramValues[field.name] || "Unable to find value"
+        }
+    })
+
+    return fieldWithValue;
 }
