@@ -804,14 +804,14 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
     {
         "name": "eth0",
         "ips": [
-            "172.17.0.2"
+            "172.17.0.2/24"
         ],
         "mac": "02:42:ac:11:00:02"
     },
     {
         "name": "lo",
         "ips": [
-            "127.0.0.1"
+            "127.0.0.1/8"
         ],
         "mac": "00:00:00:00:00:00"
     }
