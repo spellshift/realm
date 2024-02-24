@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
 use super::super::insert_dict_kv;
@@ -52,10 +52,8 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
                     Some(netmask) => {
                         let cidr = netmask_to_cidr(netmask)?;
                         ips.push(format!("{}/{}", ip.ip(), cidr));
-                    },
-                    None => {
-                        ips.push(ip.ip().to_string())
                     }
+                    None => ips.push(ip.ip().to_string()),
                 }
             } else {
                 ips.push(ip.ip().to_string())
