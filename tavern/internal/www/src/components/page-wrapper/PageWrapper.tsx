@@ -10,6 +10,7 @@ import {
   WrenchScrewdriverIcon,
   BugAntIcon,
   PresentationChartBarIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline'
 
 import logo from '../../assets/eldrich.png';
@@ -23,6 +24,7 @@ const navigation = [
   { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
   { name: PageNavItem.quests, href: '/quests', icon: ClockIcon, internal: true },
   { name: PageNavItem.tasks, href: '/tasks', icon: ClipboardDocumentCheckIcon, internal: true },
+  { name: PageNavItem.tomes, href: '/tomes', icon: BookOpenIcon, internal: true },
   { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
   { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
 ]
