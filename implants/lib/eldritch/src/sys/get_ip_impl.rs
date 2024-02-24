@@ -14,7 +14,7 @@ const UNKNOWN: &str = "UNKNOWN";
 
 struct NetInterface {
     name: String,
-    ips: Vec<String>, //IPv6 and IPv4 Addresses on the itnerface
+    ips: Vec<String>, //IPv6 and IPv4 Addresses on the interface
     mac: String,
 }
 
@@ -51,7 +51,7 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
                 match ip.netmask() {
                     Some(netmask) => {
                         let cidr = netmask_to_cidr(netmask)?;
-                        ips.push(format!("{}/{}", ip.ip(), cidr));        
+                        ips.push(format!("{}/{}", ip.ip(), cidr));
                     },
                     None => {
                         ips.push(ip.ip().to_string())
