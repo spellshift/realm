@@ -72,7 +72,7 @@ const HostTasks = () => {
                             </div>
                         )}
                     </div>
-                    <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask} />
+                    {isOpen && <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask} />}
                 </AccordionPanel>
             </AccordionItem>
         </Accordion>

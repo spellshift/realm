@@ -58,6 +58,7 @@ const TomeRadioGroup = (
                                 }
                             >
                                 {({ active, checked }) => {
+                                    const isSavedInForm = selected?.id === tome?.id;
                                     const { params } = safelyJsonParse(tome?.paramDefs);
                                     const handleAccordionClick = (expandedIndex: number, checked: boolean) => {
                                         if (checked) {
@@ -70,7 +71,7 @@ const TomeRadioGroup = (
                                                 <h2>
                                                     <AccordionButton>
                                                         <div className='flex flex-row gap-2 w-full items-center'>
-                                                            {checked && (
+                                                            {(checked || isSavedInForm) && (
                                                                 <div className="shrink-0 text-purple-500">
                                                                     <CheckCircleIcon className="w-8 h-8" />
                                                                 </div>

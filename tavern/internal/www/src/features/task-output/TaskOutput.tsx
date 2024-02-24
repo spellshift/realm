@@ -1,14 +1,15 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import TaskStatusBadge from "../../components/TaskStatusBadge";
 import BeaconTile from "../../components/BeaconTile";
 import TomeAccordion from "../../components/TomeAccordion";
-import { Image } from "@chakra-ui/react";
+import { Button, Image } from "@chakra-ui/react";
 import OutputWrapper from "./OutputWrapper";
-import { CodeBlock, tomorrow } from "react-code-blocks";
 import ErrorWrapper from "./ErrorWrapper";
+import { useNavigate } from "react-router-dom";
+import { checkIfBeaconOffline, constructTomeParams } from "../../utils/utils";
 
 type Props = {
   isOpen: boolean,
@@ -18,12 +19,30 @@ type Props = {
 
 export const TaskOutput = (props: Props) => {
   const { isOpen, setOpen, selectedTask } = props;
+
+  const nav = useNavigate();
   const createdTime = new Date(selectedTask?.createdAt || "");
   const finishTime = new Date(selectedTask?.execFinishedAt || "");
   const startTime = new Date(selectedTask?.execStartedAt || "");
 
-  let params = selectedTask?.quest?.parameters ? JSON.parse(selectedTask?.quest?.parameters) : {};
-  let paramKeys = Object.keys(params);
+  const params = constructTomeParams(selectedTask?.quest?.parameters, selectedTask?.quest?.tome?.paramDefs);
+
+  const beaconOffline = checkIfBeaconOffline(selectedTask?.beacon);
+
+  const hanldeRerunQuest = useCallback(() => {
+    const beaconId = selectedTask?.beacon?.id;
+    const tome = selectedTask?.quest?.tome
+
+    nav("/createQuest", {
+      state: {
+        step: 2,
+        beacons: [beaconId],
+        tome: tome,
+        params: params,
+        name: selectedTask?.quest?.name
+      }
+    });
+  }, [selectedTask, nav, params]);
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
@@ -61,9 +80,22 @@ export const TaskOutput = (props: Props) => {
                       </div>
                     </div>
                     <div className="relative mt-6 flex-1 px-4 sm:px-6 flex flex-col gap-4">
-                      <div className="flex flex-row gap-4 items-center">
-                        <h2 className="text-3xl font-semibold text-gray-900">{selectedTask?.quest?.name}</h2>
-                        <TaskStatusBadge task={selectedTask} />
+                      <div className="flex flex-row justify-between">
+                        <div className="flex flex-row gap-4 items-center">
+                          <h2 className="text-3xl font-semibold text-gray-900">{selectedTask?.quest?.name}</h2>
+                          <TaskStatusBadge task={selectedTask} />
+                        </div>
+                        {!beaconOffline &&
+                          <div>
+                            <Button size={"sm"}
+                              onClick={() => hanldeRerunQuest()}
+                              disabled={beaconOffline}
+                              title="Beacon must be online to rerun"
+                            >
+                              Re-run task
+                            </Button>
+                          </div>
+                        }
                       </div>
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl">Status</h3>
@@ -97,7 +129,7 @@ export const TaskOutput = (props: Props) => {
                       </div>
                       <div className="flex flex-col gap-2">
                         <h3 className="text-2xl text-gray-800">Tome</h3>
-                        <TomeAccordion tome={selectedTask?.quest?.tome} params={params} paramKeys={paramKeys} />
+                        <TomeAccordion tome={selectedTask?.quest?.tome} params={params} />
                       </div>
                       {selectedTask?.quest?.creator && (
                         <div className="flex flex-col gap-2">

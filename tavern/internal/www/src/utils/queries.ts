@@ -50,10 +50,19 @@ export const GET_QUEST_QUERY = gql`
                 execFinishedAt
                 createdAt
                 error
+                beacon{
+                    id,
+                    lastSeenAt
+                    interval
+                }
             }
             tome{
                 id
                 name
+                description
+                eldritch
+                tactic
+                paramDefs
             }
             creator {
                     id
@@ -95,6 +104,7 @@ export const GET_TASK_QUERY = gql`
                                 photoURL
                             }
                             tome{
+                                id
                                 name
                                 description
                                 eldritch
