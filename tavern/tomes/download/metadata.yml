@@ -1,5 +1,5 @@
-name: Download and execute
-description: Download a file and execute it. If possible background and disown the process.
+name: Download
+description: Download a file
 author: hulto
 support_model: FIRST_PARTY
 tactic: EXECUTION
