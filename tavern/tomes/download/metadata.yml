@@ -12,3 +12,7 @@ paramdefs:
   type: string
   label: Agent side file path (not directory)
   placeholder: "/tmp/my_file - C:\ProgramData\MyFile.txt"
+- name: insecure
+  type: bool
+  label: Should TLS certificates be ignored
+  placeholder: "False"
