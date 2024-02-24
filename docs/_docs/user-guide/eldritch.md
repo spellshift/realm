@@ -346,6 +346,12 @@ The <b>file.mkdir</b> method will make a new directory at `path`. If the parent 
 
 The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
+### file.parent_dir
+
+`file.parent_dir(path: str) -> str`
+
+The <b>file.parent_dir</b> method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
+
 ### file.read
 
 `file.read(path: str) -> str`
