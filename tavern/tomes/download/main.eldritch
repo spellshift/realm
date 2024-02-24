@@ -6,23 +6,13 @@ def download_file(remote_src, local_dst, insecure):
     else:
         eprint("Specified path has no parent directory")
 
-def cast_bool(bool_str)
-    if input_params['insecure'].lower() == "true"
-        return True
-    else if input_params['insecure'].lower() == "false"
-        return False
-    else:
-        eprint("Only true or false are accepted for input_params")
-        return -1
-
-
 def main():
-    insecure = cast_bool(input_params['insecure'])
+    insecure = cast_bool()
     if insecure == -1:
         return
 
     download_file(
         input_params['url'],
         input_params['dst'],
-        insecure
+        input_params['insecure'].lower() == "true"
     )
