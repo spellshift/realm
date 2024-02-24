@@ -12,8 +12,8 @@ def cast_bool(bool_str)
     else if input_params['insecure'].lower() == "false"
         return False
     else:
-        return -1
         eprint("Only true or false are accepted for input_params")
+        return -1
 
 
 def main():
