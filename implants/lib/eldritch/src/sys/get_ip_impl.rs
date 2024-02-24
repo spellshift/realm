@@ -22,7 +22,14 @@ fn netmask_to_cidr(netmask: IpAddr) -> Result<u8> {
     let binding = netmask.to_string();
     let mut cidr_prefix = 0;
     for octet in binding.split('.') {
-        cidr_prefix += octet.parse::<u8>()?.count_ones();
+        cidr_prefix += match octet.parse::<u8>() {
+            Ok(x) => x.count_ones(),
+            Err(_err) => {
+                #[cfg(debug_assertions)]
+                eprintln!("Failed to convert {} in netmask {}", octet, netmask);
+                0
+            }
+        }
     }
 
     Ok(cidr_prefix as u8)
