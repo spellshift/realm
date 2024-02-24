@@ -4,9 +4,8 @@ version = "0.0.5"
 edition = "2021"
 
 [dependencies]
-anyhow = { workspace = true }
 log = { workspace = true }
-prost = { workspace = true}
+prost = { workspace = true }
 prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
@@ -14,4 +13,4 @@ tonic = { workspace = true, features = ["tls-roots"] }
 
 [build-dependencies]
 tonic-build = { workspace = true }
-which =  { workspace = true }
+which = { workspace = true }
