@@ -54,13 +54,13 @@ mod test {
             id: 123,
             tome: Tome{
                 eldritch: String::from(r#"print(file.parent_dir(input_params['path']))"#),
-                #[cfg(target_os="linux")]
+                #[cfg(not(target_os="windows"))]
                 parameters: HashMap::from([(String::from("path"),String::from("/etc/ssh/sshd_config"))]),
                 #[cfg(target_os="windows")]
                 parameters: HashMap::from([(String::from("path"),String::from("C:\\ProgramData\\ssh\\sshd_config"))]),
                 file_names: Vec::new(),
             },
-            #[cfg(target_os="linux")]
+            #[cfg(not(target_os="windows"))]
             want_text: String::from("/etc/ssh\n"),
             #[cfg(target_os="windows")]
             want_text: String::from("C:\\ProgramData\\ssh\n"),
