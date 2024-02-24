@@ -5,6 +5,7 @@ import { Tome, TomeParams } from "../utils/consts";
 type Props = {
     tome: Tome,
     params: Array<TomeParams>,
+    noParamValues?: boolean
 }
 const TomeAccordion = (props: Props) => {
     const { tome, params } = props;
@@ -46,12 +47,14 @@ const TomeAccordion = (props: Props) => {
                         {params && params.length > 0 && (
                             <div className="flex flex-row gap-8 flex-wrap">
                                 {params.map((paramDef: TomeParams) => {
-                                    return (
-                                        <div className="flex flex-col gap-0 text-sm px-2" key={paramDef.name}>
-                                            <div className="font-semibold">{paramDef.name}</div>
-                                            <div>{paramDef.value}</div>
-                                        </div>
-                                    )
+                                    if (paramDef.value) {
+                                        return (
+                                            <div className="flex flex-col gap-0 text-sm px-2" key={paramDef.name}>
+                                                <div className="font-semibold">{paramDef.name}</div>
+                                                <div>{paramDef.value}</div>
+                                            </div>
+                                        )
+                                    }
                                 })}
                             </div>
                         )}

@@ -23,6 +23,49 @@ export const GET_HOST_QUERY = gql`
         }
 }`;
 
+export const GET_TOMES_QUERY = gql`
+    query GetTomes($where: TomeWhereInput) {
+        tomes(where: $where){
+        id
+        name
+        paramDefs
+        tactic
+        eldritch
+        supportModel
+        uploader{
+            id
+            name
+            photoURL
+        }
+    }
+}`;
+
+export const GET_REPOSITORY_QUERY = gql`
+    query GetRepository{
+        repositories{
+            edges{
+                node{
+                    id
+                    lastModifiedAt
+                    url
+                    tomes{
+                        id
+                        name
+                        paramDefs
+                        tactic
+                        eldritch
+                        supportModel
+                    }
+                    owner{
+                        id
+                        name
+                        photoURL
+                    }
+                }
+            }
+        }
+}`;
+
 export const GET_HOST_TASK_SUMMARY = gql`
     query GetTasks($where: TaskWhereInput) {
             tasks(where: $where){
