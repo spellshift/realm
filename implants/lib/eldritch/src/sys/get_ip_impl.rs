@@ -1,8 +1,7 @@
-use anyhow::Result;
-#[cfg(target_os = "windows")]
+use std::net::IpAddr;
+
+use anyhow::{Context, Result};
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
-#[cfg(not(target_os = "windows"))]
-use pnet::datalink::{interfaces, NetworkInterface};
 
 use super::super::insert_dict_kv;
 use starlark::{
@@ -13,43 +12,47 @@ use starlark::{
 
 const UNKNOWN: &str = "UNKNOWN";
 
-#[derive(Debug)]
-#[cfg(target_os = "windows")]
 struct NetInterface {
     name: String,
-    ips: Vec<std::net::IpAddr>, //IPv6 and IPv4 Addresses on the itnerface
+    ips: Vec<String>, //IPv6 and IPv4 Addresses on the itnerface
     mac: String,
 }
 
-#[cfg(target_os = "windows")]
+fn netmask_to_cidr(netmask: IpAddr) -> Result<u8> {
+    let binding = netmask.to_string();
+    let mut cidr_prefix = 0;
+    for octet in binding.split(".") {
+        cidr_prefix += octet.parse::<u8>()?.count_ones();
+    }
+
+    Ok(cidr_prefix as u8)
+}
+
 fn handle_get_ip() -> Result<Vec<NetInterface>> {
     let mut res = Vec::new();
     for network_interface in NetworkInterface::show()? {
-        let mac_addr = match network_interface.mac_addr {
+        let mac = match network_interface.mac_addr {
             Some(local_mac) => local_mac,
             None => UNKNOWN.to_string(),
         };
 
-        let mut ips: Vec<std::net::IpAddr> = Vec::new();
+        let name = network_interface.name;
+
+        let mut ips: Vec<String> = Vec::new();
         for ip in network_interface.addr {
-            ips.push(ip.ip());
+            let ip_addr = ip.ip();
+            let netmask = ip
+                .netmask()
+                .context(format!("Unable to get interface {} netmask", &name))?;
+            let cidr = netmask_to_cidr(netmask)?;
+            ips.push(format!("{}/{}", ip.ip().to_string(), cidr));
         }
 
-        res.push(NetInterface {
-            name: network_interface.name,
-            ips: ips,
-            mac: mac_addr,
-        });
+        res.push(NetInterface { name, ips, mac });
     }
     Ok(res)
 }
 
-#[cfg(not(target_os = "windows"))]
-fn handle_get_ip() -> Result<Vec<NetworkInterface>> {
-    Ok(interfaces())
-}
-
-#[cfg(target_os = "windows")]
 fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> Result<Dict> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
@@ -58,43 +61,10 @@ fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> 
 
     let mut tmp_value2_arr = Vec::<Value>::new();
     for ip in interface.ips {
-        tmp_value2_arr.push(
-            starlark_heap
-                .alloc_str(&ip.network().to_string())
-                .to_value(),
-        );
+        tmp_value2_arr.push(starlark_heap.alloc_str(&ip.to_string()).to_value());
     }
     insert_dict_kv!(tmp_res, starlark_heap, "ips", tmp_value2_arr, Vec<_>);
     insert_dict_kv!(tmp_res, starlark_heap, "mac", &interface.mac, String);
-
-    Ok(tmp_res)
-}
-
-#[cfg(not(target_os = "windows"))]
-fn create_dict_from_interface(starlark_heap: &Heap, interface: NetworkInterface) -> Result<Dict> {
-    let res: SmallMap<Value, Value> = SmallMap::new();
-    let mut tmp_res = Dict::new(res);
-
-    insert_dict_kv!(tmp_res, starlark_heap, "name", &interface.name, String);
-    let mut tmp_value2_arr = Vec::<Value>::new();
-    for ip in interface.ips {
-        tmp_value2_arr.push(
-            starlark_heap
-                .alloc_str(&format!("{}/{}", ip.ip(), ip.prefix()))
-                .to_value(),
-        );
-    }
-    insert_dict_kv!(tmp_res, starlark_heap, "ips", tmp_value2_arr, Vec<_>);
-    insert_dict_kv!(
-        tmp_res,
-        starlark_heap,
-        "mac",
-        &interface
-            .mac
-            .map(|mac| mac.to_string())
-            .unwrap_or(UNKNOWN.to_string()),
-        String
-    );
 
     Ok(tmp_res)
 }
@@ -117,6 +87,6 @@ mod tests {
         let starlark_heap = Heap::new();
         let res = get_ip(&starlark_heap).unwrap();
         println!("{:?}", res);
-        assert!(format!("{:?}", res).contains("127.0.0.1"));
+        assert!(format!("{:?}", res).contains("127.0.0.1/8"));
     }
 }
