@@ -130,7 +130,7 @@ export function constructTomeParams(questParamamters?: string, tomeParameters?: 
     const fieldWithValue = paramFields.map((field: TomeParams)=> {
         return {
             ...field,
-            value: paramValues[field.name] || "Unable to find value"
+            value: paramValues[field.name] || ""
         }
     })
 
@@ -140,7 +140,7 @@ export function combineTomeValueAndFields(paramValues: {[key:string]: any}, para
     const fieldWithValue = paramFields.map((field: TomeParams)=> {
         return {
             ...field,
-            value: paramValues[field.name] || "Unable to find value"
+            value: paramValues[field.name] || ""
         }
     })
 

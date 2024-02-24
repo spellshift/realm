@@ -88,8 +88,8 @@ export type UserType = {
     id: string;
     name: string;
     photoURL: string;
-    isActivated: boolean;
-    isAdmin: boolean;
+    isActivated?: boolean;
+    isAdmin?: boolean;
 }
 export type QuestProps = {
     id: string,
@@ -108,4 +108,14 @@ export type OutputTableProps = {
     group: string | null,
     output: string,
     taskDetails?: Task
+}
+
+export type RepositoryRow ={
+    node: {
+        url: string,
+        tomes: Array<Tome>,
+        owner?: UserType,
+        repoType?: string,
+        lastModifiedA?: string,
+    }
 }
