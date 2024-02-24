@@ -346,6 +346,12 @@ The <b>file.mkdir</b> method will make a new directory at `path`. If the parent 
 
 The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
+### file.parent_dir
+
+`file.parent_dir(path: str) -> str`
+
+The <b>file.parent_dir</b> method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
+
 ### file.read
 
 `file.read(path: str) -> str`
@@ -798,14 +804,14 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
     {
         "name": "eth0",
         "ips": [
-            "172.17.0.2"
+            "172.17.0.2/24"
         ],
         "mac": "02:42:ac:11:00:02"
     },
     {
         "name": "lo",
         "ips": [
-            "127.0.0.1"
+            "127.0.0.1/8"
         ],
         "mac": "00:00:00:00:00:00"
     }
