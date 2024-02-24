@@ -21,7 +21,7 @@ struct NetInterface {
 fn netmask_to_cidr(netmask: IpAddr) -> Result<u8> {
     let binding = netmask.to_string();
     let mut cidr_prefix = 0;
-    for octet in binding.split(".") {
+    for octet in binding.split('.') {
         cidr_prefix += octet.parse::<u8>()?.count_ones();
     }
 
@@ -40,12 +40,12 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
 
         let mut ips: Vec<String> = Vec::new();
         for ip in network_interface.addr {
-            let ip_addr = ip.ip();
             let netmask = ip
                 .netmask()
                 .context(format!("Unable to get interface {} netmask", &name))?;
             let cidr = netmask_to_cidr(netmask)?;
-            ips.push(format!("{}/{}", ip.ip().to_string(), cidr));
+
+            ips.push(format!("{}/{}", ip.ip(), cidr));
         }
 
         res.push(NetInterface { name, ips, mac });
