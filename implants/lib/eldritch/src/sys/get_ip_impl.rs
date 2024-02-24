@@ -47,12 +47,19 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
 
         let mut ips: Vec<String> = Vec::new();
         for ip in network_interface.addr {
-            let netmask = ip
-                .netmask()
-                .context(format!("Unable to get interface {} netmask", &name))?;
-            let cidr = netmask_to_cidr(netmask)?;
-
-            ips.push(format!("{}/{}", ip.ip(), cidr));
+            if ip.ip().is_ipv4() {
+                match ip.netmask() {
+                    Some(netmask) => {
+                        let cidr = netmask_to_cidr(netmask)?;
+                        ips.push(format!("{}/{}", ip.ip(), cidr));        
+                    },
+                    None => {
+                        ips.push(ip.ip().to_string())
+                    }
+                }
+            } else {
+                ips.push(ip.ip().to_string())
+            }
         }
 
         res.push(NetInterface { name, ips, mac });
