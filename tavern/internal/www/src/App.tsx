@@ -15,6 +15,7 @@ import Tasks from "./pages/tasks/Tasks";
 import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
+import { Tomes } from "./pages/tomes";
 
 
 const router = createBrowserRouter([
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
   {
     path: "/tasks",
     element: <Tasks />,
+  },
+  {
+    path: "/tomes",
+    element: <Tomes />,
   },
 ]);
 
