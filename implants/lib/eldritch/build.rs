@@ -24,7 +24,7 @@ fn build_bin_create_file_dll() {
 
     println!("Starting cargo build lib");
     let res = Command::new("cargo")
-        .args(&["build", "--lib"])
+        .args(["build", "--lib"])
         .current_dir(test_dll_path)
         .stderr(Stdio::piped())
         .spawn()
@@ -35,7 +35,7 @@ fn build_bin_create_file_dll() {
     let reader = BufReader::new(res);
     reader
         .lines()
-        .filter_map(|line| line.ok())
+        .map_while(Result::ok)
         .for_each(|line| println!("cargo dll build: {}", line));
 
     let relative_path_to_test_dll_file =
@@ -65,7 +65,7 @@ fn build_bin_reflective_loader() {
 
     println!("Starting cargo build lib");
     let res_build = Command::new("cargo")
-        .args(&[
+        .args([
             "build",
             "--release",
             "-Z",
@@ -83,7 +83,7 @@ fn build_bin_reflective_loader() {
     let reader = BufReader::new(res_build);
     reader
         .lines()
-        .filter_map(|line| line.ok())
+        .map_while(Result::ok)
         .for_each(|line| println!("cargo dll build: {}", line));
 
     let relative_path_to_test_dll_file = "..\\..\\..\\bin\\reflective_loader\\target\\x86_64-pc-windows-msvc\\release\\reflective_loader.dll";
