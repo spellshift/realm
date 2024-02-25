@@ -39,7 +39,7 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
         // Allocate memory in the remote process that we'll copy the DLL path string to.
         let target_process_allocated_memory_handle = VirtualAllocEx(
             target_process_memory_handle,
-            0 as *const c_void,
+            std::ptr::null::<c_void>(),
             dll_path_null_terminated.len() + 1,
             MEM_RESERVE | MEM_COMMIT,
             PAGE_EXECUTE_READWRITE,
@@ -51,13 +51,13 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
             target_process_allocated_memory_handle,
             dll_path_null_terminated.as_bytes().as_ptr() as *const c_void,
             dll_path_null_terminated.len(),
-            0 as *mut usize,
+            std::ptr::null_mut::<usize>(),
         );
 
         // Kickoff our DLL in the remote process
         let _remote_thread_return_val = CreateRemoteThread(
             target_process_memory_handle,
-            0 as *const SECURITY_ATTRIBUTES,
+            std::ptr::null::<SECURITY_ATTRIBUTES>(),
             0,
             Some(
                 // Translate our existing function return to the one LoadLibraryA wants.
@@ -68,7 +68,7 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<NoneType> {
             ),
             target_process_allocated_memory_handle,
             0,
-            0 as *mut u32,
+            std::ptr::null_mut::<u32>(),
         );
 
         CloseHandle(target_process_memory_handle);
@@ -124,11 +124,8 @@ mod tests {
         // kill the target process notepad
         let mut sys = System::new();
         sys.refresh_processes();
-        match sys.process(Pid::from_u32(target_pid)) {
-            Some(res) => {
-                res.kill_with(Signal::Kill);
-            }
-            None => {}
+        if let Some(res) = sys.process(Pid::from_u32(target_pid)) {
+            res.kill_with(Signal::Kill);
         }
 
         Ok(())
