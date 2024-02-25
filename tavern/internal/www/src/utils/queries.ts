@@ -41,13 +41,14 @@ export const GET_TOMES_QUERY = gql`
 }`;
 
 export const GET_REPOSITORY_QUERY = gql`
-    query GetRepository{
-        repositories{
+    query GetRepository($orderBy: [RepositoryOrder!]){
+        repositories(orderBy: $orderBy){
             edges{
                 node{
                     id
                     lastModifiedAt
                     url
+                    publicKey
                     tomes{
                         id
                         name

@@ -19,7 +19,7 @@ export type TableSorting = {
 type TableProps<TData> = {
   data: TData[],
   columns: ColumnDef<TData>[],
-  onRowClick?: (e: any) => void,
+  onRowClick?: (e: any, event?: any) => void,
   renderSubComponent?: (props: { row: Row<TData> }) => React.ReactElement,
   getRowCanExpand?: (row: Row<TData>) => boolean
 }
@@ -97,7 +97,7 @@ export const Table = ({
           {table.getRowModel().rows.map(row => {
             return (
               <Fragment key={row.id}>
-                <tr onClick={() => onRowClick && onRowClick(row)} tabIndex={0} onKeyDown={(e) => handleKeyDown(e, row)} className={onRowClick && `hover:cursor-pointer hover:bg-gray-100`}>
+                <tr onClick={(event) => onRowClick && onRowClick(row, event)} tabIndex={0} onKeyDown={(e) => handleKeyDown(e, row)} className={onRowClick && `hover:cursor-pointer hover:bg-gray-100`}>
                   {/* first row is a normal row */}
                   {row.getVisibleCells().map(cell => {
                     return (
