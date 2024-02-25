@@ -70,13 +70,13 @@ mod tests {
         //Write something into temp regkey...
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         let (nkey, _ndisp) =
-            hkcu.create_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+            hkcu.create_subkey(format!("SOFTWARE\\{}", id))?;
         nkey.set_value("FOO", &"BAR")?;
 
         let ares = get_reg(
             &binding,
             "HKEY_CURRENT_USER".to_string(),
-            format!("SOFTWARE\\{}", id.to_string()).to_string(),
+            format!("SOFTWARE\\{}", id),
         );
         let val2: Value<'_> = match ares?.get(const_frozen_string!("FOO").to_value()) {
             Ok(v) => Ok(v),
@@ -84,7 +84,7 @@ mod tests {
         }?
         .unwrap();
         //delete temp regkey
-        hkcu.delete_subkey(format!("SOFTWARE\\{}", id.to_string()).to_string())?;
+        hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
 
         assert_eq!(val2.unpack_str().unwrap(), "BAR");
 
