@@ -52,6 +52,13 @@ func (Repository) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipAll),
 			).
 			Comment("Private key used for authentication."),
+		field.Time("last_imported_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("LAST_IMPORTED_AT"),
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("Timestamp of when this repo was last imported"),
 	}
 }
 

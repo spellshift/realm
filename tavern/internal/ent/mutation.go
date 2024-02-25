@@ -6500,6 +6500,7 @@ type RepositoryMutation struct {
 	url              *string
 	public_key       *string
 	private_key      *string
+	last_imported_at *time.Time
 	clearedFields    map[string]struct{}
 	tomes            map[int]struct{}
 	removedtomes     map[int]struct{}
@@ -6789,6 +6790,55 @@ func (m *RepositoryMutation) ResetPrivateKey() {
 	m.private_key = nil
 }
 
+// SetLastImportedAt sets the "last_imported_at" field.
+func (m *RepositoryMutation) SetLastImportedAt(t time.Time) {
+	m.last_imported_at = &t
+}
+
+// LastImportedAt returns the value of the "last_imported_at" field in the mutation.
+func (m *RepositoryMutation) LastImportedAt() (r time.Time, exists bool) {
+	v := m.last_imported_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastImportedAt returns the old "last_imported_at" field's value of the Repository entity.
+// If the Repository object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RepositoryMutation) OldLastImportedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastImportedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastImportedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastImportedAt: %w", err)
+	}
+	return oldValue.LastImportedAt, nil
+}
+
+// ClearLastImportedAt clears the value of the "last_imported_at" field.
+func (m *RepositoryMutation) ClearLastImportedAt() {
+	m.last_imported_at = nil
+	m.clearedFields[repository.FieldLastImportedAt] = struct{}{}
+}
+
+// LastImportedAtCleared returns if the "last_imported_at" field was cleared in this mutation.
+func (m *RepositoryMutation) LastImportedAtCleared() bool {
+	_, ok := m.clearedFields[repository.FieldLastImportedAt]
+	return ok
+}
+
+// ResetLastImportedAt resets all changes to the "last_imported_at" field.
+func (m *RepositoryMutation) ResetLastImportedAt() {
+	m.last_imported_at = nil
+	delete(m.clearedFields, repository.FieldLastImportedAt)
+}
+
 // AddTomeIDs adds the "tomes" edge to the Tome entity by ids.
 func (m *RepositoryMutation) AddTomeIDs(ids ...int) {
 	if m.tomes == nil {
@@ -6916,7 +6966,7 @@ func (m *RepositoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RepositoryMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, repository.FieldCreatedAt)
 	}
@@ -6931,6 +6981,9 @@ func (m *RepositoryMutation) Fields() []string {
 	}
 	if m.private_key != nil {
 		fields = append(fields, repository.FieldPrivateKey)
+	}
+	if m.last_imported_at != nil {
+		fields = append(fields, repository.FieldLastImportedAt)
 	}
 	return fields
 }
@@ -6950,6 +7003,8 @@ func (m *RepositoryMutation) Field(name string) (ent.Value, bool) {
 		return m.PublicKey()
 	case repository.FieldPrivateKey:
 		return m.PrivateKey()
+	case repository.FieldLastImportedAt:
+		return m.LastImportedAt()
 	}
 	return nil, false
 }
@@ -6969,6 +7024,8 @@ func (m *RepositoryMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldPublicKey(ctx)
 	case repository.FieldPrivateKey:
 		return m.OldPrivateKey(ctx)
+	case repository.FieldLastImportedAt:
+		return m.OldLastImportedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Repository field %s", name)
 }
@@ -7013,6 +7070,13 @@ func (m *RepositoryMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPrivateKey(v)
 		return nil
+	case repository.FieldLastImportedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastImportedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Repository field %s", name)
 }
@@ -7042,7 +7106,11 @@ func (m *RepositoryMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *RepositoryMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(repository.FieldLastImportedAt) {
+		fields = append(fields, repository.FieldLastImportedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -7055,6 +7123,11 @@ func (m *RepositoryMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *RepositoryMutation) ClearField(name string) error {
+	switch name {
+	case repository.FieldLastImportedAt:
+		m.ClearLastImportedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Repository nullable field %s", name)
 }
 
@@ -7076,6 +7149,9 @@ func (m *RepositoryMutation) ResetField(name string) error {
 		return nil
 	case repository.FieldPrivateKey:
 		m.ResetPrivateKey()
+		return nil
+	case repository.FieldLastImportedAt:
+		m.ResetLastImportedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Repository field %s", name)
