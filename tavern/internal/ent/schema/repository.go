@@ -98,6 +98,7 @@ func (Repository) Hooks() []ent.Hook {
 }
 
 // HookDeriveRepoOnCreate will generate private key for the repository upon creation.
+// It will also format the git URL (if one is specified).
 func HookDeriveRepoOnCreate() ent.Hook {
 	// Get the relevant methods from the Mutation
 	// See this example: https://github.com/ent/ent/blob/master/entc/integration/hooks/ent/schema/user.go#L98
