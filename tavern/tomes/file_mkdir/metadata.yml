@@ -2,7 +2,7 @@ name: Make Directory
 description: Will make a directory.
 author: nickobrien
 support_model: FIRST_PARTY
-tactic: RESOURCE_DEVELOPMENT
+tactic: EXECUTION
 paramdefs:
 - name: path
   type: string

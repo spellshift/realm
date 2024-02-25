@@ -5,10 +5,10 @@ def main():
         eprint("File/Directory already exists.")
         return
     parent = True
-    parent_str = input_params['parent']
-    if parent_str == "True":
+    parent_str = input_params['parent'].lower()
+    if parent_str == "true":
         parent = True
-    elif parent_str == "False":
+    elif parent_str == "false":
         parent = False
     else:
         eprint("Parent parameter not 'True' or 'False'.")

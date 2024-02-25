@@ -3,8 +3,8 @@ use std::fs;
 
 pub fn mkdir(path: String, parent: Option<bool>) -> Result<()> {
     let mut parent_val = false;
-    if parent.is_some() {
-        parent_val = parent.unwrap();
+    if let Some(parent_some) = parent {
+        parent_val = parent_some;
     }
     let res = if parent_val {
         fs::create_dir_all(&path)
@@ -13,12 +13,10 @@ pub fn mkdir(path: String, parent: Option<bool>) -> Result<()> {
     };
     match res {
         Ok(_) => Ok(()),
-        Err(_) => {
-            Err(anyhow::anyhow!(format!(
-                "Failed to create directory at path: {}",
-                path
-            )))
-        }
+        Err(_) => Err(anyhow::anyhow!(format!(
+            "Failed to create directory at path: {}",
+            path
+        ))),
     }
 }
 
