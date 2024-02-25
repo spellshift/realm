@@ -110,8 +110,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn mkdir(this: &FileLibrary, path: String) -> anyhow::Result<NoneType> {
-        mkdir_impl::mkdir(path)?;
+    fn mkdir(this: &FileLibrary, path: String, parent: Option<bool>) -> anyhow::Result<NoneType> {
+        mkdir_impl::mkdir(path, parent)?;
         Ok(NoneType{})
     }
 
