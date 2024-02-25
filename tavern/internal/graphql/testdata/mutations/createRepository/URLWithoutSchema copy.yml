@@ -19,6 +19,6 @@ variables:
 
 expected:
   createRepository:
-    url: "https://github.com/spellshift/realm"
+    url: "ssh://git@github.com/spellshift/realm"
     owner:
       id: "5"

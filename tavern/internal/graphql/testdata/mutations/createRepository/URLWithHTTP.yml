@@ -15,10 +15,10 @@ query: |
   }
 variables:
   input:
-    url: "ssh://github.com/spellshift/realm"
+    url: "http://github.com/spellshift/realm"
 
 expected:
   createRepository:
-    url: "ssh://git@github.com/spellshift/realm"
+    url: "http://github.com/spellshift/realm"
     owner:
       id: "5"

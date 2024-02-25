@@ -6,6 +6,8 @@ import (
 	"crypto/rand"
 	"encoding/pem"
 	"fmt"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"entgo.io/contrib/entgql"
@@ -91,12 +93,12 @@ func (Repository) Mixin() []ent.Mixin {
 // Hooks defines middleware for mutations for the ent.
 func (Repository) Hooks() []ent.Hook {
 	return []ent.Hook{
-		hook.On(HookCreateRepoPrivateKey(), ent.OpCreate),
+		hook.On(HookDeriveRepoOnCreate(), ent.OpCreate),
 	}
 }
 
-// HookCreateRepoPrivateKey will generate private key for the repository upon creation.
-func HookCreateRepoPrivateKey() ent.Hook {
+// HookDeriveRepoOnCreate will generate private key for the repository upon creation.
+func HookDeriveRepoOnCreate() ent.Hook {
 	// Get the relevant methods from the Mutation
 	// See this example: https://github.com/ent/ent/blob/master/entc/integration/hooks/ent/schema/user.go#L98
 	type tMutation interface {
@@ -115,9 +117,14 @@ func HookCreateRepoPrivateKey() ent.Hook {
 				return nil, fmt.Errorf("expected repository mutation in schema hook, got: %+v", m)
 			}
 
-			// Prepend https schema if no schema specified
-			if u, ok := mut.URL(); ok && (!strings.HasPrefix(u, "https://") && !strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "ssh://")) {
-				mut.SetURL(fmt.Sprintf("https://%s", u))
+			// Format the URL (and detect errors)
+			if rawurl, ok := mut.URL(); ok {
+				formattedURL, err := FormatGitURL(rawurl)
+				if err != nil {
+					return nil, fmt.Errorf("failed to format git url: %w", err)
+				}
+
+				mut.SetURL(formattedURL.String())
 			}
 
 			// Skip if key already set
@@ -148,4 +155,69 @@ func HookCreateRepoPrivateKey() ent.Hook {
 			return next.Mutate(ctx, m)
 		})
 	}
+}
+
+var scpRegex = regexp.MustCompile(`^(ssh://)?([a-zA-Z0-9_]+)@([a-zA-Z0-9._-]+):([a-zA-Z0-9./._-]+)(?:\?||$)(.*)$`)
+
+func FormatGitURL(rawurl string) (*url.URL, error) {
+	rawurl = strings.TrimSpace(rawurl)
+
+	// If it's http(s), return the parsed url
+	if strings.HasPrefix(rawurl, "http://") || strings.HasPrefix(rawurl, "https://") {
+		return url.Parse(rawurl)
+	}
+
+	// Handle SCP (if user specified)
+	scpParts := scpRegex.FindStringSubmatch(rawurl)
+	if scpParts != nil {
+		var (
+			scheme   = "ssh"
+			user     = "git"
+			rawquery = ""
+		)
+
+		if scpParts[1] != "" {
+			scheme = strings.TrimSuffix(scpParts[1], "://")
+		}
+		if scpParts[2] != "" {
+			user = scpParts[2]
+		}
+		if len(scpParts) > 4 {
+			rawquery = scpParts[5]
+		}
+
+		return &url.URL{
+			Scheme:   scheme,
+			User:     url.User(user),
+			Host:     scpParts[3],
+			Path:     scpParts[4],
+			RawQuery: rawquery,
+		}, nil
+
+	}
+
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		return nil, err
+	}
+
+	// Handle SCP : with no user specified
+	if u.Opaque != "" && u.Scheme != "ssh" && u.Scheme != "" && u.User == nil {
+		return &url.URL{
+			Scheme:   "ssh",
+			User:     url.User("git"),
+			Host:     u.Scheme, // How url will parse host with : instead of /
+			Path:     u.Opaque,
+			RawQuery: u.RawQuery,
+		}, nil
+	}
+
+	// Default to SSH
+	if u.Scheme == "" {
+		u.Scheme = "ssh"
+	}
+	if u.User == nil {
+		u.User = url.User("git")
+	}
+	return u, nil
 }
