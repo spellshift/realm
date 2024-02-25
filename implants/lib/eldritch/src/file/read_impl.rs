@@ -15,8 +15,8 @@ pub fn read(path: String) -> Result<String> {
     for entry in glob_res {
         match entry {
             Ok(entry_path) => {
-                let data = fs::read_to_string(entry_path)?;
-                res.push_str(data.as_str());
+                let data = fs::read(entry_path)?;
+                res.push_str(&String::from_utf8_lossy(&data));
             }
             Err(_err) => {
                 #[cfg(debug_assertions)]
