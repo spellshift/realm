@@ -336,9 +336,9 @@ Here is an example of the Dict layout:
 
 ### file.mkdir
 
-`file.mkdir(path: str) -> None`
+`file.mkdir(path: str, parent: Option<bool>) -> None`
 
-The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error.
+The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
 ### file.moveto
 
