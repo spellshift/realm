@@ -16,7 +16,7 @@ References malicious code or persistence mechanisms that are deployed to comprom
 
 ### Agent
 
-An agent is a compiled program.
+An Agent is a type of implant which retrieves execution instructions by connecting to our backend infrastructure (calling back) and querying for new tasks.
 
 ### Beacon
 
