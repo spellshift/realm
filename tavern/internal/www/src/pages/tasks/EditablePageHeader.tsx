@@ -43,7 +43,7 @@ export const EditablePageHeader = () => {
         <div className="flex flex-row justify-between w-full">
             <div className="flex flex-row gap-2 items-center">
                 <h3 className="text-xl font-semibold leading-6 text-gray-900">
-                    Quest outputs for
+                    Task outputs for
                 </h3>
                 {data?.quests[0]?.name &&
                     <Link to="/tasks">

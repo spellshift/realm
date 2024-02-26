@@ -20,10 +20,9 @@ export const Tomes = () => {
                     <h3 className="text-xl font-semibold leading-6 text-gray-900">Tomes</h3>
                     <div className="max-w-2xl text-sm">
                         <span>A tome is a prebuilt bundle, which includes execution instructions and files. Tomes are how beacon actions are defined. </span>
-                        <a className="external-link" target="_blank" rel="noreferrer" href="https://docs.realm.pub/user-guide/golem#creating-and-testing-tomes">Learn more</a>
+                        <a className="external-link" target="_blank" rel="noreferrer" href="https://docs.realm.pub/user-guide/tomes">Learn more</a>
                         <span> about how to write, test, and import tome repositories.</span>
                     </div>
-
                 </div>
                 <div>
                     <Button size="sm" leftIcon={<ArrowUpTrayIcon className="h-4 w-4" />} onClick={() => setOpen(true)}>
