@@ -34,7 +34,7 @@ export const CreateQuestDropdown = ({
                             className="h-5 w-5"
                             aria-hidden="true"
                         />}>
-                            Create new quest
+                            Re-run quest
                         </Button>
                         :
                         <Button size={"sm"} leftIcon={<EllipsisHorizontalIcon

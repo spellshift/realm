@@ -108,6 +108,8 @@ func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, inp
 	quest, err := client.Quest.Create().
 		SetInput(input).
 		SetNillableBundleID(bundleID).
+		SetEldritchAtCreation(questTome.Eldritch).
+		SetParamDefsAtCreation(questTome.ParamDefs).
 		SetTome(questTome).
 		SetNillableCreatorID(creatorID).
 		Save(ctx)

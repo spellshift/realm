@@ -2228,19 +2228,14 @@ func (c *QuestConnection) build(nodes []*Quest, pager *questPager, after *Cursor
 type QuestPaginateOption func(*questPager) error
 
 // WithQuestOrder configures pagination ordering.
-func WithQuestOrder(order *QuestOrder) QuestPaginateOption {
-	if order == nil {
-		order = DefaultQuestOrder
-	}
-	o := *order
+func WithQuestOrder(order []*QuestOrder) QuestPaginateOption {
 	return func(pager *questPager) error {
-		if err := o.Direction.Validate(); err != nil {
-			return err
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
 		}
-		if o.Field == nil {
-			o.Field = DefaultQuestOrder.Field
-		}
-		pager.order = &o
+		pager.order = append(pager.order, order...)
 		return nil
 	}
 }
@@ -2258,7 +2253,7 @@ func WithQuestFilter(filter func(*QuestQuery) (*QuestQuery, error)) QuestPaginat
 
 type questPager struct {
 	reverse bool
-	order   *QuestOrder
+	order   []*QuestOrder
 	filter  func(*QuestQuery) (*QuestQuery, error)
 }
 
@@ -2269,8 +2264,10 @@ func newQuestPager(opts []QuestPaginateOption, reverse bool) (*questPager, error
 			return nil, err
 		}
 	}
-	if pager.order == nil {
-		pager.order = DefaultQuestOrder
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
 	}
 	return pager, nil
 }
@@ -2283,48 +2280,87 @@ func (p *questPager) applyFilter(query *QuestQuery) (*QuestQuery, error) {
 }
 
 func (p *questPager) toCursor(q *Quest) Cursor {
-	return p.order.Field.toCursor(q)
+	cs := make([]any, 0, len(p.order))
+	for _, o := range p.order {
+		cs = append(cs, o.Field.toCursor(q).Value)
+	}
+	return Cursor{ID: q.ID, Value: cs}
 }
 
 func (p *questPager) applyCursors(query *QuestQuery, after, before *Cursor) (*QuestQuery, error) {
-	direction := p.order.Direction
+	idDirection := entgql.OrderDirectionAsc
 	if p.reverse {
-		direction = direction.Reverse()
+		idDirection = entgql.OrderDirectionDesc
 	}
-	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultQuestOrder.Field.column, p.order.Field.column, direction) {
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultQuestOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
 		query = query.Where(predicate)
 	}
 	return query, nil
 }
 
 func (p *questPager) applyOrder(query *QuestQuery) *QuestQuery {
-	direction := p.order.Direction
-	if p.reverse {
-		direction = direction.Reverse()
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultQuestOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
 	}
-	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
-	if p.order.Field != DefaultQuestOrder.Field {
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
 		query = query.Order(DefaultQuestOrder.Field.toTerm(direction.OrderTermOption()))
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(p.order.Field.column)
 	}
 	return query
 }
 
 func (p *questPager) orderExpr(query *QuestQuery) sql.Querier {
-	direction := p.order.Direction
-	if p.reverse {
-		direction = direction.Reverse()
-	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(p.order.Field.column)
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
 	}
 	return sql.ExprFunc(func(b *sql.Builder) {
-		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
-		if p.order.Field != DefaultQuestOrder.Field {
-			b.Comma().Ident(DefaultQuestOrder.Field.column).Pad().WriteString(string(direction))
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
 		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultQuestOrder.Field.column).Pad().WriteString(string(direction))
 	})
 }
 

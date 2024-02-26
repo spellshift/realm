@@ -1028,6 +1028,10 @@ type Quest implements Node {
   name: String!
   """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
+  """JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter."""
+  paramDefsAtCreation: String
+  """Eldritch script that was evaluated at the time of this quest creation."""
+  eldritchAtCreation: String!
   """Tome that this quest will be executing"""
   tome: Tome!
   """Bundle file that the executing tome depends on (if any)"""
@@ -1036,6 +1040,22 @@ type Quest implements Node {
   tasks: [Task!]
   """User that created the quest if available."""
   creator: User
+}
+"""A connection to a list of items."""
+type QuestConnection {
+  """A list of edges."""
+  edges: [QuestEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type QuestEdge {
+  """The item at the end of the edge."""
+  node: Quest
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """Ordering options for Quest connections"""
 input QuestOrder {
@@ -1115,6 +1135,36 @@ input QuestWhereInput {
   parametersNotNil: Boolean
   parametersEqualFold: String
   parametersContainsFold: String
+  """param_defs_at_creation field predicates"""
+  paramDefsAtCreation: String
+  paramDefsAtCreationNEQ: String
+  paramDefsAtCreationIn: [String!]
+  paramDefsAtCreationNotIn: [String!]
+  paramDefsAtCreationGT: String
+  paramDefsAtCreationGTE: String
+  paramDefsAtCreationLT: String
+  paramDefsAtCreationLTE: String
+  paramDefsAtCreationContains: String
+  paramDefsAtCreationHasPrefix: String
+  paramDefsAtCreationHasSuffix: String
+  paramDefsAtCreationIsNil: Boolean
+  paramDefsAtCreationNotNil: Boolean
+  paramDefsAtCreationEqualFold: String
+  paramDefsAtCreationContainsFold: String
+  """eldritch_at_creation field predicates"""
+  eldritchAtCreation: String
+  eldritchAtCreationNEQ: String
+  eldritchAtCreationIn: [String!]
+  eldritchAtCreationNotIn: [String!]
+  eldritchAtCreationGT: String
+  eldritchAtCreationGTE: String
+  eldritchAtCreationLT: String
+  eldritchAtCreationLTE: String
+  eldritchAtCreationContains: String
+  eldritchAtCreationHasPrefix: String
+  eldritchAtCreationHasSuffix: String
+  eldritchAtCreationEqualFold: String
+  eldritchAtCreationContainsFold: String
   """tome edge predicates"""
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]

@@ -8,8 +8,8 @@ export const useQuests = () => {
     const { loading, data, error } = useQuery(GET_QUEST_QUERY);
 
     const getInitialQuestsTableData = useCallback((data: any) => {
-        const formattedData = data?.map((quest: QuestProps) => {
-            const taskDetails = quest.tasks.reduce((map: any, task: Task) => {
+        const formattedData = data?.map((questNode: {node: QuestProps}) => {
+            const taskDetails = questNode?.node.tasks.reduce((map: any, task: Task) => {
                 const modMap = { ...map };
 
                 if (task.execFinishedAt) {
@@ -47,22 +47,22 @@ export const useQuests = () => {
             );
 
             return {
-                id: quest.id,
-                name: quest.name,
-                tome: quest.tome.name,
-                creator: quest.creator,
+                id: questNode?.node.id,
+                name: questNode?.node.name,
+                tome: questNode?.node?.tome.name,
+                creator: questNode?.node?.creator,
                 ...taskDetails
             }
         });
         return formattedData.sort(function (a: any, b: any) { return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime() });
     },[]);
 
-    const questTableData = getInitialQuestsTableData(data?.quests || []);
+    const questTableData = getInitialQuestsTableData(data?.quests?.edges || []);
 
     const filteredData = useMemo(()=> questTableData.filter((quest: any)=> {
         const searchTerm = search.toLowerCase();
-        const name = quest.name.toLowerCase();
-        const tome = quest.tome.toLowerCase();
+        const name = quest?.name.toLowerCase();
+        const tome = quest?.tome.toLowerCase();
 
         return name.includes(searchTerm) || tome.includes(searchTerm);
     }),[search, questTableData]);

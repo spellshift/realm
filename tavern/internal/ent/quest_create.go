@@ -74,6 +74,34 @@ func (qc *QuestCreate) SetNillableParameters(s *string) *QuestCreate {
 	return qc
 }
 
+// SetParamDefsAtCreation sets the "param_defs_at_creation" field.
+func (qc *QuestCreate) SetParamDefsAtCreation(s string) *QuestCreate {
+	qc.mutation.SetParamDefsAtCreation(s)
+	return qc
+}
+
+// SetNillableParamDefsAtCreation sets the "param_defs_at_creation" field if the given value is not nil.
+func (qc *QuestCreate) SetNillableParamDefsAtCreation(s *string) *QuestCreate {
+	if s != nil {
+		qc.SetParamDefsAtCreation(*s)
+	}
+	return qc
+}
+
+// SetEldritchAtCreation sets the "eldritch_at_creation" field.
+func (qc *QuestCreate) SetEldritchAtCreation(s string) *QuestCreate {
+	qc.mutation.SetEldritchAtCreation(s)
+	return qc
+}
+
+// SetNillableEldritchAtCreation sets the "eldritch_at_creation" field if the given value is not nil.
+func (qc *QuestCreate) SetNillableEldritchAtCreation(s *string) *QuestCreate {
+	if s != nil {
+		qc.SetEldritchAtCreation(*s)
+	}
+	return qc
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (qc *QuestCreate) SetTomeID(id int) *QuestCreate {
 	qc.mutation.SetTomeID(id)
@@ -181,6 +209,10 @@ func (qc *QuestCreate) defaults() {
 		v := quest.DefaultLastModifiedAt()
 		qc.mutation.SetLastModifiedAt(v)
 	}
+	if _, ok := qc.mutation.EldritchAtCreation(); !ok {
+		v := quest.DefaultEldritchAtCreation
+		qc.mutation.SetEldritchAtCreation(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -203,6 +235,14 @@ func (qc *QuestCreate) check() error {
 		if err := quest.ParametersValidator(v); err != nil {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
+	}
+	if v, ok := qc.mutation.ParamDefsAtCreation(); ok {
+		if err := quest.ParamDefsAtCreationValidator(v); err != nil {
+			return &ValidationError{Name: "param_defs_at_creation", err: fmt.Errorf(`ent: validator failed for field "Quest.param_defs_at_creation": %w`, err)}
+		}
+	}
+	if _, ok := qc.mutation.EldritchAtCreation(); !ok {
+		return &ValidationError{Name: "eldritch_at_creation", err: errors.New(`ent: missing required field "Quest.eldritch_at_creation"`)}
 	}
 	if _, ok := qc.mutation.TomeID(); !ok {
 		return &ValidationError{Name: "tome", err: errors.New(`ent: missing required edge "Quest.tome"`)}
@@ -249,6 +289,14 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 	if value, ok := qc.mutation.Parameters(); ok {
 		_spec.SetField(quest.FieldParameters, field.TypeString, value)
 		_node.Parameters = value
+	}
+	if value, ok := qc.mutation.ParamDefsAtCreation(); ok {
+		_spec.SetField(quest.FieldParamDefsAtCreation, field.TypeString, value)
+		_node.ParamDefsAtCreation = value
+	}
+	if value, ok := qc.mutation.EldritchAtCreation(); ok {
+		_spec.SetField(quest.FieldEldritchAtCreation, field.TypeString, value)
+		_node.EldritchAtCreation = value
 	}
 	if nodes := qc.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -424,6 +472,12 @@ func (u *QuestUpsertOne) UpdateNewValues() *QuestUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(quest.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.ParamDefsAtCreation(); exists {
+			s.SetIgnore(quest.FieldParamDefsAtCreation)
+		}
+		if _, exists := u.create.mutation.EldritchAtCreation(); exists {
+			s.SetIgnore(quest.FieldEldritchAtCreation)
 		}
 	}))
 	return u
@@ -683,6 +737,12 @@ func (u *QuestUpsertBulk) UpdateNewValues() *QuestUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(quest.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.ParamDefsAtCreation(); exists {
+				s.SetIgnore(quest.FieldParamDefsAtCreation)
+			}
+			if _, exists := b.mutation.EldritchAtCreation(); exists {
+				s.SetIgnore(quest.FieldEldritchAtCreation)
 			}
 		}
 	}))
