@@ -13,6 +13,9 @@ export type Tome = {
     id: string;
     name: string;
     paramDefs: string;
+    tactic: string;
+    supportModel: string;
+
 }
 export type TomeParams = {
     name: string;

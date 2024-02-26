@@ -1,7 +1,7 @@
 import { FC, useState } from "react";
 import { FormSteps } from "../../../components/form-steps";
 import Modal from "../../../components/tavern-base-ui/Modal";
-import { RepositoryRow, RepositoryType, Tome } from "../../../utils/consts";
+import { RepositoryType, Tome } from "../../../utils/consts";
 import StepAddDeploymentKey from "./StepAddDeploymentKey";
 import StepCreateRepository from "./StepCreateRepository";
 

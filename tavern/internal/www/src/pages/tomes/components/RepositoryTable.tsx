@@ -1,4 +1,4 @@
-import { Badge, Button, Image, Tooltip, useToast } from "@chakra-ui/react";
+import { Badge, Button, Image, Tooltip } from "@chakra-ui/react";
 import { ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
@@ -55,7 +55,7 @@ const RepositoryTable = ({ repositories }: {
                     <div className="flex flex-row gap-2 items-center" >
                         {row.getIsExpanded() ? <div><ChevronDownIcon className="w-4 h-4" /></div> : <div><ChevronRightIcon className="w-4 h-4" /></div>}
                         <div className="flex flex-row gap-2 flex-wrap">
-                            {hasLink ? <a href={url} target="_blank" className="external-link">{url}</a> : url}
+                            {hasLink ? <a href={url} target="_blank" rel="noreferrer" className="external-link">{url}</a> : url}
                             {row?.original?.node?.repoType === "FIRST_PARTY" &&
                                 (
                                     <div><Badge colorScheme="purple" px='2'>First Party</Badge></div>
@@ -64,7 +64,7 @@ const RepositoryTable = ({ repositories }: {
                     </div>
                 ) : (
                     <div className="flex flex-row gap-2 flex-wrap">
-                        {hasLink ? <a href={url} target="_blank" className="external-link">{url}</a> : url}
+                        {hasLink ? <a href={url} target="_blank" rel="noreferrer" className="external-link">{url}</a> : url}
                         {row?.original?.node?.repoType === "FIRST_PARTY" &&
                             (
                                 <div><Badge colorScheme="purple" px='2'>First Party</Badge></div>

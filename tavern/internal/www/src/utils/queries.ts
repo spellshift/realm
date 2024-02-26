@@ -32,6 +32,7 @@ export const GET_TOMES_QUERY = gql`
         tactic
         eldritch
         supportModel
+        description
         uploader{
             id
             name
@@ -107,6 +108,7 @@ export const GET_QUEST_QUERY = gql`
                 eldritch
                 tactic
                 paramDefs
+                supportModel
             }
             creator {
                     id
@@ -154,6 +156,7 @@ export const GET_TASK_QUERY = gql`
                                 eldritch
                                 tactic
                                 paramDefs
+                                supportModel
                             }
                             parameters
                         }

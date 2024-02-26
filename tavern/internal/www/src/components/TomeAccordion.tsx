@@ -17,12 +17,12 @@ const TomeAccordion = (props: Props) => {
                         <div className='flex flex-row gap-2 w-full items-center'>
                             <Box as="div" flex='1' textAlign='left' className='flex flex-col w-full gap-1'>
                                 <div
-                                    className={`items-center font-medium text-gray-900`}
+                                    className={`items-center font-semibold text-gray-900`}
                                 >
                                     {tome.name}
                                 </div>
                                 <div
-                                    className={`flex flex-col gap- w-full text-sm text-gray-600 gap-2`}
+                                    className={`flex flex-col w-full text-sm text-gray-600`}
                                 >
                                     <p>{tome.description}</p>
                                     {params && params.length > 0 &&
@@ -33,6 +33,7 @@ const TomeAccordion = (props: Props) => {
                                             })}
                                         </div>
                                     }
+                                    {tome.tactic && tome.tactic !== "UNSPECIFIED" && <div>Tactic: <span className="lowercase">{tome?.tactic}</span></div>}
                                 </div>
                             </Box>
                             <div className='text-sm  items-center'>
