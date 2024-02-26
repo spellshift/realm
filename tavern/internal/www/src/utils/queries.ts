@@ -85,37 +85,42 @@ export const GET_HOST_TASK_SUMMARY = gql`
 export const GET_QUEST_QUERY = gql`
     query GetQuests($where: QuestWhereInput) {
         quests(where: $where){
-            id
-            name
-            tasks{
-                id
-                lastModifiedAt
-                outputSize
-                execStartedAt
-                execFinishedAt
-                createdAt
-                error
-                beacon{
-                    id,
-                    lastSeenAt
-                    interval
-                }
-            }
-            tome{
-                id
-                name
-                description
-                eldritch
-                tactic
-                paramDefs
-                supportModel
-            }
-            creator {
+            totalCount
+            edges{
+                node{
                     id
                     name
-                    photoURL
-                    isActivated
-                    isAdmin
+                    tasks{
+                        id
+                        lastModifiedAt
+                        outputSize
+                        execStartedAt
+                        execFinishedAt
+                        createdAt
+                        error
+                        beacon{
+                            id,
+                            lastSeenAt
+                            interval
+                        }
+                    }
+                    tome{
+                        id
+                        name
+                        description
+                        eldritch
+                        tactic
+                        paramDefs
+                        supportModel
+                    }
+                    creator {
+                            id
+                            name
+                            photoURL
+                            isActivated
+                            isAdmin
+                    }
+                }
             }
         }
     }
