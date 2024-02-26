@@ -1109,6 +1109,11 @@ func (r *RepositoryQuery) collectField(ctx context.Context, opCtx *graphql.Opera
 				selectedFields = append(selectedFields, repository.FieldPublicKey)
 				fieldSeen[repository.FieldPublicKey] = struct{}{}
 			}
+		case "lastImportedAt":
+			if _, ok := fieldSeen[repository.FieldLastImportedAt]; !ok {
+				selectedFields = append(selectedFields, repository.FieldLastImportedAt)
+				fieldSeen[repository.FieldLastImportedAt] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

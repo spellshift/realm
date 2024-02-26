@@ -53,15 +53,25 @@ type GitImporter struct {
 // Provided filters on tome paths may be used to limit included directories by returning true if the
 // result should be included.
 func (importer *GitImporter) Import(ctx context.Context, entRepo *ent.Repository, filters ...func(path string) bool) error {
+	// Parse URL
+	repoURL, err := url.Parse(entRepo.URL)
+	if err != nil {
+		return fmt.Errorf("failed to parse repo url %q: %w", entRepo.URL, err)
+	}
+
 	// Use Private Key Auth for SSH
 	var authMethod transport.AuthMethod
-	if strings.HasPrefix(entRepo.URL, "ssh://") {
+	if repoURL.Scheme == "ssh" {
 		privKey, err := ssh.ParsePrivateKey([]byte(entRepo.PrivateKey))
 		if err != nil {
 			return fmt.Errorf("failed to parse private key for repository: %w", err)
 		}
+		user := "git"
+		if repoURL.User != nil && repoURL.User.Username() != "" {
+			user = repoURL.User.Username()
+		}
 		authMethod = transport.AuthMethod(&gitssh.PublicKeys{
-			User:   "git",
+			User:   user,
 			Signer: privKey,
 			HostKeyCallbackHelper: gitssh.HostKeyCallbackHelper{
 				// Ignore Host Keys
