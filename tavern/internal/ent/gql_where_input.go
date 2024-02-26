@@ -3547,6 +3547,18 @@ type RepositoryWhereInput struct {
 	PublicKeyEqualFold    *string  `json:"publicKeyEqualFold,omitempty"`
 	PublicKeyContainsFold *string  `json:"publicKeyContainsFold,omitempty"`
 
+	// "last_imported_at" field predicates.
+	LastImportedAt       *time.Time  `json:"lastImportedAt,omitempty"`
+	LastImportedAtNEQ    *time.Time  `json:"lastImportedAtNEQ,omitempty"`
+	LastImportedAtIn     []time.Time `json:"lastImportedAtIn,omitempty"`
+	LastImportedAtNotIn  []time.Time `json:"lastImportedAtNotIn,omitempty"`
+	LastImportedAtGT     *time.Time  `json:"lastImportedAtGT,omitempty"`
+	LastImportedAtGTE    *time.Time  `json:"lastImportedAtGTE,omitempty"`
+	LastImportedAtLT     *time.Time  `json:"lastImportedAtLT,omitempty"`
+	LastImportedAtLTE    *time.Time  `json:"lastImportedAtLTE,omitempty"`
+	LastImportedAtIsNil  bool        `json:"lastImportedAtIsNil,omitempty"`
+	LastImportedAtNotNil bool        `json:"lastImportedAtNotNil,omitempty"`
+
 	// "tomes" edge predicates.
 	HasTomes     *bool             `json:"hasTomes,omitempty"`
 	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
@@ -3776,6 +3788,36 @@ func (i *RepositoryWhereInput) P() (predicate.Repository, error) {
 	}
 	if i.PublicKeyContainsFold != nil {
 		predicates = append(predicates, repository.PublicKeyContainsFold(*i.PublicKeyContainsFold))
+	}
+	if i.LastImportedAt != nil {
+		predicates = append(predicates, repository.LastImportedAtEQ(*i.LastImportedAt))
+	}
+	if i.LastImportedAtNEQ != nil {
+		predicates = append(predicates, repository.LastImportedAtNEQ(*i.LastImportedAtNEQ))
+	}
+	if len(i.LastImportedAtIn) > 0 {
+		predicates = append(predicates, repository.LastImportedAtIn(i.LastImportedAtIn...))
+	}
+	if len(i.LastImportedAtNotIn) > 0 {
+		predicates = append(predicates, repository.LastImportedAtNotIn(i.LastImportedAtNotIn...))
+	}
+	if i.LastImportedAtGT != nil {
+		predicates = append(predicates, repository.LastImportedAtGT(*i.LastImportedAtGT))
+	}
+	if i.LastImportedAtGTE != nil {
+		predicates = append(predicates, repository.LastImportedAtGTE(*i.LastImportedAtGTE))
+	}
+	if i.LastImportedAtLT != nil {
+		predicates = append(predicates, repository.LastImportedAtLT(*i.LastImportedAtLT))
+	}
+	if i.LastImportedAtLTE != nil {
+		predicates = append(predicates, repository.LastImportedAtLTE(*i.LastImportedAtLTE))
+	}
+	if i.LastImportedAtIsNil {
+		predicates = append(predicates, repository.LastImportedAtIsNil())
+	}
+	if i.LastImportedAtNotNil {
+		predicates = append(predicates, repository.LastImportedAtNotNil())
 	}
 
 	if i.HasTomes != nil {

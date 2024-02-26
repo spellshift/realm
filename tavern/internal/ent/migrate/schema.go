@@ -231,6 +231,7 @@ var (
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "public_key", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "private_key", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "last_imported_at", Type: field.TypeTime, Nullable: true},
 		{Name: "repository_owner", Type: field.TypeInt, Nullable: true},
 	}
 	// RepositoriesTable holds the schema information for the "repositories" table.
@@ -241,7 +242,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "repositories_users_owner",
-				Columns:    []*schema.Column{RepositoriesColumns[6]},
+				Columns:    []*schema.Column{RepositoriesColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

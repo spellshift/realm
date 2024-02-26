@@ -80,6 +80,11 @@ func PrivateKey(v string) predicate.Repository {
 	return predicate.Repository(sql.FieldEQ(FieldPrivateKey, v))
 }
 
+// LastImportedAt applies equality check predicate on the "last_imported_at" field. It's identical to LastImportedAtEQ.
+func LastImportedAt(v time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldEQ(FieldLastImportedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Repository {
 	return predicate.Repository(sql.FieldEQ(FieldCreatedAt, v))
@@ -353,6 +358,56 @@ func PrivateKeyEqualFold(v string) predicate.Repository {
 // PrivateKeyContainsFold applies the ContainsFold predicate on the "private_key" field.
 func PrivateKeyContainsFold(v string) predicate.Repository {
 	return predicate.Repository(sql.FieldContainsFold(FieldPrivateKey, v))
+}
+
+// LastImportedAtEQ applies the EQ predicate on the "last_imported_at" field.
+func LastImportedAtEQ(v time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldEQ(FieldLastImportedAt, v))
+}
+
+// LastImportedAtNEQ applies the NEQ predicate on the "last_imported_at" field.
+func LastImportedAtNEQ(v time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldNEQ(FieldLastImportedAt, v))
+}
+
+// LastImportedAtIn applies the In predicate on the "last_imported_at" field.
+func LastImportedAtIn(vs ...time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldIn(FieldLastImportedAt, vs...))
+}
+
+// LastImportedAtNotIn applies the NotIn predicate on the "last_imported_at" field.
+func LastImportedAtNotIn(vs ...time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldNotIn(FieldLastImportedAt, vs...))
+}
+
+// LastImportedAtGT applies the GT predicate on the "last_imported_at" field.
+func LastImportedAtGT(v time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldGT(FieldLastImportedAt, v))
+}
+
+// LastImportedAtGTE applies the GTE predicate on the "last_imported_at" field.
+func LastImportedAtGTE(v time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldGTE(FieldLastImportedAt, v))
+}
+
+// LastImportedAtLT applies the LT predicate on the "last_imported_at" field.
+func LastImportedAtLT(v time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldLT(FieldLastImportedAt, v))
+}
+
+// LastImportedAtLTE applies the LTE predicate on the "last_imported_at" field.
+func LastImportedAtLTE(v time.Time) predicate.Repository {
+	return predicate.Repository(sql.FieldLTE(FieldLastImportedAt, v))
+}
+
+// LastImportedAtIsNil applies the IsNil predicate on the "last_imported_at" field.
+func LastImportedAtIsNil() predicate.Repository {
+	return predicate.Repository(sql.FieldIsNull(FieldLastImportedAt))
+}
+
+// LastImportedAtNotNil applies the NotNil predicate on the "last_imported_at" field.
+func LastImportedAtNotNil() predicate.Repository {
+	return predicate.Repository(sql.FieldNotNull(FieldLastImportedAt))
 }
 
 // HasTomes applies the HasEdge predicate on the "tomes" edge.

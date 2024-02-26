@@ -178,6 +178,7 @@ type ComplexityRoot struct {
 	Repository struct {
 		CreatedAt      func(childComplexity int) int
 		ID             func(childComplexity int) int
+		LastImportedAt func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
 		PublicKey      func(childComplexity int) int
@@ -1106,6 +1107,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Repository.ID(childComplexity), true
+
+	case "Repository.lastImportedAt":
+		if e.complexity.Repository.LastImportedAt == nil {
+			break
+		}
+
+		return e.complexity.Repository.LastImportedAt(childComplexity), true
 
 	case "Repository.lastModifiedAt":
 		if e.complexity.Repository.LastModifiedAt == nil {
@@ -2757,6 +2765,8 @@ type Repository implements Node {
   url: String!
   """Public key associated with this repositories private key"""
   publicKey: String!
+  """Timestamp of when this repo was last imported"""
+  lastImportedAt: Time
   """Tomes imported using this repository."""
   tomes: [Tome!]
   """User that created this repository."""
@@ -2789,6 +2799,7 @@ input RepositoryOrder {
 enum RepositoryOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  LAST_IMPORTED_AT
 }
 """
 RepositoryWhereInput is used for filtering Repository objects.
@@ -2853,6 +2864,17 @@ input RepositoryWhereInput {
   publicKeyHasSuffix: String
   publicKeyEqualFold: String
   publicKeyContainsFold: String
+  """last_imported_at field predicates"""
+  lastImportedAt: Time
+  lastImportedAtNEQ: Time
+  lastImportedAtIn: [Time!]
+  lastImportedAtNotIn: [Time!]
+  lastImportedAtGT: Time
+  lastImportedAtGTE: Time
+  lastImportedAtLT: Time
+  lastImportedAtLTE: Time
+  lastImportedAtIsNil: Boolean
+  lastImportedAtNotNil: Boolean
   """tomes edge predicates"""
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
