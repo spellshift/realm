@@ -13,6 +13,9 @@ export type Tome = {
     id: string;
     name: string;
     paramDefs: string;
+    tactic: string;
+    supportModel: string;
+
 }
 export type TomeParams = {
     name: string;
@@ -82,20 +85,22 @@ export type Task = {
     beacon: BeaconType,
     createdAt: string,
     error: string,
+    quest?: QuestProps
 };
 export type UserType = {
     id: string;
     name: string;
     photoURL: string;
-    isActivated: boolean;
-    isAdmin: boolean;
+    isActivated?: boolean;
+    isAdmin?: boolean;
 }
 export type QuestProps = {
     id: string,
     name: string,
     tasks: Array<Task>,
     tome: Tome,
-    creator: UserType
+    creator: UserType,
+    parameters: string
 }
 export type OutputTableProps = {
     quest: string,
@@ -106,4 +111,17 @@ export type OutputTableProps = {
     group: string | null,
     output: string,
     taskDetails?: Task
+}
+
+export type RepositoryRow ={
+    node: RepositoryType
+}
+export type RepositoryType ={
+        id?: string;
+        url: string;
+        tomes: Array<Tome>;
+        owner?: UserType;
+        repoType?: string;
+        lastModifiedA?: string;
+        publicKey?: string;
 }

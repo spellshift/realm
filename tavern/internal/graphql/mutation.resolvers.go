@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
@@ -231,7 +232,7 @@ func (r *mutationResolver) ImportRepository(ctx context.Context, repoID int, inp
 		return nil, err
 	}
 
-	return repo, nil
+	return repo.Update().SetLastImportedAt(time.Now()).Save(ctx)
 }
 
 // UpdateUser is the resolver for the updateUser field.

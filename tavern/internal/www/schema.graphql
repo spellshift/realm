@@ -1193,6 +1193,8 @@ type Repository implements Node {
   url: String!
   """Public key associated with this repositories private key"""
   publicKey: String!
+  """Timestamp of when this repo was last imported"""
+  lastImportedAt: Time
   """Tomes imported using this repository."""
   tomes: [Tome!]
   """User that created this repository."""
@@ -1225,6 +1227,7 @@ input RepositoryOrder {
 enum RepositoryOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  LAST_IMPORTED_AT
 }
 """
 RepositoryWhereInput is used for filtering Repository objects.
@@ -1289,6 +1292,17 @@ input RepositoryWhereInput {
   publicKeyHasSuffix: String
   publicKeyEqualFold: String
   publicKeyContainsFold: String
+  """last_imported_at field predicates"""
+  lastImportedAt: Time
+  lastImportedAtNEQ: Time
+  lastImportedAtIn: [Time!]
+  lastImportedAtNotIn: [Time!]
+  lastImportedAtGT: Time
+  lastImportedAtGTE: Time
+  lastImportedAtLT: Time
+  lastImportedAtLTE: Time
+  lastImportedAtIsNil: Boolean
+  lastImportedAtNotNil: Boolean
   """tomes edge predicates"""
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]

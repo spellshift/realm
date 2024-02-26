@@ -3,10 +3,10 @@ import { useContext } from "react";
 
 import BeaconTile from "../../../components/BeaconTile";
 import FormTextField from "../../../components/tavern-base-ui/FormTextField";
+import TomeAccordion from "../../../components/TomeAccordion";
 import { TagContext } from "../../../context/TagContext";
 import { BeaconType } from "../../../utils/consts";
 import { convertArrayToObject } from "../../../utils/utils";
-import FinalizeTome from "./FinalizeTome";
 
 
 type Props = {
@@ -46,7 +46,7 @@ const FinalizeStep = (props: Props) => {
             <div className="flex flex-col gap-3">
                 <Heading size="sm" >Tome</Heading>
                 <div className="flex flex-col gap-1">
-                    <FinalizeTome tome={formik?.values?.tome} params={formik?.values?.params} />
+                    <TomeAccordion tome={formik?.values?.tome} params={formik?.values?.params} />
                 </div>
             </div>
             <FormTextField

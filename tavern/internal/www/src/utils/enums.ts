@@ -10,12 +10,13 @@ export enum TaskStatus {
 }
 export enum PageNavItem {
     dashboard="Dashboard",
-    quests='Quest history',
+    quests='Quests',
     documentation='Documentation',
     playground='API Playground',
-    tasks='Quest tasks',
+    tasks='Tasks',
     createQuest= 'Create new quest',
-    hosts="Hosts"
+    hosts="Hosts",
+    tomes="Tomes"
 }
 export enum SupportedPlatforms {
     Windows="PLATFORM_WINDOWS",

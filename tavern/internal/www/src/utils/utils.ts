@@ -1,5 +1,5 @@
 import {add} from "date-fns";
-import { BeaconType } from "./consts";
+import { BeaconType, QuestParam, TomeParams } from "./consts";
 
 export const convertArrayToObject = (array: Array<any>) =>
   array.reduce((acc, curr) =>(acc[curr] = curr, acc), {});
@@ -74,7 +74,7 @@ export function getOnlineBeacons(beacons: Array<BeaconType>) : Array<BeaconType>
 }
 export function checkIfBeaconOffline(beacon: {lastSeenAt: string, interval: number}) : boolean{
     const currentDate = new Date();
-    return add(new Date(beacon.lastSeenAt),{seconds: beacon.interval, minutes: 1}) < currentDate;
+    return add(new Date(beacon?.lastSeenAt),{seconds: beacon?.interval, minutes: 1}) < currentDate;
 }
 
 export function isBeaconSelected(selectedBeacons: any): boolean{
@@ -118,4 +118,31 @@ export function getTacticColor(tactic: string){
         default:
             return "#4b5563";
     }
+}
+export function constructTomeParams(questParamamters?: string, tomeParameters?: string): Array<QuestParam>{
+    if(!questParamamters || !tomeParameters){
+        return [];
+    }
+
+    const paramValues = JSON.parse(questParamamters) || {};
+    const paramFields = JSON.parse(tomeParameters || "") || [];
+
+    const fieldWithValue = paramFields.map((field: TomeParams)=> {
+        return {
+            ...field,
+            value: paramValues[field.name] || ""
+        }
+    })
+
+    return fieldWithValue;
+}
+export function combineTomeValueAndFields(paramValues: {[key:string]: any}, paramFields: Array<TomeParams>): Array<QuestParam>{
+    const fieldWithValue = paramFields.map((field: TomeParams)=> {
+        return {
+            ...field,
+            value: paramValues[field.name] || ""
+        }
+    })
+
+    return fieldWithValue;
 }

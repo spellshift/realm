@@ -23,6 +23,51 @@ export const GET_HOST_QUERY = gql`
         }
 }`;
 
+export const GET_TOMES_QUERY = gql`
+    query GetTomes($where: TomeWhereInput) {
+        tomes(where: $where){
+        id
+        name
+        paramDefs
+        tactic
+        eldritch
+        supportModel
+        description
+        uploader{
+            id
+            name
+            photoURL
+        }
+    }
+}`;
+
+export const GET_REPOSITORY_QUERY = gql`
+    query GetRepository($orderBy: [RepositoryOrder!]){
+        repositories(orderBy: $orderBy){
+            edges{
+                node{
+                    id
+                    lastModifiedAt
+                    url
+                    publicKey
+                    tomes{
+                        id
+                        name
+                        paramDefs
+                        tactic
+                        eldritch
+                        supportModel
+                    }
+                    owner{
+                        id
+                        name
+                        photoURL
+                    }
+                }
+            }
+        }
+}`;
+
 export const GET_HOST_TASK_SUMMARY = gql`
     query GetTasks($where: TaskWhereInput) {
             tasks(where: $where){
@@ -50,10 +95,20 @@ export const GET_QUEST_QUERY = gql`
                 execFinishedAt
                 createdAt
                 error
+                beacon{
+                    id,
+                    lastSeenAt
+                    interval
+                }
             }
             tome{
                 id
                 name
+                description
+                eldritch
+                tactic
+                paramDefs
+                supportModel
             }
             creator {
                     id
@@ -95,11 +150,13 @@ export const GET_TASK_QUERY = gql`
                                 photoURL
                             }
                             tome{
+                                id
                                 name
                                 description
                                 eldritch
                                 tactic
                                 paramDefs
+                                supportModel
                             }
                             parameters
                         }

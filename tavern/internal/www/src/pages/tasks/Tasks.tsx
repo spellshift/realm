@@ -9,6 +9,7 @@ import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import FilterBar from "./FilterBar";
 import { TaskPageHeader } from "./TaskPageHeader";
 import { TASK_PAGE_TYPE, useTasks } from "../../hooks/useTasks";
+import { Task } from "../../utils/consts";
 
 const Tasks = () => {
     const { questId } = useParams();
@@ -26,7 +27,7 @@ const Tasks = () => {
     } = useTasks(pageType, questId);
 
     const [isOpen, setOpen] = useState(false);
-    const [selectedTask, setSelectedTask] = useState<any | null>(null);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     const handleClick = (e: any) => {
         const selectedTaskData = e?.original?.node;
@@ -67,7 +68,7 @@ const Tasks = () => {
                     )}
                 </div>
             )}
-            <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask} />
+            {isOpen && <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask} />}
         </PageWrapper>
     );
 };

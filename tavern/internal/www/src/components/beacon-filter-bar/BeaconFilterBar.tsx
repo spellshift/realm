@@ -18,6 +18,36 @@ export const BeaconFilterBar = (props: Props) => {
     const { setFiltersSelected, beacons, groups, services, hosts, filtersSelected } = props;
     const supportedPlatformsList = Object.values(SupportedPlatforms);
 
+    // TODO: IN the future lets style things purple
+    // const styles = {
+    //     control: (base: any) => ({
+    //         ...base,
+    //         "&:focus": {
+    //             borderColor: "#a855f7"
+    //         },
+    //         "&:hover": {
+    //             borderColor: "#a855f7",
+    //             color: "#a855f7"
+    //         }
+    //     }),
+    //     dropdownIndicator: (base: any) => ({
+    //         ...base,
+    //         color: "inherit",
+    //     }),
+    //     singleValue: (base: any) => ({
+    //         ...base,
+    //         color: "inherit"
+    //     }),
+    //     option: (base: any, state: any) => ({
+    //         ...base,
+    //         "&:hover": {
+    //             backgroundColor: "#a855f7",
+    //             borderColor: "#a855f7",
+    //             color: "white"
+    //         }
+    //     })
+    // };
+
     const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>, hosts: Array<HostType>) => {
         return [
             {

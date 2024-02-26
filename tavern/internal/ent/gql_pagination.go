@@ -2808,6 +2808,20 @@ var (
 			}
 		},
 	}
+	// RepositoryOrderFieldLastImportedAt orders Repository by last_imported_at.
+	RepositoryOrderFieldLastImportedAt = &RepositoryOrderField{
+		Value: func(r *Repository) (ent.Value, error) {
+			return r.LastImportedAt, nil
+		},
+		column: repository.FieldLastImportedAt,
+		toTerm: repository.ByLastImportedAt,
+		toCursor: func(r *Repository) Cursor {
+			return Cursor{
+				ID:    r.ID,
+				Value: r.LastImportedAt,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -2818,6 +2832,8 @@ func (f RepositoryOrderField) String() string {
 		str = "CREATED_AT"
 	case RepositoryOrderFieldLastModifiedAt.column:
 		str = "LAST_MODIFIED_AT"
+	case RepositoryOrderFieldLastImportedAt.column:
+		str = "LAST_IMPORTED_AT"
 	}
 	return str
 }
@@ -2838,6 +2854,8 @@ func (f *RepositoryOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *RepositoryOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *RepositoryOrderFieldLastModifiedAt
+	case "LAST_IMPORTED_AT":
+		*f = *RepositoryOrderFieldLastImportedAt
 	default:
 		return fmt.Errorf("%s is not a valid RepositoryOrderField", str)
 	}

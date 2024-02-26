@@ -25,6 +25,7 @@ export const useSubmitQuest = () => {
                     id
                     name
                     paramDefs
+                    tactic
                 }
             }
         }

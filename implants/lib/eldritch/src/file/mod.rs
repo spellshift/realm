@@ -9,6 +9,7 @@ mod is_file_impl;
 mod list_impl;
 mod mkdir_impl;
 mod moveto_impl;
+mod parent_dir_impl;
 mod read_impl;
 mod remove_impl;
 mod replace_all_impl;
@@ -109,8 +110,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn mkdir(this: &FileLibrary, path: String) -> anyhow::Result<NoneType> {
-        mkdir_impl::mkdir(path)?;
+    fn mkdir(this: &FileLibrary, path: String, parent: Option<bool>) -> anyhow::Result<NoneType> {
+        mkdir_impl::mkdir(path, parent)?;
         Ok(NoneType{})
     }
 
@@ -129,6 +130,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn moveto(this: &FileLibrary, old: String, new: String) -> anyhow::Result<NoneType> {
         moveto_impl::moveto(old, new)?;
         Ok(NoneType{})
+    }
+    #[allow(unused_variables)]
+    fn parent_dir(this: &FileLibrary, path: String) -> anyhow::Result<String> {
+        parent_dir_impl::parent_dir(path)
     }
 
     #[allow(unused_variables)]
