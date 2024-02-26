@@ -12,13 +12,12 @@ permalink: user-guide/getting-started
 # Clone Repo
 git clone https://github.com/spellshift/realm && cd ./realm
 
-# Start Server 
+# Start Server
 go run ./tavern
 
 # Start Agent
 cd implants/imix && cargo run
 ```
-
 
 ## Getting Started
 
