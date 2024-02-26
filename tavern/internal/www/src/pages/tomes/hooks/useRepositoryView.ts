@@ -37,7 +37,7 @@ export const useRepositoryView = () => {
                 firstPartyRepo
             );
         }
-    },[firstPartyTome]);
+    },[firstPartyTome, firstParty]);
 
     useEffect(()=>{
         const repos = [] as Array<RepositoryRow>;
