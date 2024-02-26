@@ -25,7 +25,7 @@ const StepCreateRepository: FC<StepCreateRepositoryProps> = ({ setCurrStep, setN
             <div>
                 <h3 className="font-bold text-lg">Link repository</h3>
                 <p className="text-sm">
-                    Provide a valid ssh path to a remote repository that contains tomes. <a className="external-link" rel="noreferrer" target="_blank" href="https://docs.realm.pub/user-guide/golem#creating-and-testing-tomes">Learn more</a> about how to structure a tome repository.
+                    Provide a valid ssh path to a remote repository that contains tomes. <a className="external-link" rel="noreferrer" target="_blank" href="https://docs.realm.pub/user-guide/tomes">Learn more</a> about how to structure a tome repository.
                 </p>
             </div>
             {error !== "" && (

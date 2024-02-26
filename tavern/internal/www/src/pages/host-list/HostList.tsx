@@ -14,7 +14,12 @@ const HostList = () => {
     return (
         <PageWrapper currNavItem={PageNavItem.hosts}>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Hosts</h3>
+                <div className="flex-1 flex flex-col gap-2">
+                    <h3 className="text-xl font-semibold leading-6 text-gray-900">Hosts</h3>
+                    <div className="max-w-2xl text-sm">
+                        Hosts are in-scope systems for the current engagement. A host can have multiple beacons which can execute instructions provided by tomes.
+                    </div>
+                </div>
             </div>
             <HostFilter setFiltersSelected={setTypeFilters} typeFilters={typeFilters} />
             <div className="flex flex-col justify-center items-center gap-6">

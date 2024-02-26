@@ -8,11 +8,7 @@ permalink: user-guide/terminology
 
 ## Terminology
 
-Throughout the documentation terms like "agent" or "implant" are used to reference various components of Realm. Below we attempt to define some of those terms, to add some clarity to that other documentation.
-
-### Host
-
-A Host is a system that is in-scope for the current engagement. It is used to establish a logical boundary between different systems in an engagement (e.g. between a webserver and a database). This enables operations to target a particular system, for example you may want to list files on a web server in your engagement scope.
+Throughout the documentation terms that are used to reference various components of Realm. Below we attempt to define some of those terms, to add some clarity to that other documentation.
 
 ### Implant
 
@@ -20,19 +16,23 @@ References malicious code or persistence mechanisms that are deployed to comprom
 
 ### Agent
 
-An Agent is a type of implant which retrieves execution instructions by connecting to our backend infrastructure (calling back) and querying for new tasks.
+An agent is a compiled program.
 
 ### Beacon
 
-A Beacon is a running instance of an Agent. A Host may have multiple active Beacons that use the same underlying Agent.
+A Beacon is an instance of an Agent running in a process. Beacons are the underlying unit that can be tasked with instructions to execute.
 
-### Task
+### Host
 
-A Task represents a set of instructions for an Agent to perform. For example, listing files could be a Task. When listing files across various Beacons, one Task per Beacon will be created for tracking the individual execution output.
+Hosts are in-scope systems for the current engagement. A host can have multiple beacons which can execute instructions provided by tomes.
 
 ### Quest
 
-A Quest represents a collection of tasks, each with a unique host. This is how Realm enables multi-host management.
+Quests enable multi-beacon managment by taking a list of beacons and executing a tome with customized parameters against them. A quest is made up of tasks assocaited with a single beacon.
+
+### Task
+
+A task is a single instance of a tome plus its parameters executed against a single beacon.
 
 ### Eldritch
 
@@ -40,4 +40,4 @@ Eldritch is our Pythonic Domain Specific Language (DSL), which can be used to pr
 
 ### Tome
 
-A Tome is a prebuilt Eldritch bundle, which provides execution instructions to a Beacon. Tomes can embed files and accept parameters to change their behavior at runtime. Tavern's built-in Tomes are defined [here](https://github.com/spellshift/realm/tree/main/tavern/tomes).
+A Tome is a prebuilt Eldritch bundle, which includes execution instructions and files. Tomes are how beacon actions are defined and change their behavior at runtime. Tavern's built-in Tomes are defined [here](https://github.com/spellshift/realm/tree/main/tavern/tomes).
