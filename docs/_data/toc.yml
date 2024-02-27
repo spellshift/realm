@@ -60,4 +60,4 @@
         - title: "Notes about asynchronous Eldritch code"
           url: "dev-guide/eldritch#using-async"
 - title: "About"
-  url: "about"
+  url: "" # Index
