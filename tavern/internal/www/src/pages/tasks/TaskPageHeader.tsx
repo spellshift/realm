@@ -5,13 +5,16 @@ import { EditablePageHeader } from "./EditablePageHeader";
 export const TaskPageHeader = () => {
     const { questId } = useParams();
 
-    if(questId){
+    if (questId) {
         return <EditablePageHeader />;
     }
 
-    return  (
-        <h3 className="text-xl font-semibold leading-6 text-gray-900">
-            Quest outputs
-        </h3>
+    return (
+        <div className="flex-1 flex flex-col gap-2">
+            <h3 className="text-xl font-semibold leading-6 text-gray-900">Tasks</h3>
+            <div className="max-w-2xl text-sm">
+                A task is a single instance of a tome plus its parameters executed against a single beacon.
+            </div>
+        </div>
     )
 }

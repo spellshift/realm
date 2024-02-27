@@ -32,6 +32,7 @@ export const GET_TOMES_QUERY = gql`
         tactic
         eldritch
         supportModel
+        description
         uploader{
             id
             name
@@ -41,13 +42,14 @@ export const GET_TOMES_QUERY = gql`
 }`;
 
 export const GET_REPOSITORY_QUERY = gql`
-    query GetRepository{
-        repositories{
+    query GetRepository($orderBy: [RepositoryOrder!]){
+        repositories(orderBy: $orderBy){
             edges{
                 node{
                     id
                     lastModifiedAt
                     url
+                    publicKey
                     tomes{
                         id
                         name
@@ -83,36 +85,42 @@ export const GET_HOST_TASK_SUMMARY = gql`
 export const GET_QUEST_QUERY = gql`
     query GetQuests($where: QuestWhereInput) {
         quests(where: $where){
-            id
-            name
-            tasks{
-                id
-                lastModifiedAt
-                outputSize
-                execStartedAt
-                execFinishedAt
-                createdAt
-                error
-                beacon{
-                    id,
-                    lastSeenAt
-                    interval
-                }
-            }
-            tome{
-                id
-                name
-                description
-                eldritch
-                tactic
-                paramDefs
-            }
-            creator {
+            totalCount
+            edges{
+                node{
                     id
                     name
-                    photoURL
-                    isActivated
-                    isAdmin
+                    tasks{
+                        id
+                        lastModifiedAt
+                        outputSize
+                        execStartedAt
+                        execFinishedAt
+                        createdAt
+                        error
+                        beacon{
+                            id,
+                            lastSeenAt
+                            interval
+                        }
+                    }
+                    tome{
+                        id
+                        name
+                        description
+                        eldritch
+                        tactic
+                        paramDefs
+                        supportModel
+                    }
+                    creator {
+                            id
+                            name
+                            photoURL
+                            isActivated
+                            isAdmin
+                    }
+                }
             }
         }
     }
@@ -153,6 +161,7 @@ export const GET_TASK_QUERY = gql`
                                 eldritch
                                 tactic
                                 paramDefs
+                                supportModel
                             }
                             parameters
                         }

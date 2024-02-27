@@ -14,7 +14,6 @@ transport = { workspace = true }
 
 aes = { workspace = true }
 allocative = { workspace = true }
-allocative_derive = { workspace = true }
 anyhow = { workspace = true }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
@@ -23,7 +22,6 @@ chrono = { workspace = true }
 derive_more = { workspace = true }
 eval = { workspace = true }
 flate2 = { workspace = true }
-gazebo = { workspace = true }
 glob = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
@@ -35,7 +33,6 @@ notify = { workspace = true }
 object = { workspace = true }
 openssl = { workspace = true, features = ["vendored"] }
 pretty_env_logger = { workspace = true }
-prost = { workspace = true }
 prost-types = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
@@ -43,7 +40,6 @@ russh = { workspace = true }
 russh-sftp = { workspace = true }
 russh-keys = { workspace = true }
 rust-embed = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha1 = { workspace = true }
 sha2 = { workspace = true }
@@ -56,7 +52,6 @@ tempfile = { workspace = true }
 tera = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
-tonic = { workspace = true, features = ["tls-roots"] }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
@@ -70,21 +65,25 @@ windows-sys = { workspace = true, features = [
 whoami = { workspace = true }
 network-interface = { workspace = true }
 
-
+# WINDOWS
 [target.'cfg(windows)'.dependencies]
 winreg = { workspace = true }
 
+# NOT WINDOWS
 [target.'cfg(not(windows))'.dependencies]
 pnet = { workspace = true }
 
+# NOT FREEBSD
 [target.'cfg(not(target_os = "freebsd"))'.dependencies]
 netstat2 = { workspace = true }
 
+# DEV
 [dev-dependencies]
 transport = { workspace = true, features = ["mock"] }
 httptest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
+# BUILD
 [build-dependencies]
 tonic-build = { workspace = true }
 anyhow = { workspace = true }

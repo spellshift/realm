@@ -193,6 +193,8 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
 		{Name: "parameters", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "param_defs_at_creation", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "eldritch_at_creation", Type: field.TypeString, Default: "", SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "quest_tome", Type: field.TypeInt},
 		{Name: "quest_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_creator", Type: field.TypeInt, Nullable: true},
@@ -205,19 +207,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "quests_tomes_tome",
-				Columns:    []*schema.Column{QuestsColumns[5]},
+				Columns:    []*schema.Column{QuestsColumns[7]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "quests_files_bundle",
-				Columns:    []*schema.Column{QuestsColumns[6]},
+				Columns:    []*schema.Column{QuestsColumns[8]},
 				RefColumns: []*schema.Column{FilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "quests_users_creator",
-				Columns:    []*schema.Column{QuestsColumns[7]},
+				Columns:    []*schema.Column{QuestsColumns[9]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -231,6 +233,7 @@ var (
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "public_key", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "private_key", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "last_imported_at", Type: field.TypeTime, Nullable: true},
 		{Name: "repository_owner", Type: field.TypeInt, Nullable: true},
 	}
 	// RepositoriesTable holds the schema information for the "repositories" table.
@@ -241,7 +244,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "repositories_users_owner",
-				Columns:    []*schema.Column{RepositoriesColumns[6]},
+				Columns:    []*schema.Column{RepositoriesColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

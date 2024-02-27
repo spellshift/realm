@@ -7,7 +7,7 @@ permalink: user-guide/eldritch
 ---
 # Overview
 
-Eldritch is a pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust).
+Eldritch is a Pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust). It uses and supports most python syntax and basic functionality such as list comprehension, string operations (`lower()`, `join()`, `replace()`, etc.), and built-in methods (`any()`, `dir()`, `sorted()`, etc.). For more details on the supported functionality not listed here, please consult the [Starlark Spec Reference](https://github.com/bazelbuild/starlark/blob/master/spec.md), but for the most part you can treat this like basic Python with extra red team functionality.
 
 Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
 By embedding the interpreter into the agent conditional logic can be quickly evaluated without requiring multiple callbacks.
@@ -336,9 +336,9 @@ Here is an example of the Dict layout:
 
 ### file.mkdir
 
-`file.mkdir(path: str) -> None`
+`file.mkdir(path: str, parent: Option<bool>) -> None`
 
-The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error.
+The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
 ### file.moveto
 

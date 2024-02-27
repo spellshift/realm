@@ -3153,6 +3153,38 @@ type QuestWhereInput struct {
 	ParametersEqualFold    *string  `json:"parametersEqualFold,omitempty"`
 	ParametersContainsFold *string  `json:"parametersContainsFold,omitempty"`
 
+	// "param_defs_at_creation" field predicates.
+	ParamDefsAtCreation             *string  `json:"paramDefsAtCreation,omitempty"`
+	ParamDefsAtCreationNEQ          *string  `json:"paramDefsAtCreationNEQ,omitempty"`
+	ParamDefsAtCreationIn           []string `json:"paramDefsAtCreationIn,omitempty"`
+	ParamDefsAtCreationNotIn        []string `json:"paramDefsAtCreationNotIn,omitempty"`
+	ParamDefsAtCreationGT           *string  `json:"paramDefsAtCreationGT,omitempty"`
+	ParamDefsAtCreationGTE          *string  `json:"paramDefsAtCreationGTE,omitempty"`
+	ParamDefsAtCreationLT           *string  `json:"paramDefsAtCreationLT,omitempty"`
+	ParamDefsAtCreationLTE          *string  `json:"paramDefsAtCreationLTE,omitempty"`
+	ParamDefsAtCreationContains     *string  `json:"paramDefsAtCreationContains,omitempty"`
+	ParamDefsAtCreationHasPrefix    *string  `json:"paramDefsAtCreationHasPrefix,omitempty"`
+	ParamDefsAtCreationHasSuffix    *string  `json:"paramDefsAtCreationHasSuffix,omitempty"`
+	ParamDefsAtCreationIsNil        bool     `json:"paramDefsAtCreationIsNil,omitempty"`
+	ParamDefsAtCreationNotNil       bool     `json:"paramDefsAtCreationNotNil,omitempty"`
+	ParamDefsAtCreationEqualFold    *string  `json:"paramDefsAtCreationEqualFold,omitempty"`
+	ParamDefsAtCreationContainsFold *string  `json:"paramDefsAtCreationContainsFold,omitempty"`
+
+	// "eldritch_at_creation" field predicates.
+	EldritchAtCreation             *string  `json:"eldritchAtCreation,omitempty"`
+	EldritchAtCreationNEQ          *string  `json:"eldritchAtCreationNEQ,omitempty"`
+	EldritchAtCreationIn           []string `json:"eldritchAtCreationIn,omitempty"`
+	EldritchAtCreationNotIn        []string `json:"eldritchAtCreationNotIn,omitempty"`
+	EldritchAtCreationGT           *string  `json:"eldritchAtCreationGT,omitempty"`
+	EldritchAtCreationGTE          *string  `json:"eldritchAtCreationGTE,omitempty"`
+	EldritchAtCreationLT           *string  `json:"eldritchAtCreationLT,omitempty"`
+	EldritchAtCreationLTE          *string  `json:"eldritchAtCreationLTE,omitempty"`
+	EldritchAtCreationContains     *string  `json:"eldritchAtCreationContains,omitempty"`
+	EldritchAtCreationHasPrefix    *string  `json:"eldritchAtCreationHasPrefix,omitempty"`
+	EldritchAtCreationHasSuffix    *string  `json:"eldritchAtCreationHasSuffix,omitempty"`
+	EldritchAtCreationEqualFold    *string  `json:"eldritchAtCreationEqualFold,omitempty"`
+	EldritchAtCreationContainsFold *string  `json:"eldritchAtCreationContainsFold,omitempty"`
+
 	// "tome" edge predicates.
 	HasTome     *bool             `json:"hasTome,omitempty"`
 	HasTomeWith []*TomeWhereInput `json:"hasTomeWith,omitempty"`
@@ -3397,6 +3429,90 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 	if i.ParametersContainsFold != nil {
 		predicates = append(predicates, quest.ParametersContainsFold(*i.ParametersContainsFold))
 	}
+	if i.ParamDefsAtCreation != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationEQ(*i.ParamDefsAtCreation))
+	}
+	if i.ParamDefsAtCreationNEQ != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationNEQ(*i.ParamDefsAtCreationNEQ))
+	}
+	if len(i.ParamDefsAtCreationIn) > 0 {
+		predicates = append(predicates, quest.ParamDefsAtCreationIn(i.ParamDefsAtCreationIn...))
+	}
+	if len(i.ParamDefsAtCreationNotIn) > 0 {
+		predicates = append(predicates, quest.ParamDefsAtCreationNotIn(i.ParamDefsAtCreationNotIn...))
+	}
+	if i.ParamDefsAtCreationGT != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationGT(*i.ParamDefsAtCreationGT))
+	}
+	if i.ParamDefsAtCreationGTE != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationGTE(*i.ParamDefsAtCreationGTE))
+	}
+	if i.ParamDefsAtCreationLT != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationLT(*i.ParamDefsAtCreationLT))
+	}
+	if i.ParamDefsAtCreationLTE != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationLTE(*i.ParamDefsAtCreationLTE))
+	}
+	if i.ParamDefsAtCreationContains != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationContains(*i.ParamDefsAtCreationContains))
+	}
+	if i.ParamDefsAtCreationHasPrefix != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationHasPrefix(*i.ParamDefsAtCreationHasPrefix))
+	}
+	if i.ParamDefsAtCreationHasSuffix != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationHasSuffix(*i.ParamDefsAtCreationHasSuffix))
+	}
+	if i.ParamDefsAtCreationIsNil {
+		predicates = append(predicates, quest.ParamDefsAtCreationIsNil())
+	}
+	if i.ParamDefsAtCreationNotNil {
+		predicates = append(predicates, quest.ParamDefsAtCreationNotNil())
+	}
+	if i.ParamDefsAtCreationEqualFold != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationEqualFold(*i.ParamDefsAtCreationEqualFold))
+	}
+	if i.ParamDefsAtCreationContainsFold != nil {
+		predicates = append(predicates, quest.ParamDefsAtCreationContainsFold(*i.ParamDefsAtCreationContainsFold))
+	}
+	if i.EldritchAtCreation != nil {
+		predicates = append(predicates, quest.EldritchAtCreationEQ(*i.EldritchAtCreation))
+	}
+	if i.EldritchAtCreationNEQ != nil {
+		predicates = append(predicates, quest.EldritchAtCreationNEQ(*i.EldritchAtCreationNEQ))
+	}
+	if len(i.EldritchAtCreationIn) > 0 {
+		predicates = append(predicates, quest.EldritchAtCreationIn(i.EldritchAtCreationIn...))
+	}
+	if len(i.EldritchAtCreationNotIn) > 0 {
+		predicates = append(predicates, quest.EldritchAtCreationNotIn(i.EldritchAtCreationNotIn...))
+	}
+	if i.EldritchAtCreationGT != nil {
+		predicates = append(predicates, quest.EldritchAtCreationGT(*i.EldritchAtCreationGT))
+	}
+	if i.EldritchAtCreationGTE != nil {
+		predicates = append(predicates, quest.EldritchAtCreationGTE(*i.EldritchAtCreationGTE))
+	}
+	if i.EldritchAtCreationLT != nil {
+		predicates = append(predicates, quest.EldritchAtCreationLT(*i.EldritchAtCreationLT))
+	}
+	if i.EldritchAtCreationLTE != nil {
+		predicates = append(predicates, quest.EldritchAtCreationLTE(*i.EldritchAtCreationLTE))
+	}
+	if i.EldritchAtCreationContains != nil {
+		predicates = append(predicates, quest.EldritchAtCreationContains(*i.EldritchAtCreationContains))
+	}
+	if i.EldritchAtCreationHasPrefix != nil {
+		predicates = append(predicates, quest.EldritchAtCreationHasPrefix(*i.EldritchAtCreationHasPrefix))
+	}
+	if i.EldritchAtCreationHasSuffix != nil {
+		predicates = append(predicates, quest.EldritchAtCreationHasSuffix(*i.EldritchAtCreationHasSuffix))
+	}
+	if i.EldritchAtCreationEqualFold != nil {
+		predicates = append(predicates, quest.EldritchAtCreationEqualFold(*i.EldritchAtCreationEqualFold))
+	}
+	if i.EldritchAtCreationContainsFold != nil {
+		predicates = append(predicates, quest.EldritchAtCreationContainsFold(*i.EldritchAtCreationContainsFold))
+	}
 
 	if i.HasTome != nil {
 		p := quest.HasTome()
@@ -3546,6 +3662,18 @@ type RepositoryWhereInput struct {
 	PublicKeyHasSuffix    *string  `json:"publicKeyHasSuffix,omitempty"`
 	PublicKeyEqualFold    *string  `json:"publicKeyEqualFold,omitempty"`
 	PublicKeyContainsFold *string  `json:"publicKeyContainsFold,omitempty"`
+
+	// "last_imported_at" field predicates.
+	LastImportedAt       *time.Time  `json:"lastImportedAt,omitempty"`
+	LastImportedAtNEQ    *time.Time  `json:"lastImportedAtNEQ,omitempty"`
+	LastImportedAtIn     []time.Time `json:"lastImportedAtIn,omitempty"`
+	LastImportedAtNotIn  []time.Time `json:"lastImportedAtNotIn,omitempty"`
+	LastImportedAtGT     *time.Time  `json:"lastImportedAtGT,omitempty"`
+	LastImportedAtGTE    *time.Time  `json:"lastImportedAtGTE,omitempty"`
+	LastImportedAtLT     *time.Time  `json:"lastImportedAtLT,omitempty"`
+	LastImportedAtLTE    *time.Time  `json:"lastImportedAtLTE,omitempty"`
+	LastImportedAtIsNil  bool        `json:"lastImportedAtIsNil,omitempty"`
+	LastImportedAtNotNil bool        `json:"lastImportedAtNotNil,omitempty"`
 
 	// "tomes" edge predicates.
 	HasTomes     *bool             `json:"hasTomes,omitempty"`
@@ -3776,6 +3904,36 @@ func (i *RepositoryWhereInput) P() (predicate.Repository, error) {
 	}
 	if i.PublicKeyContainsFold != nil {
 		predicates = append(predicates, repository.PublicKeyContainsFold(*i.PublicKeyContainsFold))
+	}
+	if i.LastImportedAt != nil {
+		predicates = append(predicates, repository.LastImportedAtEQ(*i.LastImportedAt))
+	}
+	if i.LastImportedAtNEQ != nil {
+		predicates = append(predicates, repository.LastImportedAtNEQ(*i.LastImportedAtNEQ))
+	}
+	if len(i.LastImportedAtIn) > 0 {
+		predicates = append(predicates, repository.LastImportedAtIn(i.LastImportedAtIn...))
+	}
+	if len(i.LastImportedAtNotIn) > 0 {
+		predicates = append(predicates, repository.LastImportedAtNotIn(i.LastImportedAtNotIn...))
+	}
+	if i.LastImportedAtGT != nil {
+		predicates = append(predicates, repository.LastImportedAtGT(*i.LastImportedAtGT))
+	}
+	if i.LastImportedAtGTE != nil {
+		predicates = append(predicates, repository.LastImportedAtGTE(*i.LastImportedAtGTE))
+	}
+	if i.LastImportedAtLT != nil {
+		predicates = append(predicates, repository.LastImportedAtLT(*i.LastImportedAtLT))
+	}
+	if i.LastImportedAtLTE != nil {
+		predicates = append(predicates, repository.LastImportedAtLTE(*i.LastImportedAtLTE))
+	}
+	if i.LastImportedAtIsNil {
+		predicates = append(predicates, repository.LastImportedAtIsNil())
+	}
+	if i.LastImportedAtNotNil {
+		predicates = append(predicates, repository.LastImportedAtNotNil())
 	}
 
 	if i.HasTomes != nil {

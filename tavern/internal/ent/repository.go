@@ -28,6 +28,8 @@ type Repository struct {
 	PublicKey string `json:"public_key,omitempty"`
 	// Private key used for authentication.
 	PrivateKey string `json:"-"`
+	// Timestamp of when this repo was last imported
+	LastImportedAt time.Time `json:"last_imported_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RepositoryQuery when eager-loading is set.
 	Edges            RepositoryEdges `json:"edges"`
@@ -81,7 +83,7 @@ func (*Repository) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case repository.FieldURL, repository.FieldPublicKey, repository.FieldPrivateKey:
 			values[i] = new(sql.NullString)
-		case repository.FieldCreatedAt, repository.FieldLastModifiedAt:
+		case repository.FieldCreatedAt, repository.FieldLastModifiedAt, repository.FieldLastImportedAt:
 			values[i] = new(sql.NullTime)
 		case repository.ForeignKeys[0]: // repository_owner
 			values[i] = new(sql.NullInt64)
@@ -135,6 +137,12 @@ func (r *Repository) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field private_key", values[i])
 			} else if value.Valid {
 				r.PrivateKey = value.String
+			}
+		case repository.FieldLastImportedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_imported_at", values[i])
+			} else if value.Valid {
+				r.LastImportedAt = value.Time
 			}
 		case repository.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -202,6 +210,9 @@ func (r *Repository) String() string {
 	builder.WriteString(r.PublicKey)
 	builder.WriteString(", ")
 	builder.WriteString("private_key=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("last_imported_at=")
+	builder.WriteString(r.LastImportedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

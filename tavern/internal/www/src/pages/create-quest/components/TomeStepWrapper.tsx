@@ -11,6 +11,8 @@ const GET_TOMES = gql`
             paramDefs
             description
             eldritch
+            tactic
+            supportModel
         }
     }
 `;

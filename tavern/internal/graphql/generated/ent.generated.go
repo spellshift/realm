@@ -28,7 +28,7 @@ type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
 	Files(ctx context.Context, where *ent.FileWhereInput) ([]*ent.File, error)
-	Quests(ctx context.Context, where *ent.QuestWhereInput) ([]*ent.Quest, error)
+	Quests(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) (*ent.QuestConnection, error)
 	Tasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) (*ent.TaskConnection, error)
 	Repositories(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) (*ent.RepositoryConnection, error)
 	Beacons(ctx context.Context, where *ent.BeaconWhereInput) ([]*ent.Beacon, error)
@@ -136,15 +136,60 @@ func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs 
 func (ec *executionContext) field_Query_quests_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ent.QuestWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg0, err = ec.unmarshalOQuestWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestWhereInput(ctx, tmp)
+	var arg0 *entgql.Cursor[int]
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg0
+	args["after"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *entgql.Cursor[int]
+	if tmp, ok := rawArgs["before"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	var arg4 []*ent.QuestOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg4, err = ec.unmarshalOQuestOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrderᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg4
+	var arg5 *ent.QuestWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg5, err = ec.unmarshalOQuestWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg5
 	return args, nil
 }
 
@@ -3824,7 +3869,7 @@ func (ec *executionContext) _Query_quests(ctx context.Context, field graphql.Col
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Quests(rctx, fc.Args["where"].(*ent.QuestWhereInput))
+			return ec.resolvers.Query().Quests(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.QuestOrder), fc.Args["where"].(*ent.QuestWhereInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
@@ -3844,10 +3889,10 @@ func (ec *executionContext) _Query_quests(ctx context.Context, field graphql.Col
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*ent.Quest); ok {
+		if data, ok := tmp.(*ent.QuestConnection); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Quest`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.QuestConnection`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3859,9 +3904,9 @@ func (ec *executionContext) _Query_quests(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Quest)
+	res := resTmp.(*ent.QuestConnection)
 	fc.Result = res
-	return ec.marshalNQuest2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestᚄ(ctx, field.Selections, res)
+	return ec.marshalNQuestConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_quests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3872,26 +3917,14 @@ func (ec *executionContext) fieldContext_Query_quests(ctx context.Context, field
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Quest_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Quest_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_Quest_lastModifiedAt(ctx, field)
-			case "name":
-				return ec.fieldContext_Quest_name(ctx, field)
-			case "parameters":
-				return ec.fieldContext_Quest_parameters(ctx, field)
-			case "tome":
-				return ec.fieldContext_Quest_tome(ctx, field)
-			case "bundle":
-				return ec.fieldContext_Quest_bundle(ctx, field)
-			case "tasks":
-				return ec.fieldContext_Quest_tasks(ctx, field)
-			case "creator":
-				return ec.fieldContext_Quest_creator(ctx, field)
+			case "edges":
+				return ec.fieldContext_QuestConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_QuestConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_QuestConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type QuestConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -4985,6 +5018,91 @@ func (ec *executionContext) fieldContext_Quest_parameters(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Quest_paramDefsAtCreation(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParamDefsAtCreation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Quest_paramDefsAtCreation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Quest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Quest_eldritchAtCreation(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EldritchAtCreation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Quest_eldritchAtCreation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Quest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Quest_tome(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Quest_tome(ctx, field)
 	if err != nil {
@@ -5240,6 +5358,260 @@ func (ec *executionContext) fieldContext_Quest_creator(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _QuestConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.QuestConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_QuestConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.QuestEdge)
+	fc.Result = res
+	return ec.marshalOQuestEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_QuestConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "QuestConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_QuestEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_QuestEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type QuestEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _QuestConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.QuestConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_QuestConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(entgql.PageInfo[int])
+	fc.Result = res
+	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_QuestConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "QuestConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _QuestConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.QuestConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_QuestConnection_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_QuestConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "QuestConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _QuestEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.QuestEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_QuestEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Quest)
+	fc.Result = res
+	return ec.marshalOQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_QuestEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "QuestEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Quest_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Quest_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Quest_lastModifiedAt(ctx, field)
+			case "name":
+				return ec.fieldContext_Quest_name(ctx, field)
+			case "parameters":
+				return ec.fieldContext_Quest_parameters(ctx, field)
+			case "paramDefsAtCreation":
+				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
+			case "eldritchAtCreation":
+				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
+			case "tome":
+				return ec.fieldContext_Quest_tome(ctx, field)
+			case "bundle":
+				return ec.fieldContext_Quest_bundle(ctx, field)
+			case "tasks":
+				return ec.fieldContext_Quest_tasks(ctx, field)
+			case "creator":
+				return ec.fieldContext_Quest_creator(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _QuestEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.QuestEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_QuestEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(entgql.Cursor[int])
+	fc.Result = res
+	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_QuestEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "QuestEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Cursor does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Repository_id(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Repository_id(ctx, field)
 	if err != nil {
@@ -5455,6 +5827,47 @@ func (ec *executionContext) fieldContext_Repository_publicKey(ctx context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Repository_lastImportedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Repository_lastImportedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastImportedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Repository_lastImportedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Repository",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5775,6 +6188,8 @@ func (ec *executionContext) fieldContext_RepositoryEdge_node(ctx context.Context
 				return ec.fieldContext_Repository_url(ctx, field)
 			case "publicKey":
 				return ec.fieldContext_Repository_publicKey(ctx, field)
+			case "lastImportedAt":
+				return ec.fieldContext_Repository_lastImportedAt(ctx, field)
 			case "tomes":
 				return ec.fieldContext_Repository_tomes(ctx, field)
 			case "owner":
@@ -6461,6 +6876,10 @@ func (ec *executionContext) fieldContext_Task_quest(ctx context.Context, field g
 				return ec.fieldContext_Quest_name(ctx, field)
 			case "parameters":
 				return ec.fieldContext_Quest_parameters(ctx, field)
+			case "paramDefsAtCreation":
+				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
+			case "eldritchAtCreation":
+				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
@@ -7594,6 +8013,8 @@ func (ec *executionContext) fieldContext_Tome_repository(ctx context.Context, fi
 				return ec.fieldContext_Repository_url(ctx, field)
 			case "publicKey":
 				return ec.fieldContext_Repository_publicKey(ctx, field)
+			case "lastImportedAt":
+				return ec.fieldContext_Repository_lastImportedAt(ctx, field)
 			case "tomes":
 				return ec.fieldContext_Repository_tomes(ctx, field)
 			case "owner":
@@ -13700,7 +14121,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "paramDefsAtCreation", "paramDefsAtCreationNEQ", "paramDefsAtCreationIn", "paramDefsAtCreationNotIn", "paramDefsAtCreationGT", "paramDefsAtCreationGTE", "paramDefsAtCreationLT", "paramDefsAtCreationLTE", "paramDefsAtCreationContains", "paramDefsAtCreationHasPrefix", "paramDefsAtCreationHasSuffix", "paramDefsAtCreationIsNil", "paramDefsAtCreationNotNil", "paramDefsAtCreationEqualFold", "paramDefsAtCreationContainsFold", "eldritchAtCreation", "eldritchAtCreationNEQ", "eldritchAtCreationIn", "eldritchAtCreationNotIn", "eldritchAtCreationGT", "eldritchAtCreationGTE", "eldritchAtCreationLT", "eldritchAtCreationLTE", "eldritchAtCreationContains", "eldritchAtCreationHasPrefix", "eldritchAtCreationHasSuffix", "eldritchAtCreationEqualFold", "eldritchAtCreationContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14202,6 +14623,258 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.ParametersContainsFold = data
+		case "paramDefsAtCreation":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreation"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreation = data
+		case "paramDefsAtCreationNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationNEQ = data
+		case "paramDefsAtCreationIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationIn = data
+		case "paramDefsAtCreationNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationNotIn = data
+		case "paramDefsAtCreationGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationGT = data
+		case "paramDefsAtCreationGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationGTE = data
+		case "paramDefsAtCreationLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationLT = data
+		case "paramDefsAtCreationLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationLTE = data
+		case "paramDefsAtCreationContains":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationContains = data
+		case "paramDefsAtCreationHasPrefix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationHasPrefix = data
+		case "paramDefsAtCreationHasSuffix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationHasSuffix = data
+		case "paramDefsAtCreationIsNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationIsNil = data
+		case "paramDefsAtCreationNotNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationNotNil = data
+		case "paramDefsAtCreationEqualFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationEqualFold = data
+		case "paramDefsAtCreationContainsFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParamDefsAtCreationContainsFold = data
+		case "eldritchAtCreation":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreation"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreation = data
+		case "eldritchAtCreationNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationNEQ = data
+		case "eldritchAtCreationIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationIn = data
+		case "eldritchAtCreationNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationNotIn = data
+		case "eldritchAtCreationGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationGT = data
+		case "eldritchAtCreationGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationGTE = data
+		case "eldritchAtCreationLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationLT = data
+		case "eldritchAtCreationLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationLTE = data
+		case "eldritchAtCreationContains":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationContains = data
+		case "eldritchAtCreationHasPrefix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationHasPrefix = data
+		case "eldritchAtCreationHasSuffix":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationHasSuffix = data
+		case "eldritchAtCreationEqualFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationEqualFold = data
+		case "eldritchAtCreationContainsFold":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EldritchAtCreationContainsFold = data
 		case "hasTome":
 			var err error
 
@@ -14329,7 +15002,7 @@ func (ec *executionContext) unmarshalInputRepositoryWhereInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "url", "urlNEQ", "urlIn", "urlNotIn", "urlGT", "urlGTE", "urlLT", "urlLTE", "urlContains", "urlHasPrefix", "urlHasSuffix", "urlEqualFold", "urlContainsFold", "publicKey", "publicKeyNEQ", "publicKeyIn", "publicKeyNotIn", "publicKeyGT", "publicKeyGTE", "publicKeyLT", "publicKeyLTE", "publicKeyContains", "publicKeyHasPrefix", "publicKeyHasSuffix", "publicKeyEqualFold", "publicKeyContainsFold", "hasTomes", "hasTomesWith", "hasOwner", "hasOwnerWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "url", "urlNEQ", "urlIn", "urlNotIn", "urlGT", "urlGTE", "urlLT", "urlLTE", "urlContains", "urlHasPrefix", "urlHasSuffix", "urlEqualFold", "urlContainsFold", "publicKey", "publicKeyNEQ", "publicKeyIn", "publicKeyNotIn", "publicKeyGT", "publicKeyGTE", "publicKeyLT", "publicKeyLTE", "publicKeyContains", "publicKeyHasPrefix", "publicKeyHasSuffix", "publicKeyEqualFold", "publicKeyContainsFold", "lastImportedAt", "lastImportedAtNEQ", "lastImportedAtIn", "lastImportedAtNotIn", "lastImportedAtGT", "lastImportedAtGTE", "lastImportedAtLT", "lastImportedAtLTE", "lastImportedAtIsNil", "lastImportedAtNotNil", "hasTomes", "hasTomesWith", "hasOwner", "hasOwnerWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14813,6 +15486,96 @@ func (ec *executionContext) unmarshalInputRepositoryWhereInput(ctx context.Conte
 				return it, err
 			}
 			it.PublicKeyContainsFold = data
+		case "lastImportedAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAt = data
+		case "lastImportedAtNEQ":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtNEQ = data
+		case "lastImportedAtIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtIn = data
+		case "lastImportedAtNotIn":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtNotIn = data
+		case "lastImportedAtGT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtGT = data
+		case "lastImportedAtGTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtGTE = data
+		case "lastImportedAtLT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtLT = data
+		case "lastImportedAtLTE":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtLTE = data
+		case "lastImportedAtIsNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtIsNil = data
+		case "lastImportedAtNotNil":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastImportedAtNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastImportedAtNotNil = data
 		case "hasTomes":
 			var err error
 
@@ -19492,6 +20255,13 @@ func (ec *executionContext) _Quest(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "parameters":
 			out.Values[i] = ec._Quest_parameters(ctx, field, obj)
+		case "paramDefsAtCreation":
+			out.Values[i] = ec._Quest_paramDefsAtCreation(ctx, field, obj)
+		case "eldritchAtCreation":
+			out.Values[i] = ec._Quest_eldritchAtCreation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "tome":
 			field := field
 
@@ -19650,6 +20420,93 @@ func (ec *executionContext) _Quest(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var questConnectionImplementors = []string{"QuestConnection"}
+
+func (ec *executionContext) _QuestConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.QuestConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, questConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("QuestConnection")
+		case "edges":
+			out.Values[i] = ec._QuestConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._QuestConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._QuestConnection_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var questEdgeImplementors = []string{"QuestEdge"}
+
+func (ec *executionContext) _QuestEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.QuestEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, questEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("QuestEdge")
+		case "node":
+			out.Values[i] = ec._QuestEdge_node(ctx, field, obj)
+		case "cursor":
+			out.Values[i] = ec._QuestEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var repositoryImplementors = []string{"Repository", "Node"}
 
 func (ec *executionContext) _Repository(ctx context.Context, sel ast.SelectionSet, obj *ent.Repository) graphql.Marshaler {
@@ -19686,6 +20543,8 @@ func (ec *executionContext) _Repository(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "lastImportedAt":
+			out.Values[i] = ec._Repository_lastImportedAt(ctx, field, obj)
 		case "tomes":
 			field := field
 
@@ -20980,50 +21839,6 @@ func (ec *executionContext) marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPag
 	return ec._PageInfo(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNQuest2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Quest) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest(ctx context.Context, sel ast.SelectionSet, v *ent.Quest) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -21032,6 +21847,25 @@ func (ec *executionContext) marshalNQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋe
 		return graphql.Null
 	}
 	return ec._Quest(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNQuestConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐQuestConnection(ctx context.Context, sel ast.SelectionSet, v ent.QuestConnection) graphql.Marshaler {
+	return ec._QuestConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNQuestConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestConnection(ctx context.Context, sel ast.SelectionSet, v *ent.QuestConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._QuestConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNQuestOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrder(ctx context.Context, v interface{}) (*ent.QuestOrder, error) {
+	res, err := ec.unmarshalInputQuestOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNQuestOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrderField(ctx context.Context, v interface{}) (*ent.QuestOrderField, error) {
@@ -22169,6 +23003,74 @@ func (ec *executionContext) marshalOQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋe
 		return graphql.Null
 	}
 	return ec._Quest(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOQuestEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.QuestEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOQuestEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOQuestEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestEdge(ctx context.Context, sel ast.SelectionSet, v *ent.QuestEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._QuestEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOQuestOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrderᚄ(ctx context.Context, v interface{}) ([]*ent.QuestOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.QuestOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNQuestOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOQuestWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.QuestWhereInput, error) {

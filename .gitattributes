@@ -1,3 +1,5 @@
+go.mod linguist-generated=true
+go.sum linguist-generated=true
 **/*.pb.go linguist-generated=true
 tavern/internal/ent/*.go linguist-generated=true
 tavern/internal/ent/enttest/*.go linguist-generated=true
@@ -10,4 +12,6 @@ tavern/internal/ent/**/where.go linguist-generated=true
 tavern/internal/graphql/generated/**generated.go linguist-generated=true
 tavern/internal/graphql/models/gqlgen_models.go linguist-generated=true
 tavern/internal/graphql/schema/ent.graphql linguist-generated=true
+tavern/internal/graphql/schema.graphql linguist-generated=true
+tavern/internal/www/schema.graphql linguist-generated=true
 implants/lib/c2/src/c2.rs linguist-generated=true

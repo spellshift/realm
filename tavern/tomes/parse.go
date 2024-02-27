@@ -160,7 +160,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 
 		// Create the tome
 		if _, err := graph.Tome.Create().
-			SetName(entry.Name()).
+			SetName(metadata.Name).
 			SetDescription(metadata.Description).
 			SetAuthor(metadata.Author).
 			SetParamDefs(string(paramdefs)).
@@ -169,7 +169,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			SetEldritch(eldritch).
 			AddFiles(tomeFiles...).
 			Save(ctx); err != nil {
-			return rollback(tx, fmt.Errorf("failed to create tome %q: %w", entry.Name(), err))
+			return rollback(tx, fmt.Errorf("failed to create tome %q: %w", metadata.Name, err))
 		}
 	}
 	return nil

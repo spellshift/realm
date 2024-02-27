@@ -155,7 +155,7 @@ type ComplexityRoot struct {
 		Me           func(childComplexity int) int
 		Node         func(childComplexity int, id int) int
 		Nodes        func(childComplexity int, ids []int) int
-		Quests       func(childComplexity int, where *ent.QuestWhereInput) int
+		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
 		Tags         func(childComplexity int, where *ent.TagWhereInput) int
 		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
@@ -164,20 +164,34 @@ type ComplexityRoot struct {
 	}
 
 	Quest struct {
-		Bundle         func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Creator        func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Name           func(childComplexity int) int
-		Parameters     func(childComplexity int) int
-		Tasks          func(childComplexity int) int
-		Tome           func(childComplexity int) int
+		Bundle              func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Creator             func(childComplexity int) int
+		EldritchAtCreation  func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Name                func(childComplexity int) int
+		ParamDefsAtCreation func(childComplexity int) int
+		Parameters          func(childComplexity int) int
+		Tasks               func(childComplexity int) int
+		Tome                func(childComplexity int) int
+	}
+
+	QuestConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	QuestEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Repository struct {
 		CreatedAt      func(childComplexity int) int
 		ID             func(childComplexity int) int
+		LastImportedAt func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
 		PublicKey      func(childComplexity int) int
@@ -968,7 +982,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Quests(childComplexity, args["where"].(*ent.QuestWhereInput)), true
+		return e.complexity.Query.Quests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
 
 	case "Query.repositories":
 		if e.complexity.Query.Repositories == nil {
@@ -1051,6 +1065,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Quest.Creator(childComplexity), true
 
+	case "Quest.eldritchAtCreation":
+		if e.complexity.Quest.EldritchAtCreation == nil {
+			break
+		}
+
+		return e.complexity.Quest.EldritchAtCreation(childComplexity), true
+
 	case "Quest.id":
 		if e.complexity.Quest.ID == nil {
 			break
@@ -1071,6 +1092,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Quest.Name(childComplexity), true
+
+	case "Quest.paramDefsAtCreation":
+		if e.complexity.Quest.ParamDefsAtCreation == nil {
+			break
+		}
+
+		return e.complexity.Quest.ParamDefsAtCreation(childComplexity), true
 
 	case "Quest.parameters":
 		if e.complexity.Quest.Parameters == nil {
@@ -1093,6 +1121,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Quest.Tome(childComplexity), true
 
+	case "QuestConnection.edges":
+		if e.complexity.QuestConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.Edges(childComplexity), true
+
+	case "QuestConnection.pageInfo":
+		if e.complexity.QuestConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.PageInfo(childComplexity), true
+
+	case "QuestConnection.totalCount":
+		if e.complexity.QuestConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.TotalCount(childComplexity), true
+
+	case "QuestEdge.cursor":
+		if e.complexity.QuestEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.QuestEdge.Cursor(childComplexity), true
+
+	case "QuestEdge.node":
+		if e.complexity.QuestEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.QuestEdge.Node(childComplexity), true
+
 	case "Repository.createdAt":
 		if e.complexity.Repository.CreatedAt == nil {
 			break
@@ -1106,6 +1169,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Repository.ID(childComplexity), true
+
+	case "Repository.lastImportedAt":
+		if e.complexity.Repository.LastImportedAt == nil {
+			break
+		}
+
+		return e.complexity.Repository.LastImportedAt(childComplexity), true
 
 	case "Repository.lastModifiedAt":
 		if e.complexity.Repository.LastModifiedAt == nil {
@@ -2647,6 +2717,10 @@ type Quest implements Node {
   name: String!
   """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
+  """JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter."""
+  paramDefsAtCreation: String
+  """Eldritch script that was evaluated at the time of this quest creation."""
+  eldritchAtCreation: String!
   """Tome that this quest will be executing"""
   tome: Tome!
   """Bundle file that the executing tome depends on (if any)"""
@@ -2655,6 +2729,22 @@ type Quest implements Node {
   tasks: [Task!]
   """User that created the quest if available."""
   creator: User
+}
+"""A connection to a list of items."""
+type QuestConnection {
+  """A list of edges."""
+  edges: [QuestEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type QuestEdge {
+  """The item at the end of the edge."""
+  node: Quest
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """Ordering options for Quest connections"""
 input QuestOrder {
@@ -2734,6 +2824,36 @@ input QuestWhereInput {
   parametersNotNil: Boolean
   parametersEqualFold: String
   parametersContainsFold: String
+  """param_defs_at_creation field predicates"""
+  paramDefsAtCreation: String
+  paramDefsAtCreationNEQ: String
+  paramDefsAtCreationIn: [String!]
+  paramDefsAtCreationNotIn: [String!]
+  paramDefsAtCreationGT: String
+  paramDefsAtCreationGTE: String
+  paramDefsAtCreationLT: String
+  paramDefsAtCreationLTE: String
+  paramDefsAtCreationContains: String
+  paramDefsAtCreationHasPrefix: String
+  paramDefsAtCreationHasSuffix: String
+  paramDefsAtCreationIsNil: Boolean
+  paramDefsAtCreationNotNil: Boolean
+  paramDefsAtCreationEqualFold: String
+  paramDefsAtCreationContainsFold: String
+  """eldritch_at_creation field predicates"""
+  eldritchAtCreation: String
+  eldritchAtCreationNEQ: String
+  eldritchAtCreationIn: [String!]
+  eldritchAtCreationNotIn: [String!]
+  eldritchAtCreationGT: String
+  eldritchAtCreationGTE: String
+  eldritchAtCreationLT: String
+  eldritchAtCreationLTE: String
+  eldritchAtCreationContains: String
+  eldritchAtCreationHasPrefix: String
+  eldritchAtCreationHasSuffix: String
+  eldritchAtCreationEqualFold: String
+  eldritchAtCreationContainsFold: String
   """tome edge predicates"""
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]
@@ -2757,6 +2877,8 @@ type Repository implements Node {
   url: String!
   """Public key associated with this repositories private key"""
   publicKey: String!
+  """Timestamp of when this repo was last imported"""
+  lastImportedAt: Time
   """Tomes imported using this repository."""
   tomes: [Tome!]
   """User that created this repository."""
@@ -2789,6 +2911,7 @@ input RepositoryOrder {
 enum RepositoryOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  LAST_IMPORTED_AT
 }
 """
 RepositoryWhereInput is used for filtering Repository objects.
@@ -2853,6 +2976,17 @@ input RepositoryWhereInput {
   publicKeyHasSuffix: String
   publicKeyEqualFold: String
   publicKeyContainsFold: String
+  """last_imported_at field predicates"""
+  lastImportedAt: Time
+  lastImportedAtNEQ: Time
+  lastImportedAtIn: [Time!]
+  lastImportedAtNotIn: [Time!]
+  lastImportedAtGT: Time
+  lastImportedAtGTE: Time
+  lastImportedAtLT: Time
+  lastImportedAtLTE: Time
+  lastImportedAtIsNil: Boolean
+  lastImportedAtNotNil: Boolean
   """tomes edge predicates"""
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
@@ -3464,7 +3598,25 @@ scalar Uint64
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
-  quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
+  quests(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Quests returned from the connection."""
+    orderBy: [QuestOrder!]
+
+    """Filtering options for Quests returned from the connection."""
+    where: QuestWhereInput
+  ): QuestConnection! @requireRole(role: USER)
   tasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

@@ -79,9 +79,9 @@ const TomeRadioGroup = (
                                                             <Box as="div" flex='1' textAlign='left' className='flex flex-col w-full gap-1'>
                                                                 <RadioGroup.Label
                                                                     as="div"
-                                                                    className={`items-center font-medium text-gray-900`}
+                                                                    className={`flex flex-row gap-2 items-center`}
                                                                 >
-                                                                    {tome.name}
+                                                                    <h4 className=' text-gray-900 font-semibold'>{tome.name}</h4>
                                                                 </RadioGroup.Label>
                                                                 <RadioGroup.Description
                                                                     as="div"
@@ -96,6 +96,7 @@ const TomeRadioGroup = (
                                                                             })}
                                                                         </div>
                                                                     }
+                                                                    {tome.tactic && tome.tactic !== "UNSPECIFIED" && <div>Tactic: <span className="lowercase">{tome?.tactic}</span></div>}
                                                                 </RadioGroup.Description>
                                                             </Box>
                                                             {checked &&

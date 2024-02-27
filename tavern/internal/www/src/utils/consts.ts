@@ -13,6 +13,9 @@ export type Tome = {
     id: string;
     name: string;
     paramDefs: string;
+    tactic: string;
+    supportModel: string;
+
 }
 export type TomeParams = {
     name: string;
@@ -111,11 +114,14 @@ export type OutputTableProps = {
 }
 
 export type RepositoryRow ={
-    node: {
-        url: string,
-        tomes: Array<Tome>,
-        owner?: UserType,
-        repoType?: string,
-        lastModifiedA?: string,
-    }
+    node: RepositoryType
+}
+export type RepositoryType ={
+        id?: string;
+        url: string;
+        tomes: Array<Tome>;
+        owner?: UserType;
+        repoType?: string;
+        lastModifiedA?: string;
+        publicKey?: string;
 }

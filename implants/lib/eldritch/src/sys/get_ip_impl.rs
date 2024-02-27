@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
 use super::super::insert_dict_kv;

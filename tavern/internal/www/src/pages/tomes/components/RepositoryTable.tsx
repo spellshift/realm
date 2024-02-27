@@ -1,16 +1,22 @@
-import { Badge, Button, Image } from "@chakra-ui/react";
-import { ArrowPathIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { Badge, Button, Image, Tooltip } from "@chakra-ui/react";
+import { ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
+import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import Table from "../../../components/tavern-base-ui/Table";
 import TomeAccordion from "../../../components/TomeAccordion";
 import { RepositoryRow, Tome } from "../../../utils/consts";
 import { constructTomeParams } from "../../../utils/utils";
+import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
 
 const RepositoryTable = ({ repositories }: {
     repositories: Array<RepositoryRow>
 }) => {
     const currentDate = new Date();
+    const {
+        importRepositoryTomes,
+        loading,
+    } = useFetchRepositoryTome(undefined, true);
 
     const renderSubComponent = ({ row }: { row: Row<RepositoryRow> }) => {
         return (
@@ -21,9 +27,15 @@ const RepositoryTable = ({ repositories }: {
                 {row?.original?.node?.tomes.map((tome: Tome) => {
                     const params = constructTomeParams("[]", tome.paramDefs);
                     return (
-                        <TomeAccordion tome={tome} params={params} />
+                        <div key={tome.id}>
+                            <TomeAccordion tome={tome} params={params} />
+                        </div>
                     )
                 })}
+
+                {row?.original?.node?.tomes.length < 1 &&
+                    <EmptyState type={EmptyStateType.noData} label="No tomes found" details="Try refetching the repository" />
+                }
             </div>
         )
     }
@@ -31,19 +43,19 @@ const RepositoryTable = ({ repositories }: {
     const columns: ColumnDef<any>[] = [
         {
             id: 'expander',
-            header: 'Repository',
+            header: 'Tome repository',
             accessorFn: row => row.node.url,
             footer: props => props.column.id,
             enableSorting: false,
             cell: ({ row }) => {
                 const url = row?.original?.node?.url;
-                const link = url.replace("ssh://", "https://");
+                const hasLink = url.includes("http");
 
                 return row.getCanExpand() ? (
                     <div className="flex flex-row gap-2 items-center" >
                         {row.getIsExpanded() ? <div><ChevronDownIcon className="w-4 h-4" /></div> : <div><ChevronRightIcon className="w-4 h-4" /></div>}
                         <div className="flex flex-row gap-2 flex-wrap">
-                            <a href={link} className="text-gray-600 hover:text-purple-900 font-semibold  underline hover:cursor-pointer">{url}</a>
+                            {hasLink ? <a href={url} target="_blank" rel="noreferrer" className="external-link">{url}</a> : url}
                             {row?.original?.node?.repoType === "FIRST_PARTY" &&
                                 (
                                     <div><Badge colorScheme="purple" px='2'>First Party</Badge></div>
@@ -52,7 +64,7 @@ const RepositoryTable = ({ repositories }: {
                     </div>
                 ) : (
                     <div className="flex flex-row gap-2 flex-wrap">
-                        <a href={link} className="text-gray-600 hover:text-purple-900 font-semibold  underline hover:cursor-pointer">{url}</a>
+                        {hasLink ? <a href={url} target="_blank" rel="noreferrer" className="external-link">{url}</a> : url}
                         {row?.original?.node?.repoType === "FIRST_PARTY" &&
                             (
                                 <div><Badge colorScheme="purple" px='2'>First Party</Badge></div>
@@ -67,22 +79,24 @@ const RepositoryTable = ({ repositories }: {
             accessorFn: row => row?.node?.owner,
             footer: props => props.column.id,
             enableSorting: false,
-            maxSize: 80,
+            maxSize: 60,
             cell: (cellData: any) => {
                 const creatorData = cellData.getValue();
 
                 if (creatorData) {
-                    <div className="flex flex-row gap-2 items-center">
-                        <Image
-                            borderRadius='full'
-                            boxSize='20px'
-                            src={creatorData?.photoURL}
-                            alt={`Profile of ${creatorData?.name}`}
-                        />
-                        <div className="text-sm flex flex-row gap-1 items-center text-gray-500">
-                            {creatorData?.name}
+                    return (
+                        <div className="flex flex-row gap-2 items-center">
+                            <Image
+                                borderRadius='full'
+                                boxSize='20px'
+                                src={creatorData?.photoURL}
+                                alt={`Profile of ${creatorData?.name}`}
+                            />
+                            <div className="text-sm flex flex-row gap-1 items-center text-gray-500">
+                                {creatorData?.name}
+                            </div>
                         </div>
-                    </div>
+                    )
                 }
                 else {
                     return <div>-</div>
@@ -92,10 +106,10 @@ const RepositoryTable = ({ repositories }: {
         {
             id: "lastModifiedAt",
             header: 'Last modified',
-            accessorFn: row => row?.node?.lastModifiedAt ? formatDistance(new Date(row.lastModifiedAt), currentDate) : "-",
+            accessorFn: row => row?.node?.lastModifiedAt ? formatDistance(new Date(row?.node?.lastModifiedAt), currentDate) : "-",
             footer: props => props.column.id,
             enableSorting: false,
-            maxSize: 80,
+            maxSize: 60,
         },
         {
             id: "tomes",
@@ -107,7 +121,7 @@ const RepositoryTable = ({ repositories }: {
         },
         {
             id: "id",
-            header: 'Refetch',
+            header: 'Actions',
             accessorFn: row => row,
             footer: props => props.column.id,
             enableSorting: false,
@@ -116,7 +130,31 @@ const RepositoryTable = ({ repositories }: {
                 if (row?.original?.node?.repoType === "FIRST_PARTY") {
                     return <div></div>
                 }
-                return <Button variant="ghost" leftIcon={<ArrowPathIcon className="w-4 h-4" />} />
+                return (
+                    <div className="flex flex-row">
+                        <Tooltip label="Refetch tomes">
+                            <Button
+                                id="ignoreRowClick"
+                                variant="ghost"
+                                leftIcon={<ArrowPathIcon className="w-4 h-4" id="ignoreRowClick"
+                                />}
+                                aria-label="Refetch tomes"
+                                disabled={loading ? true : false}
+                                onClick={() => importRepositoryTomes(row?.original?.node?.id)}
+                            />
+                        </Tooltip>
+                        <Tooltip label="Copy public key">
+                            <Button
+                                id="ignoreRowClick"
+                                variant="ghost"
+                                aria-label="Copy public key"
+                                leftIcon={<ClipboardDocumentIcon id="ignoreRowClick"
+                                    className="w-4 h-4" />}
+                                onClick={() => navigator.clipboard.writeText(row?.original?.node?.publicKey)}
+                            />
+                        </Tooltip>
+                    </div>
+                );
             }
         },
     ];
@@ -125,9 +163,13 @@ const RepositoryTable = ({ repositories }: {
         <Table
             data={repositories}
             columns={columns}
-            getRowCanExpand={() => true} onRowClick={(row) => {
-                let toggle = row.getToggleExpandedHandler();
-                toggle();
+            getRowCanExpand={() => true}
+            onRowClick={(row, event) => {
+                const clickId = event?.target?.id;
+                if (clickId !== "ignoreRowClick") {
+                    let toggle = row.getToggleExpandedHandler();
+                    toggle();
+                }
             }}
             renderSubComponent={renderSubComponent}
         />

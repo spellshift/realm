@@ -19,9 +19,12 @@ use std::os::macos::fs::MetadataExt;
 use std::os::unix::fs::PermissionsExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
-use std::path::{Path, PathBuf};
 
-use sysinfo::{System, SystemExt, UserExt};
+use std::path::{Path, PathBuf};
+#[cfg(not(target_os = "windows"))]
+use sysinfo::UserExt;
+
+use sysinfo::{System, SystemExt};
 const UNKNOWN: &str = "UNKNOWN";
 
 // https://stackoverflow.com/questions/6161776/convert-windows-filetime-to-second-in-unix-linux
@@ -29,7 +32,7 @@ const UNKNOWN: &str = "UNKNOWN";
 fn windows_tick_to_unix_tick(windows_tick: u64) -> i64 {
     const WINDOWS_TICK: u64 = 10000000;
     const SEC_TO_UNIX_EPOCH: u64 = 11644473600;
-    return (windows_tick / WINDOWS_TICK - SEC_TO_UNIX_EPOCH) as i64;
+    (windows_tick / WINDOWS_TICK - SEC_TO_UNIX_EPOCH) as i64
 }
 
 fn create_file_from_pathbuf(path_entry: PathBuf) -> Result<File> {

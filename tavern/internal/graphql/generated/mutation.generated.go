@@ -410,6 +410,10 @@ func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Contex
 				return ec.fieldContext_Quest_name(ctx, field)
 			case "parameters":
 				return ec.fieldContext_Quest_parameters(ctx, field)
+			case "paramDefsAtCreation":
+				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
+			case "eldritchAtCreation":
+				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
@@ -1190,6 +1194,8 @@ func (ec *executionContext) fieldContext_Mutation_createRepository(ctx context.C
 				return ec.fieldContext_Repository_url(ctx, field)
 			case "publicKey":
 				return ec.fieldContext_Repository_publicKey(ctx, field)
+			case "lastImportedAt":
+				return ec.fieldContext_Repository_lastImportedAt(ctx, field)
 			case "tomes":
 				return ec.fieldContext_Repository_tomes(ctx, field)
 			case "owner":
@@ -1285,6 +1291,8 @@ func (ec *executionContext) fieldContext_Mutation_importRepository(ctx context.C
 				return ec.fieldContext_Repository_url(ctx, field)
 			case "publicKey":
 				return ec.fieldContext_Repository_publicKey(ctx, field)
+			case "lastImportedAt":
+				return ec.fieldContext_Repository_lastImportedAt(ctx, field)
 			case "tomes":
 				return ec.fieldContext_Repository_tomes(ctx, field)
 			case "owner":
