@@ -33,7 +33,7 @@ Want to contribute to Eldritch but aren't sure what to build check our ["good fi
 `docs/_docs/user-guide/eldritch.md`
 Add your function to the docs. Give your function a unique and descriptive name. Assign it to an Eldritch Library.
 
-Currently Eldritch has eight libraries your function can be bound to:
+Currently Eldritch has the following libraries your function can be bound to:
 
 * `assets`: Is used to interact with files stored natively in the agent.
 * `crypto` Is used to encrypt/decrypt or hash data.

@@ -86,10 +86,11 @@ The standard library is the default functionality that eldritch provides. It con
 - `assets` - Used to interact with files stored natively in the agent.
 - `crypto` - Used to encrypt/decrypt or hash data.
 - `file` - Used to interact with files on the system.
+- `http` - Used to make http(s) requests from the agent.
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
-- `report` - Structured data reporting capabilities.
 - `regex` - Regular expression capabilities for operating on strings.
+- `report` - Structured data reporting capabilities.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
 
