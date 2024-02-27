@@ -3,8 +3,6 @@
   links:
     - title: "Getting Started"
       url: "user-guide/getting-started"
-    - title: "UI"
-      url: "user-guide/ui"
     - title: "Tomes"
       url: "user-guide/tomes"
     - title: "Imix"
