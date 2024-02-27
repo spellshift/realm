@@ -3,7 +3,7 @@ def cat(path):
         res = file.read(path)
         print(res)
     else:
-        print(f"Error: Invalid Path '{path}'")
+        eprint(f"Error: Invalid Path '{path}'")
 
     return
 

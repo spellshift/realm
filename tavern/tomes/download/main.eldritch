@@ -16,3 +16,5 @@ def main():
         input_params['dst'],
         input_params['insecure'].lower() == "true"
     )
+
+main()
