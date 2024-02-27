@@ -19,10 +19,10 @@ This section will walk you through deploying a production ready instance of Tave
 ### 1. Create a GCP Project
 
 Navigate to the [GCP Console](https://console.cloud.google.com/) and [create a new GCP project](https://console.cloud.google.com/projectcreate).
-![assets/img/tavern/deploy/create-gcp-project.png](/assets/img/tavern/deploy/create-gcp-project.png)
+![assets/img/tavern/deploy/create-gcp-project.png](/assets/img/admin-guide/tavern/deploy/create-gcp-project.png)
 
 Make a note of the created Project ID as you'll need that in a later step
-![assets/img/tavern/deploy/gcp-project-info.png](/assets/img/tavern/deploy/gcp-project-info.png)
+![assets/img/tavern/deploy/gcp-project-info.png](/assets/img/admin-guide/tavern/deploy/gcp-project-info.png)
 
 ### 2. Setup OAuth (Optional)
 
@@ -30,7 +30,7 @@ _Note: These setup instructions assume you own a domain which you would like to 
 
 If you want to configure OAuth for your Tavern Deployment, navigate to the [GCP OAuth Consent Screen](https://console.cloud.google.com/apis/credentials/consent) and create a new External consent flow. **If you do not configure OAuth, Tavern will not perform any authentication or authorization for requests.**
 
-![assets/img/tavern/deploy/gcp-new-oauth-consent.png](/assets/img/tavern/deploy/gcp-new-oauth-consent.png)
+![assets/img/tavern/deploy/gcp-new-oauth-consent.png](/assets/img/admin-guide/tavern/deploy/gcp-new-oauth-consent.png)
 
 Provide details that users will see when logging into Tavern, for example:
 
@@ -42,15 +42,15 @@ Provide details that users will see when logging into Tavern, for example:
 * Developer Contact Information: "<YOUR_EMAIL@EXAMPLE.COM>"
 
 Add the ".../auth/userinfo.profile" scope, used by Tavern to obtain user names and photourls.
-![assets/img/tavern/deploy/gcp-oauth-scope.png](/assets/img/tavern/deploy/gcp-oauth-scope.png)
+![assets/img/tavern/deploy/gcp-oauth-scope.png](/assets/img/admin-guide/tavern/deploy/gcp-oauth-scope.png)
 
 Next, add yourself as a "Test User". **Until you publish your app, only test users may complete the OAuth consent flow.** If you didn't select any options that require verification, you may publish your app now (so you won't need to allowlist the users for your application).
 
 Navigate to the [Credentials Tool](https://console.cloud.google.com/apis/credentials) and select "Create Credentials" -> "OAuth client ID". Be sure to add an "Authorized redirect URI" so that the consent flow redirects to the appropriate Tavern endpoint. For example "mydomain.com/oauth/authorize". Save the resulting Client ID and Client secret for later.
-![assets/img/tavern/deploy/oauth-new-creds.png](/assets/img/tavern/deploy/oauth-new-creds.png)
+![assets/img/tavern/deploy/oauth-new-creds.png](/assets/img/admin-guide/tavern/deploy/oauth-new-creds.png)
 
 Next, configure a CNAME record for the domain you'd like to host Tavern at (e.g. "tavern.mydomain.com") to point to "ghs.googlehosted.com.".
-![assets/img/tavern/deploy/google-dns-cname.png](/assets/img/tavern/deploy/google-dns-cname.png)
+![assets/img/tavern/deploy/google-dns-cname.png](/assets/img/admin-guide/tavern/deploy/google-dns-cname.png)
 
 And that's it! In the below sections on deployment, please ensure you properly configure your OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, and OAUTH_DOMAIN to ensure Tavern is properly configured.
 
@@ -287,97 +287,10 @@ docker push <YOUR_DOCKER_HUB_USERNAME>/tavern:dev
 terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=<YOUR_DOCKER_HUB_USERNAME>/tavern:dev"
 ```
 
-## User Interface
-
 ## GraphQL API
 
 ### Playground
 
 If you'd like to explore the Graph API and try out some queries, head to the `/graphiql` endpoint of your Tavern deployment. This endpoint exposes an interactive playground for you to experiment with GraphQL queries. Currently, this is used to fill gaps between developed backend functionality and in-development frontend functionality.
 
-![/assets/img/tavern/graphiql.png](/assets/img/tavern/graphiql.png)
-
-#### Some sample queries to get started
-
-##### List all beacons
-
-```graphql
-query listBeacons {
-    beacons {
-        id
-        identifier
-        name
-        host {
-          platform
-          identifier
-          primaryIP
-        }
-    }
-}
-```
-
-##### Create a tome
-
-```graphql
-mutation CreateTome ($input: CreateTomeInput!) {
-  createTome(input: $input) {
-    id
-    name
-  }
-}
-```
-
-```json
-{
-  "input": {
-    "name": "Test tome",
-    "author":"Hulto",
-    "description": "Just a sample",
-    "paramDefs": "[{\"name\":\"print_string\",\"label\":\"Print String\",\"type\":\"string\",\"placeholder\":\"A message to print\"}]",
-    "eldritch": "print(input_params['print_string'])",
-    "fileIDs": [],
-    "tactic": "IMPACT"
-  }
-}
-```
-
-##### Create a task
-
-```graphql
-mutation createQuest($input: CreateQuestInput!, $beaconIDs:[ID!]!){
-  createQuest(input: $input, beaconIDs: $beaconIDs) {
-    id
-  }
-}
-```
-
-```json
-{
-  "input": {
-    "name": "Run test tome",
-    "tomeID": "21474836488",
-    "parameters": "{\"print_string\":\"Hello World\"}"
-  },
-  "beaconIDs": ["8589934593"]
-}
-```
-
-##### Get all task and quest output
-
-```graphql
-query get_task_res {
-  quests {
-    tasks {
-      id
-      output
-      quest {
-        tome {
-          eldritch
-        }
-        parameters
-      }
-      execFinishedAt
-    }
-  }
-}
-```
+![/assets/img/admin-guide/tavern/graphiql.png](/assets/img/admin-guide/tavern/graphiql.png)

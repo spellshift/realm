@@ -22,8 +22,6 @@
       children:
         - title: "Configuration"
           url: "admin-guide/tavern#configuration"
-        - title: "User Interface"
-          url: "admin-guide/tavern#user-interface"
         - title: "GraphQL API"
           url: "admin-guide/tavern#graphql-api"
 - title: Developer Guide
