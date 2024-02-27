@@ -24,7 +24,7 @@ cd implants/imix && cargo run
 Welcome, intrepid red teamer! This guide will launch you into a sandboxed Realm experience, perfect for experimenting and exploring its features. Think of it as your personal training ground before unleashing it in real-world engagements. But first, let's make sure you're in the right place.
 
 * Want to deploy Realm for production? Check out our [deployment guide](/admin-guide/tavern#deployment).
-* Already using a deployed Realm instance? Check out our [UI guide](/user-guide/ui).
+* Want to write new [Tomes](/user-guide/terminology#tome)? Check out our [Tome guide](/user-guide/tomes).
 
 Otherwise, let's delve into Realm! Break, bend, and explore to your heart's content. This is your chance to unlock Realm's potential and get comfortable before your next engagement. Time for an adventure!
 
@@ -77,7 +77,7 @@ Now from the left navigation menu, select "Create new quest".
 
 ![create-new-quest](/assets/img/user-guide/getting-started/create-new-quest.png)
 
-This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. For more details on filtering and selecting [Beacons](/user-guide/terminology#beacon), see our [UI guide](/user-guide/ui). For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".
+This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".
 
 #### Tome Selection
 

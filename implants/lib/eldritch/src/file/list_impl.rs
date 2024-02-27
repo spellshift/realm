@@ -211,12 +211,66 @@ pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use tempfile::tempdir;
+    use std::collections::HashMap;
 
-    #[test]
-    fn test_file_list() -> anyhow::Result<()> {
+    use crate::runtime::Message;
+
+    use super::*;
+    use pb::eldritch::Tome;
+    use tempfile::{tempdir, NamedTempFile};
+
+    fn init_logging() {
+        pretty_env_logger::formatted_timed_builder()
+            .filter_level(log::LevelFilter::Info)
+            .parse_env("IMIX_LOG")
+            .init();
+    }
+
+    #[tokio::test]
+    async fn test_file_list_file() -> anyhow::Result<()> {
+        init_logging();
+        let tmp_file = NamedTempFile::new()?;
+        let path = String::from(tmp_file.path().to_str().unwrap());
+        let expected_file_name =
+            String::from(tmp_file.path().file_name().unwrap().to_str().unwrap());
+
+        // Run Eldritch (until finished)
+        let mut runtime = crate::start(
+            123,
+            Tome {
+                eldritch: String::from(r#"print(file.list(input_params['path'])[0]['file_name'])"#),
+                parameters: HashMap::from([(String::from("path"), path.clone())]),
+                file_names: Vec::new(),
+            },
+        )
+        .await;
+        runtime.finish().await;
+
+        // Read Messages
+        let expected_output = format!("{}\n", path);
+        let mut found = false;
+        for msg in runtime.messages() {
+            if let Message::ReportText(m) = msg {
+                assert_eq!(123, m.id);
+                assert!(m.text.contains(&expected_file_name));
+                log::debug!("text: {:?}", m.text);
+                found = true;
+            }
+        }
+        assert!(found);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_file_list_dir() -> anyhow::Result<()> {
+        init_logging();
+
         let test_dir = tempdir()?;
+        let path = test_dir
+            .path()
+            .to_str()
+            .context("Failed to convert string")?
+            .to_string();
         let expected_dirs = ["never gonna", "give you up", ".never gonna"];
         let expected_files = ["let_you_down", ".or desert you"];
 
@@ -230,14 +284,36 @@ mod tests {
             std::fs::File::create(test_dir_to_create)?;
         }
 
-        let binding = Heap::new();
-        let list_res = list(&binding, test_dir.path().to_str().unwrap().to_string())?;
-        assert_eq!(list_res.len(), (expected_dirs.len() + expected_files.len()));
+        // Run Eldritch (until finished)
+        let mut runtime = crate::start(
+            123,
+            Tome {
+                eldritch: String::from(
+                    r#"
+for f in file.list(input_params['path']):
+    print(f['file_name'])"#,
+                ),
+                parameters: HashMap::from([(String::from("path"), path.clone())]),
+                file_names: Vec::new(),
+            },
+        )
+        .await;
+        runtime.finish().await;
+
+        let mut counter = 0;
+        for msg in runtime.messages() {
+            if let Message::ReportText(m) = msg {
+                counter += 1;
+                log::debug!("text: {:?}", m.text);
+            }
+        }
+        assert_eq!(counter, (expected_dirs.len() + expected_files.len()));
 
         Ok(())
     }
-    #[test]
-    fn test_file_list_glob() -> anyhow::Result<()> {
+
+    #[tokio::test]
+    async fn test_file_list_glob() -> anyhow::Result<()> {
         let test_dir = tempdir()?;
         let expected_dir = "down the";
         let nested_dir = "rabbit hole";
@@ -254,19 +330,51 @@ mod tests {
             .join(file);
         std::fs::File::create(test_file)?;
 
-        // /tmpdir/down the/*
-        let binding = Heap::new();
-        let list_res = list(
-            &binding,
+        // Run Eldritch (until finished)
+        let mut runtime = crate::start(
+            123,
+            Tome {
+                eldritch: String::from(
+                    r#"
+for f in file.list(input_params['path']):
+    print(f['file_name'])"#,
+                ),
+                parameters: HashMap::from([(
+                    String::from("path"),
+                    test_dir
+                        .path()
+                        .join("*")
+                        .join("win")
+                        .to_str()
+                        .unwrap()
+                        .to_string(),
+                )]),
+                file_names: Vec::new(),
+            },
+        )
+        .await;
+        runtime.finish().await;
+
+        let expected_output = format!(
+            "{}\n",
             test_dir
                 .path()
-                .join("*")
-                .join("win")
+                .join(expected_dir)
+                .join(nested_dir)
+                .join(file)
                 .to_str()
                 .unwrap()
-                .to_string(),
-        )?;
-        println!("{:?}", list_res);
+        );
+        let mut found = false;
+        for msg in runtime.messages() {
+            if let Message::ReportText(m) = msg {
+                assert_eq!(123, m.id);
+                assert_eq!(expected_output, m.text);
+                log::debug!("text: {:?}", m.text);
+                found = true;
+            }
+        }
+
         Ok(())
     }
 }
