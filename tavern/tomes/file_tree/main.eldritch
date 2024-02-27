@@ -56,9 +56,6 @@ def file_list(path,tree, depth=-1):
 
 def main(path, depth=-1):
     tree=""
-    if isinstance(depth, str) and not depth.lstrip("-").isdigit():
-        print("ERROR: Invalid depth specified, must be a valid number")
-        return
     depth=int(depth)
     if file.is_dir(path):
         print(path+"\n")
