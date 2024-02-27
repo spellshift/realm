@@ -1,7 +1,7 @@
 block_list = ["/proc","/sys","/lib","/libx32","/lib32","/lib64","/boot","/srv","/usr","/snap","/run","/dev","/cores"]
 
 usernfo = sys.get_user()
-windows = sys.get_os().get("platform", "") == "PLATFORM_WINDOWS"
+windows = sys.is_windows()
 
 def can_read(f):
     """Return true if the user can read this dir/file
@@ -43,16 +43,16 @@ def file_list(path,tree, depth=-1):
     files = file.list(path)
     for f in files:
         if path+f['file_name'] in block_list:
-            print("Skipping: "+path+f['file_name']+"\n")
+            print("Skipping: "+path+f['file_name'])
             continue
         if f['type'] == "Directory":
-            print(tree+"|---"+path+"/"+f['file_name']+"\n")
+            print(tree+"|---"+f['file_name']+"/")
             if can_read(f):
                 file_list(path+"/"+f['file_name'],tree, depth=depth-1)
         if f['type'] == "Link":
-            print(tree+"|---"+f['file_name']+"\n")
+            print(tree+"|---"+f['file_name'])
         if f['type'] == "File":
-            print(tree+"|---"+f['file_name']+"\n")
+            print(tree+"|---"+f['file_name'])
 
 def main(path, depth=-1):
     tree=""
@@ -63,13 +63,11 @@ def main(path, depth=-1):
     if file.is_dir(path):
         print(path+"\n")
         if path == "/":
-            print("It looks like you're trying to list every file on the system.\n")
-            print("This generates a lot of data so I'm going to exclude less helpful directories\n")
-            print("If you really really want everything including /proc and /sys specify \"//\"\n")
+            print("It looks like you're trying to list every file on the system.")
+            print("This generates a lot of data so I'm going to exclude less helpful directories")
+            print("If you really really want everything including /proc and /sys specify \"//\"")
         file_list(path,tree, depth=depth)
     elif file.is_file(path):
-        print("Error: Invalid Path ("+path+")\n")
+        print("Error: Invalid Path ("+path+")")
 
 main(input_params['path'], input_params["depth"])
-print("\n")
-print("\n")
