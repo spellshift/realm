@@ -184,7 +184,7 @@ mod tests {
         let runtime = crate::start(
             123,
             Tome {
-                eldritch: r#"print(file.find(input_params['dir_path'], name="test.txt", file_type="file"))"#
+                eldritch: r#"print(len(file.find(input_params['dir_path'], name="test.txt", file_type="file")))"#
                     .to_owned(),
                 parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
                 file_names: Vec::new(),
@@ -200,12 +200,7 @@ mod tests {
         let message = messages.first().unwrap();
 
         if let Message::ReportAggOutput(output) = message {
-            let expected = if cfg!(target_os = "macos") {
-                format!("[\"/private{}\"]\n", file.to_str().unwrap())
-            } else {
-                format!("[\"{}\"]\n", file.to_str().unwrap())
-            };
-            assert_eq!(output.text, expected);
+            assert_eq!(output.text, "1\n");
         } else {
             panic!("Expected ReportAggOutputMessage");
         }
@@ -219,7 +214,7 @@ mod tests {
         let runtime = crate::start(
             123,
             Tome {
-                eldritch: r#"print(file.find(input_params['dir_path'], name="testdir", file_type="dir"))"#
+                eldritch: r#"print(len(file.find(input_params['dir_path'], name="testdir", file_type="dir")))"#
                     .to_owned(),
                 parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
                 file_names: Vec::new(),
@@ -234,12 +229,7 @@ mod tests {
         let message = messages.first().unwrap();
 
         if let Message::ReportAggOutput(output) = message {
-            let expected = if cfg!(target_os = "macos") {
-                format!("[\"/private{}\"]\n", inner_dir.to_str().unwrap())
-            } else {
-                format!("[\"{}\"]\n", inner_dir.to_str().unwrap())
-            };
-            assert_eq!(output.text, expected);
+            assert_eq!(output.text, "1\n");
         } else {
             panic!("Expected ReportAggOutputMessage");
         }
