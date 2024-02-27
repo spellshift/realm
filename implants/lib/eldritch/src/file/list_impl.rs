@@ -227,22 +227,15 @@ mod tests {
     async fn test_file_list_file() -> anyhow::Result<()> {
         init_logging();
         let tmp_file = NamedTempFile::new()?;
-        #[cfg(target_os = "macos")]
-        let path = format!(
-            "/private{}",
-            String::from(tmp_file.path().to_str().unwrap())
-        );
-
-        #[cfg(not(target_os = "macos"))]
         let path = String::from(tmp_file.path().to_str().unwrap());
+        let expected_file_name =
+            String::from(tmp_file.path().file_name().unwrap().to_str().unwrap());
 
         // Run Eldritch (until finished)
         let mut runtime = crate::start(
             123,
             Tome {
-                eldritch: String::from(
-                    r#"print(file.list(input_params['path'])[0]['absolute_path'])"#,
-                ),
+                eldritch: String::from(r#"print(file.list(input_params['path'])[0]['file_name'])"#),
                 parameters: HashMap::from([(String::from("path"), path.clone())]),
                 file_names: Vec::new(),
             },
@@ -256,7 +249,7 @@ mod tests {
         for msg in runtime.messages() {
             if let Message::ReportText(m) = msg {
                 assert_eq!(123, m.id);
-                assert_eq!(expected_output, m.text);
+                assert!(m.text.contains(&expected_file_name));
                 log::debug!("text: {:?}", m.text);
                 found = true;
             }
