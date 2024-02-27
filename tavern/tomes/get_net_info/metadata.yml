@@ -1,0 +1,5 @@
+name: Get Network Info
+description: Get the ip and network information for the system
+author: hulto
+support_model: FIRST_PARTY
+tactic: RECON

@@ -1,14 +1,3 @@
-def pad_pid(pid):
-    pid_column_width = 16
-    padding = pid_column_width - len(pid)
-    return pid +  " "*padding
-
-def pad_username (username):
-    username_column_width = 32
-    padding = username_column_width - len(username)
-    return username +  " "*padding
-
-
 def print_table(rows: list[list]):
     """Pretty print a table, auto adjusting width based on the row data"""
     def rpad(s: str, n: int, c=" "):
@@ -18,6 +7,7 @@ def print_table(rows: list[list]):
     for r in rows:
         for i, f in enumerate(r):
             counts[i] = max(len(f), counts[i])
+    counts[-1] = 0
     # Print the columns
     for r in rows:
         row = []
@@ -33,21 +23,17 @@ def process_list(cmd_substring):
     procs = process.list()
 
     rows = [["PID", "PPID", "USER","COMMAND"]]
-    for proc in sorted(procs, key=lambda x:x["pid"]):
+    for proc in procs:
         if cmd_substring in proc['command']:
             current_proc_command = proc['command']
             if current_proc_command == "":
                 current_proc_command = proc['name']
 
-            current_proc_pid = str(proc['pid'])
-            current_proc_ppid = str(proc['ppid'])
-            current_proc_username = proc['username']
-
             rows.append([
                 str(proc['pid']),
                 str(proc['ppid']),
                 proc['username'],
-                current_proc_command.replace("\n","\\n")[:80] # trim absurdly long cmds
+                current_proc_command.replace("\n","\\n")
             ])
 
     print_table(rows)
