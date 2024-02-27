@@ -228,10 +228,13 @@ mod tests {
         init_logging();
         let tmp_file = NamedTempFile::new()?;
         #[cfg(target_os = "macos")]
-        let path = format!("/private{}", String::from(tmp_file.path().to_str().unwrap()));
+        let path = format!(
+            "/private{}",
+            String::from(tmp_file.path().to_str().unwrap())
+        );
 
         #[cfg(not(target_os = "macos"))]
-        let path = String::from(PathBuf::from(), tmp_file.path().to_str().unwrap());
+        let path = String::from(tmp_file.path().to_str().unwrap());
 
         // Run Eldritch (until finished)
         let mut runtime = crate::start(
