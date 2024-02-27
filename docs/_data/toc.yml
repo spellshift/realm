@@ -3,8 +3,6 @@
   links:
     - title: "Getting Started"
       url: "user-guide/getting-started"
-    - title: "UI"
-      url: "user-guide/ui"
     - title: "Tomes"
       url: "user-guide/tomes"
     - title: "Imix"
@@ -46,8 +44,6 @@
     - title: "Tavern"
       url: "dev-guide/tavern"
       children:
-        - title: "CDN API"
-          url: "admin-guide/tavern#cdn-api"
         - title: "Agent Development"
           url: "admin-guide/tavern#agent-development"
     - title: "Eldritch"

@@ -8,7 +8,7 @@ permalink: user-guide/golem
 ## What is Golem
 
 Golem is the standalone interpreter for Eldritch.
-This program exists to help users get experience with the Eldritch language as well as a jumping off point if you're interested in implementing your own program using the Eldritch language.
+This program exists to help users get experience with the Eldritch language as well as a jumping off point if you're interested in implementing your own program using the Eldritch language. Additionally, consult our [Tomes](/user-guide/tomes) documentation for information about packaging [Eldritch](/user-guide/terminology#eldritch) code for use with [Imix](/user-guide/imix) and Tavern.
 
 Golem can also be used operationally as an alternative to a system native shell.
 You can leverage the power of Eldritch with minimal exposure in the system process tree.
