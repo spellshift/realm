@@ -81,9 +81,7 @@ write_systemd_service()
 
 # Standard Library
 
-The standard library is the default functionality that eldritch provides.
-
-It currently contains seven modules:
+The standard library is the default functionality that eldritch provides. It contains the following libraries:
 
 - `assets` - Used to interact with files stored natively in the agent.
 - `crypto` - Used to encrypt/decrypt or hash data.
@@ -91,10 +89,9 @@ It currently contains seven modules:
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
 - `report` - Structured data reporting capabilities.
+- `regex` - Regular expression capabilities for operating on strings.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
-
-Functions fall into one of these seven modules. This is done to improve clarity about function use.
 
 **🚨 DANGER 🚨: Name shadowing**
 

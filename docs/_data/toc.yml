@@ -3,17 +3,14 @@
   links:
     - title: "Getting Started"
       url: "user-guide/getting-started"
-    - title: "Tomes"
-      url: "user-guide/tomes"
-    - title: "Imix"
-      url: "user-guide/imix"
-    - title: "Golem"
-      url: "user-guide/golem"
     - title: "Eldritch"
       url: "user-guide/eldritch"
-      children:
-        - title: Standard Library
-          url: "user-guide/eldritch#standard-library"
+    - title: "Tomes"
+      url: "user-guide/tomes"
+    - title: "Golem"
+      url: "user-guide/golem"
+    - title: "Imix"
+      url: "user-guide/imix"
     - title: "Terminology"
       url: "user-guide/terminology"
 
