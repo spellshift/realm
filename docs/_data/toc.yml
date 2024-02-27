@@ -46,8 +46,6 @@
     - title: "Tavern"
       url: "dev-guide/tavern"
       children:
-        - title: "CDN API"
-          url: "admin-guide/tavern#cdn-api"
         - title: "Agent Development"
           url: "admin-guide/tavern#agent-development"
     - title: "Eldritch"

@@ -73,6 +73,8 @@ Now it's time to provide our [Beacon](/user-guide/terminology#beacon) it's first
 
 Now from the left navigation menu, select "Create new quest".
 
+*Note: `Service + group` searches use `AND` while `service + service` or `group + group` searches use `OR`*
+
 ![create-new-quest](/assets/img/user-guide/getting-started/create-new-quest.png)
 
 This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. For more details on filtering and selecting [Beacons](/user-guide/terminology#beacon), see our [UI guide](/user-guide/ui). For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".

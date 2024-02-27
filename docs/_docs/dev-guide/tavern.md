@@ -99,59 +99,13 @@ apt install -y graphviz
 
 ## Agent Development
 
-Tavern provides an HTTP(s) GraphQL API that agents may use directly to claim tasks and submit execution results. This is the standard request flow, and is supported as a core function of realm. To learn more about how to interface with GraphQL APIs, please read [this documentation](https://www.graphql.com/tutorials/#clients) or read on for a simple example.
+Tavern provides an HTTP(s) [gRPC API](https://grpc.io/) that agents may use directly to claim tasks and submit execution results. This is the standard request flow, and is supported as a core function of realm. For more information, please consult our [API Specification](https://github.com/spellshift/realm/blob/main/tavern/internal/c2/proto/c2.proto).
 
-![/assets/img/tavern/standard-usage-arch.png](/assets/img/tavern/standard-usage-arch.png)
+If you wish to develop an agent using a different transport method (e.g. DNS), your development will need to include a C2. The role of the C2 is to handle agent communication, and translate the chosen transport method into HTTP(s) requests to Tavern's gRPC API. We recommend reusing the existing protobuf definitions for simplicity and forward compatability. This enables developers to use any transport mechanism with Tavern. If you plan to build a C2 for a common protocol for use with Tavern, consider [submitting a PR](https://github.com/spellshift/realm/pulls).
 
-This however restricts the available transport methods the agent may use to communicate with the teamserver e.g. only HTTP(s). If you wish to develop an agent using a different transport method (e.g. DNS), your development will need to include a C2. The role of the C2 is to handle agent communication, and translate the chosen transport method into HTTP(s) requests to Tavern's GraphQL API. This enables developers to use any transport mechanism with Tavern. If you plan to build a C2 for a common protocol for use with Tavern, consider [submitting a PR](https://github.com/spellshift/realm/pulls).
+### Agent Loop Lifecycle
 
-![/assets/img/tavern/custom-usage-arch.png](/assets/img/tavern/custom-usage-arch.png)
-
-### GraphQL Example
-
-GraphQL mutations enable clients to _mutate_ or modify backend data. Tavern supports a variety of different mutations for interacting with the graph ([see schema](https://github.com/spellshift/realm/blob/main/tavern/internal/graphql/schema/mutation.graphql)). The two mutations agents rely on are `claimTasks` and `submitTaskResult` (covered in more detail below). GraphQL requests are submitted as HTTP POST requests to Tavern, with a JSON body including the GraphQL mutation. Below is an example JSON body that may be sent to the Tavern GraphQL API:
-
-```json
-{
-  "query": "mutation ClaimTasks($input: ClaimTasksInput!) {\n  claimTasks(input: $input) {\n    id\n  }\n}",
-  "variables": {
-    "input": {
-      "principal": "root",
-      "hostname": "test",
-      "hostIdentifier": "dodo",
-      "agentIdentifier": "bleep",
-      "beaconIdentifier": "123"
-    }
-  },
-  "operationName": "ClaimTasks"
-}
-```
-
-In the above example, `$input` is used to pass variables from code to the GraphQL mutation while avoiding sketchy string parsing. Fields that should be present in the output are included in the body of the query (e.g. 'id').
-
-### Claiming Tasks
-
-The first GraphQL mutation an agent should utilize is `claimTasks`. This mutation is used to fetch new tasks from Tavern that should be executed by the agent. In order to fetch execution information, the agent should perform a graph traversal to obtain information about the associated quest. For example:
-
-```graphql
-mutation ClaimTasks($input: ClaimTasksInput!) {
-  claimTasks(input: $input) {
-    id
-    quest {
-      tome {
-        id
-        eldritch
-      }
-      bundle {
-        id
-      }
-    }
-  }
-}
-```
-
-If the mutation returns a bundle, it should be fetched from the CDN to provide necessary assets (a tar.gz) for eldritch execution. The Task ID should be saved for later reporting results of task execution.
-
-## Submitting Results
-
-After task execution has been completed (or as it is being completed), an agent should utilize the `submitTaskResult` mutation to update Tavern with execution output and status information. When task execution is finished, the agent should provide a value for the `execFinishedAt` parameter. If a task fails to complete, the agent should provide a value for the `error` parameter.
+1. Claim [Tasks](/user-guide/terminology#task)
+2. Execute [Tasks](/user-guide/terminology#task) (happens in parallel and may not finish within one loop)
+3. Report available output from [Task](/user-guide/terminology#task) execution
+4. Sleep for an interval and repeat
