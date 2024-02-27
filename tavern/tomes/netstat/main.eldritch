@@ -9,9 +9,10 @@ def print_table(rows: list[list]):
             counts[i] = max(len(f), counts[i])
     # Print the columns
     for r in rows:
+        row = []
         for i, c in enumerate(r):
-            print(rpad(c, counts[i]+2))
-        print("\n")
+            row.append(rpad(c, counts[i]+2))
+        print("".join(row))
 
 def netstat():
     """Pretty print the netstat results"""
@@ -34,7 +35,6 @@ def netstat():
         remote = n.get("remote_address", "")
         if remote:
             fields[2] = remote + ":" + str(n.get("remote_port",))
-        
         # Established = ESTAB
         if fields[3] == "ESTABLISHED":
             fields[3] = fields[3][:5]
@@ -46,5 +46,3 @@ def netstat():
     print_table(rows)
 
 netstat()
-print("\n")
-print("\n")
