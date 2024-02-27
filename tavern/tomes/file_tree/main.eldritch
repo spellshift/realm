@@ -29,5 +29,4 @@ def main(path):
         print("Error: Invalid Path ("+path+")\n")
 
 main(input_params['path'])
-print("\n")
-print("\n")
+print("")
