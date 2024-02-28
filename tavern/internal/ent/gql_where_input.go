@@ -3182,6 +3182,8 @@ type QuestWhereInput struct {
 	EldritchAtCreationContains     *string  `json:"eldritchAtCreationContains,omitempty"`
 	EldritchAtCreationHasPrefix    *string  `json:"eldritchAtCreationHasPrefix,omitempty"`
 	EldritchAtCreationHasSuffix    *string  `json:"eldritchAtCreationHasSuffix,omitempty"`
+	EldritchAtCreationIsNil        bool     `json:"eldritchAtCreationIsNil,omitempty"`
+	EldritchAtCreationNotNil       bool     `json:"eldritchAtCreationNotNil,omitempty"`
 	EldritchAtCreationEqualFold    *string  `json:"eldritchAtCreationEqualFold,omitempty"`
 	EldritchAtCreationContainsFold *string  `json:"eldritchAtCreationContainsFold,omitempty"`
 
@@ -3506,6 +3508,12 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 	}
 	if i.EldritchAtCreationHasSuffix != nil {
 		predicates = append(predicates, quest.EldritchAtCreationHasSuffix(*i.EldritchAtCreationHasSuffix))
+	}
+	if i.EldritchAtCreationIsNil {
+		predicates = append(predicates, quest.EldritchAtCreationIsNil())
+	}
+	if i.EldritchAtCreationNotNil {
+		predicates = append(predicates, quest.EldritchAtCreationNotNil())
 	}
 	if i.EldritchAtCreationEqualFold != nil {
 		predicates = append(predicates, quest.EldritchAtCreationEqualFold(*i.EldritchAtCreationEqualFold))

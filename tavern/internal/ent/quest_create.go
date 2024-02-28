@@ -209,10 +209,6 @@ func (qc *QuestCreate) defaults() {
 		v := quest.DefaultLastModifiedAt()
 		qc.mutation.SetLastModifiedAt(v)
 	}
-	if _, ok := qc.mutation.EldritchAtCreation(); !ok {
-		v := quest.DefaultEldritchAtCreation
-		qc.mutation.SetEldritchAtCreation(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -240,9 +236,6 @@ func (qc *QuestCreate) check() error {
 		if err := quest.ParamDefsAtCreationValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs_at_creation", err: fmt.Errorf(`ent: validator failed for field "Quest.param_defs_at_creation": %w`, err)}
 		}
-	}
-	if _, ok := qc.mutation.EldritchAtCreation(); !ok {
-		return &ValidationError{Name: "eldritch_at_creation", err: errors.New(`ent: missing required field "Quest.eldritch_at_creation"`)}
 	}
 	if _, ok := qc.mutation.TomeID(); !ok {
 		return &ValidationError{Name: "tome", err: errors.New(`ent: missing required edge "Quest.tome"`)}

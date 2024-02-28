@@ -113,8 +113,6 @@ var (
 	ParametersValidator func(string) error
 	// ParamDefsAtCreationValidator is a validator for the "param_defs_at_creation" field. It is called by the builders before save.
 	ParamDefsAtCreationValidator func(string) error
-	// DefaultEldritchAtCreation holds the default value on creation for the "eldritch_at_creation" field.
-	DefaultEldritchAtCreation string
 )
 
 // OrderOption defines the ordering options for the Quest queries.

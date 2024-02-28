@@ -2720,7 +2720,7 @@ type Quest implements Node {
   """JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter."""
   paramDefsAtCreation: String
   """Eldritch script that was evaluated at the time of this quest creation."""
-  eldritchAtCreation: String!
+  eldritchAtCreation: String
   """Tome that this quest will be executing"""
   tome: Tome!
   """Bundle file that the executing tome depends on (if any)"""
@@ -2852,6 +2852,8 @@ input QuestWhereInput {
   eldritchAtCreationContains: String
   eldritchAtCreationHasPrefix: String
   eldritchAtCreationHasSuffix: String
+  eldritchAtCreationIsNil: Boolean
+  eldritchAtCreationNotNil: Boolean
   eldritchAtCreationEqualFold: String
   eldritchAtCreationContainsFold: String
   """tome edge predicates"""
