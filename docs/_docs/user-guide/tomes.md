@@ -36,10 +36,32 @@ The `metadata.yml` file specifies key information about a [Tome](/user-guide/ter
 Parameters are defined as a YAML list, but have their own additional properties:
 
 | Name | Description | Required |
-| `name` | Identifier used to access the parameter in the tome's `input_vars` global. | Yes |
+| `name` | Identifier used to access the parameter via the `input_vars` global. | Yes |
 | `label` | Display name of the parameter for users of the [Tome](/user-guide/terminology#tome). | Yes |
 | `type` | Type of the parameter in [Eldritch](/user-guide/terminology#eldritch). Current values include: `string`. | Yes |
 | `placeholder` | An example value displayed to users to help explain the parameter's purpose. | Yes |
+
+#### Tome Parameter Example
+
+```yaml
+paramdefs:
+  - name: path
+    type: string
+    label: File path
+    placeholder: "/etc/open*"
+```
+
+#### Referencing Tome Parameters
+
+If you've defined a parameter for your [Tome](/user-guide/terminology#tome), there's a good chance you'll want to use it. Luckily, [Eldritch](/user-guide/terminology#eldritch) makes this easy for you by providing a global `input_vars` dictionary, which is populated with the parameter values provided to your [Tome](/user-guide/terminology#tome). To access a parameter, simply use the `paramdef` name (defined in `metadata.yml`). For example:
+
+```python
+def print_path_param():
+  path = input_vars["path"]
+  print(path)
+```
+
+In the above example, our `metadata.yml` file would specify a value for `paramdefs` with `name: path` set. Then when accessing `input_vars["path"]` the string value provided to the [Tome](/user-guide/terminology#tome) is returned.
 
 ### Tome Metadata Example
 
@@ -49,10 +71,10 @@ description: List the files and directories found at the path. Supports basic gl
 author: hulto
 tactic: RECON
 paramdefs:
-- name: path
-  type: string
-  label: File path
-  placeholder: "/etc/open*"
+  - name: path
+    type: string
+    label: File path
+    placeholder: "/etc/open*"
 ```
 
 For more examples, please see Tavern's first party supported [Tomes](https://github.com/spellshift/realm/tree/main/tavern/tomes).

@@ -81,20 +81,18 @@ write_systemd_service()
 
 # Standard Library
 
-The standard library is the default functionality that eldritch provides.
-
-It currently contains seven modules:
+The standard library is the default functionality that eldritch provides. It contains the following libraries:
 
 - `assets` - Used to interact with files stored natively in the agent.
 - `crypto` - Used to encrypt/decrypt or hash data.
 - `file` - Used to interact with files on the system.
+- `http` - Used to make http(s) requests from the agent.
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
+- `regex` - Regular expression capabilities for operating on strings.
 - `report` - Structured data reporting capabilities.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
-
-Functions fall into one of these seven modules. This is done to improve clarity about function use.
 
 **🚨 DANGER 🚨: Name shadowing**
 
@@ -374,13 +372,13 @@ The <b>file.remove</b> method deletes a file or directory (and it's contents) sp
 
 `file.replace(path: str, pattern: str, value: str) -> None`
 
-The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value.
+The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### file.replace_all
 
 `file.replace_all(path: str, pattern: str, value: str) -> None`
 
-The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value.
+The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### file.template
 
@@ -686,27 +684,26 @@ in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lan
 
 `regex.match_all(haystack: str, pattern: str) -> List<str>`
 
-The <b>regex.match_all</b> method returns a list of capture group strings that matched the given pattern within the given
-haystack.
+The <b>regex.match_all</b> method returns a list of capture group strings that matched the given pattern within the given haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.match
 
 `regex.match(haystack: str, pattern: str) -> str`
 
 The <b>regex.match</b> method returns the first capture group string that matched the given pattern within the given
-haystack.
+haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.replace_all
 
 `regex.replace_all(haystack: str, pattern: str, value: string) -> str`
 
-The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value.
+The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.replace
 
 `regex.replace(haystack: str, pattern: str, value: string) -> str`
 
-The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value.
+The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ---
 

@@ -3,17 +3,14 @@
   links:
     - title: "Getting Started"
       url: "user-guide/getting-started"
-    - title: "Tomes"
-      url: "user-guide/tomes"
-    - title: "Imix"
-      url: "user-guide/imix"
-    - title: "Golem"
-      url: "user-guide/golem"
     - title: "Eldritch"
       url: "user-guide/eldritch"
-      children:
-        - title: Standard Library
-          url: "user-guide/eldritch#standard-library"
+    - title: "Tomes"
+      url: "user-guide/tomes"
+    - title: "Golem"
+      url: "user-guide/golem"
+    - title: "Imix"
+      url: "user-guide/imix"
     - title: "Terminology"
       url: "user-guide/terminology"
 
@@ -23,10 +20,10 @@
     - title: "Tavern"
       url: "admin-guide/tavern"
       children:
+        - title: "Deployment"
+          url: "admin-guide/tavern#deployment"
         - title: "Configuration"
           url: "admin-guide/tavern#configuration"
-        - title: "User Interface"
-          url: "admin-guide/tavern#user-interface"
         - title: "GraphQL API"
           url: "admin-guide/tavern#graphql-api"
 - title: Developer Guide
@@ -50,14 +47,14 @@
       url: "dev-guide/eldritch"
       children:
         - title: "Overview"
-          url: "dev-guide/eldritch#Overview"
-        - title: "Creating a function"
-          url: "dev-guide/eldritch#creating-a-function"
+          url: "dev-guide/eldritch#overview"
+        - title: "Create an Eldritch Function"
+          url: "dev-guide/eldritch#create-an-eldritch-function"
         - title: "OS Specific functions"
           url: "dev-guide/eldritch#os-specific-functions"
-        - title: "Notes about using dictionary type Dict"
+        - title: "Using Dict"
           url: "dev-guide/eldritch#using-dict"
-        - title: "Notes about asynchronous Eldritch code"
+        - title: "Using Async"
           url: "dev-guide/eldritch#using-async"
 - title: "About"
-  url: "about"
+  url: "" # Index

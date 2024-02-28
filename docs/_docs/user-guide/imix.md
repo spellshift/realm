@@ -5,10 +5,9 @@ tags:
 description: Imix User Guide
 permalink: user-guide/imix
 ---
-## What is Imix
+## Imix
 
-Imix is the default agent for realm.
-Imix currently only supports http(s) callbacks to Tavern's gRPC API.
+Imix is an offensive security implant designed for stealthy communication and adversary emulation. It functions as a [Beacon](/user-guide/terminology#beacon), receiving [Eldritch](/user-guide/terminology#eldritch) packages called [Tomes](/user-guide/terminology#tome) from a central server ([Tavern](/admin-guide/tavern)) and evaluating them on the host system. It currently supports [gRPC over HTTP(s)](https://grpc.io/) as it's primary communication mechanism, but can be extended to support additional transport channels (see the [developer guide](/dev-guide/tavern#agent-development) for more info).
 
 ## Configuration
 
@@ -22,7 +21,7 @@ Imix has compile-time configuration, that may be specified using environment var
 
 ## Logging
 
-At runtime, you may use the `IMIX_LOG` environment variable to control log levels and verbosity. See [these docs](https://docs.rs/pretty_env_logger/latest/pretty_env_logger/) for more information. When building a release version of imix, logging is disabled and is not included in the released binary.
+At runtime, you may use the `IMIX_LOG` environment variable to control log levels and verbosity. See [these docs](https://docs.rs/pretty_env_logger/latest/pretty_env_logger/) for more information. **When building a release version of imix, logging is disabled** and is not included in the released binary.
 
 ## Installation
 
