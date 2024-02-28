@@ -296,3 +296,71 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 ![/assets/img/admin-guide/tavern/graphiql.png](/assets/img/admin-guide/tavern/graphiql.png)
 
 Within the GraphIQL Playground, you'll be able to access documentation on the various queries and mutations available to you. For example, the `updateUser` mutation is useful for activating new users and granting admin privileges to others.
+
+#### Activate User Example
+
+Activate the user with the ID `47244640258`.
+
+```graphql
+mutation ActivateUser {
+  updateUser(userID: 47244640258, input:{isActivated:true}) {
+    id
+    name
+    isAdmin
+    isActivated
+  }
+}
+```
+
+#### Activate Admin Example
+
+Activate the user with the ID `47244640258` and grant them admin privileges.
+
+```graphql
+mutation ActivateAdmin {
+  updateUser(userID: 47244640258, input:{isAdmin:true, isActivated:true}) {
+    id
+    name
+    isAdmin
+    isActivated
+  }
+}
+```
+
+#### List Tomes Example
+
+List information about all available tomes.
+
+```graphql
+query Tomes {
+  tomes {
+    name
+    tactic
+    supportModel
+    files {
+      id
+      name
+      size
+    }
+  }
+}
+```
+
+### List Tomes (Filter) Example
+
+List information about all available tomes which are made for persistence.
+
+```graphql
+query PeristenceTomes {
+  tomes(where:{tactic: PERSISTENCE}) {
+    name
+    tactic
+    supportModel
+    files {
+      id
+      name
+      size
+    }
+  }
+}
+```
