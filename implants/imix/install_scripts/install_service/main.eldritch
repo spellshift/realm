@@ -306,6 +306,12 @@ def windows_service_manager(service_name, service_display_name, service_descript
         print("\n")
         return
 
+    desc_res = sys.shell(f"sc.exe description {service_name} \"{service_description}\" ")
+    if 'ERROR' in create_res['stdout'] or create_res['stderr'] != "":
+        print("Failed to set description:\n"+create_res+"\n")
+        print("\n")
+        return
+
     start_res = sys.shell("sc.exe start "+service_name)
     if 'ERROR' in start_res['stdout'] or start_res['stderr'] != "":
         print("Failed to start service:\n"+start_res+"\n")
