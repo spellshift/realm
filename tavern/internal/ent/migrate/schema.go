@@ -194,7 +194,7 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "parameters", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "param_defs_at_creation", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
-		{Name: "eldritch_at_creation", Type: field.TypeString, Default: "", SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "eldritch_at_creation", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "quest_tome", Type: field.TypeInt},
 		{Name: "quest_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_creator", Type: field.TypeInt, Nullable: true},

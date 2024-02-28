@@ -253,6 +253,9 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if qu.mutation.ParamDefsAtCreationCleared() {
 		_spec.ClearField(quest.FieldParamDefsAtCreation, field.TypeString)
 	}
+	if qu.mutation.EldritchAtCreationCleared() {
+		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
+	}
 	if qu.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -655,6 +658,9 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 	}
 	if quo.mutation.ParamDefsAtCreationCleared() {
 		_spec.ClearField(quest.FieldParamDefsAtCreation, field.TypeString)
+	}
+	if quo.mutation.EldritchAtCreationCleared() {
+		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
 	}
 	if quo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -44,7 +44,7 @@ func (Quest) Fields() []ent.Field {
 			Comment("JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter."),
 		field.String("eldritch_at_creation").
 			Immutable().
-			Default("").
+			Optional().
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
 			}).
