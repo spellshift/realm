@@ -435,6 +435,16 @@ func EldritchAtCreationHasSuffix(v string) predicate.Quest {
 	return predicate.Quest(sql.FieldHasSuffix(FieldEldritchAtCreation, v))
 }
 
+// EldritchAtCreationIsNil applies the IsNil predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationIsNil() predicate.Quest {
+	return predicate.Quest(sql.FieldIsNull(FieldEldritchAtCreation))
+}
+
+// EldritchAtCreationNotNil applies the NotNil predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationNotNil() predicate.Quest {
+	return predicate.Quest(sql.FieldNotNull(FieldEldritchAtCreation))
+}
+
 // EldritchAtCreationEqualFold applies the EqualFold predicate on the "eldritch_at_creation" field.
 func EldritchAtCreationEqualFold(v string) predicate.Quest {
 	return predicate.Quest(sql.FieldEqualFold(FieldEldritchAtCreation, v))

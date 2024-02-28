@@ -6071,9 +6071,22 @@ func (m *QuestMutation) OldEldritchAtCreation(ctx context.Context) (v string, er
 	return oldValue.EldritchAtCreation, nil
 }
 
+// ClearEldritchAtCreation clears the value of the "eldritch_at_creation" field.
+func (m *QuestMutation) ClearEldritchAtCreation() {
+	m.eldritch_at_creation = nil
+	m.clearedFields[quest.FieldEldritchAtCreation] = struct{}{}
+}
+
+// EldritchAtCreationCleared returns if the "eldritch_at_creation" field was cleared in this mutation.
+func (m *QuestMutation) EldritchAtCreationCleared() bool {
+	_, ok := m.clearedFields[quest.FieldEldritchAtCreation]
+	return ok
+}
+
 // ResetEldritchAtCreation resets all changes to the "eldritch_at_creation" field.
 func (m *QuestMutation) ResetEldritchAtCreation() {
 	m.eldritch_at_creation = nil
+	delete(m.clearedFields, quest.FieldEldritchAtCreation)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by id.
@@ -6428,6 +6441,9 @@ func (m *QuestMutation) ClearedFields() []string {
 	if m.FieldCleared(quest.FieldParamDefsAtCreation) {
 		fields = append(fields, quest.FieldParamDefsAtCreation)
 	}
+	if m.FieldCleared(quest.FieldEldritchAtCreation) {
+		fields = append(fields, quest.FieldEldritchAtCreation)
+	}
 	return fields
 }
 
@@ -6447,6 +6463,9 @@ func (m *QuestMutation) ClearField(name string) error {
 		return nil
 	case quest.FieldParamDefsAtCreation:
 		m.ClearParamDefsAtCreation()
+		return nil
+	case quest.FieldEldritchAtCreation:
+		m.ClearEldritchAtCreation()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest nullable field %s", name)
