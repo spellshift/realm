@@ -20,6 +20,8 @@
     - title: "Tavern"
       url: "admin-guide/tavern"
       children:
+        - title: "Deployment"
+          url: "admin-guide/tavern#deployment"
         - title: "Configuration"
           url: "admin-guide/tavern#configuration"
         - title: "GraphQL API"
