@@ -294,3 +294,5 @@ terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLI
 If you'd like to explore the Graph API and try out some queries, head to the `/graphiql` endpoint of your Tavern deployment. This endpoint exposes an interactive playground for you to experiment with GraphQL queries. Currently, this is used to fill gaps between developed backend functionality and in-development frontend functionality.
 
 ![/assets/img/admin-guide/tavern/graphiql.png](/assets/img/admin-guide/tavern/graphiql.png)
+
+Within the GraphIQL Playground, you'll be able to access documentation on the various queries and mutations available to you. For example, the `updateUser` mutation is useful for activating new users and granting admin privileges to others.
