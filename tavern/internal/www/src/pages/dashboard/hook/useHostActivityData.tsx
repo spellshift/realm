@@ -10,6 +10,8 @@ type UniqueCountHost = {
     online: number,
     total: number,
     lastSeenAt: string | undefined | null
+    hostsOnline: number,
+    hostsTotal: number,
 }
 
 type UniqueCountHostByGroup = {
@@ -31,7 +33,7 @@ export const useHostAcitvityData = (data: Array<HostType>) => {
         let offlineCount = 0;
 
         hosts?.forEach((host: HostType) => {
-            const groupTag = host?.tags && host?.tags.find((tag: TomeTag) => tag.kind === "group");
+            const groupTag = host?.tags ? host?.tags.find((tag: TomeTag) => tag.kind === "group") : { name: "undefined", id: "undefined" };
             const beaconStatus = getOfflineOnlineStatus(host.beacons || []);
 
             if (beaconStatus.online > 0) {
@@ -57,6 +59,13 @@ export const useHostAcitvityData = (data: Array<HostType>) => {
                     }
                     uniqueGroups[groupName].total += beaconStatus.online + beaconStatus.offline;
                     uniqueGroups[groupName].online += beaconStatus.online;
+
+                    if (beaconStatus.online > 0) {
+                        uniqueGroups[groupName].hostsOnline += 1;
+                    }
+
+                    uniqueGroups[groupName].hostsTotal += 1;
+
                 }
                 else {
                     uniqueGroups[groupName] = {
@@ -64,7 +73,9 @@ export const useHostAcitvityData = (data: Array<HostType>) => {
                         group: groupTag.name,
                         lastSeenAt: host.lastSeenAt,
                         online: beaconStatus.online,
-                        total: beaconStatus.online + beaconStatus.offline
+                        total: beaconStatus.online + beaconStatus.offline,
+                        hostsOnline: beaconStatus.online > 0 ? 1 : 0,
+                        hostsTotal: 1
                     }
                 }
             }
