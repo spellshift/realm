@@ -11,6 +11,9 @@ const GroupHostActivityTable = ({ hostActivity }: { hostActivity: Array<any> }) 
     const navigation = useNavigate();
 
     const handleOnClick = (item: any) => {
+        if (item?.id === "undefined") {
+            return null;
+        }
         navigation(`/hosts`, {
             state: [{
                 'label': item?.original?.group,
