@@ -125,8 +125,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Load Default Tomes
 	if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
-		client.Close()
-		return nil, fmt.Errorf("failed to upload default tomes: %w", err)
+		log.Printf("[ERROR] failed to upload default tomes: %v", err)
 	}
 
 	// Initialize Git Tome Importer
