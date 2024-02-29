@@ -85,11 +85,11 @@ const TomeRadioGroup = (
                                                                 </RadioGroup.Label>
                                                                 <RadioGroup.Description
                                                                     as="div"
-                                                                    className={`flex flex-col gap- w-full text-sm text-gray-600`}
+                                                                    className={`flex flex-col gap-1 w-full text-sm text-gray-600`}
                                                                 >
                                                                     <p>{tome.description}</p>
                                                                     {params &&
-                                                                        <div className="flex flex-row gap-1">
+                                                                        <div className="flex flex-row flex-wrap gap-1">
                                                                             Parameters:
                                                                             {params && params.map((element: TomeParams, index: number) => {
                                                                                 return <div key={`${index}_${element.name}`}>{element.label}{index < (params.length - 1) && ","}</div>

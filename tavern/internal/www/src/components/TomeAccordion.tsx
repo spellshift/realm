@@ -22,18 +22,21 @@ const TomeAccordion = (props: Props) => {
                                     {tome.name}
                                 </div>
                                 <div
-                                    className={`flex flex-col w-full text-sm text-gray-600`}
+                                    className={`flex flex-col w-full text-sm text-gray-600 gap-1`}
                                 >
                                     <p>{tome.description}</p>
                                     {params && params.length > 0 &&
-                                        <div className="flex flex-row gap-1">
+                                        <div className="flex flex-col md:flex-row gap-1">
                                             Parameters:
                                             {params && params.map((element: TomeParams, index: number) => {
                                                 return <div key={`${index}_${element.name}`}>{element.label}{index < (params.length - 1) && ","}</div>
                                             })}
                                         </div>
                                     }
-                                    {tome.tactic && tome.tactic !== "UNSPECIFIED" && <div>Tactic: <span className="lowercase">{tome?.tactic}</span></div>}
+                                    <div>
+                                        {tome.tactic && tome.tactic !== "UNSPECIFIED" && <div>Tactic: <span className="lowercase">{tome?.tactic}</span></div>}
+                                    </div>
+
                                 </div>
                             </Box>
                             <div className='text-sm  items-center'>

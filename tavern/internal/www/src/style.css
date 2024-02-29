@@ -40,7 +40,7 @@
   }
 
   .external-link {
-    @apply text-gray-600 font-semibold underline;
+    @apply text-gray-600 font-semibold underline break-all;
   }
 
   .external-link:hover {

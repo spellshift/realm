@@ -43,7 +43,7 @@ const RepositoryTable = ({ repositories }: {
     const columns: ColumnDef<any>[] = [
         {
             id: 'expander',
-            header: 'Tome repository',
+            header: 'Repository',
             accessorFn: row => row.node.url,
             footer: props => props.column.id,
             enableSorting: false,
@@ -75,7 +75,7 @@ const RepositoryTable = ({ repositories }: {
         },
         {
             id: "owner",
-            header: 'imported by',
+            header: 'Uploader',
             accessorFn: row => row?.node?.owner,
             footer: props => props.column.id,
             enableSorting: false,
@@ -105,7 +105,7 @@ const RepositoryTable = ({ repositories }: {
         },
         {
             id: "lastModifiedAt",
-            header: 'Last modified',
+            header: 'Updated',
             accessorFn: row => row?.node?.lastModifiedAt ? formatDistance(new Date(row?.node?.lastModifiedAt), currentDate) : "-",
             footer: props => props.column.id,
             enableSorting: false,
