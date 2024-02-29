@@ -7,10 +7,6 @@ def download_file(remote_src, local_dst, insecure):
         eprint("Specified path has no parent directory")
 
 def main():
-    insecure = cast_bool()
-    if insecure == -1:
-        return
-
     download_file(
         input_params['url'],
         input_params['dst'],
