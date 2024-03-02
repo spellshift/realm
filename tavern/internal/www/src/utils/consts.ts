@@ -138,3 +138,10 @@ export type QuestTableRowType = {
     lastUpdated: null | string,
     errorCount: number
 }
+
+export type PaginationPageInfo = {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+}

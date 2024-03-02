@@ -86,6 +86,12 @@ export const GET_QUEST_QUERY = gql`
     query GetQuests($where: QuestWhereInput, $first: Int, $last:Int, $after: Cursor, $before:Cursor, $orderBy: [QuestOrder!]) {
         quests(where: $where, first: $first, last: $last, after: $after, before:$before, orderBy: $orderBy){
             totalCount
+            pageInfo{
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
             edges{
                 node{
                     id

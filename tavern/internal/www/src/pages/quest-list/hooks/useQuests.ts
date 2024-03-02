@@ -1,5 +1,5 @@
 import { useQuery } from "@apollo/client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { TableRowLimit } from "../../../utils/enums";
 import { GET_QUEST_QUERY } from "../../../utils/queries";
 
@@ -19,8 +19,7 @@ export const useQuests = () => {
       }
 
     const constructDefaultQuery = useCallback((searchText?: string, afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
-
-        const defaultRowLimit = TableRowLimit.TaskRowLimit;
+        const defaultRowLimit = TableRowLimit.QuestRowLimit;
         const query = {
           "where": {
             "and": [] as Array<any>
@@ -34,10 +33,35 @@ export const useQuests = () => {
             "field": "CREATED_AT"
           }]
         } as any;
+        const whereParams = [];
+
+        if(searchText){
+          whereParams.push({
+            "or": [
+            {"hasTasksWith": {"outputContains": searchText}},
+            {"nameContains": searchText},
+            {"hasTomeWith": {"nameContains": searchText}}
+          ]
+          });
+        };
+
+        query.where.and = whereParams;
 
         return query
     },[]);
-    const { loading, data, error } = useQuery(GET_QUEST_QUERY,{variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
+
+    const { loading, data, error, refetch } = useQuery(GET_QUEST_QUERY,{variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
+
+    const updateQuestList = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+      const defaultQuery = constructDefaultQuery(search, afterCursor, beforeCursor);
+      // Add filter handling
+      //const queryWithFilter =  constructFilterBasedQuery(filtersSelected , defaultQuery) as any;
+      refetch(defaultQuery);
+    },[search, filtersSelected, constructDefaultQuery, refetch]);
+
+    useEffect(()=> {
+      updateQuestList();
+  },[updateQuestList]);
 
     return {
         data,
@@ -48,5 +72,6 @@ export const useQuests = () => {
         setPage,
         setSearch: handleSearchChange,
         setFiltersSelected: handleFilterChange,
+        updateQuestList
     }
 }

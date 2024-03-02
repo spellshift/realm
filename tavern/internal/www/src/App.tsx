@@ -5,7 +5,6 @@ import {
 } from "@chakra-ui/react";
 import './style.css';
 
-import { Quests } from "./pages/quest-list";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
@@ -16,6 +15,7 @@ import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
 import { Tomes } from "./pages/tomes";
+import Quests from "./pages/quest-list/Quests";
 
 
 const router = createBrowserRouter([
