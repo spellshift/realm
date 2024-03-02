@@ -109,7 +109,6 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
     },[typeFilters]);
 
     const filterBySelected = useCallback((beacons: Array<BeaconType>, selectedBeacons: any) => {
-        console.log("here");
         if(viewOnlySelected){
             return beacons.filter((beacon: BeaconType)=> selectedBeacons[beacon?.id]);
         }
@@ -133,9 +132,6 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
                     hosts[hostId] = beacons[beaconIndex];
                 }
             }
-            console.log(hosts);
-            console.log(Object.values(hosts));
-            console.log(Object.values(hosts).length);
             return Object.values(hosts);
         }
         else{
