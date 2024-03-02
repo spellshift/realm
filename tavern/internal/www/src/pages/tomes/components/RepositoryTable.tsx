@@ -51,26 +51,18 @@ const RepositoryTable = ({ repositories }: {
                 const url = row?.original?.node?.url;
                 const hasLink = url.includes("http");
 
-                return row.getCanExpand() ? (
+                return (
                     <div className="flex flex-row gap-2 items-center" >
                         {row.getIsExpanded() ? <div><ChevronDownIcon className="w-4 h-4" /></div> : <div><ChevronRightIcon className="w-4 h-4" /></div>}
                         <div className="flex flex-row gap-2 flex-wrap">
-                            {hasLink ? <a href={url} target="_blank" rel="noreferrer" className="external-link">{url}</a> : url}
+                            {hasLink ? <a href={url} target="_blank" rel="noreferrer" className="external-link">{url}</a> : <div className="break-all">{url}</div>}
                             {row?.original?.node?.repoType === "FIRST_PARTY" &&
                                 (
                                     <div><Badge colorScheme="purple" px='2'>First Party</Badge></div>
                                 )}
                         </div>
                     </div>
-                ) : (
-                    <div className="flex flex-row gap-2 flex-wrap">
-                        {hasLink ? <a href={url} target="_blank" rel="noreferrer" className="external-link">{url}</a> : url}
-                        {row?.original?.node?.repoType === "FIRST_PARTY" &&
-                            (
-                                <div><Badge colorScheme="purple" px='2'>First Party</Badge></div>
-                            )}
-                    </div>
-                )
+                );
             },
         },
         {
