@@ -257,6 +257,21 @@ ENABLE_TEST_DATA=1 go run ./tavern
 2023/02/24 01:02:37 Starting HTTP server on 0.0.0.0:80
 ```
 
+### Default Tomes
+
+Running Tavern with the `DISABLE_DEFAULT_TOMES` environment variable set will disable uploading the default tomes. This is useful if they are unnecessary, or if you have a custom fork of them available somewhere for import.
+
+```sh
+DISABLE_DEFAULT_TOMES=1 go run ./tavern
+2024/03/02 01:32:22 [WARN] No value for 'HTTP_LISTEN_ADDR' provided, defaulting to 0.0.0.0:80
+2024/03/02 01:32:22 [WARN] MySQL is not configured, using SQLite
+2024/03/02 01:32:22 [WARN] OAuth is not configured, authentication disabled
+2024/03/02 01:32:22 [WARN] No value for 'DB_MAX_IDLE_CONNS' provided, defaulting to 10
+2024/03/02 01:32:22 [WARN] No value for 'DB_MAX_OPEN_CONNS' provided, defaulting to 100
+2024/03/02 01:32:22 [WARN] No value for 'DB_MAX_CONN_LIFETIME' provided, defaulting to 3600
+2024/03/02 01:32:22 Starting HTTP server on 0.0.0.0:80
+```
+
 ### PPROF
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern in the [Developer Guide](/dev-guide/tavern#performance-profiling).
