@@ -47,17 +47,17 @@ export const EditablePageHeader = () => {
         <div className="flex flex-row justify-between w-full">
             <div className="flex flex-row gap-2 items-center">
                 <h3 className="text-xl font-semibold leading-6 text-gray-900">
-                    Task outputs for
+                    Quest tasks for
                 </h3>
                 {data?.quests?.edges[0]?.node?.name &&
-                    <Link to="/tasks">
+                    <Link to="/quests">
                         <Button rightIcon={<CloseIcon />} colorScheme='purple' variant='outline' size="xs">
                             {data?.quests?.edges[0]?.node?.name}
                         </Button>
                     </Link>
                 }
                 {(error || (!data?.quests?.edges[0]?.node?.name && !loading)) &&
-                    <Link to="/tasks">
+                    <Link to="/quests">
                         <Button rightIcon={<CloseIcon />} colorScheme='purple' variant='outline' size="xs">
                             {questId}
                         </Button>
