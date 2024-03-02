@@ -3,20 +3,11 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import Table from "../../../components/tavern-base-ui/Table";
 import { useNavigate } from "react-router-dom";
+import { QuestTableRowType } from "../../../utils/consts";
 
-type QuestTableProps = {
-    id: string,
-    name: string,
-    finished: number,
-    inprogress: number,
-    queued: number,
-    outputCount: number,
-    lastUpdated: string | null,
-    errorCount: number,
-}
 
 type Props = {
-    quests: Array<QuestTableProps>;
+    quests: Array<QuestTableRowType>;
 }
 export const QuestTable = (props: Props) => {
     const { quests } = props;

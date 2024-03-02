@@ -1,14 +1,27 @@
-import { useQuery } from "@apollo/client";
-import { useCallback, useMemo, useState } from "react";
-import { QuestProps, Task } from "../../../utils/consts";
-import { GET_QUEST_QUERY } from "../../../utils/queries";
+import { useCallback, useEffect, useState } from "react";
+import { QuestProps, Task, UserType } from "../../../utils/consts";
 
-export const useQuests = () => {
-    const [search, setSearch] = useState("");
-    const { loading, data, error } = useQuery(GET_QUEST_QUERY);
+type QuestTableRow = {
+    id: string;
+    name: string;
+    tome: string;
+    creator: UserType;
+    finished: number;
+    inprogress: number;
+    queued: number;
+    outputCount: number;
+    lastUpdated: null | string,
+    errorCount: number
+}
 
-    const getInitialQuestsTableData = useCallback((data: any) => {
-        const formattedData = data?.map((questNode: {node: QuestProps}) => {
+export const useFormatQuests = (data: Array<QuestProps>) => {
+    const [loading, setLoading] = useState<boolean>(false);
+    const [formattedData, setFormattedData] = useState<Array<QuestTableRow>>([]);
+
+    const formatQuestsTableData = useCallback((data: any) => {
+        setLoading(true);
+
+        const fData = data?.map((questNode: {node: QuestProps}) => {
             const taskDetails = questNode?.node.tasks.reduce((map: any, task: Task) => {
                 const modMap = { ...map };
 
@@ -54,26 +67,16 @@ export const useQuests = () => {
                 ...taskDetails
             }
         });
-        return formattedData.sort(function (a: any, b: any) { return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime() });
+        setLoading(false);
+        setFormattedData(fData)
     },[]);
 
-    const questTableData = getInitialQuestsTableData(data?.quests?.edges || []);
-
-    const filteredData = useMemo(()=> questTableData.filter((quest: any)=> {
-        const searchTerm = search.toLowerCase();
-        const name = quest?.name.toLowerCase();
-        const tome = quest?.tome.toLowerCase();
-
-        return name.includes(searchTerm) || tome.includes(searchTerm);
-    }),[search, questTableData]);
-
-    const hasData = questTableData.length > 0;
+    useEffect(()=> {
+        formatQuestsTableData(data);
+    },[data, formatQuestsTableData]);
 
     return {
-        hasData,
-        data: filteredData,
+        data: formattedData,
         loading,
-        error,
-        setSearch
     }
 }

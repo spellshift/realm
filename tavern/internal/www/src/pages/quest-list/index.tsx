@@ -1,1 +1,1 @@
-export {QuestList} from "./QuestList";
+export { Quests } from "./Quests";

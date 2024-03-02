@@ -6,17 +6,16 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import FreeTextSearch from "../../components/tavern-base-ui/FreeTextSearch";
 import { PageNavItem } from "../../utils/enums";
 import { QuestTable } from "./components/QuestTable";
-import { useQuests } from "./hooks/useQuest";
 
 export const QuestList = () => {
     const navigate = useNavigate();
-    const {
-        hasData,
-        data,
-        loading,
-        error,
-        setSearch
-    } = useQuests();
+    // const {
+    //     hasData,
+    //     data,
+    //     loading,
+    //     error,
+    //     setSearch
+    // } = useQuests();
 
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
@@ -36,7 +35,7 @@ export const QuestList = () => {
                 </div>
             </div>
             <div className="flex flex-col justify-center items-center">
-                {loading ?
+                {/* {loading ?
                     <EmptyState type={EmptyStateType.loading} label="Loading quests..." />
                     : error ?
                         <EmptyState type={EmptyStateType.error} label="Error loading quests" />
@@ -55,7 +54,7 @@ export const QuestList = () => {
                             </>
                             :
                             <EmptyStateNoQuests />
-                }
+                } */}
             </div>
         </PageWrapper>
     );
