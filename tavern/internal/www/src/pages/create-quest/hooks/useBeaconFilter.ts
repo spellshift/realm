@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { BeaconType } from "../../../utils/consts";
+import { PrincipalAdminTypes } from "../../../utils/enums";
 
 export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any) => {
 
@@ -8,6 +9,8 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
     const [typeFilters, setTypeFilters] = useState([]);
 
     const [viewOnlySelected, setViewOnlySelected] = useState(false);
+
+    const [viewOnlyOnePerHost, setViewOnlyOnePerHost] = useState(false);
 
     function getSearchTypes(typeFilters: any){
         return typeFilters.reduce((accumulator:any, currentValue:any) => {
@@ -114,18 +117,42 @@ export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any
         }
     },[viewOnlySelected]);
 
+    const filterByOnePerHost = useCallback((beacons: Array<BeaconType>) => {
+        if(viewOnlyOnePerHost){
+            const princials = Object.values(PrincipalAdminTypes) as Array<string>;
+            const hosts = {} as {[key: string]: BeaconType};
+
+            for(let beaconIndex in beacons){
+                const hostId = beacons[beaconIndex].host.id;
+
+                if( !(hostId in hosts) ){
+                    hosts[hostId] = beacons[beaconIndex];
+                }
+                else if((princials.indexOf(hosts[hostId].principal) === -1) && (princials.indexOf(beacons[beaconIndex].principal) !== -1)){
+                    hosts[hostId] = beacons[beaconIndex];
+                }
+            }
+            return Object.values(hosts);
+        }
+        else{
+            return beacons;
+        }
+    },[viewOnlyOnePerHost]);
+
     useEffect(()=> {
        let filteredBeacons = filterBySelected(beacons, selectedBeacons);
+       filteredBeacons = filterByOnePerHost(filteredBeacons);
        filteredBeacons = filterByTypes(filteredBeacons);
        setFilteredBeacons(
         filteredBeacons
        );
-    },[beacons, selectedBeacons, typeFilters, viewOnlySelected]);
+    },[beacons, selectedBeacons, typeFilters, viewOnlySelected, viewOnlyOnePerHost]);
 
     return {
         filteredBeacons,
         setTypeFilters,
         viewOnlySelected,
-        setViewOnlySelected
+        setViewOnlySelected,
+        setViewOnlyOnePerHost
     }
 }
