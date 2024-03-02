@@ -22,8 +22,7 @@ const QuestFormatWrapper: FC<QuestFormatWrapperProps> = ({
     setPage,
     updateQuestList
 }) => {
-    const { loading: formatLoading, data: formattedData } = useFormatQuests(data);
-    console.log(formattedData);
+    const { data: formattedData } = useFormatQuests(data);
     return (
         <div className="py-4 bg-white rounded-lg shadow-lg mt-2 flex flex-col gap-1 w-full">
             <QuestTable quests={formattedData} />
