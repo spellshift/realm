@@ -19,8 +19,10 @@ import (
 var (
 	// EnvEnableTestData if set will populate the database with test data.
 	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
+	// EnvDisableDefaultTomes will prevent the default tomes from being imported on startup.
 	EnvEnableTestData       = EnvString{"ENABLE_TEST_DATA", ""}
 	EnvEnableTestRunAndExit = EnvString{"ENABLE_TEST_RUN_AND_EXIT", ""}
+	EnvDisableDefaultTomes  = EnvString{"DISABLE_DEFAULT_TOMES", ""}
 
 	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
 	// EnvHTTPMetricsAddr sets the address (ip:port) for the HTTP metrics server to bind to.
@@ -116,6 +118,11 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 func (cfg *Config) NewGitImporter(client *ent.Client) *tomes.GitImporter {
 	var options []tomes.GitImportOption
 	return tomes.NewGitImporter(client, options...)
+}
+
+// IsDefaultTomeImportEnabled returns true default tomes should be imported.
+func (cfg *Config) IsDefaultTomeImportEnabled() bool {
+	return EnvDisableDefaultTomes.String() == ""
 }
 
 // IsMetricsEnabled returns true if the /metrics http endpoint has been enabled.
