@@ -51,7 +51,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)
-
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
@@ -62,6 +61,18 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetPrincipal("root").
 					SaveX(ctx),
 			)
+			if groupNum == 1 {
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(600000).
+						SetPrincipal("jane").
+						SaveX(ctx),
+				)
+			}
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().

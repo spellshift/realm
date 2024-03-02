@@ -36,7 +36,8 @@ const BeaconStep = (props: Props) => {
     const {
         filteredBeacons,
         setTypeFilters,
-        setViewOnlySelected
+        setViewOnlySelected,
+        setViewOnlyOnePerHost
     } = useBeaconFilter(beacons, selectedBeacons);
 
     const toggleCheck = useCallback((inputName: any) => {
@@ -45,7 +46,7 @@ const BeaconStep = (props: Props) => {
             newState[inputName] = !currentState[inputName];
             return newState;
         });
-    }, []);
+    }, [setSelectedBeacons]);
 
     const handleCheckAllFiltered = useCallback(() => {
         setSelectedBeacons((currentState: any) => {
@@ -55,7 +56,7 @@ const BeaconStep = (props: Props) => {
             });
             return newState;
         });
-    }, [filteredBeacons]);
+    }, [filteredBeacons, setSelectedBeacons]);
 
     const handleUnCheckAllFiltered = useCallback(() => {
         setSelectedBeacons((currentState: any) => {
@@ -65,7 +66,7 @@ const BeaconStep = (props: Props) => {
             });
             return newState;
         });
-    }, [filteredBeacons]);
+    }, [filteredBeacons, setSelectedBeacons]);
 
     const cellRenderer = (props: any, width: any) => {
         const { columnIndex, key, rowIndex, style } = props;
@@ -94,15 +95,23 @@ const BeaconStep = (props: Props) => {
         <div className="flex flex-col gap-4">
             <Stack direction="column" gap="4">
                 <StackItem>
-                    <div className="flex flex-row justify-between gap-8">
-                        <div className=" flex-1">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="col-span-1 md:col-span-2">
                             <BeaconFilterBar setFiltersSelected={setTypeFilters} groups={groups} services={services} beacons={beacons} hosts={hosts} />
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <FormLabel htmlFor='isSelected'>
-                                <Heading size="sm" >Filter by selected</Heading>
-                            </FormLabel>
-                            <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value) => !value)} />
+                        <div className="flex-1 flex flex-col gap-2">
+                            <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
+                                <FormLabel htmlFor='isSelected' className="mt-1">
+                                    <Heading size="sm" >View only selected beacons</Heading>
+                                </FormLabel>
+                                <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value) => !value)} />
+                            </div>
+                            <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
+                                <FormLabel htmlFor='isSelected' className="mt-1">
+                                    <Heading size="sm" >View one beacon per host</Heading>
+                                </FormLabel>
+                                <Switch id='isOnePerHost' className="pt-1" colorScheme="purple" onChange={() => setViewOnlyOnePerHost((value) => !value)} />
+                            </div>
                         </div>
                     </div>
                 </StackItem>
