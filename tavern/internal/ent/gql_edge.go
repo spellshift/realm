@@ -164,16 +164,25 @@ func (q *Quest) Bundle(ctx context.Context) (*File, error) {
 	return result, MaskNotFound(err)
 }
 
-func (q *Quest) Tasks(ctx context.Context) (result []*Task, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = q.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = q.Edges.TasksOrErr()
+func (q *Quest) Tasks(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TaskOrder, where *TaskWhereInput,
+) (*TaskConnection, error) {
+	opts := []TaskPaginateOption{
+		WithTaskOrder(orderBy),
+		WithTaskFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = q.QueryTasks().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := q.Edges.totalCount[2][alias]
+	if nodes, err := q.NamedTasks(alias); err == nil || hasTotalCount {
+		pager, err := newTaskPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &TaskConnection{Edges: []*TaskEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return q.QueryTasks().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (q *Quest) Creator(ctx context.Context) (*User, error) {

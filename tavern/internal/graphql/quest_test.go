@@ -181,7 +181,11 @@ func newCreateQuestTest(gqlClient *client.Client, beaconIDs []int, input ent.Cre
 		mut := `mutation newCreateQuestTest($beaconIDs: [ID!]!, $input: CreateQuestInput!) { createQuest(beaconIDs:$beaconIDs, input:$input) {
 			id
 			tasks {
-				id
+				edges {
+					node {
+						id
+					}
+				}
 			}
 		} }`
 
@@ -189,8 +193,12 @@ func newCreateQuestTest(gqlClient *client.Client, beaconIDs []int, input ent.Cre
 		var resp struct {
 			CreateQuest struct {
 				ID    string
-				Tasks []struct {
-					ID string
+				Tasks struct {
+					Edges []struct {
+						Node struct {
+							ID string
+						} `json:"node"`
+					} `json:"edges"`
 				} `json:"tasks"`
 			}
 		}
