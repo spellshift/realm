@@ -6,7 +6,7 @@ import TaskTable from "../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
-import FilterBar from "./FilterBar";
+import FilterBar from "../../components/FilterBar";
 import { TaskPageHeader } from "./TaskPageHeader";
 import { TASK_PAGE_TYPE, useTasks } from "../../hooks/useTasks";
 import { Task } from "../../utils/consts";

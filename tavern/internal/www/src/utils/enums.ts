@@ -26,6 +26,7 @@ export enum SupportedPlatforms {
     Unknown='PLATFORM_UNSPECIFIED'
 }
 export enum TableRowLimit {
+    QuestRowLimit=8,
     TaskRowLimit=8
 }
 export enum PrincipalAdminTypes {
