@@ -1041,8 +1041,25 @@ type Quest implements Node {
   tome: Tome!
   """Bundle file that the executing tome depends on (if any)"""
   bundle: File
-  """Tasks tracking the status and output of individual tome execution on targets"""
-  tasks: [Task!]
+  tasks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Tasks returned from the connection."""
+    orderBy: [TaskOrder!]
+
+    """Filtering options for Tasks returned from the connection."""
+    where: TaskWhereInput
+  ): TaskConnection!
   """User that created the quest if available."""
   creator: User
 }

@@ -127,16 +127,32 @@ export type RepositoryType ={
 }
 
 export type QuestTableRowType = {
-    id: string;
-    name: string;
-    tome: string;
-    creator: UserType;
-    finished: number;
-    inprogress: number;
-    queued: number;
-    outputCount: number;
-    lastUpdated: null | string,
-    errorCount: number
+    node: {
+        id: string;
+        name: string;
+        tome: string;
+        creator: UserType;
+        lastUpdatedTask: {
+            edges: {
+                node: {
+                    lastModifiedAt: string
+                }
+            }
+        }
+        tasksCount: {
+            totalCount: number
+        };
+        tasksFinished: {
+            totalCount: number
+        };
+        tasksOutput: {
+            totalCount: number
+        };
+        tasksError:{
+            totalCount: number
+        };
+        lastModifiedAt: null | string,
+    }
 }
 
 export type PaginationPageInfo = {

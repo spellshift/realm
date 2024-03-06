@@ -24,10 +24,14 @@ export const EditablePageHeader = () => {
                             paramDefs
                         }
                         tasks{
-                            beacon{
-                                id
-                                lastSeenAt
-                                interval
+                            edges{
+                                node{
+                                    beacon{
+                                        id
+                                        lastSeenAt
+                                        interval
+                                    }
+                                }
                             }
                         }
                     }

@@ -4,7 +4,7 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import { Button } from '@chakra-ui/react'
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
 import { Task, Tome } from '../../utils/consts'
-import { useCreateQuest } from './useCreateQuest'
+import { LimitedTaskNode, useCreateQuest } from './useCreateQuest'
 
 
 export const CreateQuestDropdown = ({
@@ -18,7 +18,9 @@ export const CreateQuestDropdown = ({
     name: string,
     originalParms: string,
     tome: Tome,
-    tasks: Array<Task>
+    tasks: {
+        edges: Array<LimitedTaskNode>
+    }
 }) => {
     const {
         handleCreateQuestWithNewTome,

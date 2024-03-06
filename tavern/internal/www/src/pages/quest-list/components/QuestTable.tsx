@@ -13,18 +13,17 @@ export const QuestTable = (props: Props) => {
     const { quests } = props;
     const navigate = useNavigate();
 
-
     const currentDate = new Date();
 
     const onToggle = (row: any) => {
-        navigate(`/tasks/${row?.original?.id}`)
+        navigate(`/tasks/${row?.original?.node?.id}`)
     }
 
     const columns: ColumnDef<any>[] = [
         {
             id: "name",
             header: 'Quest details',
-            accessorFn: row => row,
+            accessorFn: row => row?.node,
             footer: props => props.column.id,
             enableSorting: false,
             minSize: 200,
@@ -32,51 +31,35 @@ export const QuestTable = (props: Props) => {
                 const questData = cellData.getValue();
                 return (
                     <div className="flex flex-col">
-                        <div>{questData.name}</div>
+                        <div>{questData?.name}</div>
                         <div className="text-sm flex flex-row gap-1 items-center text-gray-500">
-                            {questData?.tome}
+                            {questData?.tome?.name}
                         </div>
                     </div>
                 );
             },
         },
         {
-            id: "lastUpdated",
+            id: "lastModifiedAt",
             header: 'Updated',
             maxSize: 100,
-            accessorFn: row => formatDistance(new Date(row.lastUpdated), currentDate),
+            accessorFn: row => formatDistance(new Date(row?.node?.lastUpdatedTask?.edges[0].node.lastModifiedAt), currentDate),
             footer: props => props.column.id,
-            sortingFn: (
-                rowA,
-                rowB,
-            ) => {
-                const numA = new Date(rowA?.original?.lastUpdated as string);
-                const numB = new Date(rowB?.original?.lastUpdated as string);
-
-                return numA < numB ? 1 : numA > numB ? -1 : 0;
-            },
             enableSorting: false,
         },
         {
-            id: "finished",
+            id: "tasksFinished",
             header: 'Finished',
             accessorFn: row => row,
             maxSize: 60,
             cell: (row: any) => {
-                const rowData = row.row.original;
-                const finished = rowData.finished;
-                const allTasks = rowData.inprogress + rowData.queued + rowData.finished;
-
-                if (finished < allTasks) {
-                    return (
-                        <Badge ml='1' px='4' colorScheme='alphaWhite' fontSize="font-base">
-                            {finished}/{allTasks}
-                        </Badge>
-                    );
-                }
+                const rowData = row.getValue();
+                const finished = rowData?.node?.tasksFinished?.totalCount || 0;
+                const allTasks = rowData?.node?.tasksTotal?.totalCount || 0;
+                const colorScheme = finished < allTasks ? "alphaWhite" : "green";
 
                 return (
-                    <Badge ml='1' px='4' colorScheme='green' fontSize="font-base">
+                    <Badge ml='1' px='4' colorScheme={colorScheme} fontSize="font-base">
                         {finished}/{allTasks}
                     </Badge>
                 );
@@ -85,23 +68,18 @@ export const QuestTable = (props: Props) => {
             enableSorting: false,
         },
         {
-            id: "output",
+            id: "tasksOutput",
             header: 'Output',
-            accessorKey: "outputCount",
+            accessorKey: "tasksOutput",
+            accessorFn: row => row?.node?.tasksOutput?.totalCount,
             maxSize: 60,
             cell: (cellData: any) => {
                 const output = cellData.getValue();
 
-                if (output === 0) {
-                    return (
-                        <Badge ml='1' px='4' colorScheme='alphaWhite' fontSize="font-base">
-                            {output}
-                        </Badge>
-                    );
-                }
+                const colorScheme = output === 0 ? "alphaWhite" : 'purple';
 
                 return (
-                    <Badge ml='1' px='4' colorScheme='purple' fontSize="font-base">
+                    <Badge ml='1' px='4' colorScheme={colorScheme} fontSize="font-base">
                         {output}
                     </Badge>
                 );
@@ -110,23 +88,16 @@ export const QuestTable = (props: Props) => {
             enableSorting: false,
         },
         {
-            id: "error",
+            id: "tasksError",
             header: 'Error',
-            accessorKey: "errorCount",
+            accessorFn: row => row?.node?.tasksError?.totalCount,
             maxSize: 60,
             cell: (cellData: any) => {
                 const error = cellData.getValue();
-
-                if (error === 0) {
-                    return (
-                        <Badge ml='1' px='4' colorScheme='alphaWhite' fontSize="font-base">
-                            {error}
-                        </Badge>
-                    );
-                }
+                const colorScheme = error === 0 ? "alphaWhite" : 'red';
 
                 return (
-                    <Badge ml='1' px='4' colorScheme='red' fontSize="font-base">
+                    <Badge ml='1' px='4' colorScheme={colorScheme} fontSize="font-base">
                         {error}
                     </Badge>
                 );
@@ -138,7 +109,7 @@ export const QuestTable = (props: Props) => {
             id: "creator",
             header: 'Creator',
             maxSize: 100,
-            accessorFn: row => row.creator,
+            accessorFn: row => row.node?.creator,
             footer: props => props.column.id,
             enableSorting: false,
             cell: (cellData: any) => {
