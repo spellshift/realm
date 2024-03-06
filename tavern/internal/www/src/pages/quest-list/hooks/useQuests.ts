@@ -24,6 +24,20 @@ export const useQuests = () => {
           "where": {
             "and": [] as Array<any>
           },
+          "whereFinishedTask": {
+            "execFinishedAtNotNil": true
+          },
+          "whereOutputTask":{
+            "outputSizeGT": 0
+          },
+          "whereErrorTask": {
+            "errorNotNil": true
+          },
+          firstTask: 1,
+          orderByTask: [{
+            "direction": "DESC",
+            "field": "LAST_MODIFIED_AT"
+          }],
           "first": beforeCursor ? null : defaultRowLimit,
           "last": beforeCursor ? defaultRowLimit : null,
           "after": afterCursor ? afterCursor : null,

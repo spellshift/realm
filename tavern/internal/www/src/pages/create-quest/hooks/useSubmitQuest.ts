@@ -13,20 +13,6 @@ export const useSubmitQuest = () => {
         mutation CreateQuest ($IDs: [ID!]!, $input: CreateQuestInput!) {
             createQuest(beaconIDs: $IDs, input: $input) {
                 id
-                name
-                tasks{
-                    id
-                    lastModifiedAt
-                    output
-                    execStartedAt
-                    execFinishedAt
-                }
-                tome{
-                    id
-                    name
-                    paramDefs
-                    tactic
-                }
             }
         }
     `;

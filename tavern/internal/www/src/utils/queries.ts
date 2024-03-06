@@ -83,7 +83,19 @@ export const GET_HOST_TASK_SUMMARY = gql`
 `;
 
 export const GET_QUEST_QUERY = gql`
-    query GetQuests($where: QuestWhereInput, $first: Int, $last:Int, $after: Cursor, $before:Cursor, $orderBy: [QuestOrder!]) {
+    query GetQuests(
+        $where: QuestWhereInput,
+        $whereFinishedTask: TaskWhereInput,
+        $whereOutputTask: TaskWhereInput,
+        $whereErrorTask: TaskWhereInput,
+        $firstTask: Int,
+        $orderByTask: [TaskOrder!],
+        $first: Int,
+        $last:Int,
+        $after: Cursor,
+        $before:Cursor,
+        $orderBy: [QuestOrder!]
+    ) {
         quests(where: $where, first: $first, last: $last, after: $after, before:$before, orderBy: $orderBy){
             totalCount
             pageInfo{
@@ -96,19 +108,24 @@ export const GET_QUEST_QUERY = gql`
                 node{
                     id
                     name
-                    tasks{
-                        id
-                        lastModifiedAt
-                        outputSize
-                        execStartedAt
-                        execFinishedAt
-                        createdAt
-                        error
-                        beacon{
-                            id,
-                            lastSeenAt
-                            interval
+                    lastUpdatedTask:tasks(first: $firstTask, orderBy: $orderByTask){
+                        edges{
+                            node{
+                                lastModifiedAt
+                            }
                         }
+                    }
+                    tasksTotal:tasks{
+                        totalCount
+                    }
+                    tasksOutput:tasks(where: $whereOutputTask){
+                        totalCount
+                    }
+                    tasksError:tasks(where: $whereErrorTask){
+                        totalCount
+                    }
+                    tasksFinished:tasks(where: $whereFinishedTask){
+                        totalCount
                     }
                     tome{
                         id

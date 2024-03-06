@@ -1,20 +1,28 @@
 import { useNavigate } from "react-router-dom";
 
-import { Task, Tome } from "../../utils/consts";
+import { BeaconType, Tome } from "../../utils/consts";
 import { checkIfBeaconOffline, constructTomeParams } from "../../utils/utils";
+
+export type LimitedTaskNode = {
+    node: {
+        beacon: BeaconType
+    }
+};
 
 export const useCreateQuest = () => {
     const nav = useNavigate();
 
-    const formatBeaconList = (tasks: Array<Task>) => {
+    const formatBeaconList = (tasks: {
+        edges: Array<LimitedTaskNode>
+    }) => {
         const beaconList = [] as Array<string>;
         const uniqueBeacons = {} as {[key:string]: boolean};
 
-        for(const taskIndex in tasks){
-            const beaconName = tasks[taskIndex].beacon.id;
+        for(const taskIndex in tasks?.edges){
+            const beaconName = tasks?.edges[taskIndex]?.node?.beacon.id;
 
             if( !( beaconName in uniqueBeacons) ){
-                const beaconOffline = checkIfBeaconOffline(tasks[taskIndex].beacon);
+                const beaconOffline = checkIfBeaconOffline(tasks?.edges[taskIndex]?.node?.beacon);
                 uniqueBeacons[beaconName] = !beaconOffline;
             }
         };
@@ -27,9 +35,10 @@ export const useCreateQuest = () => {
         return beaconList;
     };
 
-    const handleCreateQuestWithNewTome = (name: string, tasks: Array<Task>) => {
+    const handleCreateQuestWithNewTome = (name: string, tasks: {
+        edges: Array<LimitedTaskNode>
+    }) => {
         const beacons = formatBeaconList(tasks);
-
         nav("/createQuest", {
             state: {
               step: 1,
@@ -40,7 +49,9 @@ export const useCreateQuest = () => {
     };
 
 
-    const handleCreateQuestWithSameTome = (name: string, originalParms: string, tome: Tome, tasks: Array<Task>) => {
+    const handleCreateQuestWithSameTome = (name: string, originalParms: string, tome: Tome, tasks: {
+        edges: Array<LimitedTaskNode>
+    }) => {
         const beacons = formatBeaconList(tasks);
         const params = constructTomeParams(originalParms, tome?.paramDefs);
 
