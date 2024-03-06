@@ -125,3 +125,23 @@ export type RepositoryType ={
         lastModifiedA?: string;
         publicKey?: string;
 }
+
+export type QuestTableRowType = {
+    id: string;
+    name: string;
+    tome: string;
+    creator: UserType;
+    finished: number;
+    inprogress: number;
+    queued: number;
+    outputCount: number;
+    lastUpdated: null | string,
+    errorCount: number
+}
+
+export type PaginationPageInfo = {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+}
