@@ -1,3 +1,4 @@
+mod bsod_impl;
 mod dll_inject_impl;
 mod dll_reflect_impl;
 mod exec_impl;
@@ -42,6 +43,10 @@ crate::eldritch_lib!(SysLibrary, "sys_library");
 #[rustfmt::skip]
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
+    #[allow(unused_variables)]
+    fn bsod(this: &SysLibrary) -> anyhow::Result<NoneType> {
+        bsod_impl::bsod_impl()
+    }
     #[allow(unused_variables)]
     fn exec<'v>(this: &SysLibrary, starlark_heap: &'v Heap, path: String, args: UnpackList<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
         exec_impl::exec(starlark_heap, path, args.items, disown)
