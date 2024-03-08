@@ -109,7 +109,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_bsd", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]"#),
+            want_text: format!("{}\n", r#"["bsod", "dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid", "get_reg", "get_user", "hostname", "is_bsd", "is_linux", "is_macos", "is_windows", "shell", "write_reg_hex", "write_reg_int", "write_reg_str"]"#),
             want_error: None,
         },
         pivot_bindings: TestCase {
