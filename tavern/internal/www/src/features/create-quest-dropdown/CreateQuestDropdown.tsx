@@ -3,7 +3,7 @@ import { Fragment } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import { Button } from '@chakra-ui/react'
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
-import { Task, Tome } from '../../utils/consts'
+import { Tome } from '../../utils/consts'
 import { LimitedTaskNode, useCreateQuest } from './useCreateQuest'
 
 

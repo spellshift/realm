@@ -6,9 +6,9 @@ import { TaskOutput } from "../../../features/task-output";
 import TaskTable from "../../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../../components/tavern-base-ui/TablePagination";
-import { TableRowLimit } from "../../../utils/enums";
+import { DEFAULT_QUERY_TYPE, TableRowLimit } from "../../../utils/enums";
 import FreeTextSearch from "../../../components/tavern-base-ui/DebouncedFreeTextSearch";
-import { TASK_PAGE_TYPE, useTasks } from "../../../hooks/useTasks";
+import { useTasks } from "../../../hooks/useTasks";
 
 const HostTasks = () => {
     const { hostId } = useParams();
@@ -20,7 +20,7 @@ const HostTasks = () => {
         setPage,
         setSearch,
         updateTaskList
-    } = useTasks(TASK_PAGE_TYPE.hostIDQuery, hostId);
+    } = useTasks(DEFAULT_QUERY_TYPE.hostIDQuery, hostId);
 
     const [isOpen, setOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<any | null>(null);
