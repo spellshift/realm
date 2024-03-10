@@ -1,7 +1,7 @@
 use super::super::insert_dict_kv;
 use super::{File, FileType};
 use anyhow::{Context, Result};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::DateTime;
 use glob::glob;
 use starlark::{
     collections::SmallMap,
@@ -98,7 +98,7 @@ fn create_file_from_pathbuf(path_entry: PathBuf) -> Result<File> {
         }
     };
 
-    let naive_datetime = match NaiveDateTime::from_timestamp_opt(timestamp, 0) {
+    let naive_datetime = match DateTime::from_timestamp(timestamp, 0) {
         Some(local_naive_datetime) => local_naive_datetime,
         None => {
             return Err(anyhow::anyhow!(
@@ -107,7 +107,6 @@ fn create_file_from_pathbuf(path_entry: PathBuf) -> Result<File> {
             ))
         }
     };
-    let time_modified: DateTime<Utc> = DateTime::from_naive_utc_and_offset(naive_datetime, Utc);
 
     Ok(File {
         name: file_name,
@@ -117,7 +116,7 @@ fn create_file_from_pathbuf(path_entry: PathBuf) -> Result<File> {
         owner: owner_username,
         group: group_id.to_string(),
         permissions: permissions.to_string(),
-        time_modified: time_modified.to_string(),
+        time_modified: naive_datetime.to_string(),
     })
 }
 
@@ -247,7 +246,6 @@ mod tests {
         runtime.finish().await;
 
         // Read Messages
-        let expected_output = format!("{}\n", path);
         let mut found = false;
         for msg in runtime.messages() {
             if let Message::ReportText(m) = msg {
@@ -374,6 +372,7 @@ for f in file.list(input_params['path']):
                 found = true;
             }
         }
+        assert!(found);
 
         Ok(())
     }
