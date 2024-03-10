@@ -85,6 +85,7 @@ export const GET_HOST_TASK_SUMMARY = gql`
 export const GET_QUEST_QUERY = gql`
     query GetQuests(
         $where: QuestWhereInput,
+        $whereTotalTask: TaskWhereInput,
         $whereFinishedTask: TaskWhereInput,
         $whereOutputTask: TaskWhereInput,
         $whereErrorTask: TaskWhereInput,
@@ -115,11 +116,97 @@ export const GET_QUEST_QUERY = gql`
                             }
                         }
                     }
-                    tasksTotal:tasks{
+                    tasksTotal:tasks(where: $whereTotalTask){
                         totalCount
                     }
                     tasksOutput:tasks(where: $whereOutputTask){
                         totalCount
+                    }
+                    tasksError:tasks(where: $whereErrorTask){
+                        totalCount
+                    }
+                    tasksFinished:tasks(where: $whereFinishedTask){
+                        totalCount
+                    }
+                    tome{
+                        id
+                        name
+                        description
+                        eldritch
+                        tactic
+                        paramDefs
+                        supportModel
+                    }
+                    creator {
+                            id
+                            name
+                            photoURL
+                            isActivated
+                            isAdmin
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_QUEST_BY_ID_QUERY = gql`
+    query GetQuests(
+        $where: QuestWhereInput,
+        $whereTotalTask: TaskWhereInput,
+        $whereFinishedTask: TaskWhereInput,
+        $whereOutputTask: TaskWhereInput,
+        $whereErrorTask: TaskWhereInput,
+        $firstTask: Int,
+        $orderByTask: [TaskOrder!],
+        $first: Int,
+        $last:Int,
+        $after: Cursor,
+        $before:Cursor,
+        $orderBy: [QuestOrder!]
+    ) {
+        quests(where: $where, first: $first, last: $last, after: $after, before:$before, orderBy: $orderBy){
+            totalCount
+            pageInfo{
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
+            edges{
+                node{
+                    id
+                    name
+                    lastUpdatedTask:tasks(first: $firstTask, orderBy: $orderByTask){
+                        edges{
+                            node{
+                                lastModifiedAt
+                            }
+                        }
+                    }
+                    tasksTotal:tasks(where: $whereTotalTask){
+                        totalCount
+                        edges{
+                            node{
+                                beacon{
+                                    id
+                                    lastSeenAt
+                                    interval
+                                }
+                            }
+                        }
+                    }
+                    tasksOutput:tasks(where: $whereOutputTask){
+                        totalCount
+                        edges{
+                            node{
+                                beacon{
+                                    id
+                                    lastSeenAt
+                                    interval
+                                }
+                            }
+                        }
                     }
                     tasksError:tasks(where: $whereErrorTask){
                         totalCount
