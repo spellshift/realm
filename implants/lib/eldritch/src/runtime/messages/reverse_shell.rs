@@ -119,6 +119,10 @@ impl Dispatcher for ReverseShellMessage {
         log::info!("started reverse shell gRPC stream");
 
         transport.reverse_shell(output_rx, input_tx).await?;
+
+        #[cfg(debug_assertions)]
+        log::info!("finished reverse shell gRPC stream");
+
         write_handle.await?;
         read_handle.await?;
 

