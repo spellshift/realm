@@ -143,19 +143,19 @@ fn get_system_proxy() -> Option<String> {
                 log::debug!("Didn't find https_proxy env var: {}", _e);
             }
         }
-        return None;
+        None
     }
     #[cfg(target_os = "windows")]
     {
-        return None;
+        None
     }
     #[cfg(target_os = "macos")]
     {
-        return None;
+        None
     }
     #[cfg(target_os = "freebsd")]
     {
-        return None;
+        None
     }
 }
 
