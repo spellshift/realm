@@ -43,7 +43,6 @@ var upgrader = websocket.Upgrader{
 type Receiver struct {
 	id string
 	ch chan *pubsub.Message
-	// ws *websocket.Conn
 }
 
 // NewReceiver initializes a new receiver that will only receive messages with the provided ID.
@@ -58,6 +57,99 @@ func NewReceiver(id string) *Receiver {
 // Messages returns a channel for receiving new pubsub messages.
 func (r *Receiver) Messages() <-chan *pubsub.Message {
 	return r.ch
+}
+
+type connector struct {
+	*Receiver
+	mux *Mux
+	ws  *websocket.Conn
+}
+
+// WriteToWebsocket will read messages from the Mux and write them to the underlying websocket.
+func (c *connector) WriteToWebsocket(ctx context.Context) {
+	defer c.ws.Close()
+
+	// Register with mux to receive messages
+	c.mux.Register(c.Receiver)
+	defer c.mux.Unregister(c.Receiver)
+
+	// Keep Alive
+	ticker := time.NewTicker(pingPeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+			return
+		case message, ok := <-c.Messages():
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				// The mux closed the channel.
+				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := c.ws.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+			w.Write(message.Body)
+
+			// Add queued messages to the current websocket message.
+			n := len(c.Messages())
+			for i := 0; i < n; i++ {
+				additionalMsg := <-c.Messages()
+				w.Write(additionalMsg.Body)
+			}
+
+			if err := w.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.ws.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
+}
+
+// ReadFromWebsocket will read messages from the underlying websocket and send them to the configured Mux.
+func (c *connector) ReadFromWebsocket(ctx context.Context) {
+	defer c.ws.Close()
+
+	// Configure connection info
+	c.ws.SetReadLimit(maxMessageSize)
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error {
+		c.ws.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			_, message, err := c.ws.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Printf("[WS][ERROR] websocket closed unexpectedly: %v", err)
+				}
+				return
+			}
+			if err := c.mux.Send(ctx, &pubsub.Message{
+				Body: message,
+				Metadata: map[string]string{
+					"id": c.id,
+				},
+			}); err != nil {
+				log.Printf("[WS][ERROR] failed to publish message: %v", err)
+				return
+			}
+		}
+	}
 }
 
 // A Mux enables multiplexing subscription messages to multiple Receivers.
@@ -179,15 +271,15 @@ func (mux *Mux) poll(ctx context.Context) error {
 // It requires a query param "shell_id" be specified (must be an integer).
 // This ID represents which Shell ent the websocket will connect to.
 func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		log.Printf("[WS] New Shell Websocket Connection")
 
-		// conn, err := upgrader.Upgrade(w, r, nil)
-		// if err != nil {
-		// 	log.Printf("[WS] Failed to start connection: %v", err)
-		// 	return
-		// }
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Printf("[WS][ERROR] Failed to upgrade connection to websocket: %v", err)
+			return
+		}
 
 		// Parse Shell ID
 		shellIDStr := r.URL.Query().Get("shell_id")
@@ -203,138 +295,17 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 
 		// Start Websocket
 		log.Printf("[WS] New Shell Websocket Connection (shell_id=%d)", shellID)
-		// handler := newShellWebsocketHandler(r.Context(), graph, shellID, mux)
-		// handler.ServeHTTP(w, r)
+		rcv := NewReceiver(shellIDStr)
+
+		// Create Connector
+		conn := &connector{
+			Receiver: rcv,
+			mux:      mux,
+			ws:       ws,
+		}
+
+		// Read & Write
+		go conn.ReadFromWebsocket(ctx)
+		go conn.WriteToWebsocket(ctx)
 	})
 }
-
-func
-
-
-// // readPump pumps messages from the websocket connection to the hub.
-// //
-// // The application runs readPump in a per-connection goroutine. The application
-// // ensures that there is at most one reader on a connection by executing all
-// // reads from this goroutine.
-// func (c *Client) readPump() {
-// 	defer func() {
-// 		c.hub.unregister <- c
-// 		c.conn.Close()
-// 	}()
-// 	c.conn.SetReadLimit(maxMessageSize)
-// 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-// 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-// 	for {
-// 		_, message, err := c.conn.ReadMessage()
-// 		if err != nil {
-// 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-// 				log.Printf("error: %v", err)
-// 			}
-// 			break
-// 		}
-// 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-// 		c.hub.broadcast <- message
-// 	}
-// }
-
-// // writePump pumps messages from the hub to the websocket connection.
-// //
-// // A goroutine running writePump is started for each connection. The
-// // application ensures that there is at most one writer to a connection by
-// // executing all writes from this goroutine.
-// func (c *Client) writePump() {
-// 	ticker := time.NewTicker(pingPeriod)
-// 	defer func() {
-// 		ticker.Stop()
-// 		c.conn.Close()
-// 	}()
-// 	for {
-// 		select {
-// 		case message, ok := <-c.send:
-// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-// 			if !ok {
-// 				// The hub closed the channel.
-// 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-// 				return
-// 			}
-
-// 			w, err := c.conn.NextWriter(websocket.TextMessage)
-// 			if err != nil {
-// 				return
-// 			}
-// 			w.Write(message)
-
-// 			// Add queued chat messages to the current websocket message.
-// 			n := len(c.send)
-// 			for i := 0; i < n; i++ {
-// 				w.Write(newline)
-// 				w.Write(<-c.send)
-// 			}
-
-// 			if err := w.Close(); err != nil {
-// 				return
-// 			}
-// 		case <-ticker.C:
-// 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-// 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-// 				return
-// 			}
-// 		}
-// 	}
-// }
-
-// func newShellWebsocketHandler(ctx context.Context, graph *ent.Client, shellID int, mux *Mux) websocket.Handler {
-// 	return func(ws *websocket.Conn) {
-// 		ctx := ws.Request().Context()
-
-// 		// Load corresponding Shell
-// 		shell, err := graph.Shell.Get(ctx, shellID)
-// 		if err != nil {
-// 			// TODO: Handle Error
-// 			return
-// 		}
-
-// 		// Write all existing Shell output
-// 		if err := websocket.JSON.Send(ws, &pubsub.Message{
-// 			Body: shell.Output,
-// 		}); err != nil {
-// 			// TODO: Handle Error
-// 			return
-// 		}
-
-// 		// Register output receiver
-// 		r := NewReceiver(fmt.Sprintf("%d", shellID))
-// 		mux.Register(r)
-// 		defer mux.Unregister(r)
-
-// 		done := make(chan struct{}, 1)
-// 		go func() {
-// 			for msg := range r.Messages() {
-// 				if err := websocket.JSON.Send(ws, msg); err != nil {
-// 					// TODO: Handle Error
-// 					return
-// 				}
-// 			}
-// 			done <- struct{}{}
-// 		}()
-
-// 		// Receive Websocket Messages and publish them
-// 		for {
-// 			select {
-// 			case <-done:
-// 			case <-ctx.Done():
-// 				return
-// 			default:
-// 				var msg *pubsub.Message
-// 				if err := websocket.JSON.Receive(ws, msg); err != nil {
-// 					// TODO: Handle Error
-// 					return
-// 				}
-// 				if err := mux.Send(ctx, msg); err != nil {
-// 					// TODO: Handle Error
-// 					return
-// 				}
-// 			}
-// 		}
-// 	}
-// }
