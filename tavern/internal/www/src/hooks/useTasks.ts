@@ -2,17 +2,12 @@ import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { FilterBarOption } from "../utils/consts";
-import { TableRowLimit } from "../utils/enums";
+import { DEFAULT_QUERY_TYPE, TableRowLimit } from "../utils/enums";
 import { GET_TASK_QUERY } from "../utils/queries";
 import { getFilterNameByTypes } from "../utils/utils";
 
-export enum TASK_PAGE_TYPE{
-    hostIDQuery="HOST_ID_QUERY",
-    questIdQuery= "QUEST_ID_QUERY",
-    questDetailsQuery= "QUEST_DETAILS_QUERY",
-}
 
-export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
+export const useTasks = (defaultQuery?: DEFAULT_QUERY_TYPE, id?: string) => {
     // store filters
     const {state} = useLocation();
     const [page, setPage] = useState<number>(1);
@@ -57,7 +52,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
       } as any;
 
       switch(defaultQuery){
-            case TASK_PAGE_TYPE.hostIDQuery:
+            case DEFAULT_QUERY_TYPE.hostIDQuery:
               const hostParams = [{
                   "hasBeaconWith": {
                       "hasHostWith": {
@@ -81,14 +76,14 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
 
               query.where.and = hostParams;
               break;
-            case TASK_PAGE_TYPE.questIdQuery:
+            case DEFAULT_QUERY_TYPE.questIdQuery:
                 const include = [{"hasQuestWith": {"id": id}}] as Array<any>;
 
                 if(searchText){include.push({"outputContains": searchText})};
 
                 query.where.and = include;
                 break;
-            case TASK_PAGE_TYPE.questDetailsQuery:
+            case DEFAULT_QUERY_TYPE.questDetailsQuery:
             default:
                 const text = searchText || "";
                 query.where.and = [{
@@ -109,7 +104,7 @@ export const useTasks = (defaultQuery?: TASK_PAGE_TYPE, id?: string) => {
 
     const constructFilterBasedQuery = useCallback((filtersSelected: Array<any>, currentQuery: any) => {
       const fq = currentQuery;
-      const {beacon: beacons, group: groups, service: services, platform: platforms, hosts=[]} = getFilterNameByTypes(filtersSelected);
+      const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts} = getFilterNameByTypes(filtersSelected);
 
       if(beacons.length > 0){
             fq.where.and = fq.where.and.concat(

@@ -1,51 +1,17 @@
-import { gql, useQuery } from "@apollo/client";
+import { ApolloError } from "@apollo/client";
 import { CloseIcon } from "@chakra-ui/icons";
 import { Button } from "@chakra-ui/react";
-import { Link, useParams } from "react-router-dom";
+import { FC } from "react";
+import { Link } from "react-router-dom";
 import { CreateQuestDropdown } from "../../features/create-quest-dropdown";
 
-export const EditablePageHeader = () => {
-    const { questId } = useParams();
-
-    const GET_QUEST_NAME = gql`
-        query GetQuests($where: QuestWhereInput) {
-            quests(where: $where){
-                edges{
-                    node{
-                        id
-                        name
-                        parameters
-                        tome{
-                            id
-                            name
-                            description
-                            eldritch
-                            tactic
-                            paramDefs
-                        }
-                        tasks{
-                            edges{
-                                node{
-                                    beacon{
-                                        id
-                                        lastSeenAt
-                                        interval
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }`;
-
-    const { loading, data, error } = useQuery(GET_QUEST_NAME, {
-        variables: {
-            where: {
-                id: questId
-            }
-        }
-    });
+type EditablePageHeaderProps = {
+    questId?: string;
+    data: any;
+    error?: ApolloError | undefined;
+    loading: boolean;
+}
+export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data, error, loading }) => {
 
     return (
         <div className="flex flex-row justify-between w-full">
@@ -74,7 +40,7 @@ export const EditablePageHeader = () => {
                     name={data?.quests?.edges[0]?.node?.name}
                     originalParms={data?.quests?.edges[0]?.node?.parameters}
                     tome={data?.quests?.edges[0]?.node?.tome}
-                    tasks={data?.quests?.edges[0]?.node?.tasks}
+                    tasks={data?.quests?.edges[0]?.node?.tasksTotal}
                 />
             }
         </div>
