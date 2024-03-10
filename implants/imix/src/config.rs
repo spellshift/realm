@@ -15,6 +15,17 @@ macro_rules! callback_uri {
         }
     };
 }
+
+/*
+ * Compile-time constant for the agent proxy URI, derived from the IMIX_PROXY_URI environment variable during compilation.
+ * Defaults to None if this is unset.
+ */
+macro_rules! proxy_uri {
+    () => {
+        option_env!("IMIX_PROXY_URI")
+    };
+}
+
 /*
  * Compile-time constant for the agent callback URI, derived from the IMIX_CALLBACK_URI environment variable during compilation.
  * Defaults to "http://127.0.0.1:80/grpc" if this is unset.
@@ -110,6 +121,11 @@ impl Default for Config {
 }
 
 fn get_system_proxy() -> Option<String> {
+    let proxy_uri_compile_time_override = proxy_uri!();
+    if let Some(proxy_uri) = proxy_uri_compile_time_override {
+        return Some(proxy_uri.to_string());
+    }
+
     #[cfg(target_os = "linux")]
     {
         match std::env::var("http_proxy") {
@@ -141,8 +157,6 @@ fn get_system_proxy() -> Option<String> {
     {
         return None;
     }
-
-    todo!()
 }
 
 /*
