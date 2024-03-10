@@ -39,5 +39,7 @@ mock! {
         &mut self,
         request: ReportTaskOutputRequest,
     ) -> Result<ReportTaskOutputResponse>;
+
+    async fn shell(&mut self, rx: Receiver<ShellRequest>, tx: Sender<ShellResponse>) -> Result<()>;
     }
 }

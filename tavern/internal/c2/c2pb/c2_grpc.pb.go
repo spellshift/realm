@@ -47,6 +47,7 @@ type C2Client interface {
 	ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error)
 	// Report execution output for a task.
 	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
+	Shell(ctx context.Context, opts ...grpc.CallOption) (C2_ShellClient, error)
 }
 
 type c2Client struct {
@@ -159,6 +160,37 @@ func (c *c2Client) ReportTaskOutput(ctx context.Context, in *ReportTaskOutputReq
 	return out, nil
 }
 
+func (c *c2Client) Shell(ctx context.Context, opts ...grpc.CallOption) (C2_ShellClient, error) {
+	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[2], "/c2.C2/Shell", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &c2ShellClient{stream}
+	return x, nil
+}
+
+type C2_ShellClient interface {
+	Send(*ShellRequest) error
+	Recv() (*ShellResponse, error)
+	grpc.ClientStream
+}
+
+type c2ShellClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2ShellClient) Send(m *ShellRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *c2ShellClient) Recv() (*ShellResponse, error) {
+	m := new(ShellResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // C2Server is the server API for C2 service.
 // All implementations must embed UnimplementedC2Server
 // for forward compatibility
@@ -188,6 +220,7 @@ type C2Server interface {
 	ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error)
 	// Report execution output for a task.
 	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
+	Shell(C2_ShellServer) error
 	mustEmbedUnimplementedC2Server()
 }
 
@@ -212,6 +245,9 @@ func (UnimplementedC2Server) ReportProcessList(context.Context, *ReportProcessLi
 }
 func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutput not implemented")
+}
+func (UnimplementedC2Server) Shell(C2_ShellServer) error {
+	return status.Errorf(codes.Unimplemented, "method Shell not implemented")
 }
 func (UnimplementedC2Server) mustEmbedUnimplementedC2Server() {}
 
@@ -345,6 +381,32 @@ func _C2_ReportTaskOutput_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _C2_Shell_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(C2Server).Shell(&c2ShellServer{stream})
+}
+
+type C2_ShellServer interface {
+	Send(*ShellResponse) error
+	Recv() (*ShellRequest, error)
+	grpc.ServerStream
+}
+
+type c2ShellServer struct {
+	grpc.ServerStream
+}
+
+func (x *c2ShellServer) Send(m *ShellResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *c2ShellServer) Recv() (*ShellRequest, error) {
+	m := new(ShellRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // C2_ServiceDesc is the grpc.ServiceDesc for C2 service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -378,6 +440,12 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ReportFile",
 			Handler:       _C2_ReportFile_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "Shell",
+			Handler:       _C2_Shell_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},

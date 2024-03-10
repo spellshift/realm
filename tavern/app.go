@@ -29,6 +29,7 @@ import (
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 )
@@ -149,27 +150,50 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Request Logging
 	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 
+	// Configure Shell Muxes
+	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
+	go func() {
+		wsShellMux.Start(ctx)
+	}()
+	go func() {
+		grpcShellMux.Start(ctx)
+	}()
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
-		"/status": tavernhttp.Endpoint{Handler: newStatusHandler()},
+		"/status": tavernhttp.Endpoint{
+			Handler:              newStatusHandler(),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/access_token/redirect": tavernhttp.Endpoint{
 			Handler:          auth.NewTokenRedirectHandler(),
 			LoginRedirectURI: "/oauth/login",
 		},
-		"/oauth/login": tavernhttp.Endpoint{Handler: auth.NewOAuthLoginHandler(cfg.oauth, privKey)},
+		"/oauth/login": tavernhttp.Endpoint{
+			Handler:              auth.NewOAuthLoginHandler(cfg.oauth, privKey),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/oauth/authorize": tavernhttp.Endpoint{Handler: auth.NewOAuthAuthorizationHandler(
 			cfg.oauth,
 			pubKey,
 			client,
 			"https://www.googleapis.com/oauth2/v3/userinfo",
 		)},
-		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client, git)},
-		"/c2.C2/":     tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
+		"/graphql": tavernhttp.Endpoint{Handler: newGraphQLHandler(client, git)},
+		"/c2.C2/": tavernhttp.Endpoint{
+			Handler:              newGRPCHandler(client, grpcShellMux),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client, "/cdn/")},
 		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
+		"/shell/ws":   tavernhttp.Endpoint{Handler: stream.NewShellHandler(client, wsShellMux)},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
 			LoginRedirectURI: "/oauth/login",
+			AllowUnactivated: true,
 		},
 		"/playground": tavernhttp.Endpoint{
 			Handler:          playground.Handler("Tavern", "/graphql"),
@@ -261,8 +285,8 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
-func newGRPCHandler(client *ent.Client) http.Handler {
-	c2srv := c2.New(client)
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
+	c2srv := c2.New(client, grpcShellMux)
 	grpcSrv := grpc.NewServer(
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),

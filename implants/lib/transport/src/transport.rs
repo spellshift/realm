@@ -58,4 +58,8 @@ pub trait UnsafeTransport: Clone + Send {
         &mut self,
         request: ReportTaskOutputRequest,
     ) -> Result<ReportTaskOutputResponse>;
+
+    ///
+    /// Open a shell via the transport.
+    async fn shell(&mut self, rx: Receiver<ShellRequest>, tx: Sender<ShellResponse>) -> Result<()>;
 }

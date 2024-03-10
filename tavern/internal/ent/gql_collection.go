@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -1269,6 +1270,100 @@ func newRepositoryPaginateArgs(rv map[string]any) *repositoryPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*RepositoryWhereInput); ok {
 		args.opts = append(args.opts, WithRepositoryFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (s *ShellQuery) CollectFields(ctx context.Context, satisfies ...string) (*ShellQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return s, nil
+	}
+	if err := s.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *ShellQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(shell.Columns))
+		selectedFields = []string{shell.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "createdAt":
+			if _, ok := fieldSeen[shell.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, shell.FieldCreatedAt)
+				fieldSeen[shell.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[shell.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, shell.FieldLastModifiedAt)
+				fieldSeen[shell.FieldLastModifiedAt] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		s.Select(selectedFields...)
+	}
+	return nil
+}
+
+type shellPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ShellPaginateOption
+}
+
+func newShellPaginateArgs(rv map[string]any) *shellPaginateArgs {
+	args := &shellPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &ShellOrder{Field: &ShellOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithShellOrder(order))
+			}
+		case *ShellOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithShellOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*ShellWhereInput); ok {
+		args.opts = append(args.opts, WithShellFilter(v.Filter))
 	}
 	return args
 }

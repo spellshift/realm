@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -57,6 +58,9 @@ func (n *Quest) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Repository) IsNode() {}
+
+// IsNode implements the Node interface check for GQLGen.
+func (n *Shell) IsNode() {}
 
 // IsNode implements the Node interface check for GQLGen.
 func (n *Tag) IsNode() {}
@@ -216,6 +220,18 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 		query := c.Repository.Query().
 			Where(repository.ID(id))
 		query, err := query.CollectFields(ctx, "Repository")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case shell.Table:
+		query := c.Shell.Query().
+			Where(shell.ID(id))
+		query, err := query.CollectFields(ctx, "Shell")
 		if err != nil {
 			return nil, err
 		}
@@ -461,6 +477,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Repository.Query().
 			Where(repository.IDIn(ids...))
 		query, err := query.CollectFields(ctx, "Repository")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case shell.Table:
+		query := c.Shell.Query().
+			Where(shell.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Shell")
 		if err != nil {
 			return nil, err
 		}

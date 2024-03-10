@@ -112,6 +112,13 @@ message ReportTaskOutputRequest {
 
 message ReportTaskOutputResponse {}
 
+message ShellRequest{
+    bytes data = 1;
+}
+message ShellResponse{
+    bytes data = 1;
+}
+
 /*
  * Service
  */
@@ -160,5 +167,5 @@ service C2 {
     rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
 
 
-
+    rpc Shell(stream ShellRequest) returns (stream ShellResponse) {}
 }

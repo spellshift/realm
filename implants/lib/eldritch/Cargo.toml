@@ -32,6 +32,7 @@ nix = { workspace = true }
 notify = { workspace = true }
 object = { workspace = true }
 openssl = { workspace = true, features = ["vendored"] }
+portable_pty = { workspace = true }
 pretty_env_logger = { workspace = true }
 prost-types = { workspace = true }
 regex = { workspace = true }

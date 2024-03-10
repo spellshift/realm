@@ -8,6 +8,7 @@ mod report_finish;
 mod report_process_list;
 mod report_start;
 mod report_text;
+mod shell;
 
 pub use fetch_asset::FetchAssetMessage;
 pub(super) use reduce::reduce;
