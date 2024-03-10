@@ -162,7 +162,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		SetClaimedAt(timeAgo(1 * time.Minute)).
 		SetExecStartedAt(timeAgo(5 * time.Second)).
 		SetExecFinishedAt(timeAgo(5 * time.Second)).
-		SetOutput("Hello World!").
+		SetOutput("Alternative output!").
 		SetQuest(printQuest).
 		SaveX(ctx)
 
