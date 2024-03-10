@@ -157,6 +157,7 @@ type ComplexityRoot struct {
 		Nodes        func(childComplexity int, ids []int) int
 		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
+		Shells       func(childComplexity int) int
 		Tags         func(childComplexity int, where *ent.TagWhereInput) int
 		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
@@ -1001,6 +1002,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Repositories(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.RepositoryOrder), args["where"].(*ent.RepositoryWhereInput)), true
+
+	case "Query.shells":
+		if e.complexity.Query.Shells == nil {
+			break
+		}
+
+		return e.complexity.Query.Shells(childComplexity), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
@@ -3768,6 +3776,7 @@ scalar Uint64
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+  shells: [Shell!]! @requireRole(role: USER)
   me: User!
 }
 `, BuiltIn: false},

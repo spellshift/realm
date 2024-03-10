@@ -112,10 +112,11 @@ message ReportTaskOutputRequest {
 
 message ReportTaskOutputResponse {}
 
-message ShellRequest{
-    bytes data = 1;
+message ReverseShellRequest{
+    int64 task_id = 1;
+    bytes data = 2;
 }
-message ShellResponse{
+message ReverseShellResponse{
     bytes data = 1;
 }
 
@@ -166,6 +167,8 @@ service C2 {
      */
     rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
 
-
-    rpc Shell(stream ShellRequest) returns (stream ShellResponse) {}
+    /*
+     * Open a reverse shell bi-directional stream.
+     */
+    rpc ReverseShell(stream ReverseShellRequest) returns (stream ReverseShellResponse) {}
 }

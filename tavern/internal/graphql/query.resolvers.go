@@ -157,6 +157,15 @@ func (r *queryResolver) Users(ctx context.Context, where *ent.UserWhereInput) ([
 	return query.All(ctx)
 }
 
+// Shells is the resolver for the shells field.
+func (r *queryResolver) Shells(ctx context.Context) ([]*ent.Shell, error) {
+	query, err := r.client.Shell.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	return query.All(ctx)
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	if authUser := auth.UserFromContext(ctx); authUser != nil {

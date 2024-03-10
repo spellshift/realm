@@ -47,7 +47,8 @@ type C2Client interface {
 	ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error)
 	// Report execution output for a task.
 	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
-	Shell(ctx context.Context, opts ...grpc.CallOption) (C2_ShellClient, error)
+	// Open a reverse shell bi-directional stream.
+	ReverseShell(ctx context.Context, opts ...grpc.CallOption) (C2_ReverseShellClient, error)
 }
 
 type c2Client struct {
@@ -160,31 +161,31 @@ func (c *c2Client) ReportTaskOutput(ctx context.Context, in *ReportTaskOutputReq
 	return out, nil
 }
 
-func (c *c2Client) Shell(ctx context.Context, opts ...grpc.CallOption) (C2_ShellClient, error) {
-	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[2], "/c2.C2/Shell", opts...)
+func (c *c2Client) ReverseShell(ctx context.Context, opts ...grpc.CallOption) (C2_ReverseShellClient, error) {
+	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[2], "/c2.C2/ReverseShell", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &c2ShellClient{stream}
+	x := &c2ReverseShellClient{stream}
 	return x, nil
 }
 
-type C2_ShellClient interface {
-	Send(*ShellRequest) error
-	Recv() (*ShellResponse, error)
+type C2_ReverseShellClient interface {
+	Send(*ReverseShellRequest) error
+	Recv() (*ReverseShellResponse, error)
 	grpc.ClientStream
 }
 
-type c2ShellClient struct {
+type c2ReverseShellClient struct {
 	grpc.ClientStream
 }
 
-func (x *c2ShellClient) Send(m *ShellRequest) error {
+func (x *c2ReverseShellClient) Send(m *ReverseShellRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *c2ShellClient) Recv() (*ShellResponse, error) {
-	m := new(ShellResponse)
+func (x *c2ReverseShellClient) Recv() (*ReverseShellResponse, error) {
+	m := new(ReverseShellResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -220,7 +221,8 @@ type C2Server interface {
 	ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error)
 	// Report execution output for a task.
 	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
-	Shell(C2_ShellServer) error
+	// Open a reverse shell bi-directional stream.
+	ReverseShell(C2_ReverseShellServer) error
 	mustEmbedUnimplementedC2Server()
 }
 
@@ -246,8 +248,8 @@ func (UnimplementedC2Server) ReportProcessList(context.Context, *ReportProcessLi
 func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutput not implemented")
 }
-func (UnimplementedC2Server) Shell(C2_ShellServer) error {
-	return status.Errorf(codes.Unimplemented, "method Shell not implemented")
+func (UnimplementedC2Server) ReverseShell(C2_ReverseShellServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReverseShell not implemented")
 }
 func (UnimplementedC2Server) mustEmbedUnimplementedC2Server() {}
 
@@ -381,26 +383,26 @@ func _C2_ReportTaskOutput_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _C2_Shell_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(C2Server).Shell(&c2ShellServer{stream})
+func _C2_ReverseShell_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(C2Server).ReverseShell(&c2ReverseShellServer{stream})
 }
 
-type C2_ShellServer interface {
-	Send(*ShellResponse) error
-	Recv() (*ShellRequest, error)
+type C2_ReverseShellServer interface {
+	Send(*ReverseShellResponse) error
+	Recv() (*ReverseShellRequest, error)
 	grpc.ServerStream
 }
 
-type c2ShellServer struct {
+type c2ReverseShellServer struct {
 	grpc.ServerStream
 }
 
-func (x *c2ShellServer) Send(m *ShellResponse) error {
+func (x *c2ReverseShellServer) Send(m *ReverseShellResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *c2ShellServer) Recv() (*ShellRequest, error) {
-	m := new(ShellRequest)
+func (x *c2ReverseShellServer) Recv() (*ReverseShellRequest, error) {
+	m := new(ReverseShellRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -443,8 +445,8 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "Shell",
-			Handler:       _C2_Shell_Handler,
+			StreamName:    "ReverseShell",
+			Handler:       _C2_ReverseShell_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

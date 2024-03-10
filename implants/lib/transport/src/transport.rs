@@ -61,5 +61,9 @@ pub trait UnsafeTransport: Clone + Send {
 
     ///
     /// Open a shell via the transport.
-    async fn shell(&mut self, rx: Receiver<ShellRequest>, tx: Sender<ShellResponse>) -> Result<()>;
+    async fn reverse_shell(
+        &mut self,
+        rx: Receiver<ReverseShellRequest>,
+        tx: Sender<ReverseShellResponse>,
+    ) -> Result<()>;
 }

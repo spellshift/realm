@@ -40,6 +40,6 @@ mock! {
         request: ReportTaskOutputRequest,
     ) -> Result<ReportTaskOutputResponse>;
 
-    async fn shell(&mut self, rx: Receiver<ShellRequest>, tx: Sender<ShellResponse>) -> Result<()>;
+    async fn reverse_shell(&mut self, rx: Receiver<ReverseShellRequest>, tx: Sender<ReverseShellResponse>) -> Result<()>;
     }
 }

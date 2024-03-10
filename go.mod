@@ -62,7 +62,7 @@ require (
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/google/uuid v1.4.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
 	github.com/hashicorp/hcl/v2 v2.18.1 // indirect

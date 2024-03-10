@@ -187,13 +187,15 @@ pub struct ReportTaskOutputRequest {
 pub struct ReportTaskOutputResponse {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ShellRequest {
-    #[prost(bytes = "vec", tag = "1")]
+pub struct ReverseShellRequest {
+    #[prost(int64, tag = "1")]
+    pub task_id: i64,
+    #[prost(bytes = "vec", tag = "2")]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ShellResponse {
+pub struct ReverseShellResponse {
     #[prost(bytes = "vec", tag = "1")]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
@@ -438,11 +440,15 @@ pub mod c2_client {
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
             self.inner.unary(req, path, codec).await
         }
-        pub async fn shell(
+        ///
+        /// Open a reverse shell bi-directional stream.
+        pub async fn reverse_shell(
             &mut self,
-            request: impl tonic::IntoStreamingRequest<Message = super::ShellRequest>,
+            request: impl tonic::IntoStreamingRequest<
+                Message = super::ReverseShellRequest,
+            >,
         ) -> std::result::Result<
-            tonic::Response<tonic::codec::Streaming<super::ShellResponse>>,
+            tonic::Response<tonic::codec::Streaming<super::ReverseShellResponse>>,
             tonic::Status,
         > {
             self.inner
@@ -455,9 +461,9 @@ pub mod c2_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/c2.C2/Shell");
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReverseShell");
             let mut req = request.into_streaming_request();
-            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "Shell"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReverseShell"));
             self.inner.streaming(req, path, codec).await
         }
     }

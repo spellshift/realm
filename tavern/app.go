@@ -189,7 +189,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client, "/cdn/")},
 		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
-		"/shell/ws":   tavernhttp.Endpoint{Handler: stream.NewShellHandler(client, wsShellMux)},
+		"/shell/ws/":  tavernhttp.Endpoint{Handler: stream.NewShellHandler(client, wsShellMux)},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
 			LoginRedirectURI: "/oauth/login",
