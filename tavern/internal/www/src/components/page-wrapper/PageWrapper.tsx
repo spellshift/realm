@@ -9,7 +9,6 @@ import {
   BugAntIcon,
   PresentationChartBarIcon,
   BookOpenIcon,
-  DocumentTextIcon,
   ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline'
 
@@ -23,7 +22,6 @@ const navigation = [
   { name: PageNavItem.dashboard, href: '/dashboard', icon: PresentationChartBarIcon, internal: true },
   { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
   { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentListIcon, internal: true },
-  { name: PageNavItem.tasks, href: '/tasks', icon: DocumentTextIcon, internal: true },
   { name: PageNavItem.tomes, href: '/tomes', icon: BookOpenIcon, internal: true },
   { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
   { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
