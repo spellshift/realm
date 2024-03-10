@@ -1,6 +1,11 @@
 use crate::Transport;
 use anyhow::Result;
+use hyper::client::HttpConnector;
+use hyper::service::service_fn;
+use hyper::Uri;
 use pb::c2::*;
+use std::borrow::Borrow;
+use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::codec::ProstCodec;
 use tonic::GrpcMethod;
@@ -21,12 +26,30 @@ pub struct GRPC {
 }
 
 impl Transport for GRPC {
-    fn new(callback: String) -> Result<Self> {
+    fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
-        let channel = endpoint
-            .rate_limit(1, Duration::from_millis(25))
-            .connect_lazy();
+        let mut http = hyper::client::HttpConnector::new();
+        http.enforce_http(false);
+        http.set_nodelay(true);
+
+        let channel = match proxy_uri {
+            Some(proxy_uri_string) => {
+                let proxy: hyper_proxy::Proxy = hyper_proxy::Proxy::new(
+                    hyper_proxy::Intercept::All,
+                    Uri::from_str(proxy_uri_string.as_str())?,
+                );
+                let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
+                proxy_connector.set_tls(None);
+
+                endpoint
+                    .rate_limit(1, Duration::from_millis(25))
+                    .connect_with_connector_lazy(proxy_connector)
+            }
+            None => endpoint
+                .rate_limit(1, Duration::from_millis(25))
+                .connect_lazy(),
+        };
 
         let grpc = tonic::client::Grpc::new(channel);
         Ok(Self { grpc })

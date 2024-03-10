@@ -54,6 +54,7 @@ pub const RETRY_INTERVAL: &str = retry_interval!();
 pub struct Config {
     pub info: pb::c2::Beacon,
     pub callback_uri: String,
+    pub proxy_uri: Option<String>,
     pub retry_interval: u64,
 }
 
@@ -92,6 +93,7 @@ impl Default for Config {
         Config {
             info,
             callback_uri: String::from(CALLBACK_URI),
+            proxy_uri: get_system_proxy(),
             retry_interval: match RETRY_INTERVAL.parse::<u64>() {
                 Ok(i) => i,
                 Err(_err) => {
@@ -100,11 +102,47 @@ impl Default for Config {
                         "failed to parse retry interval constant, defaulting to 5 seconds: {_err}"
                     );
 
-                    5_u64
+                    5
                 }
             },
         }
     }
+}
+
+fn get_system_proxy() -> Option<String> {
+    #[cfg(target_os = "linux")]
+    {
+        match std::env::var("http_proxy") {
+            Ok(val) => return Some(val),
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Didn't find http_proxy env var: {}", _e);
+            }
+        }
+
+        match std::env::var("https_proxy") {
+            Ok(val) => return Some(val),
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Didn't find https_proxy env var: {}", _e);
+            }
+        }
+        return None;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        return None;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        return None;
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+        return None;
+    }
+
+    todo!()
 }
 
 /*
