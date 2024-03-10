@@ -1,10 +1,7 @@
 use crate::Transport;
 use anyhow::Result;
-use hyper::client::HttpConnector;
-use hyper::service::service_fn;
 use hyper::Uri;
 use pb::c2::*;
-use std::borrow::Borrow;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::codec::ProstCodec;
