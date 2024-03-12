@@ -14,6 +14,8 @@ import (
 )
 
 func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
+	orderKey := 0
+
 	ctx := gstream.Context()
 	defer func() {
 		log.Printf("[gRPC] Reverse Shell Closed")
@@ -30,6 +32,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 
 	// Send initial message
 	if err := gstream.Send(&c2pb.ReverseShellResponse{
+		Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_PING,
 		Data: []byte{},
 	}); err != nil {
 		return err
@@ -49,6 +52,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 
 			log.Printf("SENDING TTY INPUT: %q", string(msg.Body))
 			if err := gstream.Send(&c2pb.ReverseShellResponse{
+				Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_DATA,
 				Data: msg.Body,
 			}); err != nil {
 				// TODO: Handle error
@@ -68,16 +72,24 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 			return status.Errorf(codes.Internal, "failed to receive shell request: %v", err)
 		}
 
+		// Ping events are no-ops
+		if req.Kind == c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_PING {
+			continue
+		}
 		// TODO: Update Ent
 
 		log.Printf("PUBLISHING TTY OUTPUT MESSAGE: %q", string(req.Data))
-		srv.mux.Send(ctx, &pubsub.Message{
+		if err := srv.mux.Send(ctx, &pubsub.Message{
 			Body: req.Data,
 			Metadata: map[string]string{
-				"id":   fmt.Sprintf("%d", shell.ID),
-				"size": fmt.Sprintf("%d", len(req.Data)),
+				"id":        fmt.Sprintf("%d", shell.ID),
+				"size":      fmt.Sprintf("%d", len(req.Data)),
+				"order-key": fmt.Sprintf("%d", orderKey),
 			},
-		})
+		}); err != nil {
+			return status.Errorf(codes.Internal, "failed to publish message: %v", err)
+		}
+		orderKey++
 	}
 
 	return nil

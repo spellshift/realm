@@ -38,26 +38,7 @@ const (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-}
-
-// A Receiver is registered with a Mux to receive filtered messages from a pubsub subscription.
-type Receiver struct {
-	id string
-	ch chan *pubsub.Message
-}
-
-// NewReceiver initializes a new receiver that will only receive messages with the provided ID.
-// It must be registered on a Mux to begin receiving messages.
-func NewReceiver(id string) *Receiver {
-	return &Receiver{
-		id: id,
-		ch: make(chan *pubsub.Message, maxRecvMsgBufSize),
-	}
-}
-
-// Messages returns a channel for receiving new pubsub messages.
-func (r *Receiver) Messages() <-chan *pubsub.Message {
-	return r.ch
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 type connector struct {
@@ -99,11 +80,11 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			w.Write(message.Body)
 
 			// Add queued messages to the current websocket message.
-			n := len(c.Messages())
-			for i := 0; i < n; i++ {
-				additionalMsg := <-c.Messages()
-				w.Write(additionalMsg.Body)
-			}
+			// n := len(c.Messages())
+			// for i := 0; i < n; i++ {
+			// 	additionalMsg := <-c.Messages()
+			// 	w.Write(additionalMsg.Body)
+			// }
 
 			if err := w.Close(); err != nil {
 				return
@@ -141,7 +122,6 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 				}
 				return
 			}
-			log.Printf("[%s] PUBLISHING GRPC MESSAGE: %q", c.mux.name, string(message))
 			if err := c.mux.Send(ctx, &pubsub.Message{
 				Body: message,
 				Metadata: map[string]string{
@@ -221,7 +201,7 @@ func (mux *Mux) unregisterReceivers() {
 		select {
 		case r := <-mux.unregister:
 			delete(mux.receivers, r)
-			close(r.ch)
+			r.Close()
 		default:
 			return
 		}
@@ -266,7 +246,7 @@ func (mux *Mux) poll(ctx context.Context) error {
 	// Broadcast Message
 	for r := range mux.receivers {
 		if msg.Metadata["id"] == r.id {
-			r.ch <- msg
+			r.recv(msg)
 		}
 	}
 

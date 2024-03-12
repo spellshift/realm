@@ -1,7 +1,9 @@
 import { PageWrapper } from "../../components/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 import { Terminal } from "@xterm/xterm";
+import { AttachAddon } from 'xterm-addon-attach';
 import React, { useState, useEffect, useRef } from 'react';
+import '@xterm/xterm/css/xterm.css'
 
 const Shell = () => {
     const term = new Terminal();
@@ -15,8 +17,10 @@ const Shell = () => {
         if (term && terminalRef.current) {
             term.open(terminalRef.current);
         }
-        const socket = new WebSocket('ws://127.0.0.1:80/shell/ws');
-
+        // TODO: Don't hardcode this
+        const socket = new WebSocket('ws://127.0.0.1:80/shell/ws?shell_id=34359738369');
+        const attachAddon = new AttachAddon(socket);
+        term.loadAddon(attachAddon);
     }, [term, terminalRef]);
 
     return (
