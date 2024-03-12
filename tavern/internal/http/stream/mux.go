@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -83,6 +84,7 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 			return
 		case message, ok := <-c.Messages():
+			log.Printf("GETTING WEBSOCKET MESSAGE: %q", string(message.Body))
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The mux closed the channel.
@@ -139,6 +141,7 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 				}
 				return
 			}
+			log.Printf("[%s] PUBLISHING GRPC MESSAGE: %q", c.mux.name, string(message))
 			if err := c.mux.Send(ctx, &pubsub.Message{
 				Body: message,
 				Metadata: map[string]string{
@@ -156,6 +159,7 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 // Receivers will only receive a Message if their configured ID matches the incoming metadata of a Message.
 // Additionally, new messages may be published using the Mux.
 type Mux struct {
+	name       string
 	pub        *pubsub.Topic
 	sub        *pubsub.Subscription
 	register   chan *Receiver
@@ -164,8 +168,9 @@ type Mux struct {
 }
 
 // NewMux initializes and returns a new Mux with the provided pubsub info.
-func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription) *Mux {
+func NewMux(name string, pub *pubsub.Topic, sub *pubsub.Subscription) *Mux {
 	return &Mux{
+		name:       name,
 		pub:        pub,
 		sub:        sub,
 		register:   make(chan *Receiver, maxRegistrationBufSize),
@@ -177,6 +182,7 @@ func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription) *Mux {
 // Send a new message to the configured publish topic.
 // The provided message MUST include an id metadata.
 func (mux *Mux) Send(ctx context.Context, m *pubsub.Message) error {
+	fmt.Printf("[%s] Publishing: %q", mux.name, string(m.Body))
 	if _, ok := m.Metadata["id"]; !ok {
 		return fmt.Errorf("must set 'id' metadata before publishing")
 	}
@@ -194,6 +200,7 @@ func (mux *Mux) registerReceivers() {
 	for {
 		select {
 		case r := <-mux.register:
+			log.Printf("[MUX] Registering Receiver (id=%q)", r.id)
 			mux.receivers[r] = true
 		default:
 			return
@@ -247,6 +254,8 @@ func (mux *Mux) poll(ctx context.Context) error {
 		return fmt.Errorf("failed to poll for new message: %w", err)
 	}
 
+	log.Printf("[%s] RECEIVED MESSAGE: %q", mux.name, string(msg.Body))
+
 	// Always acknowledge the message
 	defer msg.Ack()
 
@@ -262,7 +271,7 @@ func (mux *Mux) poll(ctx context.Context) error {
 	}
 
 	// Acknowledge Message
-	msg.Ack()
+	// msg.Ack()
 
 	return nil
 }
@@ -305,7 +314,16 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		}
 
 		// Read & Write
-		go conn.ReadFromWebsocket(ctx)
-		go conn.WriteToWebsocket(ctx)
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			conn.ReadFromWebsocket(ctx)
+		}()
+		go func() {
+			defer wg.Done()
+			conn.WriteToWebsocket(ctx)
+		}()
+		wg.Wait()
 	})
 }

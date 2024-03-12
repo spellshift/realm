@@ -1,6 +1,6 @@
 use crate::{config::Config, task::TaskHandle};
 use anyhow::Result;
-use pb::c2::ClaimTasksRequest;
+use pb::c2::{self, ClaimTasksRequest};
 use std::time::{Duration, Instant};
 use transport::{Transport, GRPC};
 
@@ -33,8 +33,8 @@ impl Agent {
             .await?
             .tasks;
 
-        #[cfg(debug_assertions)]
-        log::info!("claimed {} tasks", tasks.len());
+        // #[cfg(debug_assertions)]
+        // log::info!("claimed {} tasks", tasks.len());
 
         for task in tasks {
             let tome = match task.tome {
@@ -106,7 +106,7 @@ impl Agent {
             };
 
             #[cfg(debug_assertions)]
-            log::info!(
+            log::debug!(
                 "completed callback in {}s, sleeping for {}s",
                 start.elapsed().as_secs(),
                 delay.as_secs()

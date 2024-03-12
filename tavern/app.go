@@ -153,10 +153,14 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Shell Muxes
 	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
 	go func() {
-		wsShellMux.Start(ctx)
+		if err := wsShellMux.Start(ctx); err != nil {
+			log.Printf("[ERROR] Webshell Mux Stopped! %v", err)
+		}
 	}()
 	go func() {
-		grpcShellMux.Start(ctx)
+		if err := grpcShellMux.Start(ctx); err != nil {
+			log.Printf("[ERROR] GRPC Mux Stopped! %v", err)
+		}
 	}()
 
 	// Route Map
@@ -212,7 +216,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	srv := tavernhttp.NewServer(
 		routes,
 		withAuthentication,
-		tavernhttp.WithRequestLogging(httpLogger),
+		// tavernhttp.WithRequestLogging(httpLogger),
 	)
 
 	// Configure HTTP/2 (support for without TLS)

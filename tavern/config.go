@@ -153,8 +153,8 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
 	}
 
-	wsMux = stream.NewMux(pubInput, subOutput)
-	grpcMux = stream.NewMux(pubOutput, subInput)
+	wsMux = stream.NewMux("WEBSOCKET_MUX", pubInput, subOutput)
+	grpcMux = stream.NewMux("GRPC_MUX", pubOutput, subInput)
 	return
 }
 
