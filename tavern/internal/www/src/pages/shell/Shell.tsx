@@ -3,7 +3,7 @@ import { PageNavItem } from "../../utils/enums";
 import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import React, { useState, useEffect, useRef } from 'react';
-import '@xterm/xterm/css/xterm.css'
+import '@xterm/xterm/css/xterm.css';
 
 const Shell = () => {
     const term = new Terminal();

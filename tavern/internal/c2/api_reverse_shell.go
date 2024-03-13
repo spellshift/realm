@@ -14,12 +14,12 @@ import (
 )
 
 func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
-	orderKey := 0
-
 	ctx := gstream.Context()
+	var shellID int
 	defer func() {
-		log.Printf("[gRPC] Reverse Shell Closed")
+		log.Printf("[gRPC] Reverse Shell Closed (shell_id=%d)", shellID)
 	}()
+
 	// Create the Shell Entity
 	shell, err := srv.graph.Shell.Create().
 		SetInput([]byte{}).
@@ -28,7 +28,8 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	if err != nil {
 		return fmt.Errorf("failed to create shell: %w", err)
 	}
-	log.Printf("[gRPC] Reverse Shell Started (shell_id=%d)", shell.ID)
+	shellID = shell.ID
+	log.Printf("[gRPC] Reverse Shell Started (shell_id=%d)", shellID)
 
 	// Send initial message
 	if err := gstream.Send(&c2pb.ReverseShellResponse{
@@ -38,19 +39,18 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		return err
 	}
 
-	// Register a Receiver with the stream.Mux
-	recv := stream.NewReceiver(fmt.Sprintf("%d", shell.ID))
-	srv.mux.Register(recv)
-	defer srv.mux.Unregister(recv)
+	// Register a Stream with the stream.Mux
+	pubsubStream := stream.New(fmt.Sprintf("%d", shell.ID))
+	srv.mux.Register(pubsubStream)
+	defer srv.mux.Unregister(pubsubStream)
 
 	// Send Input
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		for msg := range recv.Messages() {
+		for msg := range pubsubStream.Messages() {
 			// TODO: Update Shell Ent
 
-			log.Printf("SENDING TTY INPUT: %q", string(msg.Body))
 			if err := gstream.Send(&c2pb.ReverseShellResponse{
 				Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_DATA,
 				Data: msg.Body,
@@ -78,18 +78,16 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		}
 		// TODO: Update Ent
 
-		log.Printf("PUBLISHING TTY OUTPUT MESSAGE: %q", string(req.Data))
-		if err := srv.mux.Send(ctx, &pubsub.Message{
+		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
 			Body: req.Data,
-			Metadata: map[string]string{
-				"id":        fmt.Sprintf("%d", shell.ID),
-				"size":      fmt.Sprintf("%d", len(req.Data)),
-				"order-key": fmt.Sprintf("%d", orderKey),
-			},
-		}); err != nil {
+			// Metadata: map[string]string{
+			// 	"id":        fmt.Sprintf("%d", shell.ID),
+			// 	"size":      fmt.Sprintf("%d", len(req.Data)),
+			// 	"order-key": fmt.Sprintf("%d", orderKey),
+			// },
+		}, srv.mux); err != nil {
 			return status.Errorf(codes.Internal, "failed to publish message: %v", err)
 		}
-		orderKey++
 	}
 
 	return nil
