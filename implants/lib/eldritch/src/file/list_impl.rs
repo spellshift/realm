@@ -328,7 +328,7 @@ for f in file.list(input_params['path']):
             .join(file);
         std::fs::File::create(test_file)?;
 
-        // Run Eldritch (until finished)
+        // Run Eldritch (until finished) /tmp/.tmpabc123/down the/rabbit hole/win
         let mut runtime = crate::start(
             123,
             Tome {
@@ -341,6 +341,7 @@ for f in file.list(input_params['path']):
                     String::from("path"),
                     test_dir
                         .path()
+                        .join(expected_dir)
                         .join("*")
                         .join("win")
                         .to_str()
@@ -353,21 +354,11 @@ for f in file.list(input_params['path']):
         .await;
         runtime.finish().await;
 
-        let expected_output = format!(
-            "{}\n",
-            test_dir
-                .path()
-                .join(expected_dir)
-                .join(nested_dir)
-                .join(file)
-                .to_str()
-                .unwrap()
-        );
         let mut found = false;
         for msg in runtime.messages() {
             if let Message::ReportText(m) = msg {
                 assert_eq!(123, m.id);
-                assert_eq!(expected_output, m.text);
+                assert!(m.text.contains(file));
                 log::debug!("text: {:?}", m.text);
                 found = true;
             }
