@@ -1,7 +1,4 @@
-use crate::{
-    config::{get_primary_ip, Config},
-    task::TaskHandle,
-};
+use crate::{config::Config, task::TaskHandle};
 use anyhow::Result;
 use pb::c2::ClaimTasksRequest;
 use std::time::{Duration, Instant};
