@@ -91,6 +91,9 @@ impl Agent {
         loop {
             let start = Instant::now();
 
+            // Sometimes Imix starts too quickly in a boot sequence, a NIC is down during the initial callback,
+            // or the box Imix is on changes its IP. In any case, for each callback we should refresh our claimed
+            // IP.
             self.cfg.refresh_primary_ip();
 
             match self.callback().await {
