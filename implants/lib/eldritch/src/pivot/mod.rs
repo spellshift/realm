@@ -3,7 +3,7 @@ mod bind_proxy_impl;
 mod ncat_impl;
 mod port_forward_impl;
 mod port_scan_impl;
-mod reverse_shell_impl;
+mod reverse_shell_pty_impl;
 mod smb_exec_impl;
 mod ssh_copy_impl;
 mod ssh_exec_impl;
@@ -36,9 +36,9 @@ crate::eldritch_lib!(PivotLibrary, "pivot_library");
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
-    fn reverse_shell(this: &PivotLibrary, starlark_eval: &mut Evaluator<'v, '_>) -> anyhow::Result<NoneType> {
+    fn reverse_shell_pty(this: &PivotLibrary, starlark_eval: &mut Evaluator<'v, '_>, cmd: Option<String>) -> anyhow::Result<NoneType> {
         let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
-        reverse_shell_impl::reverse_shell(env)?;
+        reverse_shell_pty_impl::reverse_shell_pty(env, cmd)?;
         Ok(NoneType{})
     }
 

@@ -12,7 +12,6 @@ mock = ["dep:mockall"]
 pb = { workspace = true }
 
 anyhow = { workspace = true }
-futures = { workspace = true }
 log = { workspace = true }
 prost = { workspace = true }
 prost-types = { workspace = true }

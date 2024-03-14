@@ -1,5 +1,4 @@
 use crate::Transport;
-use anyhow::anyhow;
 use anyhow::Result;
 use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
@@ -124,7 +123,6 @@ impl Transport for GRPC {
         tonic::Response<tonic::codec::Streaming<ReverseShellResponse>>,
         tonic::Status,
     > {
-        // let stream = tokio_stream::iter(req);
         self.reverse_shell_impl(req).await
 
         // while let Some(msg) = in_stream.message().await? {
@@ -309,11 +307,6 @@ impl GRPC {
         let mut req = request.into_streaming_request();
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "ReverseShell"));
-        let resp = self.grpc.streaming(req, path, codec).await;
-
-        #[cfg(debug_assertions)]
-        log::info!("TRANSPORT: Stream Started!");
-
-        resp
+        self.grpc.streaming(req, path, codec).await
     }
 }

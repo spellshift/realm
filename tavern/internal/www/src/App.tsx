@@ -57,7 +57,7 @@ const router = createBrowserRouter([
     element: <Tomes />,
   },
   {
-    path: "/shell",
+    path: "/shells/:shellId",
     element: <Shell />,
   },
 ]);

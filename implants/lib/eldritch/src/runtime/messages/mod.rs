@@ -8,7 +8,7 @@ mod report_finish;
 mod report_process_list;
 mod report_start;
 mod report_text;
-mod reverse_shell;
+mod reverse_shell_pty;
 
 pub use fetch_asset::FetchAssetMessage;
 pub(super) use reduce::reduce;
@@ -19,7 +19,7 @@ pub use report_finish::ReportFinishMessage;
 pub use report_process_list::ReportProcessListMessage;
 pub use report_start::ReportStartMessage;
 pub use report_text::ReportTextMessage;
-pub use reverse_shell::ReverseShellMessage;
+pub use reverse_shell_pty::ReverseShellPTYMessage;
 pub use transport::Transport;
 
 use anyhow::Result;
@@ -67,8 +67,8 @@ pub enum Message {
     #[display(fmt = "ReportAggOutput")]
     ReportAggOutput(ReportAggOutputMessage),
 
-    #[display(fmt = "ReverseShell")]
-    ReverseShell(ReverseShellMessage),
+    #[display(fmt = "ReverseShellPTY")]
+    ReverseShellPTY(ReverseShellPTYMessage),
 }
 
 // The Dispatcher implementation for `Message` simply calls the `dispatch()` implementation on the underlying variant.
@@ -86,7 +86,7 @@ impl Dispatcher for Message {
             Self::ReportProcessList(msg) => msg.dispatch(transport).await,
             Self::ReportText(msg) => msg.dispatch(transport).await,
             Self::ReportAggOutput(msg) => msg.dispatch(transport).await,
-            Self::ReverseShell(msg) => msg.dispatch(transport).await,
+            Self::ReverseShellPTY(msg) => msg.dispatch(transport).await,
 
             Self::ReportStart(msg) => msg.dispatch(transport).await,
             Self::ReportFinish(msg) => msg.dispatch(transport).await,
