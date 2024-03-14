@@ -17,7 +17,7 @@ prost = { workspace = true }
 prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
-tonic = { workspace = true, features = ["tls-roots"] }
+tonic = { workspace = true, features = ["tls-webpki-roots"] }
 trait-variant = { workspace = true }
 hyper = { version = "0.14", features = ["client"] }
 hyper-proxy = "0.9.1"
