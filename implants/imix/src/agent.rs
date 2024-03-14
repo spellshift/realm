@@ -1,4 +1,7 @@
-use crate::{config::Config, task::TaskHandle};
+use crate::{
+    config::{get_primary_ip, Config},
+    task::TaskHandle,
+};
 use anyhow::Result;
 use pb::c2::ClaimTasksRequest;
 use std::time::{Duration, Instant};
@@ -90,6 +93,25 @@ impl Agent {
     pub async fn callback_loop(&mut self) -> Result<()> {
         loop {
             let start = Instant::now();
+
+            let fresh_ip = get_primary_ip();
+            if self
+                .cfg
+                .info
+                .host
+                .as_ref()
+                .is_some_and(|h| h.primary_ip != fresh_ip)
+            {
+                match self.cfg.info.host.as_mut() {
+                    Some(h) => {
+                        h.primary_ip = fresh_ip;
+                    }
+                    None => {
+                        #[cfg(debug_assertions)]
+                        log::error!("host struct was never initialized, failed to set primary ip");
+                    }
+                }
+            }
 
             match self.callback().await {
                 Ok(_) => {}

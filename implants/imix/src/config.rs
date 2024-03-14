@@ -185,7 +185,7 @@ fn get_host_id(file_path: String) -> String {
  * Return the first IPv4 address of the default interface as a string.
  * Returns the empty string otherwise.
  */
-fn get_primary_ip() -> String {
+pub fn get_primary_ip() -> String {
     match default_net::get_default_interface() {
         Ok(default_interface) => match default_interface.ipv4.first() {
             Some(ip) => ip.addr.to_string(),
