@@ -1,16 +1,16 @@
-import React, { useState } from "react"
-import { PageWrapper } from "../../components/page-wrapper"
-import { PageNavItem } from "../../utils/enums"
+import { ReactElement, useState } from "react";
+import { PageWrapper } from "../../components/page-wrapper";
+import { PageNavItem } from "../../utils/enums";
 
-import { Button } from "@chakra-ui/react";
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
+import ImportRepositoryModal from "./components/ImportRepositoryModal";
 import RepositoryTable from "./components/RepositoryTable";
 import { useRepositoryView } from "./hooks/useRepositoryView";
-import ImportRepositoryModal from "./components/ImportRepositoryModal";
-import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
+import { Button } from "@chakra-ui/react";
 
-export const Tomes = () => {
-    const [isOpen, setOpen] = useState(false);
+export const Tomes = (): ReactElement => {
+    const [isOpen, setOpen] = useState<boolean>(false);
     const { loading, repositories, error } = useRepositoryView();
 
     return (

@@ -15,6 +15,17 @@ macro_rules! callback_uri {
         }
     };
 }
+
+/*
+ * Compile-time constant for the agent proxy URI, derived from the IMIX_PROXY_URI environment variable during compilation.
+ * Defaults to None if this is unset.
+ */
+macro_rules! proxy_uri {
+    () => {
+        option_env!("IMIX_PROXY_URI")
+    };
+}
+
 /*
  * Compile-time constant for the agent callback URI, derived from the IMIX_CALLBACK_URI environment variable during compilation.
  * Defaults to "http://127.0.0.1:80/grpc" if this is unset.
@@ -54,6 +65,7 @@ pub const RETRY_INTERVAL: &str = retry_interval!();
 pub struct Config {
     pub info: pb::c2::Beacon,
     pub callback_uri: String,
+    pub proxy_uri: Option<String>,
     pub retry_interval: u64,
 }
 
@@ -92,6 +104,7 @@ impl Default for Config {
         Config {
             info,
             callback_uri: String::from(CALLBACK_URI),
+            proxy_uri: get_system_proxy(),
             retry_interval: match RETRY_INTERVAL.parse::<u64>() {
                 Ok(i) => i,
                 Err(_err) => {
@@ -100,9 +113,70 @@ impl Default for Config {
                         "failed to parse retry interval constant, defaulting to 5 seconds: {_err}"
                     );
 
-                    5_u64
+                    5
                 }
             },
+        }
+    }
+}
+
+fn get_system_proxy() -> Option<String> {
+    let proxy_uri_compile_time_override = proxy_uri!();
+    if let Some(proxy_uri) = proxy_uri_compile_time_override {
+        return Some(proxy_uri.to_string());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        match std::env::var("http_proxy") {
+            Ok(val) => return Some(val),
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Didn't find http_proxy env var: {}", _e);
+            }
+        }
+
+        match std::env::var("https_proxy") {
+            Ok(val) => return Some(val),
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Didn't find https_proxy env var: {}", _e);
+            }
+        }
+        None
+    }
+    #[cfg(target_os = "windows")]
+    {
+        None
+    }
+    #[cfg(target_os = "macos")]
+    {
+        None
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+        None
+    }
+}
+
+impl Config {
+    pub fn refresh_primary_ip(&mut self) {
+        let fresh_ip = get_primary_ip();
+        if self
+            .info
+            .host
+            .as_ref()
+            .is_some_and(|h| h.primary_ip != fresh_ip)
+        {
+            match self.info.host.as_mut() {
+                Some(h) => {
+                    h.primary_ip = fresh_ip;
+                }
+                None => {
+                    #[cfg(debug_assertions)]
+                    log::error!("host struct was never initialized, failed to set primary ip");
+                }
+            }
         }
     }
 }

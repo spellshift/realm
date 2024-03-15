@@ -4,20 +4,24 @@ import { formatDistance } from "date-fns";
 import Table from "../../../components/tavern-base-ui/Table";
 import { useNavigate } from "react-router-dom";
 import { QuestTableRowType } from "../../../utils/consts";
+import { useCallback } from "react";
 
 
 type Props = {
     quests: Array<QuestTableRowType>;
+    filtersSelected: Array<any>;
 }
 export const QuestTable = (props: Props) => {
-    const { quests } = props;
+    const { quests, filtersSelected } = props;
     const navigate = useNavigate();
 
     const currentDate = new Date();
 
-    const onToggle = (row: any) => {
-        navigate(`/tasks/${row?.original?.node?.id}`)
-    }
+    const onToggle = useCallback((row: any) => {
+        navigate(`/tasks/${row?.original?.node?.id}`, {
+            state: filtersSelected
+        })
+    }, [filtersSelected, navigate]);
 
     const columns: ColumnDef<any>[] = [
         {

@@ -79,7 +79,7 @@ impl Agent {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        let transport = GRPC::new(self.cfg.callback_uri.clone())?;
+        let transport = GRPC::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
         self.claim_tasks(transport.clone()).await?;
         self.report(transport.clone()).await?;
 
@@ -92,6 +92,11 @@ impl Agent {
     pub async fn callback_loop(&mut self) -> Result<()> {
         loop {
             let start = Instant::now();
+
+            // Sometimes Imix starts too quickly in a boot sequence, a NIC is down during the initial callback,
+            // or the box Imix is on changes its IP. In any case, for each callback we should refresh our claimed
+            // IP.
+            self.cfg.refresh_primary_ip();
 
             match self.callback().await {
                 Ok(_) => {}
