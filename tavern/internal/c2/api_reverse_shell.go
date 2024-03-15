@@ -1,7 +1,6 @@
 package c2
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -18,20 +17,13 @@ import (
 
 // keepAlivePingInterval defines the frequency to send no-op ping messages to the stream,
 // this is useful because imix relies on an input after the "exit" command to perform cleanup.
-// entBufFlushThreshold is the minimum number of output bytes received before syncing data to the database.
-// entBuffFlushMaxDelay is the maximum amount of time before a buffer flush will occur (the next time new data is available).
 const (
 	keepAlivePingInterval = 5 * time.Second
-	entBufFlushThreshold  = 1024 * 1024 // 1MB
-	entBuffFlushMaxDelay  = 10 * time.Second
 )
 
 func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
+	// Setup Context
 	ctx := gstream.Context()
-	var shellID int
-	defer func() {
-		log.Printf("[gRPC] Reverse Shell Closed (shell_id=%d)", shellID)
-	}()
 
 	// Create the Shell Entity
 	shell, err := srv.graph.Shell.Create().
@@ -40,22 +32,18 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	if err != nil {
 		return fmt.Errorf("failed to create shell: %w", err)
 	}
-	shellID = shell.ID
+	shellID := shell.ID
+
+	// Log Shell Session
 	log.Printf("[gRPC] Reverse Shell Started (shell_id=%d)", shellID)
+	defer func() {
+		log.Printf("[gRPC] Reverse Shell Closed (shell_id=%d)", shellID)
+	}()
 
-	// Send initial message
-	if err := gstream.Send(&c2pb.ReverseShellResponse{
-		Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_PING,
-		Data: []byte{},
-	}); err != nil {
-		return err
-	}
+	// Create new Stream
+	pubsubStream := stream.New(fmt.Sprintf("%d", shellID))
 
-	// Register a Stream with the stream.Mux
-	pubsubStream := stream.New(fmt.Sprintf("%d", shell.ID))
-	srv.mux.Register(pubsubStream)
-	defer srv.mux.Unregister(pubsubStream)
-
+	// Cleanup
 	defer func() {
 		closedAt := time.Now()
 
@@ -86,13 +74,41 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		}
 	}()
 
-	// Send Input
+	// Register stream with Mux
+	srv.mux.Register(pubsubStream)
+	defer srv.mux.Unregister(pubsubStream)
+
+	// WaitGroup to manage tasks
 	var wg sync.WaitGroup
+
+	// Send Keep Alives
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		sendKeepAlives(ctx, gstream)
+	}()
 
-		for msg := range pubsubStream.Messages() {
+	// Send Input (to shell)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		sendShellInput(ctx, gstream, pubsubStream)
+	}()
+
+	// Send Output (to pubsub)
+	err = sendShellOutput(ctx, gstream, pubsubStream, srv.mux)
+
+	wg.Wait()
+
+	return err
+}
+
+func sendShellInput(ctx context.Context, gstream c2pb.C2_ReverseShellServer, pubsubStream *stream.Stream) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case msg := <-pubsubStream.Messages():
 			if err := gstream.Send(&c2pb.ReverseShellResponse{
 				Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_DATA,
 				Data: msg.Body,
@@ -101,77 +117,14 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 				return
 			}
 		}
-	}()
+	}
+}
 
-	// Send Keep Alives
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		ticker := time.NewTicker(keepAlivePingInterval)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				if err := gstream.Send(&c2pb.ReverseShellResponse{
-					Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_PING,
-				}); err != nil {
-					log.Printf("[ERROR] Failed to send gRPC ping: %v", err)
-				}
-			}
-		}
-	}()
-
-	// Store Stream Data
-	streamDataCh := make(chan []byte, 1024*1024)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		var buf bytes.Buffer
-		lastFlush := time.Now()
-		for msg := range streamDataCh {
-			if len(msg) < 1 {
-				continue
-			}
-
-			n, err := buf.Write(msg)
-			if err != nil {
-				log.Printf("[gRPC][ReverseShell][ERROR] failed to write stream data to buffer (shell_id=%d): %v", shellID, err)
-			}
-			if n != len(msg) {
-				log.Printf("[gRPC][ReverseShell][ERROR] data lost while writing stream to buffer (shell_id=%d): want %d, got %d", shellID, len(msg), n)
-			}
-
-			// Flush buffer to ent
-			if buf.Len() > entBufFlushThreshold || time.Since(lastFlush) > entBuffFlushMaxDelay {
-				shell, err := srv.graph.Shell.Get(ctx, shellID)
-				if err != nil {
-					log.Printf("[gRPC][ReverseShell][ERROR] failed to get underlying shell ent: %v", err)
-					continue
-				}
-
-				if _, err := shell.Update().
-					SetData(append(shell.Data, buf.Bytes()...)).
-					Save(ctx); err != nil {
-					log.Printf("[gRPC][ReverseShell][ERROR] failed to write output to ent: %v", err)
-					continue
-				}
-
-				lastFlush = time.Now()
-				buf.Reset()
-			}
-		}
-	}()
-
-	// Publish Output
+func sendShellOutput(ctx context.Context, gstream c2pb.C2_ReverseShellServer, pubsubStream *stream.Stream, mux *stream.Mux) error {
 	for {
 		req, err := gstream.Recv()
 		if err == io.EOF {
-			break
+			return nil
 		}
 		if err != nil {
 			return status.Errorf(codes.Internal, "failed to receive shell request: %v", err)
@@ -185,17 +138,26 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		// Send Pubsub Message
 		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
 			Body: req.Data,
-		}, srv.mux); err != nil {
+		}, mux); err != nil {
 			return status.Errorf(codes.Internal, "failed to publish message: %v", err)
 		}
-
-		// Update Ent (async)
-		streamDataCh <- req.Data
 	}
+}
 
-	log.Printf("waiting for threads")
-	close(streamDataCh)
-	wg.Wait()
+func sendKeepAlives(ctx context.Context, gstream c2pb.C2_ReverseShellServer) {
+	ticker := time.NewTicker(keepAlivePingInterval)
+	defer ticker.Stop()
 
-	return nil
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := gstream.Send(&c2pb.ReverseShellResponse{
+				Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_PING,
+			}); err != nil {
+				log.Printf("[ERROR] Failed to send gRPC ping: %v", err)
+			}
+		}
+	}
 }

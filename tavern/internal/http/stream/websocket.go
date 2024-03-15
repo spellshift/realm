@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/shell"
 )
 
 const (
@@ -74,11 +75,11 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			w.Write(message.Body)
 
 			// Add queued messages to the current websocket message.
-			// n := len(c.Messages())
-			// for i := 0; i < n; i++ {
-			// 	additionalMsg := <-c.Messages()
-			// 	w.Write(additionalMsg.Body)
-			// }
+			n := len(c.Messages())
+			for i := 0; i < n; i++ {
+				additionalMsg := <-c.Messages()
+				w.Write(additionalMsg.Body)
+			}
 
 			if err := w.Close(); err != nil {
 				return
@@ -136,12 +137,9 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log.Printf("[WS] New Shell Websocket Connection")
-
-		ws, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Printf("[WS][ERROR] Failed to upgrade connection to websocket: %v", err)
-			return
-		}
+		defer func() {
+			log.Printf("[WS] Shell Websocket Connection Closed")
+		}()
 
 		// Parse Shell ID
 		shellIDStr := r.URL.Query().Get("shell_id")
@@ -155,8 +153,35 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 			return
 		}
 
+		// Load Shell
+		revShell, err := graph.Shell.Query().Where(shell.ID(shellID)).Select(shell.FieldClosedAt).Only(ctx)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				http.Error(w, "shell not found", http.StatusNotFound)
+			} else {
+				log.Printf("[WS][ERROR] Failed to load shell: %v", err)
+				http.Error(w, "failed to load shell", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		// Prevent opening closed shells
+		if !revShell.ClosedAt.IsZero() {
+			http.Error(w, "shell already closed", http.StatusBadRequest)
+			return
+		} else {
+			log.Printf("Shell not closed: %s", revShell.ClosedAt.String())
+		}
+
 		// Start Websocket
 		log.Printf("[WS] New Shell Websocket Connection (shell_id=%d)", shellID)
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Printf("[WS][ERROR] Failed to upgrade connection to websocket: %v", err)
+			return
+		}
+
+		// Initialize Stream
 		stream := New(shellIDStr)
 
 		// Create Connector
