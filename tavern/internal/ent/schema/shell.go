@@ -16,22 +16,21 @@ type Shell struct {
 // Fields of the ent.
 func (Shell) Fields() []ent.Field {
 	return []ent.Field{
-		field.Bytes("input").
+		field.Time("closed_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("CLOSED_AT"),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Timestamp of when this shell was closed"),
+		field.Bytes("data").
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGBLOB", // Override MySQL, improve length maximum
 			}).
 			Annotations(
 				entgql.Skip(), // Don't return in GraphQL queries
 			).
-			Comment("Shell input stream"),
-		field.Bytes("output").
-			SchemaType(map[string]string{
-				dialect.MySQL: "LONGBLOB", // Override MySQL, improve length maximum
-			}).
-			Annotations(
-				entgql.Skip(), // Don't return in GraphQL queries
-			).
-			Comment("Shell output stream"),
+			Comment("Shell data stream"),
 	}
 }
 
@@ -42,7 +41,10 @@ func (Shell) Edges() []ent.Edge {
 
 // Annotations describes additional information for the ent.
 func (Shell) Annotations() []schema.Annotation {
-	return []schema.Annotation{}
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
+	}
 }
 
 // Mixin defines common shared properties for the ent.

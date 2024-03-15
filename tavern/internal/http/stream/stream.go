@@ -19,6 +19,10 @@ const (
 	metadataOrderKey   = "order-key"
 	metadataOrderIndex = "order-index"
 
+	// MetadataStreamClose can be added by producers when publishing messages to a topic, indicating no more messages will be sent to the stream.
+	// This should never be sent if there is more than one producer for the stream (e.g. only send from gRPC, not from websockets).
+	MetadataStreamClose = "stream-close"
+
 	// maxStreamMsgBufSize defines the maximum number of messages that can be buffered for a stream before causing the Mux to block.
 	maxStreamMsgBufSize = 1024
 )

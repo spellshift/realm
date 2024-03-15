@@ -255,8 +255,8 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
-		{Name: "input", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
-		{Name: "output", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "data", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
 	}
 	// ShellsTable holds the schema information for the "shells" table.
 	ShellsTable = &schema.Table{

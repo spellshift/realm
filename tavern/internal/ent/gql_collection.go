@@ -1305,6 +1305,11 @@ func (s *ShellQuery) collectField(ctx context.Context, opCtx *graphql.OperationC
 				selectedFields = append(selectedFields, shell.FieldLastModifiedAt)
 				fieldSeen[shell.FieldLastModifiedAt] = struct{}{}
 			}
+		case "closedAt":
+			if _, ok := fieldSeen[shell.FieldClosedAt]; !ok {
+				selectedFields = append(selectedFields, shell.FieldClosedAt)
+				fieldSeen[shell.FieldClosedAt] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:
@@ -1342,24 +1347,30 @@ func newShellPaginateArgs(rv map[string]any) *shellPaginateArgs {
 	}
 	if v, ok := rv[orderByField]; ok {
 		switch v := v.(type) {
-		case map[string]any:
-			var (
-				err1, err2 error
-				order      = &ShellOrder{Field: &ShellOrderField{}, Direction: entgql.OrderDirectionAsc}
-			)
-			if d, ok := v[directionField]; ok {
-				err1 = order.Direction.UnmarshalGQL(d)
+		case []*ShellOrder:
+			args.opts = append(args.opts, WithShellOrder(v))
+		case []any:
+			var orders []*ShellOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &ShellOrder{Field: &ShellOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
 			}
-			if f, ok := v[fieldField]; ok {
-				err2 = order.Field.UnmarshalGQL(f)
-			}
-			if err1 == nil && err2 == nil {
-				args.opts = append(args.opts, WithShellOrder(order))
-			}
-		case *ShellOrder:
-			if v != nil {
-				args.opts = append(args.opts, WithShellOrder(v))
-			}
+			args.opts = append(args.opts, WithShellOrder(orders))
 		}
 	}
 	if v, ok := rv[whereField].(*ShellWhereInput); ok {

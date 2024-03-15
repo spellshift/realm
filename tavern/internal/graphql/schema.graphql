@@ -1335,6 +1335,24 @@ type Shell implements Node {
   createdAt: Time!
   """Timestamp of when this ent was last updated"""
   lastModifiedAt: Time!
+  """Timestamp of when this shell was closed"""
+  closedAt: Time
+}
+"""A connection to a list of items."""
+type ShellConnection {
+  """A list of edges."""
+  edges: [ShellEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type ShellEdge {
+  """The item at the end of the edge."""
+  node: Shell
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """Ordering options for Shell connections"""
 input ShellOrder {
@@ -1347,6 +1365,7 @@ input ShellOrder {
 enum ShellOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  CLOSED_AT
 }
 """
 ShellWhereInput is used for filtering Shell objects.
@@ -1383,6 +1402,17 @@ input ShellWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
+  """closed_at field predicates"""
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
 }
 type Tag implements Node {
   id: ID!
@@ -2140,7 +2170,24 @@ extend type Query {
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
-  shells: [Shell!]! @requireRole(role: USER)
+  shells(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Shells returned from the connection."""
+    orderBy: [ShellOrder!]
+
+    """Filtering options for Shells returned from the connection."""
+    where: ShellWhereInput): ShellConnection! @requireRole(role: USER)
   me: User!
 }
 scalar Time

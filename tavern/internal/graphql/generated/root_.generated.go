@@ -157,7 +157,7 @@ type ComplexityRoot struct {
 		Nodes        func(childComplexity int, ids []int) int
 		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
-		Shells       func(childComplexity int) int
+		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		Tags         func(childComplexity int, where *ent.TagWhereInput) int
 		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
@@ -212,9 +212,21 @@ type ComplexityRoot struct {
 	}
 
 	Shell struct {
+		ClosedAt       func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
+	}
+
+	ShellConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ShellEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Tag struct {
@@ -1008,7 +1020,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.Shells(childComplexity), true
+		args, err := ec.field_Query_shells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
@@ -1266,6 +1283,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RepositoryEdge.Node(childComplexity), true
 
+	case "Shell.closedAt":
+		if e.complexity.Shell.ClosedAt == nil {
+			break
+		}
+
+		return e.complexity.Shell.ClosedAt(childComplexity), true
+
 	case "Shell.createdAt":
 		if e.complexity.Shell.CreatedAt == nil {
 			break
@@ -1286,6 +1310,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Shell.LastModifiedAt(childComplexity), true
+
+	case "ShellConnection.edges":
+		if e.complexity.ShellConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.Edges(childComplexity), true
+
+	case "ShellConnection.pageInfo":
+		if e.complexity.ShellConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.PageInfo(childComplexity), true
+
+	case "ShellConnection.totalCount":
+		if e.complexity.ShellConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.TotalCount(childComplexity), true
+
+	case "ShellEdge.cursor":
+		if e.complexity.ShellEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ShellEdge.Cursor(childComplexity), true
+
+	case "ShellEdge.node":
+		if e.complexity.ShellEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ShellEdge.Node(childComplexity), true
 
 	case "Tag.hosts":
 		if e.complexity.Tag.Hosts == nil {
@@ -3061,6 +3120,24 @@ type Shell implements Node {
   createdAt: Time!
   """Timestamp of when this ent was last updated"""
   lastModifiedAt: Time!
+  """Timestamp of when this shell was closed"""
+  closedAt: Time
+}
+"""A connection to a list of items."""
+type ShellConnection {
+  """A list of edges."""
+  edges: [ShellEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type ShellEdge {
+  """The item at the end of the edge."""
+  node: Shell
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """Ordering options for Shell connections"""
 input ShellOrder {
@@ -3073,6 +3150,7 @@ input ShellOrder {
 enum ShellOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  CLOSED_AT
 }
 """
 ShellWhereInput is used for filtering Shell objects.
@@ -3109,6 +3187,17 @@ input ShellWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
+  """closed_at field predicates"""
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
 }
 type Tag implements Node {
   id: ID!
@@ -3776,7 +3865,24 @@ scalar Uint64
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
-  shells: [Shell!]! @requireRole(role: USER)
+  shells(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Shells returned from the connection."""
+    orderBy: [ShellOrder!]
+
+    """Filtering options for Shells returned from the connection."""
+    where: ShellWhereInput): ShellConnection! @requireRole(role: USER)
   me: User!
 }
 `, BuiltIn: false},

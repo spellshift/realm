@@ -144,6 +144,8 @@ impl Transport for GRPC {
                     Err(_err) => {
                         #[cfg(debug_assertions)]
                         log::error!("failed to queue pty input: {}", _err);
+
+                        return;
                     }
                 }
             }

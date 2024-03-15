@@ -17,10 +17,10 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldLastModifiedAt holds the string denoting the last_modified_at field in the database.
 	FieldLastModifiedAt = "last_modified_at"
-	// FieldInput holds the string denoting the input field in the database.
-	FieldInput = "input"
-	// FieldOutput holds the string denoting the output field in the database.
-	FieldOutput = "output"
+	// FieldClosedAt holds the string denoting the closed_at field in the database.
+	FieldClosedAt = "closed_at"
+	// FieldData holds the string denoting the data field in the database.
+	FieldData = "data"
 	// Table holds the table name of the shell in the database.
 	Table = "shells"
 )
@@ -30,8 +30,8 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldLastModifiedAt,
-	FieldInput,
-	FieldOutput,
+	FieldClosedAt,
+	FieldData,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -69,4 +69,9 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByLastModifiedAt orders the results by the last_modified_at field.
 func ByLastModifiedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastModifiedAt, opts...).ToFunc()
+}
+
+// ByClosedAt orders the results by the closed_at field.
+func ByClosedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClosedAt, opts...).ToFunc()
 }

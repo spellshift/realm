@@ -51,7 +51,6 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 			return
 		case message, ok := <-c.Messages():
-			log.Printf("GETTING WEBSOCKET MESSAGE: %q", string(message.Body))
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The mux closed the channel.
@@ -59,7 +58,16 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				return
 			}
 
-			w, err := c.ws.NextWriter(websocket.TextMessage)
+			// Check if stream has closed
+			hasClosed, ok := message.Metadata[MetadataStreamClose]
+			if ok && hasClosed != "" {
+				// The producer ended the stream.
+				log.Printf("[WS] Closing websocket, stream has ended")
+				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := c.ws.NextWriter(websocket.BinaryMessage)
 			if err != nil {
 				return
 			}

@@ -64,14 +64,14 @@ func LastModifiedAt(v time.Time) predicate.Shell {
 	return predicate.Shell(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
-// Input applies equality check predicate on the "input" field. It's identical to InputEQ.
-func Input(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldEQ(FieldInput, v))
+// ClosedAt applies equality check predicate on the "closed_at" field. It's identical to ClosedAtEQ.
+func ClosedAt(v time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldEQ(FieldClosedAt, v))
 }
 
-// Output applies equality check predicate on the "output" field. It's identical to OutputEQ.
-func Output(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldEQ(FieldOutput, v))
+// Data applies equality check predicate on the "data" field. It's identical to DataEQ.
+func Data(v []byte) predicate.Shell {
+	return predicate.Shell(sql.FieldEQ(FieldData, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -154,84 +154,94 @@ func LastModifiedAtLTE(v time.Time) predicate.Shell {
 	return predicate.Shell(sql.FieldLTE(FieldLastModifiedAt, v))
 }
 
-// InputEQ applies the EQ predicate on the "input" field.
-func InputEQ(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldEQ(FieldInput, v))
+// ClosedAtEQ applies the EQ predicate on the "closed_at" field.
+func ClosedAtEQ(v time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldEQ(FieldClosedAt, v))
 }
 
-// InputNEQ applies the NEQ predicate on the "input" field.
-func InputNEQ(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldNEQ(FieldInput, v))
+// ClosedAtNEQ applies the NEQ predicate on the "closed_at" field.
+func ClosedAtNEQ(v time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldNEQ(FieldClosedAt, v))
 }
 
-// InputIn applies the In predicate on the "input" field.
-func InputIn(vs ...[]byte) predicate.Shell {
-	return predicate.Shell(sql.FieldIn(FieldInput, vs...))
+// ClosedAtIn applies the In predicate on the "closed_at" field.
+func ClosedAtIn(vs ...time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldIn(FieldClosedAt, vs...))
 }
 
-// InputNotIn applies the NotIn predicate on the "input" field.
-func InputNotIn(vs ...[]byte) predicate.Shell {
-	return predicate.Shell(sql.FieldNotIn(FieldInput, vs...))
+// ClosedAtNotIn applies the NotIn predicate on the "closed_at" field.
+func ClosedAtNotIn(vs ...time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldNotIn(FieldClosedAt, vs...))
 }
 
-// InputGT applies the GT predicate on the "input" field.
-func InputGT(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldGT(FieldInput, v))
+// ClosedAtGT applies the GT predicate on the "closed_at" field.
+func ClosedAtGT(v time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldGT(FieldClosedAt, v))
 }
 
-// InputGTE applies the GTE predicate on the "input" field.
-func InputGTE(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldGTE(FieldInput, v))
+// ClosedAtGTE applies the GTE predicate on the "closed_at" field.
+func ClosedAtGTE(v time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldGTE(FieldClosedAt, v))
 }
 
-// InputLT applies the LT predicate on the "input" field.
-func InputLT(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldLT(FieldInput, v))
+// ClosedAtLT applies the LT predicate on the "closed_at" field.
+func ClosedAtLT(v time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldLT(FieldClosedAt, v))
 }
 
-// InputLTE applies the LTE predicate on the "input" field.
-func InputLTE(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldLTE(FieldInput, v))
+// ClosedAtLTE applies the LTE predicate on the "closed_at" field.
+func ClosedAtLTE(v time.Time) predicate.Shell {
+	return predicate.Shell(sql.FieldLTE(FieldClosedAt, v))
 }
 
-// OutputEQ applies the EQ predicate on the "output" field.
-func OutputEQ(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldEQ(FieldOutput, v))
+// ClosedAtIsNil applies the IsNil predicate on the "closed_at" field.
+func ClosedAtIsNil() predicate.Shell {
+	return predicate.Shell(sql.FieldIsNull(FieldClosedAt))
 }
 
-// OutputNEQ applies the NEQ predicate on the "output" field.
-func OutputNEQ(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldNEQ(FieldOutput, v))
+// ClosedAtNotNil applies the NotNil predicate on the "closed_at" field.
+func ClosedAtNotNil() predicate.Shell {
+	return predicate.Shell(sql.FieldNotNull(FieldClosedAt))
 }
 
-// OutputIn applies the In predicate on the "output" field.
-func OutputIn(vs ...[]byte) predicate.Shell {
-	return predicate.Shell(sql.FieldIn(FieldOutput, vs...))
+// DataEQ applies the EQ predicate on the "data" field.
+func DataEQ(v []byte) predicate.Shell {
+	return predicate.Shell(sql.FieldEQ(FieldData, v))
 }
 
-// OutputNotIn applies the NotIn predicate on the "output" field.
-func OutputNotIn(vs ...[]byte) predicate.Shell {
-	return predicate.Shell(sql.FieldNotIn(FieldOutput, vs...))
+// DataNEQ applies the NEQ predicate on the "data" field.
+func DataNEQ(v []byte) predicate.Shell {
+	return predicate.Shell(sql.FieldNEQ(FieldData, v))
 }
 
-// OutputGT applies the GT predicate on the "output" field.
-func OutputGT(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldGT(FieldOutput, v))
+// DataIn applies the In predicate on the "data" field.
+func DataIn(vs ...[]byte) predicate.Shell {
+	return predicate.Shell(sql.FieldIn(FieldData, vs...))
 }
 
-// OutputGTE applies the GTE predicate on the "output" field.
-func OutputGTE(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldGTE(FieldOutput, v))
+// DataNotIn applies the NotIn predicate on the "data" field.
+func DataNotIn(vs ...[]byte) predicate.Shell {
+	return predicate.Shell(sql.FieldNotIn(FieldData, vs...))
 }
 
-// OutputLT applies the LT predicate on the "output" field.
-func OutputLT(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldLT(FieldOutput, v))
+// DataGT applies the GT predicate on the "data" field.
+func DataGT(v []byte) predicate.Shell {
+	return predicate.Shell(sql.FieldGT(FieldData, v))
 }
 
-// OutputLTE applies the LTE predicate on the "output" field.
-func OutputLTE(v []byte) predicate.Shell {
-	return predicate.Shell(sql.FieldLTE(FieldOutput, v))
+// DataGTE applies the GTE predicate on the "data" field.
+func DataGTE(v []byte) predicate.Shell {
+	return predicate.Shell(sql.FieldGTE(FieldData, v))
+}
+
+// DataLT applies the LT predicate on the "data" field.
+func DataLT(v []byte) predicate.Shell {
+	return predicate.Shell(sql.FieldLT(FieldData, v))
+}
+
+// DataLTE applies the LTE predicate on the "data" field.
+func DataLTE(v []byte) predicate.Shell {
+	return predicate.Shell(sql.FieldLTE(FieldData, v))
 }
 
 // And groups predicates with the AND operator between them.

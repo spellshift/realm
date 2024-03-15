@@ -7415,8 +7415,8 @@ type ShellMutation struct {
 	id               *int
 	created_at       *time.Time
 	last_modified_at *time.Time
-	input            *[]byte
-	output           *[]byte
+	closed_at        *time.Time
+	data             *[]byte
 	clearedFields    map[string]struct{}
 	done             bool
 	oldValue         func(context.Context) (*Shell, error)
@@ -7593,76 +7593,89 @@ func (m *ShellMutation) ResetLastModifiedAt() {
 	m.last_modified_at = nil
 }
 
-// SetInput sets the "input" field.
-func (m *ShellMutation) SetInput(b []byte) {
-	m.input = &b
+// SetClosedAt sets the "closed_at" field.
+func (m *ShellMutation) SetClosedAt(t time.Time) {
+	m.closed_at = &t
 }
 
-// Input returns the value of the "input" field in the mutation.
-func (m *ShellMutation) Input() (r []byte, exists bool) {
-	v := m.input
+// ClosedAt returns the value of the "closed_at" field in the mutation.
+func (m *ShellMutation) ClosedAt() (r time.Time, exists bool) {
+	v := m.closed_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldInput returns the old "input" field's value of the Shell entity.
+// OldClosedAt returns the old "closed_at" field's value of the Shell entity.
 // If the Shell object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ShellMutation) OldInput(ctx context.Context) (v []byte, err error) {
+func (m *ShellMutation) OldClosedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldInput is only allowed on UpdateOne operations")
+		return v, errors.New("OldClosedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldInput requires an ID field in the mutation")
+		return v, errors.New("OldClosedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldInput: %w", err)
+		return v, fmt.Errorf("querying old value for OldClosedAt: %w", err)
 	}
-	return oldValue.Input, nil
+	return oldValue.ClosedAt, nil
 }
 
-// ResetInput resets all changes to the "input" field.
-func (m *ShellMutation) ResetInput() {
-	m.input = nil
+// ClearClosedAt clears the value of the "closed_at" field.
+func (m *ShellMutation) ClearClosedAt() {
+	m.closed_at = nil
+	m.clearedFields[shell.FieldClosedAt] = struct{}{}
 }
 
-// SetOutput sets the "output" field.
-func (m *ShellMutation) SetOutput(b []byte) {
-	m.output = &b
+// ClosedAtCleared returns if the "closed_at" field was cleared in this mutation.
+func (m *ShellMutation) ClosedAtCleared() bool {
+	_, ok := m.clearedFields[shell.FieldClosedAt]
+	return ok
 }
 
-// Output returns the value of the "output" field in the mutation.
-func (m *ShellMutation) Output() (r []byte, exists bool) {
-	v := m.output
+// ResetClosedAt resets all changes to the "closed_at" field.
+func (m *ShellMutation) ResetClosedAt() {
+	m.closed_at = nil
+	delete(m.clearedFields, shell.FieldClosedAt)
+}
+
+// SetData sets the "data" field.
+func (m *ShellMutation) SetData(b []byte) {
+	m.data = &b
+}
+
+// Data returns the value of the "data" field in the mutation.
+func (m *ShellMutation) Data() (r []byte, exists bool) {
+	v := m.data
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldOutput returns the old "output" field's value of the Shell entity.
+// OldData returns the old "data" field's value of the Shell entity.
 // If the Shell object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ShellMutation) OldOutput(ctx context.Context) (v []byte, err error) {
+func (m *ShellMutation) OldData(ctx context.Context) (v []byte, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOutput is only allowed on UpdateOne operations")
+		return v, errors.New("OldData is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOutput requires an ID field in the mutation")
+		return v, errors.New("OldData requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOutput: %w", err)
+		return v, fmt.Errorf("querying old value for OldData: %w", err)
 	}
-	return oldValue.Output, nil
+	return oldValue.Data, nil
 }
 
-// ResetOutput resets all changes to the "output" field.
-func (m *ShellMutation) ResetOutput() {
-	m.output = nil
+// ResetData resets all changes to the "data" field.
+func (m *ShellMutation) ResetData() {
+	m.data = nil
 }
 
 // Where appends a list predicates to the ShellMutation builder.
@@ -7706,11 +7719,11 @@ func (m *ShellMutation) Fields() []string {
 	if m.last_modified_at != nil {
 		fields = append(fields, shell.FieldLastModifiedAt)
 	}
-	if m.input != nil {
-		fields = append(fields, shell.FieldInput)
+	if m.closed_at != nil {
+		fields = append(fields, shell.FieldClosedAt)
 	}
-	if m.output != nil {
-		fields = append(fields, shell.FieldOutput)
+	if m.data != nil {
+		fields = append(fields, shell.FieldData)
 	}
 	return fields
 }
@@ -7724,10 +7737,10 @@ func (m *ShellMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case shell.FieldLastModifiedAt:
 		return m.LastModifiedAt()
-	case shell.FieldInput:
-		return m.Input()
-	case shell.FieldOutput:
-		return m.Output()
+	case shell.FieldClosedAt:
+		return m.ClosedAt()
+	case shell.FieldData:
+		return m.Data()
 	}
 	return nil, false
 }
@@ -7741,10 +7754,10 @@ func (m *ShellMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldCreatedAt(ctx)
 	case shell.FieldLastModifiedAt:
 		return m.OldLastModifiedAt(ctx)
-	case shell.FieldInput:
-		return m.OldInput(ctx)
-	case shell.FieldOutput:
-		return m.OldOutput(ctx)
+	case shell.FieldClosedAt:
+		return m.OldClosedAt(ctx)
+	case shell.FieldData:
+		return m.OldData(ctx)
 	}
 	return nil, fmt.Errorf("unknown Shell field %s", name)
 }
@@ -7768,19 +7781,19 @@ func (m *ShellMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastModifiedAt(v)
 		return nil
-	case shell.FieldInput:
-		v, ok := value.([]byte)
+	case shell.FieldClosedAt:
+		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetInput(v)
+		m.SetClosedAt(v)
 		return nil
-	case shell.FieldOutput:
+	case shell.FieldData:
 		v, ok := value.([]byte)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetOutput(v)
+		m.SetData(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Shell field %s", name)
@@ -7811,7 +7824,11 @@ func (m *ShellMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ShellMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(shell.FieldClosedAt) {
+		fields = append(fields, shell.FieldClosedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -7824,6 +7841,11 @@ func (m *ShellMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ShellMutation) ClearField(name string) error {
+	switch name {
+	case shell.FieldClosedAt:
+		m.ClearClosedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Shell nullable field %s", name)
 }
 
@@ -7837,11 +7859,11 @@ func (m *ShellMutation) ResetField(name string) error {
 	case shell.FieldLastModifiedAt:
 		m.ResetLastModifiedAt()
 		return nil
-	case shell.FieldInput:
-		m.ResetInput()
+	case shell.FieldClosedAt:
+		m.ResetClosedAt()
 		return nil
-	case shell.FieldOutput:
-		m.ResetOutput()
+	case shell.FieldData:
+		m.ResetData()
 		return nil
 	}
 	return fmt.Errorf("unknown Shell field %s", name)

@@ -21,10 +21,10 @@ type Shell struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
-	// Shell input stream
-	Input []byte `json:"input,omitempty"`
-	// Shell output stream
-	Output       []byte `json:"output,omitempty"`
+	// Timestamp of when this shell was closed
+	ClosedAt time.Time `json:"closed_at,omitempty"`
+	// Shell data stream
+	Data         []byte `json:"data,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -33,11 +33,11 @@ func (*Shell) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case shell.FieldInput, shell.FieldOutput:
+		case shell.FieldData:
 			values[i] = new([]byte)
 		case shell.FieldID:
 			values[i] = new(sql.NullInt64)
-		case shell.FieldCreatedAt, shell.FieldLastModifiedAt:
+		case shell.FieldCreatedAt, shell.FieldLastModifiedAt, shell.FieldClosedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -72,17 +72,17 @@ func (s *Shell) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				s.LastModifiedAt = value.Time
 			}
-		case shell.FieldInput:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field input", values[i])
-			} else if value != nil {
-				s.Input = *value
+		case shell.FieldClosedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field closed_at", values[i])
+			} else if value.Valid {
+				s.ClosedAt = value.Time
 			}
-		case shell.FieldOutput:
+		case shell.FieldData:
 			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field output", values[i])
+				return fmt.Errorf("unexpected type %T for field data", values[i])
 			} else if value != nil {
-				s.Output = *value
+				s.Data = *value
 			}
 		default:
 			s.selectValues.Set(columns[i], values[i])
@@ -126,11 +126,11 @@ func (s *Shell) String() string {
 	builder.WriteString("last_modified_at=")
 	builder.WriteString(s.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("input=")
-	builder.WriteString(fmt.Sprintf("%v", s.Input))
+	builder.WriteString("closed_at=")
+	builder.WriteString(s.ClosedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("output=")
-	builder.WriteString(fmt.Sprintf("%v", s.Output))
+	builder.WriteString("data=")
+	builder.WriteString(fmt.Sprintf("%v", s.Data))
 	builder.WriteByte(')')
 	return builder.String()
 }

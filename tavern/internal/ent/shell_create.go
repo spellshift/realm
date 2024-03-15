@@ -50,15 +50,23 @@ func (sc *ShellCreate) SetNillableLastModifiedAt(t *time.Time) *ShellCreate {
 	return sc
 }
 
-// SetInput sets the "input" field.
-func (sc *ShellCreate) SetInput(b []byte) *ShellCreate {
-	sc.mutation.SetInput(b)
+// SetClosedAt sets the "closed_at" field.
+func (sc *ShellCreate) SetClosedAt(t time.Time) *ShellCreate {
+	sc.mutation.SetClosedAt(t)
 	return sc
 }
 
-// SetOutput sets the "output" field.
-func (sc *ShellCreate) SetOutput(b []byte) *ShellCreate {
-	sc.mutation.SetOutput(b)
+// SetNillableClosedAt sets the "closed_at" field if the given value is not nil.
+func (sc *ShellCreate) SetNillableClosedAt(t *time.Time) *ShellCreate {
+	if t != nil {
+		sc.SetClosedAt(*t)
+	}
+	return sc
+}
+
+// SetData sets the "data" field.
+func (sc *ShellCreate) SetData(b []byte) *ShellCreate {
+	sc.mutation.SetData(b)
 	return sc
 }
 
@@ -115,11 +123,8 @@ func (sc *ShellCreate) check() error {
 	if _, ok := sc.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Shell.last_modified_at"`)}
 	}
-	if _, ok := sc.mutation.Input(); !ok {
-		return &ValidationError{Name: "input", err: errors.New(`ent: missing required field "Shell.input"`)}
-	}
-	if _, ok := sc.mutation.Output(); !ok {
-		return &ValidationError{Name: "output", err: errors.New(`ent: missing required field "Shell.output"`)}
+	if _, ok := sc.mutation.Data(); !ok {
+		return &ValidationError{Name: "data", err: errors.New(`ent: missing required field "Shell.data"`)}
 	}
 	return nil
 }
@@ -156,13 +161,13 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 		_spec.SetField(shell.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := sc.mutation.Input(); ok {
-		_spec.SetField(shell.FieldInput, field.TypeBytes, value)
-		_node.Input = value
+	if value, ok := sc.mutation.ClosedAt(); ok {
+		_spec.SetField(shell.FieldClosedAt, field.TypeTime, value)
+		_node.ClosedAt = value
 	}
-	if value, ok := sc.mutation.Output(); ok {
-		_spec.SetField(shell.FieldOutput, field.TypeBytes, value)
-		_node.Output = value
+	if value, ok := sc.mutation.Data(); ok {
+		_spec.SetField(shell.FieldData, field.TypeBytes, value)
+		_node.Data = value
 	}
 	return _node, _spec
 }
@@ -228,27 +233,33 @@ func (u *ShellUpsert) UpdateLastModifiedAt() *ShellUpsert {
 	return u
 }
 
-// SetInput sets the "input" field.
-func (u *ShellUpsert) SetInput(v []byte) *ShellUpsert {
-	u.Set(shell.FieldInput, v)
+// SetClosedAt sets the "closed_at" field.
+func (u *ShellUpsert) SetClosedAt(v time.Time) *ShellUpsert {
+	u.Set(shell.FieldClosedAt, v)
 	return u
 }
 
-// UpdateInput sets the "input" field to the value that was provided on create.
-func (u *ShellUpsert) UpdateInput() *ShellUpsert {
-	u.SetExcluded(shell.FieldInput)
+// UpdateClosedAt sets the "closed_at" field to the value that was provided on create.
+func (u *ShellUpsert) UpdateClosedAt() *ShellUpsert {
+	u.SetExcluded(shell.FieldClosedAt)
 	return u
 }
 
-// SetOutput sets the "output" field.
-func (u *ShellUpsert) SetOutput(v []byte) *ShellUpsert {
-	u.Set(shell.FieldOutput, v)
+// ClearClosedAt clears the value of the "closed_at" field.
+func (u *ShellUpsert) ClearClosedAt() *ShellUpsert {
+	u.SetNull(shell.FieldClosedAt)
 	return u
 }
 
-// UpdateOutput sets the "output" field to the value that was provided on create.
-func (u *ShellUpsert) UpdateOutput() *ShellUpsert {
-	u.SetExcluded(shell.FieldOutput)
+// SetData sets the "data" field.
+func (u *ShellUpsert) SetData(v []byte) *ShellUpsert {
+	u.Set(shell.FieldData, v)
+	return u
+}
+
+// UpdateData sets the "data" field to the value that was provided on create.
+func (u *ShellUpsert) UpdateData() *ShellUpsert {
+	u.SetExcluded(shell.FieldData)
 	return u
 }
 
@@ -311,31 +322,38 @@ func (u *ShellUpsertOne) UpdateLastModifiedAt() *ShellUpsertOne {
 	})
 }
 
-// SetInput sets the "input" field.
-func (u *ShellUpsertOne) SetInput(v []byte) *ShellUpsertOne {
+// SetClosedAt sets the "closed_at" field.
+func (u *ShellUpsertOne) SetClosedAt(v time.Time) *ShellUpsertOne {
 	return u.Update(func(s *ShellUpsert) {
-		s.SetInput(v)
+		s.SetClosedAt(v)
 	})
 }
 
-// UpdateInput sets the "input" field to the value that was provided on create.
-func (u *ShellUpsertOne) UpdateInput() *ShellUpsertOne {
+// UpdateClosedAt sets the "closed_at" field to the value that was provided on create.
+func (u *ShellUpsertOne) UpdateClosedAt() *ShellUpsertOne {
 	return u.Update(func(s *ShellUpsert) {
-		s.UpdateInput()
+		s.UpdateClosedAt()
 	})
 }
 
-// SetOutput sets the "output" field.
-func (u *ShellUpsertOne) SetOutput(v []byte) *ShellUpsertOne {
+// ClearClosedAt clears the value of the "closed_at" field.
+func (u *ShellUpsertOne) ClearClosedAt() *ShellUpsertOne {
 	return u.Update(func(s *ShellUpsert) {
-		s.SetOutput(v)
+		s.ClearClosedAt()
 	})
 }
 
-// UpdateOutput sets the "output" field to the value that was provided on create.
-func (u *ShellUpsertOne) UpdateOutput() *ShellUpsertOne {
+// SetData sets the "data" field.
+func (u *ShellUpsertOne) SetData(v []byte) *ShellUpsertOne {
 	return u.Update(func(s *ShellUpsert) {
-		s.UpdateOutput()
+		s.SetData(v)
+	})
+}
+
+// UpdateData sets the "data" field to the value that was provided on create.
+func (u *ShellUpsertOne) UpdateData() *ShellUpsertOne {
+	return u.Update(func(s *ShellUpsert) {
+		s.UpdateData()
 	})
 }
 
@@ -564,31 +582,38 @@ func (u *ShellUpsertBulk) UpdateLastModifiedAt() *ShellUpsertBulk {
 	})
 }
 
-// SetInput sets the "input" field.
-func (u *ShellUpsertBulk) SetInput(v []byte) *ShellUpsertBulk {
+// SetClosedAt sets the "closed_at" field.
+func (u *ShellUpsertBulk) SetClosedAt(v time.Time) *ShellUpsertBulk {
 	return u.Update(func(s *ShellUpsert) {
-		s.SetInput(v)
+		s.SetClosedAt(v)
 	})
 }
 
-// UpdateInput sets the "input" field to the value that was provided on create.
-func (u *ShellUpsertBulk) UpdateInput() *ShellUpsertBulk {
+// UpdateClosedAt sets the "closed_at" field to the value that was provided on create.
+func (u *ShellUpsertBulk) UpdateClosedAt() *ShellUpsertBulk {
 	return u.Update(func(s *ShellUpsert) {
-		s.UpdateInput()
+		s.UpdateClosedAt()
 	})
 }
 
-// SetOutput sets the "output" field.
-func (u *ShellUpsertBulk) SetOutput(v []byte) *ShellUpsertBulk {
+// ClearClosedAt clears the value of the "closed_at" field.
+func (u *ShellUpsertBulk) ClearClosedAt() *ShellUpsertBulk {
 	return u.Update(func(s *ShellUpsert) {
-		s.SetOutput(v)
+		s.ClearClosedAt()
 	})
 }
 
-// UpdateOutput sets the "output" field to the value that was provided on create.
-func (u *ShellUpsertBulk) UpdateOutput() *ShellUpsertBulk {
+// SetData sets the "data" field.
+func (u *ShellUpsertBulk) SetData(v []byte) *ShellUpsertBulk {
 	return u.Update(func(s *ShellUpsert) {
-		s.UpdateOutput()
+		s.SetData(v)
+	})
+}
+
+// UpdateData sets the "data" field to the value that was provided on create.
+func (u *ShellUpsertBulk) UpdateData() *ShellUpsertBulk {
+	return u.Update(func(s *ShellUpsert) {
+		s.UpdateData()
 	})
 }
 

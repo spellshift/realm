@@ -4027,6 +4027,18 @@ type ShellWhereInput struct {
 	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
 	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
 	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "closed_at" field predicates.
+	ClosedAt       *time.Time  `json:"closedAt,omitempty"`
+	ClosedAtNEQ    *time.Time  `json:"closedAtNEQ,omitempty"`
+	ClosedAtIn     []time.Time `json:"closedAtIn,omitempty"`
+	ClosedAtNotIn  []time.Time `json:"closedAtNotIn,omitempty"`
+	ClosedAtGT     *time.Time  `json:"closedAtGT,omitempty"`
+	ClosedAtGTE    *time.Time  `json:"closedAtGTE,omitempty"`
+	ClosedAtLT     *time.Time  `json:"closedAtLT,omitempty"`
+	ClosedAtLTE    *time.Time  `json:"closedAtLTE,omitempty"`
+	ClosedAtIsNil  bool        `json:"closedAtIsNil,omitempty"`
+	ClosedAtNotNil bool        `json:"closedAtNotNil,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4171,6 +4183,36 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 	}
 	if i.LastModifiedAtLTE != nil {
 		predicates = append(predicates, shell.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.ClosedAt != nil {
+		predicates = append(predicates, shell.ClosedAtEQ(*i.ClosedAt))
+	}
+	if i.ClosedAtNEQ != nil {
+		predicates = append(predicates, shell.ClosedAtNEQ(*i.ClosedAtNEQ))
+	}
+	if len(i.ClosedAtIn) > 0 {
+		predicates = append(predicates, shell.ClosedAtIn(i.ClosedAtIn...))
+	}
+	if len(i.ClosedAtNotIn) > 0 {
+		predicates = append(predicates, shell.ClosedAtNotIn(i.ClosedAtNotIn...))
+	}
+	if i.ClosedAtGT != nil {
+		predicates = append(predicates, shell.ClosedAtGT(*i.ClosedAtGT))
+	}
+	if i.ClosedAtGTE != nil {
+		predicates = append(predicates, shell.ClosedAtGTE(*i.ClosedAtGTE))
+	}
+	if i.ClosedAtLT != nil {
+		predicates = append(predicates, shell.ClosedAtLT(*i.ClosedAtLT))
+	}
+	if i.ClosedAtLTE != nil {
+		predicates = append(predicates, shell.ClosedAtLTE(*i.ClosedAtLTE))
+	}
+	if i.ClosedAtIsNil {
+		predicates = append(predicates, shell.ClosedAtIsNil())
+	}
+	if i.ClosedAtNotNil {
+		predicates = append(predicates, shell.ClosedAtNotNil())
 	}
 
 	switch len(predicates) {

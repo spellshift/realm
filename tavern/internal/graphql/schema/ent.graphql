@@ -1330,6 +1330,24 @@ type Shell implements Node {
   createdAt: Time!
   """Timestamp of when this ent was last updated"""
   lastModifiedAt: Time!
+  """Timestamp of when this shell was closed"""
+  closedAt: Time
+}
+"""A connection to a list of items."""
+type ShellConnection {
+  """A list of edges."""
+  edges: [ShellEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type ShellEdge {
+  """The item at the end of the edge."""
+  node: Shell
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """Ordering options for Shell connections"""
 input ShellOrder {
@@ -1342,6 +1360,7 @@ input ShellOrder {
 enum ShellOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  CLOSED_AT
 }
 """
 ShellWhereInput is used for filtering Shell objects.
@@ -1378,6 +1397,17 @@ input ShellWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
+  """closed_at field predicates"""
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
 }
 type Tag implements Node {
   id: ID!

@@ -161,7 +161,7 @@ impl Dispatcher for ReverseShellPTYMessage {
             // Write gRPC input to PTY
             if let Some(msg) = input_rx.recv().await {
                 // Skip Pings
-                if msg.kind.into() == pb::c2::ReverseShellMessageKind::Ping {
+                if msg.kind == pb::c2::ReverseShellMessageKind::Ping as i32 {
                     continue;
                 }
 

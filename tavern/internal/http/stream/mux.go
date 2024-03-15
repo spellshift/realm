@@ -48,7 +48,6 @@ func NewMux(name string, pub *pubsub.Topic, sub *pubsub.Subscription) *Mux {
 // send a new message to the configured publish topic.
 // The provided message MUST include an id metadata.
 func (mux *Mux) send(ctx context.Context, m *pubsub.Message) error {
-	fmt.Printf("[%s] Publishing: %q", mux.name, string(m.Body))
 	if _, ok := m.Metadata["id"]; !ok {
 		return fmt.Errorf("must set 'id' metadata before publishing")
 	}
@@ -84,9 +83,10 @@ func (mux *Mux) Unregister(s *Stream) {
 func (mux *Mux) unregisterStreams() {
 	for {
 		select {
-		case r := <-mux.unregister:
-			delete(mux.streams, r)
-			r.Close()
+		case s := <-mux.unregister:
+
+			delete(mux.streams, s)
+			s.Close()
 		default:
 			return
 		}

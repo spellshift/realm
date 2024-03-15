@@ -34,15 +34,29 @@ func (su *ShellUpdate) SetLastModifiedAt(t time.Time) *ShellUpdate {
 	return su
 }
 
-// SetInput sets the "input" field.
-func (su *ShellUpdate) SetInput(b []byte) *ShellUpdate {
-	su.mutation.SetInput(b)
+// SetClosedAt sets the "closed_at" field.
+func (su *ShellUpdate) SetClosedAt(t time.Time) *ShellUpdate {
+	su.mutation.SetClosedAt(t)
 	return su
 }
 
-// SetOutput sets the "output" field.
-func (su *ShellUpdate) SetOutput(b []byte) *ShellUpdate {
-	su.mutation.SetOutput(b)
+// SetNillableClosedAt sets the "closed_at" field if the given value is not nil.
+func (su *ShellUpdate) SetNillableClosedAt(t *time.Time) *ShellUpdate {
+	if t != nil {
+		su.SetClosedAt(*t)
+	}
+	return su
+}
+
+// ClearClosedAt clears the value of the "closed_at" field.
+func (su *ShellUpdate) ClearClosedAt() *ShellUpdate {
+	su.mutation.ClearClosedAt()
+	return su
+}
+
+// SetData sets the "data" field.
+func (su *ShellUpdate) SetData(b []byte) *ShellUpdate {
+	su.mutation.SetData(b)
 	return su
 }
 
@@ -99,11 +113,14 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := su.mutation.LastModifiedAt(); ok {
 		_spec.SetField(shell.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := su.mutation.Input(); ok {
-		_spec.SetField(shell.FieldInput, field.TypeBytes, value)
+	if value, ok := su.mutation.ClosedAt(); ok {
+		_spec.SetField(shell.FieldClosedAt, field.TypeTime, value)
 	}
-	if value, ok := su.mutation.Output(); ok {
-		_spec.SetField(shell.FieldOutput, field.TypeBytes, value)
+	if su.mutation.ClosedAtCleared() {
+		_spec.ClearField(shell.FieldClosedAt, field.TypeTime)
+	}
+	if value, ok := su.mutation.Data(); ok {
+		_spec.SetField(shell.FieldData, field.TypeBytes, value)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -131,15 +148,29 @@ func (suo *ShellUpdateOne) SetLastModifiedAt(t time.Time) *ShellUpdateOne {
 	return suo
 }
 
-// SetInput sets the "input" field.
-func (suo *ShellUpdateOne) SetInput(b []byte) *ShellUpdateOne {
-	suo.mutation.SetInput(b)
+// SetClosedAt sets the "closed_at" field.
+func (suo *ShellUpdateOne) SetClosedAt(t time.Time) *ShellUpdateOne {
+	suo.mutation.SetClosedAt(t)
 	return suo
 }
 
-// SetOutput sets the "output" field.
-func (suo *ShellUpdateOne) SetOutput(b []byte) *ShellUpdateOne {
-	suo.mutation.SetOutput(b)
+// SetNillableClosedAt sets the "closed_at" field if the given value is not nil.
+func (suo *ShellUpdateOne) SetNillableClosedAt(t *time.Time) *ShellUpdateOne {
+	if t != nil {
+		suo.SetClosedAt(*t)
+	}
+	return suo
+}
+
+// ClearClosedAt clears the value of the "closed_at" field.
+func (suo *ShellUpdateOne) ClearClosedAt() *ShellUpdateOne {
+	suo.mutation.ClearClosedAt()
+	return suo
+}
+
+// SetData sets the "data" field.
+func (suo *ShellUpdateOne) SetData(b []byte) *ShellUpdateOne {
+	suo.mutation.SetData(b)
 	return suo
 }
 
@@ -226,11 +257,14 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 	if value, ok := suo.mutation.LastModifiedAt(); ok {
 		_spec.SetField(shell.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := suo.mutation.Input(); ok {
-		_spec.SetField(shell.FieldInput, field.TypeBytes, value)
+	if value, ok := suo.mutation.ClosedAt(); ok {
+		_spec.SetField(shell.FieldClosedAt, field.TypeTime, value)
 	}
-	if value, ok := suo.mutation.Output(); ok {
-		_spec.SetField(shell.FieldOutput, field.TypeBytes, value)
+	if suo.mutation.ClosedAtCleared() {
+		_spec.ClearField(shell.FieldClosedAt, field.TypeTime)
+	}
+	if value, ok := suo.mutation.Data(); ok {
+		_spec.SetField(shell.FieldData, field.TypeBytes, value)
 	}
 	_node = &Shell{config: suo.config}
 	_spec.Assign = _node.assignValues
