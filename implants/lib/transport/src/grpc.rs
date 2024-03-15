@@ -118,29 +118,38 @@ impl Transport for GRPC {
 
     async fn reverse_shell(
         &mut self,
-        req: tokio_stream::wrappers::ReceiverStream<ReverseShellRequest>,
-    ) -> std::result::Result<
-        tonic::Response<tonic::codec::Streaming<ReverseShellResponse>>,
-        tonic::Status,
-    > {
-        self.reverse_shell_impl(req).await
+        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+    ) -> Result<()> {
+        // Wrap PTY output receiver in stream
+        let req_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
 
-        // while let Some(msg) = in_stream.message().await? {
-        //     match tx.send(msg).await {
-        //         Ok(_) => {
-        //             #[cfg(debug_assertions)]
-        //             log::info!("TTY Input Sent");
-        //         }
-        //         Err(_err) => {
-        //             #[cfg(debug_assertions)]
-        //             log::error!("failed to send tty input: {}", _err);
+        // Open gRPC Bi-Directional Stream
+        let resp = self.reverse_shell_impl(req_stream).await?;
+        let mut resp_stream = resp.into_inner();
 
-        //             return Err(anyhow!("failed: {}", _err));
-        //         }
-        //     }
-        // }
+        // Spawn task to deliver PTY input
+        tokio::spawn(async move {
+            while let Some(msg) = match resp_stream.message().await {
+                Ok(m) => m,
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to receive gRPC stream response: {}", _err);
 
-        // Ok(())
+                    None
+                }
+            } {
+                match tx.send(msg).await {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to queue pty input: {}", _err);
+                    }
+                }
+            }
+        });
+
+        Ok(())
     }
 }
 

@@ -63,9 +63,7 @@ pub trait UnsafeTransport: Clone + Send {
     /// Open a shell via the transport.
     async fn reverse_shell(
         &mut self,
-        req: tokio_stream::wrappers::ReceiverStream<ReverseShellRequest>,
-    ) -> std::result::Result<
-        tonic::Response<tonic::codec::Streaming<ReverseShellResponse>>,
-        tonic::Status,
-    >;
+        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+    ) -> Result<()>;
 }
