@@ -159,6 +159,28 @@ fn get_system_proxy() -> Option<String> {
     }
 }
 
+impl Config {
+    pub fn refresh_primary_ip(&mut self) {
+        let fresh_ip = get_primary_ip();
+        if self
+            .info
+            .host
+            .as_ref()
+            .is_some_and(|h| h.primary_ip != fresh_ip)
+        {
+            match self.info.host.as_mut() {
+                Some(h) => {
+                    h.primary_ip = fresh_ip;
+                }
+                None => {
+                    #[cfg(debug_assertions)]
+                    log::error!("host struct was never initialized, failed to set primary ip");
+                }
+            }
+        }
+    }
+}
+
 /*
  * Returns which Platform imix has been compiled for.
  */
