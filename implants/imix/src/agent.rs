@@ -77,7 +77,7 @@ impl Agent {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        let transport = GRPC::new(self.cfg.callback_uri.clone())?;
+        let transport = GRPC::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
         self.claim_tasks(transport.clone()).await?;
         self.report(transport.clone()).await?;
 
