@@ -219,10 +219,10 @@ mod tests {
     use tempfile::{tempdir, NamedTempFile};
 
     fn init_logging() {
-        pretty_env_logger::formatted_timed_builder()
+        let _ = pretty_env_logger::formatted_timed_builder()
             .filter_level(log::LevelFilter::Info)
             .parse_env("IMIX_LOG")
-            .init();
+            .try_init();
     }
 
     #[tokio::test]
