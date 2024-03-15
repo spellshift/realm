@@ -26,7 +26,7 @@ export const useRepositoryView = () => {
     });
 
     useEffect(()=> {
-        if(!firstParty && firstPartyTome){
+        if(!firstParty && firstPartyTome && firstPartyTome?.tomes?.length > 0){
             const firstPartyRepo =
             {node:{
                 url: "https://github.com/spellshift/realm/tree/main/tavern/tomes",

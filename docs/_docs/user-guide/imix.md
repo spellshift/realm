@@ -18,6 +18,7 @@ Imix has compile-time configuration, that may be specified using environment var
 | IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:80` | No |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
+| IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
 
 ## Logging
 
@@ -42,6 +43,16 @@ See the [Eldritch User Guide](/user-guide/eldritch) for more information.
 
 Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
 Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running tasks will report their status as new data comes in.
+
+## Proxy support
+
+Imix's default `grpc` transport supports http and https proxies for outbound communication.
+By default imix will try to determine the systems proxy settings:
+
+- On Linux reading the environment variables `http_proxy` and then `https_proxy`
+- On Windows - we cannot automatically determine the default proxy
+- On MacOS - we cannot automatically determine the default proxy
+- On FreeBSD - we cannot automatically determine the default proxy
 
 ## Static cross compilation
 

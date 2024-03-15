@@ -5,15 +5,16 @@ import { TaskOutput } from "../../features/task-output";
 import TaskTable from "../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
-import { PageNavItem, TableRowLimit } from "../../utils/enums";
+import { DEFAULT_QUERY_TYPE, PageNavItem, TableRowLimit } from "../../utils/enums";
 import FilterBar from "../../components/FilterBar";
-import { TaskPageHeader } from "./TaskPageHeader";
-import { TASK_PAGE_TYPE, useTasks } from "../../hooks/useTasks";
+import { useTasks } from "../../hooks/useTasks";
 import { Task } from "../../utils/consts";
+import { EditablePageHeader } from "./EditablePageHeader";
+import { useQuests } from "../../hooks/useQuests";
 
 const Tasks = () => {
     const { questId } = useParams();
-    const pageType = questId ? TASK_PAGE_TYPE.questIdQuery : TASK_PAGE_TYPE.questDetailsQuery;
+    const pageType = questId ? DEFAULT_QUERY_TYPE.questIdQuery : DEFAULT_QUERY_TYPE.questDetailsQuery;
     const {
         data,
         loading,
@@ -26,6 +27,13 @@ const Tasks = () => {
         setPage
     } = useTasks(pageType, questId);
 
+    const {
+        data: questData,
+        loading: questLoading,
+        error: questError,
+        setFiltersSelected: setQuestFiltersSelected
+    } = useQuests(false, questId);
+
     const [isOpen, setOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -35,13 +43,18 @@ const Tasks = () => {
         setOpen((state) => !state);
     }
 
+    const handleFilterSelected = (filtersSelected: Array<any>) => {
+        setFiltersSelected(filtersSelected);
+        setQuestFiltersSelected(filtersSelected);
+    }
+
     return (
-        <PageWrapper currNavItem={PageNavItem.tasks}>
+        <PageWrapper currNavItem={PageNavItem.quests}>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
-                <TaskPageHeader />
+                <EditablePageHeader questId={questId} data={questData} loading={questLoading} error={questError} />
             </div>
             <div className="p-4 bg-white rounded-lg shadow-lg mt-2">
-                <FilterBar setSearch={setSearch} setFiltersSelected={setFiltersSelected} filtersSelected={filtersSelected} />
+                <FilterBar setSearch={setSearch} filtersSelected={filtersSelected} setFiltersSelected={handleFilterSelected} />
             </div>
             {loading ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading quest tasks..." />

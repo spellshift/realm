@@ -1,0 +1,26 @@
+
+def main():
+    new_file_path = input_params['path']
+    new_file_parent_dir = file.parent_dir(new_file_path)
+    new_file_content = input_params['content']
+
+    # if file parent directory does not exist, error and exit.
+    if not file.exists(new_file_parent_dir):
+        eprint(f"[ERROR] Parent Directory for File does not exist at path: '{new_file_path}'.")
+        eprint(f"[ERROR] Exiting...")
+        return
+
+    # if file exists, remove it.
+    if file.exists(new_file_path):
+        print("[INFO] File was detected at the path before write. Trying to remove the file...")
+        file.remove(new_file_path)
+        print("[INFO] File was successfully removed!")
+
+    # if unable to write to destination will error
+    file.write(new_file_path, new_file_content)
+
+    # Print a Success!
+    print(f"[INFO] The file '{new_file_path}' was successfully written!")
+
+
+main()

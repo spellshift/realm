@@ -40,3 +40,9 @@ export enum TaskChartKeys {
     taskNoError ="Tasks without errors",
     taskCreated= "Tasks created"
 }
+
+export enum DEFAULT_QUERY_TYPE{
+    hostIDQuery="HOST_ID_QUERY",
+    questIdQuery= "QUEST_ID_QUERY",
+    questDetailsQuery= "QUEST_DETAILS_QUERY",
+}
