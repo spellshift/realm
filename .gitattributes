@@ -14,4 +14,5 @@ tavern/internal/graphql/models/gqlgen_models.go linguist-generated=true
 tavern/internal/graphql/schema/ent.graphql linguist-generated=true
 tavern/internal/graphql/schema.graphql linguist-generated=true
 tavern/internal/www/schema.graphql linguist-generated=true
+tavern/internal/www/build/* linguist-generated=true
 implants/lib/pb/src/generated/* linguist-generated=true
