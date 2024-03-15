@@ -34,9 +34,8 @@ type Mux struct {
 }
 
 // NewMux initializes and returns a new Mux with the provided pubsub info.
-func NewMux(name string, pub *pubsub.Topic, sub *pubsub.Subscription) *Mux {
+func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription) *Mux {
 	return &Mux{
-		name:       name,
 		pub:        pub,
 		sub:        sub,
 		register:   make(chan *Stream, maxRegistrationBufSize),

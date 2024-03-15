@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
 	"gocloud.dev/pubsub"
+	_ "gocloud.dev/pubsub/gcppubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -57,6 +58,10 @@ var (
 	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
 
+	// EnvPubSubTopicShellInput defines the topic to publish shell input to.
+	// EnvPubSubSubscriptionShellInput defines the subscription to receive shell input from.
+	// EnvPubSubTopicShellOutput defines the topic to publish shell output to.
+	// EnvPubSubSubscriptionShellOutput defines the subscription to receive shell output from.
 	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
@@ -153,8 +158,8 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
 	}
 
-	wsMux = stream.NewMux("WEBSOCKET_MUX", pubInput, subOutput)
-	grpcMux = stream.NewMux("GRPC_MUX", pubOutput, subInput)
+	wsMux = stream.NewMux(pubInput, subOutput)
+	grpcMux = stream.NewMux(pubOutput, subInput)
 	return
 }
 

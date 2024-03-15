@@ -179,12 +179,16 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/oauth/authorize": tavernhttp.Endpoint{Handler: auth.NewOAuthAuthorizationHandler(
-			cfg.oauth,
-			pubKey,
-			client,
-			"https://www.googleapis.com/oauth2/v3/userinfo",
-		)},
+		"/oauth/authorize": tavernhttp.Endpoint{
+			Handler: auth.NewOAuthAuthorizationHandler(
+				cfg.oauth,
+				pubKey,
+				client,
+				"https://www.googleapis.com/oauth2/v3/userinfo",
+			),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/graphql": tavernhttp.Endpoint{Handler: newGraphQLHandler(client, git)},
 		"/c2.C2/": tavernhttp.Endpoint{
 			Handler:              newGRPCHandler(client, grpcShellMux),
@@ -216,7 +220,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	srv := tavernhttp.NewServer(
 		routes,
 		withAuthentication,
-		// tavernhttp.WithRequestLogging(httpLogger),
+		tavernhttp.WithRequestLogging(httpLogger),
 	)
 
 	// Configure HTTP/2 (support for without TLS)
