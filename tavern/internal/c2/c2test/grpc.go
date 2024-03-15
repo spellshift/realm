@@ -44,7 +44,7 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	require.NoError(t, err)
 	grpcInSub, err := pubsub.OpenSubscription(ctx, subInput)
 	require.NoError(t, err)
-	grpcShellMux := stream.NewMux("grpc_test", grpcOutTopic, grpcInSub)
+	grpcShellMux := stream.NewMux(grpcOutTopic, grpcInSub)
 
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)

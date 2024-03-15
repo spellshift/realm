@@ -14,8 +14,11 @@ import (
 	"gocloud.dev/pubsub"
 )
 
-// TODO: Docs
+// metadataID defines the ID of the entity for the stream, enabling multiple ents to be multiplexed over a topic.
+// metadataOrderKey defines the key for specifying a unique stream ID, which all published messages should be ordered (per order key).
+// metadataOrderIndex defines the index of a published message within the context of an order key.
 const (
+	metadataID         = "id"
 	metadataOrderKey   = "order-key"
 	metadataOrderIndex = "order-index"
 
@@ -25,6 +28,9 @@ const (
 
 	// maxStreamMsgBufSize defines the maximum number of messages that can be buffered for a stream before causing the Mux to block.
 	maxStreamMsgBufSize = 1024
+
+	// maxStreamOrderBuf defines how many messages to wait before dropping an out-of-order message and move on.
+	maxStreamOrderBuf = 10
 )
 
 // A Stream is registered with a Mux to receive filtered messages from a pubsub subscription.
@@ -59,7 +65,7 @@ func (s *Stream) SendMessage(ctx context.Context, msg *pubsub.Message, mux *Mux)
 	if msg.Metadata == nil {
 		msg.Metadata = make(map[string]string, 3)
 	}
-	msg.Metadata["id"] = s.id
+	msg.Metadata[metadataID] = s.id
 	msg.Metadata[metadataOrderKey] = s.orderKey
 	msg.Metadata[metadataOrderIndex] = fmt.Sprintf("%d", s.orderIndex.Load())
 
@@ -138,7 +144,8 @@ func newOrderKey() string {
 	buf := make([]byte, 16)
 	_, err := io.ReadFull(rand.Reader, buf)
 	if err != nil {
-		panic(fmt.Errorf("failed to generate random token: %w", err))
+		log.Printf("[ERROR] Failed to generate %q, defaulting to empty string!", metadataOrderKey)
+		return ""
 	}
 	return base64.StdEncoding.EncodeToString(buf)
 }
@@ -158,8 +165,6 @@ type sessionBuffer struct {
 func (buf *sessionBuffer) writeMessage(msg *pubsub.Message, dst chan<- *pubsub.Message) {
 	index, ok := parseOrderIndex(msg)
 	if !ok {
-		// If no valid order key was provided, error but send the message
-		// log.Printf("[ERROR] received message without order key")
 		dst <- msg
 	} else if index == buf.nextToSend || buf.nextToSend == 0 {
 		// If we receive the message we're looking for or if this is the first
@@ -169,7 +174,7 @@ func (buf *sessionBuffer) writeMessage(msg *pubsub.Message, dst chan<- *pubsub.M
 	} else if index < buf.nextToSend {
 		// We prefer to drop messages instead of sending them out of order
 		// If we receive a message after a subsequent one has been sent, drop it
-		log.Printf("[ERROR] dropping message, subsequent message has already been sent")
+		log.Printf("[ERROR] dropping message (index=%d), subsequent message has already been sent", index)
 	} else {
 		// If we receive the message out of order, buffer it
 		buf.data[index] = msg
@@ -181,7 +186,7 @@ func (buf *sessionBuffer) flushBuffer(dst chan<- *pubsub.Message) {
 		msg, ok := buf.data[buf.nextToSend]
 		if !ok || msg == nil {
 			// If our buffer has grown too large, skip waiting for messages
-			if len(buf.data) > 10 { // TODO: Magic Number
+			if len(buf.data) > maxStreamOrderBuf {
 				buf.nextToSend += 1
 				continue
 			}

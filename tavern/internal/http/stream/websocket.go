@@ -63,7 +63,7 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			hasClosed, ok := message.Metadata[MetadataStreamClose]
 			if ok && hasClosed != "" {
 				// The producer ended the stream.
-				log.Printf("[WS] Closing websocket, stream has ended")
+				log.Printf("[WS] Closing websocket, stream has ended (stream_id=%s)", c.Stream.id)
 				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -120,7 +120,7 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
 				Body: message,
 				Metadata: map[string]string{
-					"id": c.id,
+					metadataID: c.id,
 				},
 			}, c.mux); err != nil {
 				log.Printf("[WS][ERROR] failed to publish message: %v", err)
@@ -169,8 +169,6 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		if !revShell.ClosedAt.IsZero() {
 			http.Error(w, "shell already closed", http.StatusBadRequest)
 			return
-		} else {
-			log.Printf("Shell not closed: %s", revShell.ClosedAt.String())
 		}
 
 		// Start Websocket

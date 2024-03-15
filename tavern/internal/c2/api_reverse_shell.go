@@ -36,9 +36,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 
 	// Log Shell Session
 	log.Printf("[gRPC] Reverse Shell Started (shell_id=%d)", shellID)
-	defer func() {
-		log.Printf("[gRPC] Reverse Shell Closed (shell_id=%d)", shellID)
-	}()
+	defer log.Printf("[gRPC] Reverse Shell Closed (shell_id=%d)", shellID)
 
 	// Create new Stream
 	pubsubStream := stream.New(fmt.Sprintf("%d", shellID))
@@ -47,11 +45,11 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	defer func() {
 		closedAt := time.Now()
 
-		// Notify Subscribers that the stream is closed
+		// Prepare New Context
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		// Notify Subscribers
+		// Notify Subscribers that the stream is closed
 		log.Printf("[gRPC][ReverseShell] Sending stream close message")
 		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
 			Metadata: map[string]string{

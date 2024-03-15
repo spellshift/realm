@@ -47,7 +47,7 @@ func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription) *Mux {
 // send a new message to the configured publish topic.
 // The provided message MUST include an id metadata.
 func (mux *Mux) send(ctx context.Context, m *pubsub.Message) error {
-	if _, ok := m.Metadata["id"]; !ok {
+	if _, ok := m.Metadata[metadataID]; !ok {
 		return fmt.Errorf("must set 'id' metadata before publishing")
 	}
 	return mux.pub.Send(ctx, m)
