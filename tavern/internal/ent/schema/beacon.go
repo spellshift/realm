@@ -85,6 +85,14 @@ func (Beacon) Edges() []ent.Edge {
 			).
 			Ref("beacon").
 			Comment("Tasks that have been assigned to the beacon."),
+		edge.From("shells", Shell.Type).
+			Ref("beacon").
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Shells that have been created by the beacon."),
 	}
 }
 

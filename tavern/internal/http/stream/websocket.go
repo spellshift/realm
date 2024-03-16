@@ -10,8 +10,10 @@ import (
 
 	"github.com/gorilla/websocket"
 	"gocloud.dev/pubsub"
+	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 const (
@@ -130,16 +132,70 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 	}
 }
 
+func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Client, shellID int, userID int) {
+	defer func() {
+		log.Printf("[WS] checking user already active before removal (user_id=%d,shell_id=%d): ", userID, shellID)
+
+		wasAdded, err := graph.Shell.Query().
+			Where(shell.ID(shellID)).
+			QueryActiveUsers().
+			Where(user.ID(userID)).
+			Exist(ctx)
+		if err != nil {
+			log.Printf("[WS][ERROR] Failed to check if user active on shell (user_id=%d,shell_id=%d): %v", userID, shellID, err)
+			return
+		}
+		if !wasAdded {
+			return
+		}
+
+		if _, err := graph.Shell.UpdateOneID(shellID).
+			RemoveActiveUserIDs(userID).
+			Save(ctx); err != nil {
+			log.Printf("[WS][ERROR] Failed to remove active user from shell (user_id=%d): %v", userID, err)
+			return
+		}
+	}()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+		case <-done:
+			return
+		case <-ticker.C:
+			// Handle case where user has multiple shells open
+			alreadyAdded, err := graph.Shell.Query().
+				Where(shell.ID(shellID)).
+				QueryActiveUsers().
+				Where(user.ID(userID)).
+				Exist(ctx)
+			if err != nil {
+				log.Printf("[WS][ERROR] Failed to check if user active on shell (user_id=%d,shell_id=%d): ", userID, shellID)
+				continue
+			}
+			if alreadyAdded {
+				continue
+			}
+
+			if _, err := graph.Shell.UpdateOneID(shellID).
+				AddActiveUserIDs(userID).
+				Save(ctx); err != nil {
+				log.Printf("[WS][ERROR] Failed to add active user to shell (user_id=%d): %v", userID, err)
+			}
+		}
+	}
+
+}
+
 // NewShellHandler provides an HTTP handler which handles a websocket for shell io.
 // It requires a query param "shell_id" be specified (must be an integer).
 // This ID represents which Shell ent the websocket will connect to.
 func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		log.Printf("[WS] New Shell Websocket Connection")
-		defer func() {
-			log.Printf("[WS] Shell Websocket Connection Closed")
-		}()
 
 		// Parse Shell ID
 		shellIDStr := r.URL.Query().Get("shell_id")
@@ -154,7 +210,10 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		}
 
 		// Load Shell
-		revShell, err := graph.Shell.Query().Where(shell.ID(shellID)).Select(shell.FieldClosedAt).Only(ctx)
+		revShell, err := graph.Shell.Query().
+			Where(shell.ID(shellID)).
+			Select(shell.FieldClosedAt).
+			Only(ctx)
 		if err != nil {
 			if ent.IsNotFound(err) {
 				http.Error(w, "shell not found", http.StatusNotFound)
@@ -163,6 +222,17 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 				http.Error(w, "failed to load shell", http.StatusInternalServerError)
 			}
 			return
+		}
+
+		// Track Active User
+		var activeUserWG sync.WaitGroup
+		activeUserDoneCh := make(chan struct{})
+		if authUser := auth.UserFromContext(ctx); authUser != nil {
+			activeUserWG.Add(1)
+			go func(ctx context.Context, shellID, userID int) {
+				defer activeUserWG.Done()
+				manageActiveUser(ctx, activeUserDoneCh, graph, shellID, userID)
+			}(ctx, revShell.ID, authUser.ID)
 		}
 
 		// Prevent opening closed shells
@@ -178,6 +248,7 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 			log.Printf("[WS][ERROR] Failed to upgrade connection to websocket: %v", err)
 			return
 		}
+		defer log.Printf("[WS] Shell Websocket Connection Closed (shell_id=%d)", shellID)
 
 		// Initialize Stream
 		stream := New(shellIDStr)
@@ -200,6 +271,9 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 			defer wg.Done()
 			conn.WriteToWebsocket(ctx)
 		}()
+
 		wg.Wait()
+		activeUserDoneCh <- struct{}{}
+		activeUserWG.Wait()
 	})
 }

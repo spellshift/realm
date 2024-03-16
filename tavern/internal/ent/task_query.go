@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -32,12 +33,14 @@ type TaskQuery struct {
 	withReportedFiles            *HostFileQuery
 	withReportedProcesses        *HostProcessQuery
 	withReportedCredentials      *HostCredentialQuery
+	withShells                   *ShellQuery
 	withFKs                      bool
 	modifiers                    []func(*sql.Selector)
 	loadTotal                    []func(context.Context, []*Task) error
 	withNamedReportedFiles       map[string]*HostFileQuery
 	withNamedReportedProcesses   map[string]*HostProcessQuery
 	withNamedReportedCredentials map[string]*HostCredentialQuery
+	withNamedShells              map[string]*ShellQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -177,6 +180,28 @@ func (tq *TaskQuery) QueryReportedCredentials() *HostCredentialQuery {
 			sqlgraph.From(task.Table, task.FieldID, selector),
 			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedCredentialsTable, task.ReportedCredentialsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShells chains the current query on the "shells" edge.
+func (tq *TaskQuery) QueryShells() *ShellQuery {
+	query := (&ShellClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, task.ShellsTable, task.ShellsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -381,6 +406,7 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		withReportedFiles:       tq.withReportedFiles.Clone(),
 		withReportedProcesses:   tq.withReportedProcesses.Clone(),
 		withReportedCredentials: tq.withReportedCredentials.Clone(),
+		withShells:              tq.withShells.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -439,6 +465,17 @@ func (tq *TaskQuery) WithReportedCredentials(opts ...func(*HostCredentialQuery))
 		opt(query)
 	}
 	tq.withReportedCredentials = query
+	return tq
+}
+
+// WithShells tells the query-builder to eager-load the nodes that are connected to
+// the "shells" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithShells(opts ...func(*ShellQuery)) *TaskQuery {
+	query := (&ShellClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withShells = query
 	return tq
 }
 
@@ -521,12 +558,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		nodes       = []*Task{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			tq.withQuest != nil,
 			tq.withBeacon != nil,
 			tq.withReportedFiles != nil,
 			tq.withReportedProcesses != nil,
 			tq.withReportedCredentials != nil,
+			tq.withShells != nil,
 		}
 	)
 	if tq.withQuest != nil || tq.withBeacon != nil {
@@ -589,6 +627,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 			return nil, err
 		}
 	}
+	if query := tq.withShells; query != nil {
+		if err := tq.loadShells(ctx, query, nodes,
+			func(n *Task) { n.Edges.Shells = []*Shell{} },
+			func(n *Task, e *Shell) { n.Edges.Shells = append(n.Edges.Shells, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range tq.withNamedReportedFiles {
 		if err := tq.loadReportedFiles(ctx, query, nodes,
 			func(n *Task) { n.appendNamedReportedFiles(name) },
@@ -607,6 +652,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		if err := tq.loadReportedCredentials(ctx, query, nodes,
 			func(n *Task) { n.appendNamedReportedCredentials(name) },
 			func(n *Task, e *HostCredential) { n.appendNamedReportedCredentials(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedShells {
+		if err := tq.loadShells(ctx, query, nodes,
+			func(n *Task) { n.appendNamedShells(name) },
+			func(n *Task, e *Shell) { n.appendNamedShells(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -775,6 +827,37 @@ func (tq *TaskQuery) loadReportedCredentials(ctx context.Context, query *HostCre
 	}
 	return nil
 }
+func (tq *TaskQuery) loadShells(ctx context.Context, query *ShellQuery, nodes []*Task, init func(*Task), assign func(*Task, *Shell)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Task)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Shell(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(task.ShellsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_task
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_task" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_task" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (tq *TaskQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := tq.querySpec()
@@ -899,6 +982,20 @@ func (tq *TaskQuery) WithNamedReportedCredentials(name string, opts ...func(*Hos
 		tq.withNamedReportedCredentials = make(map[string]*HostCredentialQuery)
 	}
 	tq.withNamedReportedCredentials[name] = query
+	return tq
+}
+
+// WithNamedShells tells the query-builder to eager-load the nodes that are connected to the "shells"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithNamedShells(name string, opts ...func(*ShellQuery)) *TaskQuery {
+	query := (&ShellClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedShells == nil {
+		tq.withNamedShells = make(map[string]*ShellQuery)
+	}
+	tq.withNamedShells[name] = query
 	return tq
 }
 

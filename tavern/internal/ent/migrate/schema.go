@@ -257,12 +257,35 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "data", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "shell_task", Type: field.TypeInt},
+		{Name: "shell_beacon", Type: field.TypeInt},
+		{Name: "shell_owner", Type: field.TypeInt},
 	}
 	// ShellsTable holds the schema information for the "shells" table.
 	ShellsTable = &schema.Table{
 		Name:       "shells",
 		Columns:    ShellsColumns,
 		PrimaryKey: []*schema.Column{ShellsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shells_tasks_task",
+				Columns:    []*schema.Column{ShellsColumns[5]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "shells_beacons_beacon",
+				Columns:    []*schema.Column{ShellsColumns[6]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "shells_users_owner",
+				Columns:    []*schema.Column{ShellsColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
@@ -356,12 +379,21 @@ var (
 		{Name: "access_token", Type: field.TypeString, Size: 200},
 		{Name: "is_activated", Type: field.TypeBool, Default: false},
 		{Name: "is_admin", Type: field.TypeBool, Default: false},
+		{Name: "shell_active_users", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "users_shells_active_users",
+				Columns:    []*schema.Column{UsersColumns[8]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// HostTagsColumns holds the columns for the "host_tags" table.
 	HostTagsColumns = []*schema.Column{
@@ -450,10 +482,14 @@ func init() {
 	RepositoriesTable.Annotation = &entsql.Annotation{
 		Table: "repositories",
 	}
+	ShellsTable.ForeignKeys[0].RefTable = TasksTable
+	ShellsTable.ForeignKeys[1].RefTable = BeaconsTable
+	ShellsTable.ForeignKeys[2].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = QuestsTable
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
 	TomesTable.ForeignKeys[0].RefTable = UsersTable
 	TomesTable.ForeignKeys[1].RefTable = RepositoriesTable
+	UsersTable.ForeignKeys[0].RefTable = ShellsTable
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
 	TomeFilesTable.ForeignKeys[0].RefTable = TomesTable

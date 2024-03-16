@@ -25,7 +25,6 @@ var upgrader = websocket.Upgrader{
 // Streams will only receive a Message if their configured ID matches the incoming metadata of a Message.
 // Additionally, new messages may be published using the Mux.
 type Mux struct {
-	name       string
 	pub        *pubsub.Topic
 	sub        *pubsub.Subscription
 	register   chan *Stream

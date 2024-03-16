@@ -27,6 +27,25 @@ type Beacon implements Node {
   host: Host!
   """Tasks that have been assigned to the beacon."""
   tasks: [Task!]
+  shells(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Shells returned from the connection."""
+    orderBy: [ShellOrder!]
+
+    """Filtering options for Shells returned from the connection."""
+    where: ShellWhereInput
+  ): ShellConnection!
 }
 """Ordering options for Beacon connections"""
 input BeaconOrder {
@@ -165,6 +184,9 @@ input BeaconWhereInput {
   """tasks edge predicates"""
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
+  """shells edge predicates"""
+  hasShells: Boolean
+  hasShellsWith: [ShellWhereInput!]
 }
 """
 CreateQuestInput is used for create Quest object.
@@ -1337,6 +1359,14 @@ type Shell implements Node {
   lastModifiedAt: Time!
   """Timestamp of when this shell was closed"""
   closedAt: Time
+  """Task that created the shell"""
+  task: Task!
+  """Beacon that created the shell"""
+  beacon: Beacon!
+  """User that created the shell"""
+  owner: User!
+  """Users that are currently using the shell"""
+  activeUsers: [User!]
 }
 """A connection to a list of items."""
 type ShellConnection {
@@ -1413,6 +1443,18 @@ input ShellWhereInput {
   closedAtLTE: Time
   closedAtIsNil: Boolean
   closedAtNotNil: Boolean
+  """task edge predicates"""
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
+  """beacon edge predicates"""
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
+  """owner edge predicates"""
+  hasOwner: Boolean
+  hasOwnerWith: [UserWhereInput!]
+  """active_users edge predicates"""
+  hasActiveUsers: Boolean
+  hasActiveUsersWith: [UserWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -1504,6 +1546,8 @@ type Task implements Node {
   reportedProcesses: [HostProcess!]
   """Credentials that have been reported by this task."""
   reportedCredentials: [HostCredential!]
+  """Shells that were created by this task"""
+  shells: [Shell!]
 }
 """A connection to a list of items."""
 type TaskConnection {
@@ -1661,6 +1705,9 @@ input TaskWhereInput {
   """reported_credentials edge predicates"""
   hasReportedCredentials: Boolean
   hasReportedCredentialsWith: [HostCredentialWhereInput!]
+  """shells edge predicates"""
+  hasShells: Boolean
+  hasShellsWith: [ShellWhereInput!]
 }
 type Tome implements Node {
   id: ID!

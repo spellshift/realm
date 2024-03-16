@@ -11,7 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ShellCreate is the builder for creating a Shell entity.
@@ -70,6 +73,54 @@ func (sc *ShellCreate) SetData(b []byte) *ShellCreate {
 	return sc
 }
 
+// SetTaskID sets the "task" edge to the Task entity by ID.
+func (sc *ShellCreate) SetTaskID(id int) *ShellCreate {
+	sc.mutation.SetTaskID(id)
+	return sc
+}
+
+// SetTask sets the "task" edge to the Task entity.
+func (sc *ShellCreate) SetTask(t *Task) *ShellCreate {
+	return sc.SetTaskID(t.ID)
+}
+
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (sc *ShellCreate) SetBeaconID(id int) *ShellCreate {
+	sc.mutation.SetBeaconID(id)
+	return sc
+}
+
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (sc *ShellCreate) SetBeacon(b *Beacon) *ShellCreate {
+	return sc.SetBeaconID(b.ID)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (sc *ShellCreate) SetOwnerID(id int) *ShellCreate {
+	sc.mutation.SetOwnerID(id)
+	return sc
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (sc *ShellCreate) SetOwner(u *User) *ShellCreate {
+	return sc.SetOwnerID(u.ID)
+}
+
+// AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
+func (sc *ShellCreate) AddActiveUserIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddActiveUserIDs(ids...)
+	return sc
+}
+
+// AddActiveUsers adds the "active_users" edges to the User entity.
+func (sc *ShellCreate) AddActiveUsers(u ...*User) *ShellCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return sc.AddActiveUserIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (sc *ShellCreate) Mutation() *ShellMutation {
 	return sc.mutation
@@ -126,6 +177,15 @@ func (sc *ShellCreate) check() error {
 	if _, ok := sc.mutation.Data(); !ok {
 		return &ValidationError{Name: "data", err: errors.New(`ent: missing required field "Shell.data"`)}
 	}
+	if _, ok := sc.mutation.TaskID(); !ok {
+		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "Shell.task"`)}
+	}
+	if _, ok := sc.mutation.BeaconID(); !ok {
+		return &ValidationError{Name: "beacon", err: errors.New(`ent: missing required edge "Shell.beacon"`)}
+	}
+	if _, ok := sc.mutation.OwnerID(); !ok {
+		return &ValidationError{Name: "owner", err: errors.New(`ent: missing required edge "Shell.owner"`)}
+	}
 	return nil
 }
 
@@ -168,6 +228,73 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 	if value, ok := sc.mutation.Data(); ok {
 		_spec.SetField(shell.FieldData, field.TypeBytes, value)
 		_node.Data = value
+	}
+	if nodes := sc.mutation.TaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.TaskTable,
+			Columns: []string{shell.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.shell_task = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.BeaconIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.BeaconTable,
+			Columns: []string{shell.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.shell_beacon = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.OwnerTable,
+			Columns: []string{shell.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.shell_owner = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.ActiveUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ActiveUsersTable,
+			Columns: []string{shell.ActiveUsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

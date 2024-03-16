@@ -4,25 +4,35 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ShellQuery is the builder for querying Shell entities.
 type ShellQuery struct {
 	config
-	ctx        *QueryContext
-	order      []shell.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Shell
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Shell) error
+	ctx                  *QueryContext
+	order                []shell.OrderOption
+	inters               []Interceptor
+	predicates           []predicate.Shell
+	withTask             *TaskQuery
+	withBeacon           *BeaconQuery
+	withOwner            *UserQuery
+	withActiveUsers      *UserQuery
+	withFKs              bool
+	modifiers            []func(*sql.Selector)
+	loadTotal            []func(context.Context, []*Shell) error
+	withNamedActiveUsers map[string]*UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -57,6 +67,94 @@ func (sq *ShellQuery) Unique(unique bool) *ShellQuery {
 func (sq *ShellQuery) Order(o ...shell.OrderOption) *ShellQuery {
 	sq.order = append(sq.order, o...)
 	return sq
+}
+
+// QueryTask chains the current query on the "task" edge.
+func (sq *ShellQuery) QueryTask() *TaskQuery {
+	query := (&TaskClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shell.TaskTable, shell.TaskColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBeacon chains the current query on the "beacon" edge.
+func (sq *ShellQuery) QueryBeacon() *BeaconQuery {
+	query := (&BeaconClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shell.BeaconTable, shell.BeaconColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOwner chains the current query on the "owner" edge.
+func (sq *ShellQuery) QueryOwner() *UserQuery {
+	query := (&UserClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shell.OwnerTable, shell.OwnerColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryActiveUsers chains the current query on the "active_users" edge.
+func (sq *ShellQuery) QueryActiveUsers() *UserQuery {
+	query := (&UserClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ActiveUsersTable, shell.ActiveUsersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Shell entity from the query.
@@ -246,15 +344,63 @@ func (sq *ShellQuery) Clone() *ShellQuery {
 		return nil
 	}
 	return &ShellQuery{
-		config:     sq.config,
-		ctx:        sq.ctx.Clone(),
-		order:      append([]shell.OrderOption{}, sq.order...),
-		inters:     append([]Interceptor{}, sq.inters...),
-		predicates: append([]predicate.Shell{}, sq.predicates...),
+		config:          sq.config,
+		ctx:             sq.ctx.Clone(),
+		order:           append([]shell.OrderOption{}, sq.order...),
+		inters:          append([]Interceptor{}, sq.inters...),
+		predicates:      append([]predicate.Shell{}, sq.predicates...),
+		withTask:        sq.withTask.Clone(),
+		withBeacon:      sq.withBeacon.Clone(),
+		withOwner:       sq.withOwner.Clone(),
+		withActiveUsers: sq.withActiveUsers.Clone(),
 		// clone intermediate query.
 		sql:  sq.sql.Clone(),
 		path: sq.path,
 	}
+}
+
+// WithTask tells the query-builder to eager-load the nodes that are connected to
+// the "task" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithTask(opts ...func(*TaskQuery)) *ShellQuery {
+	query := (&TaskClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withTask = query
+	return sq
+}
+
+// WithBeacon tells the query-builder to eager-load the nodes that are connected to
+// the "beacon" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithBeacon(opts ...func(*BeaconQuery)) *ShellQuery {
+	query := (&BeaconClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withBeacon = query
+	return sq
+}
+
+// WithOwner tells the query-builder to eager-load the nodes that are connected to
+// the "owner" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithOwner(opts ...func(*UserQuery)) *ShellQuery {
+	query := (&UserClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withOwner = query
+	return sq
+}
+
+// WithActiveUsers tells the query-builder to eager-load the nodes that are connected to
+// the "active_users" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithActiveUsers(opts ...func(*UserQuery)) *ShellQuery {
+	query := (&UserClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withActiveUsers = query
+	return sq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -333,15 +479,29 @@ func (sq *ShellQuery) prepareQuery(ctx context.Context) error {
 
 func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell, error) {
 	var (
-		nodes = []*Shell{}
-		_spec = sq.querySpec()
+		nodes       = []*Shell{}
+		withFKs     = sq.withFKs
+		_spec       = sq.querySpec()
+		loadedTypes = [4]bool{
+			sq.withTask != nil,
+			sq.withBeacon != nil,
+			sq.withOwner != nil,
+			sq.withActiveUsers != nil,
+		}
 	)
+	if sq.withTask != nil || sq.withBeacon != nil || sq.withOwner != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, shell.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Shell).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Shell{config: sq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(sq.modifiers) > 0 {
@@ -356,12 +516,172 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := sq.withTask; query != nil {
+		if err := sq.loadTask(ctx, query, nodes, nil,
+			func(n *Shell, e *Task) { n.Edges.Task = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withBeacon; query != nil {
+		if err := sq.loadBeacon(ctx, query, nodes, nil,
+			func(n *Shell, e *Beacon) { n.Edges.Beacon = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withOwner; query != nil {
+		if err := sq.loadOwner(ctx, query, nodes, nil,
+			func(n *Shell, e *User) { n.Edges.Owner = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withActiveUsers; query != nil {
+		if err := sq.loadActiveUsers(ctx, query, nodes,
+			func(n *Shell) { n.Edges.ActiveUsers = []*User{} },
+			func(n *Shell, e *User) { n.Edges.ActiveUsers = append(n.Edges.ActiveUsers, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedActiveUsers {
+		if err := sq.loadActiveUsers(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedActiveUsers(name) },
+			func(n *Shell, e *User) { n.appendNamedActiveUsers(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range sq.loadTotal {
 		if err := sq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (sq *ShellQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *Task)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Shell)
+	for i := range nodes {
+		if nodes[i].shell_task == nil {
+			continue
+		}
+		fk := *nodes[i].shell_task
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(task.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_task" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (sq *ShellQuery) loadBeacon(ctx context.Context, query *BeaconQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *Beacon)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Shell)
+	for i := range nodes {
+		if nodes[i].shell_beacon == nil {
+			continue
+		}
+		fk := *nodes[i].shell_beacon
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(beacon.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_beacon" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (sq *ShellQuery) loadOwner(ctx context.Context, query *UserQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *User)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Shell)
+	for i := range nodes {
+		if nodes[i].shell_owner == nil {
+			continue
+		}
+		fk := *nodes[i].shell_owner
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_owner" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (sq *ShellQuery) loadActiveUsers(ctx context.Context, query *UserQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *User)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Shell)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.User(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shell.ActiveUsersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_active_users
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_active_users" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_active_users" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (sq *ShellQuery) sqlCount(ctx context.Context) (int, error) {
@@ -446,6 +766,20 @@ func (sq *ShellQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedActiveUsers tells the query-builder to eager-load the nodes that are connected to the "active_users"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedActiveUsers(name string, opts ...func(*UserQuery)) *ShellQuery {
+	query := (&UserClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedActiveUsers == nil {
+		sq.withNamedActiveUsers = make(map[string]*UserQuery)
+	}
+	sq.withNamedActiveUsers[name] = query
+	return sq
 }
 
 // ShellGroupBy is the group-by builder for Shell entities.

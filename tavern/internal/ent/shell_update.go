@@ -11,8 +11,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ShellUpdate is the builder for updating Shell entities.
@@ -60,9 +63,96 @@ func (su *ShellUpdate) SetData(b []byte) *ShellUpdate {
 	return su
 }
 
+// SetTaskID sets the "task" edge to the Task entity by ID.
+func (su *ShellUpdate) SetTaskID(id int) *ShellUpdate {
+	su.mutation.SetTaskID(id)
+	return su
+}
+
+// SetTask sets the "task" edge to the Task entity.
+func (su *ShellUpdate) SetTask(t *Task) *ShellUpdate {
+	return su.SetTaskID(t.ID)
+}
+
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (su *ShellUpdate) SetBeaconID(id int) *ShellUpdate {
+	su.mutation.SetBeaconID(id)
+	return su
+}
+
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (su *ShellUpdate) SetBeacon(b *Beacon) *ShellUpdate {
+	return su.SetBeaconID(b.ID)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (su *ShellUpdate) SetOwnerID(id int) *ShellUpdate {
+	su.mutation.SetOwnerID(id)
+	return su
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (su *ShellUpdate) SetOwner(u *User) *ShellUpdate {
+	return su.SetOwnerID(u.ID)
+}
+
+// AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
+func (su *ShellUpdate) AddActiveUserIDs(ids ...int) *ShellUpdate {
+	su.mutation.AddActiveUserIDs(ids...)
+	return su
+}
+
+// AddActiveUsers adds the "active_users" edges to the User entity.
+func (su *ShellUpdate) AddActiveUsers(u ...*User) *ShellUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return su.AddActiveUserIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (su *ShellUpdate) Mutation() *ShellMutation {
 	return su.mutation
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (su *ShellUpdate) ClearTask() *ShellUpdate {
+	su.mutation.ClearTask()
+	return su
+}
+
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (su *ShellUpdate) ClearBeacon() *ShellUpdate {
+	su.mutation.ClearBeacon()
+	return su
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (su *ShellUpdate) ClearOwner() *ShellUpdate {
+	su.mutation.ClearOwner()
+	return su
+}
+
+// ClearActiveUsers clears all "active_users" edges to the User entity.
+func (su *ShellUpdate) ClearActiveUsers() *ShellUpdate {
+	su.mutation.ClearActiveUsers()
+	return su
+}
+
+// RemoveActiveUserIDs removes the "active_users" edge to User entities by IDs.
+func (su *ShellUpdate) RemoveActiveUserIDs(ids ...int) *ShellUpdate {
+	su.mutation.RemoveActiveUserIDs(ids...)
+	return su
+}
+
+// RemoveActiveUsers removes "active_users" edges to User entities.
+func (su *ShellUpdate) RemoveActiveUsers(u ...*User) *ShellUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return su.RemoveActiveUserIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -101,7 +191,24 @@ func (su *ShellUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (su *ShellUpdate) check() error {
+	if _, ok := su.mutation.TaskID(); su.mutation.TaskCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Shell.task"`)
+	}
+	if _, ok := su.mutation.BeaconID(); su.mutation.BeaconCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Shell.beacon"`)
+	}
+	if _, ok := su.mutation.OwnerID(); su.mutation.OwnerCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Shell.owner"`)
+	}
+	return nil
+}
+
 func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := su.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(shell.Table, shell.Columns, sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt))
 	if ps := su.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -121,6 +228,138 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := su.mutation.Data(); ok {
 		_spec.SetField(shell.FieldData, field.TypeBytes, value)
+	}
+	if su.mutation.TaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.TaskTable,
+			Columns: []string{shell.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.TaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.TaskTable,
+			Columns: []string{shell.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.BeaconCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.BeaconTable,
+			Columns: []string{shell.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.BeaconIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.BeaconTable,
+			Columns: []string{shell.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.OwnerTable,
+			Columns: []string{shell.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.OwnerTable,
+			Columns: []string{shell.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.ActiveUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ActiveUsersTable,
+			Columns: []string{shell.ActiveUsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedActiveUsersIDs(); len(nodes) > 0 && !su.mutation.ActiveUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ActiveUsersTable,
+			Columns: []string{shell.ActiveUsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.ActiveUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ActiveUsersTable,
+			Columns: []string{shell.ActiveUsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -174,9 +413,96 @@ func (suo *ShellUpdateOne) SetData(b []byte) *ShellUpdateOne {
 	return suo
 }
 
+// SetTaskID sets the "task" edge to the Task entity by ID.
+func (suo *ShellUpdateOne) SetTaskID(id int) *ShellUpdateOne {
+	suo.mutation.SetTaskID(id)
+	return suo
+}
+
+// SetTask sets the "task" edge to the Task entity.
+func (suo *ShellUpdateOne) SetTask(t *Task) *ShellUpdateOne {
+	return suo.SetTaskID(t.ID)
+}
+
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (suo *ShellUpdateOne) SetBeaconID(id int) *ShellUpdateOne {
+	suo.mutation.SetBeaconID(id)
+	return suo
+}
+
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (suo *ShellUpdateOne) SetBeacon(b *Beacon) *ShellUpdateOne {
+	return suo.SetBeaconID(b.ID)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (suo *ShellUpdateOne) SetOwnerID(id int) *ShellUpdateOne {
+	suo.mutation.SetOwnerID(id)
+	return suo
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (suo *ShellUpdateOne) SetOwner(u *User) *ShellUpdateOne {
+	return suo.SetOwnerID(u.ID)
+}
+
+// AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
+func (suo *ShellUpdateOne) AddActiveUserIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.AddActiveUserIDs(ids...)
+	return suo
+}
+
+// AddActiveUsers adds the "active_users" edges to the User entity.
+func (suo *ShellUpdateOne) AddActiveUsers(u ...*User) *ShellUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return suo.AddActiveUserIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (suo *ShellUpdateOne) Mutation() *ShellMutation {
 	return suo.mutation
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (suo *ShellUpdateOne) ClearTask() *ShellUpdateOne {
+	suo.mutation.ClearTask()
+	return suo
+}
+
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (suo *ShellUpdateOne) ClearBeacon() *ShellUpdateOne {
+	suo.mutation.ClearBeacon()
+	return suo
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (suo *ShellUpdateOne) ClearOwner() *ShellUpdateOne {
+	suo.mutation.ClearOwner()
+	return suo
+}
+
+// ClearActiveUsers clears all "active_users" edges to the User entity.
+func (suo *ShellUpdateOne) ClearActiveUsers() *ShellUpdateOne {
+	suo.mutation.ClearActiveUsers()
+	return suo
+}
+
+// RemoveActiveUserIDs removes the "active_users" edge to User entities by IDs.
+func (suo *ShellUpdateOne) RemoveActiveUserIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.RemoveActiveUserIDs(ids...)
+	return suo
+}
+
+// RemoveActiveUsers removes "active_users" edges to User entities.
+func (suo *ShellUpdateOne) RemoveActiveUsers(u ...*User) *ShellUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return suo.RemoveActiveUserIDs(ids...)
 }
 
 // Where appends a list predicates to the ShellUpdate builder.
@@ -228,7 +554,24 @@ func (suo *ShellUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (suo *ShellUpdateOne) check() error {
+	if _, ok := suo.mutation.TaskID(); suo.mutation.TaskCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Shell.task"`)
+	}
+	if _, ok := suo.mutation.BeaconID(); suo.mutation.BeaconCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Shell.beacon"`)
+	}
+	if _, ok := suo.mutation.OwnerID(); suo.mutation.OwnerCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Shell.owner"`)
+	}
+	return nil
+}
+
 func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error) {
+	if err := suo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(shell.Table, shell.Columns, sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt))
 	id, ok := suo.mutation.ID()
 	if !ok {
@@ -265,6 +608,138 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 	}
 	if value, ok := suo.mutation.Data(); ok {
 		_spec.SetField(shell.FieldData, field.TypeBytes, value)
+	}
+	if suo.mutation.TaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.TaskTable,
+			Columns: []string{shell.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.TaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.TaskTable,
+			Columns: []string{shell.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.BeaconCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.BeaconTable,
+			Columns: []string{shell.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.BeaconIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.BeaconTable,
+			Columns: []string{shell.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.OwnerTable,
+			Columns: []string{shell.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shell.OwnerTable,
+			Columns: []string{shell.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.ActiveUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ActiveUsersTable,
+			Columns: []string{shell.ActiveUsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedActiveUsersIDs(); len(nodes) > 0 && !suo.mutation.ActiveUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ActiveUsersTable,
+			Columns: []string{shell.ActiveUsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.ActiveUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ActiveUsersTable,
+			Columns: []string{shell.ActiveUsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Shell{config: suo.config}
 	_spec.Assign = _node.assignValues
