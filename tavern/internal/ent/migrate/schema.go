@@ -250,6 +250,43 @@ var (
 			},
 		},
 	}
+	// ShellsColumns holds the columns for the "shells" table.
+	ShellsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "data", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "shell_task", Type: field.TypeInt},
+		{Name: "shell_beacon", Type: field.TypeInt},
+		{Name: "shell_owner", Type: field.TypeInt},
+	}
+	// ShellsTable holds the schema information for the "shells" table.
+	ShellsTable = &schema.Table{
+		Name:       "shells",
+		Columns:    ShellsColumns,
+		PrimaryKey: []*schema.Column{ShellsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shells_tasks_task",
+				Columns:    []*schema.Column{ShellsColumns[5]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "shells_beacons_beacon",
+				Columns:    []*schema.Column{ShellsColumns[6]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "shells_users_owner",
+				Columns:    []*schema.Column{ShellsColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -374,6 +411,31 @@ var (
 			},
 		},
 	}
+	// ShellActiveUsersColumns holds the columns for the "shell_active_users" table.
+	ShellActiveUsersColumns = []*schema.Column{
+		{Name: "shell_id", Type: field.TypeInt},
+		{Name: "user_id", Type: field.TypeInt},
+	}
+	// ShellActiveUsersTable holds the schema information for the "shell_active_users" table.
+	ShellActiveUsersTable = &schema.Table{
+		Name:       "shell_active_users",
+		Columns:    ShellActiveUsersColumns,
+		PrimaryKey: []*schema.Column{ShellActiveUsersColumns[0], ShellActiveUsersColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shell_active_users_shell_id",
+				Columns:    []*schema.Column{ShellActiveUsersColumns[0]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "shell_active_users_user_id",
+				Columns:    []*schema.Column{ShellActiveUsersColumns[1]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// TomeFilesColumns holds the columns for the "tome_files" table.
 	TomeFilesColumns = []*schema.Column{
 		{Name: "tome_id", Type: field.TypeInt},
@@ -409,11 +471,13 @@ var (
 		HostProcessesTable,
 		QuestsTable,
 		RepositoriesTable,
+		ShellsTable,
 		TagsTable,
 		TasksTable,
 		TomesTable,
 		UsersTable,
 		HostTagsTable,
+		ShellActiveUsersTable,
 		TomeFilesTable,
 	}
 )
@@ -435,12 +499,17 @@ func init() {
 	RepositoriesTable.Annotation = &entsql.Annotation{
 		Table: "repositories",
 	}
+	ShellsTable.ForeignKeys[0].RefTable = TasksTable
+	ShellsTable.ForeignKeys[1].RefTable = BeaconsTable
+	ShellsTable.ForeignKeys[2].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = QuestsTable
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
 	TomesTable.ForeignKeys[0].RefTable = UsersTable
 	TomesTable.ForeignKeys[1].RefTable = RepositoriesTable
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
+	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
+	ShellActiveUsersTable.ForeignKeys[1].RefTable = UsersTable
 	TomeFilesTable.ForeignKeys[0].RefTable = TomesTable
 	TomeFilesTable.ForeignKeys[1].RefTable = FilesTable
 }

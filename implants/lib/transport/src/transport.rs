@@ -58,4 +58,12 @@ pub trait UnsafeTransport: Clone + Send {
         &mut self,
         request: ReportTaskOutputRequest,
     ) -> Result<ReportTaskOutputResponse>;
+
+    ///
+    /// Open a shell via the transport.
+    async fn reverse_shell(
+        &mut self,
+        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+    ) -> Result<()>;
 }

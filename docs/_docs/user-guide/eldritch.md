@@ -529,6 +529,12 @@ Be mindful of this when scanning large CIDRs as it may create large return objec
 
 NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely.
 
+### pivot.reverse_shell_pty
+
+`pivot.reverse_shell_pty(cmd: Optional<str>) -> None`
+
+The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
+
 ### pivot.smb_exec
 
 `pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
