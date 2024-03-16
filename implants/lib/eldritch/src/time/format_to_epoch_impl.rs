@@ -1,9 +1,9 @@
-use chrono::NaiveDateTime;
 use anyhow::Result;
+use chrono::NaiveDateTime;
 
 pub fn format_to_epoch(s: &str, fmt: &str) -> Result<u64> {
     let naive = NaiveDateTime::parse_from_str(s, fmt)?;
-    Ok(naive.timestamp() as u64)
+    Ok(naive.and_utc().timestamp() as u64)
 }
 
 #[cfg(test)]

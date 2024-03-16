@@ -79,7 +79,7 @@ impl Default for Config {
         };
 
         let host = pb::c2::Host {
-            name: whoami::hostname(),
+            name: whoami::fallible::hostname().unwrap_or(String::from("")),
             identifier: get_host_id(get_host_id_path()),
             platform: get_host_platform() as i32,
             primary_ip: get_primary_ip(),
