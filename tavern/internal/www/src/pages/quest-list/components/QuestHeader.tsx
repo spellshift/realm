@@ -1,6 +1,6 @@
 import React from "react";
-import { Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 const QuestHeader = () => {
     const navigate = useNavigate();
@@ -14,7 +14,8 @@ const QuestHeader = () => {
                 </div>
             </div>
             <div>
-                <Button size={"sm"}
+                <Button
+                    buttonStyle={{ color: "gray", size: "md" }}
                     onClick={() => navigate("/createQuest")}
                 >
                     Create new quest

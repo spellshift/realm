@@ -1,4 +1,4 @@
-import { Badge, Button } from "@chakra-ui/react";
+import { Badge } from "@chakra-ui/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import Table from "../../../components/tavern-base-ui/Table";
 import { BeaconType } from "../../../utils/consts";
 import { PrincipalAdminTypes } from "../../../utils/enums";
 import { checkIfBeaconOffline } from "../../../utils/utils";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 type Props = {
     beacons: Array<BeaconType>
@@ -100,14 +101,17 @@ const BeaconTable = (props: Props) => {
                 return (
                     <div className="flex flex-row justify-end">
                         {!isOffline &&
-                            <Button size={"sm"} onClick={() =>
-                                nav("/createQuest", {
-                                    state: {
-                                        step: 1,
-                                        beacons: [id]
-                                    }
-                                })
-                            }>
+                            <Button
+                                buttonStyle={{ color: "gray", size: 'md' }}
+                                buttonVariant="ghost"
+                                onClick={() =>
+                                    nav("/createQuest", {
+                                        state: {
+                                            step: 1,
+                                            beacons: [id]
+                                        }
+                                    })
+                                }>
                                 New quest
                             </Button>
                         }

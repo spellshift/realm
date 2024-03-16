@@ -36,6 +36,7 @@
     "react-virtualized": "^9.22.4",
     "recharts": "^2.11.0",
     "sort-by": "^1.2.0",
+    "tailwind-variants": "^0.2.1",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4",
     "xterm-addon-attach": "^0.9.0",

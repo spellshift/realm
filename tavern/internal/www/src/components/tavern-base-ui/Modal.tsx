@@ -1,6 +1,7 @@
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import React, { FC, Fragment } from "react";
 import { Dialog, Transition } from '@headlessui/react';
+import Button from "./button/Button";
 
 type ModalProps = {
     isOpen: boolean,
@@ -31,15 +32,15 @@ const Modal: FC<ModalProps> = ({ isOpen, setOpen, children }) => {
                                             <div className="flex w-full justify-end">
 
                                                 <div className="ml-3 flex h-7 items-center">
-                                                    <button
+                                                    <Button
                                                         type="button"
-                                                        className="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                                        buttonStyle={{ color: "gray", size: "md" }}
+                                                        buttonVariant="ghost"
                                                         onClick={() => setOpen(false)}
+                                                        leftIcon={<XMarkIcon className="h-6 w-6" aria-hidden="true" />}
                                                     >
-                                                        <span className="absolute -inset-2.5" />
                                                         <span className="sr-only">Close panel</span>
-                                                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>

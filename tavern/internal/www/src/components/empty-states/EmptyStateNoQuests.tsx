@@ -1,16 +1,16 @@
 import { Link } from "react-router-dom";
 import { EmptyState, EmptyStateType } from "../tavern-base-ui/EmptyState";
+import Button from "../tavern-base-ui/button/Button";
 
 const EmptyStateNoQuests = () => {
     return (
         <EmptyState label="No quests found" type={EmptyStateType.noData} details="Get started by creating a new quest." >
             <Link to="/createQuest">
-                <button
+                <Button
                     type="button"
-                    className="inline-flex items-center rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-700"
                 >
                     Create new quest
-                </button>
+                </Button>
             </Link>
         </EmptyState>
     )

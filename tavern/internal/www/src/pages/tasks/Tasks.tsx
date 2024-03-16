@@ -11,6 +11,7 @@ import { useTasks } from "../../hooks/useTasks";
 import { Task } from "../../utils/consts";
 import { EditablePageHeader } from "./EditablePageHeader";
 import { useQuests } from "../../hooks/useQuests";
+import Button from "../../components/tavern-base-ui/button/Button";
 
 const Tasks = () => {
     const { questId } = useParams();
@@ -70,12 +71,12 @@ const Tasks = () => {
                     ) : (
                         <EmptyState label="No data found" details="Try creating a new quest or adjusting filters." type={EmptyStateType.noData}>
                             <Link to="/createQuest">
-                                <button
+                                <Button
+                                    buttonStyle={{ color: "gray", "size": "md" }}
                                     type="button"
-                                    className="inline-flex items-center rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-700"
                                 >
                                     Create new quest
-                                </button>
+                                </Button>
                             </Link>
                         </EmptyState>
                     )}

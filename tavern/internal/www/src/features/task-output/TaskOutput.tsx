@@ -2,12 +2,13 @@ import React, { useCallback } from "react";
 import TaskStatusBadge from "../../components/TaskStatusBadge";
 import BeaconTile from "../../components/BeaconTile";
 import TomeAccordion from "../../components/TomeAccordion";
-import { Button, Image } from "@chakra-ui/react";
+import { Image } from "@chakra-ui/react";
 import OutputWrapper from "./OutputWrapper";
 import ErrorWrapper from "./ErrorWrapper";
 import { useNavigate } from "react-router-dom";
 import { checkIfBeaconOffline, constructTomeParams } from "../../utils/utils";
 import Modal from "../../components/tavern-base-ui/Modal";
+import Button from "../../components/tavern-base-ui/button/Button";
 
 type Props = {
   isOpen: boolean,
@@ -52,7 +53,9 @@ export const TaskOutput = (props: Props) => {
           </div>
           {!beaconOffline &&
             <div>
-              <Button size={"sm"}
+              <Button
+                buttonStyle={{ color: "gray", size: "md" }}
+                buttonVariant="ghost"
                 onClick={() => hanldeRerunQuest()}
                 disabled={beaconOffline}
                 title="Beacon must be online to rerun"
