@@ -9,7 +9,10 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Shell is the model entity for the Shell schema.
@@ -24,8 +27,81 @@ type Shell struct {
 	// Timestamp of when this shell was closed
 	ClosedAt time.Time `json:"closed_at,omitempty"`
 	// Shell data stream
-	Data         []byte `json:"data,omitempty"`
+	Data []byte `json:"data,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the ShellQuery when eager-loading is set.
+	Edges        ShellEdges `json:"edges"`
+	shell_task   *int
+	shell_beacon *int
+	shell_owner  *int
 	selectValues sql.SelectValues
+}
+
+// ShellEdges holds the relations/edges for other nodes in the graph.
+type ShellEdges struct {
+	// Task that created the shell
+	Task *Task `json:"task,omitempty"`
+	// Beacon that created the shell
+	Beacon *Beacon `json:"beacon,omitempty"`
+	// User that created the shell
+	Owner *User `json:"owner,omitempty"`
+	// Users that are currently using the shell
+	ActiveUsers []*User `json:"active_users,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [4]bool
+	// totalCount holds the count of the edges above.
+	totalCount [4]map[string]int
+
+	namedActiveUsers map[string][]*User
+}
+
+// TaskOrErr returns the Task value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ShellEdges) TaskOrErr() (*Task, error) {
+	if e.loadedTypes[0] {
+		if e.Task == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: task.Label}
+		}
+		return e.Task, nil
+	}
+	return nil, &NotLoadedError{edge: "task"}
+}
+
+// BeaconOrErr returns the Beacon value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ShellEdges) BeaconOrErr() (*Beacon, error) {
+	if e.loadedTypes[1] {
+		if e.Beacon == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: beacon.Label}
+		}
+		return e.Beacon, nil
+	}
+	return nil, &NotLoadedError{edge: "beacon"}
+}
+
+// OwnerOrErr returns the Owner value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ShellEdges) OwnerOrErr() (*User, error) {
+	if e.loadedTypes[2] {
+		if e.Owner == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: user.Label}
+		}
+		return e.Owner, nil
+	}
+	return nil, &NotLoadedError{edge: "owner"}
+}
+
+// ActiveUsersOrErr returns the ActiveUsers value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) ActiveUsersOrErr() ([]*User, error) {
+	if e.loadedTypes[3] {
+		return e.ActiveUsers, nil
+	}
+	return nil, &NotLoadedError{edge: "active_users"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -39,6 +115,12 @@ func (*Shell) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case shell.FieldCreatedAt, shell.FieldLastModifiedAt, shell.FieldClosedAt:
 			values[i] = new(sql.NullTime)
+		case shell.ForeignKeys[0]: // shell_task
+			values[i] = new(sql.NullInt64)
+		case shell.ForeignKeys[1]: // shell_beacon
+			values[i] = new(sql.NullInt64)
+		case shell.ForeignKeys[2]: // shell_owner
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -84,6 +166,27 @@ func (s *Shell) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				s.Data = *value
 			}
+		case shell.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field shell_task", value)
+			} else if value.Valid {
+				s.shell_task = new(int)
+				*s.shell_task = int(value.Int64)
+			}
+		case shell.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field shell_beacon", value)
+			} else if value.Valid {
+				s.shell_beacon = new(int)
+				*s.shell_beacon = int(value.Int64)
+			}
+		case shell.ForeignKeys[2]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field shell_owner", value)
+			} else if value.Valid {
+				s.shell_owner = new(int)
+				*s.shell_owner = int(value.Int64)
+			}
 		default:
 			s.selectValues.Set(columns[i], values[i])
 		}
@@ -95,6 +198,26 @@ func (s *Shell) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (s *Shell) Value(name string) (ent.Value, error) {
 	return s.selectValues.Get(name)
+}
+
+// QueryTask queries the "task" edge of the Shell entity.
+func (s *Shell) QueryTask() *TaskQuery {
+	return NewShellClient(s.config).QueryTask(s)
+}
+
+// QueryBeacon queries the "beacon" edge of the Shell entity.
+func (s *Shell) QueryBeacon() *BeaconQuery {
+	return NewShellClient(s.config).QueryBeacon(s)
+}
+
+// QueryOwner queries the "owner" edge of the Shell entity.
+func (s *Shell) QueryOwner() *UserQuery {
+	return NewShellClient(s.config).QueryOwner(s)
+}
+
+// QueryActiveUsers queries the "active_users" edge of the Shell entity.
+func (s *Shell) QueryActiveUsers() *UserQuery {
+	return NewShellClient(s.config).QueryActiveUsers(s)
 }
 
 // Update returns a builder for updating this Shell.
@@ -133,6 +256,30 @@ func (s *Shell) String() string {
 	builder.WriteString(fmt.Sprintf("%v", s.Data))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedActiveUsers returns the ActiveUsers named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedActiveUsers(name string) ([]*User, error) {
+	if s.Edges.namedActiveUsers == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedActiveUsers[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedActiveUsers(name string, edges ...*User) {
+	if s.Edges.namedActiveUsers == nil {
+		s.Edges.namedActiveUsers = make(map[string][]*User)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedActiveUsers[name] = []*User{}
+	} else {
+		s.Edges.namedActiveUsers[name] = append(s.Edges.namedActiveUsers[name], edges...)
+	}
 }
 
 // Shells is a parsable slice of Shell.

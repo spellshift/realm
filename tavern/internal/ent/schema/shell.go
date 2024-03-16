@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -36,7 +37,22 @@ func (Shell) Fields() []ent.Field {
 
 // Edges of the ent.
 func (Shell) Edges() []ent.Edge {
-	return []ent.Edge{}
+	return []ent.Edge{
+		edge.To("task", Task.Type).
+			Unique().
+			Required().
+			Comment("Task that created the shell"),
+		edge.To("beacon", Beacon.Type).
+			Unique().
+			Required().
+			Comment("Beacon that created the shell"),
+		edge.To("owner", User.Type).
+			Unique().
+			Required().
+			Comment("User that created the shell"),
+		edge.To("active_users", User.Type).
+			Comment("Users that are currently using the shell"),
+	}
 }
 
 // Annotations describes additional information for the ent.

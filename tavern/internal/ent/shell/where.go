@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -242,6 +243,98 @@ func DataLT(v []byte) predicate.Shell {
 // DataLTE applies the LTE predicate on the "data" field.
 func DataLTE(v []byte) predicate.Shell {
 	return predicate.Shell(sql.FieldLTE(FieldData, v))
+}
+
+// HasTask applies the HasEdge predicate on the "task" edge.
+func HasTask() predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, TaskTable, TaskColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTaskWith applies the HasEdge predicate on the "task" edge with a given conditions (other predicates).
+func HasTaskWith(preds ...predicate.Task) predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := newTaskStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBeacon applies the HasEdge predicate on the "beacon" edge.
+func HasBeacon() predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, BeaconTable, BeaconColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBeaconWith applies the HasEdge predicate on the "beacon" edge with a given conditions (other predicates).
+func HasBeaconWith(preds ...predicate.Beacon) predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := newBeaconStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOwner applies the HasEdge predicate on the "owner" edge.
+func HasOwner() predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, OwnerTable, OwnerColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOwnerWith applies the HasEdge predicate on the "owner" edge with a given conditions (other predicates).
+func HasOwnerWith(preds ...predicate.User) predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := newOwnerStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasActiveUsers applies the HasEdge predicate on the "active_users" edge.
+func HasActiveUsers() predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ActiveUsersTable, ActiveUsersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasActiveUsersWith applies the HasEdge predicate on the "active_users" edge with a given conditions (other predicates).
+func HasActiveUsersWith(preds ...predicate.User) predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := newActiveUsersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

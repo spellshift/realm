@@ -157,6 +157,10 @@ type BeaconWhereInput struct {
 	// "tasks" edge predicates.
 	HasTasks     *bool             `json:"hasTasks,omitempty"`
 	HasTasksWith []*TaskWhereInput `json:"hasTasksWith,omitempty"`
+
+	// "shells" edge predicates.
+	HasShells     *bool              `json:"hasShells,omitempty"`
+	HasShellsWith []*ShellWhereInput `json:"hasShellsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -566,6 +570,24 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, beacon.HasTasksWith(with...))
+	}
+	if i.HasShells != nil {
+		p := beacon.HasShells()
+		if !*i.HasShells {
+			p = beacon.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellsWith) > 0 {
+		with := make([]predicate.Shell, 0, len(i.HasShellsWith))
+		for _, w := range i.HasShellsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beacon.HasShellsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -4039,6 +4061,22 @@ type ShellWhereInput struct {
 	ClosedAtLTE    *time.Time  `json:"closedAtLTE,omitempty"`
 	ClosedAtIsNil  bool        `json:"closedAtIsNil,omitempty"`
 	ClosedAtNotNil bool        `json:"closedAtNotNil,omitempty"`
+
+	// "task" edge predicates.
+	HasTask     *bool             `json:"hasTask,omitempty"`
+	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
+
+	// "beacon" edge predicates.
+	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
+	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
+
+	// "owner" edge predicates.
+	HasOwner     *bool             `json:"hasOwner,omitempty"`
+	HasOwnerWith []*UserWhereInput `json:"hasOwnerWith,omitempty"`
+
+	// "active_users" edge predicates.
+	HasActiveUsers     *bool             `json:"hasActiveUsers,omitempty"`
+	HasActiveUsersWith []*UserWhereInput `json:"hasActiveUsersWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4215,6 +4253,78 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 		predicates = append(predicates, shell.ClosedAtNotNil())
 	}
 
+	if i.HasTask != nil {
+		p := shell.HasTask()
+		if !*i.HasTask {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTaskWith) > 0 {
+		with := make([]predicate.Task, 0, len(i.HasTaskWith))
+		for _, w := range i.HasTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasTaskWith(with...))
+	}
+	if i.HasBeacon != nil {
+		p := shell.HasBeacon()
+		if !*i.HasBeacon {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBeaconWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconWith))
+		for _, w := range i.HasBeaconWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBeaconWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasBeaconWith(with...))
+	}
+	if i.HasOwner != nil {
+		p := shell.HasOwner()
+		if !*i.HasOwner {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasOwnerWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasOwnerWith))
+		for _, w := range i.HasOwnerWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasOwnerWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasOwnerWith(with...))
+	}
+	if i.HasActiveUsers != nil {
+		p := shell.HasActiveUsers()
+		if !*i.HasActiveUsers {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasActiveUsersWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasActiveUsersWith))
+		for _, w := range i.HasActiveUsersWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasActiveUsersWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasActiveUsersWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyShellWhereInput
@@ -4579,6 +4689,10 @@ type TaskWhereInput struct {
 	// "reported_credentials" edge predicates.
 	HasReportedCredentials     *bool                       `json:"hasReportedCredentials,omitempty"`
 	HasReportedCredentialsWith []*HostCredentialWhereInput `json:"hasReportedCredentialsWith,omitempty"`
+
+	// "shells" edge predicates.
+	HasShells     *bool              `json:"hasShells,omitempty"`
+	HasShellsWith []*ShellWhereInput `json:"hasShellsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -5018,6 +5132,24 @@ func (i *TaskWhereInput) P() (predicate.Task, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, task.HasReportedCredentialsWith(with...))
+	}
+	if i.HasShells != nil {
+		p := task.HasShells()
+		if !*i.HasShells {
+			p = task.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellsWith) > 0 {
+		with := make([]predicate.Shell, 0, len(i.HasShellsWith))
+		for _, w := range i.HasShellsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, task.HasShellsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

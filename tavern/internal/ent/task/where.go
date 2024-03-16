@@ -630,6 +630,29 @@ func HasReportedCredentialsWith(preds ...predicate.HostCredential) predicate.Tas
 	})
 }
 
+// HasShells applies the HasEdge predicate on the "shells" edge.
+func HasShells() predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, ShellsTable, ShellsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasShellsWith applies the HasEdge predicate on the "shells" edge with a given conditions (other predicates).
+func HasShellsWith(preds ...predicate.Shell) predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := newShellsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Task) predicate.Task {
 	return predicate.Task(sql.AndPredicates(predicates...))

@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
 )
 
@@ -25,12 +26,42 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	// Setup Context
 	ctx := gstream.Context()
 
+	// Get initial message for registration
+	registerMsg, err := gstream.Recv()
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to receive registration message: %v", err)
+	}
+
+	// Load Relevant Ents
+	task, err := srv.graph.Task.Get(ctx, int(registerMsg.TaskId))
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "task does not exist (task_id=%d)", registerMsg.TaskId)
+		}
+		return status.Errorf(codes.Internal, "failed to load task ent (task_id=%d): %v", registerMsg.TaskId, err)
+	}
+	beacon, err := task.Beacon(ctx)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to load beacon ent (task_id=%d): %v", registerMsg.TaskId, err)
+	}
+	quest, err := task.Quest(ctx)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to load quest ent (task_id=%d): %v", registerMsg.TaskId, err)
+	}
+	creator, err := quest.Creator(ctx)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to load quest creator (task_id=%d): %v", registerMsg.TaskId, err)
+	}
+
 	// Create the Shell Entity
 	shell, err := srv.graph.Shell.Create().
+		SetOwner(creator).
+		SetBeacon(beacon).
+		SetTask(task).
 		SetData([]byte{}).
 		Save(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create shell: %w", err)
+		return status.Errorf(codes.Internal, "failed to create shell: %v", err)
 	}
 	shellID := shell.ID
 

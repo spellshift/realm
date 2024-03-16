@@ -43,7 +43,7 @@ const Shell = () => {
             socket.onerror = (e) => {
                 toast({
                     title: 'Shell Connection Error',
-                    description: `Something went wrong with the underlying conneciton to the shell (${e.type})`,
+                    description: `Something went wrong with the underlying connection to the shell (${e.type})`,
                     status: 'error',
                     duration: 6000,
                     isClosable: true,

