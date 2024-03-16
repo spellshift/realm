@@ -16,6 +16,7 @@ import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
 import { Tomes } from "./pages/tomes";
 import Quests from "./pages/quest-list/Quests";
+import Shell from "./pages/shell/Shell";
 
 
 const router = createBrowserRouter([
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
   {
     path: "/tomes",
     element: <Tomes />,
+  },
+  {
+    path: "/shells/:shellId",
+    element: <Shell />,
   },
 ]);
 

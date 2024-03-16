@@ -119,7 +119,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]"#),
+            want_text: format!("{}\n", r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "reverse_shell_pty", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]"#),
             want_error: None,
         },
         assets_bindings: TestCase {

@@ -55,6 +55,7 @@ type ComplexityRoot struct {
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Principal       func(childComplexity int) int
+		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		Tasks           func(childComplexity int) int
 	}
 
@@ -157,6 +158,7 @@ type ComplexityRoot struct {
 		Nodes        func(childComplexity int, ids []int) int
 		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
+		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		Tags         func(childComplexity int, where *ent.TagWhereInput) int
 		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
@@ -210,6 +212,28 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Shell struct {
+		ActiveUsers    func(childComplexity int) int
+		Beacon         func(childComplexity int) int
+		ClosedAt       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		Task           func(childComplexity int) int
+	}
+
+	ShellConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ShellEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Tag struct {
 		Hosts func(childComplexity int) int
 		ID    func(childComplexity int) int
@@ -232,6 +256,7 @@ type ComplexityRoot struct {
 		ReportedCredentials func(childComplexity int) int
 		ReportedFiles       func(childComplexity int) int
 		ReportedProcesses   func(childComplexity int) int
+		Shells              func(childComplexity int) int
 	}
 
 	TaskConnection struct {
@@ -262,12 +287,13 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		ID          func(childComplexity int) int
-		IsActivated func(childComplexity int) int
-		IsAdmin     func(childComplexity int) int
-		Name        func(childComplexity int) int
-		PhotoURL    func(childComplexity int) int
-		Tomes       func(childComplexity int) int
+		ActiveShells func(childComplexity int) int
+		ID           func(childComplexity int) int
+		IsActivated  func(childComplexity int) int
+		IsAdmin      func(childComplexity int) int
+		Name         func(childComplexity int) int
+		PhotoURL     func(childComplexity int) int
+		Tomes        func(childComplexity int) int
 	}
 }
 
@@ -359,6 +385,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Beacon.Principal(childComplexity), true
+
+	case "Beacon.shells":
+		if e.complexity.Beacon.Shells == nil {
+			break
+		}
+
+		args, err := ec.field_Beacon_shells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Beacon.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
 
 	case "Beacon.tasks":
 		if e.complexity.Beacon.Tasks == nil {
@@ -996,6 +1034,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Repositories(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.RepositoryOrder), args["where"].(*ent.RepositoryWhereInput)), true
 
+	case "Query.shells":
+		if e.complexity.Query.Shells == nil {
+			break
+		}
+
+		args, err := ec.field_Query_shells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
+
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
 			break
@@ -1252,6 +1302,97 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RepositoryEdge.Node(childComplexity), true
 
+	case "Shell.activeUsers":
+		if e.complexity.Shell.ActiveUsers == nil {
+			break
+		}
+
+		return e.complexity.Shell.ActiveUsers(childComplexity), true
+
+	case "Shell.beacon":
+		if e.complexity.Shell.Beacon == nil {
+			break
+		}
+
+		return e.complexity.Shell.Beacon(childComplexity), true
+
+	case "Shell.closedAt":
+		if e.complexity.Shell.ClosedAt == nil {
+			break
+		}
+
+		return e.complexity.Shell.ClosedAt(childComplexity), true
+
+	case "Shell.createdAt":
+		if e.complexity.Shell.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Shell.CreatedAt(childComplexity), true
+
+	case "Shell.id":
+		if e.complexity.Shell.ID == nil {
+			break
+		}
+
+		return e.complexity.Shell.ID(childComplexity), true
+
+	case "Shell.lastModifiedAt":
+		if e.complexity.Shell.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Shell.LastModifiedAt(childComplexity), true
+
+	case "Shell.owner":
+		if e.complexity.Shell.Owner == nil {
+			break
+		}
+
+		return e.complexity.Shell.Owner(childComplexity), true
+
+	case "Shell.task":
+		if e.complexity.Shell.Task == nil {
+			break
+		}
+
+		return e.complexity.Shell.Task(childComplexity), true
+
+	case "ShellConnection.edges":
+		if e.complexity.ShellConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.Edges(childComplexity), true
+
+	case "ShellConnection.pageInfo":
+		if e.complexity.ShellConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.PageInfo(childComplexity), true
+
+	case "ShellConnection.totalCount":
+		if e.complexity.ShellConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.TotalCount(childComplexity), true
+
+	case "ShellEdge.cursor":
+		if e.complexity.ShellEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ShellEdge.Cursor(childComplexity), true
+
+	case "ShellEdge.node":
+		if e.complexity.ShellEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ShellEdge.Node(childComplexity), true
+
 	case "Tag.hosts":
 		if e.complexity.Tag.Hosts == nil {
 			break
@@ -1377,6 +1518,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Task.ReportedProcesses(childComplexity), true
+
+	case "Task.shells":
+		if e.complexity.Task.Shells == nil {
+			break
+		}
+
+		return e.complexity.Task.Shells(childComplexity), true
 
 	case "TaskConnection.edges":
 		if e.complexity.TaskConnection.Edges == nil {
@@ -1504,6 +1652,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.Uploader(childComplexity), true
 
+	case "User.activeShells":
+		if e.complexity.User.ActiveShells == nil {
+			break
+		}
+
+		return e.complexity.User.ActiveShells(childComplexity), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -1576,6 +1731,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputRepositoryOrder,
 		ec.unmarshalInputRepositoryWhereInput,
+		ec.unmarshalInputShellOrder,
+		ec.unmarshalInputShellWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
 		ec.unmarshalInputTagWhereInput,
@@ -1716,6 +1873,25 @@ type Beacon implements Node {
   host: Host!
   """Tasks that have been assigned to the beacon."""
   tasks: [Task!]
+  shells(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Shells returned from the connection."""
+    orderBy: [ShellOrder!]
+
+    """Filtering options for Shells returned from the connection."""
+    where: ShellWhereInput
+  ): ShellConnection!
 }
 """Ordering options for Beacon connections"""
 input BeaconOrder {
@@ -1854,6 +2030,9 @@ input BeaconWhereInput {
   """tasks edge predicates"""
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
+  """shells edge predicates"""
+  hasShells: Boolean
+  hasShellsWith: [ShellWhereInput!]
 }
 """
 CreateQuestInput is used for create Quest object.
@@ -3018,6 +3197,111 @@ input RepositoryWhereInput {
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
 }
+type Shell implements Node {
+  id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
+  """Timestamp of when this shell was closed"""
+  closedAt: Time
+  """Task that created the shell"""
+  task: Task!
+  """Beacon that created the shell"""
+  beacon: Beacon!
+  """User that created the shell"""
+  owner: User!
+  """Users that are currently using the shell"""
+  activeUsers: [User!]
+}
+"""A connection to a list of items."""
+type ShellConnection {
+  """A list of edges."""
+  edges: [ShellEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type ShellEdge {
+  """The item at the end of the edge."""
+  node: Shell
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
+"""Ordering options for Shell connections"""
+input ShellOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Shells."""
+  field: ShellOrderField!
+}
+"""Properties by which Shell connections can be ordered."""
+enum ShellOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLOSED_AT
+}
+"""
+ShellWhereInput is used for filtering Shell objects.
+Input was generated by ent.
+"""
+input ShellWhereInput {
+  not: ShellWhereInput
+  and: [ShellWhereInput!]
+  or: [ShellWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """closed_at field predicates"""
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
+  """task edge predicates"""
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
+  """beacon edge predicates"""
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
+  """owner edge predicates"""
+  hasOwner: Boolean
+  hasOwnerWith: [UserWhereInput!]
+  """active_users edge predicates"""
+  hasActiveUsers: Boolean
+  hasActiveUsersWith: [UserWhereInput!]
+}
 type Tag implements Node {
   id: ID!
   """Name of the tag"""
@@ -3108,6 +3392,8 @@ type Task implements Node {
   reportedProcesses: [HostProcess!]
   """Credentials that have been reported by this task."""
   reportedCredentials: [HostCredential!]
+  """Shells that were created by this task"""
+  shells: [Shell!]
 }
 """A connection to a list of items."""
 type TaskConnection {
@@ -3265,6 +3551,9 @@ input TaskWhereInput {
   """reported_credentials edge predicates"""
   hasReportedCredentials: Boolean
   hasReportedCredentialsWith: [HostCredentialWhereInput!]
+  """shells edge predicates"""
+  hasShells: Boolean
+  hasShellsWith: [ShellWhereInput!]
 }
 type Tome implements Node {
   id: ID!
@@ -3547,6 +3836,9 @@ input UpdateUserInput {
   addTomeIDs: [ID!]
   removeTomeIDs: [ID!]
   clearTomes: Boolean
+  addActiveShellIDs: [ID!]
+  removeActiveShellIDs: [ID!]
+  clearActiveShells: Boolean
 }
 type User implements Node {
   id: ID!
@@ -3560,6 +3852,8 @@ type User implements Node {
   isAdmin: Boolean!
   """Tomes uploaded by the user."""
   tomes: [Tome!]
+  """Shells actively used by the user"""
+  activeShells: [Shell!]
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -3615,6 +3909,9 @@ input UserWhereInput {
   """tomes edge predicates"""
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
+  """active_shells edge predicates"""
+  hasActiveShells: Boolean
+  hasActiveShellsWith: [ShellWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -3684,6 +3981,24 @@ scalar Uint64
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+  shells(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Shells returned from the connection."""
+    orderBy: [ShellOrder!]
+
+    """Filtering options for Shells returned from the connection."""
+    where: ShellWhereInput): ShellConnection! @requireRole(role: USER)
   me: User!
 }
 `, BuiltIn: false},

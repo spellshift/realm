@@ -22,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -45,6 +46,7 @@ const (
 	TypeHostProcess    = "HostProcess"
 	TypeQuest          = "Quest"
 	TypeRepository     = "Repository"
+	TypeShell          = "Shell"
 	TypeTag            = "Tag"
 	TypeTask           = "Task"
 	TypeTome           = "Tome"
@@ -72,6 +74,9 @@ type BeaconMutation struct {
 	tasks            map[int]struct{}
 	removedtasks     map[int]struct{}
 	clearedtasks     bool
+	shells           map[int]struct{}
+	removedshells    map[int]struct{}
+	clearedshells    bool
 	done             bool
 	oldValue         func(context.Context) (*Beacon, error)
 	predicates       []predicate.Beacon
@@ -629,6 +634,60 @@ func (m *BeaconMutation) ResetTasks() {
 	m.removedtasks = nil
 }
 
+// AddShellIDs adds the "shells" edge to the Shell entity by ids.
+func (m *BeaconMutation) AddShellIDs(ids ...int) {
+	if m.shells == nil {
+		m.shells = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.shells[ids[i]] = struct{}{}
+	}
+}
+
+// ClearShells clears the "shells" edge to the Shell entity.
+func (m *BeaconMutation) ClearShells() {
+	m.clearedshells = true
+}
+
+// ShellsCleared reports if the "shells" edge to the Shell entity was cleared.
+func (m *BeaconMutation) ShellsCleared() bool {
+	return m.clearedshells
+}
+
+// RemoveShellIDs removes the "shells" edge to the Shell entity by IDs.
+func (m *BeaconMutation) RemoveShellIDs(ids ...int) {
+	if m.removedshells == nil {
+		m.removedshells = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.shells, ids[i])
+		m.removedshells[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedShells returns the removed IDs of the "shells" edge to the Shell entity.
+func (m *BeaconMutation) RemovedShellsIDs() (ids []int) {
+	for id := range m.removedshells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ShellsIDs returns the "shells" edge IDs in the mutation.
+func (m *BeaconMutation) ShellsIDs() (ids []int) {
+	for id := range m.shells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetShells resets all changes to the "shells" edge.
+func (m *BeaconMutation) ResetShells() {
+	m.shells = nil
+	m.clearedshells = false
+	m.removedshells = nil
+}
+
 // Where appends a list predicates to the BeaconMutation builder.
 func (m *BeaconMutation) Where(ps ...predicate.Beacon) {
 	m.predicates = append(m.predicates, ps...)
@@ -923,12 +982,15 @@ func (m *BeaconMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BeaconMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.host != nil {
 		edges = append(edges, beacon.EdgeHost)
 	}
 	if m.tasks != nil {
 		edges = append(edges, beacon.EdgeTasks)
+	}
+	if m.shells != nil {
+		edges = append(edges, beacon.EdgeShells)
 	}
 	return edges
 }
@@ -947,15 +1009,24 @@ func (m *BeaconMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case beacon.EdgeShells:
+		ids := make([]ent.Value, 0, len(m.shells))
+		for id := range m.shells {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BeaconMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedtasks != nil {
 		edges = append(edges, beacon.EdgeTasks)
+	}
+	if m.removedshells != nil {
+		edges = append(edges, beacon.EdgeShells)
 	}
 	return edges
 }
@@ -970,18 +1041,27 @@ func (m *BeaconMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case beacon.EdgeShells:
+		ids := make([]ent.Value, 0, len(m.removedshells))
+		for id := range m.removedshells {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BeaconMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedhost {
 		edges = append(edges, beacon.EdgeHost)
 	}
 	if m.clearedtasks {
 		edges = append(edges, beacon.EdgeTasks)
+	}
+	if m.clearedshells {
+		edges = append(edges, beacon.EdgeShells)
 	}
 	return edges
 }
@@ -994,6 +1074,8 @@ func (m *BeaconMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case beacon.EdgeTasks:
 		return m.clearedtasks
+	case beacon.EdgeShells:
+		return m.clearedshells
 	}
 	return false
 }
@@ -1018,6 +1100,9 @@ func (m *BeaconMutation) ResetEdge(name string) error {
 		return nil
 	case beacon.EdgeTasks:
 		m.ResetTasks()
+		return nil
+	case beacon.EdgeShells:
+		m.ResetShells()
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon edge %s", name)
@@ -7405,6 +7490,786 @@ func (m *RepositoryMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Repository edge %s", name)
 }
 
+// ShellMutation represents an operation that mutates the Shell nodes in the graph.
+type ShellMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	created_at          *time.Time
+	last_modified_at    *time.Time
+	closed_at           *time.Time
+	data                *[]byte
+	clearedFields       map[string]struct{}
+	task                *int
+	clearedtask         bool
+	beacon              *int
+	clearedbeacon       bool
+	owner               *int
+	clearedowner        bool
+	active_users        map[int]struct{}
+	removedactive_users map[int]struct{}
+	clearedactive_users bool
+	done                bool
+	oldValue            func(context.Context) (*Shell, error)
+	predicates          []predicate.Shell
+}
+
+var _ ent.Mutation = (*ShellMutation)(nil)
+
+// shellOption allows management of the mutation configuration using functional options.
+type shellOption func(*ShellMutation)
+
+// newShellMutation creates new mutation for the Shell entity.
+func newShellMutation(c config, op Op, opts ...shellOption) *ShellMutation {
+	m := &ShellMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeShell,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withShellID sets the ID field of the mutation.
+func withShellID(id int) shellOption {
+	return func(m *ShellMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Shell
+		)
+		m.oldValue = func(ctx context.Context) (*Shell, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Shell.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withShell sets the old Shell of the mutation.
+func withShell(node *Shell) shellOption {
+	return func(m *ShellMutation) {
+		m.oldValue = func(context.Context) (*Shell, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ShellMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ShellMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ShellMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ShellMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Shell.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ShellMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ShellMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Shell entity.
+// If the Shell object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ShellMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *ShellMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *ShellMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Shell entity.
+// If the Shell object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *ShellMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetClosedAt sets the "closed_at" field.
+func (m *ShellMutation) SetClosedAt(t time.Time) {
+	m.closed_at = &t
+}
+
+// ClosedAt returns the value of the "closed_at" field in the mutation.
+func (m *ShellMutation) ClosedAt() (r time.Time, exists bool) {
+	v := m.closed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClosedAt returns the old "closed_at" field's value of the Shell entity.
+// If the Shell object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellMutation) OldClosedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClosedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClosedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClosedAt: %w", err)
+	}
+	return oldValue.ClosedAt, nil
+}
+
+// ClearClosedAt clears the value of the "closed_at" field.
+func (m *ShellMutation) ClearClosedAt() {
+	m.closed_at = nil
+	m.clearedFields[shell.FieldClosedAt] = struct{}{}
+}
+
+// ClosedAtCleared returns if the "closed_at" field was cleared in this mutation.
+func (m *ShellMutation) ClosedAtCleared() bool {
+	_, ok := m.clearedFields[shell.FieldClosedAt]
+	return ok
+}
+
+// ResetClosedAt resets all changes to the "closed_at" field.
+func (m *ShellMutation) ResetClosedAt() {
+	m.closed_at = nil
+	delete(m.clearedFields, shell.FieldClosedAt)
+}
+
+// SetData sets the "data" field.
+func (m *ShellMutation) SetData(b []byte) {
+	m.data = &b
+}
+
+// Data returns the value of the "data" field in the mutation.
+func (m *ShellMutation) Data() (r []byte, exists bool) {
+	v := m.data
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldData returns the old "data" field's value of the Shell entity.
+// If the Shell object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellMutation) OldData(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldData is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldData requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldData: %w", err)
+	}
+	return oldValue.Data, nil
+}
+
+// ResetData resets all changes to the "data" field.
+func (m *ShellMutation) ResetData() {
+	m.data = nil
+}
+
+// SetTaskID sets the "task" edge to the Task entity by id.
+func (m *ShellMutation) SetTaskID(id int) {
+	m.task = &id
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (m *ShellMutation) ClearTask() {
+	m.clearedtask = true
+}
+
+// TaskCleared reports if the "task" edge to the Task entity was cleared.
+func (m *ShellMutation) TaskCleared() bool {
+	return m.clearedtask
+}
+
+// TaskID returns the "task" edge ID in the mutation.
+func (m *ShellMutation) TaskID() (id int, exists bool) {
+	if m.task != nil {
+		return *m.task, true
+	}
+	return
+}
+
+// TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
+func (m *ShellMutation) TaskIDs() (ids []int) {
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTask resets all changes to the "task" edge.
+func (m *ShellMutation) ResetTask() {
+	m.task = nil
+	m.clearedtask = false
+}
+
+// SetBeaconID sets the "beacon" edge to the Beacon entity by id.
+func (m *ShellMutation) SetBeaconID(id int) {
+	m.beacon = &id
+}
+
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (m *ShellMutation) ClearBeacon() {
+	m.clearedbeacon = true
+}
+
+// BeaconCleared reports if the "beacon" edge to the Beacon entity was cleared.
+func (m *ShellMutation) BeaconCleared() bool {
+	return m.clearedbeacon
+}
+
+// BeaconID returns the "beacon" edge ID in the mutation.
+func (m *ShellMutation) BeaconID() (id int, exists bool) {
+	if m.beacon != nil {
+		return *m.beacon, true
+	}
+	return
+}
+
+// BeaconIDs returns the "beacon" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BeaconID instead. It exists only for internal usage by the builders.
+func (m *ShellMutation) BeaconIDs() (ids []int) {
+	if id := m.beacon; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBeacon resets all changes to the "beacon" edge.
+func (m *ShellMutation) ResetBeacon() {
+	m.beacon = nil
+	m.clearedbeacon = false
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by id.
+func (m *ShellMutation) SetOwnerID(id int) {
+	m.owner = &id
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (m *ShellMutation) ClearOwner() {
+	m.clearedowner = true
+}
+
+// OwnerCleared reports if the "owner" edge to the User entity was cleared.
+func (m *ShellMutation) OwnerCleared() bool {
+	return m.clearedowner
+}
+
+// OwnerID returns the "owner" edge ID in the mutation.
+func (m *ShellMutation) OwnerID() (id int, exists bool) {
+	if m.owner != nil {
+		return *m.owner, true
+	}
+	return
+}
+
+// OwnerIDs returns the "owner" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OwnerID instead. It exists only for internal usage by the builders.
+func (m *ShellMutation) OwnerIDs() (ids []int) {
+	if id := m.owner; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOwner resets all changes to the "owner" edge.
+func (m *ShellMutation) ResetOwner() {
+	m.owner = nil
+	m.clearedowner = false
+}
+
+// AddActiveUserIDs adds the "active_users" edge to the User entity by ids.
+func (m *ShellMutation) AddActiveUserIDs(ids ...int) {
+	if m.active_users == nil {
+		m.active_users = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.active_users[ids[i]] = struct{}{}
+	}
+}
+
+// ClearActiveUsers clears the "active_users" edge to the User entity.
+func (m *ShellMutation) ClearActiveUsers() {
+	m.clearedactive_users = true
+}
+
+// ActiveUsersCleared reports if the "active_users" edge to the User entity was cleared.
+func (m *ShellMutation) ActiveUsersCleared() bool {
+	return m.clearedactive_users
+}
+
+// RemoveActiveUserIDs removes the "active_users" edge to the User entity by IDs.
+func (m *ShellMutation) RemoveActiveUserIDs(ids ...int) {
+	if m.removedactive_users == nil {
+		m.removedactive_users = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.active_users, ids[i])
+		m.removedactive_users[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedActiveUsers returns the removed IDs of the "active_users" edge to the User entity.
+func (m *ShellMutation) RemovedActiveUsersIDs() (ids []int) {
+	for id := range m.removedactive_users {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ActiveUsersIDs returns the "active_users" edge IDs in the mutation.
+func (m *ShellMutation) ActiveUsersIDs() (ids []int) {
+	for id := range m.active_users {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetActiveUsers resets all changes to the "active_users" edge.
+func (m *ShellMutation) ResetActiveUsers() {
+	m.active_users = nil
+	m.clearedactive_users = false
+	m.removedactive_users = nil
+}
+
+// Where appends a list predicates to the ShellMutation builder.
+func (m *ShellMutation) Where(ps ...predicate.Shell) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ShellMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ShellMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Shell, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ShellMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ShellMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Shell).
+func (m *ShellMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ShellMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, shell.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, shell.FieldLastModifiedAt)
+	}
+	if m.closed_at != nil {
+		fields = append(fields, shell.FieldClosedAt)
+	}
+	if m.data != nil {
+		fields = append(fields, shell.FieldData)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ShellMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case shell.FieldCreatedAt:
+		return m.CreatedAt()
+	case shell.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case shell.FieldClosedAt:
+		return m.ClosedAt()
+	case shell.FieldData:
+		return m.Data()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ShellMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case shell.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case shell.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case shell.FieldClosedAt:
+		return m.OldClosedAt(ctx)
+	case shell.FieldData:
+		return m.OldData(ctx)
+	}
+	return nil, fmt.Errorf("unknown Shell field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ShellMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case shell.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case shell.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case shell.FieldClosedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClosedAt(v)
+		return nil
+	case shell.FieldData:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetData(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Shell field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ShellMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ShellMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ShellMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Shell numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ShellMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(shell.FieldClosedAt) {
+		fields = append(fields, shell.FieldClosedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ShellMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ShellMutation) ClearField(name string) error {
+	switch name {
+	case shell.FieldClosedAt:
+		m.ClearClosedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Shell nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ShellMutation) ResetField(name string) error {
+	switch name {
+	case shell.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case shell.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case shell.FieldClosedAt:
+		m.ResetClosedAt()
+		return nil
+	case shell.FieldData:
+		m.ResetData()
+		return nil
+	}
+	return fmt.Errorf("unknown Shell field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ShellMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.task != nil {
+		edges = append(edges, shell.EdgeTask)
+	}
+	if m.beacon != nil {
+		edges = append(edges, shell.EdgeBeacon)
+	}
+	if m.owner != nil {
+		edges = append(edges, shell.EdgeOwner)
+	}
+	if m.active_users != nil {
+		edges = append(edges, shell.EdgeActiveUsers)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ShellMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case shell.EdgeTask:
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	case shell.EdgeBeacon:
+		if id := m.beacon; id != nil {
+			return []ent.Value{*id}
+		}
+	case shell.EdgeOwner:
+		if id := m.owner; id != nil {
+			return []ent.Value{*id}
+		}
+	case shell.EdgeActiveUsers:
+		ids := make([]ent.Value, 0, len(m.active_users))
+		for id := range m.active_users {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ShellMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.removedactive_users != nil {
+		edges = append(edges, shell.EdgeActiveUsers)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ShellMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case shell.EdgeActiveUsers:
+		ids := make([]ent.Value, 0, len(m.removedactive_users))
+		for id := range m.removedactive_users {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ShellMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.clearedtask {
+		edges = append(edges, shell.EdgeTask)
+	}
+	if m.clearedbeacon {
+		edges = append(edges, shell.EdgeBeacon)
+	}
+	if m.clearedowner {
+		edges = append(edges, shell.EdgeOwner)
+	}
+	if m.clearedactive_users {
+		edges = append(edges, shell.EdgeActiveUsers)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ShellMutation) EdgeCleared(name string) bool {
+	switch name {
+	case shell.EdgeTask:
+		return m.clearedtask
+	case shell.EdgeBeacon:
+		return m.clearedbeacon
+	case shell.EdgeOwner:
+		return m.clearedowner
+	case shell.EdgeActiveUsers:
+		return m.clearedactive_users
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ShellMutation) ClearEdge(name string) error {
+	switch name {
+	case shell.EdgeTask:
+		m.ClearTask()
+		return nil
+	case shell.EdgeBeacon:
+		m.ClearBeacon()
+		return nil
+	case shell.EdgeOwner:
+		m.ClearOwner()
+		return nil
+	}
+	return fmt.Errorf("unknown Shell unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ShellMutation) ResetEdge(name string) error {
+	switch name {
+	case shell.EdgeTask:
+		m.ResetTask()
+		return nil
+	case shell.EdgeBeacon:
+		m.ResetBeacon()
+		return nil
+	case shell.EdgeOwner:
+		m.ResetOwner()
+		return nil
+	case shell.EdgeActiveUsers:
+		m.ResetActiveUsers()
+		return nil
+	}
+	return fmt.Errorf("unknown Shell edge %s", name)
+}
+
 // TagMutation represents an operation that mutates the Tag nodes in the graph.
 type TagMutation struct {
 	config
@@ -7907,6 +8772,9 @@ type TaskMutation struct {
 	reported_credentials        map[int]struct{}
 	removedreported_credentials map[int]struct{}
 	clearedreported_credentials bool
+	shells                      map[int]struct{}
+	removedshells               map[int]struct{}
+	clearedshells               bool
 	done                        bool
 	oldValue                    func(context.Context) (*Task, error)
 	predicates                  []predicate.Task
@@ -8623,6 +9491,60 @@ func (m *TaskMutation) ResetReportedCredentials() {
 	m.removedreported_credentials = nil
 }
 
+// AddShellIDs adds the "shells" edge to the Shell entity by ids.
+func (m *TaskMutation) AddShellIDs(ids ...int) {
+	if m.shells == nil {
+		m.shells = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.shells[ids[i]] = struct{}{}
+	}
+}
+
+// ClearShells clears the "shells" edge to the Shell entity.
+func (m *TaskMutation) ClearShells() {
+	m.clearedshells = true
+}
+
+// ShellsCleared reports if the "shells" edge to the Shell entity was cleared.
+func (m *TaskMutation) ShellsCleared() bool {
+	return m.clearedshells
+}
+
+// RemoveShellIDs removes the "shells" edge to the Shell entity by IDs.
+func (m *TaskMutation) RemoveShellIDs(ids ...int) {
+	if m.removedshells == nil {
+		m.removedshells = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.shells, ids[i])
+		m.removedshells[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedShells returns the removed IDs of the "shells" edge to the Shell entity.
+func (m *TaskMutation) RemovedShellsIDs() (ids []int) {
+	for id := range m.removedshells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ShellsIDs returns the "shells" edge IDs in the mutation.
+func (m *TaskMutation) ShellsIDs() (ids []int) {
+	for id := range m.shells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetShells resets all changes to the "shells" edge.
+func (m *TaskMutation) ResetShells() {
+	m.shells = nil
+	m.clearedshells = false
+	m.removedshells = nil
+}
+
 // Where appends a list predicates to the TaskMutation builder.
 func (m *TaskMutation) Where(ps ...predicate.Task) {
 	m.predicates = append(m.predicates, ps...)
@@ -8923,7 +9845,7 @@ func (m *TaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.quest != nil {
 		edges = append(edges, task.EdgeQuest)
 	}
@@ -8938,6 +9860,9 @@ func (m *TaskMutation) AddedEdges() []string {
 	}
 	if m.reported_credentials != nil {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.shells != nil {
+		edges = append(edges, task.EdgeShells)
 	}
 	return edges
 }
@@ -8972,13 +9897,19 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeShells:
+		ids := make([]ent.Value, 0, len(m.shells))
+		for id := range m.shells {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedreported_files != nil {
 		edges = append(edges, task.EdgeReportedFiles)
 	}
@@ -8987,6 +9918,9 @@ func (m *TaskMutation) RemovedEdges() []string {
 	}
 	if m.removedreported_credentials != nil {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.removedshells != nil {
+		edges = append(edges, task.EdgeShells)
 	}
 	return edges
 }
@@ -9013,13 +9947,19 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeShells:
+		ids := make([]ent.Value, 0, len(m.removedshells))
+		for id := range m.removedshells {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedquest {
 		edges = append(edges, task.EdgeQuest)
 	}
@@ -9034,6 +9974,9 @@ func (m *TaskMutation) ClearedEdges() []string {
 	}
 	if m.clearedreported_credentials {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.clearedshells {
+		edges = append(edges, task.EdgeShells)
 	}
 	return edges
 }
@@ -9052,6 +9995,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 		return m.clearedreported_processes
 	case task.EdgeReportedCredentials:
 		return m.clearedreported_credentials
+	case task.EdgeShells:
+		return m.clearedshells
 	}
 	return false
 }
@@ -9088,6 +10033,9 @@ func (m *TaskMutation) ResetEdge(name string) error {
 		return nil
 	case task.EdgeReportedCredentials:
 		m.ResetReportedCredentials()
+		return nil
+	case task.EdgeShells:
+		m.ResetShells()
 		return nil
 	}
 	return fmt.Errorf("unknown Task edge %s", name)
@@ -10141,23 +11089,26 @@ func (m *TomeMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	oauth_id      *string
-	photo_url     *string
-	session_token *string
-	access_token  *string
-	is_activated  *bool
-	is_admin      *bool
-	clearedFields map[string]struct{}
-	tomes         map[int]struct{}
-	removedtomes  map[int]struct{}
-	clearedtomes  bool
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op                   Op
+	typ                  string
+	id                   *int
+	name                 *string
+	oauth_id             *string
+	photo_url            *string
+	session_token        *string
+	access_token         *string
+	is_activated         *bool
+	is_admin             *bool
+	clearedFields        map[string]struct{}
+	tomes                map[int]struct{}
+	removedtomes         map[int]struct{}
+	clearedtomes         bool
+	active_shells        map[int]struct{}
+	removedactive_shells map[int]struct{}
+	clearedactive_shells bool
+	done                 bool
+	oldValue             func(context.Context) (*User, error)
+	predicates           []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -10564,6 +11515,60 @@ func (m *UserMutation) ResetTomes() {
 	m.removedtomes = nil
 }
 
+// AddActiveShellIDs adds the "active_shells" edge to the Shell entity by ids.
+func (m *UserMutation) AddActiveShellIDs(ids ...int) {
+	if m.active_shells == nil {
+		m.active_shells = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.active_shells[ids[i]] = struct{}{}
+	}
+}
+
+// ClearActiveShells clears the "active_shells" edge to the Shell entity.
+func (m *UserMutation) ClearActiveShells() {
+	m.clearedactive_shells = true
+}
+
+// ActiveShellsCleared reports if the "active_shells" edge to the Shell entity was cleared.
+func (m *UserMutation) ActiveShellsCleared() bool {
+	return m.clearedactive_shells
+}
+
+// RemoveActiveShellIDs removes the "active_shells" edge to the Shell entity by IDs.
+func (m *UserMutation) RemoveActiveShellIDs(ids ...int) {
+	if m.removedactive_shells == nil {
+		m.removedactive_shells = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.active_shells, ids[i])
+		m.removedactive_shells[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedActiveShells returns the removed IDs of the "active_shells" edge to the Shell entity.
+func (m *UserMutation) RemovedActiveShellsIDs() (ids []int) {
+	for id := range m.removedactive_shells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ActiveShellsIDs returns the "active_shells" edge IDs in the mutation.
+func (m *UserMutation) ActiveShellsIDs() (ids []int) {
+	for id := range m.active_shells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetActiveShells resets all changes to the "active_shells" edge.
+func (m *UserMutation) ResetActiveShells() {
+	m.active_shells = nil
+	m.clearedactive_shells = false
+	m.removedactive_shells = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -10799,9 +11804,12 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.tomes != nil {
 		edges = append(edges, user.EdgeTomes)
+	}
+	if m.active_shells != nil {
+		edges = append(edges, user.EdgeActiveShells)
 	}
 	return edges
 }
@@ -10816,15 +11824,24 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeActiveShells:
+		ids := make([]ent.Value, 0, len(m.active_shells))
+		for id := range m.active_shells {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedtomes != nil {
 		edges = append(edges, user.EdgeTomes)
+	}
+	if m.removedactive_shells != nil {
+		edges = append(edges, user.EdgeActiveShells)
 	}
 	return edges
 }
@@ -10839,15 +11856,24 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeActiveShells:
+		ids := make([]ent.Value, 0, len(m.removedactive_shells))
+		for id := range m.removedactive_shells {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedtomes {
 		edges = append(edges, user.EdgeTomes)
+	}
+	if m.clearedactive_shells {
+		edges = append(edges, user.EdgeActiveShells)
 	}
 	return edges
 }
@@ -10858,6 +11884,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeTomes:
 		return m.clearedtomes
+	case user.EdgeActiveShells:
+		return m.clearedactive_shells
 	}
 	return false
 }
@@ -10876,6 +11904,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
 	case user.EdgeTomes:
 		m.ResetTomes()
+		return nil
+	case user.EdgeActiveShells:
+		m.ResetActiveShells()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

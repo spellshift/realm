@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -50,6 +51,8 @@ type Client struct {
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
+	// Shell is the client for interacting with the Shell builders.
+	Shell *ShellClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Task is the client for interacting with the Task builders.
@@ -81,6 +84,7 @@ func (c *Client) init() {
 	c.HostProcess = NewHostProcessClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Repository = NewRepositoryClient(c.config)
+	c.Shell = NewShellClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tome = NewTomeClient(c.config)
@@ -178,6 +182,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		HostProcess:    NewHostProcessClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
+		Shell:          NewShellClient(cfg),
 		Tag:            NewTagClient(cfg),
 		Task:           NewTaskClient(cfg),
 		Tome:           NewTomeClient(cfg),
@@ -209,6 +214,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		HostProcess:    NewHostProcessClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
+		Shell:          NewShellClient(cfg),
 		Tag:            NewTagClient(cfg),
 		Task:           NewTaskClient(cfg),
 		Tome:           NewTomeClient(cfg),
@@ -243,7 +249,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Quest,
-		c.Repository, c.Tag, c.Task, c.Tome, c.User,
+		c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -254,7 +260,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Quest,
-		c.Repository, c.Tag, c.Task, c.Tome, c.User,
+		c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -279,6 +285,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Quest.mutate(ctx, m)
 	case *RepositoryMutation:
 		return c.Repository.mutate(ctx, m)
+	case *ShellMutation:
+		return c.Shell.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
 	case *TaskMutation:
@@ -425,6 +433,22 @@ func (c *BeaconClient) QueryTasks(b *Beacon) *TaskQuery {
 			sqlgraph.From(beacon.Table, beacon.FieldID, id),
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, beacon.TasksTable, beacon.TasksColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShells queries the shells edge of a Beacon.
+func (c *BeaconClient) QueryShells(b *Beacon) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, beacon.ShellsTable, beacon.ShellsColumn),
 		)
 		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
 		return fromV, nil
@@ -1679,6 +1703,203 @@ func (c *RepositoryClient) mutate(ctx context.Context, m *RepositoryMutation) (V
 	}
 }
 
+// ShellClient is a client for the Shell schema.
+type ShellClient struct {
+	config
+}
+
+// NewShellClient returns a client for the Shell from the given config.
+func NewShellClient(c config) *ShellClient {
+	return &ShellClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `shell.Hooks(f(g(h())))`.
+func (c *ShellClient) Use(hooks ...Hook) {
+	c.hooks.Shell = append(c.hooks.Shell, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `shell.Intercept(f(g(h())))`.
+func (c *ShellClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Shell = append(c.inters.Shell, interceptors...)
+}
+
+// Create returns a builder for creating a Shell entity.
+func (c *ShellClient) Create() *ShellCreate {
+	mutation := newShellMutation(c.config, OpCreate)
+	return &ShellCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Shell entities.
+func (c *ShellClient) CreateBulk(builders ...*ShellCreate) *ShellCreateBulk {
+	return &ShellCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ShellClient) MapCreateBulk(slice any, setFunc func(*ShellCreate, int)) *ShellCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ShellCreateBulk{err: fmt.Errorf("calling to ShellClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ShellCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ShellCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Shell.
+func (c *ShellClient) Update() *ShellUpdate {
+	mutation := newShellMutation(c.config, OpUpdate)
+	return &ShellUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ShellClient) UpdateOne(s *Shell) *ShellUpdateOne {
+	mutation := newShellMutation(c.config, OpUpdateOne, withShell(s))
+	return &ShellUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ShellClient) UpdateOneID(id int) *ShellUpdateOne {
+	mutation := newShellMutation(c.config, OpUpdateOne, withShellID(id))
+	return &ShellUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Shell.
+func (c *ShellClient) Delete() *ShellDelete {
+	mutation := newShellMutation(c.config, OpDelete)
+	return &ShellDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ShellClient) DeleteOne(s *Shell) *ShellDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ShellClient) DeleteOneID(id int) *ShellDeleteOne {
+	builder := c.Delete().Where(shell.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ShellDeleteOne{builder}
+}
+
+// Query returns a query builder for Shell.
+func (c *ShellClient) Query() *ShellQuery {
+	return &ShellQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeShell},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Shell entity by its id.
+func (c *ShellClient) Get(ctx context.Context, id int) (*Shell, error) {
+	return c.Query().Where(shell.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ShellClient) GetX(ctx context.Context, id int) *Shell {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTask queries the task edge of a Shell.
+func (c *ShellClient) QueryTask(s *Shell) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shell.TaskTable, shell.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBeacon queries the beacon edge of a Shell.
+func (c *ShellClient) QueryBeacon(s *Shell) *BeaconQuery {
+	query := (&BeaconClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shell.BeaconTable, shell.BeaconColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOwner queries the owner edge of a Shell.
+func (c *ShellClient) QueryOwner(s *Shell) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shell.OwnerTable, shell.OwnerColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryActiveUsers queries the active_users edge of a Shell.
+func (c *ShellClient) QueryActiveUsers(s *Shell) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, shell.ActiveUsersTable, shell.ActiveUsersPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ShellClient) Hooks() []Hook {
+	return c.hooks.Shell
+}
+
+// Interceptors returns the client interceptors.
+func (c *ShellClient) Interceptors() []Interceptor {
+	return c.inters.Shell
+}
+
+func (c *ShellClient) mutate(ctx context.Context, m *ShellMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ShellCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ShellUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ShellUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ShellDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Shell mutation op: %q", m.Op())
+	}
+}
+
 // TagClient is a client for the Tag schema.
 type TagClient struct {
 	config
@@ -2009,6 +2230,22 @@ func (c *TaskClient) QueryReportedCredentials(t *Task) *HostCredentialQuery {
 			sqlgraph.From(task.Table, task.FieldID, id),
 			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedCredentialsTable, task.ReportedCredentialsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShells queries the shells edge of a Task.
+func (c *TaskClient) QueryShells(t *Task) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, task.ShellsTable, task.ShellsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -2348,6 +2585,22 @@ func (c *UserClient) QueryTomes(u *User) *TomeQuery {
 	return query
 }
 
+// QueryActiveShells queries the active_shells edge of a User.
+func (c *UserClient) QueryActiveShells(u *User) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.ActiveShellsTable, user.ActiveShellsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -2377,10 +2630,10 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 type (
 	hooks struct {
 		Beacon, File, Host, HostCredential, HostFile, HostProcess, Quest, Repository,
-		Tag, Task, Tome, User []ent.Hook
+		Shell, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
 		Beacon, File, Host, HostCredential, HostFile, HostProcess, Quest, Repository,
-		Tag, Task, Tome, User []ent.Interceptor
+		Shell, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

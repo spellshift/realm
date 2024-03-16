@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/schema"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -242,6 +243,21 @@ func init() {
 	repositoryDescPrivateKey := repositoryFields[2].Descriptor()
 	// repository.PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
 	repository.PrivateKeyValidator = repositoryDescPrivateKey.Validators[0].(func(string) error)
+	shellMixin := schema.Shell{}.Mixin()
+	shellMixinFields0 := shellMixin[0].Fields()
+	_ = shellMixinFields0
+	shellFields := schema.Shell{}.Fields()
+	_ = shellFields
+	// shellDescCreatedAt is the schema descriptor for created_at field.
+	shellDescCreatedAt := shellMixinFields0[0].Descriptor()
+	// shell.DefaultCreatedAt holds the default value on creation for the created_at field.
+	shell.DefaultCreatedAt = shellDescCreatedAt.Default.(func() time.Time)
+	// shellDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	shellDescLastModifiedAt := shellMixinFields0[1].Descriptor()
+	// shell.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	shell.DefaultLastModifiedAt = shellDescLastModifiedAt.Default.(func() time.Time)
+	// shell.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	shell.UpdateDefaultLastModifiedAt = shellDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.
