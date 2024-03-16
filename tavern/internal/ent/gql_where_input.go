@@ -5806,6 +5806,10 @@ type UserWhereInput struct {
 	// "tomes" edge predicates.
 	HasTomes     *bool             `json:"hasTomes,omitempty"`
 	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
+
+	// "active_shells" edge predicates.
+	HasActiveShells     *bool              `json:"hasActiveShells,omitempty"`
+	HasActiveShellsWith []*ShellWhereInput `json:"hasActiveShellsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -6050,6 +6054,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasTomesWith(with...))
+	}
+	if i.HasActiveShells != nil {
+		p := user.HasActiveShells()
+		if !*i.HasActiveShells {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasActiveShellsWith) > 0 {
+		with := make([]predicate.Shell, 0, len(i.HasActiveShellsWith))
+		for _, w := range i.HasActiveShellsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasActiveShellsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasActiveShellsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

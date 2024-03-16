@@ -11089,23 +11089,26 @@ func (m *TomeMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	oauth_id      *string
-	photo_url     *string
-	session_token *string
-	access_token  *string
-	is_activated  *bool
-	is_admin      *bool
-	clearedFields map[string]struct{}
-	tomes         map[int]struct{}
-	removedtomes  map[int]struct{}
-	clearedtomes  bool
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op                   Op
+	typ                  string
+	id                   *int
+	name                 *string
+	oauth_id             *string
+	photo_url            *string
+	session_token        *string
+	access_token         *string
+	is_activated         *bool
+	is_admin             *bool
+	clearedFields        map[string]struct{}
+	tomes                map[int]struct{}
+	removedtomes         map[int]struct{}
+	clearedtomes         bool
+	active_shells        map[int]struct{}
+	removedactive_shells map[int]struct{}
+	clearedactive_shells bool
+	done                 bool
+	oldValue             func(context.Context) (*User, error)
+	predicates           []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -11512,6 +11515,60 @@ func (m *UserMutation) ResetTomes() {
 	m.removedtomes = nil
 }
 
+// AddActiveShellIDs adds the "active_shells" edge to the Shell entity by ids.
+func (m *UserMutation) AddActiveShellIDs(ids ...int) {
+	if m.active_shells == nil {
+		m.active_shells = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.active_shells[ids[i]] = struct{}{}
+	}
+}
+
+// ClearActiveShells clears the "active_shells" edge to the Shell entity.
+func (m *UserMutation) ClearActiveShells() {
+	m.clearedactive_shells = true
+}
+
+// ActiveShellsCleared reports if the "active_shells" edge to the Shell entity was cleared.
+func (m *UserMutation) ActiveShellsCleared() bool {
+	return m.clearedactive_shells
+}
+
+// RemoveActiveShellIDs removes the "active_shells" edge to the Shell entity by IDs.
+func (m *UserMutation) RemoveActiveShellIDs(ids ...int) {
+	if m.removedactive_shells == nil {
+		m.removedactive_shells = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.active_shells, ids[i])
+		m.removedactive_shells[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedActiveShells returns the removed IDs of the "active_shells" edge to the Shell entity.
+func (m *UserMutation) RemovedActiveShellsIDs() (ids []int) {
+	for id := range m.removedactive_shells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ActiveShellsIDs returns the "active_shells" edge IDs in the mutation.
+func (m *UserMutation) ActiveShellsIDs() (ids []int) {
+	for id := range m.active_shells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetActiveShells resets all changes to the "active_shells" edge.
+func (m *UserMutation) ResetActiveShells() {
+	m.active_shells = nil
+	m.clearedactive_shells = false
+	m.removedactive_shells = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -11747,9 +11804,12 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.tomes != nil {
 		edges = append(edges, user.EdgeTomes)
+	}
+	if m.active_shells != nil {
+		edges = append(edges, user.EdgeActiveShells)
 	}
 	return edges
 }
@@ -11764,15 +11824,24 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeActiveShells:
+		ids := make([]ent.Value, 0, len(m.active_shells))
+		for id := range m.active_shells {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedtomes != nil {
 		edges = append(edges, user.EdgeTomes)
+	}
+	if m.removedactive_shells != nil {
+		edges = append(edges, user.EdgeActiveShells)
 	}
 	return edges
 }
@@ -11787,15 +11856,24 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeActiveShells:
+		ids := make([]ent.Value, 0, len(m.removedactive_shells))
+		for id := range m.removedactive_shells {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedtomes {
 		edges = append(edges, user.EdgeTomes)
+	}
+	if m.clearedactive_shells {
+		edges = append(edges, user.EdgeActiveShells)
 	}
 	return edges
 }
@@ -11806,6 +11884,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeTomes:
 		return m.clearedtomes
+	case user.EdgeActiveShells:
+		return m.clearedactive_shells
 	}
 	return false
 }
@@ -11824,6 +11904,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
 	case user.EdgeTomes:
 		m.ResetTomes()
+		return nil
+	case user.EdgeActiveShells:
+		m.ResetActiveShells()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

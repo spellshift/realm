@@ -1985,6 +1985,9 @@ input UpdateUserInput {
   addTomeIDs: [ID!]
   removeTomeIDs: [ID!]
   clearTomes: Boolean
+  addActiveShellIDs: [ID!]
+  removeActiveShellIDs: [ID!]
+  clearActiveShells: Boolean
 }
 type User implements Node {
   id: ID!
@@ -1998,6 +2001,8 @@ type User implements Node {
   isAdmin: Boolean!
   """Tomes uploaded by the user."""
   tomes: [Tome!]
+  """Shells actively used by the user"""
+  activeShells: [Shell!]
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -2053,4 +2058,7 @@ input UserWhereInput {
   """tomes edge predicates"""
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
+  """active_shells edge predicates"""
+  hasActiveShells: Boolean
+  hasActiveShellsWith: [ShellWhereInput!]
 }

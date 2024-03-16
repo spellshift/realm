@@ -319,7 +319,7 @@ func HasActiveUsers() predicate.Shell {
 	return predicate.Shell(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ActiveUsersTable, ActiveUsersColumn),
+			sqlgraph.Edge(sqlgraph.M2M, false, ActiveUsersTable, ActiveUsersPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

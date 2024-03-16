@@ -28,6 +28,8 @@ const (
 	FieldIsAdmin = "is_admin"
 	// EdgeTomes holds the string denoting the tomes edge name in mutations.
 	EdgeTomes = "tomes"
+	// EdgeActiveShells holds the string denoting the active_shells edge name in mutations.
+	EdgeActiveShells = "active_shells"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// TomesTable is the table that holds the tomes relation/edge.
@@ -37,6 +39,11 @@ const (
 	TomesInverseTable = "tomes"
 	// TomesColumn is the table column denoting the tomes relation/edge.
 	TomesColumn = "tome_uploader"
+	// ActiveShellsTable is the table that holds the active_shells relation/edge. The primary key declared below.
+	ActiveShellsTable = "shell_active_users"
+	// ActiveShellsInverseTable is the table name for the Shell entity.
+	// It exists in this package in order to avoid circular dependency with the "shell" package.
+	ActiveShellsInverseTable = "shells"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -51,21 +58,16 @@ var Columns = []string{
 	FieldIsAdmin,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "users"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"shell_active_users",
-}
+var (
+	// ActiveShellsPrimaryKey and ActiveShellsColumn2 are the table columns denoting the
+	// primary key for the active_shells relation (M2M).
+	ActiveShellsPrimaryKey = []string{"shell_id", "user_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -145,10 +147,31 @@ func ByTomes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newTomesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByActiveShellsCount orders the results by active_shells count.
+func ByActiveShellsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newActiveShellsStep(), opts...)
+	}
+}
+
+// ByActiveShells orders the results by active_shells terms.
+func ByActiveShells(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newActiveShellsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TomesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, TomesTable, TomesColumn),
+	)
+}
+func newActiveShellsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ActiveShellsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, ActiveShellsTable, ActiveShellsPrimaryKey...),
 	)
 }

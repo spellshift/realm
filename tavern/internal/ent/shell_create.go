@@ -282,10 +282,10 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 	}
 	if nodes := sc.mutation.ActiveUsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   shell.ActiveUsersTable,
-			Columns: []string{shell.ActiveUsersColumn},
+			Columns: shell.ActiveUsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),

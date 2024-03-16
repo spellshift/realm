@@ -287,12 +287,13 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		ID          func(childComplexity int) int
-		IsActivated func(childComplexity int) int
-		IsAdmin     func(childComplexity int) int
-		Name        func(childComplexity int) int
-		PhotoURL    func(childComplexity int) int
-		Tomes       func(childComplexity int) int
+		ActiveShells func(childComplexity int) int
+		ID           func(childComplexity int) int
+		IsActivated  func(childComplexity int) int
+		IsAdmin      func(childComplexity int) int
+		Name         func(childComplexity int) int
+		PhotoURL     func(childComplexity int) int
+		Tomes        func(childComplexity int) int
 	}
 }
 
@@ -1650,6 +1651,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tome.Uploader(childComplexity), true
+
+	case "User.activeShells":
+		if e.complexity.User.ActiveShells == nil {
+			break
+		}
+
+		return e.complexity.User.ActiveShells(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -3828,6 +3836,9 @@ input UpdateUserInput {
   addTomeIDs: [ID!]
   removeTomeIDs: [ID!]
   clearTomes: Boolean
+  addActiveShellIDs: [ID!]
+  removeActiveShellIDs: [ID!]
+  clearActiveShells: Boolean
 }
 type User implements Node {
   id: ID!
@@ -3841,6 +3852,8 @@ type User implements Node {
   isAdmin: Boolean!
   """Tomes uploaded by the user."""
   tomes: [Tome!]
+  """Shells actively used by the user"""
+  activeShells: [Shell!]
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -3896,6 +3909,9 @@ input UserWhereInput {
   """tomes edge predicates"""
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
+  """active_shells edge predicates"""
+  hasActiveShells: Boolean
+  hasActiveShellsWith: [ShellWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time

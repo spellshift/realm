@@ -53,13 +53,11 @@ const (
 	OwnerInverseTable = "users"
 	// OwnerColumn is the table column denoting the owner relation/edge.
 	OwnerColumn = "shell_owner"
-	// ActiveUsersTable is the table that holds the active_users relation/edge.
-	ActiveUsersTable = "users"
+	// ActiveUsersTable is the table that holds the active_users relation/edge. The primary key declared below.
+	ActiveUsersTable = "shell_active_users"
 	// ActiveUsersInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	ActiveUsersInverseTable = "users"
-	// ActiveUsersColumn is the table column denoting the active_users relation/edge.
-	ActiveUsersColumn = "shell_active_users"
 )
 
 // Columns holds all SQL columns for shell fields.
@@ -78,6 +76,12 @@ var ForeignKeys = []string{
 	"shell_beacon",
 	"shell_owner",
 }
+
+var (
+	// ActiveUsersPrimaryKey and ActiveUsersColumn2 are the table columns denoting the
+	// primary key for the active_users relation (M2M).
+	ActiveUsersPrimaryKey = []string{"shell_id", "user_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -185,6 +189,6 @@ func newActiveUsersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ActiveUsersInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ActiveUsersTable, ActiveUsersColumn),
+		sqlgraph.Edge(sqlgraph.M2M, false, ActiveUsersTable, ActiveUsersPrimaryKey...),
 	)
 }

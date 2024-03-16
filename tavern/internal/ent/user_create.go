@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -109,6 +110,21 @@ func (uc *UserCreate) AddTomes(t ...*Tome) *UserCreate {
 		ids[i] = t[i].ID
 	}
 	return uc.AddTomeIDs(ids...)
+}
+
+// AddActiveShellIDs adds the "active_shells" edge to the Shell entity by IDs.
+func (uc *UserCreate) AddActiveShellIDs(ids ...int) *UserCreate {
+	uc.mutation.AddActiveShellIDs(ids...)
+	return uc
+}
+
+// AddActiveShells adds the "active_shells" edges to the Shell entity.
+func (uc *UserCreate) AddActiveShells(s ...*Shell) *UserCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uc.AddActiveShellIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -266,6 +282,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ActiveShellsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.ActiveShellsTable,
+			Columns: user.ActiveShellsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

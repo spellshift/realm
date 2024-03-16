@@ -379,21 +379,12 @@ var (
 		{Name: "access_token", Type: field.TypeString, Size: 200},
 		{Name: "is_activated", Type: field.TypeBool, Default: false},
 		{Name: "is_admin", Type: field.TypeBool, Default: false},
-		{Name: "shell_active_users", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "users_shells_active_users",
-				Columns:    []*schema.Column{UsersColumns[8]},
-				RefColumns: []*schema.Column{ShellsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
 	}
 	// HostTagsColumns holds the columns for the "host_tags" table.
 	HostTagsColumns = []*schema.Column{
@@ -416,6 +407,31 @@ var (
 				Symbol:     "host_tags_tag_id",
 				Columns:    []*schema.Column{HostTagsColumns[1]},
 				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// ShellActiveUsersColumns holds the columns for the "shell_active_users" table.
+	ShellActiveUsersColumns = []*schema.Column{
+		{Name: "shell_id", Type: field.TypeInt},
+		{Name: "user_id", Type: field.TypeInt},
+	}
+	// ShellActiveUsersTable holds the schema information for the "shell_active_users" table.
+	ShellActiveUsersTable = &schema.Table{
+		Name:       "shell_active_users",
+		Columns:    ShellActiveUsersColumns,
+		PrimaryKey: []*schema.Column{ShellActiveUsersColumns[0], ShellActiveUsersColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shell_active_users_shell_id",
+				Columns:    []*schema.Column{ShellActiveUsersColumns[0]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "shell_active_users_user_id",
+				Columns:    []*schema.Column{ShellActiveUsersColumns[1]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -461,6 +477,7 @@ var (
 		TomesTable,
 		UsersTable,
 		HostTagsTable,
+		ShellActiveUsersTable,
 		TomeFilesTable,
 	}
 )
@@ -489,9 +506,10 @@ func init() {
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
 	TomesTable.ForeignKeys[0].RefTable = UsersTable
 	TomesTable.ForeignKeys[1].RefTable = RepositoriesTable
-	UsersTable.ForeignKeys[0].RefTable = ShellsTable
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
+	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
+	ShellActiveUsersTable.ForeignKeys[1].RefTable = UsersTable
 	TomeFilesTable.ForeignKeys[0].RefTable = TomesTable
 	TomeFilesTable.ForeignKeys[1].RefTable = FilesTable
 }

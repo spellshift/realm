@@ -32,22 +32,24 @@ type User struct {
 	IsAdmin bool `json:"is_admin,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges              UserEdges `json:"edges"`
-	shell_active_users *int
-	selectValues       sql.SelectValues
+	Edges        UserEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
 	// Tomes uploaded by the user.
 	Tomes []*Tome `json:"tomes,omitempty"`
+	// Shells actively used by the user
+	ActiveShells []*Shell `json:"active_shells,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 
-	namedTomes map[string][]*Tome
+	namedTomes        map[string][]*Tome
+	namedActiveShells map[string][]*Shell
 }
 
 // TomesOrErr returns the Tomes value or an error if the edge
@@ -57,6 +59,15 @@ func (e UserEdges) TomesOrErr() ([]*Tome, error) {
 		return e.Tomes, nil
 	}
 	return nil, &NotLoadedError{edge: "tomes"}
+}
+
+// ActiveShellsOrErr returns the ActiveShells value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ActiveShellsOrErr() ([]*Shell, error) {
+	if e.loadedTypes[1] {
+		return e.ActiveShells, nil
+	}
+	return nil, &NotLoadedError{edge: "active_shells"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -70,8 +81,6 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldOauthID, user.FieldPhotoURL, user.FieldSessionToken, user.FieldAccessToken:
 			values[i] = new(sql.NullString)
-		case user.ForeignKeys[0]: // shell_active_users
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -135,13 +144,6 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.IsAdmin = value.Bool
 			}
-		case user.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field shell_active_users", value)
-			} else if value.Valid {
-				u.shell_active_users = new(int)
-				*u.shell_active_users = int(value.Int64)
-			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
 		}
@@ -158,6 +160,11 @@ func (u *User) Value(name string) (ent.Value, error) {
 // QueryTomes queries the "tomes" edge of the User entity.
 func (u *User) QueryTomes() *TomeQuery {
 	return NewUserClient(u.config).QueryTomes(u)
+}
+
+// QueryActiveShells queries the "active_shells" edge of the User entity.
+func (u *User) QueryActiveShells() *ShellQuery {
+	return NewUserClient(u.config).QueryActiveShells(u)
 }
 
 // Update returns a builder for updating this User.
@@ -225,6 +232,30 @@ func (u *User) appendNamedTomes(name string, edges ...*Tome) {
 		u.Edges.namedTomes[name] = []*Tome{}
 	} else {
 		u.Edges.namedTomes[name] = append(u.Edges.namedTomes[name], edges...)
+	}
+}
+
+// NamedActiveShells returns the ActiveShells named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedActiveShells(name string) ([]*Shell, error) {
+	if u.Edges.namedActiveShells == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedActiveShells[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedActiveShells(name string, edges ...*Shell) {
+	if u.Edges.namedActiveShells == nil {
+		u.Edges.namedActiveShells = make(map[string][]*Shell)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedActiveShells[name] = []*Shell{}
+	} else {
+		u.Edges.namedActiveShells[name] = append(u.Edges.namedActiveShells[name], edges...)
 	}
 }
 

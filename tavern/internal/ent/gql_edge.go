@@ -385,3 +385,15 @@ func (u *User) Tomes(ctx context.Context) (result []*Tome, err error) {
 	}
 	return result, err
 }
+
+func (u *User) ActiveShells(ctx context.Context) (result []*Shell, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = u.NamedActiveShells(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = u.Edges.ActiveShellsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = u.QueryActiveShells().All(ctx)
+	}
+	return result, err
+}

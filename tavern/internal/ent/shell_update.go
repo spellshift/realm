@@ -318,10 +318,10 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if su.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   shell.ActiveUsersTable,
-			Columns: []string{shell.ActiveUsersColumn},
+			Columns: shell.ActiveUsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
@@ -331,10 +331,10 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := su.mutation.RemovedActiveUsersIDs(); len(nodes) > 0 && !su.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   shell.ActiveUsersTable,
-			Columns: []string{shell.ActiveUsersColumn},
+			Columns: shell.ActiveUsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
@@ -347,10 +347,10 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := su.mutation.ActiveUsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   shell.ActiveUsersTable,
-			Columns: []string{shell.ActiveUsersColumn},
+			Columns: shell.ActiveUsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
@@ -698,10 +698,10 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 	}
 	if suo.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   shell.ActiveUsersTable,
-			Columns: []string{shell.ActiveUsersColumn},
+			Columns: shell.ActiveUsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
@@ -711,10 +711,10 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 	}
 	if nodes := suo.mutation.RemovedActiveUsersIDs(); len(nodes) > 0 && !suo.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   shell.ActiveUsersTable,
-			Columns: []string{shell.ActiveUsersColumn},
+			Columns: shell.ActiveUsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
@@ -727,10 +727,10 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 	}
 	if nodes := suo.mutation.ActiveUsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   shell.ActiveUsersTable,
-			Columns: []string{shell.ActiveUsersColumn},
+			Columns: shell.ActiveUsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
