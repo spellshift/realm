@@ -1,4 +1,4 @@
-import { Badge, Button, Image, Tooltip } from "@chakra-ui/react";
+import { Badge, Image, Tooltip } from "@chakra-ui/react";
 import { ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
@@ -8,6 +8,7 @@ import TomeAccordion from "../../../components/TomeAccordion";
 import { RepositoryRow, Tome } from "../../../utils/consts";
 import { constructTomeParams } from "../../../utils/utils";
 import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 const RepositoryTable = ({ repositories }: {
     repositories: Array<RepositoryRow>
@@ -127,7 +128,8 @@ const RepositoryTable = ({ repositories }: {
                         <Tooltip label="Refetch tomes">
                             <Button
                                 id="ignoreRowClick"
-                                variant="ghost"
+                                buttonVariant="ghost"
+                                buttonStyle={{ color: "gray", size: "xs" }}
                                 leftIcon={<ArrowPathIcon className="w-4 h-4" id="ignoreRowClick"
                                 />}
                                 aria-label="Refetch tomes"
@@ -138,7 +140,8 @@ const RepositoryTable = ({ repositories }: {
                         <Tooltip label="Copy public key">
                             <Button
                                 id="ignoreRowClick"
-                                variant="ghost"
+                                buttonVariant="ghost"
+                                buttonStyle={{ color: "gray", size: "xs" }}
                                 aria-label="Copy public key"
                                 leftIcon={<ClipboardDocumentIcon id="ignoreRowClick"
                                     className="w-4 h-4" />}

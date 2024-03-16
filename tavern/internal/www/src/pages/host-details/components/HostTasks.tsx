@@ -9,6 +9,7 @@ import TablePagination from "../../../components/tavern-base-ui/TablePagination"
 import { DEFAULT_QUERY_TYPE, TableRowLimit } from "../../../utils/enums";
 import FreeTextSearch from "../../../components/tavern-base-ui/DebouncedFreeTextSearch";
 import { useTasks } from "../../../hooks/useTasks";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 const HostTasks = () => {
     const { hostId } = useParams();
@@ -60,12 +61,11 @@ const HostTasks = () => {
                                     : (
                                         <EmptyState label="No tasks found" type={EmptyStateType.noData} details="Get started by creating a new quest." >
                                             <Link to="/createQuest">
-                                                <button
+                                                <Button
                                                     type="button"
-                                                    className="inline-flex items-center rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-700"
                                                 >
                                                     Create new quest
-                                                </button>
+                                                </Button>
                                             </Link>
                                         </EmptyState>
                                     )}

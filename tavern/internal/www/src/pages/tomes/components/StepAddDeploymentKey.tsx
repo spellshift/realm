@@ -5,6 +5,7 @@ import { CopyBlock, tomorrow } from "react-code-blocks";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
 import { RepositoryType } from "../../../utils/consts";
 import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 type StepAddDeploymentKeyProps = {
     setCurrStep: (step: number) => void;
@@ -47,30 +48,26 @@ const StepAddDeploymentKey: FC<StepAddDeploymentKeyProps> = ({ setCurrStep, newR
                 </div>
             </div>
             <div className="flex flex-row gap-2">
-                <button
-                    className="inline-flex items-center rounded-md bg-gray-50 py-3 px-4 text-sm font-semibold text-purple-600 shadow-sm hover:bg-purple-100"
+                <Button
+                    buttonStyle={{ color: "purple", size: "md" }}
+                    buttonVariant="ghost"
                     onClick={() => setCurrStep(0)}
                     disabled={loading ? true : false}
                 >
                     Back
-                </button>
-                <button
-                    className="btn-primary flex flex-row gap-2"
+                </Button>
+                <Button
+                    buttonStyle={{ color: "purple", size: "md" }}
                     onClick={(event) => {
                         event.preventDefault();
                         importRepositoryTomes(newRepository.id || "");
                     }}
                     type="submit"
                     disabled={loading ? true : false}
+                    isLoading={loading}
                 >
-                    {loading === true && <Ring
-                        size={16}
-                        lineWeight={2}
-                        speed={2}
-                        color="white"
-                    />}
                     {loading === true ? "Importing" : "Import"} tomes
-                </button>
+                </Button>
             </div>
         </form>
     );

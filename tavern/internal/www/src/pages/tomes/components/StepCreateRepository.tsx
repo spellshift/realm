@@ -4,6 +4,7 @@ import AlertError from "../../../components/tavern-base-ui/AlertError";
 import FormTextField from "../../../components/tavern-base-ui/FormTextField";
 import { RepositoryType } from "../../../utils/consts";
 import { useCreateRepositoryLink } from "../hooks/useCreateRepositoryLink";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 type StepCreateRepositoryProps = {
     setCurrStep: (step: number) => void;
@@ -39,8 +40,7 @@ const StepCreateRepository: FC<StepCreateRepositoryProps> = ({ setCurrStep, setN
                 onChange={(event) => formik.setFieldValue('url', event?.target?.value)}
             />
             <div>
-                <button
-                    className="btn-primary"
+                <Button
                     onClick={(event) => {
                         event.preventDefault();
                         formik.handleSubmit();
@@ -49,7 +49,7 @@ const StepCreateRepository: FC<StepCreateRepositoryProps> = ({ setCurrStep, setN
                     type="submit"
                 >
                     Save link
-                </button>
+                </Button>
             </div>
         </form>
     );

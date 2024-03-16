@@ -2,6 +2,7 @@ import { gql, useQuery } from "@apollo/client";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { TomeParams } from "../../../utils/consts";
 import TomeStep from "./TomeStep";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 const GET_TOMES = gql`
     query get_tomes{
@@ -44,19 +45,18 @@ const TomeStepWrapper = (
                 <TomeStep formik={formik} data={data?.tomes || []} />
             )}
             <div className="flex flex-row gap-2">
-                <button
-                    className="inline-flex items-center rounded-md bg-gray-50 py-3 px-4 text-sm font-semibold text-purple-600 shadow-sm hover:bg-purple-100"
+                <Button
                     onClick={() => setCurrStep(0)}
+                    buttonVariant="ghost"
                 >
                     Back
-                </button>
-                <button
-                    className="btn-primary"
+                </Button>
+                <Button
                     onClick={() => setCurrStep(2)}
                     disabled={isContinueDisabled}
                 >
                     Continue
-                </button>
+                </Button>
             </div>
         </div>
     );

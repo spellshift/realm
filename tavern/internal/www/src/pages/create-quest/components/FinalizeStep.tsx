@@ -7,6 +7,7 @@ import TomeAccordion from "../../../components/TomeAccordion";
 import { TagContext } from "../../../context/TagContext";
 import { BeaconType } from "../../../utils/consts";
 import { convertArrayToObject } from "../../../utils/utils";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 
 type Props = {
@@ -57,14 +58,13 @@ const FinalizeStep = (props: Props) => {
                 onChange={(event) => handleNameQuest(event?.target?.value)}
             />
             <div className="flex flex-row gap-2">
-                <button
-                    className="inline-flex items-center rounded-md bg-gray-50 py-3 px-4 text-sm font-semibold text-purple-600 shadow-sm hover:bg-purple-100"
+                <Button
+                    buttonVariant="ghost"
                     onClick={() => setCurrStep(1)}
                 >
                     Back
-                </button>
-                <button
-                    className="btn-primary"
+                </Button>
+                <Button
                     onClick={(event) => {
                         event.preventDefault();
                         formik.handleSubmit();
@@ -73,7 +73,7 @@ const FinalizeStep = (props: Props) => {
                     type="submit"
                 >
                     Submit
-                </button>
+                </Button>
             </div>
         </div>
     );

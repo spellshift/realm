@@ -8,6 +8,7 @@ import { PageNavItem } from "../../utils/enums";
 import { GET_HOST_QUERY, GET_TASK_QUERY } from "../../utils/queries";
 
 import OverviewChartWrapper from "./components/OverviewChartWrapper";
+import EmptyStateNoBeacon from "../../components/empty-states/EmptyStateNoBeacon";
 
 
 export const Dashboard = () => {

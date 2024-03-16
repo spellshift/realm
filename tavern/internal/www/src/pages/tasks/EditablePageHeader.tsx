@@ -1,9 +1,9 @@
 import { ApolloError } from "@apollo/client";
 import { CloseIcon } from "@chakra-ui/icons";
-import { Button } from "@chakra-ui/react";
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import { CreateQuestDropdown } from "../../features/create-quest-dropdown";
+import Button from "../../components/tavern-base-ui/button/Button";
 
 type EditablePageHeaderProps = {
     questId?: string;
@@ -21,14 +21,23 @@ export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data,
                 </h3>
                 {data?.quests?.edges[0]?.node?.name &&
                     <Link to="/quests">
-                        <Button rightIcon={<CloseIcon />} colorScheme='purple' variant='outline' size="xs">
+                        <Button
+                            buttonStyle={{ color: "purple", size: "xs" }}
+                            buttonVariant="outline"
+                            rightIcon={<CloseIcon />}
+
+                        >
                             {data?.quests?.edges[0]?.node?.name}
                         </Button>
                     </Link>
                 }
                 {(error || (!data?.quests?.edges[0]?.node?.name && !loading)) &&
                     <Link to="/quests">
-                        <Button rightIcon={<CloseIcon />} colorScheme='purple' variant='outline' size="xs">
+                        <Button
+                            rightIcon={<CloseIcon />}
+                            buttonStyle={{ color: "purple", size: "xs" }}
+                            buttonVariant="outline"
+                        >
                             {questId}
                         </Button>
                     </Link>

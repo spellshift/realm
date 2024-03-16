@@ -7,7 +7,7 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import ImportRepositoryModal from "./components/ImportRepositoryModal";
 import RepositoryTable from "./components/RepositoryTable";
 import { useRepositoryView } from "./hooks/useRepositoryView";
-import { Button } from "@chakra-ui/react";
+import Button from "../../components/tavern-base-ui/button/Button";
 
 export const Tomes = (): ReactElement => {
     const [isOpen, setOpen] = useState<boolean>(false);
@@ -25,7 +25,11 @@ export const Tomes = (): ReactElement => {
                     </div>
                 </div>
                 <div>
-                    <Button size="sm" leftIcon={<ArrowUpTrayIcon className="h-4 w-4" />} onClick={() => setOpen(true)}>
+                    <Button
+                        buttonStyle={{ color: "gray", "size": "md" }}
+                        leftIcon={<ArrowUpTrayIcon className="h-4 w-4" />}
+                        onClick={() => setOpen(true)}
+                    >
                         Import tome repository
                     </Button>
                 </div>

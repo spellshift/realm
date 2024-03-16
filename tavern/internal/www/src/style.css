@@ -24,7 +24,7 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center rounded-md bg-purple-700 px-4 py-3 text-sm font-semibold text-white shadow-sm;
+    @apply inline-flex items-center rounded-md bg-purple-700 text-white;
   }
 
   .btn-primary:hover {

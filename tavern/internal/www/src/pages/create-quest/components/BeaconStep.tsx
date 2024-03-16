@@ -1,4 +1,4 @@
-import { Heading, Text, Stack, StackItem, Box, Button, FormLabel, Switch } from "@chakra-ui/react";
+import { Heading, Text, Stack, StackItem, Box, FormLabel, Switch } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import React, { FC, useCallback } from "react";
 import {
@@ -13,6 +13,7 @@ import { BeaconFilterBar } from "../../../components/beacon-filter-bar";
 import BeaconOption from "../../../components/beacon-option/BeaconOption";
 import { BeaconType, HostType, TomeTag } from "../../../utils/consts";
 import { useBeaconFilter } from "../hooks/useBeaconFilter";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 const Grid = _Grid as unknown as FC<GridProps>;
 const AutoSizer = _AutoSizer as unknown as FC<AutoSizerProps>;
@@ -119,12 +120,21 @@ const BeaconStep = (props: Props) => {
                     <Box p={2} className="option-container" borderRadius={"md"}>
                         <Stack direction="column" gap={2} width="full" height="full">
                             <StackItem>
-                                <StackItem>
-                                    <Button leftIcon={<PlusIcon className="h-4 w-4" />} size={"sm"} onClick={() => handleCheckAllFiltered()}>Select all ({filteredBeacons.length})</Button>
-                                </StackItem>
-                                <StackItem>
-                                    <Button leftIcon={<TrashIcon className=" h-4 w-4" />} size={"sm"} onClick={() => handleUnCheckAllFiltered()}>Clear selected</Button>
-                                </StackItem>
+                                <Stack direction="row" gap={2} width="full" height="full">
+                                    <StackItem>
+                                        <Button
+                                            buttonStyle={{ color: "gray", size: "md" }}
+                                            leftIcon={<PlusIcon className="h-4 w-4" />}
+                                            onClick={() => handleCheckAllFiltered()}>Select all ({filteredBeacons.length})
+                                        </Button>
+                                    </StackItem>
+                                    <StackItem>
+                                        <Button
+                                            buttonStyle={{ color: "gray", size: "md" }}
+                                            leftIcon={<TrashIcon className=" h-4 w-4" />}
+                                            onClick={() => handleUnCheckAllFiltered()}>Clear selected</Button>
+                                    </StackItem>
+                                </Stack>
                             </StackItem>
 
                             {filteredBeacons.length === 0 && (

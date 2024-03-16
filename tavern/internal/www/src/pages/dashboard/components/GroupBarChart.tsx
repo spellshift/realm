@@ -1,4 +1,3 @@
-import { Button } from '@chakra-ui/react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
@@ -7,6 +6,7 @@ import { EmptyState, EmptyStateType } from '../../../components/tavern-base-ui/E
 import { TomeTag } from '../../../utils/consts';
 import { TaskChartKeys } from '../../../utils/enums';
 import { getOfflineOnlineStatus } from '../../../utils/utils';
+import Button from '../../../components/tavern-base-ui/button/Button';
 
 
 const GroupBarChart = ({ data, loading, hosts }: { data: Array<any>, loading: boolean, hosts: Array<any> }) => {
@@ -111,9 +111,13 @@ const GroupBarChart = ({ data, loading, hosts }: { data: Array<any>, loading: bo
                     <h4 className="font-semibold text-gray-900">Consider targeting the group with fewest tasks</h4>
                     <p className='text-sm'>{groupWithFewestTasks.name} has {groupWithFewestTasks[TaskChartKeys.taskNoError]} task run and {getTotalActiveBeaconsForGroup()} online beacons</p>
                     <div className='flex flex-row gap-4 mt-2'>
-                        <Button size="sm" variant="link" colorScheme="purple" onClick={() => {
-                            handleClickQuestDetails(groupWithFewestTasks)
-                        }}>
+                        <Button
+                            buttonStyle={{ color: "purple", size: "xs", vPadding: "none", xPadding: "none" }}
+                            buttonVariant='ghost'
+                            className='hover:underline hover:bg-white'
+                            onClick={() => {
+                                handleClickQuestDetails(groupWithFewestTasks)
+                            }}>
                             See quest details
                         </Button>
                     </div>
