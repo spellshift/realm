@@ -84,6 +84,9 @@ func (Task) Edges() []ent.Edge {
 			Comment("Processes that have been reported by this task."),
 		edge.To("reported_credentials", HostCredential.Type).
 			Comment("Credentials that have been reported by this task."),
+		edge.From("shells", Shell.Type).
+			Ref("task").
+			Comment("Shells that were created by this task"),
 	}
 }
 

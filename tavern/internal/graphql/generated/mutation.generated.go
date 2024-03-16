@@ -525,6 +525,8 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
 				return ec.fieldContext_Beacon_tasks(ctx, field)
+			case "shells":
+				return ec.fieldContext_Beacon_shells(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -1387,6 +1389,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_isAdmin(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
+			case "activeShells":
+				return ec.fieldContext_User_activeShells(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},

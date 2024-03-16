@@ -34,7 +34,9 @@ impl Agent {
             .tasks;
 
         #[cfg(debug_assertions)]
-        log::info!("claimed {} tasks", tasks.len());
+        if !tasks.is_empty() {
+            log::info!("{} tasks claimed", tasks.len());
+        }
 
         for task in tasks {
             let tome = match task.tome {
@@ -112,7 +114,7 @@ impl Agent {
 
             #[cfg(debug_assertions)]
             log::info!(
-                "completed callback in {}s, sleeping for {}s",
+                "callback complete (duration={}s, sleep={}s)",
                 start.elapsed().as_secs(),
                 delay.as_secs()
             );

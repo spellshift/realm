@@ -9,6 +9,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gocloud.dev/pubsub"
+	_ "gocloud.dev/pubsub/mempubsub"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -16,10 +18,12 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/http/stream"
 )
 
 func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	t.Helper()
+	ctx := context.Background()
 
 	// TestDB Config
 	var (
@@ -30,10 +34,23 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	// Ent Client
 	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
 
+	// gRPC Mux
+	var (
+		pubOutput = "mem://shell_output"
+		subInput  = "mem://shell_input"
+	)
+	grpcOutTopic, err := pubsub.OpenTopic(ctx, pubOutput)
+	require.NoError(t, err)
+	_, err = pubsub.OpenTopic(ctx, subInput)
+	require.NoError(t, err)
+	grpcInSub, err := pubsub.OpenSubscription(ctx, subInput)
+	require.NoError(t, err)
+	grpcShellMux := stream.NewMux(grpcOutTopic, grpcInSub)
+
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)
 	baseSrv := grpc.NewServer()
-	c2pb.RegisterC2Server(baseSrv, c2.New(graph))
+	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux))
 
 	grpcErrCh := make(chan error, 1)
 	go func() {

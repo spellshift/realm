@@ -20,6 +20,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -92,6 +93,7 @@ func checkColumn(table, column string) error {
 			hostprocess.Table:    hostprocess.ValidColumn,
 			quest.Table:          quest.ValidColumn,
 			repository.Table:     repository.ValidColumn,
+			shell.Table:          shell.ValidColumn,
 			tag.Table:            tag.ValidColumn,
 			task.Table:           task.ValidColumn,
 			tome.Table:           tome.ValidColumn,

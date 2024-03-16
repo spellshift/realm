@@ -157,6 +157,22 @@ func (r *queryResolver) Users(ctx context.Context, where *ent.UserWhereInput) ([
 	return query.All(ctx)
 }
 
+// Shells is the resolver for the shells field.
+func (r *queryResolver) Shells(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) (*ent.ShellConnection, error) {
+	query, err := r.client.Shell.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithShellOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithShellOrder(orderBy))
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	if authUser := auth.UserFromContext(ctx); authUser != nil {
