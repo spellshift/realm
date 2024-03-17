@@ -19,6 +19,8 @@ export const useOverviewData = (data: Array<any>) => {
         taskTimeline: [],
         taskTactics: [],
         groupUsage: [],
+        serviceUsage: [],
+        platformUsage: [],
         totalQuests: 0,
         totalOutput: 0,
         totalTasks: 0,
@@ -118,14 +120,17 @@ export const useOverviewData = (data: Array<any>) => {
         const uniqueTomeCount = {} as any;
         const uniqueTactics = {} as any;
         const uniqueGroup = {} as any;
+        const uniqueService = {} as any;
         const tasksTimeline = [] as Array<any>;
         let tasksWithOutput = 0;
         let tasksWithError = 0;
 
         for (let index in data){
             const groupTag = data[index]?.node?.beacon?.host?.tags.find( (tag: TomeTag) => tag.kind === "group");
+            const serviceTag = data[index]?.node?.beacon?.host?.tags.find( (tag: TomeTag) => tag.kind === "service");
             applyUniqueTermCount(data[index]?.node?.quest?.id, data[index]?.node?.quest?.id, false, uniqueQuestCount);
             applyUniqueTermCount(groupTag?.name, groupTag?.id, data[index]?.node?.error.length > 0, uniqueGroup);
+            applyUniqueTermCount(serviceTag?.name, serviceTag?.id, data[index]?.node?.error.length > 0, uniqueService);
             applyUniqueTermCount(data[index]?.node?.quest?.tome?.name, data[index]?.node?.quest?.tome.id, data[index]?.node?.error.length > 0, uniqueTomeCount);
             modifyTaskTimeline(data[index], tasksTimeline);
             modifyUniqueTactics(data[index], uniqueTactics);
@@ -140,6 +145,7 @@ export const useOverviewData = (data: Array<any>) => {
             taskTimelime: tasksTimeline,
             taskTactics: Object.keys(uniqueTactics),
             groupUsage: getTermUsage(uniqueGroup, false),
+            serviceUsage: getTermUsage(uniqueService, false),
             totalQuests: Object.keys(uniqueQuestCount).length,
             totalOutput: tasksWithOutput,
             totalTasks: data.length,

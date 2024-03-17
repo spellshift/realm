@@ -1,8 +1,9 @@
 import React from "react";
 import DashboardStatistic from "./DashboardStatistic";
 
-import GroupBarChart from "./GroupBarChart";
 import TomeBarChart from "./TomeBarChart";
+import TagBarChart from "./TagBarChart";
+import TargetReccomendation from "./TargetRecommendation";
 
 const EnvironmentCard = ({ formattedData, hosts, loading }: { formattedData: any, hosts: Array<any>, loading: boolean }) => {
 
@@ -13,13 +14,26 @@ const EnvironmentCard = ({ formattedData, hosts, loading }: { formattedData: any
             </h3>
             <div className="col-span-1 flex flex-row md:flex-col gap-4 flex-wrap">
                 <DashboardStatistic label="Total groups" value={formattedData?.groupUsage?.length} loading={loading} />
+                <DashboardStatistic label="Total services" value={formattedData?.serviceUsage.length} loading={loading} />
                 <DashboardStatistic label="Unique tomes run" value={formattedData?.tomeUsage?.length} loading={loading} />
             </div>
-            <div className="col-span-1 md:col-span-2 ">
-                <GroupBarChart data={formattedData?.groupUsage || []} loading={loading} hosts={hosts} />
-            </div>
-            <div className="col-span-1 md:col-span-2">
-                <TomeBarChart data={formattedData?.tomeUsage || []} loading={loading} />
+            <div className="col-span-4 grid grid-cols-4 gap-4">
+                <div className="col-span-2">
+                    <TagBarChart data={formattedData?.groupUsage || []} loading={loading} tagKind="group">
+                        <TargetReccomendation data={formattedData?.groupUsage || []} tagKind="group" hosts={hosts} />
+                    </TagBarChart>
+                </div>
+                <div className="col-span-2">
+                    <TagBarChart data={formattedData?.serviceUsage || []} loading={loading} tagKind="service">
+                        <TargetReccomendation data={formattedData?.serviceUsage || []} tagKind="service" hosts={hosts} />
+                    </TagBarChart>
+                </div>
+                <div className="col-span-4">
+                    <TomeBarChart data={formattedData?.tomeUsage || []} loading={loading} />
+                </div>
+                <div className="col-span-2">
+
+                </div>
             </div>
         </div>
     )
