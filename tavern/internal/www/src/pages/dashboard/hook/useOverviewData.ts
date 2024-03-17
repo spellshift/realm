@@ -12,7 +12,7 @@ type UniqueTaskCountObject = {
         id: any;
     }
 }
-export const useOverviewData = (data: Array<any>) => {
+export const useOverviewData = (data: any) => {
     const [loading, setLoading] = useState(false);
     const [formattedData, setFormattedData] = useState({
         tomeUsage: [],
@@ -158,7 +158,9 @@ export const useOverviewData = (data: Array<any>) => {
     },[getTermUsage, applyUniqueTermCount, modifyTaskTimeline, modifyUniqueTactics]);
 
     useEffect(()=> {
-        formatOverviewData(data);
+        if(data && data?.tasks?.edges.length > 0){
+            formatOverviewData(data?.tasks?.edges);
+        }
     },[data, formatOverviewData]);
 
 

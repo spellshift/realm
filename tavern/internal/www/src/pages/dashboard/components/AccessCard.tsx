@@ -1,11 +1,33 @@
+import { useState } from "react";
 import EmptyStateNoBeacon from "../../../components/empty-states/EmptyStateNoBeacon";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { useHostAcitvityData } from "../hook/useHostActivityData";
 import DashboardStatistic from "./DashboardStatistic";
-import GroupHostActivityTable from "./GroupHostActivityTable";
+import AccessHostActivityTable from "./AccessHostActivityTable";
+import SingleDropdownSelector from "../../../components/tavern-base-ui/SingleDropdownSelector";
 
 const AccessCard = ({ hosts }: { hosts: any }) => {
     const { loading, hostActivity, onlineHostCount, offlineHostCount } = useHostAcitvityData(hosts);
+
+    const [selectedOption, setSelectedOption] = useState({
+        "label": "Group",
+        "value": "group"
+    });
+
+    const accessOptions = [
+        {
+            label: "Group",
+            value: "group",
+        },
+        {
+            label: "Service",
+            value: "service",
+        },
+        {
+            label: "Platform",
+            value: "platform"
+        }
+    ];
 
     if (!hosts && hosts?.length < 1) {
         <EmptyStateNoBeacon />
@@ -23,9 +45,21 @@ const AccessCard = ({ hosts }: { hosts: any }) => {
             <div className="col-span-1 md:col-span-4">
                 {loading ? (
                     <EmptyState type={EmptyStateType.loading} label="Formatting host data..." />
-                ) : (!hostActivity || hostActivity?.length < 1) ? (
+                ) : (!hostActivity) ? (
                     <EmptyState type={EmptyStateType.noData} label="Unable to format access by group tag" />
-                ) : (<GroupHostActivityTable hostActivity={hostActivity} />)}
+                ) : (
+                    <div className="flex flex-col w-full h-full gap-4">
+                        <div className='flex flex-row gap-2 items-center'>
+                            <h2 className="text-lg">Access by</h2>
+                            <div>
+                                <SingleDropdownSelector setSelectedOption={setSelectedOption} options={accessOptions} label="accessDropdown" />
+                            </div>
+                        </div>
+                        <div className='h-80 overflow-y-scroll'>
+                            <AccessHostActivityTable hostActivity={hostActivity[selectedOption.value]} term={selectedOption.value} />
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
