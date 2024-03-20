@@ -7,8 +7,9 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import { PageNavItem } from "../../utils/enums";
 import { GET_HOST_QUERY, GET_TASK_QUERY } from "../../utils/queries";
 
-import OverviewChartWrapper from "./components/OverviewChartWrapper";
-import EmptyStateNoBeacon from "../../components/empty-states/EmptyStateNoBeacon";
+import { useOverviewData } from "./hook/useOverviewData";
+import QuestCard from "./components/QuestCard";
+import AccessCard from "./components/AccessCard";
 
 
 export const Dashboard = () => {
@@ -24,13 +25,15 @@ export const Dashboard = () => {
 
     const { loading: hostLoading, data: hosts, error: hostError } = useQuery(GET_HOST_QUERY);
 
+    const { loading: formatLoading, formattedData } = useOverviewData(data);
+
     useEffect(() => {
         refetch();
     }, [refetch]);
 
 
     function getOverviewWrapper() {
-        if (loading || hostLoading) {
+        if (loading || hostLoading || formatLoading) {
             return <EmptyState type={EmptyStateType.loading} label="Loading dashboard data..." />
         }
 
@@ -43,7 +46,10 @@ export const Dashboard = () => {
         }
 
         return (
-            <OverviewChartWrapper data={data?.tasks?.edges} hosts={hosts.hosts || []} />
+            <div className="my-4 flex flex-col gap-4">
+                <QuestCard formattedData={formattedData} hosts={hosts?.hosts || []} loading={loading} />
+                <AccessCard hosts={hosts?.hosts || []} />
+            </div>
         )
     }
 
