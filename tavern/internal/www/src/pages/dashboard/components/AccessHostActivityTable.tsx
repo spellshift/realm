@@ -14,7 +14,6 @@ const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, te
         if (item?.id === "undefined") {
             return null;
         }
-        console.log(item);
         navigation(`/hosts`, {
             state: [{
                 'label': item?.original?.tag,
