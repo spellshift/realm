@@ -14,11 +14,12 @@ const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, te
         if (item?.id === "undefined") {
             return null;
         }
+        console.log(item);
         navigation(`/hosts`, {
             state: [{
-                'label': item?.original?.[term],
+                'label': item?.original?.tag,
                 'kind': term,
-                'name': item?.original?.[term],
+                'name': item?.original?.tag,
                 'value': item?.original?.tagId
             }]
         });
