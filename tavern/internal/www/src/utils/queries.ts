@@ -109,6 +109,7 @@ export const GET_QUEST_QUERY = gql`
                 node{
                     id
                     name
+                    parameters
                     lastUpdatedTask:tasks(first: $firstTask, orderBy: $orderByTask){
                         edges{
                             node{
@@ -177,6 +178,7 @@ export const GET_QUEST_BY_ID_QUERY = gql`
                 node{
                     id
                     name
+                    parameters
                     lastUpdatedTask:tasks(first: $firstTask, orderBy: $orderByTask){
                         edges{
                             node{
