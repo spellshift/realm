@@ -8,6 +8,9 @@ edition = "2021"
 win_service = []
 default = []
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }
 pb = { workspace = true }
