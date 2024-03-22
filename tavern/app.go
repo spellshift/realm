@@ -189,15 +189,26 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/graphql": tavernhttp.Endpoint{Handler: newGraphQLHandler(client, git)},
+		"/graphql": tavernhttp.Endpoint{
+			Handler:          newGraphQLHandler(client, git),
+			AllowUnactivated: true,
+		},
 		"/c2.C2/": tavernhttp.Endpoint{
 			Handler:              newGRPCHandler(client, grpcShellMux),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client, "/cdn/")},
-		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
-		"/shell/ws":   tavernhttp.Endpoint{Handler: stream.NewShellHandler(client, wsShellMux)},
+		"/cdn/": tavernhttp.Endpoint{
+			Handler:              cdn.NewDownloadHandler(client, "/cdn/"),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/cdn/upload": tavernhttp.Endpoint{
+			Handler: cdn.NewUploadHandler(client),
+		},
+		"/shell/ws": tavernhttp.Endpoint{
+			Handler: stream.NewShellHandler(client, wsShellMux),
+		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
 			LoginRedirectURI: "/oauth/login",

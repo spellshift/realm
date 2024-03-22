@@ -16,9 +16,9 @@ const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, te
         }
         navigation(`/hosts`, {
             state: [{
-                'label': item?.original?.[term],
+                'label': item?.original?.tag,
                 'kind': term,
-                'name': item?.original?.[term],
+                'name': item?.original?.tag,
                 'value': item?.original?.tagId
             }]
         });
