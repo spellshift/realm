@@ -3,12 +3,12 @@ import TaskStatusBadge from "../../components/TaskStatusBadge";
 import BeaconTile from "../../components/BeaconTile";
 import TomeAccordion from "../../components/TomeAccordion";
 import { Image } from "@chakra-ui/react";
-import OutputWrapper from "./OutputWrapper";
 import ErrorWrapper from "./ErrorWrapper";
 import { useNavigate } from "react-router-dom";
 import { checkIfBeaconOffline, constructTomeParams } from "../../utils/utils";
 import Modal from "../../components/tavern-base-ui/Modal";
 import Button from "../../components/tavern-base-ui/button/Button";
+import ExpandedDetails from "./ExpandedDetails";
 
 type Props = {
   isOpen: boolean,
@@ -118,7 +118,7 @@ export const TaskOutput = (props: Props) => {
         {selectedTask && selectedTask.error.length > 0 &&
           <ErrorWrapper error={selectedTask.error} />
         }
-        {selectedTask && selectedTask?.id && <OutputWrapper id={selectedTask.id} />}
+        {selectedTask && selectedTask?.id && <ExpandedDetails id={selectedTask.id} />}
       </div>
     </Modal>
   )
