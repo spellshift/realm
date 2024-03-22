@@ -39,9 +39,10 @@ func (endpoint Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Require Activation
-	if !endpoint.AllowUnauthenticated && !auth.IsActivatedContext(ctx) {
+	if !endpoint.AllowUnactivated && !auth.IsActivatedContext(ctx) {
 		log.Printf("[HTTP] Unactivated User Request Forbidden: %s %q", r.Method, r.URL.String())
 		http.Error(w, "must be activated", http.StatusForbidden)
+		return
 	}
 
 	endpoint.Handler.ServeHTTP(w, r)
