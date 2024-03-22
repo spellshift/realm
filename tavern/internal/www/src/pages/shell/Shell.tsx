@@ -1,15 +1,12 @@
 import { PageWrapper } from "../../components/page-wrapper";
-import { PageNavItem } from "../../utils/enums";
 import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from "react-router-dom";
-import { useToast } from "@chakra-ui/react";
+import { Badge, useToast } from "@chakra-ui/react";
 import '@xterm/xterm/css/xterm.css';
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
-import {
-    BugAntIcon,
-} from '@heroicons/react/24/outline';
+import Button from "../../components/tavern-base-ui/button/Button";
 
 const Shell = () => {
     const { shellId } = useParams();
@@ -68,16 +65,24 @@ const Shell = () => {
 
     const renderTerminal = (div: HTMLDivElement) => { if (div) { termRef.current?.open(div); } };
 
+    //TODO: Expand to fetch active users for this page
     return (
-        <PageWrapper currNavItem={PageNavItem.dashboard}>
-            <div className="border-b border-gray-200 pb-6 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Shell <i>[BETA]</i></h3>
+        <PageWrapper>
+            <div className="border-b-2 border-gray-200 pb-6 sm:flex flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2">
+                    <div className="flex flex-row gap-4 items-center">
+                        <h3 className="text-xl font-semibold leading-6 text-gray-900">Shell for id:{shellId}</h3>
+                        <Badge colorScheme="orange">BETA FEATURE</Badge>
+                    </div>
+                    <p className="max-w-2xl text-sm">Start by clicking inside the terminal, you may need to enter a newline to see the terminal prompt.</p>
+                </div>
                 <a title="Report a Bug" target="_blank" href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Reverse%20Shell%3A%20%3CYOUR%20ISSUE%3E">
-                    <button className="btn-primary" type="button">
-                        <BugAntIcon className="text-white w-4 h-4" />
-                    </button>
+                    <Button buttonStyle={{ color: "gray", size: "md" }}>
+                        Report a bug
+                    </Button>
                 </a>
             </div>
+
             {
                 wsIsOpen ?
                     <div id="terminal" className="w-full bg-gray-500 h-96" ref={renderTerminal} /> :

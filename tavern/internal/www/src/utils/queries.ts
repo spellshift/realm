@@ -301,13 +301,24 @@ export const GET_TASK_QUERY = gql`
     }
 `;
 
-export const GET_TASK_OUTPUT_QUERY = gql`
+export const GET_TASK_DETAILS_QUERY = gql`
     query GetOutputForTask($where: TaskWhereInput) {
             tasks(where: $where, ){
     				edges{
                         node{
                             id
                             output
+                            shells{
+                                id
+                                closedAt
+                                activeUsers{
+                                    id
+                                    name
+                                    photoURL
+                                    isActivated
+                                    isAdmin
+                                }
+                            }
                         }
             }
     }
