@@ -27,9 +27,9 @@ type Response struct {
 	Extensions map[string]any
 }
 
-func (resp Response) Error() string {
+func (r Response) Error() string {
 	msg := ""
-	for _, err := range resp.Errors {
+	for _, err := range r.Errors {
 		msg = fmt.Sprintf("%s\n%s;", msg, err.Message)
 	}
 	return msg
@@ -47,7 +47,7 @@ type Client struct {
 	HTTP       *http.Client
 }
 
-func (client *Client) GetHostsSeenInLastDuration(timeAgo time.Duration) ([]Host, error) {
+func (c *Client) GetHostsSeenInLastDuration(timeAgo time.Duration) ([]Host, error) {
 	now := time.Now().UTC()
 	timeAgoFromNow := now.Add(-timeAgo)
 	formattedTime := timeAgoFromNow.Format(time.RFC3339)
@@ -72,7 +72,7 @@ func (client *Client) GetHostsSeenInLastDuration(timeAgo time.Duration) ([]Host,
 		} `json:"data"`
 	}
 	var resp GetHostsResponse
-	if err := client.do(req, &resp); err != nil {
+	if err := c.do(req, &resp); err != nil {
 		return nil, fmt.Errorf("http request failed: %w", err)
 	}
 
@@ -84,21 +84,21 @@ func (client *Client) GetHostsSeenInLastDuration(timeAgo time.Duration) ([]Host,
 }
 
 // do sends a GraphQL request and returns the response
-func (client *Client) do(gqlReq Request, gqlResp any) error {
+func (c *Client) do(gqlReq Request, gqlResp any) error {
 
 	data, err := json.Marshal(gqlReq)
 	if err != nil {
 		return fmt.Errorf("failed to marshal json request to json: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, client.URL, bytes.NewBuffer(data))
+	req, err := http.NewRequest(http.MethodPost, c.URL, bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	client.Credential.Authenticate(req)
+	c.Credential.Authenticate(req)
 
-	resp, err := client.HTTP.Do(req)
+	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %v", err)
 	}
