@@ -9,6 +9,10 @@ import (
 	"net/http"
 )
 
+var (
+	BOX_ACCESS_PATH = "/pwn/boxaccess"
+)
+
 type Request struct {
 	Data map[string]any
 }
@@ -49,7 +53,7 @@ func (c *Client) do(r Request) error {
 		return fmt.Errorf("failed to marshal json request to json: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, c.URL, bytes.NewBuffer(data))
+	req, err := http.NewRequest(http.MethodPost, c.URL+BOX_ACCESS_PATH, bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
