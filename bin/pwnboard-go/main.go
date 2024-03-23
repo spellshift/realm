@@ -15,18 +15,17 @@ const (
 	TAVERN_URL      = "https://tavern.aws-metadata.com"
 	CREDENTIAL_PATH = ".tavern-auth"
 
-	PWNBOARD_URL     = "https://pwnboard.aws-metadata.com"
+	PWNBOARD_URL      = "https://pwnboard.aws-metadata.com"
 	PWNBOARD_APP_NAME = "Realm"
 
 	LOOKBACK_WINDOW = 3 * time.Minute
 	SLEEP_INTERVAL  = 30 * time.Second
-	HTTP_TIMEOUT   = 30 * time.Second
+	HTTP_TIMEOUT    = 30 * time.Second
 )
 
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-
 
 	token, err := getAuthToken(ctx, TAVERN_URL, CREDENTIAL_PATH)
 	if err != nil {
