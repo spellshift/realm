@@ -12,6 +12,7 @@ import (
 func getAuthToken(ctx context.Context, tavernURL, cachePath string) (auth.Token, error) {
 	tokenData, err := os.ReadFile(cachePath)
 	if os.IsNotExist(err) {
+
 		token, err := auth.Authenticate(
 			ctx,
 			auth.BrowserFunc(
@@ -22,11 +23,10 @@ func getAuthToken(ctx context.Context, tavernURL, cachePath string) (auth.Token,
 			),
 			tavernURL,
 		)
-
-		// token, err := auth.Authenticate(ctx, auth.BrowserFunc(browser.OpenURL), tavernURL)
 		if err != nil {
 			return auth.Token(""), err
 		}
+
 		if err := os.WriteFile(cachePath, []byte(token), 0640); err != nil {
 			log.Printf("[WARN] Failed to save token to credential cache (%q): %v", cachePath, err)
 		}
