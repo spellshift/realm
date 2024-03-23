@@ -7,11 +7,14 @@ import (
 	"net/http"
 	"regexp"
 	"time"
+
+	"realm.pub/bin/pwnboard-go/pwnboard"
+	"realm.pub/bin/pwnboard-go/tavern"
 )
 
-func NewHostnameHostsFilter(re string) func([]Host) (matching []Host) {
+func NewHostnameHostsFilter(re string) func([]tavern.Host) (matching []tavern.Host) {
 	regex := regexp.MustCompile(re)
-	return func(hosts []Host) (matching []Host) {
+	return func(hosts []tavern.Host) (matching []tavern.Host) {
 		// Find Matching Hosts
 		for _, host := range hosts {
 			if regex.Match([]byte(host.Name)) {
@@ -29,8 +32,13 @@ func main() {
 	var (
 		tavernURL      = "https://tavern.aws-metadata.com"
 		credentialPath = ".tavern-auth"
+
+		pwnboardURL     = "https://pwnboard.aws-metadata.com"
+		pwnboardAppName = "Realm"
+
 		lookbackWindow = 3 * time.Minute
 		sleepInterval  = 10 * time.Second
+		httpTimeouts   = 30 * time.Second
 	)
 
 	token, err := getAuthToken(ctx, tavernURL, credentialPath)
@@ -38,11 +46,19 @@ func main() {
 		log.Fatalf("failed to obtain authentication credentials: %v", err)
 	}
 
-	client := &Client{
+	tavern_client := &tavern.Client{
 		Credential: token,
 		URL:        fmt.Sprintf("%s/graphql", tavernURL),
 		HTTP: &http.Client{
-			Timeout: 60 * time.Second,
+			Timeout: httpTimeouts,
+		},
+	}
+
+	pwnboard_client := &pwnboard.Client{
+		ApplicationName: pwnboardAppName,
+		URL:             pwnboardURL,
+		HTTP: &http.Client{
+			Timeout: httpTimeouts,
 		},
 	}
 
@@ -50,15 +66,21 @@ func main() {
 
 		log.Printf("Starting new lookbackWindow...")
 
-		hosts, err := client.GetHostsSeenInLastDuration(lookbackWindow)
+		hosts, err := tavern_client.GetHostsSeenInLastDuration(lookbackWindow)
 		if err != nil {
 			log.Fatalf("failed to query hosts: %v", err)
 		}
 
 		log.Printf("Successfully queried hosts (len=%d)", len(hosts))
+		var ips []string
 		for _, host := range hosts {
-			log.Printf("Found Host: id=%s\tname=%s\tip=%s", host.ID, host.Name, host.PrimaryIP)
+			ips = append(ips, host.PrimaryIP)
+		}
 
+		log.Printf("Sending IPs to pwnboard...")
+		err = pwnboard_client.ReportIPs(ips)
+		if err != nil {
+			log.Fatalf("failed to send ips to pwnboard: %v", err)
 		}
 
 		log.Printf("Sleeping for %s...", sleepInterval)
