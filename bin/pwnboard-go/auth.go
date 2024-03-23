@@ -12,7 +12,16 @@ import (
 func getAuthToken(ctx context.Context, tavernURL, cachePath string) (auth.Token, error) {
 	tokenData, err := os.ReadFile(cachePath)
 	if os.IsNotExist(err) {
-		token, err := auth.Authenticate(ctx, auth.BrowserFunc(func(url string) error { log.Printf("OPEN THIS: %s", url); return nil }), tavernURL)
+		token, err := auth.Authenticate(
+			ctx,
+			auth.BrowserFunc(
+				func(url string) error {
+					log.Printf("OPEN THIS: %s", url)
+					return nil
+				},
+			),
+			tavernURL,
+		)
 
 		// token, err := auth.Authenticate(ctx, auth.BrowserFunc(browser.OpenURL), tavernURL)
 		if err != nil {
