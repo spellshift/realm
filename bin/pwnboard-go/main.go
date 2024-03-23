@@ -42,7 +42,7 @@ func main() {
 
 	pwnboard_client := &pwnboard.Client{
 		ApplicationName: PWNBOARD_APP_NAME,
-		URL:             PWNBOARD_URL,
+		URL:             fmt.Sprintf("%s/pwn/boxaccess", PWNBOARD_URL),
 		HTTP: &http.Client{
 			Timeout: HTTP_TIMEOUT,
 		},
