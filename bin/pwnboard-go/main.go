@@ -5,67 +5,54 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 	"time"
 
 	"realm.pub/bin/pwnboard-go/pwnboard"
 	"realm.pub/bin/pwnboard-go/tavern"
 )
 
-func NewHostnameHostsFilter(re string) func([]tavern.Host) (matching []tavern.Host) {
-	regex := regexp.MustCompile(re)
-	return func(hosts []tavern.Host) (matching []tavern.Host) {
-		// Find Matching Hosts
-		for _, host := range hosts {
-			if regex.Match([]byte(host.Name)) {
-				matching = append(matching, host)
-			}
-		}
-		return
-	}
-}
+const (
+	TAVERN_URL      = "https://tavern.aws-metadata.com"
+	CREDENTIAL_PATH = ".tavern-auth"
+
+	PWNBOARD_URL     = "https://pwnboard.aws-metadata.com"
+	PWNBOARD_APP_NAME = "Realm"
+
+	LOOKBACK_WINDOW = 3 * time.Minute
+	SLEEP_INTERVAL  = 30 * time.Second
+	HTTP_TIMEOUT   = 30 * time.Second
+)
 
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	var (
-		tavernURL      = "https://tavern.aws-metadata.com"
-		credentialPath = ".tavern-auth"
 
-		pwnboardURL     = "https://pwnboard.aws-metadata.com"
-		pwnboardAppName = "Realm"
-
-		lookbackWindow = 3 * time.Minute
-		sleepInterval  = 30 * time.Second
-		httpTimeouts   = 30 * time.Second
-	)
-
-	token, err := getAuthToken(ctx, tavernURL, credentialPath)
+	token, err := getAuthToken(ctx, TAVERN_URL, CREDENTIAL_PATH)
 	if err != nil {
 		log.Fatalf("failed to obtain authentication credentials: %v", err)
 	}
 
 	tavern_client := &tavern.Client{
 		Credential: token,
-		URL:        fmt.Sprintf("%s/graphql", tavernURL),
+		URL:        fmt.Sprintf("%s/graphql", TAVERN_URL),
 		HTTP: &http.Client{
-			Timeout: httpTimeouts,
+			Timeout: HTTP_TIMEOUT,
 		},
 	}
 
 	pwnboard_client := &pwnboard.Client{
-		ApplicationName: pwnboardAppName,
-		URL:             pwnboardURL,
+		ApplicationName: PWNBOARD_APP_NAME,
+		URL:             PWNBOARD_URL,
 		HTTP: &http.Client{
-			Timeout: httpTimeouts,
+			Timeout: HTTP_TIMEOUT,
 		},
 	}
 
 	for {
 
-		log.Printf("Querying Tavern for any Hosts seen in the last %s...", lookbackWindow)
-		hosts, err := tavern_client.GetHostsSeenInLastDuration(lookbackWindow)
+		log.Printf("Querying Tavern for any Hosts seen in the last %s...", LOOKBACK_WINDOW)
+		hosts, err := tavern_client.GetHostsSeenInLastDuration(LOOKBACK_WINDOW)
 		if err != nil {
 			log.Fatalf("failed to query hosts: %v", err)
 		}
@@ -82,8 +69,8 @@ func main() {
 			log.Fatalf("failed to send ips to PWNboard: %v", err)
 		}
 
-		log.Printf("Sleeping for %s...", sleepInterval)
-		time.Sleep(sleepInterval)
+		log.Printf("Sleeping for %s...", SLEEP_INTERVAL)
+		time.Sleep(SLEEP_INTERVAL)
 
 	}
 
