@@ -37,7 +37,7 @@ func main() {
 		pwnboardAppName = "Realm"
 
 		lookbackWindow = 3 * time.Minute
-		sleepInterval  = 10 * time.Second
+		sleepInterval  = 30 * time.Second
 		httpTimeouts   = 30 * time.Second
 	)
 
@@ -64,23 +64,22 @@ func main() {
 
 	for {
 
-		log.Printf("Starting new lookbackWindow...")
-
+		log.Printf("Querying Tavern for any Hosts seen in the last %s...", lookbackWindow)
 		hosts, err := tavern_client.GetHostsSeenInLastDuration(lookbackWindow)
 		if err != nil {
 			log.Fatalf("failed to query hosts: %v", err)
 		}
 
-		log.Printf("Successfully queried hosts (len=%d)", len(hosts))
+		log.Printf("Found %d host(s)!", len(hosts))
 		var ips []string
 		for _, host := range hosts {
 			ips = append(ips, host.PrimaryIP)
 		}
 
-		log.Printf("Sending IPs to pwnboard...")
+		log.Printf("Sending %d IP(s) to PWNboard...", len(ips))
 		err = pwnboard_client.ReportIPs(ips)
 		if err != nil {
-			log.Fatalf("failed to send ips to pwnboard: %v", err)
+			log.Fatalf("failed to send ips to PWNboard: %v", err)
 		}
 
 		log.Printf("Sleeping for %s...", sleepInterval)
