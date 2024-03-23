@@ -47,7 +47,7 @@ export const QuestTable = (props: Props) => {
             id: "lastModifiedAt",
             header: 'Updated',
             maxSize: 100,
-            accessorFn: row => formatDistance(new Date(row?.node?.lastUpdatedTask?.edges[0].node.lastModifiedAt), currentDate),
+            accessorFn: row => formatDistance(new Date(row?.node?.lastUpdatedTask?.edges[0]?.node.lastModifiedAt || ""), currentDate),
             footer: props => props.column.id,
             enableSorting: false,
         },
