@@ -26,7 +26,7 @@ pub fn exec(
     let mut dict_res = Dict::new(res);
     insert_dict_kv!(dict_res, starlark_heap, "stdout", cmd_res.stdout, String);
     insert_dict_kv!(dict_res, starlark_heap, "stderr", cmd_res.stderr, String);
-    insert_dict_kv!(dict_res, starlark_heap, "stauts", cmd_res.status, i32);
+    insert_dict_kv!(dict_res, starlark_heap, "status", cmd_res.status, i32);
 
     Ok(dict_res)
 }
