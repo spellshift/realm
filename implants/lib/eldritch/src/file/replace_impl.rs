@@ -64,7 +64,7 @@ mod tests {
     #[test]
     fn test_replace_regex_binary() -> anyhow::Result<()> {
         let tmp_file_new = NamedTempFile::new()?;
-        let path_new = "/tmp/test.bin".to_string(); //String::from(tmp_file_new.path().to_str().unwrap()).clone();
+        let path_new = String::from(tmp_file_new.path().to_str().unwrap()).clone();
         let _ = write(
             path_new.clone(),
             b"\x90\x90\x90\x90\x90\x90\x90\x90\x90AAAAAAAA\x91\x91\x91\x91\x91\x91\x91\x91\x91",
