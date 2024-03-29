@@ -54,7 +54,7 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn read(this: &AssetsLibrary, src: String) -> anyhow::Result<String> {
-        read_impl::read(src)
+    fn read(this: &AssetsLibrary, starlark_eval: &mut Evaluator<'v, '_>, src: String) -> anyhow::Result<String> {
+        read_impl::read(starlark_eval, src)
     }
 }
