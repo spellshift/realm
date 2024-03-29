@@ -684,7 +684,7 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
 ## Regex
 
 The regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written
-in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, adding more than one will cause the tome to error.
+in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error.
 
 ### regex.match_all
 
