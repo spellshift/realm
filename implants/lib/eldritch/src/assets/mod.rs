@@ -49,8 +49,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn read_binary(this: &AssetsLibrary, src: String) -> anyhow::Result<Vec<u32>> {
-        read_binary_impl::read_binary(src)
+    fn read_binary(this: &AssetsLibrary, starlark_eval: &mut Evaluator<'v, '_>, src: String) -> anyhow::Result<Vec<u32>> {
+        read_binary_impl::read_binary(starlark_eval, src)
     }
 
     #[allow(unused_variables)]
