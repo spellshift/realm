@@ -59,6 +59,11 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 
 // CreateQuest is the resolver for the createQuest field.
 func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error) {
+	// Ensure at least one Beacon ID provided
+	if beaconIDs == nil || len(beaconIDs) < 1 {
+		return nil, fmt.Errorf("must provide at least one beacon id")
+	}
+
 	// 1. Begin Transaction
 	tx, err := r.client.Tx(ctx)
 	if err != nil {
