@@ -58,7 +58,6 @@ mod tests {
 
     use crate::runtime::{messages::FetchAssetMessage, Message};
     use pb::{c2::FetchAssetResponse, eldritch::Tome};
-    use tempfile::NamedTempFile;
 
     // #[test]
     // fn test_assets_read() -> anyhow::Result<()> {
