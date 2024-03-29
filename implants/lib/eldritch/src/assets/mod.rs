@@ -44,8 +44,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn list(this: &AssetsLibrary) -> anyhow::Result<Vec<String>> {
-        list_impl::list()
+    fn list(this: &AssetsLibrary, starlark_eval: &mut Evaluator<'v, '_>) -> anyhow::Result<Vec<String>> {
+        list_impl::list(starlark_eval)
     }
 
     #[allow(unused_variables)]
