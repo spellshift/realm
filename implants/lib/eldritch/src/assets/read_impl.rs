@@ -105,7 +105,7 @@ mod tests {
             tome: Tome{
                 eldritch: String::from(r#"print(assets.read("print/main.eldritch").strip())"#),
                 parameters: HashMap::new(),
-                file_names: Vec::from(["print/main.eldritch".to_string()]),
+                file_names: Vec::new(),
             },
             want_text: String::from("print(\"This script just prints\")\n"),
         },
