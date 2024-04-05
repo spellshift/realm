@@ -7,25 +7,18 @@ use starlark::{eval::Evaluator, values::list::ListRef};
 use crate::runtime::{messages::FetchAssetMessage, Environment};
 
 fn read_binary_remote(rx: Receiver<FetchAssetResponse>) -> Result<Vec<u32>> {
-    // Wait for our first chunk
-    let resp = rx.recv()?;
-
     let mut res: Vec<u32> = vec![];
-
-    let mut first_chunk = resp.chunk.iter().map(|x| *x as u32).collect::<Vec<u32>>();
-    res.append(&mut first_chunk);
 
     // Listen for more chunks and write them
     for resp in rx {
         let mut new_chunk = resp.chunk.iter().map(|x| *x as u32).collect::<Vec<u32>>();
-
         res.append(&mut new_chunk);
     }
 
     Ok(res)
 }
 
-fn read_binary_local(src: String) -> Result<Vec<u32>> {
+fn read_binary_embedded(src: String) -> Result<Vec<u32>> {
     let src_file_bytes = match super::Asset::get(src.as_str()) {
         Some(local_src_file) => local_src_file.data,
         None => return Err(anyhow::anyhow!("Embedded file {src} not found.")),
@@ -52,7 +45,7 @@ pub fn read_binary(starlark_eval: &Evaluator<'_, '_>, src: String) -> Result<Vec
             return read_binary_remote(rx);
         }
     }
-    read_binary_local(src)
+    read_binary_embedded(src)
 }
 
 #[cfg(test)]
@@ -67,7 +60,7 @@ mod tests {
 
     #[test]
     fn test_assets_read_binary() -> anyhow::Result<()> {
-        let res = read_binary_local("print/main.eldritch".to_string())?;
+        let res = read_binary_embedded("print/main.eldritch".to_string())?;
         #[cfg(not(windows))]
         assert_eq!(
             res,
