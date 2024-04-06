@@ -44,17 +44,17 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn list(this: &AssetsLibrary) -> anyhow::Result<Vec<String>> {
-        list_impl::list()
+    fn list(this: &AssetsLibrary, starlark_eval: &mut Evaluator<'v, '_>) -> anyhow::Result<Vec<String>> {
+        list_impl::list(starlark_eval)
     }
 
     #[allow(unused_variables)]
-    fn read_binary(this: &AssetsLibrary, src: String) -> anyhow::Result<Vec<u32>> {
-        read_binary_impl::read_binary(src)
+    fn read_binary(this: &AssetsLibrary, starlark_eval: &mut Evaluator<'v, '_>, src: String) -> anyhow::Result<Vec<u32>> {
+        read_binary_impl::read_binary(starlark_eval, src)
     }
 
     #[allow(unused_variables)]
-    fn read(this: &AssetsLibrary, src: String) -> anyhow::Result<String> {
-        read_impl::read(src)
+    fn read(this: &AssetsLibrary, starlark_eval: &mut Evaluator<'v, '_>, src: String) -> anyhow::Result<String> {
+        read_impl::read(starlark_eval, src)
     }
 }
