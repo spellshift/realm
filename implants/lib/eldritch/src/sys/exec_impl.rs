@@ -9,8 +9,7 @@ use starlark::{
 use std::process::Command;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
-    nix::unistd::setsid,
-    nix::unistd::{fork, ForkResult},
+    nix::unistd::{fork, setsid, ForkResult},
     std::process::{exit, Stdio},
 };
 
@@ -58,6 +57,9 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
                 if child.as_raw() < 0 {
                     return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
                 }
+
+                let _ = nix::sys::wait::wait();
+
                 Ok(CommandOutput {
                     stdout: "".to_string(),
                     stderr: "".to_string(),
@@ -66,7 +68,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
             }
             ForkResult::Child => {
                 setsid()?;
-                match unsafe { fork()? } {
+                match unsafe { nix::unistd::fork()? } {
                     ForkResult::Parent { child } => {
                         if child.as_raw() < 0 {
                             return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
@@ -111,7 +113,6 @@ mod tests {
              https://docs.rs/sysinfo/0.23.5/sysinfo/index.html#supported-oses\n\n"
             ));
         }
-        const UNKNOWN_USER: &str = "???";
 
         let mut final_res: Vec<String> = Vec::new();
         let mut sys = System::new();
