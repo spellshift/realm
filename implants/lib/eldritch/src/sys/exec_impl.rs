@@ -90,9 +90,52 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::Path, thread, time};
+    use std::{fs, path::Path, process, thread, time};
 
+    use sysinfo::{PidExt, ProcessExt, System, SystemExt};
     use tempfile::NamedTempFile;
+
+    fn init_logging() {
+        let _ = pretty_env_logger::formatted_timed_builder()
+            .filter_level(log::LevelFilter::Info)
+            .parse_env("IMIX_LOG")
+            .try_init();
+    }
+
+    fn get_zombie_child_processes(cur_pid: u32) -> Result<Vec<String>> {
+        log::debug!("{:?}", cur_pid);
+        if !System::IS_SUPPORTED {
+            return Err(anyhow::anyhow!(
+                "This OS isn't supported for process functions.
+             Pleases see sysinfo docs for a full list of supported systems.
+             https://docs.rs/sysinfo/0.23.5/sysinfo/index.html#supported-oses\n\n"
+            ));
+        }
+        const UNKNOWN_USER: &str = "???";
+
+        let mut final_res: Vec<String> = Vec::new();
+        let mut sys = System::new();
+        sys.refresh_processes();
+        sys.refresh_users_list();
+
+        for (pid, process) in sys.processes() {
+            let mut tmp_ppid = 0;
+            if process.parent().is_some() {
+                tmp_ppid = process
+                    .parent()
+                    .context(format!("Failed to get parent process for {}", pid))?
+                    .as_u32();
+            }
+            if tmp_ppid == cur_pid
+                && process.status() == sysinfo::ProcessStatus::Zombie
+                && process.exe().to_str() == Some("")
+            {
+                log::debug!("{:?}", process);
+                final_res.push(process.name().to_string());
+            }
+        }
+        Ok(final_res)
+    }
 
     use super::*;
     #[test]
@@ -183,6 +226,30 @@ mod tests {
         }
         Ok(())
     }
+
+    #[test]
+    fn test_sys_exec_disown_no_defunct() -> anyhow::Result<()> {
+        init_logging();
+
+        if cfg!(target_os = "linux")
+            || cfg!(target_os = "ios")
+            || cfg!(target_os = "macos")
+            || cfg!(target_os = "android")
+            || cfg!(target_os = "freebsd")
+            || cfg!(target_os = "openbsd")
+            || cfg!(target_os = "netbsd")
+        {
+            let _res = handle_exec(
+                String::from("/bin/sleep"),
+                vec!["3".to_string()],
+                Some(true),
+            )?;
+            let res = get_zombie_child_processes(process::id())?;
+            assert_eq!(res.len(), 0);
+        }
+        Ok(())
+    }
+
     #[test]
     fn test_sys_exec_complex_windows() -> anyhow::Result<()> {
         if cfg!(target_os = "windows") {
