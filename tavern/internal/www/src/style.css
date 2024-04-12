@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+code {
+  padding: 0px;
+}
+
 .option-container {
   width: 100%;
   background-color: #EDF2F7;

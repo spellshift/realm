@@ -25,7 +25,7 @@ const Quests = () => {
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
             <QuestHeader />
-            <div className="p-4 bg-white rounded-lg shadow-lg mt-2">
+            <div className="bg-white  mt-2">
                 <FilterBar setSearch={setSearch} searchPlaceholder="Search by quest or tome name" filtersSelected={filtersSelected} setFiltersSelected={setFiltersSelected} />
             </div>
             {(loading) ?
@@ -33,7 +33,7 @@ const Quests = () => {
                 : error ?
                     <EmptyState type={EmptyStateType.error} label="Error loading quests" />
                     : data?.quests?.edges.length > 0 ?
-                        <div className="py-4 bg-white rounded-lg shadow-lg mt-2 flex flex-col gap-1 w-full">
+                        <div className="py-4 mt-2 flex flex-col gap-1 w-full">
                             <QuestTable quests={data?.quests?.edges} filtersSelected={filtersSelected} />
                             <TablePagination totalCount={data?.quests?.totalCount} pageInfo={data?.quests?.pageInfo} refetchTable={updateQuestList} page={page} setPage={setPage} rowLimit={TableRowLimit.QuestRowLimit} />
                         </div>
