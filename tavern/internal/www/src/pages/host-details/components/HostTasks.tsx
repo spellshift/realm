@@ -1,15 +1,14 @@
-import { useState } from "react";
 import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box } from "@chakra-ui/react";
 import { Link, useParams } from "react-router-dom";
 
-import { TaskOutput } from "../../../features/task-output";
-import TaskTable from "../../../components/TaskTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../../components/tavern-base-ui/TablePagination";
 import { DEFAULT_QUERY_TYPE, TableRowLimit } from "../../../utils/enums";
 import FreeTextSearch from "../../../components/tavern-base-ui/DebouncedFreeTextSearch";
 import { useTasks } from "../../../hooks/useTasks";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import TaskCard from "../../../features/task-card/TaskCard";
+import { Task } from "../../../utils/consts";
 
 const HostTasks = () => {
     const { hostId } = useParams();
@@ -23,15 +22,6 @@ const HostTasks = () => {
         updateTaskList
     } = useTasks(DEFAULT_QUERY_TYPE.hostIDQuery, hostId);
 
-    const [isOpen, setOpen] = useState(false);
-    const [selectedTask, setSelectedTask] = useState<any | null>(null);
-
-    const handleClick = (e: any) => {
-        const selectedTaskData = e?.original?.node;
-        setSelectedTask(selectedTaskData);
-        setOpen((state) => !state);
-    }
-
     return (
         <Accordion allowToggle className='w-full' defaultIndex={[0]}>
             <AccordionItem>
@@ -43,7 +33,7 @@ const HostTasks = () => {
                 </AccordionButton>
                 <AccordionPanel>
                     <div className="flex flex-col gap-2">
-                        <div className="px-6 pt-2 ">
+                        <div className="pt-2 ">
                             <FreeTextSearch setSearch={setSearch} />
                         </div>
                         {taskLoading ? (
@@ -54,7 +44,13 @@ const HostTasks = () => {
                             <div>
                                 {taskData?.tasks?.edges.length > 0 ? (
                                     <>
-                                        <TaskTable tasks={taskData?.tasks?.edges} onToggle={handleClick} />
+                                        <div className=" w-full flex flex-col gap-2 my-4">
+                                            {taskData.tasks.edges.map((task: { node: Task }) => {
+                                                return (
+                                                    <TaskCard key={task.node.id} task={task.node} />
+                                                )
+                                            })}
+                                        </div>
                                         <TablePagination totalCount={taskData?.tasks?.totalCount} pageInfo={taskData?.tasks?.pageInfo} refetchTable={updateTaskList} page={page} setPage={setPage} rowLimit={TableRowLimit.TaskRowLimit} />
                                     </>
                                 )
@@ -72,7 +68,6 @@ const HostTasks = () => {
                             </div>
                         )}
                     </div>
-                    {isOpen && <TaskOutput isOpen={isOpen} setOpen={setOpen} selectedTask={selectedTask} />}
                 </AccordionPanel>
             </AccordionItem>
         </Accordion>

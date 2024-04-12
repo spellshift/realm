@@ -33,7 +33,7 @@ const HostContent = () => {
 
     return (
         <>
-            <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
+            <div className="pb-5 sm:flex sm:items-center sm:justify-between">
                 <EditableHostHeader hostId={hostId} loading={loading} error={error} hostData={host} />
             </div>
             <div className="my-2">
