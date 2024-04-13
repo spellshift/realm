@@ -13,32 +13,34 @@ const TaskResults: FC<TaskResultsType> = ({
     return (
         <div className="flex flex-row gap-4">
             <BookOpenIcon className="h-5 w-5 mt-1" />
-            <div className="flex flex-col gap-1 ">
+            <div className="flex flex-col gap-1 w-full">
                 <div className="text-gray-600">
                     Tome: {quest?.tome?.name}
                 </div>
-                <div className="flex flex-col gap-2 text-sm max-h-80 overflow-y-scroll">
-                    {error ? (
-                        <CodeBlock
-                            className="-ml-2"
-                            text={error}
-                            language={""}
-                            showLineNumbers={false}
-                            theme={tomorrow}
-                            codeBlock
-                        />
-                    ) : output && output?.length > 0 ? (
-                        <CodeBlock
-                            className="-ml-2"
-                            text={output}
-                            language={""}
-                            showLineNumbers={false}
-                            theme={tomorrow}
-                            codeBlock
-                        />
-                    ) : (
-                        <div className="mt-2 text-gray-600">No output available</div>
-                    )}
+                <div className="flex flex-col gap-2 text-sm max-h-80 overflow-y-scroll overflow-x-scroll">
+                    <div className="max-w-fit">
+                        {error ? (
+                            <CodeBlock
+                                className="-ml-2"
+                                text={error}
+                                language={""}
+                                showLineNumbers={false}
+                                theme={tomorrow}
+                                codeBlock
+                            />
+                        ) : output && output?.length > 0 ? (
+                            <CodeBlock
+                                className="-ml-2"
+                                text={output}
+                                language={""}
+                                showLineNumbers={false}
+                                theme={tomorrow}
+                                codeBlock
+                            />
+                        ) : (
+                            <div className="mt-2 text-gray-600">No output available</div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
