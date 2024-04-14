@@ -9,6 +9,7 @@ use starlark::{
 use std::process::Command;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
+    nix::sys::wait::wait,
     nix::unistd::{fork, setsid, ForkResult},
     std::process::{exit, Stdio},
 };
@@ -58,7 +59,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
                     return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
                 }
 
-                let _ = nix::sys::wait::wait();
+                let _ = wait();
 
                 Ok(CommandOutput {
                     stdout: "".to_string(),
@@ -68,7 +69,7 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
             }
             ForkResult::Child => {
                 setsid()?;
-                match unsafe { nix::unistd::fork()? } {
+                match unsafe { fork()? } {
                     ForkResult::Parent { child } => {
                         if child.as_raw() < 0 {
                             return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
@@ -242,9 +243,10 @@ mod tests {
         {
             let _res = handle_exec(
                 String::from("/bin/sleep"),
-                vec!["3".to_string()],
+                vec!["1".to_string()],
                 Some(true),
             )?;
+            // Make sure our test process has no zombies
             let res = get_zombie_child_processes(process::id())?;
             assert_eq!(res.len(), 0);
         }
