@@ -258,6 +258,7 @@ export const GET_TASK_QUERY = gql`
                         createdAt
                         claimedAt
                         error
+                        output
                         quest{
                             id
                             name

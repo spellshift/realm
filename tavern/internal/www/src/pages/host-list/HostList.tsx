@@ -28,7 +28,7 @@ const HostList = () => {
                 ) : error ? (
                     <EmptyState type={EmptyStateType.error} label="Error hosts..." />
                 ) : (filteredHosts.length > 0) ? (
-                    <div className="py-4 bg-white rounded-lg shadow-lg mt-2 flex flex-col gap-1 w-full">
+                    <div className="mt-2 flex flex-col gap-1 w-full">
                         <HostTable data={filteredHosts} />
                     </div>
                 ) : (hosts.length > 0) ? (
