@@ -44,6 +44,7 @@ fn handle_get_os() -> Result<OsInfo> {
         "linux" => "PLATFORM_LINUX",
         "windows" => "PLATFORM_WINDOWS",
         "mac os" => "PLATFORM_MACOS",
+        "bsd" => "PLATFORM_BSD",
         _ => tmp_platform.as_str(),
     });
 
