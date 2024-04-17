@@ -39,11 +39,19 @@ pub fn get_os(starlark_heap: &Heap) -> Result<Dict> {
 }
 
 fn handle_get_os() -> Result<OsInfo> {
+    let tmp_platform = whoami::platform().to_string();
+    let platform = String::from(match tmp_platform.to_lowercase().as_str() {
+        "linux" => "PLATFORM_LINUX",
+        "windows" => "PLATFORM_WINDOWS",
+        "mac os" => "PLATFORM_MACOS",
+        _ => tmp_platform.as_str(),
+    });
+
     Ok(OsInfo {
         arch: whoami::arch().to_string(),
         desktop_env: whoami::desktop_env().to_string(),
         distro: whoami::distro().to_string(),
-        platform: whoami::platform().to_string(),
+        platform,
     })
 }
 
