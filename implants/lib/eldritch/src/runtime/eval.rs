@@ -6,6 +6,7 @@ use crate::{
     http::HTTPLibrary,
     pivot::PivotLibrary,
     process::ProcessLibrary,
+    random::RandomLibrary,
     regex::RegexLibrary,
     report::ReportLibrary,
     runtime::{
@@ -168,6 +169,7 @@ impl Runtime {
             const assets: AssetsLibrary = AssetsLibrary;
             const crypto: CryptoLibrary = CryptoLibrary;
             const time: TimeLibrary = TimeLibrary;
+            const random: RandomLibrary = RandomLibrary;
             const report: ReportLibrary = ReportLibrary;
             const regex: RegexLibrary = RegexLibrary;
             const http: HTTPLibrary = HTTPLibrary;

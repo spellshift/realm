@@ -35,6 +35,8 @@ openssl = { workspace = true, features = ["vendored"] }
 portable-pty = { workspace = true }
 pretty_env_logger = { workspace = true }
 prost-types = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
 russh = { workspace = true }
