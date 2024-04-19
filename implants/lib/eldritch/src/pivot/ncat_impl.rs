@@ -245,6 +245,31 @@ mod tests {
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
         Ok(())
     }
+    #[tokio::test]
+    async fn test_ncat_timeout_exceeded() -> anyhow::Result<()> {
+        let test_port = allocate_localhost_unused_ports(1, "udp".to_string()).await?[0];
+
+        // Setup a test echo server
+        let expected_response = String::from("Hello world!");
+
+        // Setup a sender
+        let send_task = task::spawn(handle_ncat(
+            String::from("127.0.0.1"),
+            test_port,
+            expected_response.clone(),
+            String::from("udp"),
+            2,
+        ))
+        .await?;
+
+        assert!(send_task.is_err());
+        assert!(send_task
+            .unwrap_err()
+            .to_string()
+            .contains("deadline has elapsed"));
+
+        Ok(())
+    }
     // #[test]
     // fn test_ncat_not_handle() -> anyhow::Result<()> {
     //     let runtime = tokio::runtime::Builder::new_current_thread()
