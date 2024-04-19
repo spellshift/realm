@@ -3,10 +3,11 @@ import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from "react-router-dom";
-import { Badge, useToast } from "@chakra-ui/react";
+import { useToast } from "@chakra-ui/react";
 import '@xterm/xterm/css/xterm.css';
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import Button from "../../components/tavern-base-ui/button/Button";
+import Badge from "../../components/tavern-base-ui/badge/Badge";
 
 const Shell = () => {
     const { shellId } = useParams();
@@ -72,7 +73,7 @@ const Shell = () => {
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-row gap-4 items-center">
                         <h3 className="text-xl font-semibold leading-6 text-gray-900">Shell for id:{shellId}</h3>
-                        <Badge colorScheme="orange">BETA FEATURE</Badge>
+                        <Badge badgeStyle={{ color: "purple" }} >BETA FEATURE</Badge>
                     </div>
                     <p className="max-w-2xl text-sm">Start by clicking inside the terminal, you may need to enter a newline to see the terminal prompt.</p>
                 </div>

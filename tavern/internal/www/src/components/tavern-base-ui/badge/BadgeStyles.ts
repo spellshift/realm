@@ -9,6 +9,7 @@ export const solidBadge = tv({
   extend: baseBadge,
   variants: {
     color: {
+        none: "text-gray-800",
         purple:
         'btn-primary',
         red: 'bg-red-600 text-white',
@@ -24,22 +25,10 @@ export const outlineBadge = tv({
   base: 'ring-1',
   variants: {
     color: {
+      none: "text-gray-800 ring-gray-600",
       purple: 'text-purple-800 ring-purple-800',
       red: 'text-red-600 ring-red-800',
       gray: 'text-gray-900 ring-gray-500',
-      green: ' bg-green-600 text-white'
-    },
-  },
-});
-
-//create ghost Badge styles
-export const ghostBadge = tv({
-  extend: baseBadge,
-  variants: {
-    color: {
-      purple: 'text-purple-800',
-      red: 'text-red-800',
-      gray: 'text-gray-900',
       green: ' bg-green-600 text-white'
     },
   },

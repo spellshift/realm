@@ -1,11 +1,11 @@
 import { Task } from "../../utils/consts";
 import { FC } from "react";
 import TaskTimeStamp from "./components/TaskTimeStamp";
-import TaskCreator from "./components/TaskCreator";
-import TaskStatusBadge from "./components/TaskStatusBadge";
 import TaskHostBeacon from "./components/TaskHostBeacon";
 import TaskParameters from "./components/TaskParameters";
 import TaskResults from "./components/TaskResults";
+import UserImageAndName from "../../components/UserImageAndName";
+import TaskStatusBadge from "../../components/TaskStatusBadge";
 
 interface TaskCardType {
     task: Task
@@ -28,7 +28,7 @@ const TaskCard: FC<TaskCardType> = (
                 <TaskHostBeacon beaconData={task.beacon} />
                 <TaskTimeStamp {...task} />
                 <TaskParameters quest={task?.quest} />
-                <TaskCreator creatorData={task?.quest?.creator} />
+                <UserImageAndName userData={task?.quest?.creator} />
             </div>
             <div className="flex flex-col gap-2 col-span-1">
                 <TaskResults output={task?.output} error={task?.error} quest={task?.quest} />
