@@ -85,8 +85,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn ncat(this: &PivotLibrary, address: String, port: i32, data: String, protocol: String) ->  anyhow::Result<String> {
-        ncat_impl::ncat(address, port, data, protocol)
+    fn ncat(this: &PivotLibrary, address: String, port: i32, data: String, protocol: String, timeout: Option<u32>) ->  anyhow::Result<String> {
+        ncat_impl::ncat(address, port, data, protocol, timeout)
     }
 
     #[allow(unused_variables)]

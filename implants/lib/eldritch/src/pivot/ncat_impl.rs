@@ -4,8 +4,12 @@ use anyhow::Result;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpStream, UdpSocket};
 
-// Since we cannot go from async (test) -> sync (ncat) `block_on` -> async (handle_ncat) without getting an error "cannot create runtime in current runtime since current thread is calling async code."
-async fn handle_ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
+async fn handle_ncat_timeout(
+    address: String,
+    port: i32,
+    data: String,
+    protocol: String,
+) -> Result<String> {
     // If the response is longer than 4096 bytes it will be  truncated.
     let mut response_buffer: Vec<u8> = Vec::new();
     let result_string: String;
@@ -56,14 +60,52 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
     }
 }
 
+// Since we cannot go from async (test) -> sync (ncat) `block_on` -> async (handle_ncat) without getting an error "cannot create runtime in current runtime since current thread is calling async code."
+async fn handle_ncat(
+    address: String,
+    port: i32,
+    data: String,
+    protocol: String,
+    timeout: u32,
+) -> Result<String> {
+    let res = match tokio::time::timeout(
+        std::time::Duration::from_secs(timeout as u64),
+        handle_ncat_timeout(address, port, data, protocol),
+    )
+    .await?
+    {
+        Ok(local_res) => local_res,
+        Err(local_err) => {
+            return Err(anyhow::anyhow!(
+                "Failed to run handle_ncat_timeout: {}",
+                local_err.to_string()
+            ))
+        }
+    };
+
+    Ok(res)
+}
+
 // We do not want to make this async since it would require we make all of the starlark bindings async.
 // Instead we have a handle_ncat function that we call with block_on
-pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
+pub fn ncat(
+    address: String,
+    port: i32,
+    data: String,
+    protocol: String,
+    timeout: Option<u32>,
+) -> Result<String> {
+    let default_timeout = 2;
+    let timeout_u32 = match timeout {
+        Some(res) => res,
+        None => default_timeout,
+    };
+
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
 
-    let response = runtime.block_on(handle_ncat(address, port, data, protocol));
+    let response = runtime.block_on(handle_ncat(address, port, data, protocol, timeout_u32));
 
     match response {
         Ok(_) => Ok(response.unwrap()),
@@ -163,6 +205,7 @@ mod tests {
             test_port,
             expected_response.clone(),
             String::from("tcp"),
+            2,
         ));
 
         // Will this create a race condition where the sender sends before the listener starts?
@@ -191,6 +234,7 @@ mod tests {
             test_port,
             expected_response.clone(),
             String::from("udp"),
+            2,
         ));
 
         // Will this create a race condition where the sender sends before the listener starts?
