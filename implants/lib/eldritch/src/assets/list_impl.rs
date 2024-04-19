@@ -17,7 +17,7 @@ pub fn list(starlark_eval: &Evaluator<'_, '_>) -> Result<Vec<String>> {
             }
             res.push(asset_path_string)
         }
-        if res.len() > 0 {
+        if !res.is_empty() {
             return Ok(res);
         }
     }
