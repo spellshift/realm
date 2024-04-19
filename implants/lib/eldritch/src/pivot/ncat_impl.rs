@@ -205,7 +205,7 @@ mod tests {
             test_port,
             expected_response.clone(),
             String::from("tcp"),
-            2,
+            5,
         ));
 
         // Will this create a race condition where the sender sends before the listener starts?
@@ -234,7 +234,7 @@ mod tests {
             test_port,
             expected_response.clone(),
             String::from("udp"),
-            2,
+            5,
         ));
 
         // Will this create a race condition where the sender sends before the listener starts?
