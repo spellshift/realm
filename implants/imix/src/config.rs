@@ -216,13 +216,13 @@ fn get_host_id_path() -> String {
     return String::from("C:\\ProgramData\\system-id");
 
     #[cfg(target_os = "linux")]
-    return String::from("/var/run/lock/system-id");
+    return String::from("/etc/system-id");
 
     #[cfg(target_os = "macos")]
     return String::from("/Users/Shared/system-id");
 
     #[cfg(target_os = "freebsd")]
-    return String::from("/var/run/systemd-id");
+    return String::from("/etc/systemd-id");
 }
 
 /*
