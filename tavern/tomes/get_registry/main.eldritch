@@ -13,5 +13,7 @@ def get_registry(hive, path):
         pk = pad_key(k,max_len)
         print(f"{pk} : {v}")
 
+time.sleep(1)
+
 get_registry(input_params['hive'], input_params['path'])
 print()
