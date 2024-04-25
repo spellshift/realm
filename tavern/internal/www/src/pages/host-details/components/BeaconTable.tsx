@@ -1,4 +1,3 @@
-import { Badge } from "@chakra-ui/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +7,7 @@ import { BeaconType } from "../../../utils/consts";
 import { PrincipalAdminTypes } from "../../../utils/enums";
 import { checkIfBeaconOffline } from "../../../utils/utils";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
 
 type Props = {
     beacons: Array<BeaconType>
@@ -46,9 +46,7 @@ const BeaconTable = (props: Props) => {
                 const principal = cellData.getValue();
                 const color = princialColors.indexOf(principal) === -1 ? 'gray' : 'purple';
                 return (
-                    <div className="flex flex-row flex-wrap gap-1">
-                        <Badge textTransform="none" colorScheme={color} key={principal}>{principal}</Badge>
-                    </div>
+                    <Badge badgeStyle={{ color: color }} key={principal}>{principal}</Badge>
                 );
             }
         },
@@ -65,7 +63,7 @@ const BeaconTable = (props: Props) => {
                 const color = beaconOffline ? "red" : "gray";
                 const text = beaconOffline ? "Offline" : "Online"
                 return (
-                    <Badge colorScheme={color} >
+                    <Badge badgeStyle={{ color: color }} >
                         {text}
                     </Badge>
                 );

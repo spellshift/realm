@@ -47,7 +47,7 @@ const HostStatistics = (
     const taskCounts = getTaskCounts(taskData?.tasks?.edges || []);
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5  gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-2 py-4">
             <div
                 className="flex xl:col-span-2 md:col-span-3 col-span-1 flex-row gap-4 rounded-lg bg-white shadow items-center"
             >

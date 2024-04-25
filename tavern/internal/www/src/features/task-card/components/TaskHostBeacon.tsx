@@ -25,18 +25,18 @@ const TaskHostBeacon: FC<TaskHostBeaconType> = ({ beaconData }) => {
                 </div>
                 <div className="flex flex-row gap-2 flex-wrap">
                     {(principal && principal !== "") &&
-                        <Badge badgeStyle={{ color: "gray" }}>{principal}</Badge>
+                        <Badge>{principal}</Badge>
                     }
                     {(host?.primaryIP && host?.primaryIP !== "") &&
-                        <Badge badgeStyle={{ color: "gray" }}>{host?.primaryIP}</Badge>
+                        <Badge>{host?.primaryIP}</Badge>
                     }
                     {host?.platform &&
-                        <Badge badgeStyle={{ color: "gray" }}>{host?.platform}</Badge>
+                        <Badge>{host?.platform}</Badge>
                     }
                     {host?.tags && host?.tags.map((tag: any) => {
-                        return <Badge key={tag.id} badgeStyle={{ color: "gray" }}>{tag.name}</Badge>
+                        return <Badge key={tag.id}>{tag.name}</Badge>
                     })}
-                    {beaconOffline && <Badge badgeStyle={{ color: "gray" }}>Offline</Badge>}
+                    {beaconOffline && <Badge>Offline</Badge>}
                 </div>
             </div>
         </div>

@@ -1,10 +1,10 @@
-import { Badge } from "@chakra-ui/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import HostTile from "../../../components/HostTile";
 import Table from "../../../components/tavern-base-ui/Table";
 import { PrincipalAdminTypes } from "../../../utils/enums";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
 
 
 const HostTable = ({ data }: any) => {
@@ -48,7 +48,7 @@ const HostTable = ({ data }: any) => {
                 const beacons = cellData.getValue();
                 const color = beacons.online === 0 ? "red" : "gray";
                 return (
-                    <Badge ml='1' px='4' colorScheme={color} fontSize="font-base">
+                    <Badge badgeStyle={{ color: color }}>
                         {beacons.online}/{beacons.offline + beacons.online}
                     </Badge>
                 );
@@ -75,7 +75,7 @@ const HostTable = ({ data }: any) => {
 
                         {beaconPrincipals.map((principal: any) => {
                             const color = princialColors.indexOf(principal) === -1 ? 'gray' : 'purple';
-                            return <Badge textTransform="none" colorScheme={color} key={principal}>{principal}</Badge>
+                            return <Badge badgeStyle={{ color: color }} key={principal}>{principal}</Badge>
                         })}
                     </div>
                 );

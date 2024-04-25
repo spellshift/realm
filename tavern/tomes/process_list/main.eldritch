@@ -38,5 +38,6 @@ def process_list(cmd_substring):
 
     print_table(rows)
 
+time.sleep(1)
 process_list(input_params['cmd_substring'])
 print("")

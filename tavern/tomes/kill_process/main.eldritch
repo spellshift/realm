@@ -1,2 +1,3 @@
 process.kill(int(input_params['pid']))
+time.sleep(1)
 print("")

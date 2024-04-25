@@ -22,5 +22,6 @@ def main():
     # Print a Success!
     print(f"[INFO] The file '{new_file_path}' was successfully written!")
 
+time.sleep(1)
 
 main()

@@ -1,5 +1,5 @@
-import { Badge } from "@chakra-ui/react";
 import { checkIfBeaconOffline } from "../utils/utils";
+import Badge from "./tavern-base-ui/badge/Badge";
 
 type Props = {
     beaconData: {
@@ -24,7 +24,7 @@ const BeaconTile = (props: Props) => {
             <div className="flex flex-row gap-4">{beaconData.name}</div>
             <div className="flex flex-row flex-wrap gap-1">
                 {(beaconData.principal && beaconData.principal !== "") &&
-                    <Badge textTransform="none">{beaconData.principal}</Badge>
+                    <Badge>{beaconData.principal}</Badge>
                 }
                 <Badge>{beaconData?.host?.name}</Badge>
                 <Badge>{beaconData?.host?.primaryIP}</Badge>

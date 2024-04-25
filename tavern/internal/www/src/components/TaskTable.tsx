@@ -1,12 +1,13 @@
-import { Badge, Tooltip } from "@chakra-ui/react";
+import { Tooltip } from "@chakra-ui/react";
 
 import { ColumnDef } from "@tanstack/react-table";
 import React from "react";
 
 import Table from "./tavern-base-ui/Table";
 import { formatDistance } from "date-fns";
-import TaskStatusBadge from "./TaskStatusBadge";
 import BeaconTile from "./BeaconTile";
+import Badge from "./tavern-base-ui/badge/Badge";
+import TaskStatusBadge from "./TaskStatusBadge";
 
 type Props = {
     tasks: Array<any>,
@@ -70,7 +71,7 @@ const TaskTable = (props: Props) => {
                             <div className="flex flex-row gap-2 flex-wrap">
                                 <TaskStatusBadge task={taskData} />
                                 {hasOutput && <div>
-                                    <Badge fontSize='0.8em' size="large" colorScheme="purple">
+                                    <Badge badgeStyle={{ color: "purple" }}>
                                         <div className="p-1">
                                             Has Output
                                         </div>

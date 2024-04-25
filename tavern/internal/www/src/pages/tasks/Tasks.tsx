@@ -54,7 +54,7 @@ const Tasks = () => {
             ) : (
                 <div>
                     {data?.tasks?.edges.length > 0 ? (
-                        <div className="">
+                        <div>
                             <div className=" w-full flex flex-col gap-2 my-4">
                                 {data.tasks.edges.map((task: { node: Task }) => {
                                     return (

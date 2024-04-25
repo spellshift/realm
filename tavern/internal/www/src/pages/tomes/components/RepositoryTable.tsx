@@ -1,4 +1,4 @@
-import { Badge, Image, Tooltip } from "@chakra-ui/react";
+import { Tooltip } from "@chakra-ui/react";
 import { ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
@@ -9,6 +9,8 @@ import { RepositoryRow, Tome } from "../../../utils/consts";
 import { constructTomeParams } from "../../../utils/utils";
 import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import UserImageAndName from "../../../components/UserImageAndName";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
 
 const RepositoryTable = ({ repositories }: {
     repositories: Array<RepositoryRow>
@@ -21,9 +23,6 @@ const RepositoryTable = ({ repositories }: {
 
     const renderSubComponent = ({ row }: { row: Row<RepositoryRow> }) => {
         return (
-            // <pre style={{ fontSize: '10px' }}>
-            //     <code>{JSON.stringify(row.original, null, 2)}</code>
-            // </pre>
             <div className="px-8">
                 {row?.original?.node?.tomes.map((tome: Tome) => {
                     const params = constructTomeParams("[]", tome.paramDefs);
@@ -59,7 +58,7 @@ const RepositoryTable = ({ repositories }: {
                             {hasLink ? <a href={url} target="_blank" rel="noreferrer" className="external-link">{url}</a> : <div className="break-all">{url}</div>}
                             {row?.original?.node?.repoType === "FIRST_PARTY" &&
                                 (
-                                    <div><Badge colorScheme="purple" px='2'>First Party</Badge></div>
+                                    <div><Badge badgeStyle={{ color: "purple" }}>First Party</Badge></div>
                                 )}
                         </div>
                     </div>
@@ -75,25 +74,7 @@ const RepositoryTable = ({ repositories }: {
             maxSize: 60,
             cell: (cellData: any) => {
                 const creatorData = cellData.getValue();
-
-                if (creatorData) {
-                    return (
-                        <div className="flex flex-row gap-2 items-center">
-                            <Image
-                                borderRadius='full'
-                                boxSize='20px'
-                                src={creatorData?.photoURL}
-                                alt={`Profile of ${creatorData?.name}`}
-                            />
-                            <div className="text-sm flex flex-row gap-1 items-center text-gray-500">
-                                {creatorData?.name}
-                            </div>
-                        </div>
-                    )
-                }
-                else {
-                    return <div>-</div>
-                }
+                return <UserImageAndName userData={creatorData} />
             }
         },
         {

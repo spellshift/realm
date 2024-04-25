@@ -152,6 +152,16 @@ mod tests {
             want_text: format!("{}\n", r#"["format_to_epoch", "format_to_readable", "now", "sleep"]"#),
             want_error: None,
         },
+        random_bindings: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(dir(random))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: format!("{}\n", r#"["bool"]"#),
+            want_error: None,
+        },
         report_bindings: TestCase {
             id: 123,
             tome: Tome {
