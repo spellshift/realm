@@ -89,6 +89,7 @@ The standard library is the default functionality that eldritch provides. It con
 - `http` - Used to make http(s) requests from the agent.
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
+- `random` - Used to generate cryptographically secure random values.
 - `regex` - Regular expression capabilities for operating on strings.
 - `report` - Structured data reporting capabilities.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
@@ -678,6 +679,18 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
     ...
 ]
 ```
+
+---
+
+## Random
+
+The random library is designed to enable generation of cryptogrphically secure random vaules. None of these functions will be blocking.
+
+### random.bool
+
+`random.bool() -> bool`
+
+The <b>random.bool</b> method returns a randomly sourced boolean value.
 
 ---
 

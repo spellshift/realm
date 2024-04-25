@@ -1,10 +1,13 @@
-import { Badge, Image } from "@chakra-ui/react";
+import { useCallback } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
-import Table from "../../../components/tavern-base-ui/Table";
 import { useNavigate } from "react-router-dom";
+
+import Table from "../../../components/tavern-base-ui/Table";
 import { QuestTableRowType } from "../../../utils/consts";
-import { useCallback } from "react";
+import UserImageAndName from "../../../components/UserImageAndName";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
+
 
 
 type Props = {
@@ -60,10 +63,10 @@ export const QuestTable = (props: Props) => {
                 const rowData = row.getValue();
                 const finished = rowData?.node?.tasksFinished?.totalCount || 0;
                 const allTasks = rowData?.node?.tasksTotal?.totalCount || 0;
-                const colorScheme = finished < allTasks ? "alphaWhite" : "green";
+                const colorScheme = finished < allTasks ? "none" : "green";
 
                 return (
-                    <Badge ml='1' px='4' colorScheme={colorScheme} fontSize="font-base">
+                    <Badge badgeStyle={{ color: colorScheme }}>
                         {finished}/{allTasks}
                     </Badge>
                 );
@@ -80,10 +83,10 @@ export const QuestTable = (props: Props) => {
             cell: (cellData: any) => {
                 const output = cellData.getValue();
 
-                const colorScheme = output === 0 ? "alphaWhite" : 'purple';
+                const colorScheme = output === 0 ? "none" : 'purple';
 
                 return (
-                    <Badge ml='1' px='4' colorScheme={colorScheme} fontSize="font-base">
+                    <Badge badgeStyle={{ color: colorScheme }}>
                         {output}
                     </Badge>
                 );
@@ -98,10 +101,10 @@ export const QuestTable = (props: Props) => {
             maxSize: 60,
             cell: (cellData: any) => {
                 const error = cellData.getValue();
-                const colorScheme = error === 0 ? "alphaWhite" : 'red';
+                const colorScheme = error === 0 ? "none" : 'red';
 
                 return (
-                    <Badge ml='1' px='4' colorScheme={colorScheme} fontSize="font-base">
+                    <Badge badgeStyle={{ color: colorScheme }}>
                         {error}
                     </Badge>
                 );
@@ -118,24 +121,7 @@ export const QuestTable = (props: Props) => {
             enableSorting: false,
             cell: (cellData: any) => {
                 const creatorData = cellData.getValue();
-
-                if (!creatorData) {
-                    return <div className="text-sm text-gray-500">Not available</div>;
-                }
-
-                return (
-                    <div className="flex flex-row gap-2 items-center">
-                        <Image
-                            borderRadius='full'
-                            boxSize='20px'
-                            src={creatorData?.photoURL}
-                            alt={`Profile of ${creatorData?.name}`}
-                        />
-                        <div className="text-sm flex flex-row gap-1 items-center text-gray-500">
-                            {creatorData?.name}
-                        </div>
-                    </div>
-                );
+                return <UserImageAndName userData={creatorData} />
             }
         },
     ];

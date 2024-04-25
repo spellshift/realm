@@ -90,7 +90,7 @@ export type Task = {
 export type UserType = {
     id: string;
     name: string;
-    photoURL: string;
+    photoURL?: string | null;
     isActivated?: boolean;
     isAdmin?: boolean;
 }

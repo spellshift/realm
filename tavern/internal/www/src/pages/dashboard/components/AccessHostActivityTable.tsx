@@ -1,10 +1,10 @@
 import React from "react";
-import { Badge } from "@chakra-ui/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
 import Table from "../../../components/tavern-base-ui/Table";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
 
 const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, term: string }) => {
     const currentDate = new Date();
@@ -51,7 +51,7 @@ const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, te
                 const rowData = cellData.getValue();
                 const color = rowData.hostsOnline === 0 ? "red" : "gray";
                 return (
-                    <Badge px='4' colorScheme={color} fontSize="font-base">
+                    <Badge badgeStyle={{ color: color }}>
                         {rowData.hostsOnline}/{rowData.hostsTotal}
                     </Badge>
                 );
@@ -76,7 +76,7 @@ const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, te
                 const rowData = cellData.getValue();
                 const color = rowData.online === 0 ? "red" : "gray";
                 return (
-                    <Badge px='4' colorScheme={color} fontSize="font-base">
+                    <Badge badgeStyle={{ color: color }}>
                         {rowData.online}/{rowData.total}
                     </Badge>
                 );

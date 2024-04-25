@@ -96,14 +96,17 @@ provider "google" {
 
 resource "google_project_service" "compute_api" {
   service = "compute.googleapis.com"
+  disable_on_destroy = false
 }
 
 resource "google_project_service" "cloud_run_api" {
   service = "run.googleapis.com"
+  disable_on_destroy = false
 }
 
 resource "google_project_service" "cloud_sqladmin_api" {
   service = "sqladmin.googleapis.com"
+  disable_on_destroy = false
 }
 
 resource "google_sql_database_instance" "tavern-sql-instance" {

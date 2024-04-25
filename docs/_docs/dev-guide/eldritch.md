@@ -41,6 +41,7 @@ Currently Eldritch has the following libraries your function can be bound to:
 * `http`: Is used for any web requests needed to be made.
 * `pivot`: Is used to migrate to identify, and migrate between systems. The pivot library is also responsible for facilitating connectivity within an environment.
 * `process`: Is used to manage running processes on a system.
+* `random` - Used to generate cryptographically secure random values.
 * `regex`: Is used to preform regex operations on strings.
 * `report`: Is used to report structured data to the caller of the eldritch environment (e.g. to the c2).
 * `sys`: Is used to check system specific configurations and start new processes.

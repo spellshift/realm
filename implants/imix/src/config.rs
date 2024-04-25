@@ -215,8 +215,14 @@ fn get_host_id_path() -> String {
     #[cfg(target_os = "windows")]
     return String::from("C:\\ProgramData\\system-id");
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     return String::from("/etc/system-id");
+
+    #[cfg(target_os = "macos")]
+    return String::from("/Users/Shared/system-id");
+
+    #[cfg(target_os = "freebsd")]
+    return String::from("/etc/systemd-id");
 }
 
 /*
