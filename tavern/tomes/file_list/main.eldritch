@@ -26,4 +26,5 @@ def file_list(path):
     else:
         eprint(f"No files found at '{path}'")
 
+time.sleep(1)
 file_list(input_params['path'])

@@ -45,4 +45,6 @@ def netstat():
         rows.append(fields)
     print_table(rows)
 
+time.sleep(1)
+
 netstat()
