@@ -7,4 +7,5 @@ def cat(path):
 
     return
 
+time.sleep(5)
 cat(input_params['path'])

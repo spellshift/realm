@@ -23,4 +23,6 @@ def ifconfig():
             rows.append([interface['name'], ip, interface['mac']])
     print_table(rows)
 
+time.sleep(1)
+
 ifconfig()

@@ -29,6 +29,8 @@ def main(path):
     elif file.is_file(path):
         eprint(f"Error: Invalid Path ({path})")
 
+time.sleep(1)
+
 input_params['path']="/"
 main(input_params['path'])
 print("")
