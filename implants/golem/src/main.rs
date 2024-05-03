@@ -39,9 +39,7 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
         for msg in runtime.messages() {
             match msg {
                 Message::ReportText(m) => result.push(m.text()),
-                Message::ReportError(m) => {
-                    return Err(anyhow!("{}", m.error));
-                }
+                Message::ReportError(m) => {}
                 _ => {}
             }
         }
