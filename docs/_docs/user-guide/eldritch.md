@@ -692,6 +692,11 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
+### random.string
+
+`random.string(length: uint) -> str`
+The <b>random.string</b> method returns a randomly generated string of the specified length.
+
 ---
 
 ## Regex

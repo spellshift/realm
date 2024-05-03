@@ -1,4 +1,5 @@
 mod bool_impl;
+mod string_impl;
 
 use starlark::{environment::MethodsBuilder, starlark_module, values::starlark_value};
 
@@ -18,5 +19,10 @@ fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
     fn bool<'v>(this: &RandomLibrary) -> anyhow::Result<bool> {
         bool_impl::bool()
+    }
+
+    #[allow(unused_variables)]
+    fn string<'v>(this: &RandomLibrary, length: u64) -> anyhow::Result<String> {
+        string_impl::string(length)
     }
 }
