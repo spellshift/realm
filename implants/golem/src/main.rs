@@ -33,18 +33,21 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     }
 
     let mut result = Vec::new();
+    let mut errors = Vec::new();
     for runtime in &mut runtimes {
         runtime.finish().await;
 
         for msg in runtime.messages() {
             match msg {
                 Message::ReportText(m) => result.push(m.text()),
-                Message::ReportError(m) => {}
+                Message::ReportError(m) => errors.push(m.error),
                 _ => {}
             }
         }
     }
-
+    if !errors.is_empty() {
+        return Err(anyhow!("{:?}", errors));
+    }
     Ok(result)
 }
 
