@@ -22,7 +22,7 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn string<'v>(this: &RandomLibrary, length: u64) -> anyhow::Result<String> {
-        string_impl::string(length)
+    fn string<'v>(this: &RandomLibrary, length: u64, charset: Option<String>) -> anyhow::Result<String> {
+        string_impl::string(length, charset)
     }
 }
