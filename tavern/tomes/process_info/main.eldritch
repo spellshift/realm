@@ -12,5 +12,6 @@ def process_info(pid):
         else:
             print("{}={}".format(key, value))
 
+time.sleep(1)
 process_info(int(input_params['pid']))
 print("")
