@@ -65,7 +65,10 @@ mod tests {
         let test_heap = Heap::new();
         let res = get_os(&test_heap)?;
         println!("{}", res);
+        #[cfg(target_arch = "x86_64")]
         assert!(res.to_string().contains(r#""arch": "x86_64""#));
+        #[cfg(target_arch = "aarch64")]
+        assert!(res.to_string().contains(r#""arch": "arm64""#));
         Ok(())
     }
 }
