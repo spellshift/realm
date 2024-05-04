@@ -692,6 +692,11 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
+### random.string
+
+`random.string(length: uint, charset: Optional<str>) -> str`
+The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+
 ---
 
 ## Regex
