@@ -2,9 +2,7 @@ import React from "react";
 import { PageWrapper } from "../../components/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import { PageNavItem } from "../../utils/enums";
-import HostFilter from "./components/HostFilter";
 import UserTable from "./components/UserTable";
-import { useHostsFilter } from "./hooks/useHostsFilter";
 import { useUserTable } from "./hooks/useUserTable";
 
 export const UserList = () => {

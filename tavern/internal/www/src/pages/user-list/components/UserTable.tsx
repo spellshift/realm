@@ -2,42 +2,31 @@ import { Badge, Image, Button } from "@chakra-ui/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import UserTile from "../../../components/UserTile";
 import Table from "../../../components/tavern-base-ui/Table";
 import { PrincipalAdminTypes } from "../../../utils/enums";
+import { CheckCircleIcon, ShieldCheckIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import UserImageAndName from "../../../components/UserImageAndName";
 
 
 const UserTable = ({ data }: any) => {
-    const currentDate = new Date();
-    const navigate = useNavigate();
-    const princialColors = Object.values(PrincipalAdminTypes);
-    const onToggle = (row: any) => {
-        navigate(`/users/${row?.id}`)
-    }
-
     const columns: ColumnDef<any>[] = [
         {
-            id: "photo",
-            header: '',
+            id: "name",
+            header: 'Name',
             accessorFn: row => row,
             footer: props => props.column.id,
             maxSize: 50,
-            enableSorting: false,
+            enableSorting: true,
             cell: (cellData: any) => {
                 const rowData = cellData.getValue();
                 return (
-                    <Image
-                        borderRadius='full'
-                        boxSize='40px'
-                        src={rowData?.photoURL}
-                        alt={`Profile of ${rowData?.name}`}
-                    />
+                    <UserImageAndName userData={rowData}/>
                 );
             }
         },
         {
-            id: "name",
-            header: "Name",
+            id: "status",
+            header: "Status",
             accessorFn: row => row,
             footer: props => props.column.id,
             maxSize: 100,
@@ -45,7 +34,23 @@ const UserTable = ({ data }: any) => {
             cell: (cellData: any) => {
                 const rowData = cellData.getValue();
                 return (
-                    <UserTile data={rowData} />
+                    <div className="flex flex-row flex-wrap gap-1">
+                        {rowData?.isActivated && <Badge>
+                            <div className="flex flex-row gap-1 justify-center items-center p-1">
+                                <div>Activated</div>
+                            </div>
+                        </Badge>}
+                        {!rowData?.isActivated && <Badge>
+                            <div className="flex flex-row gap-1 justify-center items-center p-1" >
+                                <div>Pending</div>
+                            </div>
+                        </Badge>}
+                        {rowData?.isAdmin && <Badge>
+                            <div className="flex flex-row gap-1 justify-center items-center p-1" >
+                                <div>Administrator</div>
+                            </div>
+                        </Badge>}
+                    </div>
                 );
             }
         },
@@ -59,7 +64,7 @@ const UserTable = ({ data }: any) => {
             cell: (cellData: any) => {
                 const rowData = cellData.getValue();
                 return (
-                    <>
+                    <div className="flex flex-row flex-wrap gap-1">
                       {!rowData?.isActivated && <Button size={"sm"}>
                         Activate
                       </Button>}
@@ -72,7 +77,7 @@ const UserTable = ({ data }: any) => {
                       {rowData?.isActivated && rowData?.isAdmin && <Button size={"sm"}>
                         Demote
                       </Button>}
-                    </>
+                    </div>
                 );
             }
         },
@@ -80,7 +85,7 @@ const UserTable = ({ data }: any) => {
 
     return (
         <div>
-            <Table data={data} columns={columns} onRowClick={onToggle} />
+            <Table data={data} columns={columns} />
         </div>
     );
 }
