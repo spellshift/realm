@@ -54,38 +54,6 @@ At the time of writing, the Tavern UI is still in an early stage, and therefore 
 
 In an attempt to reduce the complexity of merges, we enforce a linear history for Realm. This means that when your PR is merged, a "squash & merge" will be enforced so that only one commit is added onto the main branch. This means you can feel free to commit and push as often as you'd like, since all of your commits will be combined before merging your final changes.
 
-# Terminology
-
-Throughout the documentation terms like "agent" or "implant" are used to reference various components (or types of components) in our codebase. Below we attempt to define some of those terms, to add some clarity to that other documentation.
-
-### Host
-
-A Host is a system that is in-scope for the current engagement. It is used to establish a logical boundary between different systems in an engagement (e.g. between a webserver and a database). This enables operations to target a particular system, for example you may want to list files on a web server in your engagement scope.
-
-### Implant
-
-References malicious code or persistence mechanisms that are deployed to compromise target systems.
-
-### Agent
-
-An Agent is a type of implant which retrieves execution instructions by connecting to our backend infrastructure (calling back) and querying for new tasks.
-
-### Beacon
-
-A Beacon is a running instance of an Agent. A Host may have multiple active Beacons that use the same underlying Agent.
-
-### Task
-
-A Task represents a set of instructions for an Agent to perform. For example, listing files could be a Task. When listing files across various Beacons, one Task per Beacon will be created for tracking the individual execution output.
-
-### Eldritch
-
-Eldritch is our Pythonic Domain Specific Language (DSL), which can be used to progammatically define red team operations. Many of the language's built-in features do not rely on system binaries. For more information, please see the [Eldritch section](/user-guide/eldritch) of the documentation.
-
-### Tome
-
-A Tome is a prebuilt Eldritch bundle, which provides execution instructions to a Beacon. Tomes can embed files and accept parameters to change their behavior at runtime. Tavern's built-in Tomes are defined [here](https://github.com/spellshift/realm/tree/main/tavern/tomes).
-
 # Project Structure
 
 * **[.devcontainer](https://github.com/spellshift/realm/tree/main/.devcontainer)** contains settings required for configuring a VSCode dev container that can be used for Realm development

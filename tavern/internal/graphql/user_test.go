@@ -10,6 +10,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/tomes"
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -22,9 +23,13 @@ func TestUserMutations(t *testing.T) {
 	ctx := context.Background()
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
+
+	// Initialize Git Importer
+	git := tomes.NewGitImporter(graph)
+
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git)),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)

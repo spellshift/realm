@@ -1,4 +1,4 @@
-import { Heading, Text, Stack, StackItem, Box, Button, FormLabel, Switch } from "@chakra-ui/react";
+import { Heading, Text, Stack, StackItem, Box, FormLabel, Switch } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import React, { FC, useCallback } from "react";
 import {
@@ -13,6 +13,7 @@ import { BeaconFilterBar } from "../../../components/beacon-filter-bar";
 import BeaconOption from "../../../components/beacon-option/BeaconOption";
 import { BeaconType, HostType, TomeTag } from "../../../utils/consts";
 import { useBeaconFilter } from "../hooks/useBeaconFilter";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 const Grid = _Grid as unknown as FC<GridProps>;
 const AutoSizer = _AutoSizer as unknown as FC<AutoSizerProps>;
@@ -36,7 +37,8 @@ const BeaconStep = (props: Props) => {
     const {
         filteredBeacons,
         setTypeFilters,
-        setViewOnlySelected
+        setViewOnlySelected,
+        setViewOnlyOnePerHost
     } = useBeaconFilter(beacons, selectedBeacons);
 
     const toggleCheck = useCallback((inputName: any) => {
@@ -45,7 +47,7 @@ const BeaconStep = (props: Props) => {
             newState[inputName] = !currentState[inputName];
             return newState;
         });
-    }, []);
+    }, [setSelectedBeacons]);
 
     const handleCheckAllFiltered = useCallback(() => {
         setSelectedBeacons((currentState: any) => {
@@ -55,7 +57,7 @@ const BeaconStep = (props: Props) => {
             });
             return newState;
         });
-    }, [filteredBeacons]);
+    }, [filteredBeacons, setSelectedBeacons]);
 
     const handleUnCheckAllFiltered = useCallback(() => {
         setSelectedBeacons((currentState: any) => {
@@ -65,7 +67,7 @@ const BeaconStep = (props: Props) => {
             });
             return newState;
         });
-    }, [filteredBeacons]);
+    }, [filteredBeacons, setSelectedBeacons]);
 
     const cellRenderer = (props: any, width: any) => {
         const { columnIndex, key, rowIndex, style } = props;
@@ -94,15 +96,23 @@ const BeaconStep = (props: Props) => {
         <div className="flex flex-col gap-4">
             <Stack direction="column" gap="4">
                 <StackItem>
-                    <div className="flex flex-row justify-between gap-8">
-                        <div className=" flex-1">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="col-span-1 md:col-span-2">
                             <BeaconFilterBar setFiltersSelected={setTypeFilters} groups={groups} services={services} beacons={beacons} hosts={hosts} />
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <FormLabel htmlFor='isSelected'>
-                                <Heading size="sm" >Filter by selected</Heading>
-                            </FormLabel>
-                            <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value) => !value)} />
+                        <div className="flex-1 flex flex-col gap-2">
+                            <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
+                                <FormLabel htmlFor='isSelected' className="mt-1">
+                                    <Heading size="sm" >View only selected beacons</Heading>
+                                </FormLabel>
+                                <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value) => !value)} />
+                            </div>
+                            <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
+                                <FormLabel htmlFor='isSelected' className="mt-1">
+                                    <Heading size="sm" >View one beacon per host</Heading>
+                                </FormLabel>
+                                <Switch id='isOnePerHost' className="pt-1" colorScheme="purple" onChange={() => setViewOnlyOnePerHost((value) => !value)} />
+                            </div>
                         </div>
                     </div>
                 </StackItem>
@@ -110,12 +120,21 @@ const BeaconStep = (props: Props) => {
                     <Box p={2} className="option-container" borderRadius={"md"}>
                         <Stack direction="column" gap={2} width="full" height="full">
                             <StackItem>
-                                <StackItem>
-                                    <Button leftIcon={<PlusIcon className="h-4 w-4" />} size={"sm"} onClick={() => handleCheckAllFiltered()}>Select all ({filteredBeacons.length})</Button>
-                                </StackItem>
-                                <StackItem>
-                                    <Button leftIcon={<TrashIcon className=" h-4 w-4" />} size={"sm"} onClick={() => handleUnCheckAllFiltered()}>Clear selected</Button>
-                                </StackItem>
+                                <Stack direction="row" gap={2} width="full" height="full">
+                                    <StackItem>
+                                        <Button
+                                            buttonStyle={{ color: "gray", size: "md" }}
+                                            leftIcon={<PlusIcon className="h-4 w-4" />}
+                                            onClick={() => handleCheckAllFiltered()}>Select all ({filteredBeacons.length})
+                                        </Button>
+                                    </StackItem>
+                                    <StackItem>
+                                        <Button
+                                            buttonStyle={{ color: "gray", size: "md" }}
+                                            leftIcon={<TrashIcon className=" h-4 w-4" />}
+                                            onClick={() => handleUnCheckAllFiltered()}>Clear selected</Button>
+                                    </StackItem>
+                                </Stack>
                             </StackItem>
 
                             {filteredBeacons.length === 0 && (

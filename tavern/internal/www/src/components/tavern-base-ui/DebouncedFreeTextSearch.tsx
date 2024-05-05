@@ -10,8 +10,8 @@ type Props = {
 }
 const FreeTextSearch = (props: Props) => {
     const { placeholder, questId } = useParams();
-    const placeholderText = placeholder ? placeholder : questId ? "Search by output" : "Search by tome name, quest name, or output";
-    const { setSearch } = props;
+    const { placeholder: parentPlaceholder, setSearch } = props;
+    const placeholderText = parentPlaceholder ? parentPlaceholder : placeholder ? placeholder : questId ? "Search by output" : "Search by tome name, quest name, or output";
 
     const debouncedSearch = useRef(
         debounce(async (criteria) => {

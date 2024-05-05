@@ -17,7 +17,7 @@ type Props = {
 };
 
 export const BeaconOption = (props: Props) => {
-    const {index, style, beaconsToDisplay, toggleCheck, beaconsSelected } = props;
+    const { index, style, beaconsToDisplay, toggleCheck, beaconsSelected } = props;
     // Your card component goes here
     const beacon = beaconsToDisplay[index];
     const isChecked = beaconsSelected[beacon.id];
@@ -26,8 +26,8 @@ export const BeaconOption = (props: Props) => {
         <div style={style} key={`beacon_option_${beacon.id}`}>
             <Card>
                 <CardBody>
-                    <Checkbox colorScheme={"purple"} size="lg" isChecked={isChecked} onChange={()=> toggleCheck(beacon.id)}>
-                        <BeaconTile beaconData={beacon} />
+                    <Checkbox colorScheme={"purple"} size="lg" isChecked={isChecked} onChange={() => toggleCheck(beacon.id)}>
+                        <div className="ml-2"><BeaconTile beaconData={beacon} /></div>
                     </Checkbox>
                 </CardBody>
             </Card>

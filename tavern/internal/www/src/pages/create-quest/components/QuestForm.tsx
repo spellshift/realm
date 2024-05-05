@@ -26,9 +26,9 @@ const QuestForm = () => {
 
     const formik = useFormik({
         initialValues: {
-            name: placeholderTitle,
-            tome: null,
-            params: [],
+            name: data?.name || placeholderTitle,
+            tome: data?.tome || null,
+            params: data?.params || [],
             beacons: data?.beacons || [],
         },
         onSubmit: (values: any) => submitQuest(values),

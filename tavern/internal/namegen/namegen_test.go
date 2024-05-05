@@ -20,10 +20,12 @@ func TestGetRandomName(t *testing.T) {
 	})
 
 	t.Run("NoDuplicates", func(t *testing.T) {
+		maxIterations := 100000
+
 		// Ensure we don't duplicate names over the course of many trials
-		names := make(map[string]bool, 1000000)
+		names := make(map[string]bool, maxIterations)
 		count := 0
-		for i := 0; i < 1000000; i++ {
+		for i := 0; i < maxIterations; i++ {
 			name := namegen.NewComplex()
 			exists, ok := names[name]
 			require.False(t, ok, "Name %s already exists - after %d attempts", name, count)

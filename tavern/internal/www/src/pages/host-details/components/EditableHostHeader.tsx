@@ -1,8 +1,8 @@
 import { ApolloError } from "@apollo/client";
 import { CloseIcon } from "@chakra-ui/icons";
-import { Button } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { HostType } from "../../../utils/consts";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 type Props = {
     hostId?: string;
@@ -20,30 +20,27 @@ const EditableHostHeader = (props: Props) => {
                 </h3>
                 {hostData &&
                     <Link to="/hosts">
-                        <Button rightIcon={<CloseIcon />} colorScheme='purple' variant='outline' size="xs">
+                        <Button
+                            rightIcon={<CloseIcon />}
+                            buttonVariant="outline"
+                            buttonStyle={{ color: "purple", size: "xs" }}
+                        >
                             {hostData?.name}
                         </Button>
                     </Link>
                 }
                 {(error || (!hostData && !loading)) &&
                     <Link to="/hosts">
-                        <Button rightIcon={<CloseIcon />} colorScheme='purple' variant='outline' size="xs">
+                        <Button
+                            rightIcon={<CloseIcon />}
+                            buttonVariant="outline"
+                            buttonStyle={{ color: "purple", size: "xs" }}
+                        >
                             Id: {hostId}
                         </Button>
                     </Link>
                 }
             </div>
-            {/* TODO support changing tags
-            <Button
-                leftIcon={<EditIcon />}
-                colorScheme="gray"
-                variant="ghost"
-                verticalAlign="center"
-            >
-
-                Change host tags
-            </Button> */}
-
         </div>
     );
 }

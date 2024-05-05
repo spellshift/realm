@@ -1,18 +1,30 @@
-def file_list(path):
-    if file.is_dir(path):
-        files = file.list(path)
-        for f in files:
-            type_str = ""
-            if f['type'] == "Directory":
-                type_str = "Dir"
-            if f['type'] == "Link":
-                type_str = "Link"
-            if f['type'] == "File":
-                type_str = "File"
-            print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name']+"\n")
-    else:
-        print("Error: Invalid Path ("+path+")\n")
+usernfo = sys.get_user()
 
+name = {
+    "Directory": "Dir",
+    "File": "File",
+    "Link": "Link"
+}
+
+def print_file(f):
+    """Pretty Print a file"""
+    perms = f['permissions']
+    owner = f['owner']
+    group = f['group']
+    size = str(f['size'])
+    modified = f['modified']
+    ftype = name.get(f['type'], f['type'])
+    absolute_path = f['absolute_path']
+
+    print(f"{perms}\t{owner}\t{group}\t{size}\t{modified}\t{ftype}\t{absolute_path}")
+
+def file_list(path):
+    res = file.list(path)
+    if len(res) > 0:
+        for f in res:
+            print_file(f)
+    else:
+        eprint(f"No files found at '{path}'")
+
+time.sleep(1)
 file_list(input_params['path'])
-print("\n")
-print("\n")

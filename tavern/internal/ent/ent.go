@@ -15,9 +15,12 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -82,16 +85,19 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			beacon.Table:      beacon.ValidColumn,
-			file.Table:        file.ValidColumn,
-			host.Table:        host.ValidColumn,
-			hostfile.Table:    hostfile.ValidColumn,
-			hostprocess.Table: hostprocess.ValidColumn,
-			quest.Table:       quest.ValidColumn,
-			tag.Table:         tag.ValidColumn,
-			task.Table:        task.ValidColumn,
-			tome.Table:        tome.ValidColumn,
-			user.Table:        user.ValidColumn,
+			beacon.Table:         beacon.ValidColumn,
+			file.Table:           file.ValidColumn,
+			host.Table:           host.ValidColumn,
+			hostcredential.Table: hostcredential.ValidColumn,
+			hostfile.Table:       hostfile.ValidColumn,
+			hostprocess.Table:    hostprocess.ValidColumn,
+			quest.Table:          quest.ValidColumn,
+			repository.Table:     repository.ValidColumn,
+			shell.Table:          shell.ValidColumn,
+			tag.Table:            tag.ValidColumn,
+			task.Table:           task.ValidColumn,
+			tome.Table:           tome.ValidColumn,
+			user.Table:           user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

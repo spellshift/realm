@@ -175,5 +175,8 @@ pub fn globals() -> Globals {
 }
 
 pub fn dialect() -> Dialect {
-    Dialect::Extended
+    Dialect {
+        enable_f_strings: true,
+        ..Dialect::Extended
+    }
 }

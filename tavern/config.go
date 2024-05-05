@@ -1,25 +1,32 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+	"github.com/go-sql-driver/mysql"
+	"gocloud.dev/pubsub"
+	_ "gocloud.dev/pubsub/gcppubsub"
+	_ "gocloud.dev/pubsub/mempubsub"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
-
-	"entgo.io/ent/dialect/sql"
-	"github.com/go-sql-driver/mysql"
+	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/tomes"
 )
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
 	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
+	// EnvDisableDefaultTomes will prevent the default tomes from being imported on startup.
 	EnvEnableTestData       = EnvString{"ENABLE_TEST_DATA", ""}
 	EnvEnableTestRunAndExit = EnvString{"ENABLE_TEST_RUN_AND_EXIT", ""}
+	EnvDisableDefaultTomes  = EnvString{"DISABLE_DEFAULT_TOMES", ""}
 
 	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
 	// EnvHTTPMetricsAddr sets the address (ip:port) for the HTTP metrics server to bind to.
@@ -50,6 +57,15 @@ var (
 	EnvDBMaxIdleConns    = EnvInteger{"DB_MAX_IDLE_CONNS", 10}
 	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
+
+	// EnvPubSubTopicShellInput defines the topic to publish shell input to.
+	// EnvPubSubSubscriptionShellInput defines the subscription to receive shell input from.
+	// EnvPubSubTopicShellOutput defines the topic to publish shell output to.
+	// EnvPubSubSubscriptionShellOutput defines the subscription to receive shell output from.
+	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "mem://shell_input"}
+	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "mem://shell_input"}
+	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
+	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "mem://shell_output"}
 
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
@@ -109,6 +125,53 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+}
+
+// NewShellMuxes configures two stream.Mux instances for shell i/o.
+// The wsMux will be used by websockets to subscribe to shell output and publish new input.
+// The grpcMux will be used by gRPC to subscribe to shell input and publish new output.
+func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
+	var (
+		topicShellInput  = EnvPubSubTopicShellInput.String()
+		topicShellOutput = EnvPubSubTopicShellOutput.String()
+		subShellInput    = EnvPubSubSubscriptionShellInput.String()
+		subShellOutput   = EnvPubSubSubscriptionShellOutput.String()
+	)
+
+	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
+	}
+
+	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellOutput, err)
+	}
+
+	pubInput, err := pubsub.OpenTopic(ctx, topicShellInput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellInput, err)
+	}
+
+	subInput, err := pubsub.OpenSubscription(ctx, subShellInput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
+	}
+
+	wsMux = stream.NewMux(pubInput, subOutput)
+	grpcMux = stream.NewMux(pubOutput, subInput)
+	return
+}
+
+// NewGitImporter configures and returns a new RepoImporter using git.
+func (cfg *Config) NewGitImporter(client *ent.Client) *tomes.GitImporter {
+	var options []tomes.GitImportOption
+	return tomes.NewGitImporter(client, options...)
+}
+
+// IsDefaultTomeImportEnabled returns true default tomes should be imported.
+func (cfg *Config) IsDefaultTomeImportEnabled() bool {
+	return EnvDisableDefaultTomes.String() == ""
 }
 
 // IsMetricsEnabled returns true if the /metrics http endpoint has been enabled.

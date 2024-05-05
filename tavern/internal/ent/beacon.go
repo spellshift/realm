@@ -47,13 +47,16 @@ type BeaconEdges struct {
 	Host *Host `json:"host,omitempty"`
 	// Tasks that have been assigned to the beacon.
 	Tasks []*Task `json:"tasks,omitempty"`
+	// Shells that have been created by the beacon.
+	Shells []*Shell `json:"shells,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
 
-	namedTasks map[string][]*Task
+	namedTasks  map[string][]*Task
+	namedShells map[string][]*Shell
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -76,6 +79,15 @@ func (e BeaconEdges) TasksOrErr() ([]*Task, error) {
 		return e.Tasks, nil
 	}
 	return nil, &NotLoadedError{edge: "tasks"}
+}
+
+// ShellsOrErr returns the Shells value or an error if the edge
+// was not loaded in eager-loading.
+func (e BeaconEdges) ShellsOrErr() ([]*Shell, error) {
+	if e.loadedTypes[2] {
+		return e.Shells, nil
+	}
+	return nil, &NotLoadedError{edge: "shells"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -190,6 +202,11 @@ func (b *Beacon) QueryTasks() *TaskQuery {
 	return NewBeaconClient(b.config).QueryTasks(b)
 }
 
+// QueryShells queries the "shells" edge of the Beacon entity.
+func (b *Beacon) QueryShells() *ShellQuery {
+	return NewBeaconClient(b.config).QueryShells(b)
+}
+
 // Update returns a builder for updating this Beacon.
 // Note that you need to call Beacon.Unwrap() before calling this method if this Beacon
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -261,6 +278,30 @@ func (b *Beacon) appendNamedTasks(name string, edges ...*Task) {
 		b.Edges.namedTasks[name] = []*Task{}
 	} else {
 		b.Edges.namedTasks[name] = append(b.Edges.namedTasks[name], edges...)
+	}
+}
+
+// NamedShells returns the Shells named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (b *Beacon) NamedShells(name string) ([]*Shell, error) {
+	if b.Edges.namedShells == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := b.Edges.namedShells[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (b *Beacon) appendNamedShells(name string, edges ...*Shell) {
+	if b.Edges.namedShells == nil {
+		b.Edges.namedShells = make(map[string][]*Shell)
+	}
+	if len(edges) == 0 {
+		b.Edges.namedShells[name] = []*Shell{}
+	} else {
+		b.Edges.namedShells[name] = append(b.Edges.namedShells[name], edges...)
 	}
 }
 

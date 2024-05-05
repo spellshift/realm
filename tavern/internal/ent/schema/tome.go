@@ -90,6 +90,12 @@ func (Tome) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
 			).
 			Comment("User who uploaded the tome (may be null)."),
+		edge.To("repository", Repository.Type).
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("Repository from which this Tome was imported (may be null)."),
 	}
 }
 

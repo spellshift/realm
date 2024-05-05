@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/tomes"
 )
 
 // TestCreateQuest ensures the createQuest mutation functions as expected
@@ -27,9 +28,12 @@ func TestCreateQuest(t *testing.T) {
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
 
+	// Initialize Git Importer
+	git := tomes.NewGitImporter(graph)
+
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git)),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
@@ -177,7 +181,11 @@ func newCreateQuestTest(gqlClient *client.Client, beaconIDs []int, input ent.Cre
 		mut := `mutation newCreateQuestTest($beaconIDs: [ID!]!, $input: CreateQuestInput!) { createQuest(beaconIDs:$beaconIDs, input:$input) {
 			id
 			tasks {
-				id
+				edges {
+					node {
+						id
+					}
+				}
 			}
 		} }`
 
@@ -185,8 +193,12 @@ func newCreateQuestTest(gqlClient *client.Client, beaconIDs []int, input ent.Cre
 		var resp struct {
 			CreateQuest struct {
 				ID    string
-				Tasks []struct {
-					ID string
+				Tasks struct {
+					Edges []struct {
+						Node struct {
+							ID string
+						} `json:"node"`
+					} `json:"edges"`
 				} `json:"tasks"`
 			}
 		}

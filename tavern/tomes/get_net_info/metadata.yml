@@ -1,5 +1,5 @@
-name: Get net info
-description: Get the network information for the system
-author: Alextibtab
+name: Get Network Info
+description: Get the ip and network information for the system
+author: hulto
 support_model: FIRST_PARTY
 tactic: RECON

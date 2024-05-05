@@ -1,0 +1,14 @@
+name: Write File
+description: Write the given utf-8 content to a file
+author: cictrone
+support_model: FIRST_PARTY
+tactic: EXECUTION
+paramdefs:
+- name: path
+  type: string
+  label: File path
+  placeholder: "/tmp/cat.txt"
+- name: content
+  type: string
+  label: Content to write
+  placeholder: "meow"

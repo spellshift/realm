@@ -1,38 +1,36 @@
-import { Badge, Image } from "@chakra-ui/react";
+import { useCallback } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
-import Table from "../../../components/tavern-base-ui/Table";
 import { useNavigate } from "react-router-dom";
 
-type QuestTableProps = {
-    id: string,
-    name: string,
-    finished: number,
-    inprogress: number,
-    queued: number,
-    outputCount: number,
-    lastUpdated: string | null,
-}
+import Table from "../../../components/tavern-base-ui/Table";
+import { QuestTableRowType } from "../../../utils/consts";
+import UserImageAndName from "../../../components/UserImageAndName";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
+
+
 
 type Props = {
-    quests: Array<QuestTableProps>;
+    quests: Array<QuestTableRowType>;
+    filtersSelected: Array<any>;
 }
 export const QuestTable = (props: Props) => {
-    const { quests } = props;
+    const { quests, filtersSelected } = props;
     const navigate = useNavigate();
-
 
     const currentDate = new Date();
 
-    const onToggle = (row: any) => {
-        navigate(`/results/${row?.original?.id}`)
-    }
+    const onToggle = useCallback((row: any) => {
+        navigate(`/tasks/${row?.original?.node?.id}`, {
+            state: filtersSelected
+        })
+    }, [filtersSelected, navigate]);
 
     const columns: ColumnDef<any>[] = [
         {
             id: "name",
             header: 'Quest details',
-            accessorFn: row => row,
+            accessorFn: row => row?.node,
             footer: props => props.column.id,
             enableSorting: false,
             minSize: 200,
@@ -40,50 +38,35 @@ export const QuestTable = (props: Props) => {
                 const questData = cellData.getValue();
                 return (
                     <div className="flex flex-col">
-                        <div>{questData.name}</div>
+                        <div>{questData?.name}</div>
                         <div className="text-sm flex flex-row gap-1 items-center text-gray-500">
-                            {questData?.tome}
+                            {questData?.tome?.name}
                         </div>
                     </div>
                 );
-            }
+            },
         },
         {
-            id: "lastUpdated",
-            header: 'Last updated',
+            id: "lastModifiedAt",
+            header: 'Updated',
             maxSize: 100,
-            accessorFn: row => formatDistance(new Date(row.lastUpdated), currentDate),
+            accessorFn: row => formatDistance(new Date(row?.node?.lastUpdatedTask?.edges[0].node.lastModifiedAt), currentDate),
             footer: props => props.column.id,
-            sortingFn: (
-                rowA,
-                rowB,
-            ) => {
-                const numA = new Date(rowA?.original?.lastUpdated as string);
-                const numB = new Date(rowB?.original?.lastUpdated as string);
-
-                return numA < numB ? 1 : numA > numB ? -1 : 0;
-            }
+            enableSorting: false,
         },
         {
-            id: "finished",
-            header: 'Finished Tasks',
+            id: "tasksFinished",
+            header: 'Finished',
             accessorFn: row => row,
-            maxSize: 100,
+            maxSize: 60,
             cell: (row: any) => {
-                const rowData = row.row.original;
-                const finished = rowData.finished;
-                const allTasks = rowData.inprogress + rowData.queued + rowData.finished;
-
-                if (finished < allTasks) {
-                    return (
-                        <Badge ml='1' px='4' colorScheme='alphaWhite' fontSize="font-base">
-                            {finished}/{allTasks}
-                        </Badge>
-                    );
-                }
+                const rowData = row.getValue();
+                const finished = rowData?.node?.tasksFinished?.totalCount || 0;
+                const allTasks = rowData?.node?.tasksTotal?.totalCount || 0;
+                const colorScheme = finished < allTasks ? "none" : "green";
 
                 return (
-                    <Badge ml='1' px='4' colorScheme='green' fontSize="font-base">
+                    <Badge badgeStyle={{ color: colorScheme }}>
                         {finished}/{allTasks}
                     </Badge>
                 );
@@ -92,57 +75,53 @@ export const QuestTable = (props: Props) => {
             enableSorting: false,
         },
         {
-            id: "output",
-            header: 'Output available',
-            accessorKey: "outputCount",
-            maxSize: 100,
+            id: "tasksOutput",
+            header: 'Output',
+            accessorKey: "tasksOutput",
+            accessorFn: row => row?.node?.tasksOutput?.totalCount,
+            maxSize: 60,
             cell: (cellData: any) => {
                 const output = cellData.getValue();
 
-                if (output === 0) {
-                    return (
-                        <Badge ml='1' px='4' colorScheme='alphaWhite' fontSize="font-base">
-                            {output}
-                        </Badge>
-                    );
-                }
+                const colorScheme = output === 0 ? "none" : 'purple';
 
                 return (
-                    <Badge ml='1' px='4' colorScheme='purple' fontSize="font-base">
+                    <Badge badgeStyle={{ color: colorScheme }}>
                         {output}
                     </Badge>
                 );
             },
             footer: (props: any) => props.column.id,
-            sortingFn: "alphanumeric"
+            enableSorting: false,
+        },
+        {
+            id: "tasksError",
+            header: 'Error',
+            accessorFn: row => row?.node?.tasksError?.totalCount,
+            maxSize: 60,
+            cell: (cellData: any) => {
+                const error = cellData.getValue();
+                const colorScheme = error === 0 ? "none" : 'red';
+
+                return (
+                    <Badge badgeStyle={{ color: colorScheme }}>
+                        {error}
+                    </Badge>
+                );
+            },
+            footer: (props: any) => props.column.id,
+            enableSorting: false,
         },
         {
             id: "creator",
-            header: 'Created by',
+            header: 'Creator',
             maxSize: 100,
-            accessorFn: row => row.creator,
+            accessorFn: row => row.node?.creator,
             footer: props => props.column.id,
             enableSorting: false,
             cell: (cellData: any) => {
                 const creatorData = cellData.getValue();
-
-                if (!creatorData) {
-                    return <div className="text-sm text-gray-500">Not available</div>;
-                }
-
-                return (
-                    <div className="flex flex-row gap-2 items-center">
-                        <Image
-                            borderRadius='full'
-                            boxSize='20px'
-                            src={creatorData?.photoURL}
-                            alt={`Profile of ${creatorData?.name}`}
-                        />
-                        <div className="text-sm flex flex-row gap-1 items-center text-gray-500">
-                            {creatorData?.name}
-                        </div>
-                    </div>
-                );
+                return <UserImageAndName userData={creatorData} />
             }
         },
     ];

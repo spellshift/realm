@@ -47,9 +47,9 @@ func TestReportProcessList(t *testing.T) {
 				TaskId: int64(existingTask.ID),
 				List: &epb.ProcessList{
 					List: []*epb.Process{
-						{Pid: 1, Name: "systemd", Principal: "root"},
-						{Pid: 2321, Name: "/bin/sh", Principal: "root"},
-						{Pid: 4505, Name: "/usr/bin/sshd", Principal: "root"},
+						{Pid: 1, Name: "systemd", Principal: "root", Status: epb.Process_STATUS_RUN},
+						{Pid: 2321, Name: "/bin/sh", Principal: "root", Status: epb.Process_STATUS_SLEEP},
+						{Pid: 4505, Name: "/usr/bin/sshd", Principal: "root", Status: epb.Process_STATUS_RUN},
 					},
 				},
 			},

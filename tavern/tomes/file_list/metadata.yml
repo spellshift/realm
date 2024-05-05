@@ -1,5 +1,5 @@
 name: List files
-description: List the files and directories found at the path
+description: List the files and directories found at the path. Supports basic glob functionality. Does not glob more than one level
 author: hulto
 support_model: FIRST_PARTY
 tactic: RECON
@@ -7,4 +7,4 @@ paramdefs:
 - name: path
   type: string
   label: File path
-  placeholder: "/etc/"
+  placeholder: "/etc/open*"

@@ -35,10 +35,8 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	HostProcess() HostProcessResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
-	HostProcessWhereInput() HostProcessWhereInputResolver
 }
 
 type DirectiveRoot struct {
@@ -57,6 +55,7 @@ type ComplexityRoot struct {
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Principal       func(childComplexity int) int
+		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		Tasks           func(childComplexity int) int
 	}
 
@@ -73,6 +72,7 @@ type ComplexityRoot struct {
 	Host struct {
 		Beacons        func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
+		Credentials    func(childComplexity int) int
 		Files          func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
@@ -83,6 +83,17 @@ type ComplexityRoot struct {
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int) int
 		Tags           func(childComplexity int) int
+	}
+
+	HostCredential struct {
+		CreatedAt      func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Kind           func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Principal      func(childComplexity int) int
+		Secret         func(childComplexity int) int
+		Task           func(childComplexity int) int
 	}
 
 	HostFile struct {
@@ -117,15 +128,18 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateQuest  func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateTag    func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome   func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteTome   func(childComplexity int, tomeID int) int
-		UpdateBeacon func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost   func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateTag    func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome   func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser   func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteTome       func(childComplexity int, tomeID int) int
+		DropAllData      func(childComplexity int) int
+		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome       func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -136,29 +150,88 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Beacons func(childComplexity int, where *ent.BeaconWhereInput) int
-		Files   func(childComplexity int, where *ent.FileWhereInput) int
-		Hosts   func(childComplexity int, where *ent.HostWhereInput) int
-		Me      func(childComplexity int) int
-		Node    func(childComplexity int, id int) int
-		Nodes   func(childComplexity int, ids []int) int
-		Quests  func(childComplexity int, where *ent.QuestWhereInput) int
-		Tags    func(childComplexity int, where *ent.TagWhereInput) int
-		Tasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes   func(childComplexity int, where *ent.TomeWhereInput) int
-		Users   func(childComplexity int, where *ent.UserWhereInput) int
+		Beacons      func(childComplexity int, where *ent.BeaconWhereInput) int
+		Files        func(childComplexity int, where *ent.FileWhereInput) int
+		Hosts        func(childComplexity int, where *ent.HostWhereInput) int
+		Me           func(childComplexity int) int
+		Node         func(childComplexity int, id int) int
+		Nodes        func(childComplexity int, ids []int) int
+		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
+		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		Tags         func(childComplexity int, where *ent.TagWhereInput) int
+		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
+		Users        func(childComplexity int, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
-		Bundle         func(childComplexity int) int
+		Bundle              func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Creator             func(childComplexity int) int
+		EldritchAtCreation  func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Name                func(childComplexity int) int
+		ParamDefsAtCreation func(childComplexity int) int
+		Parameters          func(childComplexity int) int
+		Tasks               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tome                func(childComplexity int) int
+	}
+
+	QuestConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	QuestEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	Repository struct {
 		CreatedAt      func(childComplexity int) int
-		Creator        func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastImportedAt func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		PublicKey      func(childComplexity int) int
+		Tomes          func(childComplexity int) int
+		URL            func(childComplexity int) int
+	}
+
+	RepositoryConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	RepositoryEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	Shell struct {
+		ActiveUsers    func(childComplexity int) int
+		Beacon         func(childComplexity int) int
+		ClosedAt       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
-		Name           func(childComplexity int) int
-		Parameters     func(childComplexity int) int
-		Tasks          func(childComplexity int) int
-		Tome           func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		Task           func(childComplexity int) int
+	}
+
+	ShellConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ShellEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Tag struct {
@@ -169,19 +242,21 @@ type ComplexityRoot struct {
 	}
 
 	Task struct {
-		Beacon            func(childComplexity int) int
-		ClaimedAt         func(childComplexity int) int
-		CreatedAt         func(childComplexity int) int
-		Error             func(childComplexity int) int
-		ExecFinishedAt    func(childComplexity int) int
-		ExecStartedAt     func(childComplexity int) int
-		ID                func(childComplexity int) int
-		LastModifiedAt    func(childComplexity int) int
-		Output            func(childComplexity int) int
-		OutputSize        func(childComplexity int) int
-		Quest             func(childComplexity int) int
-		ReportedFiles     func(childComplexity int) int
-		ReportedProcesses func(childComplexity int) int
+		Beacon              func(childComplexity int) int
+		ClaimedAt           func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Error               func(childComplexity int) int
+		ExecFinishedAt      func(childComplexity int) int
+		ExecStartedAt       func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Output              func(childComplexity int) int
+		OutputSize          func(childComplexity int) int
+		Quest               func(childComplexity int) int
+		ReportedCredentials func(childComplexity int) int
+		ReportedFiles       func(childComplexity int) int
+		ReportedProcesses   func(childComplexity int) int
+		Shells              func(childComplexity int) int
 	}
 
 	TaskConnection struct {
@@ -205,18 +280,20 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
 		ParamDefs      func(childComplexity int) int
+		Repository     func(childComplexity int) int
 		SupportModel   func(childComplexity int) int
 		Tactic         func(childComplexity int) int
 		Uploader       func(childComplexity int) int
 	}
 
 	User struct {
-		ID          func(childComplexity int) int
-		IsActivated func(childComplexity int) int
-		IsAdmin     func(childComplexity int) int
-		Name        func(childComplexity int) int
-		PhotoURL    func(childComplexity int) int
-		Tomes       func(childComplexity int) int
+		ActiveShells func(childComplexity int) int
+		ID           func(childComplexity int) int
+		IsActivated  func(childComplexity int) int
+		IsAdmin      func(childComplexity int) int
+		Name         func(childComplexity int) int
+		PhotoURL     func(childComplexity int) int
+		Tomes        func(childComplexity int) int
 	}
 }
 
@@ -309,6 +386,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Beacon.Principal(childComplexity), true
 
+	case "Beacon.shells":
+		if e.complexity.Beacon.Shells == nil {
+			break
+		}
+
+		args, err := ec.field_Beacon_shells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Beacon.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
+
 	case "Beacon.tasks":
 		if e.complexity.Beacon.Tasks == nil {
 			break
@@ -379,6 +468,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.CreatedAt(childComplexity), true
 
+	case "Host.credentials":
+		if e.complexity.Host.Credentials == nil {
+			break
+		}
+
+		return e.complexity.Host.Credentials(childComplexity), true
+
 	case "Host.files":
 		if e.complexity.Host.Files == nil {
 			break
@@ -448,6 +544,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Host.Tags(childComplexity), true
+
+	case "HostCredential.createdAt":
+		if e.complexity.HostCredential.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.CreatedAt(childComplexity), true
+
+	case "HostCredential.host":
+		if e.complexity.HostCredential.Host == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Host(childComplexity), true
+
+	case "HostCredential.id":
+		if e.complexity.HostCredential.ID == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.ID(childComplexity), true
+
+	case "HostCredential.kind":
+		if e.complexity.HostCredential.Kind == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Kind(childComplexity), true
+
+	case "HostCredential.lastModifiedAt":
+		if e.complexity.HostCredential.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.LastModifiedAt(childComplexity), true
+
+	case "HostCredential.principal":
+		if e.complexity.HostCredential.Principal == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Principal(childComplexity), true
+
+	case "HostCredential.secret":
+		if e.complexity.HostCredential.Secret == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Secret(childComplexity), true
+
+	case "HostCredential.task":
+		if e.complexity.HostCredential.Task == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Task(childComplexity), true
 
 	case "HostFile.createdAt":
 		if e.complexity.HostFile.CreatedAt == nil {
@@ -636,6 +788,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateQuest(childComplexity, args["beaconIDs"].([]int), args["input"].(ent.CreateQuestInput)), true
 
+	case "Mutation.createRepository":
+		if e.complexity.Mutation.CreateRepository == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createRepository_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateRepository(childComplexity, args["input"].(ent.CreateRepositoryInput)), true
+
 	case "Mutation.createTag":
 		if e.complexity.Mutation.CreateTag == nil {
 			break
@@ -671,6 +835,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteTome(childComplexity, args["tomeID"].(int)), true
+
+	case "Mutation.dropAllData":
+		if e.complexity.Mutation.DropAllData == nil {
+			break
+		}
+
+		return e.complexity.Mutation.DropAllData(childComplexity), true
+
+	case "Mutation.importRepository":
+		if e.complexity.Mutation.ImportRepository == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_importRepository_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ImportRepository(childComplexity, args["repoID"].(int), args["input"].(*models.ImportRepositoryInput)), true
 
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
@@ -837,7 +1020,31 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Quests(childComplexity, args["where"].(*ent.QuestWhereInput)), true
+		return e.complexity.Query.Quests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
+
+	case "Query.repositories":
+		if e.complexity.Query.Repositories == nil {
+			break
+		}
+
+		args, err := ec.field_Query_repositories_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Repositories(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.RepositoryOrder), args["where"].(*ent.RepositoryWhereInput)), true
+
+	case "Query.shells":
+		if e.complexity.Query.Shells == nil {
+			break
+		}
+
+		args, err := ec.field_Query_shells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
@@ -908,6 +1115,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Quest.Creator(childComplexity), true
 
+	case "Quest.eldritchAtCreation":
+		if e.complexity.Quest.EldritchAtCreation == nil {
+			break
+		}
+
+		return e.complexity.Quest.EldritchAtCreation(childComplexity), true
+
 	case "Quest.id":
 		if e.complexity.Quest.ID == nil {
 			break
@@ -929,6 +1143,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Quest.Name(childComplexity), true
 
+	case "Quest.paramDefsAtCreation":
+		if e.complexity.Quest.ParamDefsAtCreation == nil {
+			break
+		}
+
+		return e.complexity.Quest.ParamDefsAtCreation(childComplexity), true
+
 	case "Quest.parameters":
 		if e.complexity.Quest.Parameters == nil {
 			break
@@ -941,7 +1162,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Quest.Tasks(childComplexity), true
+		args, err := ec.field_Quest_tasks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Quest.Tasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TaskOrder), args["where"].(*ent.TaskWhereInput)), true
 
 	case "Quest.tome":
 		if e.complexity.Quest.Tome == nil {
@@ -949,6 +1175,223 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Quest.Tome(childComplexity), true
+
+	case "QuestConnection.edges":
+		if e.complexity.QuestConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.Edges(childComplexity), true
+
+	case "QuestConnection.pageInfo":
+		if e.complexity.QuestConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.PageInfo(childComplexity), true
+
+	case "QuestConnection.totalCount":
+		if e.complexity.QuestConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.QuestConnection.TotalCount(childComplexity), true
+
+	case "QuestEdge.cursor":
+		if e.complexity.QuestEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.QuestEdge.Cursor(childComplexity), true
+
+	case "QuestEdge.node":
+		if e.complexity.QuestEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.QuestEdge.Node(childComplexity), true
+
+	case "Repository.createdAt":
+		if e.complexity.Repository.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Repository.CreatedAt(childComplexity), true
+
+	case "Repository.id":
+		if e.complexity.Repository.ID == nil {
+			break
+		}
+
+		return e.complexity.Repository.ID(childComplexity), true
+
+	case "Repository.lastImportedAt":
+		if e.complexity.Repository.LastImportedAt == nil {
+			break
+		}
+
+		return e.complexity.Repository.LastImportedAt(childComplexity), true
+
+	case "Repository.lastModifiedAt":
+		if e.complexity.Repository.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Repository.LastModifiedAt(childComplexity), true
+
+	case "Repository.owner":
+		if e.complexity.Repository.Owner == nil {
+			break
+		}
+
+		return e.complexity.Repository.Owner(childComplexity), true
+
+	case "Repository.publicKey":
+		if e.complexity.Repository.PublicKey == nil {
+			break
+		}
+
+		return e.complexity.Repository.PublicKey(childComplexity), true
+
+	case "Repository.tomes":
+		if e.complexity.Repository.Tomes == nil {
+			break
+		}
+
+		return e.complexity.Repository.Tomes(childComplexity), true
+
+	case "Repository.url":
+		if e.complexity.Repository.URL == nil {
+			break
+		}
+
+		return e.complexity.Repository.URL(childComplexity), true
+
+	case "RepositoryConnection.edges":
+		if e.complexity.RepositoryConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.RepositoryConnection.Edges(childComplexity), true
+
+	case "RepositoryConnection.pageInfo":
+		if e.complexity.RepositoryConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.RepositoryConnection.PageInfo(childComplexity), true
+
+	case "RepositoryConnection.totalCount":
+		if e.complexity.RepositoryConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.RepositoryConnection.TotalCount(childComplexity), true
+
+	case "RepositoryEdge.cursor":
+		if e.complexity.RepositoryEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.RepositoryEdge.Cursor(childComplexity), true
+
+	case "RepositoryEdge.node":
+		if e.complexity.RepositoryEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.RepositoryEdge.Node(childComplexity), true
+
+	case "Shell.activeUsers":
+		if e.complexity.Shell.ActiveUsers == nil {
+			break
+		}
+
+		return e.complexity.Shell.ActiveUsers(childComplexity), true
+
+	case "Shell.beacon":
+		if e.complexity.Shell.Beacon == nil {
+			break
+		}
+
+		return e.complexity.Shell.Beacon(childComplexity), true
+
+	case "Shell.closedAt":
+		if e.complexity.Shell.ClosedAt == nil {
+			break
+		}
+
+		return e.complexity.Shell.ClosedAt(childComplexity), true
+
+	case "Shell.createdAt":
+		if e.complexity.Shell.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Shell.CreatedAt(childComplexity), true
+
+	case "Shell.id":
+		if e.complexity.Shell.ID == nil {
+			break
+		}
+
+		return e.complexity.Shell.ID(childComplexity), true
+
+	case "Shell.lastModifiedAt":
+		if e.complexity.Shell.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Shell.LastModifiedAt(childComplexity), true
+
+	case "Shell.owner":
+		if e.complexity.Shell.Owner == nil {
+			break
+		}
+
+		return e.complexity.Shell.Owner(childComplexity), true
+
+	case "Shell.task":
+		if e.complexity.Shell.Task == nil {
+			break
+		}
+
+		return e.complexity.Shell.Task(childComplexity), true
+
+	case "ShellConnection.edges":
+		if e.complexity.ShellConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.Edges(childComplexity), true
+
+	case "ShellConnection.pageInfo":
+		if e.complexity.ShellConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.PageInfo(childComplexity), true
+
+	case "ShellConnection.totalCount":
+		if e.complexity.ShellConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ShellConnection.TotalCount(childComplexity), true
+
+	case "ShellEdge.cursor":
+		if e.complexity.ShellEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ShellEdge.Cursor(childComplexity), true
+
+	case "ShellEdge.node":
+		if e.complexity.ShellEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ShellEdge.Node(childComplexity), true
 
 	case "Tag.hosts":
 		if e.complexity.Tag.Hosts == nil {
@@ -1055,6 +1498,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Quest(childComplexity), true
 
+	case "Task.reportedCredentials":
+		if e.complexity.Task.ReportedCredentials == nil {
+			break
+		}
+
+		return e.complexity.Task.ReportedCredentials(childComplexity), true
+
 	case "Task.reportedFiles":
 		if e.complexity.Task.ReportedFiles == nil {
 			break
@@ -1068,6 +1518,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Task.ReportedProcesses(childComplexity), true
+
+	case "Task.shells":
+		if e.complexity.Task.Shells == nil {
+			break
+		}
+
+		return e.complexity.Task.Shells(childComplexity), true
 
 	case "TaskConnection.edges":
 		if e.complexity.TaskConnection.Edges == nil {
@@ -1167,6 +1624,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.ParamDefs(childComplexity), true
 
+	case "Tome.repository":
+		if e.complexity.Tome.Repository == nil {
+			break
+		}
+
+		return e.complexity.Tome.Repository(childComplexity), true
+
 	case "Tome.supportModel":
 		if e.complexity.Tome.SupportModel == nil {
 			break
@@ -1187,6 +1651,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tome.Uploader(childComplexity), true
+
+	case "User.activeShells":
+		if e.complexity.User.ActiveShells == nil {
+			break
+		}
+
+		return e.complexity.User.ActiveShells(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -1242,18 +1713,26 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateQuestInput,
+		ec.unmarshalInputCreateRepositoryInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputFileOrder,
 		ec.unmarshalInputFileWhereInput,
+		ec.unmarshalInputHostCredentialOrder,
+		ec.unmarshalInputHostCredentialWhereInput,
 		ec.unmarshalInputHostFileOrder,
 		ec.unmarshalInputHostFileWhereInput,
 		ec.unmarshalInputHostOrder,
 		ec.unmarshalInputHostProcessOrder,
 		ec.unmarshalInputHostProcessWhereInput,
 		ec.unmarshalInputHostWhereInput,
+		ec.unmarshalInputImportRepositoryInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
+		ec.unmarshalInputRepositoryOrder,
+		ec.unmarshalInputRepositoryWhereInput,
+		ec.unmarshalInputShellOrder,
+		ec.unmarshalInputShellWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
 		ec.unmarshalInputTagWhereInput,
@@ -1394,6 +1873,25 @@ type Beacon implements Node {
   host: Host!
   """Tasks that have been assigned to the beacon."""
   tasks: [Task!]
+  shells(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Shells returned from the connection."""
+    orderBy: [ShellOrder!]
+
+    """Filtering options for Shells returned from the connection."""
+    where: ShellWhereInput
+  ): ShellConnection!
 }
 """Ordering options for Beacon connections"""
 input BeaconOrder {
@@ -1532,6 +2030,9 @@ input BeaconWhereInput {
   """tasks edge predicates"""
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
+  """shells edge predicates"""
+  hasShells: Boolean
+  hasShellsWith: [ShellWhereInput!]
 }
 """
 CreateQuestInput is used for create Quest object.
@@ -1543,6 +2044,14 @@ input CreateQuestInput {
   """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
   tomeID: ID!
+}
+"""
+CreateRepositoryInput is used for create Repository object.
+Input was generated by ent.
+"""
+input CreateRepositoryInput {
+  """URL of the repository"""
+  url: String!
 }
 """
 CreateTagInput is used for create Tag object.
@@ -1709,6 +2218,119 @@ type Host implements Node {
   files: [HostFile!]
   """Processes reported as running on this host system."""
   processes: [HostProcess!]
+  """Credentials reported from this host system."""
+  credentials: [HostCredential!]
+}
+type HostCredential implements Node {
+  id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
+  """Identity associated with this credential (e.g. username)."""
+  principal: String!
+  """Secret for this credential (e.g. password)."""
+  secret: String!
+  """Kind of credential."""
+  kind: HostCredentialKind!
+  """Host the credential was reported on."""
+  host: Host!
+  """Task that reported this credential."""
+  task: Task!
+}
+"""HostCredentialKind is enum for the field kind"""
+enum HostCredentialKind @goModel(model: "realm.pub/tavern/internal/c2/epb.Credential_Kind") {
+  KIND_PASSWORD
+  KIND_SSH_KEY
+  KIND_UNSPECIFIED
+}
+"""Ordering options for HostCredential connections"""
+input HostCredentialOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order HostCredentials."""
+  field: HostCredentialOrderField!
+}
+"""Properties by which HostCredential connections can be ordered."""
+enum HostCredentialOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  PRINCIPAL
+}
+"""
+HostCredentialWhereInput is used for filtering HostCredential objects.
+Input was generated by ent.
+"""
+input HostCredentialWhereInput {
+  not: HostCredentialWhereInput
+  and: [HostCredentialWhereInput!]
+  or: [HostCredentialWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """principal field predicates"""
+  principal: String
+  principalNEQ: String
+  principalIn: [String!]
+  principalNotIn: [String!]
+  principalGT: String
+  principalGTE: String
+  principalLT: String
+  principalLTE: String
+  principalContains: String
+  principalHasPrefix: String
+  principalHasSuffix: String
+  principalEqualFold: String
+  principalContainsFold: String
+  """secret field predicates"""
+  secret: String
+  secretNEQ: String
+  secretIn: [String!]
+  secretNotIn: [String!]
+  secretGT: String
+  secretGTE: String
+  secretLT: String
+  secretLTE: String
+  secretContains: String
+  secretHasPrefix: String
+  secretHasSuffix: String
+  secretEqualFold: String
+  secretContainsFold: String
+  """kind field predicates"""
+  kind: HostCredentialKind
+  kindNEQ: HostCredentialKind
+  kindIn: [HostCredentialKind!]
+  kindNotIn: [HostCredentialKind!]
+  """host edge predicates"""
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """task edge predicates"""
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
 }
 type HostFile implements Node {
   id: ID!
@@ -1725,7 +2347,7 @@ type HostFile implements Node {
   """Permissions for the file on the host system."""
   permissions: String
   """The size of the file in bytes"""
-  size: Int!
+  size: Uint64!
   """A SHA3-256 digest of the content field"""
   hash: String
   """Host the file was reported on."""
@@ -1845,14 +2467,14 @@ input HostFileWhereInput {
   permissionsEqualFold: String
   permissionsContainsFold: String
   """size field predicates"""
-  size: Int
-  sizeNEQ: Int
-  sizeIn: [Int!]
-  sizeNotIn: [Int!]
-  sizeGT: Int
-  sizeGTE: Int
-  sizeLT: Int
-  sizeLTE: Int
+  size: Uint64
+  sizeNEQ: Uint64
+  sizeIn: [Uint64!]
+  sizeNotIn: [Uint64!]
+  sizeGT: Uint64
+  sizeGTE: Uint64
+  sizeLT: Uint64
+  sizeLTE: Uint64
   """hash field predicates"""
   hash: String
   hashNEQ: String
@@ -1904,9 +2526,9 @@ type HostProcess implements Node {
   """Timestamp of when this ent was last updated"""
   lastModifiedAt: Time!
   """ID of the process."""
-  pid: Int!
+  pid: Uint64!
   """ID of the parent process."""
-  ppid: Int!
+  ppid: Uint64!
   """The name of the process."""
   name: String!
   """The user the process is running as."""
@@ -1994,23 +2616,23 @@ input HostProcessWhereInput {
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
   """pid field predicates"""
-  pid: Int
-  pidNEQ: Int
-  pidIn: [Int!]
-  pidNotIn: [Int!]
-  pidGT: Int
-  pidGTE: Int
-  pidLT: Int
-  pidLTE: Int
+  pid: Uint64
+  pidNEQ: Uint64
+  pidIn: [Uint64!]
+  pidNotIn: [Uint64!]
+  pidGT: Uint64
+  pidGTE: Uint64
+  pidLT: Uint64
+  pidLTE: Uint64
   """ppid field predicates"""
-  ppid: Int
-  ppidNEQ: Int
-  ppidIn: [Int!]
-  ppidNotIn: [Int!]
-  ppidGT: Int
-  ppidGTE: Int
-  ppidLT: Int
-  ppidLTE: Int
+  ppid: Uint64
+  ppidNEQ: Uint64
+  ppidIn: [Uint64!]
+  ppidNotIn: [Uint64!]
+  ppidGT: Uint64
+  ppidGTE: Uint64
+  ppidLT: Uint64
+  ppidLTE: Uint64
   """name field predicates"""
   name: String
   nameNEQ: String
@@ -2224,6 +2846,9 @@ input HostWhereInput {
   """processes edge predicates"""
   hasProcesses: Boolean
   hasProcessesWith: [HostProcessWhereInput!]
+  """credentials edge predicates"""
+  hasCredentials: Boolean
+  hasCredentialsWith: [HostCredentialWhereInput!]
 }
 """
 An object with an ID.
@@ -2276,14 +2901,51 @@ type Quest implements Node {
   name: String!
   """Value of parameters that were specified for the quest (as a JSON string)."""
   parameters: String
+  """JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter."""
+  paramDefsAtCreation: String
+  """Eldritch script that was evaluated at the time of this quest creation."""
+  eldritchAtCreation: String
   """Tome that this quest will be executing"""
   tome: Tome!
   """Bundle file that the executing tome depends on (if any)"""
   bundle: File
-  """Tasks tracking the status and output of individual tome execution on targets"""
-  tasks: [Task!]
+  tasks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Tasks returned from the connection."""
+    orderBy: [TaskOrder!]
+
+    """Filtering options for Tasks returned from the connection."""
+    where: TaskWhereInput
+  ): TaskConnection!
   """User that created the quest if available."""
   creator: User
+}
+"""A connection to a list of items."""
+type QuestConnection {
+  """A list of edges."""
+  edges: [QuestEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type QuestEdge {
+  """The item at the end of the edge."""
+  node: Quest
+  """A cursor for use in pagination."""
+  cursor: Cursor!
 }
 """Ordering options for Quest connections"""
 input QuestOrder {
@@ -2363,6 +3025,38 @@ input QuestWhereInput {
   parametersNotNil: Boolean
   parametersEqualFold: String
   parametersContainsFold: String
+  """param_defs_at_creation field predicates"""
+  paramDefsAtCreation: String
+  paramDefsAtCreationNEQ: String
+  paramDefsAtCreationIn: [String!]
+  paramDefsAtCreationNotIn: [String!]
+  paramDefsAtCreationGT: String
+  paramDefsAtCreationGTE: String
+  paramDefsAtCreationLT: String
+  paramDefsAtCreationLTE: String
+  paramDefsAtCreationContains: String
+  paramDefsAtCreationHasPrefix: String
+  paramDefsAtCreationHasSuffix: String
+  paramDefsAtCreationIsNil: Boolean
+  paramDefsAtCreationNotNil: Boolean
+  paramDefsAtCreationEqualFold: String
+  paramDefsAtCreationContainsFold: String
+  """eldritch_at_creation field predicates"""
+  eldritchAtCreation: String
+  eldritchAtCreationNEQ: String
+  eldritchAtCreationIn: [String!]
+  eldritchAtCreationNotIn: [String!]
+  eldritchAtCreationGT: String
+  eldritchAtCreationGTE: String
+  eldritchAtCreationLT: String
+  eldritchAtCreationLTE: String
+  eldritchAtCreationContains: String
+  eldritchAtCreationHasPrefix: String
+  eldritchAtCreationHasSuffix: String
+  eldritchAtCreationIsNil: Boolean
+  eldritchAtCreationNotNil: Boolean
+  eldritchAtCreationEqualFold: String
+  eldritchAtCreationContainsFold: String
   """tome edge predicates"""
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]
@@ -2375,6 +3069,238 @@ input QuestWhereInput {
   """creator edge predicates"""
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
+}
+type Repository implements Node {
+  id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
+  """URL of the repository"""
+  url: String!
+  """Public key associated with this repositories private key"""
+  publicKey: String!
+  """Timestamp of when this repo was last imported"""
+  lastImportedAt: Time
+  """Tomes imported using this repository."""
+  tomes: [Tome!]
+  """User that created this repository."""
+  owner: User
+}
+"""A connection to a list of items."""
+type RepositoryConnection {
+  """A list of edges."""
+  edges: [RepositoryEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type RepositoryEdge {
+  """The item at the end of the edge."""
+  node: Repository
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
+"""Ordering options for Repository connections"""
+input RepositoryOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Repositories."""
+  field: RepositoryOrderField!
+}
+"""Properties by which Repository connections can be ordered."""
+enum RepositoryOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  LAST_IMPORTED_AT
+}
+"""
+RepositoryWhereInput is used for filtering Repository objects.
+Input was generated by ent.
+"""
+input RepositoryWhereInput {
+  not: RepositoryWhereInput
+  and: [RepositoryWhereInput!]
+  or: [RepositoryWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """url field predicates"""
+  url: String
+  urlNEQ: String
+  urlIn: [String!]
+  urlNotIn: [String!]
+  urlGT: String
+  urlGTE: String
+  urlLT: String
+  urlLTE: String
+  urlContains: String
+  urlHasPrefix: String
+  urlHasSuffix: String
+  urlEqualFold: String
+  urlContainsFold: String
+  """public_key field predicates"""
+  publicKey: String
+  publicKeyNEQ: String
+  publicKeyIn: [String!]
+  publicKeyNotIn: [String!]
+  publicKeyGT: String
+  publicKeyGTE: String
+  publicKeyLT: String
+  publicKeyLTE: String
+  publicKeyContains: String
+  publicKeyHasPrefix: String
+  publicKeyHasSuffix: String
+  publicKeyEqualFold: String
+  publicKeyContainsFold: String
+  """last_imported_at field predicates"""
+  lastImportedAt: Time
+  lastImportedAtNEQ: Time
+  lastImportedAtIn: [Time!]
+  lastImportedAtNotIn: [Time!]
+  lastImportedAtGT: Time
+  lastImportedAtGTE: Time
+  lastImportedAtLT: Time
+  lastImportedAtLTE: Time
+  lastImportedAtIsNil: Boolean
+  lastImportedAtNotNil: Boolean
+  """tomes edge predicates"""
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
+  """owner edge predicates"""
+  hasOwner: Boolean
+  hasOwnerWith: [UserWhereInput!]
+}
+type Shell implements Node {
+  id: ID!
+  """Timestamp of when this ent was created"""
+  createdAt: Time!
+  """Timestamp of when this ent was last updated"""
+  lastModifiedAt: Time!
+  """Timestamp of when this shell was closed"""
+  closedAt: Time
+  """Task that created the shell"""
+  task: Task!
+  """Beacon that created the shell"""
+  beacon: Beacon!
+  """User that created the shell"""
+  owner: User!
+  """Users that are currently using the shell"""
+  activeUsers: [User!]
+}
+"""A connection to a list of items."""
+type ShellConnection {
+  """A list of edges."""
+  edges: [ShellEdge]
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+  """Identifies the total count of items in the connection."""
+  totalCount: Int!
+}
+"""An edge in a connection."""
+type ShellEdge {
+  """The item at the end of the edge."""
+  node: Shell
+  """A cursor for use in pagination."""
+  cursor: Cursor!
+}
+"""Ordering options for Shell connections"""
+input ShellOrder {
+  """The ordering direction."""
+  direction: OrderDirection! = ASC
+  """The field by which to order Shells."""
+  field: ShellOrderField!
+}
+"""Properties by which Shell connections can be ordered."""
+enum ShellOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLOSED_AT
+}
+"""
+ShellWhereInput is used for filtering Shell objects.
+Input was generated by ent.
+"""
+input ShellWhereInput {
+  not: ShellWhereInput
+  and: [ShellWhereInput!]
+  or: [ShellWhereInput!]
+  """id field predicates"""
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """created_at field predicates"""
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """last_modified_at field predicates"""
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """closed_at field predicates"""
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
+  """task edge predicates"""
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
+  """beacon edge predicates"""
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
+  """owner edge predicates"""
+  hasOwner: Boolean
+  hasOwnerWith: [UserWhereInput!]
+  """active_users edge predicates"""
+  hasActiveUsers: Boolean
+  hasActiveUsersWith: [UserWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -2464,6 +3390,10 @@ type Task implements Node {
   reportedFiles: [HostFile!]
   """Processes that have been reported by this task."""
   reportedProcesses: [HostProcess!]
+  """Credentials that have been reported by this task."""
+  reportedCredentials: [HostCredential!]
+  """Shells that were created by this task"""
+  shells: [Shell!]
 }
 """A connection to a list of items."""
 type TaskConnection {
@@ -2618,6 +3548,12 @@ input TaskWhereInput {
   """reported_processes edge predicates"""
   hasReportedProcesses: Boolean
   hasReportedProcessesWith: [HostProcessWhereInput!]
+  """reported_credentials edge predicates"""
+  hasReportedCredentials: Boolean
+  hasReportedCredentialsWith: [HostCredentialWhereInput!]
+  """shells edge predicates"""
+  hasShells: Boolean
+  hasShellsWith: [ShellWhereInput!]
 }
 type Tome implements Node {
   id: ID!
@@ -2643,6 +3579,8 @@ type Tome implements Node {
   files: [File!]
   """User who uploaded the tome (may be null)."""
   uploader: User
+  """Repository from which this Tome was imported (may be null)."""
+  repository: Repository
 }
 """Ordering options for Tome connections"""
 input TomeOrder {
@@ -2804,6 +3742,9 @@ input TomeWhereInput {
   """uploader edge predicates"""
   hasUploader: Boolean
   hasUploaderWith: [UserWhereInput!]
+  """repository edge predicates"""
+  hasRepository: Boolean
+  hasRepositoryWith: [RepositoryWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -2836,6 +3777,9 @@ input UpdateHostInput {
   addProcessIDs: [ID!]
   removeProcessIDs: [ID!]
   clearProcesses: Boolean
+  addCredentialIDs: [ID!]
+  removeCredentialIDs: [ID!]
+  clearCredentials: Boolean
 }
 """
 UpdateTagInput is used for update Tag object.
@@ -2892,6 +3836,9 @@ input UpdateUserInput {
   addTomeIDs: [ID!]
   removeTomeIDs: [ID!]
   clearTomes: Boolean
+  addActiveShellIDs: [ID!]
+  removeActiveShellIDs: [ID!]
+  clearActiveShells: Boolean
 }
 type User implements Node {
   id: ID!
@@ -2905,6 +3852,8 @@ type User implements Node {
   isAdmin: Boolean!
   """Tomes uploaded by the user."""
   tomes: [Tome!]
+  """Shells actively used by the user"""
+  activeShells: [Shell!]
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -2960,6 +3909,9 @@ input UserWhereInput {
   """tomes edge predicates"""
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
+  """active_shells edge predicates"""
+  hasActiveShells: Boolean
+  hasActiveShellsWith: [ShellWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -2967,7 +3919,25 @@ scalar Uint64
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
   files(where: FileWhereInput): [File!]! @requireRole(role: USER)
-  quests(where: QuestWhereInput): [Quest!]! @requireRole(role: USER)
+  quests(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Quests returned from the connection."""
+    orderBy: [QuestOrder!]
+
+    """Filtering options for Quests returned from the connection."""
+    where: QuestWhereInput
+  ): QuestConnection! @requireRole(role: USER)
   tasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -2987,15 +3957,57 @@ scalar Uint64
     """Filtering options for Tasks returned from the connection."""
     where: TaskWhereInput
   ): TaskConnection! @requireRole(role: USER)
+  repositories(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Repositories returned from the connection."""
+    orderBy: [RepositoryOrder!]
+
+    """Filtering options for Repositories returned from the connection."""
+    where: RepositoryWhereInput
+  ): RepositoryConnection! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
   hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+  shells(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Shells returned from the connection."""
+    orderBy: [ShellOrder!]
+
+    """Filtering options for Shells returned from the connection."""
+    where: ShellWhereInput): ShellConnection! @requireRole(role: USER)
   me: User!
 }
 `, BuiltIn: false},
 	{Name: "../schema/mutation.graphql", Input: `type Mutation {
+    ####
+    # Admin
+    ####
+    dropAllData: Boolean! @requireRole(role: ADMIN)
+
     ###
     # Quest
     ###
@@ -3023,6 +4035,12 @@ scalar Uint64
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
     updateTome(tomeID: ID!, input: UpdateTomeInput!,): Tome! @requireRole(role: ADMIN)
     deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)
+
+    ###
+    # Repository
+    ###
+    createRepository(input: CreateRepositoryInput!): Repository! @requireRole(role: USER)
+    importRepository(repoID: ID!, input: ImportRepositoryInput): Repository! @requireRole(role: USER)
 
     ###
     # User
@@ -3071,6 +4089,13 @@ input SubmitTaskResultInput {
 
   """Error message captured as the result of task execution failure."""
   error: String
+}
+input ImportRepositoryInput {
+  """
+  Optionally, specify directories to include.
+  Only tomes that have a main.eldritch in one of these directory prefixes will be included.
+  """
+  includeDirs: [String!]
 }
 `, BuiltIn: false},
 }

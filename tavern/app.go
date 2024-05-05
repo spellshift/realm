@@ -29,6 +29,7 @@ import (
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 )
@@ -124,10 +125,14 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	// Load Default Tomes
-	if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
-		client.Close()
-		return nil, fmt.Errorf("failed to upload default tomes: %w", err)
+	if cfg.IsDefaultTomeImportEnabled() {
+		if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
+			log.Printf("[ERROR] failed to upload default tomes: %v", err)
+		}
 	}
+
+	// Initialize Git Tome Importer
+	git := cfg.NewGitImporter(client)
 
 	// Initialize Test Data
 	if cfg.IsTestDataEnabled() {
@@ -145,27 +150,69 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Request Logging
 	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 
+	// Configure Shell Muxes
+	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
+	go func() {
+		if err := wsShellMux.Start(ctx); err != nil {
+			log.Printf("[ERROR] Webshell Mux Stopped! %v", err)
+		}
+	}()
+	go func() {
+		if err := grpcShellMux.Start(ctx); err != nil {
+			log.Printf("[ERROR] GRPC Mux Stopped! %v", err)
+		}
+	}()
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
-		"/status": tavernhttp.Endpoint{Handler: newStatusHandler()},
+		"/status": tavernhttp.Endpoint{
+			Handler:              newStatusHandler(),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/access_token/redirect": tavernhttp.Endpoint{
 			Handler:          auth.NewTokenRedirectHandler(),
 			LoginRedirectURI: "/oauth/login",
 		},
-		"/oauth/login": tavernhttp.Endpoint{Handler: auth.NewOAuthLoginHandler(cfg.oauth, privKey)},
-		"/oauth/authorize": tavernhttp.Endpoint{Handler: auth.NewOAuthAuthorizationHandler(
-			cfg.oauth,
-			pubKey,
-			client,
-			"https://www.googleapis.com/oauth2/v3/userinfo",
-		)},
-		"/graphql":    tavernhttp.Endpoint{Handler: newGraphQLHandler(client)},
-		"/c2.C2/":     tavernhttp.Endpoint{Handler: newGRPCHandler(client)},
-		"/cdn/":       tavernhttp.Endpoint{Handler: cdn.NewDownloadHandler(client)},
-		"/cdn/upload": tavernhttp.Endpoint{Handler: cdn.NewUploadHandler(client)},
+		"/oauth/login": tavernhttp.Endpoint{
+			Handler:              auth.NewOAuthLoginHandler(cfg.oauth, privKey),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/oauth/authorize": tavernhttp.Endpoint{
+			Handler: auth.NewOAuthAuthorizationHandler(
+				cfg.oauth,
+				pubKey,
+				client,
+				"https://www.googleapis.com/oauth2/v3/userinfo",
+			),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/graphql": tavernhttp.Endpoint{
+			Handler:          newGraphQLHandler(client, git),
+			AllowUnactivated: true,
+		},
+		"/c2.C2/": tavernhttp.Endpoint{
+			Handler:              newGRPCHandler(client, grpcShellMux),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/cdn/": tavernhttp.Endpoint{
+			Handler:              cdn.NewDownloadHandler(client, "/cdn/"),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/cdn/upload": tavernhttp.Endpoint{
+			Handler: cdn.NewUploadHandler(client),
+		},
+		"/shell/ws": tavernhttp.Endpoint{
+			Handler: stream.NewShellHandler(client, wsShellMux),
+		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
 			LoginRedirectURI: "/oauth/login",
+			AllowUnactivated: true,
 		},
 		"/playground": tavernhttp.Endpoint{
 			Handler:          playground.Handler("Tavern", "/graphql"),
@@ -226,8 +273,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client))
+func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// GraphQL Logging
@@ -257,8 +304,8 @@ func newGraphQLHandler(client *ent.Client) http.Handler {
 	})
 }
 
-func newGRPCHandler(client *ent.Client) http.Handler {
-	c2srv := c2.New(client)
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
+	c2srv := c2.New(client, grpcShellMux)
 	grpcSrv := grpc.NewServer(
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),

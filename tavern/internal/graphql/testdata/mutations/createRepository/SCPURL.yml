@@ -1,0 +1,24 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+requestor:
+  session_token: secretToken
+query: |
+  mutation CreateRepository($input: CreateRepositoryInput!) {
+    createRepository(input: $input) {
+        url
+
+        owner {
+          id
+        }
+    }
+  }
+variables:
+  input:
+    url: "git@github.com:spellshift/realm.git"
+
+expected:
+  createRepository:
+    url: "ssh://git@github.com/spellshift/realm.git"
+    owner:
+      id: "5"

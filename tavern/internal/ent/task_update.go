@@ -12,10 +12,12 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -211,6 +213,36 @@ func (tu *TaskUpdate) AddReportedProcesses(h ...*HostProcess) *TaskUpdate {
 	return tu.AddReportedProcessIDs(ids...)
 }
 
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by IDs.
+func (tu *TaskUpdate) AddReportedCredentialIDs(ids ...int) *TaskUpdate {
+	tu.mutation.AddReportedCredentialIDs(ids...)
+	return tu
+}
+
+// AddReportedCredentials adds the "reported_credentials" edges to the HostCredential entity.
+func (tu *TaskUpdate) AddReportedCredentials(h ...*HostCredential) *TaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tu.AddReportedCredentialIDs(ids...)
+}
+
+// AddShellIDs adds the "shells" edge to the Shell entity by IDs.
+func (tu *TaskUpdate) AddShellIDs(ids ...int) *TaskUpdate {
+	tu.mutation.AddShellIDs(ids...)
+	return tu
+}
+
+// AddShells adds the "shells" edges to the Shell entity.
+func (tu *TaskUpdate) AddShells(s ...*Shell) *TaskUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tu.AddShellIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tu *TaskUpdate) Mutation() *TaskMutation {
 	return tu.mutation
@@ -268,6 +300,48 @@ func (tu *TaskUpdate) RemoveReportedProcesses(h ...*HostProcess) *TaskUpdate {
 		ids[i] = h[i].ID
 	}
 	return tu.RemoveReportedProcessIDs(ids...)
+}
+
+// ClearReportedCredentials clears all "reported_credentials" edges to the HostCredential entity.
+func (tu *TaskUpdate) ClearReportedCredentials() *TaskUpdate {
+	tu.mutation.ClearReportedCredentials()
+	return tu
+}
+
+// RemoveReportedCredentialIDs removes the "reported_credentials" edge to HostCredential entities by IDs.
+func (tu *TaskUpdate) RemoveReportedCredentialIDs(ids ...int) *TaskUpdate {
+	tu.mutation.RemoveReportedCredentialIDs(ids...)
+	return tu
+}
+
+// RemoveReportedCredentials removes "reported_credentials" edges to HostCredential entities.
+func (tu *TaskUpdate) RemoveReportedCredentials(h ...*HostCredential) *TaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tu.RemoveReportedCredentialIDs(ids...)
+}
+
+// ClearShells clears all "shells" edges to the Shell entity.
+func (tu *TaskUpdate) ClearShells() *TaskUpdate {
+	tu.mutation.ClearShells()
+	return tu
+}
+
+// RemoveShellIDs removes the "shells" edge to Shell entities by IDs.
+func (tu *TaskUpdate) RemoveShellIDs(ids ...int) *TaskUpdate {
+	tu.mutation.RemoveShellIDs(ids...)
+	return tu
+}
+
+// RemoveShells removes "shells" edges to Shell entities.
+func (tu *TaskUpdate) RemoveShells(s ...*Shell) *TaskUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tu.RemoveShellIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -527,6 +601,96 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.ReportedCredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedCredentialsTable,
+			Columns: []string{task.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedReportedCredentialsIDs(); len(nodes) > 0 && !tu.mutation.ReportedCredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedCredentialsTable,
+			Columns: []string{task.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ReportedCredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedCredentialsTable,
+			Columns: []string{task.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tu.mutation.ShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   task.ShellsTable,
+			Columns: []string{task.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedShellsIDs(); len(nodes) > 0 && !tu.mutation.ShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   task.ShellsTable,
+			Columns: []string{task.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ShellsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   task.ShellsTable,
+			Columns: []string{task.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
@@ -726,6 +890,36 @@ func (tuo *TaskUpdateOne) AddReportedProcesses(h ...*HostProcess) *TaskUpdateOne
 	return tuo.AddReportedProcessIDs(ids...)
 }
 
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by IDs.
+func (tuo *TaskUpdateOne) AddReportedCredentialIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.AddReportedCredentialIDs(ids...)
+	return tuo
+}
+
+// AddReportedCredentials adds the "reported_credentials" edges to the HostCredential entity.
+func (tuo *TaskUpdateOne) AddReportedCredentials(h ...*HostCredential) *TaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tuo.AddReportedCredentialIDs(ids...)
+}
+
+// AddShellIDs adds the "shells" edge to the Shell entity by IDs.
+func (tuo *TaskUpdateOne) AddShellIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.AddShellIDs(ids...)
+	return tuo
+}
+
+// AddShells adds the "shells" edges to the Shell entity.
+func (tuo *TaskUpdateOne) AddShells(s ...*Shell) *TaskUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tuo.AddShellIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
 	return tuo.mutation
@@ -783,6 +977,48 @@ func (tuo *TaskUpdateOne) RemoveReportedProcesses(h ...*HostProcess) *TaskUpdate
 		ids[i] = h[i].ID
 	}
 	return tuo.RemoveReportedProcessIDs(ids...)
+}
+
+// ClearReportedCredentials clears all "reported_credentials" edges to the HostCredential entity.
+func (tuo *TaskUpdateOne) ClearReportedCredentials() *TaskUpdateOne {
+	tuo.mutation.ClearReportedCredentials()
+	return tuo
+}
+
+// RemoveReportedCredentialIDs removes the "reported_credentials" edge to HostCredential entities by IDs.
+func (tuo *TaskUpdateOne) RemoveReportedCredentialIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.RemoveReportedCredentialIDs(ids...)
+	return tuo
+}
+
+// RemoveReportedCredentials removes "reported_credentials" edges to HostCredential entities.
+func (tuo *TaskUpdateOne) RemoveReportedCredentials(h ...*HostCredential) *TaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tuo.RemoveReportedCredentialIDs(ids...)
+}
+
+// ClearShells clears all "shells" edges to the Shell entity.
+func (tuo *TaskUpdateOne) ClearShells() *TaskUpdateOne {
+	tuo.mutation.ClearShells()
+	return tuo
+}
+
+// RemoveShellIDs removes the "shells" edge to Shell entities by IDs.
+func (tuo *TaskUpdateOne) RemoveShellIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.RemoveShellIDs(ids...)
+	return tuo
+}
+
+// RemoveShells removes "shells" edges to Shell entities.
+func (tuo *TaskUpdateOne) RemoveShells(s ...*Shell) *TaskUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tuo.RemoveShellIDs(ids...)
 }
 
 // Where appends a list predicates to the TaskUpdate builder.
@@ -1065,6 +1301,96 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.ReportedCredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedCredentialsTable,
+			Columns: []string{task.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedReportedCredentialsIDs(); len(nodes) > 0 && !tuo.mutation.ReportedCredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedCredentialsTable,
+			Columns: []string{task.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ReportedCredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedCredentialsTable,
+			Columns: []string{task.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.ShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   task.ShellsTable,
+			Columns: []string{task.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedShellsIDs(); len(nodes) > 0 && !tuo.mutation.ShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   task.ShellsTable,
+			Columns: []string{task.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ShellsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   task.ShellsTable,
+			Columns: []string{task.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

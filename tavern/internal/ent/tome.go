@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -40,9 +41,10 @@ type Tome struct {
 	Eldritch string `json:"eldritch,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TomeQuery when eager-loading is set.
-	Edges         TomeEdges `json:"edges"`
-	tome_uploader *int
-	selectValues  sql.SelectValues
+	Edges           TomeEdges `json:"edges"`
+	tome_uploader   *int
+	tome_repository *int
+	selectValues    sql.SelectValues
 }
 
 // TomeEdges holds the relations/edges for other nodes in the graph.
@@ -51,11 +53,13 @@ type TomeEdges struct {
 	Files []*File `json:"files,omitempty"`
 	// User who uploaded the tome (may be null).
 	Uploader *User `json:"uploader,omitempty"`
+	// Repository from which this Tome was imported (may be null).
+	Repository *Repository `json:"repository,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
 
 	namedFiles map[string][]*File
 }
@@ -82,6 +86,19 @@ func (e TomeEdges) UploaderOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "uploader"}
 }
 
+// RepositoryOrErr returns the Repository value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TomeEdges) RepositoryOrErr() (*Repository, error) {
+	if e.loadedTypes[2] {
+		if e.Repository == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: repository.Label}
+		}
+		return e.Repository, nil
+	}
+	return nil, &NotLoadedError{edge: "repository"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Tome) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -94,6 +111,8 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
 		case tome.ForeignKeys[0]: // tome_uploader
+			values[i] = new(sql.NullInt64)
+		case tome.ForeignKeys[1]: // tome_repository
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -183,6 +202,13 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 				t.tome_uploader = new(int)
 				*t.tome_uploader = int(value.Int64)
 			}
+		case tome.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field tome_repository", value)
+			} else if value.Valid {
+				t.tome_repository = new(int)
+				*t.tome_repository = int(value.Int64)
+			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
 		}
@@ -204,6 +230,11 @@ func (t *Tome) QueryFiles() *FileQuery {
 // QueryUploader queries the "uploader" edge of the Tome entity.
 func (t *Tome) QueryUploader() *UserQuery {
 	return NewTomeClient(t.config).QueryUploader(t)
+}
+
+// QueryRepository queries the "repository" edge of the Tome entity.
+func (t *Tome) QueryRepository() *RepositoryQuery {
+	return NewTomeClient(t.config).QueryRepository(t)
 }
 
 // Update returns a builder for updating this Tome.

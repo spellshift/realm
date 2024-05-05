@@ -1,6 +1,6 @@
 import React from "react";
 import { Heading } from "@chakra-ui/react";
-import Select, { createFilter } from "react-select"
+import Select, { createFilter, } from "react-select"
 import { BeaconType, HostType, TomeTag } from "../../utils/consts";
 import { SupportedPlatforms } from "../../utils/enums";
 
@@ -10,12 +10,43 @@ type Props = {
     groups: Array<TomeTag>;
     services: Array<TomeTag>;
     hosts: Array<HostType>;
+    filtersSelected?: any;
 }
 export const BeaconFilterBar = (props: Props) => {
     // TODO add host to filter
 
-    const { setFiltersSelected, beacons, groups, services, hosts } = props;
+    const { setFiltersSelected, beacons, groups, services, hosts, filtersSelected } = props;
     const supportedPlatformsList = Object.values(SupportedPlatforms);
+
+    // TODO: IN the future lets style things purple
+    // const styles = {
+    //     control: (base: any) => ({
+    //         ...base,
+    //         "&:focus": {
+    //             borderColor: "#a855f7"
+    //         },
+    //         "&:hover": {
+    //             borderColor: "#a855f7",
+    //             color: "#a855f7"
+    //         }
+    //     }),
+    //     dropdownIndicator: (base: any) => ({
+    //         ...base,
+    //         color: "inherit",
+    //     }),
+    //     singleValue: (base: any) => ({
+    //         ...base,
+    //         color: "inherit"
+    //     }),
+    //     option: (base: any, state: any) => ({
+    //         ...base,
+    //         "&:hover": {
+    //             backgroundColor: "#a855f7",
+    //             borderColor: "#a855f7",
+    //             color: "white"
+    //         }
+    //     })
+    // };
 
     const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>, hosts: Array<HostType>) => {
         return [
@@ -89,6 +120,7 @@ export const BeaconFilterBar = (props: Props) => {
                     matchFrom: 'any',
                     stringify: option => `${option.label}`,
                 })}
+                value={filtersSelected || undefined}
             />
         </div>
     );

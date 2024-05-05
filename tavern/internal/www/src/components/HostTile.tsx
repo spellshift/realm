@@ -1,5 +1,5 @@
-import { Badge } from "@chakra-ui/react";
 import { HostType } from "../utils/consts";
+import Badge from "./tavern-base-ui/badge/Badge";
 
 type Props = {
     data: HostType

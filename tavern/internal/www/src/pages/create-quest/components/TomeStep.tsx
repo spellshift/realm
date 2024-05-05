@@ -1,5 +1,6 @@
+import { Heading } from "@chakra-ui/react";
 import { FormTextArea } from "../../../components/form-text-area";
-import FormTextField from "../../../components/tavern-base-ui/FormTextField";
+import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { Tome, TomeParams } from "../../../utils/consts";
 import { safelyJsonParse } from "../../../utils/utils";
 import TomeRadioGroup from "./TomeRadioGroup";
@@ -16,6 +17,16 @@ const TomeStep = (props: Props) => {
         formik.setFieldValue('tome', tome);
         formik.setFieldValue('params', params ? params : []);
     };
+
+    if (data.length < 1) {
+        // TODO Link to github upload a tome in empty state when that is ready
+        return (
+            <div className="flex flex-col gap-3">
+                <Heading size="sm" >Select a tome</Heading>
+                <EmptyState type={EmptyStateType.noData} label="No tome data found." />
+            </div>
+        )
+    }
 
     return (
         <div className="flex flex-col gap-6">

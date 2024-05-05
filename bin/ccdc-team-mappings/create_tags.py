@@ -63,7 +63,10 @@ query getTag($input:TagWhereInput){
         if 'errors' in res:
             return -1
         else:
-            return res['data']['tags'][0]['id']
+            if len(res['data']['tags']) > 0:
+                return res['data']['tags'][0]['id']
+            else:
+                return -1
 
     def create_tag(self, tag_name: str, tag_kind: str):
         print(f"{tag_name}:{tag_kind}")

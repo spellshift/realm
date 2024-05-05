@@ -1,0 +1,28 @@
+[package]
+name = "transport"
+version = "0.0.5"
+edition = "2021"
+
+[features]
+default = ["grpc"]
+grpc = []
+mock = ["dep:mockall"]
+
+[dependencies]
+pb = { workspace = true }
+
+anyhow = { workspace = true }
+log = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tokio-stream = { workspace = true }
+tonic = { workspace = true, features = ["tls-webpki-roots"] }
+trait-variant = { workspace = true }
+hyper = { version = "0.14", features = [
+    "client",
+] } # Had to user an older version of hyper to support hyper-proxy
+hyper-proxy = "0.9.1"
+
+# [feature = mock]
+mockall = { workspace = true, optional = true }

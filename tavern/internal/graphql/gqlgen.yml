@@ -25,15 +25,6 @@ resolver:
 # ent package. If they match it will use them, otherwise it will new ones.
 autobind:
   - realm.pub/tavern/internal/ent
-  - realm.pub/tavern/internal/ent/file
-  - realm.pub/tavern/internal/ent/user
-  - realm.pub/tavern/internal/ent/tag
-  - realm.pub/tavern/internal/ent/beacon
-  - realm.pub/tavern/internal/ent/host
-  - realm.pub/tavern/internal/ent/hostprocess
-  - realm.pub/tavern/internal/ent/quest
-  - realm.pub/tavern/internal/ent/task
-  - realm.pub/tavern/internal/ent/tome
 
 struct_tag: json
 
@@ -56,6 +47,7 @@ models:
   Kind:
     model:
       - realm.pub/tavern/internal/ent/tag.Kind
+      - realm.pub/tavern/internal/c2/epb.Credential_Kind
   Platform:
     model:
       - realm.pub/tavern/internal/c2/c2pb.Host_Platform

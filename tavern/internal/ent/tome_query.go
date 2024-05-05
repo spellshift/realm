@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -26,6 +27,7 @@ type TomeQuery struct {
 	predicates     []predicate.Tome
 	withFiles      *FileQuery
 	withUploader   *UserQuery
+	withRepository *RepositoryQuery
 	withFKs        bool
 	modifiers      []func(*sql.Selector)
 	loadTotal      []func(context.Context, []*Tome) error
@@ -103,6 +105,28 @@ func (tq *TomeQuery) QueryUploader() *UserQuery {
 			sqlgraph.From(tome.Table, tome.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, tome.UploaderTable, tome.UploaderColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRepository chains the current query on the "repository" edge.
+func (tq *TomeQuery) QueryRepository() *RepositoryQuery {
+	query := (&RepositoryClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tome.Table, tome.FieldID, selector),
+			sqlgraph.To(repository.Table, repository.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, tome.RepositoryTable, tome.RepositoryColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -297,13 +321,14 @@ func (tq *TomeQuery) Clone() *TomeQuery {
 		return nil
 	}
 	return &TomeQuery{
-		config:       tq.config,
-		ctx:          tq.ctx.Clone(),
-		order:        append([]tome.OrderOption{}, tq.order...),
-		inters:       append([]Interceptor{}, tq.inters...),
-		predicates:   append([]predicate.Tome{}, tq.predicates...),
-		withFiles:    tq.withFiles.Clone(),
-		withUploader: tq.withUploader.Clone(),
+		config:         tq.config,
+		ctx:            tq.ctx.Clone(),
+		order:          append([]tome.OrderOption{}, tq.order...),
+		inters:         append([]Interceptor{}, tq.inters...),
+		predicates:     append([]predicate.Tome{}, tq.predicates...),
+		withFiles:      tq.withFiles.Clone(),
+		withUploader:   tq.withUploader.Clone(),
+		withRepository: tq.withRepository.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -329,6 +354,17 @@ func (tq *TomeQuery) WithUploader(opts ...func(*UserQuery)) *TomeQuery {
 		opt(query)
 	}
 	tq.withUploader = query
+	return tq
+}
+
+// WithRepository tells the query-builder to eager-load the nodes that are connected to
+// the "repository" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TomeQuery) WithRepository(opts ...func(*RepositoryQuery)) *TomeQuery {
+	query := (&RepositoryClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withRepository = query
 	return tq
 }
 
@@ -411,12 +447,13 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 		nodes       = []*Tome{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			tq.withFiles != nil,
 			tq.withUploader != nil,
+			tq.withRepository != nil,
 		}
 	)
-	if tq.withUploader != nil {
+	if tq.withUploader != nil || tq.withRepository != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -453,6 +490,12 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 	if query := tq.withUploader; query != nil {
 		if err := tq.loadUploader(ctx, query, nodes, nil,
 			func(n *Tome, e *User) { n.Edges.Uploader = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withRepository; query != nil {
+		if err := tq.loadRepository(ctx, query, nodes, nil,
+			func(n *Tome, e *Repository) { n.Edges.Repository = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -557,6 +600,38 @@ func (tq *TomeQuery) loadUploader(ctx context.Context, query *UserQuery, nodes [
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "tome_uploader" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (tq *TomeQuery) loadRepository(ctx context.Context, query *RepositoryQuery, nodes []*Tome, init func(*Tome), assign func(*Tome, *Repository)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Tome)
+	for i := range nodes {
+		if nodes[i].tome_repository == nil {
+			continue
+		}
+		fk := *nodes[i].tome_repository
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(repository.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tome_repository" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

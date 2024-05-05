@@ -67,6 +67,9 @@ func (User) Edges() []ent.Edge {
 		edge.From("tomes", Tome.Type).
 			Ref("uploader").
 			Comment("Tomes uploaded by the user."),
+		edge.From("active_shells", Shell.Type).
+			Ref("active_users").
+			Comment("Shells actively used by the user"),
 	}
 }
 

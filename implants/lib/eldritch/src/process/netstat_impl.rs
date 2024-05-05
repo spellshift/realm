@@ -1,5 +1,8 @@
 use super::super::insert_dict_kv;
 use anyhow::Result;
+#[cfg(target_os = "freebsd")]
+use anyhow::anyhow;
+#[cfg(not(target_os = "freebsd"))]
 use netstat2::*;
 use starlark::{
     collections::SmallMap,
@@ -7,6 +10,12 @@ use starlark::{
     values::{dict::Dict, Heap, Value},
 };
 
+#[cfg(target_os = "freebsd")]
+pub fn netstat(_: &Heap) -> Result<Vec<Dict>> {
+    Err(anyhow!("Not implemented for FreeBSD"))
+}
+
+#[cfg(not(target_os = "freebsd"))]
 pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
     let mut out: Vec<Dict> = Vec::new();
     let af_flags = AddressFamilyFlags::IPV4 | AddressFamilyFlags::IPV6;
@@ -89,6 +98,7 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 mod tests {
     use super::*;
     use anyhow::Result;
+    use starlark::values::list::UnpackList;
     use starlark::values::{Heap, UnpackValue};
     use std::process::id;
     use tokio::io::copy;
@@ -159,9 +169,9 @@ mod tests {
             if let Some(Some(pids)) = socket
                 .get(const_frozen_string!("pids").to_value())
                 .unwrap()
-                .map(Vec::<i32>::unpack_value)
+                .map(UnpackList::<i32>::unpack_value)
             {
-                if pids.contains(&pid) {
+                if pids.items.contains(&pid) {
                     return Ok(());
                 }
             }

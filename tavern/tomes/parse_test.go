@@ -23,7 +23,7 @@ func TestUploadTomes(t *testing.T) {
 	// Assert our example tome is there
 	require.NoError(t, tomes.UploadTomes(ctx, graph, tomes.FileSystem))
 	testTome := graph.Tome.Query().
-		Where(tome.Name("example")).
+		Where(tome.NameContains("Example")).
 		OnlyX(ctx)
 	require.NotNil(t, testTome)
 	assert.Equal(t, "print(input_params['msg'])", strings.TrimSpace(testTome.Eldritch))

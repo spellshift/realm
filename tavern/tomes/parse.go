@@ -39,13 +39,36 @@ func (paramDef ParamDefinition) Validate() error {
 	return nil
 }
 
-type metadataDefinition struct {
+// MetadataDefinition defines the contents that should be present in all tome metadata.yml files
+type MetadataDefinition struct {
 	Name         string `yaml:"name"`
 	Description  string `yaml:"description"`
 	Author       string `yaml:"author"`
 	SupportModel string `yaml:"support_model"`
 	Tactic       string `yaml:"tactic"`
 	ParamDefs    []ParamDefinition
+}
+
+// Validate ensures the Tome metadata has been properly configured.
+func (meta MetadataDefinition) Validate() error {
+	if meta.Name == "" {
+		return fmt.Errorf("must set 'name'")
+	}
+	if meta.Author == "" {
+		return fmt.Errorf("must set 'author'")
+	}
+	if meta.Description == "" {
+		return fmt.Errorf("must set 'description'")
+	}
+	if meta.Tactic == "" {
+		return fmt.Errorf("must set 'tactic'")
+	}
+	for _, paramDef := range meta.ParamDefs {
+		if err := paramDef.Validate(); err != nil {
+			return fmt.Errorf("invalid parameter definition (%q): %w", meta.Name, err)
+		}
+	}
+	return nil
 }
 
 // UploadTomes traverses the provided filesystem and creates tomes using the provided graph.
@@ -78,7 +101,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			continue
 		}
 
-		var metadata metadataDefinition
+		var metadata MetadataDefinition
 		var eldritch string
 		var tomeFiles []*ent.File
 		if err := fs.WalkDir(fileSystem, entry.Name(), func(path string, d fs.DirEntry, err error) error {
@@ -101,14 +124,11 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 				if err := yaml.Unmarshal(content, &metadata); err != nil {
 					return rollback(tx, fmt.Errorf("failed to parse %q: %w", path, err))
 				}
-				return nil
-			}
-
-			// Validate Params
-			for _, paramDef := range metadata.ParamDefs {
-				if err := paramDef.Validate(); err != nil {
-					return rollback(tx, fmt.Errorf("failed to validate tome parameter definition: %w", err))
+				// Validate Metadata
+				if err := metadata.Validate(); err != nil {
+					return rollback(tx, fmt.Errorf("invalid tome metadata %q: %w", entry.Name(), err))
 				}
+				return nil
 			}
 
 			// Parse main.eldritch
@@ -132,6 +152,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			return rollback(tx, fmt.Errorf("failed to parse and upload tome %q: %w", entry.Name(), err))
 		}
 
+		// Marshal Params
 		paramdefs, err := json.Marshal(metadata.ParamDefs)
 		if err != nil {
 			return rollback(tx, fmt.Errorf("failed to parse param defs for %q: %w", metadata.Name, err))
@@ -139,7 +160,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 
 		// Create the tome
 		if _, err := graph.Tome.Create().
-			SetName(entry.Name()).
+			SetName(metadata.Name).
 			SetDescription(metadata.Description).
 			SetAuthor(metadata.Author).
 			SetParamDefs(string(paramdefs)).
@@ -148,7 +169,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			SetEldritch(eldritch).
 			AddFiles(tomeFiles...).
 			Save(ctx); err != nil {
-			return rollback(tx, fmt.Errorf("failed to create tome %q: %w", entry.Name(), err))
+			return rollback(tx, fmt.Errorf("failed to create tome %q: %w", metadata.Name, err))
 		}
 	}
 	return nil

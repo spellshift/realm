@@ -39,21 +39,24 @@ func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
 
 // UpdateHostInput represents a mutation input for updating hosts.
 type UpdateHostInput struct {
-	LastModifiedAt   *time.Time
-	ClearName        bool
-	Name             *string
-	ClearTags        bool
-	AddTagIDs        []int
-	RemoveTagIDs     []int
-	ClearBeacons     bool
-	AddBeaconIDs     []int
-	RemoveBeaconIDs  []int
-	ClearFiles       bool
-	AddFileIDs       []int
-	RemoveFileIDs    []int
-	ClearProcesses   bool
-	AddProcessIDs    []int
-	RemoveProcessIDs []int
+	LastModifiedAt      *time.Time
+	ClearName           bool
+	Name                *string
+	ClearTags           bool
+	AddTagIDs           []int
+	RemoveTagIDs        []int
+	ClearBeacons        bool
+	AddBeaconIDs        []int
+	RemoveBeaconIDs     []int
+	ClearFiles          bool
+	AddFileIDs          []int
+	RemoveFileIDs       []int
+	ClearProcesses      bool
+	AddProcessIDs       []int
+	RemoveProcessIDs    []int
+	ClearCredentials    bool
+	AddCredentialIDs    []int
+	RemoveCredentialIDs []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -103,6 +106,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	if v := i.RemoveProcessIDs; len(v) > 0 {
 		m.RemoveProcessIDs(v...)
 	}
+	if i.ClearCredentials {
+		m.ClearCredentials()
+	}
+	if v := i.AddCredentialIDs; len(v) > 0 {
+		m.AddCredentialIDs(v...)
+	}
+	if v := i.RemoveCredentialIDs; len(v) > 0 {
+		m.RemoveCredentialIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the UpdateHostInput on the HostUpdate builder.
@@ -135,6 +147,22 @@ func (i *CreateQuestInput) Mutate(m *QuestMutation) {
 
 // SetInput applies the change-set in the CreateQuestInput on the QuestCreate builder.
 func (c *QuestCreate) SetInput(i CreateQuestInput) *QuestCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateRepositoryInput represents a mutation input for creating repositories.
+type CreateRepositoryInput struct {
+	URL string
+}
+
+// Mutate applies the CreateRepositoryInput on the RepositoryMutation builder.
+func (i *CreateRepositoryInput) Mutate(m *RepositoryMutation) {
+	m.SetURL(i.URL)
+}
+
+// SetInput applies the change-set in the CreateRepositoryInput on the RepositoryCreate builder.
+func (c *RepositoryCreate) SetInput(i CreateRepositoryInput) *RepositoryCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
@@ -309,13 +337,16 @@ func (c *TomeUpdateOne) SetInput(i UpdateTomeInput) *TomeUpdateOne {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name          *string
-	PhotoURL      *string
-	IsActivated   *bool
-	IsAdmin       *bool
-	ClearTomes    bool
-	AddTomeIDs    []int
-	RemoveTomeIDs []int
+	Name                 *string
+	PhotoURL             *string
+	IsActivated          *bool
+	IsAdmin              *bool
+	ClearTomes           bool
+	AddTomeIDs           []int
+	RemoveTomeIDs        []int
+	ClearActiveShells    bool
+	AddActiveShellIDs    []int
+	RemoveActiveShellIDs []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -340,6 +371,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveTomeIDs; len(v) > 0 {
 		m.RemoveTomeIDs(v...)
+	}
+	if i.ClearActiveShells {
+		m.ClearActiveShells()
+	}
+	if v := i.AddActiveShellIDs; len(v) > 0 {
+		m.AddActiveShellIDs(v...)
+	}
+	if v := i.RemoveActiveShellIDs; len(v) > 0 {
+		m.RemoveActiveShellIDs(v...)
 	}
 }
 

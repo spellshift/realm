@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log"
 	"net/http"
 
 	"realm.pub/tavern/internal/auth"
@@ -12,14 +13,35 @@ type Endpoint struct {
 	// If unset, no redirect will be performed.
 	LoginRedirectURI string
 
+	// AllowUnauthenticated requests, if false unauthenticated requests will error.
+	// AllowUnactivated allows unactivated user accounts to access the endpoint.
+	AllowUnauthenticated bool
+	AllowUnactivated     bool
+
 	http.Handler
 }
 
 // ServeHTTP traffic based on the configured handler.
 func (endpoint Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// Redirect request to login (if configured)
-	if endpoint.LoginRedirectURI != "" && !auth.IsAuthenticatedContext(r.Context()) {
+	if endpoint.LoginRedirectURI != "" && !auth.IsAuthenticatedContext(ctx) {
 		http.Redirect(w, r, endpoint.LoginRedirectURI, http.StatusFound)
+		return
+	}
+
+	// Require Authentication
+	if !endpoint.AllowUnauthenticated && !auth.IsAuthenticatedContext(ctx) {
+		log.Printf("[HTTP] Unauthenticated Request Forbidden: %s %q", r.Method, r.URL.String())
+		http.Error(w, "must authenticate", http.StatusUnauthorized)
+		return
+	}
+
+	// Require Activation
+	if !endpoint.AllowUnactivated && !auth.IsActivatedContext(ctx) {
+		log.Printf("[HTTP] Unactivated User Request Forbidden: %s %q", r.Method, r.URL.String())
+		http.Error(w, "must be activated", http.StatusForbidden)
 		return
 	}
 

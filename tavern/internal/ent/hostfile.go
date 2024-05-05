@@ -32,7 +32,7 @@ type HostFile struct {
 	// Permissions for the file on the host system.
 	Permissions string `json:"permissions,omitempty"`
 	// The size of the file in bytes
-	Size int `json:"size,omitempty"`
+	Size uint64 `json:"size,omitempty"`
 	// A SHA3-256 digest of the content field
 	Hash string `json:"hash,omitempty"`
 	// The content of the file
@@ -165,7 +165,7 @@ func (hf *HostFile) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field size", values[i])
 			} else if value.Valid {
-				hf.Size = int(value.Int64)
+				hf.Size = uint64(value.Int64)
 			}
 		case hostfile.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {

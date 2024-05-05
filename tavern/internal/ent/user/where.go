@@ -456,6 +456,29 @@ func HasTomesWith(preds ...predicate.Tome) predicate.User {
 	})
 }
 
+// HasActiveShells applies the HasEdge predicate on the "active_shells" edge.
+func HasActiveShells() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, ActiveShellsTable, ActiveShellsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasActiveShellsWith applies the HasEdge predicate on the "active_shells" edge with a given conditions (other predicates).
+func HasActiveShellsWith(preds ...predicate.Shell) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newActiveShellsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(sql.AndPredicates(predicates...))

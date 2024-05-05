@@ -75,6 +75,16 @@ func Parameters(v string) predicate.Quest {
 	return predicate.Quest(sql.FieldEQ(FieldParameters, v))
 }
 
+// ParamDefsAtCreation applies equality check predicate on the "param_defs_at_creation" field. It's identical to ParamDefsAtCreationEQ.
+func ParamDefsAtCreation(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldEQ(FieldParamDefsAtCreation, v))
+}
+
+// EldritchAtCreation applies equality check predicate on the "eldritch_at_creation" field. It's identical to EldritchAtCreationEQ.
+func EldritchAtCreation(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldEQ(FieldEldritchAtCreation, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Quest {
 	return predicate.Quest(sql.FieldEQ(FieldCreatedAt, v))
@@ -293,6 +303,156 @@ func ParametersEqualFold(v string) predicate.Quest {
 // ParametersContainsFold applies the ContainsFold predicate on the "parameters" field.
 func ParametersContainsFold(v string) predicate.Quest {
 	return predicate.Quest(sql.FieldContainsFold(FieldParameters, v))
+}
+
+// ParamDefsAtCreationEQ applies the EQ predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationEQ(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldEQ(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationNEQ applies the NEQ predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationNEQ(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldNEQ(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationIn applies the In predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationIn(vs ...string) predicate.Quest {
+	return predicate.Quest(sql.FieldIn(FieldParamDefsAtCreation, vs...))
+}
+
+// ParamDefsAtCreationNotIn applies the NotIn predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationNotIn(vs ...string) predicate.Quest {
+	return predicate.Quest(sql.FieldNotIn(FieldParamDefsAtCreation, vs...))
+}
+
+// ParamDefsAtCreationGT applies the GT predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationGT(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldGT(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationGTE applies the GTE predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationGTE(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldGTE(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationLT applies the LT predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationLT(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldLT(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationLTE applies the LTE predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationLTE(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldLTE(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationContains applies the Contains predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationContains(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldContains(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationHasPrefix applies the HasPrefix predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationHasPrefix(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldHasPrefix(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationHasSuffix applies the HasSuffix predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationHasSuffix(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldHasSuffix(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationIsNil applies the IsNil predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationIsNil() predicate.Quest {
+	return predicate.Quest(sql.FieldIsNull(FieldParamDefsAtCreation))
+}
+
+// ParamDefsAtCreationNotNil applies the NotNil predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationNotNil() predicate.Quest {
+	return predicate.Quest(sql.FieldNotNull(FieldParamDefsAtCreation))
+}
+
+// ParamDefsAtCreationEqualFold applies the EqualFold predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationEqualFold(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldEqualFold(FieldParamDefsAtCreation, v))
+}
+
+// ParamDefsAtCreationContainsFold applies the ContainsFold predicate on the "param_defs_at_creation" field.
+func ParamDefsAtCreationContainsFold(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldContainsFold(FieldParamDefsAtCreation, v))
+}
+
+// EldritchAtCreationEQ applies the EQ predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationEQ(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldEQ(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationNEQ applies the NEQ predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationNEQ(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldNEQ(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationIn applies the In predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationIn(vs ...string) predicate.Quest {
+	return predicate.Quest(sql.FieldIn(FieldEldritchAtCreation, vs...))
+}
+
+// EldritchAtCreationNotIn applies the NotIn predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationNotIn(vs ...string) predicate.Quest {
+	return predicate.Quest(sql.FieldNotIn(FieldEldritchAtCreation, vs...))
+}
+
+// EldritchAtCreationGT applies the GT predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationGT(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldGT(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationGTE applies the GTE predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationGTE(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldGTE(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationLT applies the LT predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationLT(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldLT(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationLTE applies the LTE predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationLTE(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldLTE(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationContains applies the Contains predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationContains(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldContains(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationHasPrefix applies the HasPrefix predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationHasPrefix(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldHasPrefix(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationHasSuffix applies the HasSuffix predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationHasSuffix(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldHasSuffix(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationIsNil applies the IsNil predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationIsNil() predicate.Quest {
+	return predicate.Quest(sql.FieldIsNull(FieldEldritchAtCreation))
+}
+
+// EldritchAtCreationNotNil applies the NotNil predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationNotNil() predicate.Quest {
+	return predicate.Quest(sql.FieldNotNull(FieldEldritchAtCreation))
+}
+
+// EldritchAtCreationEqualFold applies the EqualFold predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationEqualFold(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldEqualFold(FieldEldritchAtCreation, v))
+}
+
+// EldritchAtCreationContainsFold applies the ContainsFold predicate on the "eldritch_at_creation" field.
+func EldritchAtCreationContainsFold(v string) predicate.Quest {
+	return predicate.Quest(sql.FieldContainsFold(FieldEldritchAtCreation, v))
 }
 
 // HasTome applies the HasEdge predicate on the "tome" edge.

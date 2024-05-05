@@ -29,11 +29,15 @@ query: |
         }
       }
       tasks {
-      beacon {
-          id
-        }
-        quest {
-          name
+        edges {
+          node {
+            beacon {
+              id
+            }
+            quest {
+              name
+            }
+          }
         }
       }
       bundle {
@@ -58,9 +62,11 @@ expected:
         - id: "3000"
         - id: "3001"
     tasks:
-      - beacon:
-          id: "1337"
-        quest:
-          name: "WonderfulQuest"
+      edges:
+        - node:
+            beacon:
+              id: "1337"
+            quest:
+              name: "WonderfulQuest"
     bundle:
       hash: "4469e68357aa4abc056aa32c248c0912c9f921aba75a960725b2070bc1fad130"

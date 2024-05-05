@@ -13,6 +13,9 @@ export type Tome = {
     id: string;
     name: string;
     paramDefs: string;
+    tactic: string;
+    supportModel: string;
+
 }
 export type TomeParams = {
     name: string;
@@ -27,6 +30,7 @@ export type TomeTag = {
     kind: string;
 }
 export type FilterBarOption = {
+    label?: string;
     id: string;
     name: string;
     kind: string;
@@ -35,6 +39,7 @@ export type HostType = {
     id: string;
     name: string;
     primaryIP?: string;
+    lastSeenAt?: string | null;
     platform?: SupportedPlatforms;
     tags?: Array<TomeTag>;
     beacons?: Array<BeaconType>;
@@ -74,25 +79,28 @@ export type Task = {
     id: string,
     lastModifiedAt: string,
     outputSize: number,
-    output: string,
+    output?: string,
     execStartedAt: string,
     execFinishedAt: string,
-    beacon: BeaconType
+    beacon: BeaconType,
     createdAt: string,
+    error: string,
+    quest?: QuestProps
 };
 export type UserType = {
     id: string;
     name: string;
-    photoURL: string;
-    isActivated: boolean;
-    isAdmin: boolean;
+    photoURL?: string | null;
+    isActivated?: boolean;
+    isAdmin?: boolean;
 }
 export type QuestProps = {
     id: string,
     name: string,
     tasks: Array<Task>,
     tome: Tome,
-    creator: UserType
+    creator: UserType,
+    parameters: string
 }
 export type OutputTableProps = {
     quest: string,
@@ -103,4 +111,53 @@ export type OutputTableProps = {
     group: string | null,
     output: string,
     taskDetails?: Task
+}
+
+export type RepositoryRow ={
+    node: RepositoryType
+}
+export type RepositoryType ={
+        id?: string;
+        url: string;
+        tomes: Array<Tome>;
+        owner?: UserType;
+        repoType?: string;
+        lastModifiedA?: string;
+        publicKey?: string;
+}
+
+export type QuestTableRowType = {
+    node: {
+        id: string;
+        name: string;
+        tome: string;
+        creator: UserType;
+        lastUpdatedTask: {
+            edges: {
+                node: {
+                    lastModifiedAt: string
+                }
+            }
+        }
+        tasksCount: {
+            totalCount: number
+        };
+        tasksFinished: {
+            totalCount: number
+        };
+        tasksOutput: {
+            totalCount: number
+        };
+        tasksError:{
+            totalCount: number
+        };
+        lastModifiedAt: null | string,
+    }
+}
+
+export type PaginationPageInfo = {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
 }

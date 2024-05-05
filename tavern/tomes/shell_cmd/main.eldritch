@@ -1,9 +1,9 @@
 def shell_cmd(cmd):
     res = sys.shell(cmd)
-    print("stdout: {}\n".format(res['stdout']))
-    print("stderr: {}\n".format(res['stderr']))
-    print("status: {}\n".format(res['status']))
+    print("stdout:", res['stdout'])
+    print("stderr:", res['stderr'])
+    print("status:", res['status'])
 
+time.sleep(1)
 shell_cmd(input_params['cmd'])
-print("\n")
-print("\n")
+print("")

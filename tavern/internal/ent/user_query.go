@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -19,14 +20,16 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx            *QueryContext
-	order          []user.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.User
-	withTomes      *TomeQuery
-	modifiers      []func(*sql.Selector)
-	loadTotal      []func(context.Context, []*User) error
-	withNamedTomes map[string]*TomeQuery
+	ctx                   *QueryContext
+	order                 []user.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.User
+	withTomes             *TomeQuery
+	withActiveShells      *ShellQuery
+	modifiers             []func(*sql.Selector)
+	loadTotal             []func(context.Context, []*User) error
+	withNamedTomes        map[string]*TomeQuery
+	withNamedActiveShells map[string]*ShellQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,6 +81,28 @@ func (uq *UserQuery) QueryTomes() *TomeQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(tome.Table, tome.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, user.TomesTable, user.TomesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryActiveShells chains the current query on the "active_shells" edge.
+func (uq *UserQuery) QueryActiveShells() *ShellQuery {
+	query := (&ShellClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.ActiveShellsTable, user.ActiveShellsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -272,12 +297,13 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:     uq.config,
-		ctx:        uq.ctx.Clone(),
-		order:      append([]user.OrderOption{}, uq.order...),
-		inters:     append([]Interceptor{}, uq.inters...),
-		predicates: append([]predicate.User{}, uq.predicates...),
-		withTomes:  uq.withTomes.Clone(),
+		config:           uq.config,
+		ctx:              uq.ctx.Clone(),
+		order:            append([]user.OrderOption{}, uq.order...),
+		inters:           append([]Interceptor{}, uq.inters...),
+		predicates:       append([]predicate.User{}, uq.predicates...),
+		withTomes:        uq.withTomes.Clone(),
+		withActiveShells: uq.withActiveShells.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -292,6 +318,17 @@ func (uq *UserQuery) WithTomes(opts ...func(*TomeQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withTomes = query
+	return uq
+}
+
+// WithActiveShells tells the query-builder to eager-load the nodes that are connected to
+// the "active_shells" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithActiveShells(opts ...func(*ShellQuery)) *UserQuery {
+	query := (&ShellClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withActiveShells = query
 	return uq
 }
 
@@ -373,8 +410,9 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			uq.withTomes != nil,
+			uq.withActiveShells != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -405,10 +443,24 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withActiveShells; query != nil {
+		if err := uq.loadActiveShells(ctx, query, nodes,
+			func(n *User) { n.Edges.ActiveShells = []*Shell{} },
+			func(n *User, e *Shell) { n.Edges.ActiveShells = append(n.Edges.ActiveShells, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range uq.withNamedTomes {
 		if err := uq.loadTomes(ctx, query, nodes,
 			func(n *User) { n.appendNamedTomes(name) },
 			func(n *User, e *Tome) { n.appendNamedTomes(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedActiveShells {
+		if err := uq.loadActiveShells(ctx, query, nodes,
+			func(n *User) { n.appendNamedActiveShells(name) },
+			func(n *User, e *Shell) { n.appendNamedActiveShells(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -448,6 +500,67 @@ func (uq *UserQuery) loadTomes(ctx context.Context, query *TomeQuery, nodes []*U
 			return fmt.Errorf(`unexpected referenced foreign-key "tome_uploader" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadActiveShells(ctx context.Context, query *ShellQuery, nodes []*User, init func(*User), assign func(*User, *Shell)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*User)
+	nids := make(map[int]map[*User]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(user.ActiveShellsTable)
+		s.Join(joinT).On(s.C(shell.FieldID), joinT.C(user.ActiveShellsPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(user.ActiveShellsPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(user.ActiveShellsPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*User]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Shell](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "active_shells" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
 	}
 	return nil
 }
@@ -547,6 +660,20 @@ func (uq *UserQuery) WithNamedTomes(name string, opts ...func(*TomeQuery)) *User
 		uq.withNamedTomes = make(map[string]*TomeQuery)
 	}
 	uq.withNamedTomes[name] = query
+	return uq
+}
+
+// WithNamedActiveShells tells the query-builder to eager-load the nodes that are connected to the "active_shells"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedActiveShells(name string, opts ...func(*ShellQuery)) *UserQuery {
+	query := (&ShellClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedActiveShells == nil {
+		uq.withNamedActiveShells = make(map[string]*ShellQuery)
+	}
+	uq.withNamedActiveShells[name] = query
 	return uq
 }
 

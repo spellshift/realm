@@ -6,6 +6,8 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -40,6 +42,9 @@ func (Task) Fields() []ent.Field {
 			Comment("Timestamp of when execution of the task finished, null if not yet finished"),
 		field.Text("output").
 			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Comment("Output from executing the task"),
 		field.Int("output_size").
 			Default(0).
@@ -50,6 +55,9 @@ func (Task) Fields() []ent.Field {
 			Comment("The size of the output in bytes"),
 		field.String("error").
 			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Comment("Error, if any, produced while executing the Task"),
 	}
 }
@@ -59,15 +67,26 @@ func (Task) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("quest", Quest.Type).
 			Ref("tasks").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Required().
 			Unique(),
 		edge.To("beacon", Beacon.Type).
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Required().
 			Unique(),
 		edge.To("reported_files", HostFile.Type).
 			Comment("Files that have been reported by this task."),
 		edge.To("reported_processes", HostProcess.Type).
 			Comment("Processes that have been reported by this task."),
+		edge.To("reported_credentials", HostCredential.Type).
+			Comment("Credentials that have been reported by this task."),
+		edge.From("shells", Shell.Type).
+			Ref("task").
+			Comment("Shells that were created by this task"),
 	}
 }
 

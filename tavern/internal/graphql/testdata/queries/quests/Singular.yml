@@ -14,9 +14,15 @@ requestor:
 query: |
   query Quests {
     quests {
-      id
+      edges {
+        node {
+          id
+        }
+      }
     }
   }
 expected:
   quests:
-    - id: "7000"
+    edges:
+      - node:
+          id: "7000"

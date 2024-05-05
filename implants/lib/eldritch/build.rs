@@ -1,9 +1,8 @@
 use anyhow::Result;
-use std::env;
-use std::path::PathBuf;
-use which::which;
 
-#[cfg(target_os = "windows")]
+
+
+#[cfg(all(target_os = "windows", debug_assertions))]
 fn build_bin_create_file_dll() {
     use std::{
         io::{BufRead, BufReader},
@@ -25,7 +24,7 @@ fn build_bin_create_file_dll() {
 
     println!("Starting cargo build lib");
     let res = Command::new("cargo")
-        .args(&["build", "--lib"])
+        .args(["build", "--lib"])
         .current_dir(test_dll_path)
         .stderr(Stdio::piped())
         .spawn()
@@ -36,7 +35,7 @@ fn build_bin_create_file_dll() {
     let reader = BufReader::new(res);
     reader
         .lines()
-        .filter_map(|line| line.ok())
+        .map_while(Result::ok)
         .for_each(|line| println!("cargo dll build: {}", line));
 
     let relative_path_to_test_dll_file =
@@ -66,7 +65,7 @@ fn build_bin_reflective_loader() {
 
     println!("Starting cargo build lib");
     let res_build = Command::new("cargo")
-        .args(&[
+        .args([
             "build",
             "--release",
             "-Z",
@@ -84,7 +83,7 @@ fn build_bin_reflective_loader() {
     let reader = BufReader::new(res_build);
     reader
         .lines()
-        .filter_map(|line| line.ok())
+        .map_while(Result::ok)
         .for_each(|line| println!("cargo dll build: {}", line));
 
     let relative_path_to_test_dll_file = "..\\..\\..\\bin\\reflective_loader\\target\\x86_64-pc-windows-msvc\\release\\reflective_loader.dll";
@@ -102,37 +101,9 @@ fn set_host_family() {
     println!("cargo:rustc-cfg=host_family=\"{}\"", HOST_FAMILY);
 }
 
-fn build_proto() -> Result<()> {
-    match env::var_os("PROTOC")
-        .map(PathBuf::from)
-        .or_else(|| which("protoc").ok())
-    {
-        Some(_) => println!("Found protoc, protos will be generated"),
-        None => {
-            println!("WARNING: Failed to locate protoc, protos will not be generated");
-            return Ok(());
-        }
-    }
-
-    match tonic_build::configure()
-        .out_dir("./src")
-        .protoc_arg("--rust_out=./src/pb.rs")
-        .build_client(false)
-        .build_server(false)
-        .compile(&["eldritch.proto"], &["../../../tavern/internal/c2/proto"])
-    {
-        Err(err) => {
-            println!("WARNING: Failed to compile protos: {}", err);
-        }
-        Ok(_) => println!("Generating protos"),
-    }
-    Ok(())
-}
-
 fn main() -> Result<()> {
     set_host_family();
-    build_proto()?;
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", debug_assertions))]
     build_bin_create_file_dll();
     #[cfg(target_os = "windows")]
     build_bin_reflective_loader();

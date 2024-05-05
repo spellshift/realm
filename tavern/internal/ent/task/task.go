@@ -39,6 +39,10 @@ const (
 	EdgeReportedFiles = "reported_files"
 	// EdgeReportedProcesses holds the string denoting the reported_processes edge name in mutations.
 	EdgeReportedProcesses = "reported_processes"
+	// EdgeReportedCredentials holds the string denoting the reported_credentials edge name in mutations.
+	EdgeReportedCredentials = "reported_credentials"
+	// EdgeShells holds the string denoting the shells edge name in mutations.
+	EdgeShells = "shells"
 	// Table holds the table name of the task in the database.
 	Table = "tasks"
 	// QuestTable is the table that holds the quest relation/edge.
@@ -69,6 +73,20 @@ const (
 	ReportedProcessesInverseTable = "host_processes"
 	// ReportedProcessesColumn is the table column denoting the reported_processes relation/edge.
 	ReportedProcessesColumn = "task_reported_processes"
+	// ReportedCredentialsTable is the table that holds the reported_credentials relation/edge.
+	ReportedCredentialsTable = "host_credentials"
+	// ReportedCredentialsInverseTable is the table name for the HostCredential entity.
+	// It exists in this package in order to avoid circular dependency with the "hostcredential" package.
+	ReportedCredentialsInverseTable = "host_credentials"
+	// ReportedCredentialsColumn is the table column denoting the reported_credentials relation/edge.
+	ReportedCredentialsColumn = "task_reported_credentials"
+	// ShellsTable is the table that holds the shells relation/edge.
+	ShellsTable = "shells"
+	// ShellsInverseTable is the table name for the Shell entity.
+	// It exists in this package in order to avoid circular dependency with the "shell" package.
+	ShellsInverseTable = "shells"
+	// ShellsColumn is the table column denoting the shells relation/edge.
+	ShellsColumn = "shell_task"
 )
 
 // Columns holds all SQL columns for task fields.
@@ -214,6 +232,34 @@ func ByReportedProcesses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption
 		sqlgraph.OrderByNeighborTerms(s, newReportedProcessesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByReportedCredentialsCount orders the results by reported_credentials count.
+func ByReportedCredentialsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReportedCredentialsStep(), opts...)
+	}
+}
+
+// ByReportedCredentials orders the results by reported_credentials terms.
+func ByReportedCredentials(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReportedCredentialsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByShellsCount orders the results by shells count.
+func ByShellsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newShellsStep(), opts...)
+	}
+}
+
+// ByShells orders the results by shells terms.
+func ByShells(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newShellsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newQuestStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -240,5 +286,19 @@ func newReportedProcessesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReportedProcessesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReportedProcessesTable, ReportedProcessesColumn),
+	)
+}
+func newReportedCredentialsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReportedCredentialsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReportedCredentialsTable, ReportedCredentialsColumn),
+	)
+}
+func newShellsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ShellsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ShellsTable, ShellsColumn),
 	)
 }

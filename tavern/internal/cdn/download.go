@@ -3,7 +3,7 @@ package cdn
 import (
 	"bytes"
 	"net/http"
-	"path/filepath"
+	"strings"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/file"
@@ -18,12 +18,12 @@ const (
 )
 
 // NewDownloadHandler returns an HTTP handler responsible for downloading a file from the CDN.
-func NewDownloadHandler(graph *ent.Client) http.Handler {
+func NewDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 	return errors.WrapHandler(func(w http.ResponseWriter, req *http.Request) error {
 		ctx := req.Context()
 
 		// Get the File name from the request URI
-		fileName := filepath.Base(req.URL.Path)
+		fileName := strings.TrimPrefix(req.URL.Path, prefix)
 		if fileName == "" || fileName == "." || fileName == "/" {
 			return ErrInvalidFileName
 		}

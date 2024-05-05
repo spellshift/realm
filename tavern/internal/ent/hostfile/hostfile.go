@@ -108,9 +108,9 @@ var (
 	// PathValidator is a validator for the "path" field. It is called by the builders before save.
 	PathValidator func(string) error
 	// DefaultSize holds the default value on creation for the "size" field.
-	DefaultSize int
+	DefaultSize uint64
 	// SizeValidator is a validator for the "size" field. It is called by the builders before save.
-	SizeValidator func(int) error
+	SizeValidator func(uint64) error
 	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	HashValidator func(string) error
 )

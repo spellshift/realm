@@ -8,7 +8,7 @@ def download_stuff_test():
         print("Failure - OS not supported")
         return -1
 
-    file.download("https://github.com/spellshift/realm/releases/download/v0.0.1/imix-linux-x64",dest_path)
+    http.download("https://github.com/spellshift/realm/releases/download/v0.0.1/imix-linux-x64",dest_path)
     print("OKAY!")
     return 0
 

@@ -101,15 +101,15 @@ func (hfc *HostFileCreate) SetNillablePermissions(s *string) *HostFileCreate {
 }
 
 // SetSize sets the "size" field.
-func (hfc *HostFileCreate) SetSize(i int) *HostFileCreate {
-	hfc.mutation.SetSize(i)
+func (hfc *HostFileCreate) SetSize(u uint64) *HostFileCreate {
+	hfc.mutation.SetSize(u)
 	return hfc
 }
 
 // SetNillableSize sets the "size" field if the given value is not nil.
-func (hfc *HostFileCreate) SetNillableSize(i *int) *HostFileCreate {
-	if i != nil {
-		hfc.SetSize(*i)
+func (hfc *HostFileCreate) SetNillableSize(u *uint64) *HostFileCreate {
+	if u != nil {
+		hfc.SetSize(*u)
 	}
 	return hfc
 }
@@ -301,7 +301,7 @@ func (hfc *HostFileCreate) createSpec() (*HostFile, *sqlgraph.CreateSpec) {
 		_node.Permissions = value
 	}
 	if value, ok := hfc.mutation.Size(); ok {
-		_spec.SetField(hostfile.FieldSize, field.TypeInt, value)
+		_spec.SetField(hostfile.FieldSize, field.TypeUint64, value)
 		_node.Size = value
 	}
 	if value, ok := hfc.mutation.Hash(); ok {
@@ -477,7 +477,7 @@ func (u *HostFileUpsert) ClearPermissions() *HostFileUpsert {
 }
 
 // SetSize sets the "size" field.
-func (u *HostFileUpsert) SetSize(v int) *HostFileUpsert {
+func (u *HostFileUpsert) SetSize(v uint64) *HostFileUpsert {
 	u.Set(hostfile.FieldSize, v)
 	return u
 }
@@ -489,7 +489,7 @@ func (u *HostFileUpsert) UpdateSize() *HostFileUpsert {
 }
 
 // AddSize adds v to the "size" field.
-func (u *HostFileUpsert) AddSize(v int) *HostFileUpsert {
+func (u *HostFileUpsert) AddSize(v uint64) *HostFileUpsert {
 	u.Add(hostfile.FieldSize, v)
 	return u
 }
@@ -667,14 +667,14 @@ func (u *HostFileUpsertOne) ClearPermissions() *HostFileUpsertOne {
 }
 
 // SetSize sets the "size" field.
-func (u *HostFileUpsertOne) SetSize(v int) *HostFileUpsertOne {
+func (u *HostFileUpsertOne) SetSize(v uint64) *HostFileUpsertOne {
 	return u.Update(func(s *HostFileUpsert) {
 		s.SetSize(v)
 	})
 }
 
 // AddSize adds v to the "size" field.
-func (u *HostFileUpsertOne) AddSize(v int) *HostFileUpsertOne {
+func (u *HostFileUpsertOne) AddSize(v uint64) *HostFileUpsertOne {
 	return u.Update(func(s *HostFileUpsert) {
 		s.AddSize(v)
 	})
@@ -1032,14 +1032,14 @@ func (u *HostFileUpsertBulk) ClearPermissions() *HostFileUpsertBulk {
 }
 
 // SetSize sets the "size" field.
-func (u *HostFileUpsertBulk) SetSize(v int) *HostFileUpsertBulk {
+func (u *HostFileUpsertBulk) SetSize(v uint64) *HostFileUpsertBulk {
 	return u.Update(func(s *HostFileUpsert) {
 		s.SetSize(v)
 	})
 }
 
 // AddSize adds v to the "size" field.
-func (u *HostFileUpsertBulk) AddSize(v int) *HostFileUpsertBulk {
+func (u *HostFileUpsertBulk) AddSize(v uint64) *HostFileUpsertBulk {
 	return u.Update(func(s *HostFileUpsert) {
 		s.AddSize(v)
 	})

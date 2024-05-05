@@ -4,6 +4,8 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
+	"fmt"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent/dialect/sql"
@@ -11,9 +13,12 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -61,6 +66,90 @@ func (b *BeaconQuery) collectField(ctx context.Context, opCtx *graphql.Operation
 				return err
 			}
 			b.WithNamedTasks(alias, func(wq *TaskQuery) {
+				*wq = *query
+			})
+		case "shells":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellClient{config: b.config}).Query()
+			)
+			args := newShellPaginateArgs(fieldArgs(ctx, new(ShellWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newShellPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					b.loadTotal = append(b.loadTotal, func(ctx context.Context, nodes []*Beacon) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_beacon"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(beacon.ShellsColumn), ids...))
+						})
+						if err := query.GroupBy(beacon.ShellsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				} else {
+					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Beacon) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Shells)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, opCtx, *field, path, mayAddCondition(satisfies, "Shell")...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				modify := limitRows(beacon.ShellsColumn, limit, pager.orderExpr(query))
+				query.modifiers = append(query.modifiers, modify)
+			} else {
+				query = pager.applyOrder(query)
+			}
+			b.WithNamedShells(alias, func(wq *ShellQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -356,6 +445,18 @@ func (h *HostQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			h.WithNamedProcesses(alias, func(wq *HostProcessQuery) {
 				*wq = *query
 			})
+		case "credentials":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostCredentialClient{config: h.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			h.WithNamedCredentials(alias, func(wq *HostCredentialQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[host.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, host.FieldCreatedAt)
@@ -450,6 +551,135 @@ func newHostPaginateArgs(rv map[string]any) *hostPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*HostWhereInput); ok {
 		args.opts = append(args.opts, WithHostFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (hc *HostCredentialQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostCredentialQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return hc, nil
+	}
+	if err := hc.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return hc, nil
+}
+
+func (hc *HostCredentialQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(hostcredential.Columns))
+		selectedFields = []string{hostcredential.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "host":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostClient{config: hc.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			hc.withHost = query
+		case "task":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TaskClient{config: hc.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			hc.withTask = query
+		case "createdAt":
+			if _, ok := fieldSeen[hostcredential.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldCreatedAt)
+				fieldSeen[hostcredential.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[hostcredential.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldLastModifiedAt)
+				fieldSeen[hostcredential.FieldLastModifiedAt] = struct{}{}
+			}
+		case "principal":
+			if _, ok := fieldSeen[hostcredential.FieldPrincipal]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldPrincipal)
+				fieldSeen[hostcredential.FieldPrincipal] = struct{}{}
+			}
+		case "secret":
+			if _, ok := fieldSeen[hostcredential.FieldSecret]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldSecret)
+				fieldSeen[hostcredential.FieldSecret] = struct{}{}
+			}
+		case "kind":
+			if _, ok := fieldSeen[hostcredential.FieldKind]; !ok {
+				selectedFields = append(selectedFields, hostcredential.FieldKind)
+				fieldSeen[hostcredential.FieldKind] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		hc.Select(selectedFields...)
+	}
+	return nil
+}
+
+type hostcredentialPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []HostCredentialPaginateOption
+}
+
+func newHostCredentialPaginateArgs(rv map[string]any) *hostcredentialPaginateArgs {
+	args := &hostcredentialPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &HostCredentialOrder{Field: &HostCredentialOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithHostCredentialOrder(order))
+			}
+		case *HostCredentialOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithHostCredentialOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*HostCredentialWhereInput); ok {
+		args.opts = append(args.opts, WithHostCredentialFilter(v.Filter))
 	}
 	return args
 }
@@ -804,8 +1034,80 @@ func (q *QuestQuery) collectField(ctx context.Context, opCtx *graphql.OperationC
 				path  = append(path, alias)
 				query = (&TaskClient{config: q.config}).Query()
 			)
-			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+			args := newTaskPaginateArgs(fieldArgs(ctx, new(TaskWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newTaskPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
 				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					q.loadTotal = append(q.loadTotal, func(ctx context.Context, nodes []*Quest) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"quest_tasks"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(quest.TasksColumn), ids...))
+						})
+						if err := query.GroupBy(quest.TasksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				} else {
+					q.loadTotal = append(q.loadTotal, func(_ context.Context, nodes []*Quest) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Tasks)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, opCtx, *field, path, mayAddCondition(satisfies, "Task")...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				modify := limitRows(quest.TasksColumn, limit, pager.orderExpr(query))
+				query.modifiers = append(query.modifiers, modify)
+			} else {
+				query = pager.applyOrder(query)
 			}
 			q.WithNamedTasks(alias, func(wq *TaskQuery) {
 				*wq = *query
@@ -839,6 +1141,16 @@ func (q *QuestQuery) collectField(ctx context.Context, opCtx *graphql.OperationC
 			if _, ok := fieldSeen[quest.FieldParameters]; !ok {
 				selectedFields = append(selectedFields, quest.FieldParameters)
 				fieldSeen[quest.FieldParameters] = struct{}{}
+			}
+		case "paramDefsAtCreation":
+			if _, ok := fieldSeen[quest.FieldParamDefsAtCreation]; !ok {
+				selectedFields = append(selectedFields, quest.FieldParamDefsAtCreation)
+				fieldSeen[quest.FieldParamDefsAtCreation] = struct{}{}
+			}
+		case "eldritchAtCreation":
+			if _, ok := fieldSeen[quest.FieldEldritchAtCreation]; !ok {
+				selectedFields = append(selectedFields, quest.FieldEldritchAtCreation)
+				fieldSeen[quest.FieldEldritchAtCreation] = struct{}{}
 			}
 		case "id":
 		case "__typename":
@@ -877,28 +1189,318 @@ func newQuestPaginateArgs(rv map[string]any) *questPaginateArgs {
 	}
 	if v, ok := rv[orderByField]; ok {
 		switch v := v.(type) {
-		case map[string]any:
-			var (
-				err1, err2 error
-				order      = &QuestOrder{Field: &QuestOrderField{}, Direction: entgql.OrderDirectionAsc}
-			)
-			if d, ok := v[directionField]; ok {
-				err1 = order.Direction.UnmarshalGQL(d)
+		case []*QuestOrder:
+			args.opts = append(args.opts, WithQuestOrder(v))
+		case []any:
+			var orders []*QuestOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &QuestOrder{Field: &QuestOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
 			}
-			if f, ok := v[fieldField]; ok {
-				err2 = order.Field.UnmarshalGQL(f)
-			}
-			if err1 == nil && err2 == nil {
-				args.opts = append(args.opts, WithQuestOrder(order))
-			}
-		case *QuestOrder:
-			if v != nil {
-				args.opts = append(args.opts, WithQuestOrder(v))
-			}
+			args.opts = append(args.opts, WithQuestOrder(orders))
 		}
 	}
 	if v, ok := rv[whereField].(*QuestWhereInput); ok {
 		args.opts = append(args.opts, WithQuestFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (r *RepositoryQuery) CollectFields(ctx context.Context, satisfies ...string) (*RepositoryQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return r, nil
+	}
+	if err := r.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (r *RepositoryQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(repository.Columns))
+		selectedFields = []string{repository.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "tomes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TomeClient{config: r.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			r.WithNamedTomes(alias, func(wq *TomeQuery) {
+				*wq = *query
+			})
+		case "owner":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: r.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			r.withOwner = query
+		case "createdAt":
+			if _, ok := fieldSeen[repository.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, repository.FieldCreatedAt)
+				fieldSeen[repository.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[repository.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, repository.FieldLastModifiedAt)
+				fieldSeen[repository.FieldLastModifiedAt] = struct{}{}
+			}
+		case "url":
+			if _, ok := fieldSeen[repository.FieldURL]; !ok {
+				selectedFields = append(selectedFields, repository.FieldURL)
+				fieldSeen[repository.FieldURL] = struct{}{}
+			}
+		case "publicKey":
+			if _, ok := fieldSeen[repository.FieldPublicKey]; !ok {
+				selectedFields = append(selectedFields, repository.FieldPublicKey)
+				fieldSeen[repository.FieldPublicKey] = struct{}{}
+			}
+		case "lastImportedAt":
+			if _, ok := fieldSeen[repository.FieldLastImportedAt]; !ok {
+				selectedFields = append(selectedFields, repository.FieldLastImportedAt)
+				fieldSeen[repository.FieldLastImportedAt] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		r.Select(selectedFields...)
+	}
+	return nil
+}
+
+type repositoryPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []RepositoryPaginateOption
+}
+
+func newRepositoryPaginateArgs(rv map[string]any) *repositoryPaginateArgs {
+	args := &repositoryPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*RepositoryOrder:
+			args.opts = append(args.opts, WithRepositoryOrder(v))
+		case []any:
+			var orders []*RepositoryOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &RepositoryOrder{Field: &RepositoryOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithRepositoryOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*RepositoryWhereInput); ok {
+		args.opts = append(args.opts, WithRepositoryFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (s *ShellQuery) CollectFields(ctx context.Context, satisfies ...string) (*ShellQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return s, nil
+	}
+	if err := s.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *ShellQuery) collectField(ctx context.Context, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(shell.Columns))
+		selectedFields = []string{shell.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "task":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TaskClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			s.withTask = query
+		case "beacon":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BeaconClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			s.withBeacon = query
+		case "owner":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			s.withOwner = query
+		case "activeUsers":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			s.WithNamedActiveUsers(alias, func(wq *UserQuery) {
+				*wq = *query
+			})
+		case "createdAt":
+			if _, ok := fieldSeen[shell.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, shell.FieldCreatedAt)
+				fieldSeen[shell.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[shell.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, shell.FieldLastModifiedAt)
+				fieldSeen[shell.FieldLastModifiedAt] = struct{}{}
+			}
+		case "closedAt":
+			if _, ok := fieldSeen[shell.FieldClosedAt]; !ok {
+				selectedFields = append(selectedFields, shell.FieldClosedAt)
+				fieldSeen[shell.FieldClosedAt] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		s.Select(selectedFields...)
+	}
+	return nil
+}
+
+type shellPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ShellPaginateOption
+}
+
+func newShellPaginateArgs(rv map[string]any) *shellPaginateArgs {
+	args := &shellPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*ShellOrder:
+			args.opts = append(args.opts, WithShellOrder(v))
+		case []any:
+			var orders []*ShellOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &ShellOrder{Field: &ShellOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithShellOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*ShellWhereInput); ok {
+		args.opts = append(args.opts, WithShellFilter(v.Filter))
 	}
 	return args
 }
@@ -1074,6 +1676,30 @@ func (t *TaskQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 			t.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
 				*wq = *query
 			})
+		case "reportedCredentials":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostCredentialClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedReportedCredentials(alias, func(wq *HostCredentialQuery) {
+				*wq = *query
+			})
+		case "shells":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedShells(alias, func(wq *ShellQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[task.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, task.FieldCreatedAt)
@@ -1226,6 +1852,16 @@ func (t *TomeQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				return err
 			}
 			t.withUploader = query
+		case "repository":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&RepositoryClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.withRepository = query
 		case "createdAt":
 			if _, ok := fieldSeen[tome.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, tome.FieldCreatedAt)
@@ -1365,6 +2001,18 @@ func (u *UserQuery) collectField(ctx context.Context, opCtx *graphql.OperationCo
 				return err
 			}
 			u.WithNamedTomes(alias, func(wq *TomeQuery) {
+				*wq = *query
+			})
+		case "activeShells":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, opCtx, field, path, satisfies...); err != nil {
+				return err
+			}
+			u.WithNamedActiveShells(alias, func(wq *ShellQuery) {
 				*wq = *query
 			})
 		case "name":
