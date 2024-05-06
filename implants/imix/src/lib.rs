@@ -1,3 +1,4 @@
+#![deny(warnings)]
 #![allow(dead_code)]
 mod agent;
 mod config;

@@ -1,4 +1,6 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
+#![deny(warnings)]
+
 #[cfg(all(feature = "win_service", windows))]
 #[macro_use]
 extern crate windows_service;
