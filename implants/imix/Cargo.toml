@@ -3,6 +3,9 @@ name = "imix"
 version = "0.0.5"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib"]
+
 [features]
 # Check if compiled by imix
 win_service = []

