@@ -94,9 +94,9 @@ fn build_bin_reflective_loader() {
                 "build",
                 "--release",
                 "-Z",
-                "build-std=core,compiler_builtins",
+                "build-std=core,compiler_builtins,profiler_builtins",
                 "-Z",
-                "build-std-features=compiler-builtins-mem",
+                "build-std-features=compiler-builtins-mem,profiler_builtins",
                 &format!("--target={target_triple}"),
             ])
             .current_dir(test_dll_path.clone())
