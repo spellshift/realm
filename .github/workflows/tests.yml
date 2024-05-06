@@ -58,6 +58,12 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/ -> ../target"
+    - if: matrix.os == 'windows-latest'
+      shell: powershell
+      name: Build reflective loader
+      run: |
+        cd ./bin/reflective_loader/
+        cargo build --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
     - name: Install latest nextest & cargo-llvm-cov release
       uses: taiki-e/install-action@v2.17.7
       with:
