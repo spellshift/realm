@@ -48,7 +48,6 @@ mod test {
         pub want_text: String,
     }
 
-
     test_cases! {
         simple_ssh: TestCase{
             id: 123,
