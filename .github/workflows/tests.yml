@@ -63,6 +63,10 @@ jobs:
       with:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
-      run: cd ./implants/ && cargo +nightly-2024-02-11 fmt --check && cargo llvm-cov nextest --lcov --output-path lcov.info
+      run: |
+        cd ./implants/ && \
+        cargo +nightly-2024-02-11 fmt --check && \
+        cargo +nightly-2024-02-11 clippy && \
+        cargo +nightly-2024-02-11 llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
