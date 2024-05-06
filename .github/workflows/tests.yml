@@ -53,6 +53,7 @@ jobs:
         toolchain: '1.76.0'
         default: true
         profile: minimal
+        components: rustfmt, clippy
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
