@@ -92,6 +92,7 @@ fn build_bin_reflective_loader() {
         "x86_64-pc-windows-msvc" => Command::new("cargo")
             .args([
                 "build",
+                "--release",
                 "-Z",
                 "build-std=core,compiler_builtins",
                 "-Z",
