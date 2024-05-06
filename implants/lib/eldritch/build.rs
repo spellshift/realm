@@ -87,20 +87,39 @@ fn build_bin_reflective_loader() {
     assert!(test_dll_path.is_dir());
 
     println!("Starting cargo build lib");
-    let res_build = Command::new("cargo")
-        .args([
-            "build",
-            "--release",
-            "--lib",
-            &format!("--target={target_triple}"),
-        ])
-        .current_dir(test_dll_path.clone())
-        .env("RUSTFLAGS", "-C target-feature=+crt-static")
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap()
-        .stderr
-        .unwrap();
+    // Define custom builds based on the target triple
+    let res_build = match target_triple.as_str() {
+        "x86_64-pc-windows-msvc" => Command::new("cargo")
+            .args([
+                "build",
+                "-Z",
+                "build-std=core,compiler_builtins",
+                "-Z",
+                "build-std-features=compiler-builtins-mem",
+                &format!("--target={target_triple}"),
+            ])
+            .current_dir(test_dll_path.clone())
+            .env("RUSTFLAGS", "-C target-feature=+crt-static")
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap()
+            .stderr
+            .unwrap(),
+        _ => Command::new("cargo")
+            .args([
+                "build",
+                "--release",
+                "--lib",
+                &format!("--target={target_triple}"),
+            ])
+            .current_dir(test_dll_path.clone())
+            .env("RUSTFLAGS", "-C target-feature=+crt-static")
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap()
+            .stderr
+            .unwrap(),
+    };
 
     let reader = BufReader::new(res_build);
     reader
