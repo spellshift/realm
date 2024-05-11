@@ -4,7 +4,7 @@ import re
 import requests
 from pprint import pprint
 import json
-from neccdc_mapping import tag_profiles
+from ub_mapping import tag_profiles
 from dataclasses import dataclass
 
 
