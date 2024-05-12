@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn test_random_int() -> anyhow::Result<()> {
-        let random_number = random_int(MIN_VALUE, MAX_VALUE)?;
+        let random_number = int(MIN_VALUE, MAX_VALUE)?;
         assert!(random_number >= MIN_VALUE && random_number < MAX_VALUE);
         Ok(())
     }
@@ -29,7 +29,7 @@ mod tests {
     fn test_random_int_uniform() -> anyhow::Result<()> {
         let mut counts = vec![0; MAX_VALUE as usize];
         for _ in 0..NUM_ITERATION {
-            let random_number = random_int(MIN_VALUE, MAX_VALUE)?;
+            let random_number = int(MIN_VALUE, MAX_VALUE)?;
             counts[random_number as usize] += 1;
         }
 
