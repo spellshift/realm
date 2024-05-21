@@ -12,17 +12,21 @@ mock = ["dep:mockall"]
 pb = { workspace = true }
 
 anyhow = { workspace = true }
+bytes = { workspace = true }
 log = { workspace = true }
 prost = { workspace = true }
 prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-webpki-roots"] }
+tower = { workspace = true }
 trait-variant = { workspace = true }
 hyper = { version = "0.14", features = [
     "client",
 ] } # Had to user an older version of hyper to support hyper-proxy
 hyper-proxy = "0.9.1"
+http-body = { workspace = true }
+http-body-util = { workspace = true }
 
 # [feature = mock]
 mockall = { workspace = true, optional = true }
