@@ -49,9 +49,7 @@ mod tests {
         for _ in 0..=NUM_ITERATION {
             let new_str = string(16, None)?;
             assert_eq!(new_str.chars().count(), 16);
-            if !result_str.insert(new_str) {
-                panic!("test_string_uniform - failed");
-            }
+            assert!(result_str.insert(new_str), "test_string_uniform - failed");
         }
         Ok(())
     }
