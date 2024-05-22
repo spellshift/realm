@@ -7,9 +7,11 @@ use hyper::http::{Request, Response};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use tokio_stream::StreamExt;
 use tonic::body::BoxBody;
 use tonic::transport::Body;
 use tonic::transport::Channel;
+use tonic::IntoStreamingRequest;
 use tower::Service;
 
 #[derive(Debug, Clone)]
@@ -50,21 +52,48 @@ impl Service<Request<BoxBody>> for XorSvc {
         let mut inner = std::mem::replace(&mut self.inner, clone);
 
         Box::pin(async move {
-            // Do extra async work here...
-            let (parts, body) = req.into_parts();
+            // Encrypt request
+            let new_req = {
+                let (parts, body) = req.into_parts();
+                // This in theory doesn't await
+                // TODO: Validate that theory by making sure
+                // it doesn't hold all of a large request in memory
+                let body = body
+                    .map_data(move |x| {
+                        let enc_bytes = x.into_iter().map(|x| x + 0).collect::<bytes::Bytes>();
+                        #[cfg(debug_assertions)]
+                        log::debug!("Request bytes: {:?}", enc_bytes);
+                        enc_bytes
+                    })
+                    .boxed_unsync();
 
-            let body = body
+                Request::from_parts(parts, body)
+            };
+
+            let response: Response<Body> = inner.call(new_req).await?;
+
+            // Decrypt response
+            let (parts, body) = response.into_parts();
+
+            // TODO: Why doesn't this hit?
+            // Do i need to use a different map funciton?
+            let mut new_body: Body = body
                 .map_data(move |x| {
-                    let enc_bytes = x.into_iter().map(|x| x + 0).collect::<bytes::Bytes>();
+                    let enc_bytes = x.into_iter().map(|x| x + 1).collect::<bytes::Bytes>();
                     #[cfg(debug_assertions)]
-                    log::debug!("BYTES: {:?}", enc_bytes);
+                    log::debug!("Response bytes: {:?}", enc_bytes);
                     enc_bytes
                 })
-                .boxed_unsync();
+                .into_inner();
 
-            let new_req = Request::from_parts(parts, body);
-            let response = inner.call(new_req).await?;
-            Ok(response)
+            {
+                let tmp = new_body.data().await.unwrap().unwrap();
+                log::debug!("HERE: {:?}", tmp);
+            }
+
+            let new_resp = Response::from_parts(parts, new_body);
+
+            Ok(new_resp)
         })
     }
 }
