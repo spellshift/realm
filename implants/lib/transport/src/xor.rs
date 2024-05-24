@@ -60,7 +60,20 @@ impl Service<Request<BoxBody>> for XorSvc {
                 // it doesn't hold all of a large request in memory
                 let body = body
                     .map_data(move |x| {
-                        let enc_bytes = x.into_iter().map(|x| x + 0).collect::<bytes::Bytes>();
+                        // Skip the first 5 bytes which are the grpc header
+                        // let mut i = -1;
+                        let enc_bytes = x
+                            .into_iter()
+                            .map(|x| {
+                                // i += 1;
+                                // if i == 4 {
+                                //     x
+                                // } else {
+                                //     x
+                                // }
+                                x ^ 0x69
+                            })
+                            .collect::<bytes::Bytes>();
                         #[cfg(debug_assertions)]
                         log::debug!("Request bytes: {:?}", enc_bytes);
                         enc_bytes
@@ -79,7 +92,7 @@ impl Service<Request<BoxBody>> for XorSvc {
             // Do i need to use a different map funciton?
             let mut new_body: Body = body
                 .map_data(move |x| {
-                    let enc_bytes = x.into_iter().map(|x| x + 1).collect::<bytes::Bytes>();
+                    let enc_bytes = x.into_iter().map(|x| x + 0).collect::<bytes::Bytes>();
                     #[cfg(debug_assertions)]
                     log::debug!("Response bytes: {:?}", enc_bytes);
                     enc_bytes

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -304,11 +306,31 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
+// Need to mover farther down the stack. Looks like `grpcSrv` doesn't recognize our encrypted byte stream
+// as a valid GRPC message so our interceptor never gets hit.
+// When trying to modify the client to not encrypt the first five bytes (the grpc header with length prefixed)
+// The client throws this error.
+// 2024-05-22T12:37:59.053Z DEBUG transport::xor               > Request bytes: b"\0\0\0\0\x84\n\x82\x02\x0b%d89fe99:.2742.583d.c35e.84665cdcdb78\x13\x05sppu\x1bC\x0b%e6b63f4d.d2:2.5f69.:2g2.fe32efde:ecf\x13\r:4c1cd2d79:9\x19\x03#\x0b283/28/1/3#\x0e\x0b\x0cjnjy.w1/1/6)\x06"
+// 2024-05-22T12:37:59.053Z DEBUG h2::codec::framed_write      > send frame=Headers { stream_id: StreamId(1), flags: (0x4: END_HEADERS) }
+// 2024-05-22T12:37:59.053Z DEBUG h2::codec::framed_write      > send frame=Data { stream_id: StreamId(1) }
+// 2024-05-22T12:37:59.053Z DEBUG h2::codec::framed_write      > send frame=Data { stream_id: StreamId(1), flags: (0x1: END_STREAM) }
+// 2024-05-22T12:37:59.055Z DEBUG h2::codec::framed_read       > received frame=Headers { stream_id: StreamId(1), flags: (0x4: END_HEADERS) }
+// 2024-05-22T12:37:59.055Z DEBUG h2::codec::framed_read       > received frame=Headers { stream_id: StreamId(1), flags: (0x5: END_HEADERS | END_STREAM) }
+// 2024-05-22T12:37:59.056Z ERROR imix::agent                  > callback failed: status: Internal, message: "grpc: error unmarshalling request: proto:\u{a0}cannot parse invalid wire-format data", details: [], metadata: MetadataMap { headers: {"content-type": "application/grpc", "trailer": "Grpc-Status", "trailer": "Grpc-Message", "trailer": "Grpc-Status-Details-Bin"} }
+func grpcWithUnaryCrypto(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	log.Printf("Received GRPC request: %v", req)
+	resp, err := handler(ctx, req)
+	return resp, err
+}
+
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 	c2srv := c2.New(client, grpcShellMux)
 	grpcSrv := grpc.NewServer(
-		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
-		grpc.StreamInterceptor(grpcWithStreamMetrics),
+		grpc.ChainUnaryInterceptor(
+			grpc.UnaryServerInterceptor(grpcWithUnaryMetrics),
+			grpc.UnaryServerInterceptor(grpcWithUnaryCrypto),
+		),
+		grpc.ChainStreamInterceptor(grpc.StreamServerInterceptor(grpcWithStreamMetrics)),
 	)
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -322,7 +344,28 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 			return
 		}
 
+		// This works!
+		DefaultMaxBodyLength := 2 * 1024 * 1024 * 1024
+		body, err := io.ReadAll(&io.LimitedReader{
+			R: r.Body,
+			N: int64(DefaultMaxBodyLength),
+		})
+		if err != nil {
+			log.Printf("Failed to read request body %s", err)
+		}
+		arr := []byte{}
+		for _, b := range body {
+			arr = append(arr, b^0x69)
+		}
+		body = arr
+		fmt.Println(body)
+
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
+
+		// rww := ResponseWriterWrapper{w: w}
+
 		grpcSrv.ServeHTTP(w, r)
+
 	})
 }
 
