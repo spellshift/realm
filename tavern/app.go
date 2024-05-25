@@ -314,6 +314,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 	)
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("HERE")
 		if r.ProtoMajor != 2 {
 			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
 			return
@@ -336,9 +337,9 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 		// r.Body require an io.ReadCloser
 		r.Body = io.NopCloser(bytes.NewBuffer(arr))
 
-		rww := ResponseWriterWrapper{w: w}
+		// rww := ResponseWriterWrapper{w: w}
 
-		grpcSrv.ServeHTTP(rww, r)
+		grpcSrv.ServeHTTP(w, r)
 	})
 }
 
@@ -363,7 +364,9 @@ func (i ResponseWriterWrapper) Write(buf []byte) (int, error) {
 	for _, b := range buf {
 		arr = append(arr, b^0x69)
 	}
-	return i.w.Write(arr)
+	fmt.Println(buf)
+	fmt.Println(arr)
+	return i.w.Write(buf)
 }
 
 // WriteHeader implements http.ResponseWriter.

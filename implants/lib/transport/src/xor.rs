@@ -11,7 +11,7 @@ use tokio_stream::StreamExt;
 use tonic::body::BoxBody;
 use tonic::transport::Body;
 use tonic::transport::Channel;
-use tonic::IntoStreamingRequest;
+use tonic::{IntoRequest, IntoStreamingRequest};
 use tower::Service;
 
 #[derive(Debug, Clone)]
@@ -64,16 +64,11 @@ impl Service<Request<BoxBody>> for XorSvc {
 
             let response: Response<Body> = inner.call(new_req).await?;
             // Decrypt response
-            let (parts, mut body) = response.into_parts();
+            let (parts, body) = response.into_parts();
 
-            log::debug!("HERE1");
-            let mut body_bytes = body.data().await.unwrap().unwrap();
-            body_bytes = body_bytes
-                .into_iter()
-                .map(|x| x ^ 0x69)
-                .collect::<bytes::Bytes>();
-            log::debug!("HERE2");
-            let new_body: Body = Body::from(body_bytes);
+            let new_body = body
+                .map_data(|x| x.into_iter().map(|x| x ^ 0x69).collect::<bytes::Bytes>())
+                .into_inner();
 
             let new_resp = Response::from_parts(parts, new_body);
 
