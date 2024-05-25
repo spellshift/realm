@@ -1,12 +1,13 @@
 use anyhow::Result;
+use rand_chacha::rand_core::SeedableRng;
 use rand::distributions::{Alphanumeric, Uniform, DistString, Distribution};
 
 pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
+    let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
     match charset_opt {
         Some(charset) => {
             let strlen = charset.chars().count().into();
             let rand_dist = Uniform::from(0..strlen);
-            let mut rng = rand::thread_rng();
             let mut s = "".to_string();
             for _ in 0..length {
                 let index = rand_dist.sample(&mut rng);
@@ -15,7 +16,7 @@ pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
             return Ok(s);
         },
         None => {
-            let s = Alphanumeric.sample_string(&mut rand::thread_rng(), length as usize);
+            let s = Alphanumeric.sample_string(&mut rng, length as usize);
             return Ok(s);
         }
     }
