@@ -50,59 +50,30 @@ impl Service<Request<BoxBody>> for XorSvc {
         // for details on why this is necessary
         let clone: Channel = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
-
+        log::debug!("HERE0");
         Box::pin(async move {
             // Encrypt request
             let new_req = {
                 let (parts, body) = req.into_parts();
-                // This in theory doesn't await
-                // TODO: Validate that theory by making sure
-                // it doesn't hold all of a large request in memory
                 let body = body
-                    .map_data(move |x| {
-                        // Skip the first 5 bytes which are the grpc header
-                        // let mut i = -1;
-                        let enc_bytes = x
-                            .into_iter()
-                            .map(|x| {
-                                // i += 1;
-                                // if i == 4 {
-                                //     x
-                                // } else {
-                                //     x
-                                // }
-                                x ^ 0x69
-                            })
-                            .collect::<bytes::Bytes>();
-                        #[cfg(debug_assertions)]
-                        log::debug!("Request bytes: {:?}", enc_bytes);
-                        enc_bytes
-                    })
+                    .map_data(move |x| x.into_iter().map(|x| x ^ 0x69).collect::<bytes::Bytes>())
                     .boxed_unsync();
 
                 Request::from_parts(parts, body)
             };
 
             let response: Response<Body> = inner.call(new_req).await?;
-
             // Decrypt response
-            let (parts, body) = response.into_parts();
+            let (parts, mut body) = response.into_parts();
 
-            // TODO: Why doesn't this hit?
-            // Do i need to use a different map funciton?
-            let mut new_body: Body = body
-                .map_data(move |x| {
-                    let enc_bytes = x.into_iter().map(|x| x + 0).collect::<bytes::Bytes>();
-                    #[cfg(debug_assertions)]
-                    log::debug!("Response bytes: {:?}", enc_bytes);
-                    enc_bytes
-                })
-                .into_inner();
-
-            {
-                let tmp = new_body.data().await.unwrap().unwrap();
-                log::debug!("HERE: {:?}", tmp);
-            }
+            log::debug!("HERE1");
+            let mut body_bytes = body.data().await.unwrap().unwrap();
+            body_bytes = body_bytes
+                .into_iter()
+                .map(|x| x ^ 0x69)
+                .collect::<bytes::Bytes>();
+            log::debug!("HERE2");
+            let new_body: Body = Body::from(body_bytes);
 
             let new_resp = Response::from_parts(parts, new_body);
 
