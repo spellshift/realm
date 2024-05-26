@@ -17,21 +17,27 @@ pub struct XorSvc {
     inner: Channel,
 }
 
+const XOR_KEY: &[u8; 5] = b"\x01\x02\x03\x04\x05";
+
 impl CryptoSvc for XorSvc {
     fn new(inner: Channel) -> Self {
         XorSvc { inner }
     }
     fn decrypt(bytes: Bytes) -> Bytes {
-        bytes
-            .into_iter()
-            .map(|x| x ^ 0x69)
-            .collect::<bytes::Bytes>()
+        let mut res_bytes = Vec::new();
+        for (i, x) in bytes.into_iter().enumerate() {
+            res_bytes.push(x ^ XOR_KEY[i % XOR_KEY.len()]);
+        }
+
+        bytes::Bytes::from(res_bytes)
     }
     fn encrypt(bytes: Bytes) -> Bytes {
-        bytes
-            .into_iter()
-            .map(|x| x ^ 0x69)
-            .collect::<bytes::Bytes>()
+        let mut res_bytes = Vec::new();
+        for (i, x) in bytes.into_iter().enumerate() {
+            res_bytes.push(x ^ XOR_KEY[i % XOR_KEY.len()]);
+        }
+
+        bytes::Bytes::from(res_bytes)
     }
 }
 

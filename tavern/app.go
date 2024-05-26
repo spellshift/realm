@@ -343,13 +343,15 @@ func (r RequestBodyWrapper) Close() error {
 	return r.body.Close()
 }
 
+const XOR_KEY = "\x01\x02\x03\x04\x05"
+
 // Read implements io.ReadCloser.
 func (r RequestBodyWrapper) Read(p []byte) (n int, err error) {
 	// tmp := []byte{}
 	bytes_read, byte_err := r.body.Read(p)
 	fmt.Println("Encrypted request: ", p[:bytes_read])
 	for i, b := range p[:bytes_read] {
-		p[i] = b ^ 0x69
+		p[i] = b ^ XOR_KEY[i%len(XOR_KEY)]
 	}
 	fmt.Println("Decrypted request: ", p[:bytes_read])
 
@@ -375,8 +377,9 @@ func (i ResponseWriterWrapper) Header() http.Header {
 func (i ResponseWriterWrapper) Write(buf []byte) (int, error) {
 	fmt.Println("Decrypted response: ", buf)
 	arr := []byte{}
-	for _, b := range buf {
-		arr = append(arr, b^0x69)
+	for indx, b := range buf {
+		new_b := b ^ XOR_KEY[indx%len(XOR_KEY)]
+		arr = append(arr, new_b)
 	}
 	fmt.Println("Encrypted response: ", arr)
 	return i.w.Write(arr)
