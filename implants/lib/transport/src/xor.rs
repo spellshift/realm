@@ -70,16 +70,15 @@ impl Service<Request<BoxBody>> for XorSvc {
 
             let response: Response<Body> = inner.call(new_req).await?;
 
-            // Decrypt response
-            let (parts, body) = response.into_parts();
+            let new_resp = {
+                let (parts, body) = response.into_parts();
 
-            let mut new_body = body
-                .map_data(|b| b.into_iter().map(|x| x ^ 0x69).collect::<bytes::Bytes>())
-                .into_inner();
+                let mut new_body = body.map_data(crate::xor::XorSvc::decrypt).into_inner();
 
-            log::debug!("new_body: {:?}", new_body.data().await.unwrap().unwrap());
+                log::debug!("new_body: {:?}", new_body.data().await.unwrap().unwrap());
 
-            let new_resp = Response::from_parts(parts, new_body);
+                Response::from_parts(parts, new_body)
+            };
 
             Ok(new_resp)
         })
