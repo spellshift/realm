@@ -50,10 +50,17 @@ jobs:
     - name: Setup Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: 'nightly-2024-02-11'
+        toolchain: '1.76.0'
         default: true
         profile: minimal
         components: rustfmt, clippy, rust-src
+    - name: Setup Rust (Loader)
+      uses: actions-rs/toolchain@v1
+      if: matrix.os == 'windows-latest'
+      with:
+        toolchain: 'nightly-2024-02-11'
+        default: false
+        profile: minimal
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
