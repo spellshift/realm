@@ -70,7 +70,7 @@ jobs:
       name: Build reflective loader
       run: |
         cd ./bin/reflective_loader/
-        cargo build --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+        cargo build +nightly-2024-02-11 --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
     - name: Install latest nextest & cargo-llvm-cov release
       uses: taiki-e/install-action@v2.17.7
       with:
@@ -78,7 +78,7 @@ jobs:
     - name: 🔎 Run tests
       run: |
         cd ./implants/ &&
-        cargo +nightly-2024-02-11 fmt --check &&
-        cargo +nightly-2024-02-11 llvm-cov nextest --lcov --output-path lcov.info
+        cargo fmt --check &&
+        cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
