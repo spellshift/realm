@@ -23,6 +23,7 @@ static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 #[derive(Debug, Clone)]
 pub struct GRPC {
     grpc: tonic::client::Grpc<crate::xor::XorSvc>,
+    // grpc: tonic::client::Grpc<tonic::transport::Channel>,
 }
 
 impl Transport for GRPC {

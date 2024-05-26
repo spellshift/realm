@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -326,21 +325,35 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 		}
 
 		// Decrypt grpc message
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			log.Printf("Failed to read request body %s", err)
-		}
-		arr := []byte{}
-		for _, b := range body {
-			arr = append(arr, b^0x69)
-		}
-		// r.Body require an io.ReadCloser
-		r.Body = io.NopCloser(bytes.NewBuffer(arr))
+		r.Body = RequestBodyWrapper{body: r.Body}
 
-		// rww := ResponseWriterWrapper{w: w}
+		// Encrypt grpc response
+		rww := ResponseWriterWrapper{w: w}
 
-		grpcSrv.ServeHTTP(w, r)
+		grpcSrv.ServeHTTP(rww, r)
 	})
+}
+
+type RequestBodyWrapper struct {
+	body io.ReadCloser
+}
+
+// Close implements io.ReadCloser.
+func (r RequestBodyWrapper) Close() error {
+	return r.body.Close()
+}
+
+// Read implements io.ReadCloser.
+func (r RequestBodyWrapper) Read(p []byte) (n int, err error) {
+	// tmp := []byte{}
+	bytes_read, byte_err := r.body.Read(p)
+	fmt.Println("Encrypted request: ", p[:bytes_read])
+	for i, b := range p[:bytes_read] {
+		p[i] = b ^ 0x69
+	}
+	fmt.Println("Decrypted request: ", p[:bytes_read])
+
+	return bytes_read, byte_err
 }
 
 // Custom writer to enable encryption
@@ -360,13 +373,13 @@ func (i ResponseWriterWrapper) Header() http.Header {
 
 // Write implements http.ResponseWriter.
 func (i ResponseWriterWrapper) Write(buf []byte) (int, error) {
+	fmt.Println("Decrypted response: ", buf)
 	arr := []byte{}
 	for _, b := range buf {
 		arr = append(arr, b^0x69)
 	}
-	fmt.Println(buf)
-	fmt.Println(arr)
-	return i.w.Write(buf)
+	fmt.Println("Encrypted response: ", arr)
+	return i.w.Write(arr)
 }
 
 // WriteHeader implements http.ResponseWriter.

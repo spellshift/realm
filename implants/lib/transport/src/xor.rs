@@ -21,16 +21,22 @@ impl CryptoSvc for XorSvc {
         XorSvc { inner }
     }
     fn decrypt(bytes: Bytes) -> Bytes {
-        bytes
+        log::debug!("Encrypted response: {:?}", bytes);
+        let res = bytes
             .into_iter()
             .map(|x| x ^ 0x69)
-            .collect::<bytes::Bytes>()
+            .collect::<bytes::Bytes>();
+        log::debug!("Decrypted response: {:?}", res);
+        res
     }
     fn encrypt(bytes: Bytes) -> Bytes {
-        bytes
+        log::debug!("Decrypted request: {:?}", bytes);
+        let res = bytes
             .into_iter()
             .map(|x| x ^ 0x69)
-            .collect::<bytes::Bytes>()
+            .collect::<bytes::Bytes>();
+        log::debug!("Encrypted request: {:?}", res);
+        res
     }
 }
 
@@ -63,10 +69,15 @@ impl Service<Request<BoxBody>> for XorSvc {
             };
 
             let response: Response<Body> = inner.call(new_req).await?;
+
             // Decrypt response
             let (parts, body) = response.into_parts();
 
-            let new_body = body.map_data(crate::xor::XorSvc::decrypt).into_inner();
+            let mut new_body = body
+                .map_data(|b| b.into_iter().map(|x| x ^ 0x69).collect::<bytes::Bytes>())
+                .into_inner();
+
+            log::debug!("new_body: {:?}", new_body.data().await.unwrap().unwrap());
 
             let new_resp = Response::from_parts(parts, new_body);
 
