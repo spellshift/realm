@@ -4,8 +4,8 @@ use tonic::transport::Channel;
 
 pub trait CryptoSvc {
     fn new(inner: Channel) -> Self;
-    fn encrypt(bytes: Bytes) -> Result<Bytes>;
-    fn decrypt(bytes: Bytes) -> Result<Bytes>;
+    fn encrypt(bytes: Bytes) -> Bytes;
+    fn decrypt(bytes: Bytes) -> Bytes;
 }
 
 // Is there a way to require things implementing

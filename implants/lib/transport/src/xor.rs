@@ -1,17 +1,14 @@
 use crate::crypto::CryptoSvc;
 use anyhow::Result;
 use bytes::Bytes;
-use http_body_util::BodyExt;
 use hyper::body::HttpBody as HyperHttpBody;
 use hyper::http::{Request, Response};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use tokio_stream::StreamExt;
 use tonic::body::BoxBody;
 use tonic::transport::Body;
 use tonic::transport::Channel;
-use tonic::{IntoRequest, IntoStreamingRequest};
 use tower::Service;
 
 #[derive(Debug, Clone)]
@@ -23,11 +20,17 @@ impl CryptoSvc for XorSvc {
     fn new(inner: Channel) -> Self {
         XorSvc { inner }
     }
-    fn decrypt(bytes: Bytes) -> Result<Bytes> {
-        Ok(bytes)
+    fn decrypt(bytes: Bytes) -> Bytes {
+        bytes
+            .into_iter()
+            .map(|x| x ^ 0x69)
+            .collect::<bytes::Bytes>()
     }
-    fn encrypt(bytes: Bytes) -> Result<Bytes> {
-        Ok(bytes)
+    fn encrypt(bytes: Bytes) -> Bytes {
+        bytes
+            .into_iter()
+            .map(|x| x ^ 0x69)
+            .collect::<bytes::Bytes>()
     }
 }
 
@@ -50,14 +53,11 @@ impl Service<Request<BoxBody>> for XorSvc {
         // for details on why this is necessary
         let clone: Channel = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
-        log::debug!("HERE0");
         Box::pin(async move {
             // Encrypt request
             let new_req = {
                 let (parts, body) = req.into_parts();
-                let body = body
-                    .map_data(move |x| x.into_iter().map(|x| x ^ 0x69).collect::<bytes::Bytes>())
-                    .boxed_unsync();
+                let body = body.map_data(crate::xor::XorSvc::encrypt).boxed_unsync();
 
                 Request::from_parts(parts, body)
             };
@@ -66,9 +66,7 @@ impl Service<Request<BoxBody>> for XorSvc {
             // Decrypt response
             let (parts, body) = response.into_parts();
 
-            let new_body = body
-                .map_data(|x| x.into_iter().map(|x| x ^ 0x69).collect::<bytes::Bytes>())
-                .into_inner();
+            let new_body = body.map_data(crate::xor::XorSvc::decrypt).into_inner();
 
             let new_resp = Response::from_parts(parts, new_body);
 
