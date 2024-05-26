@@ -1,13 +1,6 @@
 #[cfg(not(target_os = "windows"))]
 use {
     super::super::insert_dict_kv,
-    starlark::collections::SmallMap,
-    starlark::const_frozen_string,
-    std::collections::HashMap,
-    std::net::{IpAddr, Ipv4Addr},
-    std::str::FromStr,
-    std::sync::{Arc, Mutex},
-    std::time::{Duration, SystemTime},
     ipnetwork::{IpNetwork, Ipv4Network},
     pnet::{
         datalink::{self, channel, Channel::Ethernet, NetworkInterface},
@@ -18,9 +11,16 @@ use {
         },
         util::MacAddr,
     },
+    starlark::collections::SmallMap,
+    starlark::const_frozen_string,
+    std::collections::HashMap,
+    std::net::{IpAddr, Ipv4Addr},
+    std::str::FromStr,
+    std::sync::{Arc, Mutex},
+    std::time::{Duration, SystemTime},
 };
 
-use anyhow::{anyhow,Result};
+use anyhow::{anyhow, Result};
 use starlark::values::{dict::Dict, Heap};
 
 #[cfg(not(target_os = "windows"))]
@@ -322,10 +322,7 @@ mod tests {
         thread::sleep(Duration::from_secs(3));
         let loopback = {
             let interfaces = interfaces();
-            interfaces
-                .iter().find(|x| x.is_loopback())
-                .unwrap()
-                .clone()
+            interfaces.iter().find(|x| x.is_loopback()).unwrap().clone()
         };
         assert!(start_listener(loopback, data).is_err());
     }

@@ -524,7 +524,8 @@ mod tests {
 
         let test_eldritch_script = r#"
 func_dll_reflect(input_params['dll_bytes'], input_params['target_pid'], "demo_init")
-"#.to_string();
+"#
+        .to_string();
 
         let ast = match AstModule::parse(
             "test.eldritch",
