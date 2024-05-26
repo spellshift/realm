@@ -1,4 +1,3 @@
-use anyhow::Result;
 use bytes::Bytes;
 use tonic::transport::Channel;
 

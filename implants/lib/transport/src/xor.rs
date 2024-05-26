@@ -22,22 +22,16 @@ impl CryptoSvc for XorSvc {
         XorSvc { inner }
     }
     fn decrypt(bytes: Bytes) -> Bytes {
-        log::debug!("Encrypted response: {:?}", bytes);
-        let res = bytes
+        bytes
             .into_iter()
             .map(|x| x ^ 0x69)
-            .collect::<bytes::Bytes>();
-        log::debug!("Decrypted response: {:?}", res);
-        res
+            .collect::<bytes::Bytes>()
     }
     fn encrypt(bytes: Bytes) -> Bytes {
-        log::debug!("Decrypted request: {:?}", bytes);
-        let res = bytes
+        bytes
             .into_iter()
             .map(|x| x ^ 0x69)
-            .collect::<bytes::Bytes>();
-        log::debug!("Encrypted request: {:?}", res);
-        res
+            .collect::<bytes::Bytes>()
     }
 }
 
@@ -60,6 +54,7 @@ impl Service<Request<BoxBody>> for XorSvc {
         // for details on why this is necessary
         let clone: Channel = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
+
         Box::pin(async move {
             // Encrypt request
             let new_req = {
@@ -75,17 +70,9 @@ impl Service<Request<BoxBody>> for XorSvc {
             let new_resp = {
                 let (parts, mut body) = response.into_parts();
 
-                // let mut tmp = body.boxed_unsync();
-                // let tmp = tmp.data().await.unwrap().unwrap();
-                let tmp = body.data().await.unwrap().unwrap();
-
-                log::debug!("HERE: {:?}", tmp);
-
-                let tmp = tmp.into_iter().map(|x| x ^ 0x69).collect::<bytes::Bytes>();
-
-                log::debug!("HERE: {:?}", tmp);
-
-                let new_body = hyper::body::Body::from(tmp);
+                let body_bytes = body.data().await.unwrap().unwrap();
+                let dec_body_bytes = crate::xor::XorSvc::decrypt(body_bytes);
+                let new_body = hyper::body::Body::from(dec_body_bytes);
 
                 Response::from_parts(parts, new_body)
             };
