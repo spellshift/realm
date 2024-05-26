@@ -6,6 +6,7 @@ use hyper::http::{Request, Response};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use tokio_stream::StreamExt;
 use tonic::body::BoxBody;
 use tonic::transport::Body;
 use tonic::transport::Channel;
@@ -63,19 +64,28 @@ impl Service<Request<BoxBody>> for XorSvc {
             // Encrypt request
             let new_req = {
                 let (parts, body) = req.into_parts();
-                let body = body.map_data(crate::xor::XorSvc::encrypt).boxed_unsync();
+                let new_body = body.map_data(crate::xor::XorSvc::encrypt).boxed_unsync();
 
-                Request::from_parts(parts, body)
+                Request::from_parts(parts, new_body)
             };
 
             let response: Response<Body> = inner.call(new_req).await?;
 
+            // Decrypt response
             let new_resp = {
-                let (parts, body) = response.into_parts();
+                let (parts, mut body) = response.into_parts();
 
-                let mut new_body = body.map_data(crate::xor::XorSvc::decrypt).into_inner();
+                // let mut tmp = body.boxed_unsync();
+                // let tmp = tmp.data().await.unwrap().unwrap();
+                let tmp = body.data().await.unwrap().unwrap();
 
-                log::debug!("new_body: {:?}", new_body.data().await.unwrap().unwrap());
+                log::debug!("HERE: {:?}", tmp);
+
+                let tmp = tmp.into_iter().map(|x| x ^ 0x69).collect::<bytes::Bytes>();
+
+                log::debug!("HERE: {:?}", tmp);
+
+                let new_body = hyper::body::Body::from(tmp);
 
                 Response::from_parts(parts, new_body)
             };
