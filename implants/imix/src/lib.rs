@@ -1,6 +1,6 @@
 #![deny(warnings)]
-#![allow(dead_code)]
-mod agent;
+
+pub mod agent;
 mod config;
 mod install;
 mod run;
@@ -10,7 +10,7 @@ mod version;
 pub mod win_service;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
-async fn lib_entry() {
+pub async fn lib_entry() {
     #[cfg(debug_assertions)]
     run::init_logging();
 
