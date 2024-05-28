@@ -13,9 +13,11 @@ pb = { workspace = true }
 
 anyhow = { workspace = true }
 bytes = { workspace = true }
+chacha20poly1305 = { workspace = true }
 log = { workspace = true }
 prost = { workspace = true }
 prost-types = { workspace = true }
+sha2 = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-webpki-roots"] }

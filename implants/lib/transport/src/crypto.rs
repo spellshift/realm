@@ -1,10 +1,11 @@
+use anyhow::Result;
 use bytes::Bytes;
 use tonic::transport::Channel;
 
 pub trait CryptoSvc {
-    fn new(inner: Channel) -> Self;
-    fn encrypt(bytes: Bytes) -> Bytes;
-    fn decrypt(bytes: Bytes) -> Bytes;
+    fn new(inner: Channel, key: Vec<u8>) -> Self;
+    fn encrypt(&self, bytes: Bytes) -> Bytes;
+    fn decrypt(&self, bytes: Bytes) -> Bytes;
 }
 
 // Is there a way to require things implementing

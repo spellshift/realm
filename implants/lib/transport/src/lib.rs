@@ -10,5 +10,5 @@ pub use mock::MockTransport;
 
 mod transport;
 pub use transport::Transport;
+mod chacha;
 mod crypto;
-mod xor;
