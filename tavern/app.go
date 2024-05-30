@@ -26,6 +26,7 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
+	"realm.pub/tavern/internal/crypto"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
@@ -324,17 +325,20 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 			return
 		}
 
+		csvc := crypto.NewCryptoSvc([]byte("helloworld"))
+
 		// Decrypt grpc message
-		r.Body = RequestBodyWrapper{body: r.Body}
+		r.Body = RequestBodyWrapper{csvc: csvc, body: r.Body}
 
 		// Encrypt grpc response
-		rww := ResponseWriterWrapper{w: w}
+		rww := ResponseWriterWrapper{csvc: csvc, w: w}
 
 		grpcSrv.ServeHTTP(rww, r)
 	})
 }
 
 type RequestBodyWrapper struct {
+	csvc crypto.CryptoSvc
 	body io.ReadCloser
 }
 
@@ -343,24 +347,25 @@ func (r RequestBodyWrapper) Close() error {
 	return r.body.Close()
 }
 
-const XOR_KEY = "\x01\x02\x03\x04\x05"
-
 // Read implements io.ReadCloser.
 func (r RequestBodyWrapper) Read(p []byte) (n int, err error) {
 	// tmp := []byte{}
 	bytes_read, byte_err := r.body.Read(p)
-	fmt.Println("Encrypted request: ", p[:bytes_read])
-	for i, b := range p[:bytes_read] {
-		p[i] = b ^ XOR_KEY[i%len(XOR_KEY)]
+	if byte_err != nil {
+		return bytes_read, byte_err
 	}
-	fmt.Println("Decrypted request: ", p[:bytes_read])
+	fmt.Println("Encrypted request: ", p[:bytes_read])
+	res := r.csvc.Decrypt(p[:bytes_read])
+	fmt.Println("Decrypted request: ", res)
+	copy(p, res)
 
 	return bytes_read, byte_err
 }
 
 // Custom writer to enable encryption
 type ResponseWriterWrapper struct {
-	w http.ResponseWriter
+	csvc crypto.CryptoSvc
+	w    http.ResponseWriter
 }
 
 // Header implements http.ResponseWriter.
@@ -376,11 +381,7 @@ func (i ResponseWriterWrapper) Header() http.Header {
 // Write implements http.ResponseWriter.
 func (i ResponseWriterWrapper) Write(buf []byte) (int, error) {
 	fmt.Println("Decrypted response: ", buf)
-	arr := []byte{}
-	for indx, b := range buf {
-		new_b := b ^ XOR_KEY[indx%len(XOR_KEY)]
-		arr = append(arr, new_b)
-	}
+	arr := i.csvc.Encrypt(buf)
 	fmt.Println("Encrypted response: ", arr)
 	return i.w.Write(arr)
 }
