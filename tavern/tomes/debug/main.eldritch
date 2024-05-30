@@ -1,0 +1,4 @@
+assets.copy("debug/linux/test-file", "/tmp/winnnnnnnnz")
+report.file("/tmp/winnnnnnnnz")
+# file.remove("/tmp/winnnnnnnnz")
+print("Okay!")

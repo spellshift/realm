@@ -34,6 +34,8 @@ impl CryptoSvc for ChaChaSvc {
         }
     }
     fn decrypt(&self, bytes: Bytes) -> Bytes {
+        log::debug!("enc bytes: {:?}", bytes.to_vec());
+
         if bytes.len() < 24 {
             #[cfg(debug_assertions)]
             log::error!("Message size smaller than nonce ({})", bytes.len());
@@ -48,7 +50,6 @@ impl CryptoSvc for ChaChaSvc {
 
         log::debug!("NONE: {:?}", nonce);
         log::debug!("KEY: {:?}", self.key);
-        log::debug!("bytes: {:?}", bytes.to_vec());
         log::debug!("CT: {:?}", ciphertext.to_vec());
 
         let res_bytes = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext) {
@@ -60,6 +61,7 @@ impl CryptoSvc for ChaChaSvc {
                 Vec::new()
             }
         };
+        log::debug!("dec bytes: {:?}", res_bytes.to_vec());
 
         bytes::Bytes::from(res_bytes)
     }
@@ -118,6 +120,8 @@ impl Service<Request<BoxBody>> for ChaChaSvc {
             };
 
             let response: Response<Body> = inner.call(new_req).await?;
+            let next = response.is_end_stream();
+            log::debug!("is end of stream?: {:?}", next);
 
             // Decrypt response
             let new_resp = {
@@ -125,9 +129,14 @@ impl Service<Request<BoxBody>> for ChaChaSvc {
                 let body_bytes_tmp = body.data().await.unwrap_or(Ok(bytes::Bytes::new()));
                 let body_bytes = body_bytes_tmp.unwrap_or(bytes::Bytes::new());
                 let dec_body_bytes = self_clone2.decrypt(body_bytes);
-                let new_body = hyper::body::Body::from(dec_body_bytes);
 
-                Response::from_parts(parts, new_body)
+                if !dec_body_bytes.is_empty() {
+                    let new_body = hyper::body::Body::from(dec_body_bytes);
+                    Response::from_parts(parts, new_body)
+                } else {
+                    log::debug!("EMTPY body");
+                    Response::from_parts(parts, hyper::Body::empty())
+                }
             };
 
             Ok(new_resp)

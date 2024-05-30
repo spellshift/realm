@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -328,69 +327,13 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 		csvc := crypto.NewCryptoSvc([]byte("helloworld"))
 
 		// Decrypt grpc message
-		r.Body = RequestBodyWrapper{csvc: csvc, body: r.Body}
+		r.Body = crypto.RequestBodyWrapper{Csvc: csvc, Body: r.Body}
 
 		// Encrypt grpc response
-		rww := ResponseWriterWrapper{csvc: csvc, w: w}
+		rww := crypto.NewResponseWriterWrapper(csvc, w)
 
 		grpcSrv.ServeHTTP(rww, r)
 	})
-}
-
-type RequestBodyWrapper struct {
-	csvc crypto.CryptoSvc
-	body io.ReadCloser
-}
-
-// Close implements io.ReadCloser.
-func (r RequestBodyWrapper) Close() error {
-	return r.body.Close()
-}
-
-// Read implements io.ReadCloser.
-func (r RequestBodyWrapper) Read(p []byte) (n int, err error) {
-	// tmp := []byte{}
-	bytes_read, byte_err := r.body.Read(p)
-	if byte_err != nil {
-		return bytes_read, byte_err
-	}
-	fmt.Println("Encrypted request: ", p[:bytes_read])
-	res := r.csvc.Decrypt(p[:bytes_read])
-	fmt.Println("Decrypted request: ", res)
-	copy(p, res)
-
-	return bytes_read, byte_err
-}
-
-// Custom writer to enable encryption
-type ResponseWriterWrapper struct {
-	csvc crypto.CryptoSvc
-	w    http.ResponseWriter
-}
-
-// Header implements http.ResponseWriter.
-func (i ResponseWriterWrapper) Flush() {
-	i.w.(http.Flusher).Flush()
-}
-
-// Header implements http.ResponseWriter.
-func (i ResponseWriterWrapper) Header() http.Header {
-	return i.w.Header()
-}
-
-// Write implements http.ResponseWriter.
-func (i ResponseWriterWrapper) Write(buf []byte) (int, error) {
-	fmt.Println("Decrypted response: ", buf)
-	arr := i.csvc.Encrypt(buf)
-	fmt.Println("Encrypted response: ", arr)
-	res, err := i.w.Write(arr)
-	// i.Flush()
-	return res, err
-}
-
-// WriteHeader implements http.ResponseWriter.
-func (i ResponseWriterWrapper) WriteHeader(statusCode int) {
-	i.w.WriteHeader(statusCode)
 }
 
 func newMetricsServer() *http.Server {
