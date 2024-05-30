@@ -3,15 +3,11 @@ use anyhow::Result;
 use bytes::Bytes;
 use chacha20poly1305::{
     aead::{Aead, AeadCore, KeyInit, OsRng},
-    KeySizeUser, XChaCha20Poly1305, XNonce,
+    KeySizeUser, XChaCha20Poly1305,
 };
 use hyper::body::HttpBody as HyperHttpBody;
 use hyper::http::{Request, Response};
-use prost::Message;
-use sha2::{
-    digest::generic_array::{sequence::Lengthen, GenericArray},
-    Digest, Sha256, Sha512,
-};
+use sha2::{digest::generic_array::GenericArray, Digest, Sha256};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -38,12 +34,32 @@ impl CryptoSvc for ChaChaSvc {
         }
     }
     fn decrypt(&self, bytes: Bytes) -> Bytes {
-        let nonce = GenericArray::clone_from_slice(&bytes.clone()[0..24]);
+        if bytes.len() < 24 {
+            #[cfg(debug_assertions)]
+            log::error!("Message size smaller than nonce ({})", bytes.len());
+
+            return bytes::Bytes::new();
+        }
 
         let cipher = XChaCha20Poly1305::new_from_slice(self.key.as_slice()).unwrap();
 
+        let nonce = &bytes.clone()[..24];
         let ciphertext = &bytes.clone()[24..];
-        let res_bytes = cipher.decrypt(&nonce, ciphertext).unwrap();
+
+        log::debug!("NONE: {:?}", nonce);
+        log::debug!("KEY: {:?}", self.key);
+        log::debug!("bytes: {:?}", bytes.to_vec());
+        log::debug!("CT: {:?}", ciphertext.to_vec());
+
+        let res_bytes = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext) {
+            Ok(res) => res,
+            Err(err) => {
+                #[cfg(debug_assertions)]
+                log::error!("Decrypt failed: {}", err.to_string());
+
+                Vec::new()
+            }
+        };
 
         bytes::Bytes::from(res_bytes)
     }
@@ -52,7 +68,15 @@ impl CryptoSvc for ChaChaSvc {
         let cipher = XChaCha20Poly1305::new_from_slice(self.key.as_slice()).unwrap();
         let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng); // 192-bits; unique per message
 
-        let mesg = cipher.encrypt(&nonce, bytes.as_ref()).unwrap();
+        let mesg = match cipher.encrypt(&nonce, bytes.as_ref()) {
+            Ok(mesg) => mesg,
+            Err(err) => {
+                #[cfg(debug_assertions)]
+                log::error!("Encrypt failed: {:?}", err.to_string());
+
+                Vec::new()
+            }
+        };
 
         let res = [nonce.to_vec(), mesg].concat();
 
@@ -99,7 +123,8 @@ impl Service<Request<BoxBody>> for ChaChaSvc {
             let new_resp = {
                 let (parts, mut body) = response.into_parts();
 
-                let body_bytes = body.data().await.unwrap().unwrap();
+                let body_bytes_tmp = body.data().await.unwrap_or(Ok(bytes::Bytes::new()));
+                let body_bytes = body_bytes_tmp.unwrap_or(bytes::Bytes::new());
                 let dec_body_bytes = self_clone2.decrypt(body_bytes);
                 let new_body = hyper::body::Body::from(dec_body_bytes);
 
@@ -123,6 +148,20 @@ mod tests {
         let test_bytes = bytes::Bytes::from_static(
             "My super secret data that needs to be kept secret!".as_bytes(),
         );
+        let chacha = ChaChaSvc::new(channel, "$up3r-S3cretPassword123!".as_bytes().to_vec());
+        let enc = chacha.encrypt(test_bytes.clone());
+        assert_ne!(enc, test_bytes.clone());
+        let dec = chacha.decrypt(enc);
+        assert_eq!(dec, test_bytes);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_chacha_empty_enc_dec() -> anyhow::Result<()> {
+        let endpoint = tonic::transport::Endpoint::from_static("127.0.0.1");
+        let channel = endpoint.connect_lazy();
+
+        let test_bytes = bytes::Bytes::new();
         let chacha = ChaChaSvc::new(channel, "$up3r-S3cretPassword123!".as_bytes().to_vec());
         let enc = chacha.encrypt(test_bytes.clone());
         assert_ne!(enc, test_bytes.clone());
