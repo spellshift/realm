@@ -122,7 +122,6 @@ impl Service<Request<BoxBody>> for ChaChaSvc {
             // Decrypt response
             let new_resp = {
                 let (parts, mut body) = response.into_parts();
-
                 let body_bytes_tmp = body.data().await.unwrap_or(Ok(bytes::Bytes::new()));
                 let body_bytes = body_bytes_tmp.unwrap_or(bytes::Bytes::new());
                 let dec_body_bytes = self_clone2.decrypt(body_bytes);
@@ -158,6 +157,20 @@ mod tests {
 
     #[tokio::test]
     async fn test_chacha_empty_enc_dec() -> anyhow::Result<()> {
+        let endpoint = tonic::transport::Endpoint::from_static("127.0.0.1");
+        let channel = endpoint.connect_lazy();
+
+        let test_bytes = bytes::Bytes::new();
+        let chacha = ChaChaSvc::new(channel, "$up3r-S3cretPassword123!".as_bytes().to_vec());
+        let enc = chacha.encrypt(test_bytes.clone());
+        assert_ne!(enc, test_bytes.clone());
+        let dec = chacha.decrypt(enc);
+        assert_eq!(dec, test_bytes);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_chacha_debug_bullshit() -> anyhow::Result<()> {
         let endpoint = tonic::transport::Endpoint::from_static("127.0.0.1");
         let channel = endpoint.connect_lazy();
 
