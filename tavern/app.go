@@ -383,7 +383,9 @@ func (i ResponseWriterWrapper) Write(buf []byte) (int, error) {
 	fmt.Println("Decrypted response: ", buf)
 	arr := i.csvc.Encrypt(buf)
 	fmt.Println("Encrypted response: ", arr)
-	return i.w.Write(arr)
+	res, err := i.w.Write(arr)
+	// i.Flush()
+	return res, err
 }
 
 // WriteHeader implements http.ResponseWriter.
