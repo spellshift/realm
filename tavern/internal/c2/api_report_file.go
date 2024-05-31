@@ -3,6 +3,7 @@ package c2
 import (
 	"fmt"
 	"io"
+	"log"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,16 +28,21 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 
 	// Loop Input Stream
 	for {
+		log.Println("Sent file?")
+
 		req, err := stream.Recv()
 		if err == io.EOF {
+			log.Println("EOF?")
 			break
 		}
 		if err != nil {
+			log.Println("Failed", err, req)
 			return status.Errorf(codes.Internal, "failed to receive report_file request: %v", err)
 		}
 
 		// Collect args
 		if req.Chunk == nil {
+			log.Println("Nil chunk")
 			continue
 		}
 		if taskID == 0 {
@@ -60,8 +66,11 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		if hash == "" && req.Chunk.Metadata != nil {
 			hash = req.Chunk.Metadata.GetSha3_256Hash()
 		}
+		log.Println("Appending")
 		content = append(content, req.Chunk.GetChunk()...)
 	}
+
+	log.Println("Got file")
 
 	// Input Validation
 	if taskID == 0 {
@@ -95,6 +104,8 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		return status.Errorf(codes.Internal, "failed to load existing host files: %v", err)
 	}
 
+	log.Println("Looking good")
+
 	// Prepare Transaction
 	tx, err := srv.graph.Tx(stream.Context())
 	if err != nil {
@@ -109,6 +120,8 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			panic(v)
 		}
 	}()
+
+	log.Println("Making stuff up")
 
 	// Create File
 	f, err := client.HostFile.Create().
@@ -134,11 +147,15 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	if err != nil {
 		return rollback(tx, fmt.Errorf("failed to remove previous host files: %w", err))
 	}
+	log.Println("Time to commit!")
 
 	// Commit Transaction
 	if err := tx.Commit(); err != nil {
+		log.Println("Didn't send file")
 		return rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
+
+	log.Println("Sent file")
 
 	return stream.SendAndClose(&c2pb.ReportFileResponse{})
 }

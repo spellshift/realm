@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/aead/chacha20poly1305"
+	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 type CryptoSvc struct {
@@ -58,8 +59,9 @@ func (cryptosvc *CryptoSvc) Decrypt(in_arr []byte) []byte {
 }
 
 type RequestBodyWrapper struct {
-	Csvc CryptoSvc
-	Body io.ReadCloser
+	Csvc          CryptoSvc
+	Body          io.ReadCloser
+	stream_reader c2pb.C2_ReportFileServer
 }
 
 // Close implements io.ReadCloser.
@@ -72,6 +74,7 @@ func (r RequestBodyWrapper) Read(p []byte) (n int, err error) {
 	// tmp := []byte{}
 	bytes_read, byte_err := r.Body.Read(p)
 	if byte_err != nil {
+		fmt.Println("Failed to read body: ", byte_err)
 		return bytes_read, byte_err
 	}
 	fmt.Println("Encrypted request: ", p[:bytes_read])
@@ -153,3 +156,30 @@ func NewResponseWriterWrapper(csvc CryptoSvc, w http.ResponseWriter) ResponseWri
 		ew:   encryptedWriter,
 	}
 }
+
+// func init() {
+// 	encoding.RegisterCodec(StreamDecryptCodec{})
+// }
+
+// // Custom stream decryptor
+// func NewStreamDecryptCodec() StreamDecryptCodec {
+// 	return StreamDecryptCodec{}
+// }
+
+// type StreamDecryptCodec struct {
+// }
+
+// func (s StreamDecryptCodec) Marshal(any) ([]byte, error) {
+// 	log.Println("Marshal")
+// 	tmp := []byte{}
+// 	return tmp, nil
+// }
+
+// func (s StreamDecryptCodec) Unmarshal([]byte, any) error {
+// 	log.Println("Unmarshal")
+// 	return nil
+// }
+
+// func (s StreamDecryptCodec) Name() string {
+// 	return "StreamDecryptCodec"
+// }

@@ -130,13 +130,8 @@ impl Service<Request<BoxBody>> for ChaChaSvc {
                 let body_bytes = body_bytes_tmp.unwrap_or(bytes::Bytes::new());
                 let dec_body_bytes = self_clone2.decrypt(body_bytes);
 
-                if !dec_body_bytes.is_empty() {
-                    let new_body = hyper::body::Body::from(dec_body_bytes);
-                    Response::from_parts(parts, new_body)
-                } else {
-                    log::debug!("EMTPY body");
-                    Response::from_parts(parts, hyper::Body::empty())
-                }
+                let new_body = hyper::body::Body::from(dec_body_bytes);
+                Response::from_parts(parts, new_body)
             };
 
             Ok(new_resp)

@@ -25,7 +25,6 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
-	"realm.pub/tavern/internal/crypto"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
@@ -194,7 +193,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler:          newGraphQLHandler(client, git),
 			AllowUnactivated: true,
 		},
-		"/c2.C2/": tavernhttp.Endpoint{
+		"/c2.C2/": tavernhttp.EncryptedEndpoint{
 			Handler:              newGRPCHandler(client, grpcShellMux),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
@@ -311,6 +310,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
+
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("HERE")
@@ -324,15 +324,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 			return
 		}
 
-		csvc := crypto.NewCryptoSvc([]byte("helloworld"))
-
-		// Decrypt grpc message
-		r.Body = crypto.RequestBodyWrapper{Csvc: csvc, Body: r.Body}
-
-		// Encrypt grpc response
-		rww := crypto.NewResponseWriterWrapper(csvc, w)
-
-		grpcSrv.ServeHTTP(rww, r)
+		grpcSrv.ServeHTTP(w, r)
 	})
 }
 
