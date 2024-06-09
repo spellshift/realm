@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"realm.pub/tavern/internal/auth"
-	"realm.pub/tavern/internal/crypto"
 )
 
 // An Endpoint wraps an HTTP handler with configuration options.
@@ -87,13 +86,13 @@ func (endpoint EncryptedEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	csvc := crypto.NewCryptoSvc([]byte("helloworld"))
+	// csvc := crypto.NewCryptoSvc([]byte("helloworld"))
 
-	// Decrypt grpc message
-	r.Body = crypto.RequestBodyWrapper{Csvc: csvc, Body: r.Body}
+	// // Decrypt grpc message
+	// r.Body = crypto.RequestBodyWrapper{Csvc: csvc, Body: r.Body}
 
-	// Encrypt grpc response
-	rww := crypto.NewResponseWriterWrapper(csvc, w)
+	// // Encrypt grpc response
+	// rww := crypto.NewResponseWriterWrapper(csvc, w)
 
-	endpoint.Handler.ServeHTTP(rww, r)
+	endpoint.Handler.ServeHTTP(w, r)
 }

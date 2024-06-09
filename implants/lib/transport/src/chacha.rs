@@ -1,20 +1,18 @@
-use crate::crypto::CryptoSvc;
-use anyhow::Result;
-use bytes::Bytes;
+use bytes::{Buf, Bytes};
 use chacha20poly1305::{
-    aead::{Aead, AeadCore, KeyInit, OsRng},
-    KeySizeUser, XChaCha20Poly1305,
+    aead::{Aead, OsRng},
+    AeadCore, XChaCha20Poly1305,
 };
-use hyper::body::HttpBody as HyperHttpBody;
-use hyper::http::{Request, Response};
-use sha2::{digest::generic_array::GenericArray, Digest, Sha256};
-use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
-use tonic::body::BoxBody;
-use tonic::transport::Body;
-use tonic::transport::Channel;
-use tower::Service;
+use prost::Message;
+use sha2::{digest::generic_array::GenericArray, Digest as _, Sha256};
+use std::marker::PhantomData;
+use tonic::{
+    codec::{Codec, DecodeBuf, Decoder, EncodeBuf, Encoder},
+    transport::Channel,
+    Status,
+};
+
+use crate::crypto::CryptoSvc;
 
 #[derive(Debug, Clone)]
 pub struct ChaChaSvc {
@@ -33,24 +31,14 @@ impl CryptoSvc for ChaChaSvc {
             key: padded_key,
         }
     }
+
     fn decrypt(&self, bytes: Bytes) -> Bytes {
         log::debug!("enc bytes: {:?}", bytes.to_vec());
 
-        if bytes.len() < 24 {
-            #[cfg(debug_assertions)]
-            log::error!("Message size smaller than nonce ({})", bytes.len());
-
-            return bytes::Bytes::new();
-        }
-
-        let cipher = XChaCha20Poly1305::new_from_slice(self.key.as_slice()).unwrap();
-
         let nonce = &bytes.clone()[..24];
         let ciphertext = &bytes.clone()[24..];
-
-        log::debug!("NONE: {:?}", nonce);
-        log::debug!("KEY: {:?}", self.key);
-        log::debug!("CT: {:?}", ciphertext.to_vec());
+        let cipher =
+            <XChaCha20Poly1305 as chacha20poly1305::KeyInit>::new_from_slice(&self.key).unwrap();
 
         let res_bytes = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext) {
             Ok(res) => res,
@@ -61,13 +49,18 @@ impl CryptoSvc for ChaChaSvc {
                 Vec::new()
             }
         };
-        log::debug!("dec bytes: {:?}", res_bytes.to_vec());
 
-        bytes::Bytes::from(res_bytes)
+        {
+            log::debug!("dec bytes: {:?}", res_bytes.to_vec());
+        }
+
+        bytes::Bytes::from_iter(res_bytes)
     }
 
     fn encrypt(&self, bytes: Bytes) -> Bytes {
-        let cipher = XChaCha20Poly1305::new_from_slice(self.key.as_slice()).unwrap();
+        let cipher =
+            <XChaCha20Poly1305 as chacha20poly1305::KeyInit>::new_from_slice(self.key.as_slice())
+                .unwrap();
         let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng); // 192-bits; unique per message
 
         let mesg = match cipher.encrypt(&nonce, bytes.as_ref()) {
@@ -86,104 +79,66 @@ impl CryptoSvc for ChaChaSvc {
     }
 }
 
-// Should this move into the `crytosvc` trait
-// Would be nice to have all this logic handled by us
-// Then crypto impls are just an encrypt and decrypt.
-impl Service<Request<BoxBody>> for ChaChaSvc {
-    type Response = Response<Body>;
-    type Error = Box<dyn std::error::Error + Send + Sync>;
-    #[allow(clippy::type_complexity)]
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+#[derive(Debug)]
+pub struct ChaChaEncoder<T>(PhantomData<T>);
 
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready(cx).map_err(Into::into)
-    }
+impl<T> Encoder for ChaChaEncoder<T> {
+    type Item = T;
+    type Error = Status;
 
-    fn call(&mut self, req: Request<BoxBody>) -> Self::Future {
-        // This is necessary because tonic internally uses `tower::buffer::Buffer`.
-        // See https://github.com/tower-rs/tower/issues/547#issuecomment-767629149
-        // for details on why this is necessary
-        let clone: Channel = self.inner.clone();
-        let mut inner = std::mem::replace(&mut self.inner, clone);
-
-        // This is so stupid but i'm not sure how to satisfying the borrowing.
-        let self_clone = self.clone();
-        let self_clone2 = self.clone();
-
-        Box::pin(async move {
-            // Encrypt request
-            let new_req = {
-                let (parts, body) = req.into_parts();
-                let new_body = body.map_data(move |x| self_clone.encrypt(x)).boxed_unsync();
-
-                Request::from_parts(parts, new_body)
-            };
-
-            let response: Response<Body> = inner.call(new_req).await?;
-            let next = response.is_end_stream();
-            log::debug!("is end of stream?: {:?}", next);
-
-            // Decrypt response
-            let new_resp = {
-                let (parts, mut body) = response.into_parts();
-                let body_bytes_tmp = body.data().await.unwrap_or(Ok(bytes::Bytes::new()));
-                let body_bytes = body_bytes_tmp.unwrap_or(bytes::Bytes::new());
-                let dec_body_bytes = self_clone2.decrypt(body_bytes);
-
-                let new_body = hyper::body::Body::from(dec_body_bytes);
-                Response::from_parts(parts, new_body)
-            };
-
-            Ok(new_resp)
-        })
+    fn encode(&mut self, item: Self::Item, buf: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
+        log::debug!("Encode buf: {:?}", buf);
+        // serde_json::to_writer(buf.writer(), &item).map_err(|e| Status::internal(e.to_string()))
+        todo!();
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[derive(Debug)]
+pub struct ChaChaDecoder<U>(PhantomData<U>);
 
-    #[tokio::test]
-    async fn test_chacha_enc_dec() -> anyhow::Result<()> {
-        let endpoint = tonic::transport::Endpoint::from_static("127.0.0.1");
-        let channel = endpoint.connect_lazy();
+impl<U> Decoder for ChaChaDecoder<U> {
+    type Item = U;
+    type Error = Status;
 
-        let test_bytes = bytes::Bytes::from_static(
-            "My super secret data that needs to be kept secret!".as_bytes(),
-        );
-        let chacha = ChaChaSvc::new(channel, "$up3r-S3cretPassword123!".as_bytes().to_vec());
-        let enc = chacha.encrypt(test_bytes.clone());
-        assert_ne!(enc, test_bytes.clone());
-        let dec = chacha.decrypt(enc);
-        assert_eq!(dec, test_bytes);
-        Ok(())
+    fn decode(&mut self, buf: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
+        if !buf.has_remaining() {
+            return Ok(None);
+        }
+
+        log::debug!("Decode: {:?}", buf);
+
+        // let item: Self::Item =
+        //     serde_json::from_reader(buf.reader()).map_err(|e| Status::internal(e.to_string()))?;
+        // let item: Self::Item =
+        // Ok(Some(item))
+        todo!();
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ChaChaCodec<T, U>(PhantomData<(T, U)>);
+
+impl<T, U> Default for ChaChaCodec<T, U> {
+    fn default() -> Self {
+        Self(PhantomData)
+    }
+}
+
+impl<T, U> Codec for ChaChaCodec<T, U>
+where
+    T: Message + Send + 'static,
+    U: Message + Default + Send + 'static,
+{
+    type Encode = T;
+    type Decode = U;
+    type Encoder = ChaChaEncoder<T>;
+    type Decoder = ChaChaDecoder<U>;
+
+    fn encoder(&mut self) -> Self::Encoder {
+        ChaChaEncoder(PhantomData)
     }
 
-    #[tokio::test]
-    async fn test_chacha_empty_enc_dec() -> anyhow::Result<()> {
-        let endpoint = tonic::transport::Endpoint::from_static("127.0.0.1");
-        let channel = endpoint.connect_lazy();
-
-        let test_bytes = bytes::Bytes::new();
-        let chacha = ChaChaSvc::new(channel, "$up3r-S3cretPassword123!".as_bytes().to_vec());
-        let enc = chacha.encrypt(test_bytes.clone());
-        assert_ne!(enc, test_bytes.clone());
-        let dec = chacha.decrypt(enc);
-        assert_eq!(dec, test_bytes);
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_chacha_debug_bullshit() -> anyhow::Result<()> {
-        let endpoint = tonic::transport::Endpoint::from_static("127.0.0.1");
-        let channel = endpoint.connect_lazy();
-
-        let test_bytes = bytes::Bytes::new();
-        let chacha = ChaChaSvc::new(channel, "$up3r-S3cretPassword123!".as_bytes().to_vec());
-        let enc = chacha.encrypt(test_bytes.clone());
-        assert_ne!(enc, test_bytes.clone());
-        let dec = chacha.decrypt(enc);
-        assert_eq!(dec, test_bytes);
-        Ok(())
+    fn decoder(&mut self) -> Self::Decoder {
+        ChaChaDecoder(PhantomData)
     }
 }

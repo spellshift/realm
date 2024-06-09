@@ -1,4 +1,4 @@
-package crypto
+package cryptoold
 
 import (
 	"crypto/cipher"
@@ -156,30 +156,3 @@ func NewResponseWriterWrapper(csvc CryptoSvc, w http.ResponseWriter) ResponseWri
 		ew:   encryptedWriter,
 	}
 }
-
-// func init() {
-// 	encoding.RegisterCodec(StreamDecryptCodec{})
-// }
-
-// // Custom stream decryptor
-// func NewStreamDecryptCodec() StreamDecryptCodec {
-// 	return StreamDecryptCodec{}
-// }
-
-// type StreamDecryptCodec struct {
-// }
-
-// func (s StreamDecryptCodec) Marshal(any) ([]byte, error) {
-// 	log.Println("Marshal")
-// 	tmp := []byte{}
-// 	return tmp, nil
-// }
-
-// func (s StreamDecryptCodec) Unmarshal([]byte, any) error {
-// 	log.Println("Unmarshal")
-// 	return nil
-// }
-
-// func (s StreamDecryptCodec) Name() string {
-// 	return "StreamDecryptCodec"
-// }

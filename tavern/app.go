@@ -25,6 +25,8 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
+	"realm.pub/tavern/internal/cryptocodec"
+	_ "realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
@@ -306,7 +308,11 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 	c2srv := c2.New(client, grpcShellMux)
+	codec := cryptocodec.StreamDecryptCodec{
+		Csvc: cryptocodec.NewCryptoSvc([]byte("helloworld")),
+	}
 	grpcSrv := grpc.NewServer(
+		grpc.ForceServerCodec(codec),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
@@ -323,6 +329,9 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
 			return
 		}
+
+		// csvc := cryptoold.NewCryptoSvc([]byte("helloworld"))
+		// r.Body = cryptoold.RequestBodyWrapper{Body: r.Body, Csvc: csvc}
 
 		grpcSrv.ServeHTTP(w, r)
 	})
