@@ -10,7 +10,11 @@ prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-roots"] }
+chacha20poly1305 = { workspace = true }
+bytes = { workspace = true }
+sha2 = { workspace = true }
+rand = { workspace = true }
 
 [build-dependencies]
-tonic-build = { workspace = true }
+tonic-build = { workspace = true, features = ["prost"] }
 which = { workspace = true }
