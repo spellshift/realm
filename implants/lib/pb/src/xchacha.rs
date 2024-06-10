@@ -92,7 +92,7 @@ where
         let pt_vec = item.encode_to_vec();
 
         println!("ENCODE DEC: {:?}", pt_vec);
-        let _ = buf.writer().write_all(&pt_vec);
+        // let _ = buf.writer().write_all(&pt_vec);
 
         let ciphertext = match cipher.encrypt(&nonce, pt_vec.as_slice()) {
             Ok(ct) => ct,
