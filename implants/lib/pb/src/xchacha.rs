@@ -94,16 +94,16 @@ where
         println!("ENCODE DEC: {:?}", pt_vec);
         let _ = buf.writer().write_all(&pt_vec);
 
-        // let ciphertext = match cipher.encrypt(&nonce, pt_vec.as_slice()) {
-        //     Ok(ct) => ct,
-        //     Err(err) => {
-        //         println!("err: {:?}", err);
-        //         return Err(Status::new(tonic::Code::Internal, err.to_string()));
-        //     }
-        // };
+        let ciphertext = match cipher.encrypt(&nonce, pt_vec.as_slice()) {
+            Ok(ct) => ct,
+            Err(err) => {
+                println!("err: {:?}", err);
+                return Err(Status::new(tonic::Code::Internal, err.to_string()));
+            }
+        };
 
-        // let _ = buf.writer().write_all(nonce.as_slice());
-        // buf.writer().write_all(ciphertext.as_slice())?;
+        let _ = buf.writer().write_all(nonce.as_slice());
+        buf.writer().write_all(ciphertext.as_slice())?;
 
         println!("ENCODE ENC: {:?}", buf);
 
@@ -145,35 +145,35 @@ where
         };
 
         let ciphertext = &bytes_in[0..bytes_read];
-        // let nonce = &ciphertext[0..24];
-        // let ciphertext = &ciphertext[24..];
+        let nonce = &ciphertext[0..24];
+        let ciphertext = &ciphertext[24..];
 
         println!("DECODE ENC: {:?}", ciphertext);
 
-        // let key = self.1.key.as_slice();
-        // let mut hasher = Sha256::new();
-        // hasher.update(key);
-        // let key_hash = hasher.finalize();
-        // let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&key_hash));
+        let key = self.1.key.as_slice();
+        let mut hasher = Sha256::new();
+        hasher.update(key);
+        let key_hash = hasher.finalize();
+        let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&key_hash));
 
-        // let plaintext = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext.as_ref()) {
-        //     Ok(pt) => pt,
-        //     Err(err) => {
-        //         println!("err: {:?}", err);
-        //         return Err(Status::new(tonic::Code::Internal, err.to_string()));
-        //     }
-        // };
+        let plaintext = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext.as_ref()) {
+            Ok(pt) => pt,
+            Err(err) => {
+                println!("err: {:?}", err);
+                return Err(Status::new(tonic::Code::Internal, err.to_string()));
+            }
+        };
 
-        // println!("DECODE DEC: {:?}", plaintext);
+        println!("DECODE DEC: {:?}", plaintext);
 
-        // let item = Message::decode(bytes::Bytes::from(plaintext))
-        //     .map(Option::Some)
-        //     .map_err(from_decode_error)?;
-
-        let plaintext = bytes::Bytes::copy_from_slice(ciphertext);
-        let item: Option<U> = Message::decode(plaintext)
+        let item = Message::decode(bytes::Bytes::from(plaintext))
             .map(Option::Some)
             .map_err(from_decode_error)?;
+
+        // let plaintext = bytes::Bytes::copy_from_slice(ciphertext);
+        // let item: Option<U> = Message::decode(plaintext)
+        //     .map(Option::Some)
+        //     .map_err(from_decode_error)?;
 
         Ok(item)
     }
