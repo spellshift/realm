@@ -25,6 +25,7 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
+	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
@@ -306,7 +307,11 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 	c2srv := c2.New(client, grpcShellMux)
+	xchacha := cryptocodec.StreamDecryptCodec{
+		Csvc: cryptocodec.NewCryptoSvc([]byte("helloworld")),
+	}
 	grpcSrv := grpc.NewServer(
+		grpc.ForceServerCodec(xchacha),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
