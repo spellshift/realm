@@ -11,6 +11,8 @@
 		}
 	},
 	"runArgs": [
+		"--env-file",
+		".devcontainer/devcontainer.env",
 		"--cap-add=SYS_PTRACE",
 		"--security-opt",
 		"seccomp=unconfined"
