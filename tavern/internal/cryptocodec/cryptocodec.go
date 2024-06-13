@@ -31,6 +31,7 @@ func (s StreamDecryptCodec) Marshal(v any) ([]byte, error) {
 	log.Println("Marshal")
 	proto := encoding.GetCodec("proto")
 	res, err := proto.Marshal(v)
+	log.Println("Marshal buf     ", res)
 	enc_res := s.Csvc.Encrypt(res)
 	return enc_res, err
 }
@@ -40,7 +41,7 @@ func (s StreamDecryptCodec) Unmarshal(buf []byte, v any) error {
 	dec_buf := s.Csvc.Decrypt(buf)
 	log.Println("Unmarshal:", dec_buf)
 	proto := encoding.GetCodec("proto")
-	return proto.Unmarshal(buf, v)
+	return proto.Unmarshal(dec_buf, v)
 }
 
 func (s StreamDecryptCodec) Name() string {
