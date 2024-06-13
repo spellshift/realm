@@ -12,19 +12,32 @@ use tonic::{
     Status,
 };
 
-/// A [`Codec`] that implements `application/grpc+json` via the serde library.
+#[derive(Debug, Clone)]
+pub struct ChaChaSvc {
+    key: Vec<u8>,
+}
+
+const IMIX_ENCRYPT_KEY: &'static str = env!(
+    "IMIX_ENCRYPT_KEY",
+    "Please set `IMIX_ENCRYPT_KEY` env variable"
+);
+
+impl Default for ChaChaSvc {
+    fn default() -> Self {
+        Self {
+            key: IMIX_ENCRYPT_KEY.into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ChachaCodec<T, U>(PhantomData<(T, U)>, ChaChaSvc);
 
 impl<T, U> Default for ChachaCodec<T, U> {
     fn default() -> Self {
-        log::debug!("CODEC LOADED");
-        Self(
-            PhantomData,
-            ChaChaSvc {
-                key: b"helloworld".to_vec(),
-            },
-        )
+        #[cfg(debug_assertions)]
+        log::debug!("Loaded custom codec with xchacha encryption");
+        Self(PhantomData, ChaChaSvc::default())
     }
 }
 
@@ -39,30 +52,15 @@ where
     type Decoder = ChachaDecrypt<T, U>;
 
     fn encoder(&mut self) -> Self::Encoder {
-        ChachaEncrypt(
-            PhantomData,
-            ChaChaSvc {
-                key: b"helloworld".to_vec(),
-            },
-        )
+        ChachaEncrypt(PhantomData, ChaChaSvc::default())
     }
 
     fn decoder(&mut self) -> Self::Decoder {
-        ChachaDecrypt(
-            PhantomData,
-            ChaChaSvc {
-                key: b"helloworld".to_vec(),
-            },
-        )
+        ChachaDecrypt(PhantomData, ChaChaSvc::default())
     }
 }
 
 // ---
-
-#[derive(Debug, Clone)]
-pub struct ChaChaSvc {
-    key: Vec<u8>,
-}
 
 #[derive(Debug)]
 pub struct ChachaEncrypt<T, U>(PhantomData<(T, U)>, ChaChaSvc);
@@ -127,13 +125,6 @@ where
     type Error = Status;
 
     fn decode(&mut self, buf: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
-        // if !buf.has_remaining() {
-        //     return Err(Status::new(
-        //         tonic::Code::Internal,
-        //         "Unable to allocate new buffer space",
-        //     ));
-        // }
-
         let mut reader = buf.reader();
         let mut bytes_in = vec![0; DEFAULT_CODEC_BUFFER_SIZE];
         let bytes_read = match reader.read(&mut bytes_in) {
@@ -147,8 +138,6 @@ where
         let ciphertext = &bytes_in[0..bytes_read];
         let nonce = &ciphertext[0..24];
         let ciphertext = &ciphertext[24..];
-
-        println!("DECODE ENC: {:?}", ciphertext);
 
         let key = self.1.key.as_slice();
         let mut hasher = Sha256::new();
@@ -164,16 +153,9 @@ where
             }
         };
 
-        println!("DECODE DEC: {:?}", plaintext);
-
         let item = Message::decode(bytes::Bytes::from(plaintext))
             .map(Option::Some)
             .map_err(from_decode_error)?;
-
-        // let plaintext = bytes::Bytes::copy_from_slice(ciphertext);
-        // let item: Option<U> = Message::decode(plaintext)
-        //     .map(Option::Some)
-        //     .map_err(from_decode_error)?;
 
         Ok(item)
     }
@@ -184,5 +166,3 @@ fn from_decode_error(error: prost::DecodeError) -> Status {
     // https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
     Status::new(tonic::Code::Internal, error.to_string())
 }
-
-// ---
