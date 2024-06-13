@@ -17,7 +17,7 @@ pub struct ChaChaSvc {
     key: Vec<u8>,
 }
 
-const IMIX_ENCRYPT_KEY: &'static str = env!(
+const IMIX_ENCRYPT_KEY: &str = env!(
     "IMIX_ENCRYPT_KEY",
     "Please set `IMIX_ENCRYPT_KEY` env variable"
 );
