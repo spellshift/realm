@@ -10,9 +10,13 @@
 			"NODE_VERSION": "lts/*"
 		}
 	},
+	"containerEnv": {
+		"IMIX_ENCRYPT_KEY": "$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c 64)"
+	},
+	"remoteEnv": {
+		"IMIX_ENCRYPT_KEY": "${localEnv:IMIX_ENCRYPT_KEY}"
+	},
 	"runArgs": [
-		"--env-file",
-		".devcontainer/devcontainer.env",
 		"--cap-add=SYS_PTRACE",
 		"--security-opt",
 		"seccomp=unconfined"
