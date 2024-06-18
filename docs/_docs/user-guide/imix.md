@@ -15,6 +15,7 @@ Imix has compile-time configuration, that may be specified using environment var
 
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
+| IMIX_ENCRYPT_KEY | Secret key to encrypt app layer crypto | - | Yes |
 | IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:80` | No |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
@@ -56,6 +57,9 @@ By default imix will try to determine the systems proxy settings:
 
 ## Static cross compilation
 
+**We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
+Building in the dev container limits variables that might cause issues and is the most tested way to compile.
+
 ### Linux
 
 ```bash
@@ -64,6 +68,9 @@ rustup target add x86_64-unknown-linux-musl
 sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
+
+IMIX_ENCRYPT_KEY=$(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 64)
+
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
@@ -86,6 +93,9 @@ sudo apt install gcc-mingw-w64
 
 # Build imix
 cd realm/implants/imix/
+
+IMIX_ENCRYPT_KEY=$(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 64)
+
 # Build imix.exe
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-pc-windows-gnu
 # Build imix.svc.exe

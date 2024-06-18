@@ -104,6 +104,12 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
 
 ## Configuration
 
+### Application layer crypto
+
+Tavern recieves the encryption key for app layer crypto through an environment variable `IMIX_ENCRYPT_KEY`. This variable must be the same for agent builds and all running instances of Tavern. If the variable is not set Tavern will pick a random 64 character password. To retrieve the randomly set variable check the app logs
+
+`2024/06/18 02:35:53 [WARN] No value for 'IMIX_ENCRYPT_KEY' provided, defaulting to /1oIbH~L#urAr0s75A:+0WMF8V*2I-0Z4Q6d[j-SBDBk]s4FCS&x~NmsVYOO0G6x`
+
 ### Metrics
 
 By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server such that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
