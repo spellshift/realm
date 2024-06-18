@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -71,6 +72,9 @@ var (
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
 	EnvEnablePProf   = EnvString{"ENABLE_PPROF", ""}
 	EnvEnableMetrics = EnvString{"ENABLE_METRICS", ""}
+
+	// EnvImixEncryptKey is the secret key used to encrypt app layer communication
+	EnvImixEncryptKey = EnvString{"IMIX_ENCRYPT_KEY", generateRandomString(64)}
 )
 
 // Config holds information that controls the behaviour of Tavern
@@ -192,6 +196,22 @@ func (cfg *Config) IsTestDataEnabled() bool {
 // IsTestRunAndExitEnabled returns true if a value for the "ENABLE_TEST_RUN_AND_EXIT" environment variable is set.
 func (cfg *Config) IsTestRunAndExitEnabled() bool {
 	return EnvEnableTestRunAndExit.String() != ""
+}
+
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*(){}`[]\\=/?+|-_;:"
+
+var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func generateRandomString(length int) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func (cfg *Config) GetEncryptKey() []byte {
+	return []byte(EnvImixEncryptKey.String())
 }
 
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be

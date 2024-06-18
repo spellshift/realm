@@ -195,7 +195,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux),
+			Handler:              newGRPCHandler(client, grpcShellMux, cfg.GetEncryptKey()),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -308,10 +308,10 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, crypto_key []byte) http.Handler {
 	c2srv := c2.New(client, grpcShellMux)
 	xchacha := cryptocodec.StreamDecryptCodec{
-		Csvc: cryptocodec.NewCryptoSvc([]byte("helloworld")),
+		Csvc: cryptocodec.NewCryptoSvc(crypto_key),
 	}
 	grpcSrv := grpc.NewServer(
 		grpc.ForceServerCodec(xchacha),
