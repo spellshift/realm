@@ -7,21 +7,6 @@ import (
 )
 
 // EnvString represents a string that is configured using environment variables.
-type EnvRequiredString struct {
-	Key string
-}
-
-// String parsed from the environment variable.
-func (env EnvRequiredString) String() string {
-	if val := os.Getenv(env.Key); val != "" {
-		return val
-	} else {
-		log.Printf("[ERROR] No value for required variable '%s' provided, Aborting.", env.Key)
-		panic("Missing variable")
-	}
-}
-
-// EnvString represents a string that is configured using environment variables.
 type EnvString struct {
 	Key     string
 	Default string
