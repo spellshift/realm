@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 pub mod agent;
 mod config;
 mod install;
