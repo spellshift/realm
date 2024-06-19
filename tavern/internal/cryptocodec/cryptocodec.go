@@ -28,18 +28,14 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 }
 
 func (s StreamDecryptCodec) Marshal(v any) ([]byte, error) {
-	log.Println("Marshal")
 	proto := encoding.GetCodec("proto")
 	res, err := proto.Marshal(v)
-	log.Println("Marshal buf     ", res)
 	enc_res := s.Csvc.Encrypt(res)
 	return enc_res, err
 }
 
 func (s StreamDecryptCodec) Unmarshal(buf []byte, v any) error {
-	log.Println("Decrypt:", buf)
 	dec_buf := s.Csvc.Decrypt(buf)
-	log.Println("Unmarshal:", dec_buf)
 	proto := encoding.GetCodec("proto")
 	return proto.Unmarshal(dec_buf, v)
 }
@@ -94,7 +90,8 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) []byte {
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	nonce := make([]byte, csvc.Aead.NonceSize(), csvc.Aead.NonceSize()+len(in_arr)+csvc.Aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
-		panic(err)
+		fmt.Printf("Failed to encrypt %v\n", err)
+		return []byte{}
 	}
 	encryptedMsg := csvc.Aead.Seal(nonce, nonce, in_arr, nil)
 	return encryptedMsg
