@@ -1,5 +1,4 @@
 #![windows_subsystem = "windows"]
-#![deny(warnings)]
 
 #[cfg(all(feature = "win_service", windows))]
 #[macro_use]
