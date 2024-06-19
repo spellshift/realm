@@ -17,8 +17,6 @@ func init() {
 	encoding.RegisterCodec(StreamDecryptCodec{})
 }
 
-// TODO decyrpt and encrypt in place
-
 type StreamDecryptCodec struct {
 	Csvc CryptoSvc
 }
