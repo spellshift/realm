@@ -3,3 +3,8 @@ description: An example tome!
 author: kcarretto
 support_model: FIRST_PARTY
 tactic: UNSPECIFIED
+paramdefs:
+- label: Message
+  name: msg
+  placeholder: Something to print
+  type: string
