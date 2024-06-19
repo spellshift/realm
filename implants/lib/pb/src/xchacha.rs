@@ -21,7 +21,7 @@ pub struct ChaChaSvc {
 // This is the default static key set to ensure compatability between server and client
 // in debug builds. This key must be changed in order to protect data. We're still in the
 // process of implementing app layer crypto and this is temporary. Do not rely on the
-// app layer crypto and ensure you're using proper TLS.
+// app layer crypto without changing this default.
 const IMIX_ENCRYPT_KEY_DEFAULT: &str = "I Don't care how small the room is I cast fireball";
 const IMIX_ENCRYPT_KEY: Option<&'static str> = option_env!("IMIX_ENCRYPT_KEY",);
 
