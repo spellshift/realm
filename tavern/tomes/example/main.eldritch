@@ -1,10 +1,1 @@
-assets.copy("example/linux/test-file", "/tmp/winnnnz")
-print(file.read("/tmp/winnnnz"))
-test_hash = crypto.hash_file("/tmp/winnnnz", "SHA256")
-if not "30c2bf79fb57fe7c9bea00a2bfe0cb2e9b3ce0b694aa63c633a2bd44a5c87e56" == test_hash:
-    print("Hashes don't match!")
-    print(file.read("/tmp/winnnnz"))
-
-report.file("/etc/passwd")
-print("Success! ✅")
-file.remove("/tmp/winnnnz")
+print(input_params['msg'])
