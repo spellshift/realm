@@ -82,7 +82,8 @@ where
     fn encode(&mut self, item: Self::Item, buf: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
         if !buf.has_remaining_mut() {
             // Can't add to the buffer.
-            println!("DANGER can't add to the buffer.");
+            #[cfg(debug_assertions)]
+            log::debug!("DANGER can't add to the buffer.");
         }
 
         let key = self.1.key.as_slice();
@@ -95,21 +96,17 @@ where
 
         let pt_vec = item.encode_to_vec();
 
-        println!("ENCODE DEC: {:?}", pt_vec);
-        // let _ = buf.writer().write_all(&pt_vec);
-
         let ciphertext = match cipher.encrypt(&nonce, pt_vec.as_slice()) {
             Ok(ct) => ct,
             Err(err) => {
-                println!("err: {:?}", err);
+                #[cfg(debug_assertions)]
+                log::debug!("err: {:?}", err);
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
 
         let _ = buf.writer().write_all(nonce.as_slice());
         buf.writer().write_all(ciphertext.as_slice())?;
-
-        println!("ENCODE ENC: {:?}", buf);
 
         Ok(())
     }
@@ -136,7 +133,8 @@ where
         let bytes_read = match reader.read(&mut bytes_in) {
             Ok(n) => n,
             Err(err) => {
-                println!("err: {:?}", err);
+                #[cfg(debug_assertions)]
+                log::debug!("err: {:?}", err);
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
@@ -154,7 +152,8 @@ where
         let plaintext = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext.as_ref()) {
             Ok(pt) => pt,
             Err(err) => {
-                println!("err: {:?}", err);
+                #[cfg(debug_assertions)]
+                log::debug!("err: {:?}", err);
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
