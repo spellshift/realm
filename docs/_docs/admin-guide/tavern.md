@@ -104,24 +104,6 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
 
 ## Configuration
 
-### Application layer crypto
-
-Tavern implements static key symmetric encryption using xchacha20-poly1305.
-
-Tavern recieves the encryption key for app layer crypto through an environment variable `IMIX_ENCRYPT_KEY`. This variable must be the same for agent builds and all running instances of Tavern.
-
-If the variable is not set Tavern and Imix will default to `I Don't care how small the room is I cast fireball`. This is a dangerous stop gap we've implemented while we build out the app layer crypto. Long term we're moving to asymmetric encryption and don't want to build a safe way to handle the shared key since it will be going away. For now implementers should not rely on the static key encryption or should take care to safely modify the key.
-
-The vaule is set in:
-
-* `realm/tavern/config.go`:`EnvImixEncryptKeyDefault`
-* `realm/implants/lib/pb/src/xchacha.rs`:`IMIX_ENCRYPT_KEY_DEFAULT`
-* `realm/terraform/main.tf`:`imix_encrypt_key`
-
-| Env Var | Description | Default | Required |
-| ------- | ----------- | ------- | -------- |
-| IMIX_ENCRYPT_KEY | Define the encryption key for app layer crypto | "I Don't care how small the room is I cast fireball" | Yes |
-
 ### Metrics
 
 By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server such that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
