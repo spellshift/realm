@@ -88,6 +88,13 @@ variable "enable_metrics" {
   description = "Enable prometheus sidecar and Tavern metrics collection"
   default = false
 }
+variable "imix_encrypt_key" {
+  type = string
+  description = "The encryption key tavern and imix should use to talk to each other"
+  sensitive = true
+  default = ""
+}
+
 
 provider "google" {
   project = var.gcp_project
@@ -198,6 +205,10 @@ resource "google_cloud_run_service" "tavern" {
         env {
           name = "ENABLE_METRICS"
           value = var.enable_metrics ? "1" : ""
+        }
+        env {
+          name = "IMIX_ENCRYPT_KEY"
+          value = var.imix_encrypt_key
         }
       }
 
