@@ -106,9 +106,16 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
 
 ### Application layer crypto
 
-Tavern recieves the encryption key for app layer crypto through an environment variable `IMIX_ENCRYPT_KEY`. This variable must be the same for agent builds and all running instances of Tavern. If the variable is not set Tavern will pick a random 64 character password. To retrieve the randomly set variable check the app logs
+Tavern implements static key symmetric encryption using xchacha20-poly1305.
 
-`2024/06/18 02:35:53 [WARN] No value for 'IMIX_ENCRYPT_KEY' provided, defaulting to /1oIbH~L#urAr0s75A:+0WMF8V*2I-0Z4Q6d[j-SBDBk]s4FCS&x~NmsVYOO0G6x`
+Tavern recieves the encryption key for app layer crypto through an environment variable `IMIX_ENCRYPT_KEY`. This variable must be the same for agent builds and all running instances of Tavern.
+
+If the variable is not set Tavern and Imix will default to `I Don't care how small the room is I cast fireball`. This is a dangerous stop gap we've implemented while we build out the app layer crypto. Long term we're moving to asymmetric encryption and don't want to build a safe way to handle the shared key since it will be going away. For now implementers should not rely on the static key encryption or should take care to safely modify the key.
+
+The vaule is set in:
+
+* `realm/tavern/config.go`:`EnvImixEncryptKeyDefault`
+* `realm/implants/lib/pb/src/xchacha.rs`:`IMIX_ENCRYPT_KEY_DEFAULT`
 
 ### Metrics
 
