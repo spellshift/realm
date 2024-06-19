@@ -85,18 +85,14 @@ macro_rules! eldritch_lib {
             Clone,
             Debug,
             PartialEq,
+            derive_more::Display,
             starlark::values::ProvidesStaticType,
             starlark::values::NoSerialize,
             allocative::Allocative,
         )]
+        #[display(fmt = stringify!($name))]
         pub struct $name;
         starlark::starlark_simple_value!($name);
-
-        impl std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(f, "{}", stringify!($name))
-            }
-        }
 
         #[starlark_value(type = $t)]
         impl<'v> starlark::values::StarlarkValue<'v> for $name {
