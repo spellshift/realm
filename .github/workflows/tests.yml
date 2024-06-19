@@ -77,8 +77,6 @@ jobs:
       with:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
-      env:
-        IMIX_ENCRYPT_KEY: "cicd"
       run: |
         cd ./implants/ &&
         cargo fmt --check &&
