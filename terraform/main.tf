@@ -92,7 +92,7 @@ variable "imix_encrypt_key" {
   type = string
   description = "The encryption key tavern and imix should use to talk to each other"
   sensitive = true
-  default = ""
+  default = "I Don't care how small the room is I cast fireball"
 }
 
 

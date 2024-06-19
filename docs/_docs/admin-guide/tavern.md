@@ -116,6 +116,11 @@ The vaule is set in:
 
 * `realm/tavern/config.go`:`EnvImixEncryptKeyDefault`
 * `realm/implants/lib/pb/src/xchacha.rs`:`IMIX_ENCRYPT_KEY_DEFAULT`
+* `realm/terraform/main.tf`:`imix_encrypt_key`
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| IMIX_ENCRYPT_KEY | Define the encryption key for app layer crypto | "I Don't care how small the room is I cast fireball" | Yes |
 
 ### Metrics
 
