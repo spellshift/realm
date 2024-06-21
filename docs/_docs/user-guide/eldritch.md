@@ -692,6 +692,12 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
+### radnom.int
+
+`random.int(min: i32, max: i32) -> i32`
+
+The <b>random.int</b> method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum.
+
 ### random.string
 
 `random.string(length: uint, charset: Optional<str>) -> str`
