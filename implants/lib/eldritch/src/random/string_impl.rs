@@ -6,7 +6,7 @@ pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
     let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
     match charset_opt {
         Some(charset) => {
-            let strlen = charset.chars().count().into();
+            let strlen = charset.chars().count();
             let rand_dist = Uniform::from(0..strlen);
             let mut s = "".to_string();
             for _ in 0..length {
@@ -19,7 +19,10 @@ pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
             let s = Alphanumeric.sample_string(&mut rng, length as usize);
             return Ok(s);
         }
-    }
+        None => Alphanumeric.sample_string(&mut rand::thread_rng(), length as usize),
+    };
+
+    Ok(res)
 }
 
 #[cfg(test)]
@@ -51,9 +54,7 @@ mod tests {
         for _ in 0..=NUM_ITERATION {
             let new_str = string(16, None)?;
             assert_eq!(new_str.chars().count(), 16);
-            if !result_str.insert(new_str){
-                assert!(false);
-            }
+            assert!(result_str.insert(new_str), "test_string_uniform - failed");
         }
         Ok(())
     }

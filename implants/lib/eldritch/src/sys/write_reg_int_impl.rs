@@ -107,8 +107,7 @@ mod tests {
                 12345678,
             );
             let mut hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            let mut subky =
-                hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
+            let mut subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             let mut val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.bytes, 12345678u32.to_le_bytes().to_vec());
 
