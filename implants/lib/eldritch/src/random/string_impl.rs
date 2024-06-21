@@ -4,7 +4,7 @@ use rand_chacha::rand_core::SeedableRng;
 
 pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
     let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
-    match charset_opt {
+    let res = match charset_opt {
         Some(charset) => {
             let strlen = charset.chars().count();
             let rand_dist = Uniform::from(0..strlen);
@@ -13,13 +13,9 @@ pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
                 let index = rand_dist.sample(&mut rng);
                 s.push(charset.chars().nth(index).unwrap());
             }
-            return Ok(s);
+            s
         }
-        None => {
-            let s = Alphanumeric.sample_string(&mut rng, length as usize);
-            return Ok(s);
-        }
-        None => Alphanumeric.sample_string(&mut rand::thread_rng(), length as usize),
+        None => Alphanumeric.sample_string(&mut rng, length as usize),
     };
 
     Ok(res)
