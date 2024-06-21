@@ -1,6 +1,6 @@
 use anyhow::Result;
+use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
 use rand_chacha::rand_core::SeedableRng;
-use rand::distributions::{Alphanumeric, Uniform, DistString, Distribution};
 
 pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
     let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
@@ -12,9 +12,9 @@ pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
             for _ in 0..length {
                 let index = rand_dist.sample(&mut rng);
                 s.push(charset.chars().nth(index).unwrap());
-            };
+            }
             return Ok(s);
-        },
+        }
         None => {
             let s = Alphanumeric.sample_string(&mut rng, length as usize);
             return Ok(s);
