@@ -47,8 +47,8 @@ const IMIX_ENCRYPT_KEY_DEFAULT: &str = "I Don't care how small the room is I cas
 const IMIX_ENCRYPT_KEY: Option<&'static str> = option_env!("IMIX_ENCRYPT_KEY",);
 
 const SERVER_PUB_KEY: [u8; 32] = [
-    79, 171, 254, 115, 119, 187, 169, 165, 250, 167, 134, 221, 7, 212, 205, 92, 246, 231, 226, 104,
-    93, 146, 140, 87, 88, 109, 223, 179, 194, 64, 137, 120,
+    140, 28, 151, 125, 147, 60, 129, 229, 192, 192, 253, 156, 203, 213, 206, 224, 203, 232, 93,
+    111, 207, 238, 67, 47, 168, 134, 44, 210, 2, 124, 133, 24,
 ];
 
 impl Default for ChaChaSvc {
