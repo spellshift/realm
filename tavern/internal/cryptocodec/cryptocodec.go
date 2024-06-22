@@ -1,15 +1,18 @@
 package cryptocodec
 
 import (
-	"crypto/cipher"
+	"crypto/ecdh"
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
 	"log"
 
+	"github.com/cloudflare/circl/dh/x25519"
 	"golang.org/x/crypto/chacha20poly1305"
 	"google.golang.org/grpc/encoding"
 )
+
+var last_seen_client_pub_key []byte
 
 func init() {
 	log.Println("Loading xchacha20-poly1305")
@@ -43,40 +46,103 @@ func (s StreamDecryptCodec) Name() string {
 }
 
 type CryptoSvc struct {
-	Aead cipher.AEAD
+	// Aead cipher.AEAD
+	priv_key *ecdh.PrivateKey
 }
 
-func NewCryptoSvc(key []byte) CryptoSvc {
+func hashitup(in_key []byte) []byte {
 	hasher := sha256.New()
-	hasher.Write(key)
-	key = hasher.Sum(nil)
-	aead, err := chacha20poly1305.NewX(key)
+	hasher.Write(in_key)
+	key := hasher.Sum(nil)
+	// aead, err := chacha20poly1305.NewX(key)
 
-	if err != nil {
-		panic(err)
-	}
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	nonce := make([]byte, aead.NonceSize())
-	if _, err := rand.Read(nonce); err != nil {
-		panic(err)
-	}
+	// nonce := make([]byte, aead.NonceSize())
+	// if _, err := rand.Read(nonce); err != nil {
+	// 	panic(err)
+	// }
+	return key
+
+}
+
+func NewCryptoSvc(priv_key *ecdh.PrivateKey) CryptoSvc {
 
 	res := CryptoSvc{
-		Aead: aead,
+		// Aead: aead,
+		priv_key: priv_key,
 	}
 
 	return res
 
 }
 
-func (csvc *CryptoSvc) Decrypt(in_arr []byte) []byte {
-	if len(in_arr) < csvc.Aead.NonceSize() {
-		fmt.Printf("Input bytes to short %d expected %d\n", len(in_arr), csvc.Aead.NonceSize())
+func (csvc *CryptoSvc) GetAgentPubkey() []byte {
+	return last_seen_client_pub_key
+}
+
+func (csvc *CryptoSvc) SetAgentPubkey(client_pub_key []byte) {
+	last_seen_client_pub_key = client_pub_key
+}
+
+func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
+	fmt.Println("[DEBUG] client_pub_key_bytes: ", client_pub_key_bytes)
+	x22519_curve := ecdh.X25519()
+	client_pub_key, err := x22519_curve.NewPublicKey(client_pub_key_bytes)
+	if err != nil {
+		log.Printf("[ERROR] Failed to create public key %v", err)
 		return []byte{}
 	}
 
-	nonce, ciphertext := in_arr[:csvc.Aead.NonceSize()], in_arr[csvc.Aead.NonceSize():]
-	plaintext, err := csvc.Aead.Open(nil, nonce, ciphertext, nil)
+	shared_key, err := csvc.priv_key.ECDH(client_pub_key)
+	if err != nil {
+		log.Printf("[ERROR] Failed to get shared secret %v", err)
+		return []byte{}
+	}
+
+	return shared_key
+}
+
+func (csvc *CryptoSvc) Decrypt(in_arr []byte) []byte {
+	// Read in pub key
+	if len(in_arr) < x25519.Size {
+		fmt.Printf("Input bytes to short %d expected at least %d\n", len(in_arr), x25519.Size)
+		return []byte{}
+	}
+
+	client_pub_key_bytes := in_arr[:x25519.Size]
+	csvc.SetAgentPubkey(client_pub_key_bytes)
+
+	// // Generate shared secret
+	// log.Printf("[DEBUG] shared_key: %v\n", shared_key)
+	// aead, err := chacha20poly1305.NewX(shared_key)
+	// derived_key := hashitup([]byte("I Don't care how small the room is I cast fireball"))
+
+	derived_key := csvc.generate_shared_key(client_pub_key_bytes)
+
+	log.Println("[DEBUG] derived_key: ", derived_key)
+	aead, err := chacha20poly1305.NewX(derived_key)
+	if err != nil {
+		log.Printf("[ERROR] Failed to create xchacha key %v", err)
+		return []byte{}
+	}
+
+	// // Progress in_arr buf
+	// fmt.Println("[DEBUG] in_arr 1:", in_arr)
+	in_arr = in_arr[x25519.Size:]
+	// fmt.Println("[DEBUG] in_arr 2:", in_arr)
+
+	// Read nonce
+	if len(in_arr) < aead.NonceSize() {
+		fmt.Printf("Input bytes to short %d expected at least %d\n", len(in_arr), aead.NonceSize())
+		return []byte{}
+	}
+	nonce, ciphertext := in_arr[:aead.NonceSize()], in_arr[aead.NonceSize():]
+
+	// Decrypt
+	plaintext, err := aead.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		fmt.Printf("Failed to decrypt %v\n", err)
 		return []byte{}
@@ -85,12 +151,25 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) []byte {
 	return plaintext
 }
 
+// TODO: Don't use [] ref.
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
-	nonce := make([]byte, csvc.Aead.NonceSize(), csvc.Aead.NonceSize()+len(in_arr)+csvc.Aead.Overhead())
+	// Get the client pub key?
+	client_pub_key_bytes := csvc.GetAgentPubkey()
+	fmt.Println("[DEBUG] Got pub key: ", client_pub_key_bytes)
+
+	// Generate shared secret
+	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
+	aead, err := chacha20poly1305.NewX(shared_key)
+	if err != nil {
+		log.Printf("[ERROR] Failed to create xchacha key %v", err)
+		return []byte{}
+	}
+
+	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(in_arr)+aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
 		fmt.Printf("Failed to encrypt %v\n", err)
 		return []byte{}
 	}
-	encryptedMsg := csvc.Aead.Seal(nonce, nonce, in_arr, nil)
-	return encryptedMsg
+	encryptedMsg := aead.Seal(nonce, nonce, in_arr, nil)
+	return append(client_pub_key_bytes, encryptedMsg...)
 }

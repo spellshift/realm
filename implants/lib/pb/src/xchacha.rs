@@ -1,20 +1,41 @@
+use anyhow::Result;
+use base64::{engine::general_purpose, Engine};
 use bytes::{Buf, BufMut};
 use chacha20poly1305::{aead::generic_array::GenericArray, aead::Aead, AeadCore, KeyInit};
 use prost::Message;
 use rand::rngs::OsRng;
+use rand_chacha::rand_core::SeedableRng;
 use sha2::{Digest, Sha256};
 use std::{
+    collections::HashMap,
+    hash::Hash,
     io::{Read, Write},
     marker::PhantomData,
+    sync::{Arc, Mutex, OnceLock, RwLock},
 };
 use tonic::{
     codec::{Codec, DecodeBuf, Decoder, EncodeBuf, Encoder},
     Status,
 };
+use x25519_dalek::{EphemeralSecret, PublicKey};
 
 #[derive(Debug, Clone)]
 pub struct ChaChaSvc {
     key: Vec<u8>,
+    priv_key_history: HashMap<[u8; 32], [u8; 32]>,
+}
+
+fn key_history() -> &'static Mutex<HashMap<[u8; 32], [u8; 32]>> {
+    static ARRAY: OnceLock<Mutex<HashMap<[u8; 32], [u8; 32]>>> = OnceLock::new();
+    ARRAY.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn add_key_history(pub_key: [u8; 32], shared_secret: [u8; 32]) {
+    key_history().lock().unwrap().insert(pub_key, shared_secret);
+}
+
+fn get_key(pub_key: [u8; 32]) -> [u8; 32] {
+    *key_history().lock().unwrap().get(&pub_key).unwrap()
 }
 
 // !!!! DANGER !!!!!
@@ -25,6 +46,11 @@ pub struct ChaChaSvc {
 const IMIX_ENCRYPT_KEY_DEFAULT: &str = "I Don't care how small the room is I cast fireball";
 const IMIX_ENCRYPT_KEY: Option<&'static str> = option_env!("IMIX_ENCRYPT_KEY",);
 
+const SERVER_PUB_KEY: [u8; 32] = [
+    79, 171, 254, 115, 119, 187, 169, 165, 250, 167, 134, 221, 7, 212, 205, 92, 246, 231, 226, 104,
+    93, 146, 140, 87, 88, 109, 223, 179, 194, 64, 137, 120,
+];
+
 impl Default for ChaChaSvc {
     fn default() -> Self {
         Self {
@@ -32,6 +58,7 @@ impl Default for ChaChaSvc {
                 Some(res) => res.into(),
                 None => IMIX_ENCRYPT_KEY_DEFAULT.into(),
             },
+            priv_key_history: HashMap::new(),
         }
     }
 }
@@ -86,12 +113,30 @@ where
             log::debug!("DANGER can't add to the buffer.");
         }
 
-        let key = self.1.key.as_slice();
-        let mut hasher = Sha256::new();
-        hasher.update(key);
-        let key_hash = hasher.finalize();
+        // Store server pubkey
+        let server_public_bytes = SERVER_PUB_KEY;
+        let server_public = PublicKey::from(server_public_bytes);
 
-        let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&key_hash));
+        // Generate ephemeral keys
+        let rng = rand_chacha::ChaCha20Rng::from_entropy();
+        let client_secret = EphemeralSecret::random_from_rng(rng);
+        let client_public = PublicKey::from(&client_secret);
+        log::debug!("client_public: {:?}", client_public);
+
+        // Generate shared secret
+        let shared_secret = client_secret.diffie_hellman(&server_public);
+        add_key_history(*client_public.as_bytes(), *shared_secret.as_bytes());
+
+        // let key = shared_secret.as_bytes();
+        // let mut hasher = Sha256::new();
+        // hasher.update(IMIX_ENCRYPT_KEY_DEFAULT);
+        // let key = hasher.finalize();
+        // log::debug!("[DEBUG] {:?}", key);
+        log::debug!("[DEBUG] derived key {:?}", shared_secret.as_bytes());
+
+        let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
+            shared_secret.as_bytes(),
+        ));
         let nonce = chacha20poly1305::XChaCha20Poly1305::generate_nonce(&mut OsRng);
 
         let pt_vec = item.encode_to_vec();
@@ -105,6 +150,7 @@ where
             }
         };
 
+        let _ = buf.writer().write_all(client_public.as_bytes());
         let _ = buf.writer().write_all(nonce.as_slice());
         buf.writer().write_all(ciphertext.as_slice())?;
 
@@ -139,15 +185,18 @@ where
             }
         };
 
-        let ciphertext = &bytes_in[0..bytes_read];
-        let nonce = &ciphertext[0..24];
-        let ciphertext = &ciphertext[24..];
+        // TODO validate buffer size to avoid index out of bounds accesses
+        let buf = bytes_in.get(0..bytes_read).unwrap();
+        let msg_pub_key_ref = buf.get(0..32).unwrap();
+        let nonce = buf.get(32..56).unwrap();
+        let ciphertext = buf.get(56..).unwrap();
 
-        let key = self.1.key.as_slice();
-        let mut hasher = Sha256::new();
-        hasher.update(key);
-        let key_hash = hasher.finalize();
-        let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&key_hash));
+        log::debug!("msg_pub_key: {:?}", buf);
+        let msg_pub_key: [u8; 32] = msg_pub_key_ref.to_vec().try_into().unwrap();
+
+        let key = get_key(msg_pub_key);
+        log::debug!("priv_key_history: {:?}", key);
+        let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&key));
 
         let plaintext = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext.as_ref()) {
             Ok(pt) => pt,
@@ -170,4 +219,8 @@ fn from_decode_error(error: prost::DecodeError) -> Status {
     // Map Protobuf parse errors to an INTERNAL status code, as per
     // https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
     Status::new(tonic::Code::Internal, error.to_string())
+}
+
+pub fn decode_b64(content: String) -> Result<Vec<u8>> {
+    Ok(general_purpose::STANDARD.decode(content.as_bytes())?)
 }

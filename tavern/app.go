@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -195,7 +197,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux, cfg.GetEncryptKey()),
+			Handler:              newGRPCHandler(client, grpcShellMux),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -284,7 +286,7 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 		oc := gqlgraphql.GetOperationContext(ctx)
 		reqVars, err := json.Marshal(oc.Variables)
 		if err != nil {
-			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v", err)
+			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v\n", err)
 			return next(ctx)
 		}
 
@@ -305,10 +307,29 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, crypto_key []byte) http.Handler {
+func generate_key_pair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
+	x22519 := ecdh.X25519()
+	priv_key, err := x22519.GenerateKey(rand.Reader)
+	if err != nil {
+		log.Printf("[ERROR] Failed to generate private key: %v\n", err)
+		panic("[ERROR] Failed to generate private key")
+	}
+	public_key, err := x22519.NewPublicKey(priv_key.PublicKey().Bytes())
+	if err != nil {
+		log.Printf("[ERROR] Failed to generate public key: %v\n", err)
+		panic("[ERROR] Failed to generate public key")
+	}
+
+	return public_key, priv_key
+}
+
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
+	public_key, priv_key := generate_key_pair()
+	log.Println("[INFO] Public key: ", base64.StdEncoding.EncodeToString(public_key.Bytes()))
+	log.Println("[INFO] Private key: ", base64.StdEncoding.EncodeToString(priv_key.Bytes()))
 	c2srv := c2.New(client, grpcShellMux)
 	xchacha := cryptocodec.StreamDecryptCodec{
-		Csvc: cryptocodec.NewCryptoSvc(crypto_key),
+		Csvc: cryptocodec.NewCryptoSvc(priv_key),
 	}
 	grpcSrv := grpc.NewServer(
 		grpc.ForceServerCodec(xchacha),
