@@ -1,11 +1,15 @@
 package cryptocodec
 
 import (
+	"bytes"
 	"crypto/ecdh"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"log"
+	"runtime"
+	"strconv"
 
 	"github.com/cloudflare/circl/dh/x25519"
 	"golang.org/x/crypto/chacha20poly1305"
@@ -28,7 +32,30 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 	return StreamDecryptCodec{}
 }
 
+// This is terrible, slow, and should never be used.
+func goid() (int, error) {
+	buf := make([]byte, 32)
+	n := runtime.Stack(buf, false)
+	buf = buf[:n]
+	// goroutine 1 [running]: ...
+	var goroutinePrefix = []byte("goroutine ")
+	var errBadStack = errors.New("invalid runtime.Stack output")
+	buf, ok := bytes.CutPrefix(buf, goroutinePrefix)
+	if !ok {
+		return 0, errBadStack
+	}
+
+	i := bytes.IndexByte(buf, ' ')
+	if i < 0 {
+		return 0, errBadStack
+	}
+
+	return strconv.Atoi(string(buf[:i]))
+}
+
 func (s StreamDecryptCodec) Marshal(v any) ([]byte, error) {
+	id, _ := goid()
+	fmt.Printf("GO_ID: %d Marshal\n", id)
 	proto := encoding.GetCodec("proto")
 	res, err := proto.Marshal(v)
 	enc_res := s.Csvc.Encrypt(res)
@@ -36,6 +63,8 @@ func (s StreamDecryptCodec) Marshal(v any) ([]byte, error) {
 }
 
 func (s StreamDecryptCodec) Unmarshal(buf []byte, v any) error {
+	id, _ := goid()
+	fmt.Printf("GO_ID: %d Unmarshal\n", id)
 	dec_buf := s.Csvc.Decrypt(buf)
 	proto := encoding.GetCodec("proto")
 	return proto.Unmarshal(dec_buf, v)
@@ -84,7 +113,9 @@ func (csvc *CryptoSvc) GetAgentPubkey() []byte {
 }
 
 func (csvc *CryptoSvc) SetAgentPubkey(client_pub_key []byte) {
+	fmt.Printf("Old last_seen_client_pub_key: %v\n", last_seen_client_pub_key)
 	last_seen_client_pub_key = client_pub_key
+	fmt.Printf("New last_seen_client_pub_key: %v\n", last_seen_client_pub_key)
 }
 
 func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
