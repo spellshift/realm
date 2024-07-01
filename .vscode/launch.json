@@ -1,0 +1,10 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "env": {
+                "SERVER_PUBKEY": "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
+            },
+        }
+    ]
+}

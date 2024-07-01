@@ -9,6 +9,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  SERVER_PUBKEY: "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
 
 jobs:
   tavern:
