@@ -22,13 +22,6 @@ import (
 
 const REDACTED = "[REDACTED]"
 
-// !!!! DANGER !!!!!
-// This is the default static key set to ensure compatability between server and client
-// in debug builds. This key must be changed in order to protect data. We're still in the
-// process of implementing app layer crypto and this is temporary. Do not rely on the
-// app layer crypto without changing this default.
-const EnvImixEncryptKeyDefault = "I Don't care how small the room is I cast fireball"
-
 var (
 	// EnvEnableTestData if set will populate the database with test data.
 	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
@@ -204,13 +197,6 @@ func (cfg *Config) IsTestDataEnabled() bool {
 // IsTestRunAndExitEnabled returns true if a value for the "ENABLE_TEST_RUN_AND_EXIT" environment variable is set.
 func (cfg *Config) IsTestRunAndExitEnabled() bool {
 	return EnvEnableTestRunAndExit.String() != ""
-}
-
-func (cfg *Config) GetEncryptKey() []byte {
-	if EnvImixEncryptKey.String() == REDACTED {
-		return []byte(EnvImixEncryptKeyDefault)
-	}
-	return []byte(EnvImixEncryptKey.String())
 }
 
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be
