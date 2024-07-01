@@ -73,9 +73,6 @@ var (
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
 	EnvEnablePProf   = EnvString{"ENABLE_PPROF", ""}
 	EnvEnableMetrics = EnvString{"ENABLE_METRICS", ""}
-
-	// EnvImixEncryptKey is the secret key used to encrypt app layer communication
-	EnvImixEncryptKey = EnvString{"IMIX_ENCRYPT_KEY", REDACTED}
 )
 
 // Config holds information that controls the behaviour of Tavern
