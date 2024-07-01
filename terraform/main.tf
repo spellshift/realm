@@ -88,18 +88,6 @@ variable "enable_metrics" {
   description = "Enable prometheus sidecar and Tavern metrics collection"
   default = false
 }
-// !!!! DANGER !!!!!
-// This is the default static key set to ensure compatability between server and client
-// in debug builds. This key must be changed in order to protect data. We're still in the
-// process of implementing app layer crypto and this is temporary. Do not rely on the
-// app layer crypto without changing this default.
-variable "imix_encrypt_key" {
-  type = string
-  description = "The encryption key tavern and imix should use to talk to each other"
-  sensitive = true
-  default = "I Don't care how small the room is I cast fireball"
-}
-
 
 provider "google" {
   project = var.gcp_project
@@ -210,10 +198,6 @@ resource "google_cloud_run_service" "tavern" {
         env {
           name = "ENABLE_METRICS"
           value = var.enable_metrics ? "1" : ""
-        }
-        env {
-          name = "IMIX_ENCRYPT_KEY"
-          value = var.imix_encrypt_key
         }
       }
 

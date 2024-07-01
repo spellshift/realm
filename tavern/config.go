@@ -20,8 +20,6 @@ import (
 	"realm.pub/tavern/tomes"
 )
 
-const REDACTED = "[REDACTED]"
-
 var (
 	// EnvEnableTestData if set will populate the database with test data.
 	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
