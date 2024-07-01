@@ -329,7 +329,6 @@ func generate_key_pair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 	public_key, priv_key := generate_key_pair()
 	log.Println("[INFO] Public key: ", base64.StdEncoding.EncodeToString(public_key.Bytes()))
-	log.Println("[INFO] Private key: ", base64.StdEncoding.EncodeToString(priv_key.Bytes()))
 	c2srv := c2.New(client, grpcShellMux)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv_key),
