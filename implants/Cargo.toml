@@ -1,10 +1,11 @@
 [workspace]
-members = ["imix", "golem", "lib/eldritch", "lib/transport", "lib/pb"]
+members = ["imix", "golem", "lib/eldritch", "lib/transport", "lib/pb", "lib/host_unique"]
 resolver = "2"
 
 [workspace.dependencies]
 transport = { path = "./lib/transport" }
 eldritch = { path = "./lib/eldritch" }
+host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
 
 aes = "0.8.3"
