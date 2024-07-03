@@ -77,3 +77,17 @@ impl HostUniqueEngine for File {
         Some(host_id)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_id_file() {
+        let engine = File {};
+        let id_one = engine.get_host_id();
+        let id_two = engine.get_host_id();
+
+        assert_eq!(id_one, id_two);
+    }
+}

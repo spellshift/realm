@@ -22,3 +22,19 @@ impl HostUniqueEngine for Env {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use uuid::uuid;
+
+    use super::*;
+
+    #[test]
+    fn test_id_env() {
+        std::env::set_var("IMIX_HOST_ID", "f17b92c0-e383-4328-9017-952e5d9fd53d");
+        let engine = Env {};
+        let id = engine.get_host_id().unwrap();
+
+        assert_eq!(id, uuid!("f17b92c0-e383-4328-9017-952e5d9fd53d"));
+    }
+}

@@ -54,6 +54,21 @@ impl HostUniqueEngine for MacAddress {
         // Return None if anything fails
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_id_mac_consistent() {
+        let engine = MacAddress {};
+        let id_one = engine.get_host_id();
+        let id_two = engine.get_host_id();
+
+        assert_eq!(id_one, id_two);
+    }
+}
+
 ```
 
 - Update `lib.rs` to re-export your implementation

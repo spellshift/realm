@@ -35,31 +35,3 @@ pub fn id(engines: Vec<Box<dyn HostUniqueEngine>>) -> Uuid {
 pub fn defaults() -> Vec<Box<dyn HostUniqueEngine>> {
     vec![Box::new(Env {}), Box::new(File {})]
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_id_consistent() {
-        let engines: Vec<Box<dyn HostUniqueEngine>> = defaults();
-        let id_one = id(engines);
-
-        let engines: Vec<Box<dyn HostUniqueEngine>> = defaults();
-        let id_two = id(engines);
-
-        assert_eq!(id_one, id_two);
-    }
-
-    #[test]
-    fn test_id_env_override() {
-        std::env::set_var("IMIX_HOST_ID", "f17b92c0-e383-4328-9017-952e5d9fd53d");
-        let engines: Vec<Box<dyn HostUniqueEngine>> = defaults();
-        let id = id(engines);
-
-        assert_eq!(
-            id.to_string(),
-            "f17b92c0-e383-4328-9017-952e5d9fd53d".to_string()
-        );
-    }
-}
