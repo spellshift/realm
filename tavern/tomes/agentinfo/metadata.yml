@@ -1,0 +1,4 @@
+name: Agent Info
+description: Get information about the current running agent.
+author: kcarretto
+tactic: RECON
