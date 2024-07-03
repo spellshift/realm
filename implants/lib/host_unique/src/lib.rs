@@ -10,6 +10,8 @@ pub trait HostUniqueEngine {
     fn get_host_id(&self) -> Option<Uuid>;
 }
 
+// Iterate through all available uniqueness engines in order if one
+// returns a UUID that's accepted
 pub fn id(engines: Vec<Box<dyn HostUniqueEngine>>) -> Uuid {
     for engine in engines {
         match engine.get_host_id() {
