@@ -5,6 +5,12 @@ use crate::HostUniqueEngine;
 
 pub struct Env {}
 
+impl Default for Env {
+    fn default() -> Self {
+        Env {}
+    }
+}
+
 impl HostUniqueEngine for Env {
     fn get_name(&self) -> String {
         "env".to_string()

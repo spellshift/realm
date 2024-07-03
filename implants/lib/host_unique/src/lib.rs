@@ -33,5 +33,5 @@ pub fn id(engines: Vec<Box<dyn HostUniqueEngine>>) -> Uuid {
 // List is evaluated in order and will take the first successful
 // result.
 pub fn defaults() -> Vec<Box<dyn HostUniqueEngine>> {
-    vec![Box::new(Env {}), Box::new(File {})]
+    vec![Box::<Env>::default(), Box::<File>::default()]
 }

@@ -8,13 +8,20 @@ use uuid::Uuid;
 
 use crate::HostUniqueEngine;
 
-pub struct File {}
+#[derive(Default)]
+pub struct File {
+    path_override: Option<String>,
+}
 
 impl File {
     /*
      * Returns a predefined path to the host id file based on the current platform.
      */
     fn get_host_id_path(&self) -> String {
+        if let Some(override_path) = &self.path_override {
+            return override_path.to_string();
+        }
+
         #[cfg(target_os = "windows")]
         return String::from("C:\\ProgramData\\system-id");
 
@@ -80,11 +87,18 @@ impl HostUniqueEngine for File {
 
 #[cfg(test)]
 mod tests {
+    use tempfile::NamedTempFile;
+
     use super::*;
 
     #[test]
     fn test_id_file() {
-        let engine = File {};
+        let tmp_file = NamedTempFile::new().unwrap();
+        let path = String::from(tmp_file.path().to_str().unwrap());
+
+        let engine = File {
+            path_override: Some(path),
+        };
         let id_one = engine.get_host_id();
         let id_two = engine.get_host_id();
 
