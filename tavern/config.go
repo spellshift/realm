@@ -13,10 +13,9 @@ import (
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/gcppubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/oauth"
 	"realm.pub/tavern/tomes"
 )
 
@@ -80,7 +79,7 @@ type Config struct {
 	mysqlDSN string
 
 	client *ent.Client
-	oauth  oauth2.Config
+	oauth  oauth.Oauth
 }
 
 // Connect to the database using configured drivers and uri
@@ -238,15 +237,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 
-		cfg.oauth = oauth2.Config{
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			RedirectURL:  domain + redirectPath,
-			Scopes: []string{
-				"https://www.googleapis.com/auth/userinfo.profile",
-			},
-			Endpoint: google.Endpoint,
-		}
+		cfg.oauth = oauth.NewVault(clientID, clientSecret, domain, redirectPath)
 	}
 }
 

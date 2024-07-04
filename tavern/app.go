@@ -141,7 +141,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Configure Authentication
 	var withAuthentication tavernhttp.Option
-	if cfg.oauth.ClientID != "" {
+	if cfg.oauth.GetConfig().ClientID != "" {
 		withAuthentication = tavernhttp.WithAuthentication(client)
 	} else {
 		withAuthentication = tavernhttp.WithAuthenticationBypass(client)
@@ -175,16 +175,16 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			LoginRedirectURI: "/oauth/login",
 		},
 		"/oauth/login": tavernhttp.Endpoint{
-			Handler:              auth.NewOAuthLoginHandler(cfg.oauth, privKey),
+			Handler:              auth.NewOAuthLoginHandler(cfg.oauth.GetConfig(), privKey),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
 		"/oauth/authorize": tavernhttp.Endpoint{
 			Handler: auth.NewOAuthAuthorizationHandler(
-				cfg.oauth,
+				cfg.oauth.GetConfig(),
 				pubKey,
 				client,
-				"https://www.googleapis.com/oauth2/v3/userinfo",
+				cfg.oauth.GetUserProfiles(),
 			),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
