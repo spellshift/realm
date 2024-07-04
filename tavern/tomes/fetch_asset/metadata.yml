@@ -1,0 +1,14 @@
+name: Fetch asset
+description: Move an asset from the c2 server onto the target host.
+author: hulto
+support_model: FIRST_PARTY
+tactic: EXECUTION
+paramdefs:
+- label: Destination
+  name: dst_path
+  placeholder: /etc/passwd
+  type: string
+- label: Source
+  name: src_path
+  placeholder: example/linux/test-file
+  type: string
