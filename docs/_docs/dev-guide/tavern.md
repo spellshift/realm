@@ -122,3 +122,57 @@ For example to add Hashicorp Vault as an OIDC backend you'll need to:
 4. If you copied the google backend you'll need to update `New*` function changing `Endpoint: google.Endpoint` to  `oauth2.Endpoint{}` and fill in the `AuthURL` and `TokenURL` with `authorization_endpoint` and `token_endpoint` respectively.
 5. Update the `UserProfiles` link with the `userinfo_endpoint`
 6. Update `Scopes:` with the scopes in `scopes_supported`
+
+For example `vault.go` might look like:
+
+```go
+package oauth
+
+import (
+ "golang.org/x/oauth2"
+)
+
+type Vault struct {
+ Name         string
+ Config       oauth2.Config
+ UserProfiles string
+}
+
+// GetName implements Oauth.
+func (v Vault) GetName() string {
+ return v.Name
+}
+
+// GetConfig implements Oauth.
+func (v Vault) GetConfig() oauth2.Config {
+ return v.Config
+}
+
+// GetUserProfiles implements Oauth.
+func (v Vault) GetUserProfiles() string {
+ return v.UserProfiles
+}
+
+func NewVault(clientID string, clientSecret string, domain string, redirectPath string) Oauth {
+ return Vault{
+  Name: "vault",
+  Config: oauth2.Config{
+   ClientID:     clientID,
+   ClientSecret: clientSecret,
+   RedirectURL:  domain + redirectPath,
+   Scopes: []string{
+    "openid",
+   },
+   Endpoint: oauth2.Endpoint{
+    AuthURL:  "https://vault.example.com/ui/vault/identity/oidc/provider/default/authorize",
+    TokenURL: "https://vault.example.com/v1/identity/oidc/provider/default/token",
+   },
+  },
+  UserProfiles: "https://vault.example.com/v1/identity/oidc/provider/default/userinfo",
+ }
+}
+```
+
+_Keep in mind `/default/` in vault corresponds to the name of the OIDC provider and may be different in your environemnet._
+
+_You man need to include / create additional scopes to get things like profile pictures and users names from vault into Tavern_
