@@ -1,7 +1,7 @@
 use std::env;
 use uuid::Uuid;
 
-use crate::HostUniqueEngine;
+use crate::HostIDSelector;
 
 pub struct Env {}
 
@@ -11,7 +11,7 @@ impl Default for Env {
     }
 }
 
-impl HostUniqueEngine for Env {
+impl HostIDSelector for Env {
     fn get_name(&self) -> String {
         "env".to_string()
     }

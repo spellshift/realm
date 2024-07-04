@@ -19,7 +19,7 @@ Imix has compile-time configuration, that may be specified using environment var
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
-| IMIX_HOST_ID | Manually specify the host ID for this beacon. Superceeds the file on disk. | - | No |
+| IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
 
 ## Logging
 

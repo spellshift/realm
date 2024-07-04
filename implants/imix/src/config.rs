@@ -73,11 +73,11 @@ impl Default for Config {
             identifier: format!("imix-v{}", VERSION),
         };
 
-        let engines = host_unique::defaults();
+        let selectors = host_unique::defaults();
 
         let host = pb::c2::Host {
             name: whoami::fallible::hostname().unwrap_or(String::from("")),
-            identifier: host_unique::id(engines).to_string(),
+            identifier: host_unique::get_id_with_selectors(selectors).to_string(),
             platform: get_host_platform() as i32,
             primary_ip: get_primary_ip(),
         };

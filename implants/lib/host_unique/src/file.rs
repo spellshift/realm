@@ -6,7 +6,7 @@ use std::{
 
 use uuid::Uuid;
 
-use crate::HostUniqueEngine;
+use crate::HostIDSelector;
 
 #[derive(Default)]
 pub struct File {
@@ -36,7 +36,7 @@ impl File {
     }
 }
 
-impl HostUniqueEngine for File {
+impl HostIDSelector for File {
     fn get_name(&self) -> String {
         "file".to_string()
     }

@@ -10,9 +10,9 @@ permalink: dev-guide/imix
 
 Imix in the main bot for Realm.
 
-## Host uniqueness Engines
+## Host Selector
 
-The host uniqueness engines defined in `implants/lib/host_unique` allow imix to reliably determine which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness stored as a UUID4 value.
+The host selector defined in `implants/lib/host_selector` allow imix to reliably identify which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness is stored as a UUID4 value.
 
 Out of the box realm comes with two options `File` and `Env` to determine what host it's on.
 
@@ -25,24 +25,30 @@ Out of the box realm comes with two options `File` and `Env` to determine what h
 
 `Env` will read from the agent environment variables looking for `IMIX_HOST_ID` if it's set it will use the UUID4 string set there.
 
-If no engines succeed a random UUID4 ID will be generated and used for the bot. This should be avoided.
+If no selectors succeed a random UUID4 ID will be generated and used for the bot. This should be avoided.
 
 ## Develop A Host Uniqueness Engine
 
 To create your own:
 
 - Navigate to `implants/lib/host_unique`
-- Create a file for your engine `touch mac_address.rs`
+- Create a file for your selector `touch mac_address.rs`
 - Create an implementation of the `HostUniqueEngine`
 
 ```rust
 use uuid::Uuid;
 
-use crate::HostUniqueEngine;
+use crate::HostIDSelector;
 
 pub struct MacAddress {}
 
-impl HostUniqueEngine for MacAddress {
+impl Default for MacAddress {
+    fn default() -> Self {
+        MacAddress {}
+    }
+}
+
+impl HostIDSelector for MacAddress {
     fn get_name(&self) -> String {
         "mac_address".to_string()
     }
@@ -57,18 +63,19 @@ impl HostUniqueEngine for MacAddress {
 
 #[cfg(test)]
 mod tests {
+    use uuid::uuid;
+
     use super::*;
 
     #[test]
     fn test_id_mac_consistent() {
-        let engine = MacAddress {};
-        let id_one = engine.get_host_id();
-        let id_two = engine.get_host_id();
+        let selector = MacAddress {};
+        let id_one = selector.get_host_id();
+        let id_two = selector.get_host_id();
 
         assert_eq!(id_one, id_two);
     }
 }
-
 ```
 
 - Update `lib.rs` to re-export your implementation

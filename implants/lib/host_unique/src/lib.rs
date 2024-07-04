@@ -5,22 +5,22 @@ pub use env::Env;
 mod file;
 pub use file::File;
 
-pub trait HostUniqueEngine {
+pub trait HostIDSelector {
     fn get_name(&self) -> String;
     fn get_host_id(&self) -> Option<Uuid>;
 }
 
-// Iterate through all available uniqueness engines in order if one
+// Iterate through all available uniqueness selectors in order if one
 // returns a UUID that's accepted
-pub fn id(engines: Vec<Box<dyn HostUniqueEngine>>) -> Uuid {
-    for engine in engines {
-        match engine.get_host_id() {
+pub fn get_id_with_selectors(selectors: Vec<Box<dyn HostIDSelector>>) -> Uuid {
+    for selector in selectors {
+        match selector.get_host_id() {
             Some(res) => {
                 return res;
             }
             None => {
                 #[cfg(debug_assertions)]
-                log::debug!("Unique engine {} failed", engine.get_name());
+                log::debug!("Unique selector {} failed", selector.get_name());
             }
         }
     }
@@ -29,9 +29,9 @@ pub fn id(engines: Vec<Box<dyn HostUniqueEngine>>) -> Uuid {
     Uuid::new_v4()
 }
 
-// Return the default list of unique engines to evaluate
+// Return the default list of unique selectors to evaluate
 // List is evaluated in order and will take the first successful
 // result.
-pub fn defaults() -> Vec<Box<dyn HostUniqueEngine>> {
+pub fn defaults() -> Vec<Box<dyn HostIDSelector>> {
     vec![Box::<Env>::default(), Box::<File>::default()]
 }
