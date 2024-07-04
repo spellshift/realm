@@ -109,3 +109,7 @@ If you wish to develop an agent using a different transport method (e.g. DNS), y
 2. Execute [Tasks](/user-guide/terminology#task) (happens in parallel and may not finish within one loop)
 3. Report available output from [Task](/user-guide/terminology#task) execution
 4. Sleep for an interval and repeat
+
+## Custom oauth2 backend
+
+If you can't use the default google oauth2 backend Realm has a flexible implementation that allows you to implement your own backends.
