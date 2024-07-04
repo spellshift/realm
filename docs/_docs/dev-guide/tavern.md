@@ -113,3 +113,12 @@ If you wish to develop an agent using a different transport method (e.g. DNS), y
 ## Custom oauth2 backend
 
 If you can't use the default google oauth2 backend Realm has a flexible implementation that allows you to implement your own backends.
+
+For example to add Hashicorp Vault as an OIDC backend you'll need to:
+
+1. Setup an OIDC provider in vault - <https://developer.hashicorp.com/vault/docs/secrets/identity/oidc-provider>
+2. Get the relevant variables from the '.well-known/openid-configuration` endpoint: `authorization_endpoint`,`token_endpoint`,`userinfo_endpoint`,`scopes_supported`
+3. Add a new backend to `tavern/internal/oauth/vault.go` (I recommend copying an existing backend)
+4. If you copied the google backend you'll need to update `New*` function changing `Endpoint: google.Endpoint` to  `oauth2.Endpoint{}` and fill in the `AuthURL` and `TokenURL` with `authorization_endpoint` and `token_endpoint` respectively.
+5. Update the `UserProfiles` link with the `userinfo_endpoint`
+6. Update `Scopes:` with the scopes in `scopes_supported`
