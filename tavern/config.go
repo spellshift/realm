@@ -237,7 +237,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 
-		cfg.oauth = oauth.NewVault(clientID, clientSecret, domain, redirectPath)
+		cfg.oauth = oauth.Default(clientID, clientSecret, domain, redirectPath)
 	}
 }
 
