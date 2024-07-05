@@ -692,7 +692,7 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
-### radnom.int
+### random.int
 
 `random.int(min: i32, max: i32) -> i32`
 

@@ -14,7 +14,7 @@ pub fn int(min: i32, max: i32) -> Result<i32> {
 mod tests {
     use super::*;
 
-    const NUM_ITERATION: i32 = 10000;
+    const NUM_ITERATION: i32 = 50000;
     const MIN_VALUE: i32 = 0;
     const MAX_VALUE: i32 = 1000;
 
