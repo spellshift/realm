@@ -118,7 +118,7 @@ func TestConfigureOAuthFromEnv(t *testing.T) {
 		cfg := &Config{}
 		ConfigureOAuthFromEnv("/redirect/here")(cfg)
 
-		assert.Equal(t, oauth2.Config{}, cfg.oauth)
+		assert.Equal(t, oauth2.Config{}, cfg.oauth.GetConfig())
 	})
 
 	t.Run("WithoutDomainSchema", func(t *testing.T) {
@@ -142,7 +142,7 @@ func TestConfigureOAuthFromEnv(t *testing.T) {
 		cfg := &Config{}
 		ConfigureOAuthFromEnv("/redirect/here")(cfg)
 
-		assert.Equal(t, expectedCfg, cfg.oauth)
+		assert.Equal(t, expectedCfg, cfg.oauth.GetConfig())
 	})
 
 	t.Run("Enabled", func(t *testing.T) {
@@ -166,6 +166,6 @@ func TestConfigureOAuthFromEnv(t *testing.T) {
 		cfg := &Config{}
 		ConfigureOAuthFromEnv("/redirect/here")(cfg)
 
-		assert.Equal(t, expectedCfg, cfg.oauth)
+		assert.Equal(t, expectedCfg, cfg.oauth.GetConfig())
 	})
 }
