@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 extern crate eldritch;
 extern crate golem;
 

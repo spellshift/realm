@@ -111,8 +111,7 @@ mod tests {
                 "BAR2".to_string(),
             );
             let mut hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            let mut subky =
-                hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
+            let mut subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             let mut val2 = subky.get_raw_value("FOO2")?;
             assert_eq!(val2.to_string(), "BAR2");
 

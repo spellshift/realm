@@ -1,24 +1,24 @@
 use anyhow::Result;
-use rand::distributions::{Alphanumeric, Uniform, DistString, Distribution};
+use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
+use rand_chacha::rand_core::SeedableRng;
 
 pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
-    match charset_opt {
+    let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
+    let res = match charset_opt {
         Some(charset) => {
-            let strlen = charset.chars().count().into();
+            let strlen = charset.chars().count();
             let rand_dist = Uniform::from(0..strlen);
-            let mut rng = rand::thread_rng();
             let mut s = "".to_string();
             for _ in 0..length {
                 let index = rand_dist.sample(&mut rng);
                 s.push(charset.chars().nth(index).unwrap());
-            };
-            return Ok(s);
-        },
-        None => {
-            let s = Alphanumeric.sample_string(&mut rand::thread_rng(), length as usize);
-            return Ok(s);
+            }
+            s
         }
-    }
+        None => Alphanumeric.sample_string(&mut rng, length as usize),
+    };
+
+    Ok(res)
 }
 
 #[cfg(test)]
@@ -50,9 +50,7 @@ mod tests {
         for _ in 0..=NUM_ITERATION {
             let new_str = string(16, None)?;
             assert_eq!(new_str.chars().count(), 16);
-            if !result_str.insert(new_str){
-                assert!(false);
-            }
+            assert!(result_str.insert(new_str), "test_string_uniform - failed");
         }
         Ok(())
     }

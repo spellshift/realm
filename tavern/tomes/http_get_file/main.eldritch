@@ -1,4 +1,4 @@
-def download_file(remote_src, local_dst, insecure):
+def get_http_file(remote_src, local_dst, insecure):
     if file.is_dir(file.parent_dir(local_dst)):
         if file.is_file(local_dst):
             file.remove(local_dst)
@@ -7,7 +7,7 @@ def download_file(remote_src, local_dst, insecure):
         eprint("Specified path has no parent directory")
 
 def main():
-    download_file(
+    get_http_file(
         input_params['url'],
         input_params['dst'],
         input_params['insecure'].lower() == "true"
