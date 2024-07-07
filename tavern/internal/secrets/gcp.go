@@ -17,6 +17,7 @@ import (
 type Gcp struct {
 	Name      string
 	projectID string
+	prefix    string
 	client    *secretmanager.Client
 	clientctx context.Context
 }
@@ -29,7 +30,7 @@ func (g Gcp) GetName() string {
 // GetValue implements SecretsManager.
 func (g Gcp) GetValue(key string) ([]byte, error) {
 	// name := "projects/my-project/secrets/my-secret"
-	name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", g.projectID, key)
+	name := fmt.Sprintf("projects/%s/secrets/%s_%s/versions/latest", g.projectID, g.prefix, key)
 
 	// Build the request.
 	accessRequest := &secretmanagerpb.AccessSecretVersionRequest{
@@ -77,7 +78,7 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	parent := fmt.Sprintf("projects/%s", g.projectID)
 	createSecretReq := secretmanagerpb.CreateSecretRequest{
 		Parent:   parent,
-		SecretId: key,
+		SecretId: fmt.Sprintf("%s_%s", g.prefix, key),
 		Secret: &secretmanagerpb.Secret{
 			Replication: &secretmanagerpb.Replication{
 				Replication: &secretmanagerpb.Replication_Automatic_{
@@ -104,7 +105,7 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	}
 
 	// Declare the payload to store.
-	path := fmt.Sprintf("%s/secrets/%s", parent, key)
+	path := fmt.Sprintf("%s/secrets/%s_%s", parent, g.prefix, key)
 	payload := []byte(value)
 
 	// Build the request.
@@ -149,6 +150,7 @@ func NewGcp(projectID string) (SecretsManager, error) {
 	return Gcp{
 		Name:      "Gcp",
 		projectID: projectID,
+		prefix:    "REALM",
 		client:    client,
 		clientctx: ctx,
 	}, nil
