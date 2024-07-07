@@ -328,8 +328,8 @@ func generate_key_pair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 	x22519 := ecdh.X25519()
 
-	// secretsManager, err := secrets.NewGcp("")
-	secretsManager, err := secrets.NewDebugFileSecrets("/etc/realm-secrets.txt")
+	secretsManager, err := secrets.NewGcp("")
+	// secretsManager, err := secrets.NewDebugFileSecrets("/etc/realm-secrets.txt")
 	if err != nil {
 		log.Printf("[ERROR] Unable to setup secrets manager\n")
 	}
@@ -338,13 +338,18 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 	priv_key_string, err := secretsManager.GetValue("tavern_encryption_private_key")
 	if err != nil {
 		// Generate a new one if it doesn't exist
-		priv_key, pub_key := generate_key_pair()
-		_, err = secretsManager.SetValue("tavern_encryption_private_key", priv_key.Bytes())
+		pub_key, priv_key := generate_key_pair()
+		priv_key_bytes, err := x509.MarshalPKCS8PrivateKey(priv_key)
+		if err != nil {
+			log.Printf("[ERROR] Unable to set marshal priv key: %v", err)
+			return nil, nil
+		}
+		_, err = secretsManager.SetValue("tavern_encryption_private_key", priv_key_bytes)
 		if err != nil {
 			log.Printf("[ERROR] Unable to set 'tavern_encryption_private_key' using secrets manager: %v", err)
 			return nil, nil
 		}
-		return priv_key, pub_key
+		return pub_key, priv_key
 	}
 
 	// Parse private key bytes
