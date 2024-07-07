@@ -54,7 +54,6 @@ func (s DebugFileSecrets) SetValue(key string, value []byte) ([]byte, error) {
 
 	var old_value []byte = []byte{}
 
-	log.Printf("[ERROR] Before: %v\n", secrets.Secrets)
 	// If the value exists update it
 	for idx, k := range secrets.Secrets {
 		if k.Key == key {
@@ -73,7 +72,6 @@ func (s DebugFileSecrets) SetValue(key string, value []byte) ([]byte, error) {
 			},
 		)
 	}
-	log.Printf("[ERROR] After: %v\n", secrets.Secrets)
 
 	err = s.setYamlStruct(path, secrets)
 	if err != nil {
@@ -94,7 +92,6 @@ func (s DebugFileSecrets) GetValue(key string) ([]byte, error) {
 	}
 
 	for _, k := range secrets.Secrets {
-		fmt.Printf("key: %s\n", k)
 		if k.Key == key {
 			return []byte(k.Value), nil
 		}
