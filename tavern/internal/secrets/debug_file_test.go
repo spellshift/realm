@@ -29,7 +29,7 @@ secrets:
 	return secretsPath
 }
 
-func TestGetSecrets(t *testing.T) {
+func TestGetSecretsFile(t *testing.T) {
 	path := createTestSecrets(t)
 	defer os.Remove(path)
 
@@ -43,7 +43,7 @@ func TestGetSecrets(t *testing.T) {
 	assert.Equal(t, "Fe8E/SVf7MLgCHzBWvjdnavejsJijJZD9mPvLQbgybE=", res)
 }
 
-func TestSetSecretsAdd(t *testing.T) {
+func TestSetSecretsAddFile(t *testing.T) {
 	path := createTestSecrets(t)
 	defer os.Remove(path)
 
@@ -73,7 +73,7 @@ func TestSetSecretsAdd(t *testing.T) {
 	assert.Equal(t, "Fe8E/SVf7MLgCHzBWvjdnavejsJijJZD9mPvLQbgybE=", res)
 }
 
-func TestSetSecretsNew(t *testing.T) {
+func TestSetSecretsNewFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := path.Join(tmpDir, "secrets.yaml")
 	defer os.Remove(path)
@@ -82,6 +82,7 @@ func TestSetSecretsNew(t *testing.T) {
 	res, err := secretsManager.GetValue("super_secret_test_data")
 	// Make sure this fails
 	assert.NotNil(t, err)
+	assert.Equal(t, "", res)
 
 	res, err = secretsManager.SetValue("super_secret_test_data", "now this will work")
 	assert.Nil(t, err)
