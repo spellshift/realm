@@ -27,7 +27,7 @@ func (g Gcp) GetName() string {
 }
 
 // GetValue implements SecretsManager.
-func (g Gcp) GetValue(key string) (string, error) {
+func (g Gcp) GetValue(key string) ([]byte, error) {
 	// name := "projects/my-project/secrets/my-secret"
 	name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", g.projectID, key)
 
@@ -40,12 +40,10 @@ func (g Gcp) GetValue(key string) (string, error) {
 	result, err := g.client.AccessSecretVersion(g.clientctx, accessRequest)
 	if err != nil {
 		log.Printf("[ERROR] failed to access secret version: %v\n", err)
-		return "", err
+		return []byte{}, err
 	}
 
-	value := string(result.Payload.Data)
-
-	return value, nil
+	return result.Payload.Data, nil
 }
 
 type credentialsJson struct {
@@ -73,8 +71,11 @@ func GetCurrentGcpProject(ctx context.Context) (string, error) {
 	return ProjectID, nil
 }
 
-func (g Gcp) newCreateSecretReq(key string, parent string) secretmanagerpb.CreateSecretRequest {
-	return secretmanagerpb.CreateSecretRequest{
+// SetValue implements SecretsManager.
+func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
+	// Create the request to create the secret.
+	parent := fmt.Sprintf("projects/%s", g.projectID)
+	createSecretReq := secretmanagerpb.CreateSecretRequest{
 		Parent:   parent,
 		SecretId: key,
 		Secret: &secretmanagerpb.Secret{
@@ -85,25 +86,18 @@ func (g Gcp) newCreateSecretReq(key string, parent string) secretmanagerpb.Creat
 			},
 		},
 	}
-}
 
-// SetValue implements SecretsManager.
-func (g Gcp) SetValue(key string, value string) (string, error) {
-	// Create the request to create the secret.
-	parent := fmt.Sprintf("projects/%s", g.projectID)
-	createSecretReq := g.newCreateSecretReq(key, parent)
-
-	old_value := ""
+	old_value := []byte{}
 	_, err := g.client.CreateSecret(g.clientctx, &createSecretReq)
 	if err != nil {
 		if !strings.Contains(err.Error(), "code = AlreadyExists") {
 			log.Printf("[ERROR] Failed to create secret: %v\n", err)
-			return "", err
+			return []byte{}, err
 		} else {
 			tmp, err := g.GetValue(key)
 			if err != nil {
 				log.Printf("[ERROR] Failed to get old secret: %v\n", err)
-				return "", err
+				return []byte{}, err
 			}
 			old_value = tmp
 		}
@@ -122,11 +116,10 @@ func (g Gcp) SetValue(key string, value string) (string, error) {
 	}
 
 	// Call the API.
-	version, err := g.client.AddSecretVersion(g.clientctx, addSecretVersionReq)
+	_, err = g.client.AddSecretVersion(g.clientctx, addSecretVersionReq)
 	if err != nil {
 		log.Fatalf("failed to add secret version: %v", err)
 	}
-	log.Printf("version: %v\n", version)
 
 	return old_value, nil
 }
@@ -140,11 +133,11 @@ func NewGcp(projectID string) (SecretsManager, error) {
 		tmp, err := GetCurrentGcpProject(ctx)
 		projectID = tmp
 		if err != nil {
-			fmt.Printf("[ERROR] Failed to get current project ID: %v\n", err)
+			log.Printf("[ERROR] Failed to get current project ID: %v\n", err)
 			return nil, err
 		}
 	}
-	fmt.Printf("[DEBUG] Using projectID: %s\n", projectID)
+	log.Printf("[DEBUG] Using projectID: %s\n", projectID)
 
 	// Create the client.
 	client, err := secretmanager.NewClient(ctx)

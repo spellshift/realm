@@ -4,7 +4,7 @@
         "rust-analyzer"
     ],
     "rust-analyzer.server.extraEnv": {
-        "SERVER_PUBKEY": "[OVERRIDE THIS VARIABLE]"
+        "IMIX_SERVER_PUBKEY": "[OVERRIDE THIS VARIABLE]"
     },
     "rust-analyzer.check.command": "clippy",
     "rust-analyzer.showUnlinkedFileNotification": false,

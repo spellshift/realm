@@ -17,7 +17,7 @@ use tonic::{
 };
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-const SERVER_PUBKEY_STR: &str = env!("SERVER_PUBKEY");
+const SERVER_PUBKEY_STR: &str = env!("IMIX_SERVER_PUBKEY");
 const SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(SERVER_PUBKEY_STR.as_bytes());
 
 // ------------
@@ -42,14 +42,8 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
 
 // ------------
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ChaChaSvc {}
-
-impl Default for ChaChaSvc {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct ChachaCodec<T, U>(PhantomData<(T, U)>, ChaChaSvc);
@@ -131,8 +125,8 @@ where
         };
 
         // Write pubkey + nonce + cipher text
-        buf.writer().write_all(client_public.as_bytes());
-        buf.writer().write_all(nonce.as_slice());
+        buf.writer().write_all(client_public.as_bytes())?;
+        buf.writer().write_all(nonce.as_slice())?;
         buf.writer().write_all(ciphertext.as_slice())?;
 
         Ok(())
@@ -142,6 +136,8 @@ where
 // ---
 //
 const DEFAULT_CODEC_BUFFER_SIZE: usize = 8 * 1024;
+const PUBKEY_LEN: usize = 32;
+const NONCE_LEN: usize = 24;
 
 #[derive(Debug)]
 pub struct ChachaDecrypt<T, U>(PhantomData<(T, U)>, ChaChaSvc);
@@ -174,17 +170,17 @@ where
             .map_err(from_anyhow_error)?;
 
         let client_public = buf
-            .get(0..32)
+            .get(0..PUBKEY_LEN)
             .context("Input buffer doesn't have enough bytes for public key")
             .map_err(from_anyhow_error)?;
 
         let nonce = buf
-            .get(32..56)
+            .get(PUBKEY_LEN..PUBKEY_LEN + NONCE_LEN)
             .context("Input buffer doesn't have enough bytes for nonce")
             .map_err(from_anyhow_error)?;
 
         let ciphertext = buf
-            .get(56..)
+            .get(PUBKEY_LEN + NONCE_LEN..)
             .context("Input buffer doesn't have enough bytes for ciphertext")
             .map_err(from_anyhow_error)?;
 
