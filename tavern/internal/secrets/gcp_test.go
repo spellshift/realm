@@ -18,20 +18,20 @@ package secrets_test
 // 	// Get a non existent value
 // 	res, err := secretsManager.GetValue(test_key)
 // 	assert.NotNil(t, err)
-// 	assert.Equal(t, "", res)
+// 	assert.Equal(t, []byte(""), res)
 
 // 	// Create a value
-// 	res, err = secretsManager.SetValue(test_key, "This should work")
+// 	res, err = secretsManager.SetValue(test_key, []byte("This should work"))
 // 	assert.Nil(t, err)
-// 	assert.Equal(t, "", res)
+// 	assert.Equal(t, []byte(""), res)
 
 // 	// Update the value
-// 	res, err = secretsManager.SetValue(test_key, "This should work too")
+// 	res, err = secretsManager.SetValue(test_key, []byte{0x99, 0x99})
 // 	assert.Nil(t, err)
-// 	assert.Equal(t, "This should work", res)
+// 	assert.Equal(t, []byte("This should work"), res)
 
 // 	// Get the value
 // 	res, err = secretsManager.GetValue(test_key)
 // 	assert.Nil(t, err)
-// 	assert.Equal(t, "This should work too", res)
+// 	assert.Equal(t, []byte{0x99, 0x99}, res)
 // }

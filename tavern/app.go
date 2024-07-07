@@ -5,6 +5,7 @@ import (
 	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -33,6 +34,7 @@ import (
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 )
@@ -323,12 +325,51 @@ func generate_key_pair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 	return public_key, priv_key
 }
 
+func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
+	x22519 := ecdh.X25519()
+
+	// secretsManager, err := secrets.NewGcp("")
+	secretsManager, err := secrets.NewDebugFileSecrets("/etc/realm-secrets.txt")
+	if err != nil {
+		log.Printf("[ERROR] Unable to setup secrets manager\n")
+	}
+
+	// Check if we already have a key
+	priv_key_string, err := secretsManager.GetValue("tavern_encryption_private_key")
+	if err != nil {
+		// Generate a new one if it doesn't exist
+		priv_key, pub_key := generate_key_pair()
+		_, err = secretsManager.SetValue("tavern_encryption_private_key", priv_key.Bytes())
+		if err != nil {
+			log.Printf("[ERROR] Unable to set 'tavern_encryption_private_key' using secrets manager: %v", err)
+			return nil, nil
+		}
+		return priv_key, pub_key
+	}
+
+	// Parse private key bytes
+	tmp, err := x509.ParsePKCS8PrivateKey(priv_key_string)
+	if err != nil {
+		log.Printf("[ERROR] Unable to parse private key %v\n", err)
+	}
+	priv_key := tmp.(*ecdh.PrivateKey)
+
+	public_key, err := x22519.NewPublicKey(priv_key.PublicKey().Bytes())
+	if err != nil {
+		log.Printf("[ERROR] Failed to generate public key: %v\n", err)
+		panic("[ERROR] Failed to generate public key")
+	}
+
+	return public_key, priv_key
+}
+
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
-	public_key, priv_key := generate_key_pair()
-	log.Println("[INFO] Public key: ", base64.StdEncoding.EncodeToString(public_key.Bytes()))
+	pub, priv := getKeyPair()
+	log.Println("[INFO] Public key: ", base64.StdEncoding.EncodeToString(pub.Bytes()))
+
 	c2srv := c2.New(client, grpcShellMux)
 	xchacha := cryptocodec.StreamDecryptCodec{
-		Csvc: cryptocodec.NewCryptoSvc(priv_key),
+		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}
 	grpcSrv := grpc.NewServer(
 		grpc.ForceServerCodec(xchacha),

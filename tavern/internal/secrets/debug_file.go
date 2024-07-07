@@ -28,76 +28,79 @@ type DebugFileSecrets struct {
 	Path string
 }
 
-func NewDebugFileSecrets(path string) SecretsManager {
+func NewDebugFileSecrets(path string) (SecretsManager, error) {
 	return DebugFileSecrets{
 		Name: "DebugFileSecrets",
 		Path: path,
-	}
+	}, nil
 }
 
 func (s DebugFileSecrets) GetName() string {
 	return s.Name
 }
 
-func (s DebugFileSecrets) SetValue(key string, value string) (string, error) {
-	path, err := s.createSecretsFile()
+func (s DebugFileSecrets) SetValue(key string, value []byte) ([]byte, error) {
+	path, err := s.ensureSecretsFileExist()
 	if err != nil {
 		log.Printf("[ERROR] Failed to create secrets file %s: %v", path, err)
-		return "", err
+		return []byte{}, err
 	}
 
 	secrets, err := s.getYamlStruct(path)
 	if err != nil {
 		log.Printf("[ERROR] Failed to parse YAML file %s: %v", path, err)
-		return "", err
+		return []byte{}, err
 	}
 
-	var old_value string = ""
+	var old_value []byte = []byte{}
 
+	log.Printf("[ERROR] Before: %v\n", secrets.Secrets)
 	// If the value exists update it
 	for idx, k := range secrets.Secrets {
 		if k.Key == key {
-			secrets.Secrets[idx].Value = value
-			old_value = k.Value
+			secrets.Secrets[idx].Value = string(value)
+			old_value = []byte(k.Value)
 		}
 	}
 
 	// If the value doesn't exist create it
-	if old_value == "" {
+	if len(old_value) == 0 {
 		secrets.Secrets = append(
 			secrets.Secrets,
 			Secret{
 				Key:   key,
-				Value: value,
+				Value: string(value),
 			},
 		)
 	}
+	log.Printf("[ERROR] After: %v\n", secrets.Secrets)
 
 	err = s.setYamlStruct(path, secrets)
 	if err != nil {
 		log.Printf("[ERROR] Failed to update YAML file %s: %v", path, err)
-		return "", err
+		return []byte{}, err
 	}
 
 	return old_value, nil
 }
 
-func (s DebugFileSecrets) GetValue(key string) (string, error) {
+func (s DebugFileSecrets) GetValue(key string) ([]byte, error) {
 	path := s.Path
 
 	secrets, err := s.getYamlStruct(path)
 	if err != nil {
 		log.Printf("[ERROR] Failed to parse YAML file %s: %v", path, err)
-		return "", err
+		return []byte{}, err
 	}
 
 	for _, k := range secrets.Secrets {
+		fmt.Printf("key: %s\n", k)
 		if k.Key == key {
-			return k.Value, nil
+			return []byte(k.Value), nil
 		}
 	}
 
-	return "", nil
+	return []byte{}, nil
 }
 
 func (s DebugFileSecrets) setYamlStruct(path string, secrets Secrets) error {
@@ -112,8 +115,6 @@ func (s DebugFileSecrets) setYamlStruct(path string, secrets Secrets) error {
 		log.Printf("[ERROR] Failed to open secrets file %s: %v", path, err)
 		return err
 	}
-
-	log.Printf("data: %s\n", data)
 
 	_, err = file.Write(data)
 	if err != nil {
@@ -150,7 +151,7 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 	return secrets, nil
 }
 
-func (s DebugFileSecrets) createSecretsFile() (string, error) {
+func (s DebugFileSecrets) ensureSecretsFileExist() (string, error) {
 	_, err := os.Stat(s.Path)
 	if errors.Is(err, os.ErrNotExist) {
 		// Create file

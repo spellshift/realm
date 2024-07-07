@@ -2,6 +2,6 @@ package secrets
 
 type SecretsManager interface {
 	GetName() string
-	SetValue(string, string) (string, error)
-	GetValue(string) (string, error)
+	SetValue(string, []byte) ([]byte, error)
+	GetValue(string) ([]byte, error)
 }
