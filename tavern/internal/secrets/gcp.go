@@ -98,7 +98,7 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	// 		log.Printf("[ERROR] Failed to create secret: %v\n", err)
 	// 		return []byte{}, err
 	// 	} else {
-	// }
+	// }h
 
 	old_value, err := g.GetValue(key)
 	if err != nil && !strings.Contains(err.Error(), "code = NotFound") {

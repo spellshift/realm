@@ -185,6 +185,18 @@ resource "google_project_iam_member" "tavern-sqlclient-binding" {
   member  = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
+resource "google_project_iam_member" "tavern-metricwriter-binding" {
+  project = var.gcp_project
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
+resource "google_project_iam_member" "tavern-logwriter-binding" {
+  project = var.gcp_project
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
 
 resource "google_cloud_run_service" "tavern" {
   name     = "tavern"
@@ -274,6 +286,8 @@ resource "google_cloud_run_service" "tavern" {
   depends_on = [
     google_project_iam_member.tavern-sqlclient-binding,
     google_secret_manager_secret_iam_binding.tavern-secrets-binding,
+    google_project_iam_member.tavern-metricwriter-binding,
+    google_project_iam_member.tavern-logwriter-binding,
     google_project_service.cloud_run_api,
     google_project_service.cloud_sqladmin_api,
     google_sql_user.tavern-user,
