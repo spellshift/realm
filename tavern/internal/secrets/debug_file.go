@@ -112,6 +112,7 @@ func (s DebugFileSecrets) setYamlStruct(path string, secrets Secrets) error {
 		log.Printf("[ERROR] Failed to open secrets file %s: %v", path, err)
 		return err
 	}
+	defer file.Close()
 
 	_, err = file.Write(data)
 	if err != nil {
@@ -128,6 +129,7 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 		log.Printf("[ERROR] Failed to open secrets file %s: %v", path, err)
 		return Secrets{}, err
 	}
+	defer file.Close()
 
 	data := make([]byte, MAX_FILE_SIZE)
 	n, err := file.Read(data)
@@ -168,9 +170,3 @@ func (s DebugFileSecrets) ensureSecretsFileExist() (string, error) {
 	}
 	return s.Path, nil
 }
-
-// func checkFileExists(filePath string) bool {
-// 	_, error := os.Stat(filePath)
-// 	//return !os.IsNotExist(err)
-// 	return !errors.Is(error, os.ErrNotExist)
-// }
