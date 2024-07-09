@@ -5,7 +5,6 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"errors"
-	"fmt"
 	"log"
 	"runtime"
 	"strconv"
@@ -96,17 +95,16 @@ func (csvc *CryptoSvc) SetAgentPubkey(client_pub_key []byte) {
 }
 
 func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
-	fmt.Println("[DEBUG] client_pub_key_bytes: ", client_pub_key_bytes)
 	x22519_curve := ecdh.X25519()
 	client_pub_key, err := x22519_curve.NewPublicKey(client_pub_key_bytes)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create public key %v", err)
+		log.Printf("[ERROR] Failed to create public key %v\n", err)
 		return FAILURE_BYTES
 	}
 
 	shared_key, err := csvc.priv_key.ECDH(client_pub_key)
 	if err != nil {
-		log.Printf("[ERROR] Failed to get shared secret %v", err)
+		log.Printf("[ERROR] Failed to get shared secret %v\n", err)
 		return FAILURE_BYTES
 	}
 
@@ -116,7 +114,7 @@ func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
 func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	// Read in pub key
 	if len(in_arr) < x25519.Size {
-		fmt.Printf("Input bytes to short %d expected at least %d\n", len(in_arr), x25519.Size)
+		log.Printf("[ERROR] Input bytes to short %d expected at least %d\n", len(in_arr), x25519.Size)
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -126,10 +124,9 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	// Generate shared secret
 	derived_key := csvc.generate_shared_key(client_pub_key_bytes)
 
-	log.Println("[DEBUG] derived_key: ", derived_key)
 	aead, err := chacha20poly1305.NewX(derived_key)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create xchacha key %v", err)
+		log.Printf("[ERROR] Failed to create xchacha key %v\n", err)
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -138,7 +135,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	// Read nonce
 	if len(in_arr) < aead.NonceSize() {
-		fmt.Printf("Input bytes to short %d expected at least %d\n", len(in_arr), aead.NonceSize())
+		log.Printf("[ERROR] Input bytes to short %d expected at least %d\n", len(in_arr), aead.NonceSize())
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 	nonce, ciphertext := in_arr[:aead.NonceSize()], in_arr[aead.NonceSize():]
@@ -146,7 +143,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	// Decrypt
 	plaintext, err := aead.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		fmt.Printf("Failed to decrypt %v\n", err)
+		log.Printf("[ERROR] Failed to decrypt %v\n", err)
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -157,19 +154,18 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	// Get the client pub key?
 	client_pub_key_bytes := csvc.GetAgentPubkey()
-	fmt.Println("[DEBUG] Got pub key: ", client_pub_key_bytes)
 
 	// Generate shared secret
 	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
 	aead, err := chacha20poly1305.NewX(shared_key)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create xchacha key %v", err)
+		log.Printf("[ERROR] Failed to create xchacha key %v\n", err)
 		return FAILURE_BYTES
 	}
 
 	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(in_arr)+aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
-		fmt.Printf("Failed to encrypt %v\n", err)
+		log.Printf("[ERROR] Failed to encrypt %v\n", err)
 		return FAILURE_BYTES
 	}
 	encryptedMsg := aead.Seal(nonce, nonce, in_arr, nil)
