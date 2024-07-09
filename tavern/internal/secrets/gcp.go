@@ -80,25 +80,6 @@ func GetCurrentGcpProject(ctx context.Context) (string, error) {
 func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	// Create the request to create the secret.
 	parent := fmt.Sprintf("projects/%s", g.projectID)
-	// createSecretReq := secretmanagerpb.CreateSecretRequest{
-	// 	Parent:   parent,
-	// 	SecretId: fmt.Sprintf("%s_%s", g.prefix, key),
-	// 	Secret: &secretmanagerpb.Secret{
-	// 		Replication: &secretmanagerpb.Replication{
-	// 			Replication: &secretmanagerpb.Replication_Automatic_{
-	// 				Automatic: &secretmanagerpb.Replication_Automatic{},
-	// 			},
-	// 		},
-	// 	},
-	// }
-
-	// _, err := g.client.CreateSecret(g.clientctx, &createSecretReq)
-	// if err != nil {
-	// 	if !strings.Contains(err.Error(), "code = AlreadyExists") {
-	// 		log.Printf("[ERROR] Failed to create secret: %v\n", err)
-	// 		return []byte{}, err
-	// 	} else {
-	// }h
 
 	old_value, err := g.GetValue(key)
 	if err != nil && !strings.Contains(err.Error(), "code = NotFound") {
