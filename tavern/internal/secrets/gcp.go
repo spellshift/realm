@@ -53,6 +53,7 @@ type credentialsJson struct {
 
 func GetCurrentGcpProject(ctx context.Context) (string, error) {
 	respMesg, err := google.FindDefaultCredentials(ctx, compute.ComputeScope)
+	log.Printf("[DEBUG] Default creds: %v\n", respMesg)
 	if err != nil {
 		return "", err
 	}
