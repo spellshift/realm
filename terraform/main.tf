@@ -162,7 +162,7 @@ resource "google_service_account" "svctavern" {
 }
 
 resource "google_secret_manager_secret" "tavern-grpc-priv-key" {
-  secret_id = "tavern_encryption_private_key"
+  secret_id = "REALM_tavern_encryption_private_key"
 
   replication {
     auto {
