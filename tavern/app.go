@@ -312,27 +312,33 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
-func generate_key_pair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
+func generate_key_pair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
 	x22519 := ecdh.X25519()
 	priv_key, err := x22519.GenerateKey(rand.Reader)
 	if err != nil {
 		log.Printf("[ERROR] Failed to generate private key: %v\n", err)
-		panic("[ERROR] Failed to generate private key")
+		return nil, nil, err
 	}
 	public_key, err := x22519.NewPublicKey(priv_key.PublicKey().Bytes())
 	if err != nil {
 		log.Printf("[ERROR] Failed to generate public key: %v\n", err)
-		panic("[ERROR] Failed to generate public key")
+		return nil, nil, err
 	}
 
-	return public_key, priv_key
+	return public_key, priv_key, nil
 }
 
 func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 	x22519 := ecdh.X25519()
 
-	secretsManager, err := secrets.NewGcp("")
-	// secretsManager, err := secrets.NewDebugFileSecrets("/etc/realm-secrets.txt")
+	var secretsManager secrets.SecretsManager
+	var err error
+
+	if EnvSecretsManagerPath.String() == "" {
+		secretsManager, err = secrets.NewGcp("")
+	} else {
+		secretsManager, err = secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
+	}
 	if err != nil {
 		log.Printf("[ERROR] Unable to setup secrets manager\n")
 	}
@@ -341,7 +347,12 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 	priv_key_string, err := secretsManager.GetValue("tavern_encryption_private_key")
 	if err != nil {
 		// Generate a new one if it doesn't exist
-		pub_key, priv_key := generate_key_pair()
+		pub_key, priv_key, err := generate_key_pair()
+		if err != nil {
+			log.Printf("[ERROR] Key generation failed: %v", err)
+			return nil, nil
+		}
+
 		priv_key_bytes, err := x509.MarshalPKCS8PrivateKey(priv_key)
 		if err != nil {
 			log.Printf("[ERROR] Unable to set marshal priv key: %v", err)

@@ -13,6 +13,7 @@ func TestMainFunc(t *testing.T) {
 	os.Setenv(EnvHTTPMetricsListenAddr.Key, "127.0.0.1:8081")
 	os.Setenv(EnvEnablePProf.Key, "1")
 	os.Setenv(EnvEnableMetrics.Key, "1")
+	os.Setenv(EnvSecretsManagerPath.Key, "/tmp/test-secret.yml")
 	defer func() {
 		unsetList := []string{
 			EnvEnableTestRunAndExit.Key,
