@@ -31,6 +31,11 @@ variable "gcp_project" {
     error_message = "Must provide a valid gcp_project"
   }
 }
+
+data "google_project" "project" {
+  project_id = var.gcp_project
+}
+
 variable "gcp_region" {
   type = string
   description = "GCP Region for deployment"
@@ -104,6 +109,11 @@ resource "google_project_service" "cloud_run_api" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "secret_manager" {
+  service = "secretmanager.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_project_service" "cloud_sqladmin_api" {
   service = "sqladmin.googleapis.com"
   disable_on_destroy = false
@@ -146,6 +156,36 @@ locals {
   prometheus_container_name = "prometheus-sidecar"
 }
 
+resource "google_service_account" "svctavern" {
+  account_id = "svctavern"
+  description = "The service account Realm's Tavern uses to connect to GCP based services. Managed by Terraform."
+}
+
+resource "google_secret_manager_secret" "tavern-grpc-priv-key" {
+  secret_id = "tavern_encryption_private_key"
+
+  replication {
+    auto {
+    }
+  }
+}
+
+resource "google_secret_manager_secret_iam_binding" "tavern-secrets-binding" {
+  project = var.gcp_project
+  secret_id = google_secret_manager_secret.tavern-grpc-priv-key.secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = [
+    "serviceAccount:${google_service_account.svctavern.email}",
+  ]
+}
+
+resource "google_project_iam_member" "tavern-sqlclient-binding" {
+  project = var.gcp_project
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
+
 resource "google_cloud_run_service" "tavern" {
   name     = "tavern"
   location = var.gcp_region
@@ -157,6 +197,8 @@ resource "google_cloud_run_service" "tavern" {
 
   template {
     spec {
+      service_account_name = google_service_account.svctavern.email
+
       containers {
         name = local.tavern_container_name
         image = var.tavern_container_image
@@ -230,6 +272,8 @@ resource "google_cloud_run_service" "tavern" {
   autogenerate_revision_name = true
 
   depends_on = [
+    google_project_iam_member.tavern-sqlclient-binding,
+    google_secret_manager_secret_iam_binding.tavern-secrets-binding,
     google_project_service.cloud_run_api,
     google_project_service.cloud_sqladmin_api,
     google_sql_user.tavern-user,
