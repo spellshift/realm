@@ -80,32 +80,30 @@ func GetCurrentGcpProject(ctx context.Context) (string, error) {
 func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	// Create the request to create the secret.
 	parent := fmt.Sprintf("projects/%s", g.projectID)
-	createSecretReq := secretmanagerpb.CreateSecretRequest{
-		Parent:   parent,
-		SecretId: fmt.Sprintf("%s_%s", g.prefix, key),
-		Secret: &secretmanagerpb.Secret{
-			Replication: &secretmanagerpb.Replication{
-				Replication: &secretmanagerpb.Replication_Automatic_{
-					Automatic: &secretmanagerpb.Replication_Automatic{},
-				},
-			},
-		},
-	}
+	// createSecretReq := secretmanagerpb.CreateSecretRequest{
+	// 	Parent:   parent,
+	// 	SecretId: fmt.Sprintf("%s_%s", g.prefix, key),
+	// 	Secret: &secretmanagerpb.Secret{
+	// 		Replication: &secretmanagerpb.Replication{
+	// 			Replication: &secretmanagerpb.Replication_Automatic_{
+	// 				Automatic: &secretmanagerpb.Replication_Automatic{},
+	// 			},
+	// 		},
+	// 	},
+	// }
 
-	old_value := []byte{}
-	_, err := g.client.CreateSecret(g.clientctx, &createSecretReq)
-	if err != nil {
-		if !strings.Contains(err.Error(), "code = AlreadyExists") {
-			log.Printf("[ERROR] Failed to create secret: %v\n", err)
-			return []byte{}, err
-		} else {
-			tmp, err := g.GetValue(key)
-			if err != nil {
-				log.Printf("[ERROR] Failed to get old secret: %v\n", err)
-				return []byte{}, err
-			}
-			old_value = tmp
-		}
+	// _, err := g.client.CreateSecret(g.clientctx, &createSecretReq)
+	// if err != nil {
+	// 	if !strings.Contains(err.Error(), "code = AlreadyExists") {
+	// 		log.Printf("[ERROR] Failed to create secret: %v\n", err)
+	// 		return []byte{}, err
+	// 	} else {
+	// }
+
+	old_value, err := g.GetValue(key)
+	if err != nil && !strings.Contains(err.Error(), "code = NotFound") {
+		log.Printf("[ERROR] Failed to get old secret: %v\n", err)
+		return []byte{}, err
 	}
 
 	// Declare the payload to store.
