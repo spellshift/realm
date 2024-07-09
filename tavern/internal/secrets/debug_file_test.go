@@ -31,7 +31,6 @@ secrets:
 
 func TestGetSecretsFile(t *testing.T) {
 	path := createTestSecrets(t)
-	defer os.Remove(path)
 
 	secretsManager, err := secrets.NewDebugFileSecrets(path)
 	assert.Nil(t, err)
@@ -46,7 +45,6 @@ func TestGetSecretsFile(t *testing.T) {
 
 func TestSetSecretsAddFile(t *testing.T) {
 	path := createTestSecrets(t)
-	defer os.Remove(path)
 
 	secretsManager, err := secrets.NewDebugFileSecrets(path)
 	assert.Nil(t, err)
@@ -78,8 +76,6 @@ func TestSetSecretsAddFile(t *testing.T) {
 func TestSetSecretsNewFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := path.Join(tmpDir, "secrets.yaml")
-	defer os.Remove(path)
-	// path = "/tmp/test-secrets.yaml"
 
 	secretsManager, err := secrets.NewDebugFileSecrets(path)
 	assert.Nil(t, err)
