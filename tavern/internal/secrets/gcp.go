@@ -29,7 +29,6 @@ func (g Gcp) GetName() string {
 
 // GetValue implements SecretsManager.
 func (g Gcp) GetValue(key string) ([]byte, error) {
-	// name := "projects/my-project/secrets/my-secret"
 	name := fmt.Sprintf("projects/%s/secrets/%s_%s/versions/latest", g.projectID, g.prefix, key)
 
 	// Build the request.
@@ -109,11 +108,11 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 }
 
 func NewGcp(projectID string) (SecretsManager, error) {
-	// GCP project in which to store secrets in Secret Manager.
 	ctx := context.Background()
 
 	// If unset try to figure out the current GCP
 	if projectID == "" {
+		// GCP project in which to store secrets in Secret Manager.
 		tmp, err := GetCurrentGcpProject(ctx)
 		projectID = tmp
 		if err != nil {
