@@ -1,10 +1,5 @@
 use crate::version::VERSION;
 use pb::c2::host::Platform;
-use std::{
-    fs::{self, File},
-    io::Write,
-    path::Path,
-};
 use uuid::Uuid;
 
 macro_rules! callback_uri {
@@ -78,9 +73,11 @@ impl Default for Config {
             identifier: format!("imix-v{}", VERSION),
         };
 
+        let selectors = host_unique::defaults();
+
         let host = pb::c2::Host {
             name: whoami::fallible::hostname().unwrap_or(String::from("")),
-            identifier: get_host_id(get_host_id_path()),
+            identifier: host_unique::get_id_with_selectors(selectors).to_string(),
             platform: get_host_platform() as i32,
             primary_ip: get_primary_ip(),
         };
@@ -206,59 +203,6 @@ fn get_host_platform() -> Platform {
         not(target_os = "openbsd"),
     ))]
     return Platform::Unspecified;
-}
-
-/*
- * Returns a predefined path to the host id file based on the current platform.
- */
-fn get_host_id_path() -> String {
-    #[cfg(target_os = "windows")]
-    return String::from("C:\\ProgramData\\system-id");
-
-    #[cfg(target_os = "linux")]
-    return String::from("/etc/system-id");
-
-    #[cfg(target_os = "macos")]
-    return String::from("/Users/Shared/system-id");
-
-    #[cfg(target_os = "freebsd")]
-    return String::from("/etc/systemd-id");
-}
-
-/*
- * Attempt to read a host-id from a predefined path on disk.
- * If the file exist, it's value will be returned as the identifier.
- * If the file does not exist, a new value will be generated and written to the file.
- * If there is any failure reading / writing the file, the generated id is still returned.
- */
-fn get_host_id(file_path: String) -> String {
-    // Read Existing Host ID
-    let path = Path::new(file_path.as_str());
-    if path.exists() {
-        if let Ok(host_id) = fs::read_to_string(path) {
-            return host_id.trim().to_string();
-        }
-    }
-
-    // Generate New
-    let host_id = Uuid::new_v4().to_string();
-
-    // Save to file
-    match File::create(path) {
-        Ok(mut f) => match f.write_all(host_id.as_bytes()) {
-            Ok(_) => {}
-            Err(_err) => {
-                #[cfg(debug_assertions)]
-                log::error!("failed to write host id file: {_err}");
-            }
-        },
-        Err(_err) => {
-            #[cfg(debug_assertions)]
-            log::error!("failed to create host id file: {_err}");
-        }
-    };
-
-    host_id
 }
 
 /*

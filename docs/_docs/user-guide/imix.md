@@ -19,6 +19,7 @@ Imix has compile-time configuration, that may be specified using environment var
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
+| IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
 
 ## Logging
 
@@ -53,6 +54,23 @@ By default imix will try to determine the systems proxy settings:
 - On Windows - we cannot automatically determine the default proxy
 - On MacOS - we cannot automatically determine the default proxy
 - On FreeBSD - we cannot automatically determine the default proxy
+
+## Identifying unique hosts
+
+Imix communicates which host it's on to Tavern enabling operators to reliably perform per host actions. The default way that imix does this is through a file on disk. We recognize that this may be un-ideal for many situations so we've also provided an environment override and made it easy for admins managing a realm deployment to change how the bot determines uniqueness.
+
+Imix uses the `host_unique` library under `implants/lib/host_unique` to determine which host it's on. The `id` function will fail over all available options returning the first successful ID. If a method is unable to determine the uniqueness of a host it should return `None`.
+
+We recommend that you use the `File` for the most reliability:
+
+- Exists across reboots
+- Garunteed to be unique per host (because the bot creates it)
+- Can be used by multiple instances of the beacon on the same host.
+
+If you cannot use the `File` engine we highly recommend manually setting the `Env` engine with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
+
+If all uniqueness engines fail imix will randomly generate a UUID to avoid crashing.
+This isn't ideal as in the UI each new beacon will appear as thought it were on a new host.
 
 ## Static cross compilation
 

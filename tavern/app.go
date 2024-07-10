@@ -208,6 +208,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
+		"/cdn/hostfiles/": tavernhttp.Endpoint{
+			Handler: cdn.NewHostFileDownloadHandler(client, "/cdn/hostfiles/"),
+		},
 		"/cdn/upload": tavernhttp.Endpoint{
 			Handler: cdn.NewUploadHandler(client),
 		},

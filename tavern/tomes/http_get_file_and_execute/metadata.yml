@@ -1,5 +1,5 @@
-name: Download and execute
-description: Download a file and execute it. If possible background and disown the process.
+name: HTTP GET file and execute
+description: Copy a file from a remote HTTP server to the target host and execute it. If possible background and disown the process.
 author: hulto
 support_model: FIRST_PARTY
 tactic: EXECUTION
