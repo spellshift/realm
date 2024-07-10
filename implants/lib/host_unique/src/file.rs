@@ -96,11 +96,11 @@ mod tests {
         let tmp_file = NamedTempFile::new().unwrap();
         let path = String::from(tmp_file.path().to_str().unwrap());
 
-        let engine = File {
+        let selector = File {
             path_override: Some(path),
         };
-        let id_one = engine.get_host_id();
-        let id_two = engine.get_host_id();
+        let id_one = selector.get_host_id();
+        let id_two = selector.get_host_id();
 
         assert_eq!(id_one, id_two);
     }
