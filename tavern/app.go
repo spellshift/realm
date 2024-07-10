@@ -355,7 +355,7 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 
 		priv_key_bytes, err := x509.MarshalPKCS8PrivateKey(priv_key)
 		if err != nil {
-			log.Printf("[ERROR] Unable to set marshal priv key: %v", err)
+			log.Printf("[ERROR] Unable to marshal private key: %v", err)
 			return nil, nil
 		}
 		_, err = secretsManager.SetValue("tavern_encryption_private_key", priv_key_bytes)
