@@ -1,4 +1,5 @@
 use crate::version::VERSION;
+use const_decoder::Decoder as const_decode;
 use pb::c2::host::Platform;
 use uuid::Uuid;
 
@@ -42,7 +43,7 @@ pub const CALLBACK_INTERVAL: &str = callback_interval!();
 
 macro_rules! retry_interval {
     () => {
-        match option_env!("IMIX_RETRY_INTERVAL") {
+        match option_env!("IMIX_CALLBACK_INTERVAL") {
             Some(interval) => interval,
             None => "5",
         }
@@ -53,6 +54,17 @@ macro_rules! retry_interval {
  */
 pub const RETRY_INTERVAL: &str = retry_interval!();
 
+macro_rules! server_pubkey {
+    () => {
+        env!("IMIX_SERVER_PUBKEY").as_bytes()
+    };
+}
+
+/* Compile-time constant for the agent retry interval, derived from the IMIX_RETRY_INTERVAL environment variable during compilation.
+ * Defaults to 5 if unset.
+ */
+pub const SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(server_pubkey!());
+
 /*
  * Config holds values necessary to configure an Agent.
  */
@@ -62,6 +74,7 @@ pub struct Config {
     pub callback_uri: String,
     pub proxy_uri: Option<String>,
     pub retry_interval: u64,
+    pub server_pubkey: [u8; 32],
 }
 
 /*
@@ -113,6 +126,7 @@ impl Default for Config {
                     5
                 }
             },
+            server_pubkey: SERVER_PUBKEY,
         }
     }
 }

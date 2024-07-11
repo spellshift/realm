@@ -26,6 +26,7 @@ pretty_env_logger = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
+const-decoder = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = "0.6.0"
