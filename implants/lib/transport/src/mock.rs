@@ -10,7 +10,7 @@ mock! {
         fn clone(&self) -> Self;
     }
     impl super::Transport for Transport {
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
+    fn new(uri: String, server_pubkey: [u8; 32], proxy_uri: Option<String>) -> Result<Self>;
 
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 

