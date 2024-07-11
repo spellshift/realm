@@ -40,6 +40,10 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
     Ok(res)
 }
 
+fn del_key(pub_key: [u8; 32]) -> Option<([u8; 32], [u8; 32])> {
+    key_history().lock().unwrap().remove_entry(&pub_key)
+}
+
 // ------------
 
 #[derive(Debug, Clone, Default)]
@@ -189,6 +193,9 @@ where
         let client_public_bytes = tmp_client_public_bytes.try_into().unwrap(); // Bruh idk how to not unwrap this :sob:
 
         let client_private_bytes = get_key(client_public_bytes).map_err(from_anyhow_error)?;
+        // Shouldn't need private key again once the message has been decrypted
+        del_key(client_public_bytes);
+
         let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
             &client_private_bytes,
         ));
