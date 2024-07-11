@@ -16,9 +16,37 @@ import (
 )
 
 // TODO: Switch to a gomap and mutex.
-var session_pub_keys = sync.Map{}
+var session_pub_keys = NewSyncMap()
 
-// TODO: Should we make this a random long byte array in case it gets used anywhere to avoid encrypting data with a week key? - Sliver handles errors in this way.
+type SyncMap struct {
+	Mutex sync.RWMutex   // Read Write Mutex to allow for multiple readers
+	Map   map[int][]byte // Example data map
+}
+
+func NewSyncMap() *SyncMap {
+	return &SyncMap{Mutex: sync.RWMutex{}, Map: make(map[int][]byte)}
+}
+
+func (s *SyncMap) Load(key int) ([]byte, bool) {
+	defer s.Mutex.Unlock()
+	s.Mutex.Lock()
+	res, ok := s.Map[key]
+	return res, ok
+}
+
+func (s *SyncMap) Store(key int, value []byte) {
+	defer s.Mutex.Unlock()
+	s.Mutex.Lock()
+	s.Map[key] = value
+}
+
+func (s *SyncMap) Delete(key int) {
+	defer s.Mutex.Unlock()
+	s.Mutex.Lock()
+	delete(s.Map, key)
+}
+
+// TODO: Should we make this a random long byte array in case it gets used anywhere to avoid encrypting data with a weak key? - Sliver handles errors in this way.
 var FAILURE_BYTES = []byte{}
 
 func init() {
@@ -53,7 +81,9 @@ func (s StreamDecryptCodec) Unmarshal(buf []byte, v any) error {
 		return err
 	}
 	dec_buf, pub_key := s.Csvc.Decrypt(buf)
-	s.Csvc.SetAgentPubkey(pub_key)
+
+	session_pub_keys.Store(id, pub_key)
+
 	proto := encoding.GetCodec("proto")
 	return proto.Unmarshal(dec_buf, v)
 }
@@ -71,27 +101,6 @@ func NewCryptoSvc(priv_key *ecdh.PrivateKey) CryptoSvc {
 	return CryptoSvc{
 		priv_key: priv_key,
 	}
-}
-
-func (csvc *CryptoSvc) GetAgentPubkey() []byte {
-	id, err := goid()
-	if err != nil {
-		log.Println("[ERROR] Unable to find GOID ", id)
-		return FAILURE_BYTES
-	}
-	res, ok := session_pub_keys.Load(id)
-	if !ok {
-		log.Println("[ERROR] Public key not found")
-	}
-	return res.([]byte)
-}
-
-func (csvc *CryptoSvc) SetAgentPubkey(client_pub_key []byte) {
-	id, err := goid()
-	if err != nil {
-		log.Println("[ERROR] Failed to get goid")
-	}
-	session_pub_keys.Store(id, client_pub_key)
 }
 
 func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
@@ -119,7 +128,13 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	}
 
 	client_pub_key_bytes := in_arr[:x25519.Size]
-	csvc.SetAgentPubkey(client_pub_key_bytes)
+
+	id, err := goid()
+	if err != nil {
+		log.Println("[ERROR] Failed to get goid")
+		return FAILURE_BYTES, FAILURE_BYTES
+	}
+	session_pub_keys.Store(id, client_pub_key_bytes)
 
 	// Generate shared secret
 	derived_key := csvc.generate_shared_key(client_pub_key_bytes)
@@ -133,7 +148,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	// Progress in_arr buf
 	in_arr = in_arr[x25519.Size:]
 
-	// Read nonce
+	// Read nonce & cipher text
 	if len(in_arr) < aead.NonceSize() {
 		log.Printf("[ERROR] Input bytes to short %d expected at least %d\n", len(in_arr), aead.NonceSize())
 		return FAILURE_BYTES, FAILURE_BYTES
@@ -153,7 +168,20 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 // TODO: Don't use [] ref.
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	// Get the client pub key?
-	client_pub_key_bytes := csvc.GetAgentPubkey()
+	id, err := goid()
+	if err != nil {
+		log.Println("[ERROR] Unable to find GOID ", id)
+		return FAILURE_BYTES
+	}
+
+	client_pub_key_bytes, ok := session_pub_keys.Load(id)
+	if !ok {
+		log.Println("[ERROR] Public key not found")
+		return FAILURE_BYTES
+	}
+
+	// We should only need to use these once so delete it after use
+	session_pub_keys.Delete(id)
 
 	// Generate shared secret
 	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
