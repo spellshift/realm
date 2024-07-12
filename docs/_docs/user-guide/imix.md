@@ -74,6 +74,11 @@ This isn't ideal as in the UI each new beacon will appear as thought it were on 
 
 ## Static cross compilation
 
+**We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
+Building in the dev container limits variables that might cause issues and is the most tested way to compile.
+
+**Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `[INFO] Public key: <SERVER_PUBKEY>`**
+
 ### Linux
 
 ```bash
@@ -82,7 +87,8 @@ rustup target add x86_64-unknown-linux-musl
 sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
-RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-unknown-linux-musl
+
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
 ### MacOS
@@ -104,10 +110,11 @@ sudo apt install gcc-mingw-w64
 
 # Build imix
 cd realm/implants/imix/
+
 # Build imix.exe
-RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-pc-windows-gnu
 # Build imix.svc.exe
-RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
-RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --lib --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```

@@ -71,6 +71,9 @@ var (
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
 	EnvEnablePProf   = EnvString{"ENABLE_PPROF", ""}
 	EnvEnableMetrics = EnvString{"ENABLE_METRICS", ""}
+
+	// EnvSecretsManagerPath defines the local path on disk where secrets should be stored by the DebugFile secrets manager. If left empty uses GCP
+	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
 )
 
 // Config holds information that controls the behaviour of Tavern
