@@ -79,8 +79,9 @@ type Config struct {
 
 	mysqlDSN string
 
-	client *ent.Client
-	oauth  oauth2.Config
+	client       *ent.Client
+	oauth        oauth2.Config
+	userProfiles string
 }
 
 // Connect to the database using configured drivers and uri
@@ -238,6 +239,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 
+		// Google OAuth backend
 		cfg.oauth = oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
@@ -247,6 +249,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			},
 			Endpoint: google.Endpoint,
 		}
+		cfg.userProfiles = "https://www.googleapis.com/oauth2/v3/userinfo"
 	}
 }
 
