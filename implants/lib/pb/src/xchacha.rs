@@ -17,8 +17,9 @@ use tonic::{
 };
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-const SERVER_PUBKEY_STR: &str = env!("IMIX_SERVER_PUBKEY");
-const SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(SERVER_PUBKEY_STR.as_bytes());
+/* Compile-time constant for the server pubkey, derived from the IMIX_SERVER_PUBKEY environment variable during compilation.
+ */
+static SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(env!("IMIX_SERVER_PUBKEY").as_bytes());
 
 // ------------
 
