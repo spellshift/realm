@@ -27,13 +27,13 @@ Out of the box realm comes with two options `File` and `Env` to determine what h
 
 If no selectors succeed a random UUID4 ID will be generated and used for the bot. This should be avoided.
 
-## Develop A Host Uniqueness Engine
+## Develop A Host Uniqueness Selector
 
 To create your own:
 
 - Navigate to `implants/lib/host_unique`
 - Create a file for your selector `touch mac_address.rs`
-- Create an implementation of the `HostUniqueEngine`
+- Create an implementation of the `HostIDSelector`
 
 ```rust
 use uuid::Uuid;

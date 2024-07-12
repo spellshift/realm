@@ -60,9 +60,9 @@
       url: "dev-guide/imix"
       children:
         - title: "Overview"
-          url: "dev-guide/eldritch#overview"
-        - title: "Developing a host uniqueness engine"
-          url: "dev-guide/eldritch#develop-a-host-uniqueness-engine"
+          url: "dev-guide/imix#overview"
+        - title: "Develop a host uniqueness selector"
+          url: "dev-guide/imix#develop-a-host-uniqueness-selector"
 
 - title: "About"
   url: "" # Index
