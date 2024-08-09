@@ -38,7 +38,7 @@ mod tests {
             fs::remove_file(&p)?;
         }
 
-        // Run our code
+        // check if file exists
         assert!(!Path::new(&p).exists());
 
         Ok(())
