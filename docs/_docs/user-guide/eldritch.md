@@ -385,7 +385,7 @@ The <b>file.replace_all</b> method finds all strings matching a regex pattern in
 
 `file.tmp_file(name: str) -> str`
 
-The <b> file.temp</b> method returns the path of a new temporary file with the name provided as the argument.
+The <b> file.temp</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
 
