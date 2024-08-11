@@ -179,7 +179,7 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn temp_file(this: &FileLibrary, name: String) -> anyhow::Result<String> {
+    fn temp_file(this: &FileLibrary, name: Option<String>) -> anyhow::Result<String> {
         temp_file_impl::temp_file(name)
     }
 
