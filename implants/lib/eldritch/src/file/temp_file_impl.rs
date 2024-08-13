@@ -27,7 +27,6 @@ pub fn temp_file(name: Option<String>) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use std::path::Path;
 
     #[test]
@@ -35,7 +34,8 @@ mod tests {
         // Create file with a name
         let p = temp_file(Some("foo".to_string()))?;
         // check if file exists
-        assert!(Path::new(&p).exists());
+        let t = Path::new(&p);
+        assert!(t.exists() && (t.file_name().unwrap() == "foo"));
 
         Ok(())
     }
@@ -45,34 +45,6 @@ mod tests {
         let p = temp_file(None)?;
         // check if file exists
         assert!(Path::new(&p).exists());
-
-        Ok(())
-    }
-    #[test]
-    fn test_temp_no_file_w_name() -> anyhow::Result<()> {
-        // Create file with a name and then delete it (so we know it doesnt exist)
-        let p = temp_file(Some("foo".to_string()))?;
-        if Path::new(&p).exists() {
-            // delete the file
-            fs::remove_file(&p)?;
-        }
-
-        // check file doesn't exists
-        assert!(!Path::new(&p).exists());
-
-        Ok(())
-    }
-    #[test]
-    fn test_temp_no_file_r_name() -> anyhow::Result<()> {
-        // Create file with a random name and then delete it (so we know it doesnt exist)
-        let p = temp_file(None)?;
-        if Path::new(&p).exists() {
-            // delete the file
-            fs::remove_file(&p)?;
-        }
-
-        // check file doesn't exists
-        assert!(!Path::new(&p).exists());
 
         Ok(())
     }
