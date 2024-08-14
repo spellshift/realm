@@ -5,18 +5,18 @@ use tempfile::NamedTempFile;
 
 pub fn temp_file(name: Option<String>) -> Result<String> {
     let mut temp_path;
-    let _file;
+    let _: File;
 
     match name {
         None => {
             // Generate a random file name if name is not provided
             let tfile = NamedTempFile::new()?;
-            (_file, temp_path) = tfile.keep()?;
+            (_, temp_path) = tfile.keep()?;
         }
         Some(n) => {
             temp_path = env::temp_dir();
             temp_path.push(n);
-            _file = File::create(&temp_path)?;
+            _ = File::create(&temp_path)?;
         }
     }
     // Create the file in the temporary directory
@@ -35,7 +35,8 @@ mod tests {
         let p = temp_file(Some("foo".to_string()))?;
         // check if file exists
         let t = Path::new(&p);
-        assert!(t.exists() && (t.file_name().unwrap() == "foo"));
+        assert!(t.exists());
+        assert!(t.file_name().unwrap() == "foo");
 
         Ok(())
     }
