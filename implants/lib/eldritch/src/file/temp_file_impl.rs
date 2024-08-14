@@ -5,7 +5,6 @@ use tempfile::NamedTempFile;
 
 pub fn temp_file(name: Option<String>) -> Result<String> {
     let mut temp_path;
-    let _: File;
 
     match name {
         None => {
