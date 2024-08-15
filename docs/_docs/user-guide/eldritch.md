@@ -381,6 +381,12 @@ The <b>file.replace</b> method finds the first string matching a regex pattern i
 
 The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
+### file.tmp_file
+
+`file.tmp_file(name: Option<str>) -> str`
+
+The <b> file.temp</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+
 ### file.template
 
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
