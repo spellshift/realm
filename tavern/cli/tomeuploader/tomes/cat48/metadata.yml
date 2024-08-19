@@ -1,0 +1,10 @@
+name: cat48
+description: Display contents of a file
+author: adm1nPanda
+support_model: FIRST_PARTY
+tactic: RECON
+paramdefs:
+- name: path
+  type: string
+  label: Absolute file path
+  placeholder: "/etc/passwd"
