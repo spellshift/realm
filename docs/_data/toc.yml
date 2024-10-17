@@ -56,5 +56,13 @@
           url: "dev-guide/eldritch#using-dict"
         - title: "Using Async"
           url: "dev-guide/eldritch#using-async"
+    - title: "Imix"
+      url: "dev-guide/imix"
+      children:
+        - title: "Overview"
+          url: "dev-guide/imix#overview"
+        - title: "Develop a host uniqueness selector"
+          url: "dev-guide/imix#develop-a-host-uniqueness-selector"
+
 - title: "About"
   url: "" # Index

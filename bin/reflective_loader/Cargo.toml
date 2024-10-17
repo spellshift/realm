@@ -1,3 +1,11 @@
+#
+# ============= DO NOT MANUALLY COMPILE =======================
+# The reflective loader gets automatically compiled
+# By the eldritch `build.rs` file. There's some differences
+# in how to build the loader with `gnu` and `msvc`. If you're
+# curious chekc out `realm/implants/lib/eldritch/build.rs`
+#
+
 [package]
 name = "reflective_loader"
 version = "0.1.0"
@@ -9,14 +17,14 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [profile.dev]
-opt-level = "z"  # This reduces the numebr of symbols not found.
+opt-level = "z"   # This reduces the numebr of symbols not found.
 lto = true
 codegen-units = 1
 panic = "abort"
 
 [profile.release]
-strip = true  # Automatically strip symbols from the binary.
-opt-level = "z"  # Optimize for size.
+strip = true      # Automatically strip symbols from the binary.
+opt-level = "z"   # Optimize for size.
 lto = true
 codegen-units = 1
 panic = "abort"
@@ -41,5 +49,5 @@ features = [
     "Win32_System_Diagnostics_Debug",
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices",
-    "Win32_System_WindowsProgramming"
+    "Win32_System_WindowsProgramming",
 ]

@@ -1,0 +1,1 @@
+assets.copy(input_params['src_path'], input_params['dst_path'])

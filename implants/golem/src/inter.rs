@@ -26,8 +26,6 @@
 use std::fmt;
 use std::fmt::Display;
 
-
-
 use starlark::errors::EvalMessage;
 use starlark::errors::EvalSeverity;
 use starlark::read_line::ReadLine;

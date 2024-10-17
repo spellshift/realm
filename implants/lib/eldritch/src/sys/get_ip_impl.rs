@@ -52,10 +52,8 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
                     Some(netmask) => {
                         let cidr = netmask_to_cidr(netmask)?;
                         ips.push(format!("{}/{}", ip.ip(), cidr));
-                    },
-                    None => {
-                        ips.push(ip.ip().to_string())
                     }
+                    None => ips.push(ip.ip().to_string()),
                 }
             } else {
                 ips.push(ip.ip().to_string())

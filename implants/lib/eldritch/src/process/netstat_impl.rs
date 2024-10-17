@@ -1,7 +1,7 @@
 use super::super::insert_dict_kv;
-use anyhow::Result;
 #[cfg(target_os = "freebsd")]
 use anyhow::anyhow;
+use anyhow::Result;
 #[cfg(not(target_os = "freebsd"))]
 use netstat2::*;
 use starlark::{

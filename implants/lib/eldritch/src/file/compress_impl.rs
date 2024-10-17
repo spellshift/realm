@@ -92,6 +92,7 @@ pub fn compress(src: String, dst: String) -> Result<()> {
         OpenOptions::new()
             .create(true)
             .write(true)
+            .truncate(false)
             .open(dst.clone())?,
     );
 

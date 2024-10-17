@@ -1,30 +1,36 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
+#![deny(warnings)]
+
 #[cfg(all(feature = "win_service", windows))]
 #[macro_use]
 extern crate windows_service;
 
-use imix::handle_main;
-
+mod agent;
+mod config;
+mod install;
+mod run;
+mod task;
+mod version;
+use run::handle_main;
 
 // ============= Standard ===============
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 128)]
 async fn main() {
     #[cfg(debug_assertions)]
-    imix::init_logging();
+    run::init_logging();
 
     #[cfg(feature = "win_service")]
     match windows_service::service_dispatcher::start("imix", ffi_service_main) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_err) => {
             #[cfg(debug_assertions)]
             log::error!("Failed to start service (running as exe?): {_err}");
-        },
+        }
     }
 
     handle_main().await
 }
-
 
 // ============ Windows Service =============
 

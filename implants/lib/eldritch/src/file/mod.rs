@@ -14,6 +14,7 @@ mod read_impl;
 mod remove_impl;
 mod replace_all_impl;
 mod replace_impl;
+mod temp_file_impl;
 mod template_impl;
 mod timestomp_impl;
 mod write_impl;
@@ -176,4 +177,10 @@ fn methods(builder: &mut MethodsBuilder) {
         follow_impl::follow(path, f, eval)?;
         Ok(NoneType{})
     }
+
+    #[allow(unused_variables)]
+    fn temp_file(this: &FileLibrary, name: Option<String>) -> anyhow::Result<String> {
+        temp_file_impl::temp_file(name)
+    }
+
 }

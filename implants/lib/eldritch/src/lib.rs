@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 pub mod assets;
 pub mod crypto;
 pub mod file;

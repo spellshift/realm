@@ -1,5 +1,5 @@
-name: Download
-description: Download a file
+name: HTTP GET file
+description: Copy a file from a remote HTTP server to the target host
 author: hulto
 support_model: FIRST_PARTY
 tactic: EXECUTION

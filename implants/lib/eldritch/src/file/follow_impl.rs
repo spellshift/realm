@@ -1,5 +1,5 @@
-use std::io::{Seek, BufReader, BufRead};
-use notify::{Watcher, RecursiveMode, RecommendedWatcher, Config};
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use std::io::{BufRead, BufReader, Seek};
 
 use anyhow::Result;
 use starlark::{eval::Evaluator, values::Value};
@@ -32,8 +32,8 @@ pub fn follow<'v>(path: String, f: Value<'v>, eval: &mut Evaluator<'v, '_>) -> R
         for line in reader.lines() {
             let val = starlark_heap.alloc(line?.to_string());
             match eval.eval_function(f, &[val], &[]) {
-                Ok(_) => {},
-                Err(err) => {return Err(err.into_anyhow())},
+                Ok(_) => {}
+                Err(err) => return Err(err.into_anyhow()),
             };
         }
     }

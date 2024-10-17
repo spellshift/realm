@@ -69,8 +69,7 @@ mod tests {
         let id = Uuid::new_v4();
         //Write something into temp regkey...
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-        let (nkey, _ndisp) =
-            hkcu.create_subkey(format!("SOFTWARE\\{}", id))?;
+        let (nkey, _ndisp) = hkcu.create_subkey(format!("SOFTWARE\\{}", id))?;
         nkey.set_value("FOO", &"BAR")?;
 
         let ares = get_reg(
