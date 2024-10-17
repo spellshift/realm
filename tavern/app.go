@@ -184,7 +184,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 				cfg.oauth,
 				pubKey,
 				client,
-				"https://www.googleapis.com/oauth2/v3/userinfo",
+				cfg.userProfiles,
 			),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
