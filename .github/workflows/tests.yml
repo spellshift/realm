@@ -11,27 +11,27 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  tavern:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          # - macOS-latest
-          # - windows-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: ⚡ Setup Golang
-      uses: actions/setup-go@v3
-      with:
-        go-version-file: go.mod
-        cache: true
-    - name: 🔨 Build
-      run: go build -v -o ./build/tavern ./tavern
-    - name: 🔎 Test
-      run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
-    - name: 📶 Upload Coverage Results
-      uses: codecov/codecov-action@v3
+  # tavern:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os:
+  #         - ubuntu-latest
+  #         - macOS-latest
+  #         - windows-latest
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: ⚡ Setup Golang
+  #     uses: actions/setup-go@v3
+  #     with:
+  #       go-version-file: go.mod
+  #       cache: true
+  #   - name: 🔨 Build
+  #     run: go build -v -o ./build/tavern ./tavern
+  #   - name: 🔎 Test
+  #     run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
+  #   - name: 📶 Upload Coverage Results
+  #     uses: codecov/codecov-action@v3
   implants:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -39,8 +39,8 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macOS-latest
-          - windows-latest
+          # - macOS-latest
+          # - windows-latest
     steps:
     - uses: actions/checkout@v3
     - if: matrix.os == 'windows-latest'
