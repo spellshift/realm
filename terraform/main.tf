@@ -81,7 +81,7 @@ variable "min_scale" {
 variable "max_scale" {
   type = string
   description = "Maximum number of CloudRun containers to run"
-  default = "100"
+  default = "10"
 }
 variable "enable_metrics" {
   type = bool
@@ -151,7 +151,7 @@ resource "google_cloud_run_service" "tavern" {
   location = var.gcp_region
 
   traffic {
-    percent         = 10
+    percent         = 100
     latest_revision = true
   }
 
