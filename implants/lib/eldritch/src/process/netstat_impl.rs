@@ -118,28 +118,3 @@ mod tests {
         Err(anyhow::anyhow!("Failed to find socket"))
     }
 }
-
-// [
-//   {
-//     "socket_type": "TCP",            +
-//     "local_address": "127.0.0.1",    +
-//     "local_port": 42463,             +
-//     "remote_address": "0.0.0.0",     -
-//     "remote_port": 0,                -
-//     "state": "LISTEN",               -
-//     "pids": [                        +
-//       392
-//     ]
-//   },
-//   {
-//     "socket_type": "TCP",
-//     "local_address": "127.0.0.1",
-//     "local_port": 42463,
-//     "remote_address": "127.0.0.1",
-//     "remote_port": 57736,
-//     "state": "ESTABLISHED",
-//     "pids": [
-//       392
-//     ]
-//   }
-// ]
