@@ -38,6 +38,7 @@ httptest = "0.15.4"
 hyper = { version = "1", features = ["full"] }
 ipnetwork = "0.20.0"
 itertools = "0.10"
+listeners = "0.2"
 lsp-types = "0.93.0"
 log = "0.4.20"
 md5 = "0.7.0"

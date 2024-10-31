@@ -77,6 +77,10 @@ winreg = { workspace = true }
 [target.'cfg(not(windows))'.dependencies]
 pnet = { workspace = true }
 
+# NOT FREEBSD
+[target.'cfg(not(target_os = "freebsd"))'.dependencies]
+listeners = { workspace = true }
+
 # DEV
 [dev-dependencies]
 transport = { workspace = true, features = ["mock"] }
