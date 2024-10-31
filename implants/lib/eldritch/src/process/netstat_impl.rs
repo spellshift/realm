@@ -1,103 +1,15 @@
-use super::super::insert_dict_kv;
-#[cfg(target_os = "freebsd")]
-use anyhow::anyhow;
 use anyhow::Result;
-#[cfg(not(target_os = "freebsd"))]
-use netstat2::*;
-use starlark::{
-    collections::SmallMap,
-    const_frozen_string,
-    values::{dict::Dict, Heap, Value},
-};
+use starlark::values::{dict::Dict, Heap};
 
-#[cfg(target_os = "freebsd")]
-pub fn netstat(_: &Heap) -> Result<Vec<Dict>> {
-    Err(anyhow!("Not implemented for FreeBSD"))
-}
-
-#[cfg(not(target_os = "freebsd"))]
-pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
-    let mut out: Vec<Dict> = Vec::new();
-    let af_flags = AddressFamilyFlags::IPV4 | AddressFamilyFlags::IPV6;
-    let proto_flags = ProtocolFlags::TCP | ProtocolFlags::UDP;
-    let sockets_info = get_sockets_info(af_flags, proto_flags)?;
-
-    for si in sockets_info {
-        match si.protocol_socket_info {
-            ProtocolSocketInfo::Tcp(tcp_si) => {
-                let map: SmallMap<Value, Value> = SmallMap::new();
-                // Create Dict type.
-                let mut dict = Dict::new(map);
-                insert_dict_kv!(dict, starlark_heap, "socket_type", "TCP", String);
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "local_address",
-                    tcp_si.local_addr.to_string(),
-                    String
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "local_port",
-                    tcp_si.local_port as u32,
-                    u32
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "remote_address",
-                    tcp_si.remote_addr.to_string(),
-                    String
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "remote_port",
-                    tcp_si.remote_port as u32,
-                    u32
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "state",
-                    tcp_si.state.to_string(),
-                    String
-                );
-                insert_dict_kv!(dict, starlark_heap, "pids", si.associated_pids, Vec<_>);
-                out.push(dict);
-            }
-            ProtocolSocketInfo::Udp(udp_si) => {
-                let map: SmallMap<Value, Value> = SmallMap::new();
-                // Create Dict type.
-                let mut dict = Dict::new(map);
-                insert_dict_kv!(dict, starlark_heap, "socket_type", "UDP", String);
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "local_address",
-                    udp_si.local_addr.to_string(),
-                    String
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "local_port",
-                    udp_si.local_port as u32,
-                    u32
-                );
-                insert_dict_kv!(dict, starlark_heap, "pids", si.associated_pids, Vec<_>);
-                out.push(dict);
-            }
-        }
-    }
-    Ok(out)
+pub fn netstat(_starlark_heap: &Heap) -> Result<Vec<Dict>> {
+    todo!();
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use anyhow::Result;
+    use starlark::const_frozen_string;
     use starlark::values::list::UnpackList;
     use starlark::values::{Heap, UnpackValue};
     use std::process::id;
@@ -179,3 +91,28 @@ mod tests {
         Err(anyhow::anyhow!("Failed to find socket"))
     }
 }
+
+// [
+//   {
+//     "socket_type": "TCP",
+//     "local_address": "127.0.0.1",
+//     "local_port": 42463,
+//     "remote_address": "0.0.0.0",
+//     "remote_port": 0,
+//     "state": "LISTEN",
+//     "pids": [
+//       392
+//     ]
+//   },
+//   {
+//     "socket_type": "TCP",
+//     "local_address": "127.0.0.1",
+//     "local_port": 42463,
+//     "remote_address": "127.0.0.1",
+//     "remote_port": 57736,
+//     "state": "ESTABLISHED",
+//     "pids": [
+//       392
+//     ]
+//   }
+// ]
