@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-latest
+          - ubuntu-20.04
           # - macOS-latest
           # - windows-latest
     steps:
