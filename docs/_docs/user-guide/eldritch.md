@@ -669,18 +669,15 @@ The <b>process.name</b> method returns the name of the process from it's given p
 
 The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
+_Currently only shows TCP_
+
 ```json
 [
     {
         "socket_type": "TCP",
         "local_address": "127.0.0.1",
         "local_port": 46341,
-        "remote_address": "0.0.0.0",
-        "remote_port": 0,
-        "state": "LISTEN",
-        "pids": [
-            2359037
-        ]
+        "pid": 2359037
     },
     ...
 ]
