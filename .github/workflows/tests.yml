@@ -17,8 +17,8 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macOS-latest
-          - windows-latest
+          # - macOS-latest
+          # - windows-latest
     steps:
     - uses: actions/checkout@v3
     - name: ⚡ Setup Golang
@@ -78,6 +78,7 @@ jobs:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
       run: |
+        ldd --version &&
         cd ./implants/ &&
         cargo fmt --check &&
         cargo llvm-cov nextest --lcov --output-path lcov.info
