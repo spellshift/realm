@@ -11,36 +11,36 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # tavern:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       os:
-  #         - ubuntu-latest
-  #         - macOS-latest
-  #         - windows-latest
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - name: ⚡ Setup Golang
-  #     uses: actions/setup-go@v3
-  #     with:
-  #       go-version-file: go.mod
-  #       cache: true
-  #   - name: 🔨 Build
-  #     run: go build -v -o ./build/tavern ./tavern
-  #   - name: 🔎 Test
-  #     run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
-  #   - name: 📶 Upload Coverage Results
-  #     uses: codecov/codecov-action@v3
+  tavern:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: ⚡ Setup Golang
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: go.mod
+        cache: true
+    - name: 🔨 Build
+      run: go build -v -o ./build/tavern ./tavern
+    - name: 🔎 Test
+      run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
+    - name: 📶 Upload Coverage Results
+      uses: codecov/codecov-action@v3
   implants:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       matrix:
         os:
-          - ubuntu-20.04
-          # - macOS-latest
-          # - windows-latest
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
     steps:
     - uses: actions/checkout@v3
     - if: matrix.os == 'windows-latest'
@@ -78,7 +78,6 @@ jobs:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
       run: |
-        ldd --version &&
         cd ./implants/ &&
         cargo fmt --check &&
         cargo llvm-cov nextest --lcov --output-path lcov.info
