@@ -151,7 +151,7 @@ resource "google_cloud_run_service" "tavern" {
   location = var.gcp_region
 
   traffic {
-    percent         = 100
+    percent         = 10
     latest_revision = true
   }
 
