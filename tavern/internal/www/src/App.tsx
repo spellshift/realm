@@ -13,6 +13,7 @@ import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import Tasks from "./pages/tasks/Tasks";
 import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
+import { UserList } from "./pages/user-list";
 import { Dashboard } from "./pages/dashboard";
 import { Tomes } from "./pages/tomes";
 import Quests from "./pages/quest-list/Quests";
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
   {
     path: "/tasks",
     element: <Tasks />,
+  },
+  {
+    path: "/users",
+    element: <UserList />,
   },
   {
     path: "/tomes",

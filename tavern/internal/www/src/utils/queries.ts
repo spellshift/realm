@@ -353,3 +353,15 @@ export const GET_SEARCH_FILTERS = gql`
         }
     }
 `;
+
+export const GET_USER_QUERY = gql`
+    query GetUserQuery($where: UserWhereInput){
+        users(where: $where) {
+            id
+            name
+            photoURL
+            isActivated
+            isAdmin
+        }
+    }
+`;
