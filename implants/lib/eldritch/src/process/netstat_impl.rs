@@ -1,9 +1,9 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use starlark::values::{dict::Dict, Heap};
 
 #[cfg(target_os = "freebsd")]
 pub fn netstat(_: &Heap) -> Result<Vec<Dict>> {
-    Err(anyhow!("Not implemented for FreeBSD"))
+    Err(anyhow::anyhow!("Not implemented for FreeBSD"))
 }
 
 #[cfg(not(target_os = "freebsd"))]
@@ -68,7 +68,7 @@ mod tests {
         if bytes_copied > 1 {
             Ok(())
         } else {
-            Err(anyhow!("Failed to copy any bytes"))
+            Err(anyhow::anyhow!("Failed to copy any bytes"))
         }
     }
 
@@ -115,6 +115,6 @@ mod tests {
                 }
             }
         }
-        Err(anyhow!("Failed to find socket"))
+        Err(anyhow::anyhow!("Failed to find socket"))
     }
 }
