@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use starlark::values::{dict::Dict, Heap};
 
 #[cfg(target_os = "freebsd")]
@@ -68,7 +68,7 @@ mod tests {
         if bytes_copied > 1 {
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Failed to copy any bytes"))
+            Err(anyhow!("Failed to copy any bytes"))
         }
     }
 
@@ -115,6 +115,6 @@ mod tests {
                 }
             }
         }
-        Err(anyhow::anyhow!("Failed to find socket"))
+        Err(anyhow!("Failed to find socket"))
     }
 }
