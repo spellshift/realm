@@ -4,8 +4,8 @@
 		"dockerfile": "Dockerfile",
 		"args": {
 			// Use the -bullseye variants if you are on a M1 mac.
-			"GO_VARIANT": "1.20.2-buster",
-			"RUST_VARIANT": "buster",
+			"GO_VARIANT": "1.23.4-bookworm",
+			"RUST_VARIANT": "bookworm",
 			// Options
 			"NODE_VERSION": "lts/*"
 		}
