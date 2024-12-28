@@ -1,0 +1,10 @@
+name: DEBUG
+description: Lol
+author: skyz
+support_model: FIRST_PARTY
+tactic: RECON
+paramdefs:
+- name: pass
+  type: string
+  label: password
+  placeholder: "foo"
