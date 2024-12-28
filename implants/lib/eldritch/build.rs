@@ -142,6 +142,7 @@ const HOST_FAMILY: &str = "windows";
 const HOST_FAMILY: &str = "unix";
 
 fn set_host_family() {
+    println!("cargo::rustc-check-cfg=cfg(host_family, values(\"unix\", \"windows\"))");
     println!("cargo:rustc-cfg=host_family=\"{}\"", HOST_FAMILY);
 }
 
