@@ -1,1 +1,0 @@
-report.user_password("foo", input_params['pass'])
