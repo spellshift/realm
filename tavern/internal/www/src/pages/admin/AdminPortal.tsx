@@ -5,7 +5,7 @@ import { UserTableWrapper } from "./components/UserTableWrapper";
 
 export const AdminPortal = () => {
     return (
-        <PageWrapper currNavItem={PageNavItem.admin}>
+        <PageWrapper currNavItem={PageNavItem.admin} adminOnly>
             <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
                 <h3 className="text-xl font-semibold leading-6 text-gray-900">Admin Portal</h3>
                 <div className="max-w-2xl text-sm">

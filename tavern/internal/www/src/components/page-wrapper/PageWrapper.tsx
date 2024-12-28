@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, FunctionComponent, useContext, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import {
   Bars3Icon,
@@ -17,16 +17,18 @@ import logo from '../../assets/eldrich.png';
 import { PageNavItem } from '../../utils/enums';
 import { Link } from 'react-router-dom';
 import { AccessGate } from '../access-gate';
+import { AuthorizationContext } from '../../context/AuthorizationContext';
+import { EmptyState, EmptyStateType } from '../tavern-base-ui/EmptyState';
 
 const navigation = [
-  { name: PageNavItem.createQuest, href: '/createQuest', icon: CommandLineIcon, internal: true },
-  { name: PageNavItem.dashboard, href: '/dashboard', icon: PresentationChartBarIcon, internal: true },
-  { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
-  { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentListIcon, internal: true },
-  { name: PageNavItem.tomes, href: '/tomes', icon: BookOpenIcon, internal: true },
-  { name: PageNavItem.admin, href: '/admin', icon: UserIcon, internal: true },
-  { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
-  { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
+  { name: PageNavItem.createQuest, href: '/createQuest', icon: CommandLineIcon, internal: true, adminOnly: false },
+  { name: PageNavItem.dashboard, href: '/dashboard', icon: PresentationChartBarIcon, internal: true, adminOnly: false },
+  { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true, adminOnly: false },
+  { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentListIcon, internal: true, adminOnly: false },
+  { name: PageNavItem.tomes, href: '/tomes', icon: BookOpenIcon, internal: true, adminOnly: false },
+  { name: PageNavItem.admin, href: '/admin', icon: UserIcon, internal: true, adminOnly: true },
+  { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false, adminOnly: false },
+  { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false, adminOnly: false },
 ]
 
 function classNames(...classes: string[]) {
@@ -36,13 +38,35 @@ function classNames(...classes: string[]) {
 type Props = {
   children: any;
   currNavItem?: PageNavItem;
+  adminOnly?: boolean;
 }
-export const PageWrapper = (props: Props) => {
-  const { children, currNavItem } = props;
+
+export const PageWrapper: FunctionComponent<Props> = ({ children, currNavItem, adminOnly=false }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const {data, isLoading, error} = useContext(AuthorizationContext);
+
+  if(isLoading){
+    return (
+        <div className="flex flex-row w-sceen h-screen justify-center items-center">
+            <EmptyState label="Loading authroization state" type={EmptyStateType.loading}/>
+        </div>
+    );
+}
+
+  if(error){
+      return (
+          <div className="flex flex-row w-sceen h-screen justify-center items-center">
+              <EmptyState label="Error fetching authroization state" type={EmptyStateType.error} details="Please contact your admin to diagnose the issue."/>
+          </div>
+      );
+  }
+
+  const shownNavigation = navigation.filter((item) => data!.me!.isAdmin || !item.adminOnly);
+
+  console.log(shownNavigation)
 
   return (
-    <AccessGate>
+    <AccessGate userData={data!.me!} adminOnly={adminOnly}>
       <div>
         <Transition.Root show={sidebarOpen} as={Fragment}>
           <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
@@ -93,7 +117,7 @@ export const PageWrapper = (props: Props) => {
                       <ul className="flex flex-1 flex-col gap-y-7">
                         <li>
                           <ul className="-mx-2 space-y-1">
-                            {navigation.map((item) => (
+                            {shownNavigation.map((item) => (
                               <li key={item.name}>
                                 {item.internal ? (
                                   <Link
@@ -154,7 +178,7 @@ export const PageWrapper = (props: Props) => {
               <ul className="flex flex-1 flex-col gap-y-7">
                 <li>
                   <ul className="-mx-4 space-y-1">
-                    {navigation.map((item) => (
+                    {shownNavigation.map((item) => (
                       <li key={item.name}>
                         {item.internal ? (
                           <Link

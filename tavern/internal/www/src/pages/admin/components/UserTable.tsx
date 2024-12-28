@@ -3,10 +3,17 @@ import { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../components/tavern-base-ui/Table";
 import UserImageAndName from "../../../components/UserImageAndName";
 import { useUpdateUser } from "../hooks/userMutations";
+import { UserType } from "../../../utils/consts";
 
 
-const UserTable = ({ data }: any) => {
+type Props = {
+    data: UserType[];
+    currentUser: UserType;
+}
+const UserTable = (props: Props) => {
+    const {data, currentUser} = props;
     const {submitUpdateUser} = useUpdateUser();
+    
     const columns: ColumnDef<any>[] = [
         {
             id: "name",
@@ -55,18 +62,19 @@ const UserTable = ({ data }: any) => {
             enableSorting: false,
             cell: (cellData: any) => {
                 const rowData = cellData.getValue();
+                const isDisabled = rowData.id == currentUser.id;
                 return (
                     <div className="flex flex-row flex-wrap gap-1">
-                      {!rowData?.isActivated && <Button size={"sm"} onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": false})}>
+                      {!rowData?.isActivated && <Button isDisabled={isDisabled} size={"sm"}  onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": false})}>
                         Activate
                       </Button>}
-                      {rowData?.isActivated && <Button size={"sm"} onClick={() => submitUpdateUser({"id": rowData.id, "activated": false, "admin": false})}>
+                      {rowData?.isActivated && <Button isDisabled={isDisabled} size={"sm"} onClick={() => submitUpdateUser({"id": rowData.id, "activated": false, "admin": false})}>
                         Deactivate
                       </Button>}
-                      {rowData?.isActivated && !rowData?.isAdmin && <Button size={"sm"} onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": true})}>
+                      {rowData?.isActivated && !rowData?.isAdmin && <Button isDisabled={isDisabled} size={"sm"} onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": true})}>
                         Promote
                       </Button>}
-                      {rowData?.isActivated && rowData?.isAdmin && <Button size={"sm"} onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": false})}>
+                      {rowData?.isActivated && rowData?.isAdmin && <Button isDisabled={isDisabled} size={"sm"} onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": false})}>
                         Demote
                       </Button>}
                     </div>

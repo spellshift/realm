@@ -3,6 +3,7 @@ import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UpdateUserProps } from "../../../utils/consts";
+import { GET_USER_QUERY } from "../../../utils/queries";
 
 export const useUpdateUser = () => {
     const [error, setError] = useState(false);
@@ -26,7 +27,10 @@ export const useUpdateUser = () => {
         navigate('/admin');
     }
 
-    const [activateUserMutation, {loading, reset}] = useMutation(ACTIVATE_USER_MUTATION, {onCompleted: handleOnCompleted, onError: handleError});
+    const [activateUserMutation, {loading, reset}] = useMutation(ACTIVATE_USER_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
+        GET_USER_QUERY, // DocumentNode object parsed with gql
+        'GetUserQuery' // Query name
+    ]});
 
     const submitUpdateUser = (props: UpdateUserProps) => {
         const formatVariables = {

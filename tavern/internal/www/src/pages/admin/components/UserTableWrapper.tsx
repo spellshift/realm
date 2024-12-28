@@ -1,18 +1,25 @@
+import { useContext } from "react";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { useUserTable } from "../hooks/useUserTable";
 import UserTable from "./UserTable";
+import { AuthorizationContext } from "../../../context/AuthorizationContext";
+import { UserType } from "../../../utils/consts";
 
 export const UserTableWrapper = () => {
-    const { loading, users, error } = useUserTable();
+    const { loading: tableLoading, users, error: tableError } = useUserTable();
+    const { isLoading: userLoading, data: authData, error: userError} = useContext(AuthorizationContext);
+
+    const currentUser: UserType = authData!.me!;
+
     return (
         <div className="flex flex-col justify-center items-center gap-6">
-            {(loading) ? (
+            {(tableLoading || userLoading) ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading users..." />
-            ) : error ? (
+            ) : (tableError || userError) ? (
                 <EmptyState type={EmptyStateType.error} label="Error users..." />
             ) : (users.length > 0) ? (
                 <div className="py-4 bg-white rounded-lg shadow-lg mt-2 flex flex-col gap-1 w-full">
-                    <UserTable data={users} />
+                    <UserTable currentUser={currentUser} data={users} />
                 </div>
             ) : (
                 <EmptyState type={EmptyStateType.noData} label="No user data found" />
