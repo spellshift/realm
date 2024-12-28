@@ -20,6 +20,12 @@ export const GET_HOST_QUERY = gql`
                 interval
                 lastSeenAt
             }
+            credentials {
+                createdAt
+                principal
+                kind
+                secret
+            }
         }
 }`;
 
@@ -350,6 +356,19 @@ export const GET_SEARCH_FILTERS = gql`
         hosts{
             label:name
             value:id
+        }
+    }
+`;
+
+export const GET_HOST_CREDENTIALS = gql`
+    query GetHostCredentials($where: HostWhereInput){
+        hosts(where: $where) {
+            credentials {
+                createdAt
+                principal
+                kind
+                secret
+            }
         }
     }
 `;
