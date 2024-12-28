@@ -72,6 +72,14 @@ func (hcu *HostCredentialUpdate) SetTaskID(id int) *HostCredentialUpdate {
 	return hcu
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableTaskID(id *int) *HostCredentialUpdate {
+	if id != nil {
+		hcu = hcu.SetTaskID(*id)
+	}
+	return hcu
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hcu *HostCredentialUpdate) SetTask(t *Task) *HostCredentialUpdate {
 	return hcu.SetTaskID(t.ID)
@@ -149,9 +157,6 @@ func (hcu *HostCredentialUpdate) check() error {
 	}
 	if _, ok := hcu.mutation.HostID(); hcu.mutation.HostCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
-	}
-	if _, ok := hcu.mutation.TaskID(); hcu.mutation.TaskCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "HostCredential.task"`)
 	}
 	return nil
 }
@@ -299,6 +304,14 @@ func (hcuo *HostCredentialUpdateOne) SetTaskID(id int) *HostCredentialUpdateOne 
 	return hcuo
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableTaskID(id *int) *HostCredentialUpdateOne {
+	if id != nil {
+		hcuo = hcuo.SetTaskID(*id)
+	}
+	return hcuo
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hcuo *HostCredentialUpdateOne) SetTask(t *Task) *HostCredentialUpdateOne {
 	return hcuo.SetTaskID(t.ID)
@@ -389,9 +402,6 @@ func (hcuo *HostCredentialUpdateOne) check() error {
 	}
 	if _, ok := hcuo.mutation.HostID(); hcuo.mutation.HostCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
-	}
-	if _, ok := hcuo.mutation.TaskID(); hcuo.mutation.TaskCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "HostCredential.task"`)
 	}
 	return nil
 }

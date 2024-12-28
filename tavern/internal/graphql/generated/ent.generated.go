@@ -2485,14 +2485,11 @@ func (ec *executionContext) _HostCredential_task(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*ent.Task)
 	fc.Result = res
-	return ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+	return ec.marshalOTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_task(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10504,6 +10501,71 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 				return it, err
 			}
 			it.HasShellsWith = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.Context, obj interface{}) (ent.CreateHostCredentialInput, error) {
+	var it ent.CreateHostCredentialInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"principal", "secret", "kind", "hostID", "taskID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "principal":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("principal"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Principal = data
+		case "secret":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("secret"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Secret = data
+		case "kind":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			data, err := ec.unmarshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kind = data
+		case "hostID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostID"))
+			data, err := ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HostID = data
+		case "taskID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskID"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TaskID = data
 		}
 	}
 
@@ -21276,9 +21338,6 @@ func (ec *executionContext) _HostCredential(ctx context.Context, sel ast.Selecti
 					}
 				}()
 				res = ec._HostCredential_task(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -23602,6 +23661,11 @@ func (ec *executionContext) unmarshalNBeaconWhereInput2ᚖrealmᚗpubᚋtavern�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateHostCredentialInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateHostCredentialInput(ctx context.Context, v interface{}) (ent.CreateHostCredentialInput, error) {
+	res, err := ec.unmarshalInputCreateHostCredentialInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateQuestInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateQuestInput(ctx context.Context, v interface{}) (ent.CreateQuestInput, error) {
 	res, err := ec.unmarshalInputCreateQuestInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -23763,6 +23827,10 @@ func (ec *executionContext) marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋen
 		return graphql.Null
 	}
 	return ec._Host(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNHostCredential2realmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential(ctx context.Context, sel ast.SelectionSet, v ent.HostCredential) graphql.Marshaler {
+	return ec._HostCredential(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNHostCredential2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential(ctx context.Context, sel ast.SelectionSet, v *ent.HostCredential) graphql.Marshaler {
