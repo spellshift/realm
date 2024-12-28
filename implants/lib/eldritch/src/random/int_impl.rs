@@ -1,4 +1,5 @@
 use anyhow::Result;
+use anyhow::Result;
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 
@@ -35,7 +36,7 @@ mod tests {
 
         let lower_bound = 0.90 * NUM_ITERATION as f64 / MAX_VALUE as f64;
         let upper_bound = 1.10 * NUM_ITERATION as f64 / MAX_VALUE as f64;
-        
+
         for count in counts {
             assert!(
                 count as f64 >= lower_bound && count as f64 <= upper_bound,
