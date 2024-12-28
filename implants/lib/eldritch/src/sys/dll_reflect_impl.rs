@@ -20,27 +20,27 @@ use {
     },
 };
 
-#[cfg(all(target_family = "windows", target_os = "windows"))]
+#[cfg(all(host_family = "windows", target_os = "windows"))]
 macro_rules! win_target {
     () => {
         r"x86_64-pc-windows-msvc"
     };
 }
-#[cfg(all(target_family = "unix", target_os = "windows"))]
+#[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! win_target {
     () => {
         r"x86_64-pc-windows-gnu"
     };
 }
 
-#[cfg(all(target_family = "unix", target_os = "windows"))]
+#[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! sep {
     () => {
         "/"
     };
 }
 
-#[cfg(target_family = "windows")]
+#[cfg(host_family = "windows")]
 macro_rules! sep {
     () => {
         r#"\"#
