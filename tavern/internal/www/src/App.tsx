@@ -17,7 +17,7 @@ import { Dashboard } from "./pages/dashboard";
 import { Tomes } from "./pages/tomes";
 import Quests from "./pages/quest-list/Quests";
 import Shell from "./pages/shell/Shell";
-import { UserList } from "./pages/user-list";
+import { AdminPortal } from "./pages/admin";
 
 
 const router = createBrowserRouter([
@@ -62,8 +62,8 @@ const router = createBrowserRouter([
     element: <Shell />,
   },
   {
-    path: "/users",
-    element: <UserList />,
+    path: "/admin",
+    element: <AdminPortal />,
   },
 ]);
 
