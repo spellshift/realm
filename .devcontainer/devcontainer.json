@@ -1,21 +1,37 @@
 {
-	"name": "Realm DevContainer",
+	"name": "Debian",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
-			// Use the -bullseye variants if you are on a M1 mac.
-			"GO_VARIANT": "1.23.4-bookworm",
-			"RUST_VARIANT": "bookworm",
-			// Options
-			"NODE_VERSION": "lts/*"
 		}
 	},
-	"runArgs": [
-		"--cap-add=SYS_PTRACE",
-		"--security-opt",
-		"seccomp=unconfined"
-	],
-	// Set *default* container specific settings.json values on container create.
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"configureZshAsDefaultShell": true,
+			"installOhMyZsh": true,
+			"installOhMyZshConfig": true,
+			"username": "vscode",
+			"userUid": "1001",
+			"userGid": "automatic"
+		},
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "1.23"
+		},
+		"ghcr.io/devcontainers/features/python:1": {
+			"installTools": true,
+			"version": "3.12"
+		},
+		"ghcr.io/devcontainers/features/rust:1": {
+			"version": "1.76",
+			"profile": "minimal",
+			"targets": "aarch64-unknown-linux-gnu"
+		},
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "lts"
+		}
+	},
 	"customizations": {
 		"vscode": {
 			"settings": {
@@ -49,17 +65,15 @@
 			]
 		}
 	},
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"appPort": [
 		"127.0.0.1:80:80"
 	],
-	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
-	// SPEEEEEEED on MacOS & Windows. Note that your local clone of realm will not be updated.
+	"remoteUser": "vscode",
 	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
 	"workspaceFolder": "/workspaces/realm",
 	"postCreateCommand": "cd /workspaces && git clone https://github.com/spellshift/realm.git",
 	"mounts": [
 		"source=realm-bashhistory,target=/commandhistory,type=volume"
 	]
+
 }
