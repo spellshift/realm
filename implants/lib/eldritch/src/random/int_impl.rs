@@ -27,6 +27,9 @@ mod tests {
     const MAX_VALUE: i32 = 1000;
     const CI_99_MIN: f32 = 496.675;
     const CI_99_MAX: f32 = 503.325;
+    const CHI_SQUARED_EXPECTED: f32 = NUM_ITERATION as f32 / MAX_VALUE as f32;
+    const CHI_SQUARED_MIN: f32 = 914.3;
+    const CHI_SQUARED_MAX: f32 = 1090.0;
 
     #[test]
     fn test_random_int() -> anyhow::Result<()> {
@@ -36,7 +39,7 @@ mod tests {
     }
 
     #[test]
-    fn test_random_int_uniform() -> anyhow::Result<()> {
+    fn test_random_int_uniform_average() -> anyhow::Result<()> {
         let mut total = 0;
         for _ in 0..NUM_ITERATION {
             let random_number = int(MIN_VALUE, MAX_VALUE)?;
@@ -51,6 +54,29 @@ mod tests {
             NUM_ITERATION
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_random_int_uniform_chi_square() -> anyhow::Result<()> {
+        let mut counts = [0.0; MAX_VALUE as usize];
+        for _ in 0..NUM_ITERATION {
+            let random_number = int(MIN_VALUE, MAX_VALUE)?;
+            counts[random_number as usize] += 1.0;
+        }
+
+        let mut chi_square = 0.0;
+
+        for count in counts {
+            chi_square += (count - CHI_SQUARED_EXPECTED).powf(2.0) / CHI_SQUARED_EXPECTED
+        }
+        assert!(
+            chi_square >= CHI_SQUARED_MIN && chi_square <= CHI_SQUARED_MAX,
+            "Chi-Squared Goodness of Fit Failed. {} not in interval ({}, {})",
+            chi_square,
+            CHI_SQUARED_MIN,
+            CHI_SQUARED_MAX
+        );
         Ok(())
     }
 }
