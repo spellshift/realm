@@ -11,6 +11,14 @@ type Props = {
 export const AccessGate = (props: Props) => {
      const {children, userData, adminOnly} = props;
 
+    if (!userData.isActivated) {
+    	return (
+        	<div className="flex flex-row w-sceen h-screen justify-center items-center">
+            	<EmptyState label="Account not approved" details={`Gain approval by providing your id (${userData.id}) to an admin.`} type={EmptyStateType.noData}/>
+        	</div>
+    	);
+    }
+
     if (adminOnly && !userData.isAdmin) {
         return (
             <div className="flex flex-row w-sceen h-screen justify-center items-center">
@@ -19,13 +27,5 @@ export const AccessGate = (props: Props) => {
         );
     }
 
-    if(userData.isActivated){
-        return children;
-    }
-
-    return (
-        <div className="flex flex-row w-sceen h-screen justify-center items-center">
-            <EmptyState label="Account not approved" details={`Gain approval by providing your id (${userData.id}) to an admin.`} type={EmptyStateType.noData}/>
-        </div>
-    );
+    return children;
 }
