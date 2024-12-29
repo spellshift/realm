@@ -15,13 +15,13 @@ mod tests {
     use super::*;
 
     /*
-    * Statistics of a Uniform Distribution from a to b
-    * mean = (a+b)/2
-    * standard deviation = sqrt(((b-a)^2)/12)
-    * a = 0, b = 1000
-    * mean = 500, std dev = 288.675
-    * 95% Confidence Interval where n = 50000 = (496.675, 503.325)
-    */
+     * Statistics of a Uniform Distribution from a to b
+     * mean = (a+b)/2
+     * standard deviation = sqrt(((b-a)^2)/12)
+     * a = 0, b = 1000
+     * mean = 500, std dev = 288.675
+     * 95% Confidence Interval where n = 50000 = (496.675, 503.325)
+     */
     const NUM_ITERATION: i32 = 50000;
     const MIN_VALUE: i32 = 0;
     const MAX_VALUE: i32 = 1000;
