@@ -26,7 +26,7 @@
 		"ghcr.io/devcontainers/features/rust:1": {
 			"version": "1.76",
 			"profile": "minimal",
-			"targets": "aarch64-unknown-linux-gnu"
+			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu"
 		},
 		"ghcr.io/devcontainers/features/node:1": {
 			"version": "lts"
@@ -71,7 +71,7 @@
 	"remoteUser": "vscode",
 	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
 	"workspaceFolder": "/workspaces/realm",
-	"postCreateCommand": "cd /workspaces && git clone https://github.com/spellshift/realm.git",
+	"postCreateCommand": "sudo chown -R vscode:vscode /workspaces && cd /workspaces && git clone https://github.com/spellshift/realm.git",
 	"mounts": [
 		"source=realm-bashhistory,target=/commandhistory,type=volume"
 	]
