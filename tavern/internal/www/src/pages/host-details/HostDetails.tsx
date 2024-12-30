@@ -9,6 +9,7 @@ import EditableHostHeader from "./components/EditableHostHeader";
 import { HostType } from "../../utils/consts";
 import HostStatistics from "./components/HostStatistics";
 import BeaconTableWrapper from "./components/BeaconTableWrapper";
+import HostCredentials from "./components/HostCredentials";
 
 const HostDetails = () => {
     const { hostId } = useParams();
@@ -42,6 +43,7 @@ const HostDetails = () => {
                 <Tab.List className="flex flex-row space-x-4 border-b border-gray-200 w-full">
                     <Tab className={({ selected }) => `border-b-2 py-2 px-4 text-sm font-semibold ${selected ? 'border-purple-700 text-purple-800' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}>Beacons</Tab>
                     <Tab className={({ selected }) => `border-b-2 py-2 px-4 text-sm font-semibold ${selected ? 'border-purple-700 text-purple-800' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}>Tasks</Tab>
+                    <Tab className={({ selected }) => `border-b-2 py-2 px-4 text-sm font-semibold ${selected ? 'border-purple-700 text-purple-800' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}>Credentials</Tab>
                 </Tab.List>
                 <Tab.Panels>
                     <Tab.Panel>
@@ -49,6 +51,9 @@ const HostDetails = () => {
                     </Tab.Panel>
                     <Tab.Panel>
                         <HostTasks />
+                    </Tab.Panel>
+                    <Tab.Panel>
+                        <HostCredentials />
                     </Tab.Panel>
                 </Tab.Panels>
             </Tab.Group>
