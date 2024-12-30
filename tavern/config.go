@@ -90,7 +90,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	}
 
 	var (
-		mysqlDSN = "file:/tmp/test.db?cache=shared&_fk=1"
+		mysqlDSN = "file:ent?mode=memory&cache=shared&_fk=1"
 		driver   = "sqlite3"
 	)
 	if cfg != nil && cfg.mysqlDSN != "" {
