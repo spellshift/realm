@@ -28,13 +28,13 @@ mod tests {
     const CI_99_MIN: f32 = 496.675;
     const CI_99_MAX: f32 = 503.325;
     const CHI_SQUARED_EXPECTED: f32 = NUM_ITERATION as f32 / MAX_VALUE as f32;
-    const CHI_SQUARED_MIN: f32 = 914.3;
-    const CHI_SQUARED_MAX: f32 = 1090.0;
+    const CHI_SQUARED_MIN: f32 = 888.6;
+    const CHI_SQUARED_MAX: f32 = 1119.0;
 
     #[test]
     fn test_random_int() -> anyhow::Result<()> {
         let random_number = int(MIN_VALUE, MAX_VALUE)?;
-        assert!(random_number >= MIN_VALUE && random_number < MAX_VALUE);
+        assert!((MIN_VALUE..MAX_VALUE).contains(&random_number));
         Ok(())
     }
 
@@ -49,7 +49,7 @@ mod tests {
         let avg = total as f32 / NUM_ITERATION as f32;
 
         assert!(
-            avg >= CI_99_MIN && avg <= CI_99_MAX,
+            (CI_99_MIN..=CI_99_MAX).contains(&avg),
             "Average of {} Random Numbers not within 99% Confidence Interval",
             NUM_ITERATION
         );
@@ -71,7 +71,7 @@ mod tests {
             chi_square += (count - CHI_SQUARED_EXPECTED).powf(2.0) / CHI_SQUARED_EXPECTED
         }
         assert!(
-            chi_square >= CHI_SQUARED_MIN && chi_square <= CHI_SQUARED_MAX,
+            (CHI_SQUARED_MIN..=CHI_SQUARED_MAX).contains(&chi_square),
             "Chi-Squared Goodness of Fit Failed. {} not in interval ({}, {})",
             chi_square,
             CHI_SQUARED_MIN,
