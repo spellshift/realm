@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -25,11 +28,13 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
+	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 )
@@ -286,7 +291,7 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 		oc := gqlgraphql.GetOperationContext(ctx)
 		reqVars, err := json.Marshal(oc.Variables)
 		if err != nil {
-			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v", err)
+			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v\n", err)
 			return next(ctx)
 		}
 
@@ -307,9 +312,86 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
+func generate_key_pair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
+	x22519 := ecdh.X25519()
+	priv_key, err := x22519.GenerateKey(rand.Reader)
+	if err != nil {
+		log.Printf("[ERROR] Failed to generate private key: %v\n", err)
+		return nil, nil, err
+	}
+	public_key, err := x22519.NewPublicKey(priv_key.PublicKey().Bytes())
+	if err != nil {
+		log.Printf("[ERROR] Failed to generate public key: %v\n", err)
+		return nil, nil, err
+	}
+
+	return public_key, priv_key, nil
+}
+
+func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
+	x22519 := ecdh.X25519()
+
+	var secretsManager secrets.SecretsManager
+	var err error
+
+	if EnvSecretsManagerPath.String() == "" {
+		secretsManager, err = secrets.NewGcp("")
+	} else {
+		secretsManager, err = secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
+	}
+	if err != nil {
+		log.Printf("[ERROR] Unable to setup secrets manager\n")
+	}
+
+	// Check if we already have a key
+	priv_key_string, err := secretsManager.GetValue("tavern_encryption_private_key")
+	if err != nil {
+		// Generate a new one if it doesn't exist
+		pub_key, priv_key, err := generate_key_pair()
+		if err != nil {
+			log.Printf("[ERROR] Key generation failed: %v", err)
+			return nil, nil
+		}
+
+		priv_key_bytes, err := x509.MarshalPKCS8PrivateKey(priv_key)
+		if err != nil {
+			log.Printf("[ERROR] Unable to marshal private key: %v", err)
+			return nil, nil
+		}
+		_, err = secretsManager.SetValue("tavern_encryption_private_key", priv_key_bytes)
+		if err != nil {
+			log.Printf("[ERROR] Unable to set 'tavern_encryption_private_key' using secrets manager: %v", err)
+			return nil, nil
+		}
+		return pub_key, priv_key
+	}
+
+	// Parse private key bytes
+	tmp, err := x509.ParsePKCS8PrivateKey(priv_key_string)
+	if err != nil {
+		log.Printf("[ERROR] Unable to parse private key %v\n", err)
+	}
+	priv_key := tmp.(*ecdh.PrivateKey)
+
+	public_key, err := x22519.NewPublicKey(priv_key.PublicKey().Bytes())
+	if err != nil {
+		log.Printf("[ERROR] Failed to generate public key: %v\n", err)
+		panic("[ERROR] Failed to generate public key")
+	}
+
+	return public_key, priv_key
+}
+
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
+	pub, priv := getKeyPair()
+	log.Println("[INFO] Public key: ", base64.StdEncoding.EncodeToString(pub.Bytes()))
+
 	c2srv := c2.New(client, grpcShellMux)
+	xchacha := cryptocodec.StreamDecryptCodec{
+		Csvc: cryptocodec.NewCryptoSvc(priv),
+	}
 	grpcSrv := grpc.NewServer(
+		grpc.ForceServerCodec(xchacha),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)

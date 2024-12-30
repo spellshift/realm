@@ -4,3 +4,4 @@ pub mod eldritch {
 pub mod c2 {
     include!("generated/c2.rs");
 }
+pub mod xchacha;
