@@ -29,7 +29,7 @@ export const AuthorizationContextProvider = ({children}: {children: React.ReactN
         }
     `;
 
-    const { loading: isLoading, error: error, data: data } = useQuery(GET_USER_INFO);
+    const { loading: isLoading, error, data } = useQuery(GET_USER_INFO);
   
     return (
       <AuthorizationContext.Provider value={{ data, isLoading, error }}>
