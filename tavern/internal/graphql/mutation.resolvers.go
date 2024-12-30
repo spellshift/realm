@@ -247,7 +247,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent
 
 // CreateCredential is the resolver for the createCredential field.
 func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error) {
-	panic(fmt.Errorf("not implemented: CreateCredential - createCredential"))
+	return r.client.HostCredential.Create().SetInput(input).Save(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.
