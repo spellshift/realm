@@ -86,7 +86,7 @@ variable "min_scale" {
 variable "max_scale" {
   type = string
   description = "Maximum number of CloudRun containers to run"
-  default = "100"
+  default = "10"
 }
 variable "enable_metrics" {
   type = bool
@@ -128,10 +128,10 @@ resource "google_sql_database_instance" "tavern-sql-instance" {
   settings {
     tier = var.mysql_tier
 
-    database_flags {
-      name  = "default_authentication_plugin"
-      value = "caching_sha2_password"
-    }
+    # database_flags {
+    #   name  = "default_authentication_plugin"
+    #   value = "caching_sha2_password"
+    # }
   }
 
   depends_on = [

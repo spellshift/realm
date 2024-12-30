@@ -87,8 +87,7 @@ rustup target add x86_64-unknown-linux-musl
 sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
-
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-unknown-linux-musl
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
 
 ### MacOS
