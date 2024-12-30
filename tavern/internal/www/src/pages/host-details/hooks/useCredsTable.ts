@@ -2,10 +2,14 @@ import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
 import { GET_HOST_CREDENTIALS } from "../../../utils/queries";
 import { CredentialType, HostType } from "../../../utils/consts";
+import { groupBy } from "../../../utils/utils";
 
 export const useCredsTable = (hostId: number) => {
     const [creds, setCreds] = useState([] as CredentialType[]);
-    const { loading, data, error, startPolling, stopPolling } = useQuery(GET_HOST_CREDENTIALS, {
+    const [search, setSearch] = useState("");
+    const [groupByPrincipal, setGroupByPrincipal] = useState(false);
+
+    const { loading, data, error, startPolling, stopPolling} = useQuery(GET_HOST_CREDENTIALS, {
         variables: {
             "where": {
                 "id": hostId
@@ -13,19 +17,43 @@ export const useCredsTable = (hostId: number) => {
             }
         });
 
-    const getCreds = useCallback((data: any)=> {
+    const getCreds = useCallback((data: any, search: string, groupByPrincipal: boolean)=> {
         if(!data || !data.hosts) {
             return;
         }
 
         const hosts: HostType[] = data?.hosts
 
-        const creds: CredentialType[] = hosts[0].credentials!.map(((cred) => {
+        let creds: CredentialType[] = hosts[0].credentials!.map(((cred) => {
             return {
                 ...cred,
                 kind: cred.kind.replace(/^KIND_/, "")
             }
         }));
+
+        if (search) {
+            creds = creds.filter((cred) => cred.principal.toLowerCase().includes(search.toLowerCase()));
+        }
+
+        if (groupByPrincipal) {
+            let principal_groups = Object.values(groupBy(creds, "principal"));
+            creds = principal_groups
+                .flatMap(
+                    (principalGroup) => Object.values(groupBy(principalGroup, "kind"))
+                ).flatMap(
+                    (group) => {
+                        if (group == null) {
+                            return [];
+                        }
+                        const mostRecent = group.reduce((a, b) => (a.createdAt > b.createdAt ? a : b));
+                        const earliest = group.reduce((a, b) => (a.createdAt < b.createdAt ? a : b));
+                        return [{
+                            ...mostRecent,
+                            createdAt: earliest.createdAt
+                        }]
+                    }
+                );
+        }
     
         setCreds(creds);
     }, []) as any;
@@ -41,13 +69,16 @@ export const useCredsTable = (hostId: number) => {
 
     useEffect(()=> {
         if(data){
-            getCreds(data);
+            getCreds(data, search, groupByPrincipal);
         }
-    },[data, getCreds])
+    },[data, getCreds, search, groupByPrincipal]);
 
     return {
         loading,
         creds,
-        error
+        error,
+        setSearch,
+        groupByPrincipal,
+        setGroupByPrincipal
     }
 }

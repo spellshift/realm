@@ -365,6 +365,7 @@ export const GET_HOST_CREDENTIALS = gql`
         hosts(where: $where) {
             credentials {
                 createdAt
+                lastModifiedAt
                 principal
                 kind
                 secret

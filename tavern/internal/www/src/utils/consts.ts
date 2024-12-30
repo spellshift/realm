@@ -167,4 +167,6 @@ export type CredentialType = {
     principal: string;
     kind: string;
     secret: string;
+    createdAt: string;
+    lastModifiedAt: string;
 }

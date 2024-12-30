@@ -146,3 +146,15 @@ export function combineTomeValueAndFields(paramValues: {[key:string]: any}, para
 
     return fieldWithValue;
 }
+
+export function groupBy<T>(collection: T[], key: keyof T): {[key: string]: T[]} {
+    const groupedResult =  collection.reduce((previous,current)=>{
+        if(!previous[current[key]]){
+            previous[current[key]] = [] as T[];
+        }
+    
+        previous[current[key]].push(current);
+            return previous;
+    }, {} as any);
+    return groupedResult
+}
