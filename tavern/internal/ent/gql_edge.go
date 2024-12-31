@@ -134,7 +134,7 @@ func (hc *HostCredential) Task(ctx context.Context) (*Task, error) {
 	if IsNotLoaded(err) {
 		result, err = hc.QueryTask().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
 }
 
 func (hf *HostFile) Host(ctx context.Context) (*Host, error) {

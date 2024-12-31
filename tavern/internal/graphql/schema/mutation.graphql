@@ -42,4 +42,9 @@ type Mutation {
     # User
     ###
     updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
+
+    ###
+    # Credential
+    ###
+    createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
 }

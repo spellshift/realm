@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -125,6 +126,32 @@ func (c *HostUpdate) SetInput(i UpdateHostInput) *HostUpdate {
 
 // SetInput applies the change-set in the UpdateHostInput on the HostUpdateOne builder.
 func (c *HostUpdateOne) SetInput(i UpdateHostInput) *HostUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateHostCredentialInput represents a mutation input for creating hostcredentials.
+type CreateHostCredentialInput struct {
+	Principal string
+	Secret    string
+	Kind      epb.Credential_Kind
+	HostID    int
+	TaskID    *int
+}
+
+// Mutate applies the CreateHostCredentialInput on the HostCredentialMutation builder.
+func (i *CreateHostCredentialInput) Mutate(m *HostCredentialMutation) {
+	m.SetPrincipal(i.Principal)
+	m.SetSecret(i.Secret)
+	m.SetKind(i.Kind)
+	m.SetHostID(i.HostID)
+	if v := i.TaskID; v != nil {
+		m.SetTaskID(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateHostCredentialInput on the HostCredentialCreate builder.
+func (c *HostCredentialCreate) SetInput(i CreateHostCredentialInput) *HostCredentialCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
