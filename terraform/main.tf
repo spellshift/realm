@@ -182,7 +182,7 @@ resource "google_pubsub_topic" "shell_input" {
 }
 resource "google_pubsub_subscription" "shell_input-sub" {
   count = var.disable_gcp_pubsub ? 0 : 1
-  name  =  format("%s-sub", gcp_pubsub_topic_shell_input)
+  name  = format("%s-sub", var.gcp_pubsub_topic_shell_input)
   topic = google_pubsub_topic.shell_input[0].id
 }
 resource "google_pubsub_topic" "shell_output" {
