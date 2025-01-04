@@ -51,6 +51,7 @@ variable "gcp_region" {
 variable "disable_gcp_pubsub" {
   type = bool
   description = "Disables GCP pubsub setup and instead defaults to inmem pubsub, suitable for use-cases where only one tavern instance will exist and distributed orchestration is unnecessary"
+  default = false
 }
 
 variable "gcp_pubsub_topic_shell_input" {
