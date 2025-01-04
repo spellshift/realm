@@ -251,22 +251,22 @@ resource "google_cloud_run_service" "tavern" {
 
         // Only configure GCP pubsub if it is not disabled
         dynamic "env" {
-          for_each = var.disable_gcp_pubsub ? [] : [
+          for_each = disable_gcp_pubsub ? [] : [
             {
               name = "PUBSUB_TOPIC_SHELL_INPUT"
-              value = format("gcppubsub://%s", google_pubsub_topic.shell_input.id)
+              value = format("gcppubsub://%s", google_pubsub_topic.shell_input[0].id)
             },
             {
               name = "PUBSUB_SUBSCRIPTION_SHELL_INPUT"
-              value = format("gcppubsub://%s", google_pubsub_subscription.shell_input-sub.id)
+              value = format("gcppubsub://%s", google_pubsub_subscription.shell_input-sub[0].id)
             },
             {
               name = "PUBSUB_TOPIC_SHELL_OUTPUT"
-              value = format("gcppubsub://%s", google_pubsub_topic.shell_output.id)
+              value = format("gcppubsub://%s", google_pubsub_topic.shell_output[0].id)
             },
             {
               name = "PUBSUB_SUBSCRIPTION_SHELL_OUTPUT"
-              value = format("gcppubsub://%s", google_pubsub_subscription.shell_output-sub.id)
+              value = format("gcppubsub://%s", google_pubsub_subscription.shell_output-sub[0].id)
             }
           ]
           content {
@@ -283,7 +283,7 @@ resource "google_cloud_run_service" "tavern" {
 
       // Only create prometheus sidecar if metrics enabled
       dynamic "containers" {
-        for_each = var.enable_metrics ? [{
+        for_each = enable_metrics ? [{
             image = "us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.0.0"
             name = local.prometheus_container_name
           }] : []
