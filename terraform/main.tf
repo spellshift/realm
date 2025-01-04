@@ -24,9 +24,14 @@ variable "tavern_container_image" {
 }
 
 variable "tavern_request_timeout_seconds" {
-  type = int
-  description = "How many seconds before a request is dropped, defaults to 3600 to accomodate reverse shells (which are killed when this timeout is reached)"
+  type = number
+  description = "How many seconds before a request is dropped, defaults to 3600 (the maximum) to accomodate reverse shells (which are killed when this timeout is reached)"
   default = 3600
+
+  validation {
+    condition = var.tavern_request_timeout_seconds >= 1 && var.tavern_request_timeout_seconds <= 3600
+    error_message = "tavern_request_timeout_seconds must be a value between 1 and 3600 seconds"
+  }
 }
 
 variable "gcp_project" {
