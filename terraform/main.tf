@@ -23,6 +23,12 @@ variable "tavern_container_image" {
   default = "spellshift/tavern:latest"
 }
 
+variable "tavern_request_timeout_seconds" {
+  type = int
+  description = "How many seconds before a request is dropped, defaults to 3600 to accomodate reverse shells (which are killed when this timeout is reached)"
+  default = 3600
+}
+
 variable "gcp_project" {
   type = string
   description = "GCP Project ID for deployment"
@@ -36,6 +42,24 @@ variable "gcp_region" {
   description = "GCP Region for deployment"
   default = "us-east4"
 }
+
+variable "disable_gcp_pubsub" {
+  type = bool
+  description = "Disables GCP pubsub setup and instead defaults to inmem pubsub, suitable for use-cases where only one tavern instance will exist and distributed orchestration is unnecessary"
+}
+
+variable "gcp_pubsub_topic_shell_input" {
+  type = string
+  description = "Name of the GCP pubsub topic to create for shell input"
+  default = "shell_input"
+}
+
+variable "gcp_pubsub_topic_shell_output" {
+  type = string
+  description = "Name of the GCP pubsub topic to create for shell output"
+  default = "shell_output"
+}
+
 variable "mysql_user" {
   type = string
   description = "Username to set for the configured MySQL instance"
@@ -146,6 +170,25 @@ locals {
   prometheus_container_name = "prometheus-sidecar"
 }
 
+resource "google_pubsub_topic" "shell_input" {
+  count = var.disable_gcp_pubsub ? 0 : 1
+  name = var.gcp_pubsub_topic_shell_input
+}
+resource "google_pubsub_subscription" "shell_input-sub" {
+  count = var.disable_gcp_pubsub ? 0 : 1
+  name  =  gcp_pubsub_topic_shell_input + "-sub"
+  topic = google_pubsub_topic.shell_input.id
+}
+resource "google_pubsub_topic" "shell_output" {
+  count = var.disable_gcp_pubsub ? 0 : 1
+  name = var.gcp_pubsub_topic_shell_output
+}
+resource "google_pubsub_subscription" "shell_output-sub" {
+  count = var.disable_gcp_pubsub ? 0 : 1
+  name  = var.gcp_pubsub_topic_shell_output + "-sub"
+  topic = google_pubsub_topic.shell_output.id
+}
+
 resource "google_cloud_run_service" "tavern" {
   name     = "tavern"
   location = var.gcp_region
@@ -157,9 +200,13 @@ resource "google_cloud_run_service" "tavern" {
 
   template {
     spec {
+      // Controls request timeout, must be long-lived to enable reverse shell support
+      timeout_seconds = var.tavern_request_timeout_seconds
+
       containers {
         name = local.tavern_container_name
         image = var.tavern_container_image
+
         ports {
           container_port = 80
         }
@@ -195,6 +242,33 @@ resource "google_cloud_run_service" "tavern" {
           name = "OAUTH_DOMAIN"
           value = format("https://%s", var.oauth_domain)
         }
+
+        // Only configure GCP pubsub if it is not disabled
+        dynamic "env" {
+          for_each = var.disable_gcp_pubsub ? [] : [
+            {
+              name = "PUBSUB_TOPIC_SHELL_INPUT"
+              value = format("gcppubsub://%s", google_pubsub_topic.shell_input.id)
+            },
+            {
+              name = "PUBSUB_SUBSCRIPTION_SHELL_INPUT"
+              value = format("gcppubsub://%s", google_pubsub_subscription.shell_input-sub.id)
+            },
+            {
+              name = "PUBSUB_TOPIC_SHELL_OUTPUT"
+              value = format("gcppubsub://%s", google_pubsub_topic.shell_output.id)
+            },
+            {
+              name = "PUBSUB_SUBSCRIPTION_SHELL_OUTPUT"
+              value = format("gcppubsub://%s", google_pubsub_subscription.shell_output-sub.id)
+            }
+          ]
+          content {
+            name = env.value.name
+            value = env.value.value
+          }
+        }
+
         env {
           name = "ENABLE_METRICS"
           value = var.enable_metrics ? "1" : ""
