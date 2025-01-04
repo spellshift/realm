@@ -182,8 +182,8 @@ resource "google_pubsub_topic" "shell_input" {
 }
 resource "google_pubsub_subscription" "shell_input-sub" {
   count = var.disable_gcp_pubsub ? 0 : 1
-  name  =  gcp_pubsub_topic_shell_input + "-sub"
-  topic = google_pubsub_topic.shell_input.id
+  name  =  format("%s-sub", gcp_pubsub_topic_shell_input)
+  topic = google_pubsub_topic.shell_input[0].id
 }
 resource "google_pubsub_topic" "shell_output" {
   count = var.disable_gcp_pubsub ? 0 : 1
@@ -191,8 +191,8 @@ resource "google_pubsub_topic" "shell_output" {
 }
 resource "google_pubsub_subscription" "shell_output-sub" {
   count = var.disable_gcp_pubsub ? 0 : 1
-  name  = var.gcp_pubsub_topic_shell_output + "-sub"
-  topic = google_pubsub_topic.shell_output.id
+  name  = format("%s-sub", var.gcp_pubsub_topic_shell_output)
+  topic = google_pubsub_topic.shell_output[0].id
 }
 
 resource "google_cloud_run_service" "tavern" {
