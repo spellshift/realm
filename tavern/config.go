@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	gcppubsub "cloud.google.com/go/pubsub"
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
 	"gocloud.dev/pubsub"
@@ -17,8 +18,12 @@ import (
 	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/tomes"
 )
+
+// GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
+var GlobalInstanceID = namegen.NewComplex()
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
@@ -135,6 +140,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 // The grpcMux will be used by gRPC to subscribe to shell input and publish new output.
 func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
 	var (
+		projectID        string
 		topicShellInput  = EnvPubSubTopicShellInput.String()
 		topicShellOutput = EnvPubSubTopicShellOutput.String()
 		subShellInput    = EnvPubSubSubscriptionShellInput.String()
@@ -144,6 +150,41 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
 	if err != nil {
 		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
+	}
+
+	// For GCP, messages for a "Subscription" are load-balanced across all of the "Subscribers" to that same "Subscription"
+	// This means we must make a new "Subscription" in GCP for each instance of tavern to ensure they all receive the
+	// appropriate input/output from shells. For more information, see the information here:
+	// https://cloud.google.com/pubsub/docs/pubsub-basics#choose_a_publish_and_subscribe_pattern
+	if strings.HasPrefix(subShellInput, "gcppubsub://") && strings.HasPrefix(subShellOutput, "gcppubsub://") {
+		client, err := gcppubsub.NewClient(ctx, projectID)
+		if err != nil {
+			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription"))
+		}
+		defer client.Close()
+
+		subShellOutput = fmt.Sprintf("%s--%s", strings.TrimPrefix(subShellOutput, "gcppubsub://"), GlobalInstanceID)
+
+		createGCPSubscription := func(ctx context.Context, subName EnvString) string {
+			name := fmt.Sprintf("%s--%s", strings.TrimPrefix(subName.String(), "gcppubsub://"), GlobalInstanceID)
+			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
+				AckDeadline:      10 * time.Second,
+				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
+			})
+			if err != nil {
+				panic(fmt.Errorf("failed to create gcppubsub subscription, to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q", EnvPubSubSubscriptionShellInput.Key))
+			}
+			exists, err := sub.Exists(ctx)
+			if err != nil {
+				panic(fmt.Errorf("failed to check if gcppubsub subscription was succesfully created: %w", err))
+			}
+			if !exists {
+				panic(fmt.Errorf("failed to create gcppubsub subscription, it does not exist! name=%q", name))
+			}
+			return name
+		}
+		subShellInput = fmt.Sprintf("gcpubsub://", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput))
+		subShellOutput = fmt.Sprintf("gcpubsub://", createGCPSubscription(ctx, EnvPubSubSubscriptionShellOutput))
 	}
 
 	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
