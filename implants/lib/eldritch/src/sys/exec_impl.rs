@@ -174,7 +174,8 @@ mod tests {
                 vec![String::from("/c"), String::from("whoami")],
                 Some(false),
             )?
-            .stdout.to_lowercase();
+            .stdout
+            .to_lowercase();
             let mut bool_res = false;
             if res.contains("runneradmin") || res.contains("administrator") || res.contains("user")
             {
