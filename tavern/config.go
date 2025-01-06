@@ -169,9 +169,11 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		}
 		defer client.Close()
 
-		createGCPSubscription := func(ctx context.Context, subName EnvString) string {
+		createGCPSubscription := func(ctx context.Context, subName EnvString, topic *gcppubsub.Topic) string {
 			name := fmt.Sprintf("%s--%s", strings.TrimPrefix(subName.String(), "gcppubsub://"), GlobalInstanceID)
+
 			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
+				Topic:            topic,
 				AckDeadline:      10 * time.Second,
 				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
 			})
@@ -187,8 +189,11 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 			}
 			return name
 		}
-		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput))
-		subShellOutput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellOutput))
+
+		shellInputTopic := client.Topic(strings.TrimPrefix(EnvPubSubTopicShellInput.String(), "gcppubsub://"))
+		shellOutputTopic := client.Topic(strings.TrimPrefix(EnvPubSubTopicShellInput.String(), "gcppubsub://"))
+		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput, shellInputTopic))
+		subShellOutput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellOutput, shellOutputTopic))
 	}
 
 	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
