@@ -65,10 +65,12 @@ var (
 	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
 
+	// EnvGCPProjectID represents the project id tavern is deployed in for Google Cloud Platform deployments (leave empty otherwise).
 	// EnvPubSubTopicShellInput defines the topic to publish shell input to.
 	// EnvPubSubSubscriptionShellInput defines the subscription to receive shell input from.
 	// EnvPubSubTopicShellOutput defines the topic to publish shell output to.
 	// EnvPubSubSubscriptionShellOutput defines the subscription to receive shell output from.
+	EnvGCPProjectID                  = EnvString{"GCP_PROJECT_ID", ""}
 	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
@@ -140,7 +142,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 // The grpcMux will be used by gRPC to subscribe to shell input and publish new output.
 func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
 	var (
-		projectID        string
+		projectID        = EnvGCPProjectID.String()
 		topicShellInput  = EnvPubSubTopicShellInput.String()
 		topicShellOutput = EnvPubSubTopicShellOutput.String()
 		subShellInput    = EnvPubSubSubscriptionShellInput.String()
@@ -157,13 +159,15 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 	// appropriate input/output from shells. For more information, see the information here:
 	// https://cloud.google.com/pubsub/docs/pubsub-basics#choose_a_publish_and_subscribe_pattern
 	if strings.HasPrefix(subShellInput, "gcppubsub://") && strings.HasPrefix(subShellOutput, "gcppubsub://") {
+		if projectID == "" {
+			log.Fatalf("must set value for %q when using gcppubsub:// in configuration", EnvGCPProjectID.Key)
+		}
+
 		client, err := gcppubsub.NewClient(ctx, projectID)
 		if err != nil {
 			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription"))
 		}
 		defer client.Close()
-
-		subShellOutput = fmt.Sprintf("%s--%s", strings.TrimPrefix(subShellOutput, "gcppubsub://"), GlobalInstanceID)
 
 		createGCPSubscription := func(ctx context.Context, subName EnvString) string {
 			name := fmt.Sprintf("%s--%s", strings.TrimPrefix(subName.String(), "gcppubsub://"), GlobalInstanceID)
