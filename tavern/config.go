@@ -182,7 +182,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 			}
 			exists, err := sub.Exists(ctx)
 			if err != nil {
-				panic(fmt.Errorf("failed to check if gcppubsub subscription was succesfully created: %w", err))
+				panic(fmt.Errorf("failed to check if gcppubsub subscription was successfully created: %w", err))
 			}
 			if !exists {
 				panic(fmt.Errorf("failed to create gcppubsub subscription, it does not exist! name=%q", name))
