@@ -1,6 +1,6 @@
 module realm.pub
 
-go 1.20
+go 1.23
 
 require (
 	entgo.io/contrib v0.4.5
@@ -96,7 +96,7 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/zclconf/go-cty v1.14.1 // indirect
 	gocloud.dev v0.37.0
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect

@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -37,12 +37,12 @@ const (
 type Stream struct {
 	mu sync.Mutex
 
-	id          string
-	orderKey    string
+	id          string // ID of the underlying ent (e.g. Shell)
+	orderKey    string // Unique ID for the session (e.g. Websocket)
 	orderIndex  *atomic.Uint64
 	recv        chan *pubsub.Message
 	recvOrdered chan *pubsub.Message
-	buffers     map[string]*sessionBuffer
+	buffers     map[string]*sessionBuffer // Receive messages, bucket by sender (order-key), and order messages from same sender
 }
 
 // New initializes a new stream that will only receive messages with the provided ID.
@@ -97,11 +97,13 @@ func (s *Stream) Close() error {
 
 // processOneMessage is called by a Mux to receive a new pubsub message designated for this stream.
 // It may be unordered.
-func (s *Stream) processOneMessage(msg *pubsub.Message) {
+func (s *Stream) processOneMessage(ctx context.Context, msg *pubsub.Message) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Get Buffer
+	// Get Buffer for the given order-key
+	// We order all messages within the same order key, or create a new one
+	// if we have not seen this order key yet.
 	key := parseOrderKey(msg)
 	buf, ok := s.buffers[key]
 	if !ok || buf == nil {
@@ -112,10 +114,10 @@ func (s *Stream) processOneMessage(msg *pubsub.Message) {
 	}
 
 	// Write Message (or buffer it)
-	buf.writeMessage(msg, s.recvOrdered)
+	buf.writeMessage(ctx, msg, s.recvOrdered)
 
 	// Flush possible messages from buffer
-	buf.flushBuffer(s.recvOrdered)
+	buf.flushBuffer(ctx, s.recvOrdered)
 }
 
 func parseOrderKey(msg *pubsub.Message) string {
@@ -144,7 +146,7 @@ func newOrderKey() string {
 	buf := make([]byte, 16)
 	_, err := io.ReadFull(rand.Reader, buf)
 	if err != nil {
-		log.Printf("[ERROR] Failed to generate %q, defaulting to empty string!", metadataOrderKey)
+		slog.Error("failed to generate order key, defaulting to empty string!", "error", err)
 		return ""
 	}
 	return base64.StdEncoding.EncodeToString(buf)
@@ -162,9 +164,10 @@ type sessionBuffer struct {
 	data       map[uint64]*pubsub.Message
 }
 
-func (buf *sessionBuffer) writeMessage(msg *pubsub.Message, dst chan<- *pubsub.Message) {
+func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message, dst chan<- *pubsub.Message) {
 	index, ok := parseOrderIndex(msg)
 	if !ok {
+		slog.DebugContext(ctx, "sessionBuffer received no order index, will write immediately and not buffer")
 		dst <- msg
 	} else if index == buf.nextToSend || buf.nextToSend == 0 {
 		// If we receive the message we're looking for or if this is the first
@@ -174,19 +177,27 @@ func (buf *sessionBuffer) writeMessage(msg *pubsub.Message, dst chan<- *pubsub.M
 	} else if index < buf.nextToSend {
 		// We prefer to drop messages instead of sending them out of order
 		// If we receive a message after a subsequent one has been sent, drop it
-		log.Printf("[ERROR] dropping message (index=%d), subsequent message has already been sent", index)
+		slog.ErrorContext(ctx, "dropping message because subsequent message has already been sent",
+			"msg_log_id", msg.LoggableID,
+			"next_to_send", buf.nextToSend,
+			"order_index", index,
+		)
 	} else {
 		// If we receive the message out of order, buffer it
 		buf.data[index] = msg
 	}
 }
 
-func (buf *sessionBuffer) flushBuffer(dst chan<- *pubsub.Message) {
+func (buf *sessionBuffer) flushBuffer(ctx context.Context, dst chan<- *pubsub.Message) {
 	for {
 		msg, ok := buf.data[buf.nextToSend]
 		if !ok || msg == nil {
 			// If our buffer has grown too large, skip waiting for messages
 			if len(buf.data) > maxStreamOrderBuf {
+				slog.ErrorContext(ctx, "sessionBuffer overflow, skipping message to catch up",
+					"skipped_message_index", buf.nextToSend,
+					"buffered_msgs_count", len(buf.data),
+				)
 				buf.nextToSend += 1
 				continue
 			}
