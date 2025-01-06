@@ -24,9 +24,11 @@ var (
 	// EnvEnableTestData if set will populate the database with test data.
 	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
 	// EnvDisableDefaultTomes will prevent the default tomes from being imported on startup.
+	// EnvDebugLogging will emit verbose debug logs to help troubleshoot issues.
 	EnvEnableTestData       = EnvString{"ENABLE_TEST_DATA", ""}
 	EnvEnableTestRunAndExit = EnvString{"ENABLE_TEST_RUN_AND_EXIT", ""}
 	EnvDisableDefaultTomes  = EnvString{"DISABLE_DEFAULT_TOMES", ""}
+	EnvDebugLogging         = EnvString{"ENABLE_DEBUG_LOGGING", ""}
 
 	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
 	// EnvHTTPMetricsAddr sets the address (ip:port) for the HTTP metrics server to bind to.

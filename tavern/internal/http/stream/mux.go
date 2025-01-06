@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"gocloud.dev/pubsub"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -32,15 +33,22 @@ type Mux struct {
 	streams    map[*Stream]bool
 }
 
+// A MuxOption is used to provide further configuration to the Mux.
+type MuxOption func(*Mux)
+
 // NewMux initializes and returns a new Mux with the provided pubsub info.
-func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription) *Mux {
-	return &Mux{
+func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription, options ...MuxOption) *Mux {
+	mux := &Mux{
 		pub:        pub,
 		sub:        sub,
 		register:   make(chan *Stream, maxRegistrationBufSize),
 		unregister: make(chan *Stream, maxRegistrationBufSize),
 		streams:    make(map[*Stream]bool),
 	}
+	for _, opt := range options {
+		opt(mux)
+	}
+	return mux
 }
 
 // send a new message to the configured publish topic.
@@ -59,11 +67,12 @@ func (mux *Mux) Register(s *Stream) {
 }
 
 // registerStreams inserts all registered streams into the streams map.
-func (mux *Mux) registerStreams() {
+func (mux *Mux) registerStreams(ctx context.Context) {
 	for {
 		select {
-		case r := <-mux.register:
-			mux.streams[r] = true
+		case s := <-mux.register:
+			slog.DebugContext(ctx, "mux registering new stream", "stream_id", s.id)
+			mux.streams[s] = true
 		default:
 			return
 		}
@@ -78,11 +87,11 @@ func (mux *Mux) Unregister(s *Stream) {
 }
 
 // unregisterStreams deletes all unregistered streams from the streams map.
-func (mux *Mux) unregisterStreams() {
+func (mux *Mux) unregisterStreams(ctx context.Context) {
 	for {
 		select {
 		case s := <-mux.unregister:
-
+			slog.DebugContext(ctx, "mux unregistering stream", "stream_id", s.id)
 			delete(mux.streams, s)
 			s.Close()
 		default:
@@ -93,17 +102,22 @@ func (mux *Mux) unregisterStreams() {
 
 // Start the mux, returning an error if polling ever fails.
 func (mux *Mux) Start(ctx context.Context) error {
+	slog.DebugContext(ctx, "mux starting to manage streams and polling")
 	for {
 		// Manage Streams
-		mux.registerStreams()
-		mux.unregisterStreams()
+		mux.registerStreams(ctx)
+		mux.unregisterStreams(ctx)
 
 		// Poll for new messages
 		select {
 		case <-ctx.Done():
+			slog.DebugContext(ctx, "mux context finished, exiting")
 			return ctx.Err()
 		default:
-			mux.poll(ctx)
+			slog.DebugContext(ctx, "mux polling for message")
+			if err := mux.poll(ctx); err != nil {
+				slog.ErrorContext(ctx, "mux failed to poll subscription", "error", err)
+			}
 		}
 	}
 }
@@ -121,13 +135,45 @@ func (mux *Mux) poll(ctx context.Context) error {
 	defer msg.Ack()
 
 	// Manage Streams
-	mux.registerStreams()
-	mux.unregisterStreams()
+	mux.registerStreams(ctx)
+	mux.unregisterStreams(ctx)
+
+	// Get Message Metadata
+	msgID, ok := msg.Metadata["id"]
+	if !ok {
+		slog.DebugContext(ctx, "mux received message without 'id' for stream, ignoring")
+		return nil
+	}
+	msgOrderKey, ok := msg.Metadata[metadataOrderKey]
+	if !ok {
+		slog.DebugContext(ctx, "mux received message without metadataOrderKey")
+	}
+	msgOrderIndex, ok := msg.Metadata[metadataOrderIndex]
+	if !ok {
+		slog.DebugContext(ctx, "mux received message without msgOrderIndex")
+	}
 
 	// Broadcast Message
+	slog.DebugContext(ctx, "mux broadcasting received message",
+		"msg_id", msgID,
+		"msg_order_key", msgOrderKey,
+		"msg_order_index", msgOrderIndex,
+		"stream_count", len(mux.streams),
+	)
 	for s := range mux.streams {
-		if msg.Metadata["id"] == s.id {
-			s.processOneMessage(msg)
+		if s == nil {
+			slog.ErrorContext(ctx, "mux found nil stream in map while broadcasting message, skipping stream", "msg_id", msgID)
+			continue
+		}
+
+		if s.id == msgID {
+			slog.DebugContext(ctx, "mux sending message to stream",
+				"msg_id", msgID,
+				"stream_id", s.id,
+				"stream_order_key", s.orderKey,
+				"stream_index", s.orderIndex.Load(),
+			)
+			s.processOneMessage(ctx, msg)
 		}
 	}
 

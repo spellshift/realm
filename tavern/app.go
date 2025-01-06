@@ -18,6 +18,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/cli"
+	"golang.org/x/exp/slog"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -30,9 +31,14 @@ import (
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 )
+
+func init() {
+	configureLogging()
+}
 
 func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	app = cli.NewApp()
@@ -349,4 +355,31 @@ func registerProfiler(router tavernhttp.RouteMap) {
 	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
 	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	router.Handle("/debug/pprof/block", pprof.Handler("block"))
+}
+
+func configureLogging() {
+	// Generate new instance ID as prefix (helps in deployments with multiple tavern instances)
+	var (
+		instanceID = namegen.NewSimple()
+		logger     *slog.Logger
+	)
+
+	// Setup Default Logger
+	if EnvDebugLogging.String() == "" {
+		// Production Logging
+		logger = slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		})).
+			With("tavern_id", instanceID)
+	} else {
+		// Debug Logging
+		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level:     slog.LevelDebug,
+			AddSource: true,
+		})).
+			With("tavern_id", instanceID)
+	}
+
+	slog.SetDefault(logger)
+	slog.Debug("Debug logging enabled 🕵️ ")
 }
