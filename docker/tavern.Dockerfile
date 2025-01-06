@@ -1,5 +1,5 @@
 # Dependency Cache
-FROM golang:1.20.2-buster as base
+FROM golang:1.23.4-buster as base
 WORKDIR /app
 RUN mkdir -p /app/build /app/cdn
 COPY ./go.mod /app/go.mod
