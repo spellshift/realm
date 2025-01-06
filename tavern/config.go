@@ -183,8 +183,8 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 			}
 			return name
 		}
-		subShellInput = fmt.Sprintf("gcpubsub://", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput))
-		subShellOutput = fmt.Sprintf("gcpubsub://", createGCPSubscription(ctx, EnvPubSubSubscriptionShellOutput))
+		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput))
+		subShellOutput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellOutput))
 	}
 
 	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
