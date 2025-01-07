@@ -223,7 +223,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/playground": tavernhttp.Endpoint{
-			Handler:          playground.Handler("Tavern", "/graphql"),
+			Handler:          playground.Handler("Realm - Red Team Engagement Platform", "/graphql"),
 			LoginRedirectURI: "/oauth/login",
 		},
 	}
