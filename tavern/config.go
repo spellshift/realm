@@ -144,7 +144,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
 	var (
 		projectID        = EnvGCPProjectID.String()
-		gcpPrefix        = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
+		gcpTopicPrefix   = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
 		topicShellInput  = EnvPubSubTopicShellInput.String()
 		topicShellOutput = EnvPubSubTopicShellOutput.String()
 		subShellInput    = EnvPubSubSubscriptionShellInput.String()
@@ -193,8 +193,8 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 			return name
 		}
 
-		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, gcpPrefix))
-		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpPrefix))
+		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, gcpTopicPrefix))
+		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpTopicPrefix))
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
 		subShellInput = fmt.Sprintf("gcppubsub://%s", createGCPSubscription(ctx, shellInputTopic))
