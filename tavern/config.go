@@ -197,9 +197,9 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpPrefix))
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
-		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, shellInputTopic))
+		subShellInput = fmt.Sprintf("gcppubsub://%s", createGCPSubscription(ctx, shellInputTopic))
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
-		subShellOutput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, shellOutputTopic))
+		subShellOutput = fmt.Sprintf("gcppubsub://%s", createGCPSubscription(ctx, shellOutputTopic))
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 	}
 
