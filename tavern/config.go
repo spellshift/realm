@@ -24,7 +24,7 @@ import (
 )
 
 // GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
-var GlobalInstanceID = namegen.New()
+var GlobalInstanceID = fmt.Sprintf("tavern-%s", namegen.New())
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
@@ -208,6 +208,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
 	}
 
+	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
 	if err != nil {
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellOutput, err)
@@ -218,6 +219,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellInput, err)
 	}
 
+	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell input", "subscription_name", subShellInput)
 	subInput, err := pubsub.OpenSubscription(ctx, subShellInput)
 	if err != nil {
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
