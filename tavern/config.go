@@ -144,7 +144,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
 	var (
 		projectID        = EnvGCPProjectID.String()
-		gcpPrefix        = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
+		gcpTopicPrefix   = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
 		topicShellInput  = EnvPubSubTopicShellInput.String()
 		topicShellOutput = EnvPubSubTopicShellOutput.String()
 		subShellInput    = EnvPubSubSubscriptionShellInput.String()
@@ -193,13 +193,13 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 			return name
 		}
 
-		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, gcpPrefix))
-		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpPrefix))
+		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, gcpTopicPrefix))
+		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpTopicPrefix))
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
-		subShellInput = fmt.Sprintf("gcpubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellInputTopic))
+		subShellInput = fmt.Sprintf("gcppubsub://%s", createGCPSubscription(ctx, shellInputTopic))
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
-		subShellOutput = fmt.Sprintf("gcpubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopic))
+		subShellOutput = fmt.Sprintf("gcppubsub://%s", createGCPSubscription(ctx, shellOutputTopic))
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 	}
 
