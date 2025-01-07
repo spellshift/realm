@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ import (
 )
 
 // GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
-var GlobalInstanceID = namegen.NewComplex()
+var GlobalInstanceID = namegen.New()
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
@@ -165,8 +166,8 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		}
 		defer client.Close()
 
-		createGCPSubscription := func(ctx context.Context, subName EnvString, topic *gcppubsub.Topic) string {
-			name := fmt.Sprintf("%s--%s", strings.TrimPrefix(subName.String(), gcpPrefix), GlobalInstanceID)
+		createGCPSubscription := func(ctx context.Context, topic *gcppubsub.Topic) string {
+			name := fmt.Sprintf("%s-sub_%s", topic.ID(), GlobalInstanceID)
 
 			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
 				Topic:            topic,
@@ -174,7 +175,13 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
 			})
 			if err != nil {
-				panic(fmt.Errorf("failed to create gcppubsub subscription (topic=%q), to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q: %v", topic.ID(), EnvPubSubSubscriptionShellInput.Key, err))
+				panic(fmt.Errorf(
+					"failed to create gcppubsub subscription (topic=%q,subscription_name=%q), to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q: %v",
+					topic.ID(),
+					name,
+					EnvPubSubSubscriptionShellInput.Key,
+					err,
+				))
 			}
 			exists, err := sub.Exists(ctx)
 			if err != nil {
@@ -190,8 +197,10 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpPrefix))
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
-		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput, shellInputTopic))
-		subShellOutput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellOutput, shellOutputTopic))
+		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, shellInputTopic))
+		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
+		subShellOutput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, shellOutputTopic))
+		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 	}
 
 	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
