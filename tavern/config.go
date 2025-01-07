@@ -178,7 +178,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
 			})
 			if err != nil {
-				panic(fmt.Errorf("failed to create gcppubsub subscription, to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q", EnvPubSubSubscriptionShellInput.Key))
+				panic(fmt.Errorf("failed to create gcppubsub subscription, to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q: %v", EnvPubSubSubscriptionShellInput.Key, err))
 			}
 			exists, err := sub.Exists(ctx)
 			if err != nil {
