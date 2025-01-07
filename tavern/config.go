@@ -143,6 +143,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
 	var (
 		projectID        = EnvGCPProjectID.String()
+		gcpPrefix        = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
 		topicShellInput  = EnvPubSubTopicShellInput.String()
 		topicShellOutput = EnvPubSubTopicShellOutput.String()
 		subShellInput    = EnvPubSubSubscriptionShellInput.String()
@@ -165,7 +166,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		defer client.Close()
 
 		createGCPSubscription := func(ctx context.Context, subName EnvString, topic *gcppubsub.Topic) string {
-			name := fmt.Sprintf("%s--%s", strings.TrimPrefix(subName.String(), "gcppubsub://"), GlobalInstanceID)
+			name := fmt.Sprintf("%s--%s", strings.TrimPrefix(subName.String(), gcpPrefix), GlobalInstanceID)
 
 			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
 				Topic:            topic,
@@ -185,8 +186,8 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 			return name
 		}
 
-		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)))
-		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)))
+		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, gcpPrefix))
+		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpPrefix))
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
 		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput, shellInputTopic))
