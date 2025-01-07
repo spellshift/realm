@@ -26,6 +26,7 @@ require (
 )
 
 require (
+	cloud.google.com/go v0.117.0 // indirect
 	cloud.google.com/go/auth v0.13.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.6 // indirect
 	cloud.google.com/go/iam v1.3.1 // indirect

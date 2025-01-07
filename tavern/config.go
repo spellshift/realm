@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	gcppubsub "cloud.google.com/go/pubsub"
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
 	"gocloud.dev/pubsub"
@@ -17,8 +18,12 @@ import (
 	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/tomes"
 )
+
+// GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
+var GlobalInstanceID = namegen.NewComplex()
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
@@ -60,10 +65,12 @@ var (
 	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
 
+	// EnvGCPProjectID represents the project id tavern is deployed in for Google Cloud Platform deployments (leave empty otherwise).
 	// EnvPubSubTopicShellInput defines the topic to publish shell input to.
 	// EnvPubSubSubscriptionShellInput defines the subscription to receive shell input from.
 	// EnvPubSubTopicShellOutput defines the topic to publish shell output to.
 	// EnvPubSubSubscriptionShellOutput defines the subscription to receive shell output from.
+	EnvGCPProjectID                  = EnvString{"GCP_PROJECT_ID", ""}
 	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
@@ -135,6 +142,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 // The grpcMux will be used by gRPC to subscribe to shell input and publish new output.
 func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
 	var (
+		projectID        = EnvGCPProjectID.String()
 		topicShellInput  = EnvPubSubTopicShellInput.String()
 		topicShellOutput = EnvPubSubTopicShellOutput.String()
 		subShellInput    = EnvPubSubSubscriptionShellInput.String()
@@ -144,6 +152,50 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
 	if err != nil {
 		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
+	}
+
+	// For GCP, messages for a "Subscription" are load-balanced across all of the "Subscribers" to that same "Subscription"
+	// This means we must make a new "Subscription" in GCP for each instance of tavern to ensure they all receive the
+	// appropriate input/output from shells. For more information, see the information here:
+	// https://cloud.google.com/pubsub/docs/pubsub-basics#choose_a_publish_and_subscribe_pattern
+	if strings.HasPrefix(subShellInput, "gcppubsub://") && strings.HasPrefix(subShellOutput, "gcppubsub://") {
+		if projectID == "" {
+			log.Fatalf("must set value for %q when using gcppubsub:// in configuration", EnvGCPProjectID.Key)
+		}
+
+		client, err := gcppubsub.NewClient(ctx, projectID)
+		if err != nil {
+			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription"))
+		}
+		defer client.Close()
+
+		createGCPSubscription := func(ctx context.Context, subName EnvString, topic *gcppubsub.Topic) string {
+			name := fmt.Sprintf("%s--%s", strings.TrimPrefix(subName.String(), "gcppubsub://"), GlobalInstanceID)
+
+			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
+				Topic:            topic,
+				AckDeadline:      10 * time.Second,
+				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
+			})
+			if err != nil {
+				panic(fmt.Errorf("failed to create gcppubsub subscription, to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q", EnvPubSubSubscriptionShellInput.Key))
+			}
+			exists, err := sub.Exists(ctx)
+			if err != nil {
+				panic(fmt.Errorf("failed to check if gcppubsub subscription was successfully created: %w", err))
+			}
+			if !exists {
+				panic(fmt.Errorf("failed to create gcppubsub subscription, it does not exist! name=%q", name))
+			}
+			return name
+		}
+
+		shellInputTopic := client.Topic(strings.TrimPrefix(EnvPubSubTopicShellInput.String(), "gcppubsub://"))
+		shellOutputTopic := client.Topic(strings.TrimPrefix(EnvPubSubTopicShellInput.String(), "gcppubsub://"))
+
+		// Overwrite env var specification with newly created GCP PubSub Subscriptions
+		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput, shellInputTopic))
+		subShellOutput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellOutput, shellOutputTopic))
 	}
 
 	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
