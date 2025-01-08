@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ import (
 )
 
 // GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
-var GlobalInstanceID = namegen.NewComplex()
+var GlobalInstanceID = fmt.Sprintf("tavern-%s", namegen.New())
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
@@ -143,16 +144,12 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
 	var (
 		projectID        = EnvGCPProjectID.String()
+		gcpTopicPrefix   = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
 		topicShellInput  = EnvPubSubTopicShellInput.String()
 		topicShellOutput = EnvPubSubTopicShellOutput.String()
 		subShellInput    = EnvPubSubSubscriptionShellInput.String()
 		subShellOutput   = EnvPubSubSubscriptionShellOutput.String()
 	)
-
-	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
-	if err != nil {
-		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
-	}
 
 	// For GCP, messages for a "Subscription" are load-balanced across all of the "Subscribers" to that same "Subscription"
 	// This means we must make a new "Subscription" in GCP for each instance of tavern to ensure they all receive the
@@ -160,17 +157,17 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 	// https://cloud.google.com/pubsub/docs/pubsub-basics#choose_a_publish_and_subscribe_pattern
 	if strings.HasPrefix(subShellInput, "gcppubsub://") && strings.HasPrefix(subShellOutput, "gcppubsub://") {
 		if projectID == "" {
-			log.Fatalf("must set value for %q when using gcppubsub:// in configuration", EnvGCPProjectID.Key)
+			log.Fatalf("[FATAL] must set value for %q when using gcppubsub:// in configuration", EnvGCPProjectID.Key)
 		}
 
 		client, err := gcppubsub.NewClient(ctx, projectID)
 		if err != nil {
-			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription"))
+			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
 		}
 		defer client.Close()
 
-		createGCPSubscription := func(ctx context.Context, subName EnvString, topic *gcppubsub.Topic) string {
-			name := fmt.Sprintf("%s--%s", strings.TrimPrefix(subName.String(), "gcppubsub://"), GlobalInstanceID)
+		createGCPSubscription := func(ctx context.Context, topic *gcppubsub.Topic) string {
+			name := fmt.Sprintf("%s-sub_%s", topic.ID(), GlobalInstanceID)
 
 			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
 				Topic:            topic,
@@ -178,7 +175,13 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
 			})
 			if err != nil {
-				panic(fmt.Errorf("failed to create gcppubsub subscription, to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q", EnvPubSubSubscriptionShellInput.Key))
+				panic(fmt.Errorf(
+					"failed to create gcppubsub subscription (topic=%q,subscription_name=%q), to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q: %v",
+					topic.ID(),
+					name,
+					EnvPubSubSubscriptionShellInput.Key,
+					err,
+				))
 			}
 			exists, err := sub.Exists(ctx)
 			if err != nil {
@@ -190,14 +193,22 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 			return name
 		}
 
-		shellInputTopic := client.Topic(strings.TrimPrefix(EnvPubSubTopicShellInput.String(), "gcppubsub://"))
-		shellOutputTopic := client.Topic(strings.TrimPrefix(EnvPubSubTopicShellInput.String(), "gcppubsub://"))
+		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, gcpTopicPrefix))
+		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpTopicPrefix))
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
-		subShellInput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellInput, shellInputTopic))
-		subShellOutput = fmt.Sprintf("gcpubsub://%s", createGCPSubscription(ctx, EnvPubSubSubscriptionShellOutput, shellOutputTopic))
+		subShellInput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellInputTopic))
+		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
+		subShellOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopic))
+		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 	}
 
+	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
+	}
+
+	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
 	if err != nil {
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellOutput, err)
@@ -208,6 +219,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellInput, err)
 	}
 
+	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell input", "subscription_name", subShellInput)
 	subInput, err := pubsub.OpenSubscription(ctx, subShellInput)
 	if err != nil {
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
