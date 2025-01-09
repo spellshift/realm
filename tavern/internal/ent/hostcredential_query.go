@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -111,7 +112,7 @@ func (hcq *HostCredentialQuery) QueryTask() *TaskQuery {
 // First returns the first HostCredential entity from the query.
 // Returns a *NotFoundError when no HostCredential was found.
 func (hcq *HostCredentialQuery) First(ctx context.Context) (*HostCredential, error) {
-	nodes, err := hcq.Limit(1).All(setContextOp(ctx, hcq.ctx, "First"))
+	nodes, err := hcq.Limit(1).All(setContextOp(ctx, hcq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (hcq *HostCredentialQuery) FirstX(ctx context.Context) *HostCredential {
 // Returns a *NotFoundError when no HostCredential ID was found.
 func (hcq *HostCredentialQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hcq.Limit(1).IDs(setContextOp(ctx, hcq.ctx, "FirstID")); err != nil {
+	if ids, err = hcq.Limit(1).IDs(setContextOp(ctx, hcq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -157,7 +158,7 @@ func (hcq *HostCredentialQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one HostCredential entity is found.
 // Returns a *NotFoundError when no HostCredential entities are found.
 func (hcq *HostCredentialQuery) Only(ctx context.Context) (*HostCredential, error) {
-	nodes, err := hcq.Limit(2).All(setContextOp(ctx, hcq.ctx, "Only"))
+	nodes, err := hcq.Limit(2).All(setContextOp(ctx, hcq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +186,7 @@ func (hcq *HostCredentialQuery) OnlyX(ctx context.Context) *HostCredential {
 // Returns a *NotFoundError when no entities are found.
 func (hcq *HostCredentialQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hcq.Limit(2).IDs(setContextOp(ctx, hcq.ctx, "OnlyID")); err != nil {
+	if ids, err = hcq.Limit(2).IDs(setContextOp(ctx, hcq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -210,7 +211,7 @@ func (hcq *HostCredentialQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of HostCredentials.
 func (hcq *HostCredentialQuery) All(ctx context.Context) ([]*HostCredential, error) {
-	ctx = setContextOp(ctx, hcq.ctx, "All")
+	ctx = setContextOp(ctx, hcq.ctx, ent.OpQueryAll)
 	if err := hcq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -232,7 +233,7 @@ func (hcq *HostCredentialQuery) IDs(ctx context.Context) (ids []int, err error) 
 	if hcq.ctx.Unique == nil && hcq.path != nil {
 		hcq.Unique(true)
 	}
-	ctx = setContextOp(ctx, hcq.ctx, "IDs")
+	ctx = setContextOp(ctx, hcq.ctx, ent.OpQueryIDs)
 	if err = hcq.Select(hostcredential.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -250,7 +251,7 @@ func (hcq *HostCredentialQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (hcq *HostCredentialQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, hcq.ctx, "Count")
+	ctx = setContextOp(ctx, hcq.ctx, ent.OpQueryCount)
 	if err := hcq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -268,7 +269,7 @@ func (hcq *HostCredentialQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (hcq *HostCredentialQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, hcq.ctx, "Exist")
+	ctx = setContextOp(ctx, hcq.ctx, ent.OpQueryExist)
 	switch _, err := hcq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -624,7 +625,7 @@ func (hcgb *HostCredentialGroupBy) Aggregate(fns ...AggregateFunc) *HostCredenti
 
 // Scan applies the selector query and scans the result into the given value.
 func (hcgb *HostCredentialGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hcgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, hcgb.build.ctx, ent.OpQueryGroupBy)
 	if err := hcgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -672,7 +673,7 @@ func (hcs *HostCredentialSelect) Aggregate(fns ...AggregateFunc) *HostCredential
 
 // Scan applies the selector query and scans the result into the given value.
 func (hcs *HostCredentialSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hcs.ctx, "Select")
+	ctx = setContextOp(ctx, hcs.ctx, ent.OpQuerySelect)
 	if err := hcs.prepareQuery(ctx); err != nil {
 		return err
 	}

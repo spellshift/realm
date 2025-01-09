@@ -37,247 +37,501 @@ type MutationResolver interface {
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_createCredential_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_createCredential_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 ent.CreateHostCredentialInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateHostCredentialInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateHostCredentialInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createCredential_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_createCredential_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.CreateHostCredentialInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.CreateHostCredentialInput
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_createQuest_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNCreateHostCredentialInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateHostCredentialInput(ctx, tmp)
+	}
+
+	var zeroVal ent.CreateHostCredentialInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createQuest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 []int
-	if tmp, ok := rawArgs["beaconIDs"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconIDs"))
-		arg0, err = ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createQuest_argsBeaconIDs(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["beaconIDs"] = arg0
-	var arg1 ent.CreateQuestInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNCreateQuestInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateQuestInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_createQuest_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_createQuest_argsBeaconIDs(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]int, error) {
+	if _, ok := rawArgs["beaconIDs"]; !ok {
+		var zeroVal []int
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_createRepository_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 ent.CreateRepositoryInput
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconIDs"))
+	if tmp, ok := rawArgs["beaconIDs"]; ok {
+		return ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
+	}
+
+	var zeroVal []int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createQuest_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.CreateQuestInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.CreateQuestInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateRepositoryInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateRepositoryInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNCreateQuestInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateQuestInput(ctx, tmp)
+	}
+
+	var zeroVal ent.CreateQuestInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createRepository_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createRepository_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_createRepository_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.CreateRepositoryInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.CreateRepositoryInput
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_createTag_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 ent.CreateTagInput
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateTagInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateTagInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNCreateRepositoryInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateRepositoryInput(ctx, tmp)
+	}
+
+	var zeroVal ent.CreateRepositoryInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createTag_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createTag_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_createTag_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.CreateTagInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.CreateTagInput
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_createTome_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 ent.CreateTomeInput
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateTomeInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateTomeInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNCreateTagInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateTagInput(ctx, tmp)
+	}
+
+	var zeroVal ent.CreateTagInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createTome_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createTome_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_createTome_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.CreateTomeInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.CreateTomeInput
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_deleteTome_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNCreateTomeInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateTomeInput(ctx, tmp)
+	}
+
+	var zeroVal ent.CreateTomeInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteTome_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["tomeID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tomeID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteTome_argsTomeID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["tomeID"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_deleteTome_argsTomeID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["tomeID"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_importRepository_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("tomeID"))
+	if tmp, ok := rawArgs["tomeID"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_importRepository_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["repoID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("repoID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_importRepository_argsRepoID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["repoID"] = arg0
-	var arg1 *models.ImportRepositoryInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalOImportRepositoryInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐImportRepositoryInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_importRepository_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_importRepository_argsRepoID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["repoID"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_updateBeacon_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("repoID"))
+	if tmp, ok := rawArgs["repoID"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_importRepository_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*models.ImportRepositoryInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal *models.ImportRepositoryInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalOImportRepositoryInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐImportRepositoryInput(ctx, tmp)
+	}
+
+	var zeroVal *models.ImportRepositoryInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateBeacon_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["beaconID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateBeacon_argsBeaconID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["beaconID"] = arg0
-	var arg1 ent.UpdateBeaconInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateBeaconInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateBeaconInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_updateBeacon_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_updateBeacon_argsBeaconID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["beaconID"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_updateHost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconID"))
+	if tmp, ok := rawArgs["beaconID"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateBeacon_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.UpdateBeaconInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.UpdateBeaconInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateBeaconInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateBeaconInput(ctx, tmp)
+	}
+
+	var zeroVal ent.UpdateBeaconInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateHost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["hostID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateHost_argsHostID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["hostID"] = arg0
-	var arg1 ent.UpdateHostInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateHostInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateHostInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_updateHost_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_updateHost_argsHostID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["hostID"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_updateTag_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("hostID"))
+	if tmp, ok := rawArgs["hostID"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateHost_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.UpdateHostInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.UpdateHostInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateHostInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateHostInput(ctx, tmp)
+	}
+
+	var zeroVal ent.UpdateHostInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateTag_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["tagID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tagID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateTag_argsTagID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["tagID"] = arg0
-	var arg1 ent.UpdateTagInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateTagInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateTagInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_updateTag_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_updateTag_argsTagID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["tagID"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_updateTome_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("tagID"))
+	if tmp, ok := rawArgs["tagID"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateTag_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.UpdateTagInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.UpdateTagInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateTagInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateTagInput(ctx, tmp)
+	}
+
+	var zeroVal ent.UpdateTagInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateTome_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["tomeID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tomeID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateTome_argsTomeID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["tomeID"] = arg0
-	var arg1 ent.UpdateTomeInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateTomeInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateTomeInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_updateTome_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_updateTome_argsTomeID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["tomeID"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("tomeID"))
+	if tmp, ok := rawArgs["tomeID"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateTome_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.UpdateTomeInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.UpdateTomeInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateTomeInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateTomeInput(ctx, tmp)
+	}
+
+	var zeroVal ent.UpdateTomeInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["userID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateUser_argsUserID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["userID"] = arg0
-	var arg1 ent.UpdateUserInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateUserInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateUserInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_updateUser_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateUser_argsUserID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["userID"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+	if tmp, ok := rawArgs["userID"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUser_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.UpdateUserInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.UpdateUserInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateUserInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateUserInput(ctx, tmp)
+	}
+
+	var zeroVal ent.UpdateUserInput
+	return zeroVal, nil
 }
 
 // endregion ***************************** args.gotpl *****************************
@@ -300,18 +554,21 @@ func (ec *executionContext) _Mutation_dropAllData(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().DropAllData(rctx)
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
-				return nil, err
+				var zeroVal bool
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal bool
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -343,7 +600,7 @@ func (ec *executionContext) _Mutation_dropAllData(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_dropAllData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_dropAllData(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -368,18 +625,21 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().CreateQuest(rctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Quest
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Quest
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -468,18 +728,21 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().UpdateBeacon(rctx, fc.Args["beaconID"].(int), fc.Args["input"].(ent.UpdateBeaconInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Beacon
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Beacon
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -573,18 +836,21 @@ func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().UpdateHost(rctx, fc.Args["hostID"].(int), fc.Args["input"].(ent.UpdateHostInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Host
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Host
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -680,18 +946,21 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().CreateTag(rctx, fc.Args["input"].(ent.CreateTagInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Tag
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Tag
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -769,18 +1038,21 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().UpdateTag(rctx, fc.Args["tagID"].(int), fc.Args["input"].(ent.UpdateTagInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Tag
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Tag
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -858,18 +1130,21 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().CreateTome(rctx, fc.Args["input"].(ent.CreateTomeInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Tome
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Tome
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -965,18 +1240,21 @@ func (ec *executionContext) _Mutation_updateTome(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().UpdateTome(rctx, fc.Args["tomeID"].(int), fc.Args["input"].(ent.UpdateTomeInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Tome
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Tome
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -1072,18 +1350,21 @@ func (ec *executionContext) _Mutation_deleteTome(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().DeleteTome(rctx, fc.Args["tomeID"].(int))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
-				return nil, err
+				var zeroVal int
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal int
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -1151,18 +1432,21 @@ func (ec *executionContext) _Mutation_createRepository(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().CreateRepository(rctx, fc.Args["input"].(ent.CreateRepositoryInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Repository
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Repository
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -1248,18 +1532,21 @@ func (ec *executionContext) _Mutation_importRepository(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().ImportRepository(rctx, fc.Args["repoID"].(int), fc.Args["input"].(*models.ImportRepositoryInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.Repository
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.Repository
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -1345,18 +1632,21 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["userID"].(int), fc.Args["input"].(ent.UpdateUserInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.User
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.User
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}
@@ -1437,18 +1727,21 @@ func (ec *executionContext) _Mutation_createCredential(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().CreateCredential(rctx, fc.Args["input"].(ent.CreateHostCredentialInput))
 		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
+
+		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				return nil, err
+				var zeroVal *ent.HostCredential
+				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				return nil, errors.New("directive requireRole is not implemented")
+				var zeroVal *ent.HostCredential
+				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
 		}

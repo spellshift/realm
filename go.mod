@@ -3,6 +3,7 @@ module realm.pub
 go 1.23.4
 
 require (
+	cloud.google.com/go/pubsub v1.45.3
 	entgo.io/contrib v0.6.0
 	entgo.io/ent v0.14.1
 	github.com/99designs/gqlgen v0.17.62
@@ -29,7 +30,6 @@ require (
 	cloud.google.com/go/auth v0.13.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.6 // indirect
 	cloud.google.com/go/iam v1.3.1 // indirect
-	cloud.google.com/go/pubsub v1.45.3 // indirect
 	dario.cat/mergo v1.0.1 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect

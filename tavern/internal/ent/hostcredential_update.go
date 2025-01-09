@@ -43,15 +43,39 @@ func (hcu *HostCredentialUpdate) SetPrincipal(s string) *HostCredentialUpdate {
 	return hcu
 }
 
+// SetNillablePrincipal sets the "principal" field if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillablePrincipal(s *string) *HostCredentialUpdate {
+	if s != nil {
+		hcu.SetPrincipal(*s)
+	}
+	return hcu
+}
+
 // SetSecret sets the "secret" field.
 func (hcu *HostCredentialUpdate) SetSecret(s string) *HostCredentialUpdate {
 	hcu.mutation.SetSecret(s)
 	return hcu
 }
 
+// SetNillableSecret sets the "secret" field if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableSecret(s *string) *HostCredentialUpdate {
+	if s != nil {
+		hcu.SetSecret(*s)
+	}
+	return hcu
+}
+
 // SetKind sets the "kind" field.
 func (hcu *HostCredentialUpdate) SetKind(ek epb.Credential_Kind) *HostCredentialUpdate {
 	hcu.mutation.SetKind(ek)
+	return hcu
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableKind(ek *epb.Credential_Kind) *HostCredentialUpdate {
+	if ek != nil {
+		hcu.SetKind(*ek)
+	}
 	return hcu
 }
 
@@ -155,7 +179,7 @@ func (hcu *HostCredentialUpdate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if _, ok := hcu.mutation.HostID(); hcu.mutation.HostCleared() && !ok {
+	if hcu.mutation.HostCleared() && len(hcu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
 	}
 	return nil
@@ -275,15 +299,39 @@ func (hcuo *HostCredentialUpdateOne) SetPrincipal(s string) *HostCredentialUpdat
 	return hcuo
 }
 
+// SetNillablePrincipal sets the "principal" field if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillablePrincipal(s *string) *HostCredentialUpdateOne {
+	if s != nil {
+		hcuo.SetPrincipal(*s)
+	}
+	return hcuo
+}
+
 // SetSecret sets the "secret" field.
 func (hcuo *HostCredentialUpdateOne) SetSecret(s string) *HostCredentialUpdateOne {
 	hcuo.mutation.SetSecret(s)
 	return hcuo
 }
 
+// SetNillableSecret sets the "secret" field if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableSecret(s *string) *HostCredentialUpdateOne {
+	if s != nil {
+		hcuo.SetSecret(*s)
+	}
+	return hcuo
+}
+
 // SetKind sets the "kind" field.
 func (hcuo *HostCredentialUpdateOne) SetKind(ek epb.Credential_Kind) *HostCredentialUpdateOne {
 	hcuo.mutation.SetKind(ek)
+	return hcuo
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableKind(ek *epb.Credential_Kind) *HostCredentialUpdateOne {
+	if ek != nil {
+		hcuo.SetKind(*ek)
+	}
 	return hcuo
 }
 
@@ -400,7 +448,7 @@ func (hcuo *HostCredentialUpdateOne) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if _, ok := hcuo.mutation.HostID(); hcuo.mutation.HostCleared() && !ok {
+	if hcuo.mutation.HostCleared() && len(hcuo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
 	}
 	return nil

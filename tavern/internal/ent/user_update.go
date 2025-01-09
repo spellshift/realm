@@ -35,9 +35,25 @@ func (uu *UserUpdate) SetName(s string) *UserUpdate {
 	return uu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableName(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetName(*s)
+	}
+	return uu
+}
+
 // SetPhotoURL sets the "photo_url" field.
 func (uu *UserUpdate) SetPhotoURL(s string) *UserUpdate {
 	uu.mutation.SetPhotoURL(s)
+	return uu
+}
+
+// SetNillablePhotoURL sets the "photo_url" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePhotoURL(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPhotoURL(*s)
+	}
 	return uu
 }
 
@@ -367,9 +383,25 @@ func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
 	return uuo
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableName(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetName(*s)
+	}
+	return uuo
+}
+
 // SetPhotoURL sets the "photo_url" field.
 func (uuo *UserUpdateOne) SetPhotoURL(s string) *UserUpdateOne {
 	uuo.mutation.SetPhotoURL(s)
+	return uuo
+}
+
+// SetNillablePhotoURL sets the "photo_url" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePhotoURL(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPhotoURL(*s)
+	}
 	return uuo
 }
 

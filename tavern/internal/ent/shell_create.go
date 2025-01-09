@@ -177,13 +177,13 @@ func (sc *ShellCreate) check() error {
 	if _, ok := sc.mutation.Data(); !ok {
 		return &ValidationError{Name: "data", err: errors.New(`ent: missing required field "Shell.data"`)}
 	}
-	if _, ok := sc.mutation.TaskID(); !ok {
+	if len(sc.mutation.TaskIDs()) == 0 {
 		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "Shell.task"`)}
 	}
-	if _, ok := sc.mutation.BeaconID(); !ok {
+	if len(sc.mutation.BeaconIDs()) == 0 {
 		return &ValidationError{Name: "beacon", err: errors.New(`ent: missing required edge "Shell.beacon"`)}
 	}
-	if _, ok := sc.mutation.OwnerID(); !ok {
+	if len(sc.mutation.OwnerIDs()) == 0 {
 		return &ValidationError{Name: "owner", err: errors.New(`ent: missing required edge "Shell.owner"`)}
 	}
 	return nil

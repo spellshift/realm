@@ -178,7 +178,7 @@ func (hcc *HostCredentialCreate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if _, ok := hcc.mutation.HostID(); !ok {
+	if len(hcc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostCredential.host"`)}
 	}
 	return nil
