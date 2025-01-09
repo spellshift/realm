@@ -161,3 +161,9 @@ export type PaginationPageInfo = {
     startCursor: string;
     endCursor: string;
 }
+
+export type UpdateUserProps = {
+    id: number,
+    activated: boolean,
+    admin: boolean,
+};
