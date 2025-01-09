@@ -109,3 +109,52 @@ If you wish to develop an agent using a different transport method (e.g. DNS), y
 2. Execute [Tasks](/user-guide/terminology#task) (happens in parallel and may not finish within one loop)
 3. Report available output from [Task](/user-guide/terminology#task) execution
 4. Sleep for an interval and repeat
+
+## Custom oauth2 backend
+
+If you can't use the default google oauth2 backend Realm has a flexible implementation that allows you to implement your own backends.
+
+For example to add Hashicorp Vault as an OIDC backend you'll need to:
+
+1. Setup an OIDC provider in vault - <https://developer.hashicorp.com/vault/docs/secrets/identity/oidc-provider>
+2. Get the relevant variables from the '.well-known/openid-configuration` endpoint: `authorization_endpoint`,`token_endpoint`,`userinfo_endpoint`,`scopes_supported`
+3. Open the `tavern/config.go` file and find where the `oauth2.Config` is initalized.
+4. You'll need to change `Endpoint: google.Endpoint` to  `oauth2.Endpoint{}` and fill in the `AuthURL` and `TokenURL` with `authorization_endpoint` and `token_endpoint` respectively.
+5. Update the `cfg.userProfiles` link with the `userinfo_endpoint`
+6. Update `Scopes:` with the scopes in `scopes_supported`
+
+For example using vault might look like:
+
+```go
+// ConfigureOAuthFromEnv sets OAuth config values from the environment
+func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
+    return func(cfg *Config) {
+        var (
+            clientID     = EnvOAuthClientID.String()
+            clientSecret = EnvOAuthClientSecret.String()
+            domain       = EnvOAuthDomain.String()
+        )
+
+        // .....
+        // .....
+
+        // Vault OAuth backend
+        cfg.oauth = oauth2.Config{
+            ClientID:     clientID,
+            ClientSecret: clientSecret,
+            RedirectURL:  domain + redirectPath,
+            Scopes: []string{
+                "openid",
+            },
+            Endpoint: oauth2.Endpoint{
+                AuthURL:  "https://vault.example.com/ui/vault/identity/oidc/provider/default/authorize",
+                TokenURL: "https://vault.example.com/v1/identity/oidc/provider/default/token",
+            },
+        }
+        cfg.userProfiles = "https://vault.example.com/v1/identity/oidc/provider/default/userinfo"
+    }
+}
+
+```
+
+_Keep in mind `/default/` in vault corresponds to the name of the OIDC provider and may be different in your environemnet. You may need to include / create additional scopes to get things like profile pictures and users names from vault into Tavern_
