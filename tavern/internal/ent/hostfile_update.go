@@ -42,6 +42,14 @@ func (hfu *HostFileUpdate) SetPath(s string) *HostFileUpdate {
 	return hfu
 }
 
+// SetNillablePath sets the "path" field if the given value is not nil.
+func (hfu *HostFileUpdate) SetNillablePath(s *string) *HostFileUpdate {
+	if s != nil {
+		hfu.SetPath(*s)
+	}
+	return hfu
+}
+
 // SetOwner sets the "owner" field.
 func (hfu *HostFileUpdate) SetOwner(s string) *HostFileUpdate {
 	hfu.mutation.SetOwner(s)
@@ -253,10 +261,10 @@ func (hfu *HostFileUpdate) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
-	if _, ok := hfu.mutation.HostID(); hfu.mutation.HostCleared() && !ok {
+	if hfu.mutation.HostCleared() && len(hfu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostFile.host"`)
 	}
-	if _, ok := hfu.mutation.TaskID(); hfu.mutation.TaskCleared() && !ok {
+	if hfu.mutation.TaskCleared() && len(hfu.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostFile.task"`)
 	}
 	return nil
@@ -403,6 +411,14 @@ func (hfuo *HostFileUpdateOne) SetLastModifiedAt(t time.Time) *HostFileUpdateOne
 // SetPath sets the "path" field.
 func (hfuo *HostFileUpdateOne) SetPath(s string) *HostFileUpdateOne {
 	hfuo.mutation.SetPath(s)
+	return hfuo
+}
+
+// SetNillablePath sets the "path" field if the given value is not nil.
+func (hfuo *HostFileUpdateOne) SetNillablePath(s *string) *HostFileUpdateOne {
+	if s != nil {
+		hfuo.SetPath(*s)
+	}
 	return hfuo
 }
 
@@ -630,10 +646,10 @@ func (hfuo *HostFileUpdateOne) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
-	if _, ok := hfuo.mutation.HostID(); hfuo.mutation.HostCleared() && !ok {
+	if hfuo.mutation.HostCleared() && len(hfuo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostFile.host"`)
 	}
-	if _, ok := hfuo.mutation.TaskID(); hfuo.mutation.TaskCleared() && !ok {
+	if hfuo.mutation.TaskCleared() && len(hfuo.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostFile.task"`)
 	}
 	return nil

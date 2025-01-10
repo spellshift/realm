@@ -44,6 +44,14 @@ func (qu *QuestUpdate) SetName(s string) *QuestUpdate {
 	return qu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (qu *QuestUpdate) SetNillableName(s *string) *QuestUpdate {
+	if s != nil {
+		qu.SetName(*s)
+	}
+	return qu
+}
+
 // SetParameters sets the "parameters" field.
 func (qu *QuestUpdate) SetParameters(s string) *QuestUpdate {
 	qu.mutation.SetParameters(s)
@@ -220,7 +228,7 @@ func (qu *QuestUpdate) check() error {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
 	}
-	if _, ok := qu.mutation.TomeID(); qu.mutation.TomeCleared() && !ok {
+	if qu.mutation.TomeCleared() && len(qu.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Quest.tome"`)
 	}
 	return nil
@@ -420,6 +428,14 @@ func (quo *QuestUpdateOne) SetName(s string) *QuestUpdateOne {
 	return quo
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (quo *QuestUpdateOne) SetNillableName(s *string) *QuestUpdateOne {
+	if s != nil {
+		quo.SetName(*s)
+	}
+	return quo
+}
+
 // SetParameters sets the "parameters" field.
 func (quo *QuestUpdateOne) SetParameters(s string) *QuestUpdateOne {
 	quo.mutation.SetParameters(s)
@@ -609,7 +625,7 @@ func (quo *QuestUpdateOne) check() error {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
 	}
-	if _, ok := quo.mutation.TomeID(); quo.mutation.TomeCleared() && !ok {
+	if quo.mutation.TomeCleared() && len(quo.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Quest.tome"`)
 	}
 	return nil

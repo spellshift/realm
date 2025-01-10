@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -111,7 +112,7 @@ func (hfq *HostFileQuery) QueryTask() *TaskQuery {
 // First returns the first HostFile entity from the query.
 // Returns a *NotFoundError when no HostFile was found.
 func (hfq *HostFileQuery) First(ctx context.Context) (*HostFile, error) {
-	nodes, err := hfq.Limit(1).All(setContextOp(ctx, hfq.ctx, "First"))
+	nodes, err := hfq.Limit(1).All(setContextOp(ctx, hfq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (hfq *HostFileQuery) FirstX(ctx context.Context) *HostFile {
 // Returns a *NotFoundError when no HostFile ID was found.
 func (hfq *HostFileQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hfq.Limit(1).IDs(setContextOp(ctx, hfq.ctx, "FirstID")); err != nil {
+	if ids, err = hfq.Limit(1).IDs(setContextOp(ctx, hfq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -157,7 +158,7 @@ func (hfq *HostFileQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one HostFile entity is found.
 // Returns a *NotFoundError when no HostFile entities are found.
 func (hfq *HostFileQuery) Only(ctx context.Context) (*HostFile, error) {
-	nodes, err := hfq.Limit(2).All(setContextOp(ctx, hfq.ctx, "Only"))
+	nodes, err := hfq.Limit(2).All(setContextOp(ctx, hfq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +186,7 @@ func (hfq *HostFileQuery) OnlyX(ctx context.Context) *HostFile {
 // Returns a *NotFoundError when no entities are found.
 func (hfq *HostFileQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hfq.Limit(2).IDs(setContextOp(ctx, hfq.ctx, "OnlyID")); err != nil {
+	if ids, err = hfq.Limit(2).IDs(setContextOp(ctx, hfq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -210,7 +211,7 @@ func (hfq *HostFileQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of HostFiles.
 func (hfq *HostFileQuery) All(ctx context.Context) ([]*HostFile, error) {
-	ctx = setContextOp(ctx, hfq.ctx, "All")
+	ctx = setContextOp(ctx, hfq.ctx, ent.OpQueryAll)
 	if err := hfq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -232,7 +233,7 @@ func (hfq *HostFileQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if hfq.ctx.Unique == nil && hfq.path != nil {
 		hfq.Unique(true)
 	}
-	ctx = setContextOp(ctx, hfq.ctx, "IDs")
+	ctx = setContextOp(ctx, hfq.ctx, ent.OpQueryIDs)
 	if err = hfq.Select(hostfile.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -250,7 +251,7 @@ func (hfq *HostFileQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (hfq *HostFileQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, hfq.ctx, "Count")
+	ctx = setContextOp(ctx, hfq.ctx, ent.OpQueryCount)
 	if err := hfq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -268,7 +269,7 @@ func (hfq *HostFileQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (hfq *HostFileQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, hfq.ctx, "Exist")
+	ctx = setContextOp(ctx, hfq.ctx, ent.OpQueryExist)
 	switch _, err := hfq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -624,7 +625,7 @@ func (hfgb *HostFileGroupBy) Aggregate(fns ...AggregateFunc) *HostFileGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (hfgb *HostFileGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hfgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, hfgb.build.ctx, ent.OpQueryGroupBy)
 	if err := hfgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -672,7 +673,7 @@ func (hfs *HostFileSelect) Aggregate(fns ...AggregateFunc) *HostFileSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (hfs *HostFileSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hfs.ctx, "Select")
+	ctx = setContextOp(ctx, hfs.ctx, ent.OpQuerySelect)
 	if err := hfs.prepareQuery(ctx); err != nil {
 		return err
 	}
