@@ -15,7 +15,7 @@ def http_get_andcute(url):
     # Get random process name
     platform = sys.get_os()["platform"]
     proc_name = PROC_NAMES[platform][random.int(
-        0, len(PROC_NAMES[platform]) - 1)]
+        0, len(PROC_NAMES[platform]))]
 
     proc_path = "/tmp/"
     if platform == "PLATFORM_WINDOWS":
