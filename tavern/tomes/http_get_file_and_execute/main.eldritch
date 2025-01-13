@@ -66,6 +66,4 @@ def http_get_andcute(url):
         return
 
 
-input_params = {
-    "url": "https://github.com/peass-ng/PEASS-ng/releases/download/20250112-c19ae6c3/winPEASany.exe"}
 http_get_andcute(input_params['url'])
