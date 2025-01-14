@@ -67,12 +67,10 @@ type HostProcessEdges struct {
 // HostOrErr returns the Host value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e HostProcessEdges) HostOrErr() (*Host, error) {
-	if e.loadedTypes[0] {
-		if e.Host == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: host.Label}
-		}
+	if e.Host != nil {
 		return e.Host, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: host.Label}
 	}
 	return nil, &NotLoadedError{edge: "host"}
 }
@@ -80,12 +78,10 @@ func (e HostProcessEdges) HostOrErr() (*Host, error) {
 // TaskOrErr returns the Task value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e HostProcessEdges) TaskOrErr() (*Task, error) {
-	if e.loadedTypes[1] {
-		if e.Task == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: task.Label}
-		}
+	if e.Task != nil {
 		return e.Task, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: task.Label}
 	}
 	return nil, &NotLoadedError{edge: "task"}
 }

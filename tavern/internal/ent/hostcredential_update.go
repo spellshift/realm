@@ -43,15 +43,39 @@ func (hcu *HostCredentialUpdate) SetPrincipal(s string) *HostCredentialUpdate {
 	return hcu
 }
 
+// SetNillablePrincipal sets the "principal" field if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillablePrincipal(s *string) *HostCredentialUpdate {
+	if s != nil {
+		hcu.SetPrincipal(*s)
+	}
+	return hcu
+}
+
 // SetSecret sets the "secret" field.
 func (hcu *HostCredentialUpdate) SetSecret(s string) *HostCredentialUpdate {
 	hcu.mutation.SetSecret(s)
 	return hcu
 }
 
+// SetNillableSecret sets the "secret" field if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableSecret(s *string) *HostCredentialUpdate {
+	if s != nil {
+		hcu.SetSecret(*s)
+	}
+	return hcu
+}
+
 // SetKind sets the "kind" field.
 func (hcu *HostCredentialUpdate) SetKind(ek epb.Credential_Kind) *HostCredentialUpdate {
 	hcu.mutation.SetKind(ek)
+	return hcu
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableKind(ek *epb.Credential_Kind) *HostCredentialUpdate {
+	if ek != nil {
+		hcu.SetKind(*ek)
+	}
 	return hcu
 }
 
@@ -69,6 +93,14 @@ func (hcu *HostCredentialUpdate) SetHost(h *Host) *HostCredentialUpdate {
 // SetTaskID sets the "task" edge to the Task entity by ID.
 func (hcu *HostCredentialUpdate) SetTaskID(id int) *HostCredentialUpdate {
 	hcu.mutation.SetTaskID(id)
+	return hcu
+}
+
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableTaskID(id *int) *HostCredentialUpdate {
+	if id != nil {
+		hcu = hcu.SetTaskID(*id)
+	}
 	return hcu
 }
 
@@ -147,11 +179,8 @@ func (hcu *HostCredentialUpdate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if _, ok := hcu.mutation.HostID(); hcu.mutation.HostCleared() && !ok {
+	if hcu.mutation.HostCleared() && len(hcu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
-	}
-	if _, ok := hcu.mutation.TaskID(); hcu.mutation.TaskCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "HostCredential.task"`)
 	}
 	return nil
 }
@@ -270,15 +299,39 @@ func (hcuo *HostCredentialUpdateOne) SetPrincipal(s string) *HostCredentialUpdat
 	return hcuo
 }
 
+// SetNillablePrincipal sets the "principal" field if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillablePrincipal(s *string) *HostCredentialUpdateOne {
+	if s != nil {
+		hcuo.SetPrincipal(*s)
+	}
+	return hcuo
+}
+
 // SetSecret sets the "secret" field.
 func (hcuo *HostCredentialUpdateOne) SetSecret(s string) *HostCredentialUpdateOne {
 	hcuo.mutation.SetSecret(s)
 	return hcuo
 }
 
+// SetNillableSecret sets the "secret" field if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableSecret(s *string) *HostCredentialUpdateOne {
+	if s != nil {
+		hcuo.SetSecret(*s)
+	}
+	return hcuo
+}
+
 // SetKind sets the "kind" field.
 func (hcuo *HostCredentialUpdateOne) SetKind(ek epb.Credential_Kind) *HostCredentialUpdateOne {
 	hcuo.mutation.SetKind(ek)
+	return hcuo
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableKind(ek *epb.Credential_Kind) *HostCredentialUpdateOne {
+	if ek != nil {
+		hcuo.SetKind(*ek)
+	}
 	return hcuo
 }
 
@@ -296,6 +349,14 @@ func (hcuo *HostCredentialUpdateOne) SetHost(h *Host) *HostCredentialUpdateOne {
 // SetTaskID sets the "task" edge to the Task entity by ID.
 func (hcuo *HostCredentialUpdateOne) SetTaskID(id int) *HostCredentialUpdateOne {
 	hcuo.mutation.SetTaskID(id)
+	return hcuo
+}
+
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableTaskID(id *int) *HostCredentialUpdateOne {
+	if id != nil {
+		hcuo = hcuo.SetTaskID(*id)
+	}
 	return hcuo
 }
 
@@ -387,11 +448,8 @@ func (hcuo *HostCredentialUpdateOne) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if _, ok := hcuo.mutation.HostID(); hcuo.mutation.HostCleared() && !ok {
+	if hcuo.mutation.HostCleared() && len(hcuo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
-	}
-	if _, ok := hcuo.mutation.TaskID(); hcuo.mutation.TaskCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "HostCredential.task"`)
 	}
 	return nil
 }

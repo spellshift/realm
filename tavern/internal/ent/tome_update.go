@@ -43,15 +43,39 @@ func (tu *TomeUpdate) SetName(s string) *TomeUpdate {
 	return tu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableName(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetName(*s)
+	}
+	return tu
+}
+
 // SetDescription sets the "description" field.
 func (tu *TomeUpdate) SetDescription(s string) *TomeUpdate {
 	tu.mutation.SetDescription(s)
 	return tu
 }
 
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableDescription(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetDescription(*s)
+	}
+	return tu
+}
+
 // SetAuthor sets the "author" field.
 func (tu *TomeUpdate) SetAuthor(s string) *TomeUpdate {
 	tu.mutation.SetAuthor(s)
+	return tu
+}
+
+// SetNillableAuthor sets the "author" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableAuthor(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetAuthor(*s)
+	}
 	return tu
 }
 
@@ -109,9 +133,25 @@ func (tu *TomeUpdate) SetHash(s string) *TomeUpdate {
 	return tu
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableHash(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetHash(*s)
+	}
+	return tu
+}
+
 // SetEldritch sets the "eldritch" field.
 func (tu *TomeUpdate) SetEldritch(s string) *TomeUpdate {
 	tu.mutation.SetEldritch(s)
+	return tu
+}
+
+// SetNillableEldritch sets the "eldritch" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableEldritch(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetEldritch(*s)
+	}
 	return tu
 }
 
@@ -455,15 +495,39 @@ func (tuo *TomeUpdateOne) SetName(s string) *TomeUpdateOne {
 	return tuo
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableName(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetName(*s)
+	}
+	return tuo
+}
+
 // SetDescription sets the "description" field.
 func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
 	tuo.mutation.SetDescription(s)
 	return tuo
 }
 
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableDescription(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetDescription(*s)
+	}
+	return tuo
+}
+
 // SetAuthor sets the "author" field.
 func (tuo *TomeUpdateOne) SetAuthor(s string) *TomeUpdateOne {
 	tuo.mutation.SetAuthor(s)
+	return tuo
+}
+
+// SetNillableAuthor sets the "author" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableAuthor(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetAuthor(*s)
+	}
 	return tuo
 }
 
@@ -521,9 +585,25 @@ func (tuo *TomeUpdateOne) SetHash(s string) *TomeUpdateOne {
 	return tuo
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableHash(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetHash(*s)
+	}
+	return tuo
+}
+
 // SetEldritch sets the "eldritch" field.
 func (tuo *TomeUpdateOne) SetEldritch(s string) *TomeUpdateOne {
 	tuo.mutation.SetEldritch(s)
+	return tuo
+}
+
+// SetNillableEldritch sets the "eldritch" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableEldritch(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetEldritch(*s)
+	}
 	return tuo
 }
 

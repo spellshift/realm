@@ -59,12 +59,10 @@ type ShellEdges struct {
 // TaskOrErr returns the Task value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ShellEdges) TaskOrErr() (*Task, error) {
-	if e.loadedTypes[0] {
-		if e.Task == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: task.Label}
-		}
+	if e.Task != nil {
 		return e.Task, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: task.Label}
 	}
 	return nil, &NotLoadedError{edge: "task"}
 }
@@ -72,12 +70,10 @@ func (e ShellEdges) TaskOrErr() (*Task, error) {
 // BeaconOrErr returns the Beacon value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ShellEdges) BeaconOrErr() (*Beacon, error) {
-	if e.loadedTypes[1] {
-		if e.Beacon == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: beacon.Label}
-		}
+	if e.Beacon != nil {
 		return e.Beacon, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: beacon.Label}
 	}
 	return nil, &NotLoadedError{edge: "beacon"}
 }
@@ -85,12 +81,10 @@ func (e ShellEdges) BeaconOrErr() (*Beacon, error) {
 // OwnerOrErr returns the Owner value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ShellEdges) OwnerOrErr() (*User, error) {
-	if e.loadedTypes[2] {
-		if e.Owner == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
-		}
+	if e.Owner != nil {
 		return e.Owner, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "owner"}
 }

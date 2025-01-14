@@ -296,10 +296,10 @@ func (tc *TaskCreate) check() error {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "Task.output_size": %w`, err)}
 		}
 	}
-	if _, ok := tc.mutation.QuestID(); !ok {
+	if len(tc.mutation.QuestIDs()) == 0 {
 		return &ValidationError{Name: "quest", err: errors.New(`ent: missing required edge "Task.quest"`)}
 	}
-	if _, ok := tc.mutation.BeaconID(); !ok {
+	if len(tc.mutation.BeaconIDs()) == 0 {
 		return &ValidationError{Name: "beacon", err: errors.New(`ent: missing required edge "Task.beacon"`)}
 	}
 	return nil
